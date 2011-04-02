@@ -1,0 +1,346 @@
+set -exuv
+date
+#
+# Basic Definitions
+#
+Myversion=%VERSION%
+RUNdir=%RUNdir"
+MyMember=%MEMBER%
+Myexpid=%EXPID%
+START_date=%SDATE%
+
+#
+# Model Configuration
+#
+WRITINGDIR=${RUNdir}/${USER}/nemo-ecearth/${Myexpid}
+RUN_dir=${WRITINGDIR}/${Myexpid}/${START_date}
+
+mkdir -p ${WRITINGDIR}
+mkdir -p ${WRITINGDIR}/${START_date}
+
+#if [[ -d $RUN_dir ]] ; then
+#   chmod +wx -R $RUN_dir
+#   rm -rf $RUN_dir
+#fi
+mkdir -p $RUN_dir
+#
+#
+cdfheatc=/gpfs/apps/CDFTOOLS/2.1/cdfheatc
+cdfmoc=/gpfs/apps/CDFTOOLS/2.1/cdfmoc
+cdfmaxmoc=/gpfs/apps/CDFTOOLS/2.1/cdfmaxmoc
+cdficediags=/gpfs/apps/CDFTOOLS/2.1/cdficediags
+cdo=/gpfs/apps/CDO/1.4.6/64/bin/cdo
+ncks=/gpfs/apps/NCO/4.0.1/bin/ncks
+ncatted=/gpfs/apps/NCO/4.0.1/bin/ncatted
+ncap=/gpfs/apps/NCO/4.0.1/bin/ncap
+ncrcat=/gpfs/apps/NCO/4.0.1/bin/ncrcat
+ncrename=/gpfs/apps/NCO/4.0.1/bin/ncrename
+ncwa=/gpfs/apps/NCO/4.0.1/bin/ncwa
+#
+# Chunk management
+#
+chunk=CHUNK
+
+Chunk_start_date=Chunk_START_DATE
+Chunk_end_date=Chunk_END_DATE
+nyearini=Starting_DATE_YEAR
+nmonthini=Starting_DATE_MONTH
+
+#in days
+RUN_days=1825
+
+# in hours
+Chunk_length=$(( ${RUN_days} * 24 )) # In hours
+
+#in month
+RUN_chunk_size=Chunk_SIZE_MONTH
+#
+# Output path on HSM
+#
+output_dir=$RUN_dir/Output_${chunk}
+chmod 775 $output_dir
+if [[ -d ${output_dir} ]] ; then
+   cd $output_dir
+else
+   exit
+fi
+
+#
+# Rebuild ocean output
+#
+date
+rebuild_tool=/gpfs/projects/ecm86/nemo/ecearth-v2.2/nemo/modipsl/modeles/IOIPSL/tools/rebuild
+#
+interval=MM
+prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
+#grid_types="grid_W grid_T grid_U grid_V icemod"
+
+
+
+grid_types="grid_T grid_V icemod"
+for grid_type in ${grid_types}; do
+    output_file=${prefix}_${grid_type}.nc
+    ${rebuild_tool} -v -o ${output_file} ${prefix}_${grid_type}_00[0-6][0-9].nc
+#   ${rebuild_tool} -o ${output_file} ${prefix}_${grid_type}_00[0-6][0-9].nc
+#   gzip -9 ${output_file}
+done
+
+############################ Saving Mixed Layer Depth     #####################
+# 
+${ncks} -v somixhgt,somxl010 ${prefix}_grid_T.nc zmlo_${Myexpid}_${START_date}_${Chunk_start_date}_${Chunk_end_date}.nc
+#
+#
+## Diagnostics part for heatc content, sea ice area and AMOC
+#
+# heatc content
+
+############################ Beginning of computing heatc #####################
+
+############################ End of user modification #########################
+PATH=${PATH}:/share/apps/cdftools-2.1/intel11/bin
+PATH=${PATH}:/share/apps/cdo-1.4.5.1/intel11/bin/
+PATH=${PATH}:/share/apps/nco-3.9.9/intel11/bin/
+PATH=${PATH}:/share/apps/ferret/bin/
+PATH=${PATH}:/share/apps/netcdf-3.6.0-p1/intel10/bin/
+#
+CON_FILES=/gpfs/projects/ecm86/common/cdftools/constant_files
+chunkname=${START_date}_${Chunk_start_date}_${Chunk_end_date}
+
+
+# obtain constant files
+#
+cp ${CON_FILES}/depth.txt .
+ln -sf ${CON_FILES}/mask.nc .
+ln -sf ${CON_FILES}/mesh_hgr.nc .
+ln -sf ${CON_FILES}/mesh_zgr.nc .
+ln -sf ${CON_FILES}/new_maskglo.nc .
+
+grid_T_file=${prefix}_grid_T.nc
+grid_V_file=${prefix}_grid_V.nc
+icemod_file=${prefix}_icemod.nc
+
+nt=`${cdo} ntime ${grid_T_file}`
+
+imin=0
+imax=0
+jmin=0
+jmax=0
+
+
+#layer upper for 0-300m, mid for 300 to 1000m and lower for 1000 to bottom
+
+for layer in u m l; do # loop for layers 
+
+case ${layer} in
+ u)
+ kmin=1
+ kmax=20  # 24 for about 657m and 20 for 315m
+ ;;
+ m)
+ kmin=21
+ kmax=25
+ ;;
+ l)
+ kmin=26
+ kmax=42
+ ;;
+esac
+
+para="$imin $imax $jmin $jmax $kmin $kmax"
+
+
+#
+# Calculation of the ohc
+#
+output=${Myexpid}_heatc_${kmin}-${kmax}_${chunkname}
+
+cp ${CON_FILES}/heatc.nc template_heatc.nc # heatc.nc is a file that contains a template for the ohc NetCDF output
+ncdump template_heatc.nc > template_heatc.cdl
+
+for t in $(seq 1 1 $nt); do
+ rm -f tmp.nc
+ ${cdo} seltimestep,$t ${grid_T_file} tmp.nc
+ ${cdfheatc} tmp.nc $para > tmp.log
+ thc=`cat tmp.log | grep "Total Heat content :" | awk '{print $5}'`;
+ uhc=`cat tmp.log | grep "Total Heat content/volume" | awk '{print $5}'`;
+ echo $t $thc $uhc >> ${output}.txt
+ sed -e "s/thc =.*/thc = $thc ;/" template_heatc.cdl > template_heatc2.cdl
+ sed -e "s/uhc =.*/uhc = $uhc ;/" template_heatc2.cdl > template_heatc.cdl
+ ncgen -o heatc.nc template_heatc.cdl
+ ${cdo} cat heatc.nc ${output}.nc
+done
+
+rm -f time.nc template_heatc.cdl template_heatc2.cdl template_heatc.nc heatc.nc
+time=`ncdump -c ${grid_T_file} |grep -i unlimited|awk  '{print $1}'`
+${ncks} -h -O -v ${time} ${grid_T_file} time.nc
+${ncrename} -v ${time},time time.nc
+${ncks} -h -A time.nc ${output}.nc
+#
+# Modify headers
+#
+thc_min=`cat ${output}.txt | awk '{print $2}' | sort -n | head -1`;
+thc_max=`cat ${output}.txt | awk '{print $2}' | sort -n | tail -n 1`;
+${ncatted} -h -a valid_min,thc,m,f,$thc_min ${output}.nc
+${ncatted} -h -a valid_max,thc,m,f,$thc_max ${output}.nc
+#
+
+uhc_min=`cat ${output}.txt | awk '{print $3}' | sort -n | head -1`;
+uhc_max=`cat ${output}.txt | awk '{print $3}' | sort -n | tail -n 1`;
+${ncatted} -h -a valid_min,uhc,m,f,$uhc_min ${output}.nc
+${ncatted} -h -a valid_max,uhc,m,f,$uhc_max ${output}.nc
+#
+#
+
+done # loop for layers
+
+############################## End of computing heatc ########################################3
+
+
+#
+##  AMOC
+#
+############################ Beginning of computing AMOC  ##################################
+
+basin=atl  # for Atlantic 
+latmin=20 
+latmax=70
+
+output1=moc_${Myexpid}_${chunkname}
+output3=avemoc_${Myexpid}_${chunkname}_40-55_1000-2000 
+ 
+cp /home/ecm86/ecm86859/BUGFIX_MAXMOC/template_maxmoc.cdl .
+for t in $(seq 1 1 ${nt}); do
+ ${cdo} seltimestep,$t ${grid_V_file} tmp.nc
+ ${cdfmoc} tmp.nc 
+
+ for layer in u l; do # loop for layers
+
+  case ${layer} in
+   u)
+   depmin=0
+   depmax=500  # 24 for about 657m and 20 for 315m
+   ;;
+   l)
+   depmin=300
+   depmax=5000
+   ;;
+  esac
+  para="$basin $latmin $latmax $depmin $depmax "
+  suffix=${depmin}-${depmax}_$basin
+  output2=maxmoc_${Myexpid}_${chunkname}_${suffix}
+  
+  ${cdfmaxmoc} moc.nc $para > maxmoc.txt
+  maxmocval=`grep Maximum maxmoc.txt |awk '{print $2}'`
+  latmaxmoc=`grep Maximum maxmoc.txt |awk '{print $5}'`
+  depmaxmoc=`grep Maximum maxmoc.txt |awk '{print $8}'`
+  sed -e "s/maxmoc =.*/maxmoc = $maxmocval ;/" template_maxmoc.cdl > template_maxmoc2.cdl
+  sed -e "s/latmaxmoc =.*/latmaxmoc = $latmaxmoc ;/" template_maxmoc2.cdl > template_maxmoc3.cdl
+  sed -e "s/depmaxmoc =.*/depmaxmoc = $depmaxmoc ;/" template_maxmoc3.cdl > maxmoc.cdl
+  ncgen -o maxmoc.nc maxmoc.cdl
+  ${cdo} cat maxmoc.nc ${output2}.nc
+
+ done # loop for layers
+
+ ${ncrename} -d y,nav_lat moc.nc 
+ ${cdo} cat moc.nc ${output1}.nc  
+ 
+ ${ncks} -O -v zomsfatl moc.nc moc.nc 
+ ncdump moc.nc > moc.cdl
+ sed -e "s/nav_lat(nav_lat, x)/nav_lat(nav_lat)/g" moc.cdl > moc2.cdl
+ sed -e "s/zomsfatl(time_counter, depthw, nav_lat, x)/zomsfatl(time_counter, depthw, nav_lat)/g" moc2.cdl > moc.cdl
+ ncgen -o moc.nc moc.cdl
+ ${ncks} -d nav_lat,40.,55. -d depthw,-2000.,-1000. moc.nc area_moc.nc
+ ${cdo} vertmean area_moc.nc area_ave_moc.nc
+ ${ncap} -O -s "coslat[nav_lat]=cos(nav_lat[nav_lat]*3.141592657/180.0)" area_ave_moc.nc area_ave_moc2.nc
+ ${ncwa} -w coslat -a nav_lat area_ave_moc2.nc area_ave_moc3.nc
+ ${ncks} -O -v zomsfatl,time area_ave_moc3.nc area_ave_moc3.nc
+ ${cdo} cat area_ave_moc3.nc ${output3}.nc
+ rm -f maxmoc.nc template_maxmoc2.cdl template_maxmoc3.cdl maxmoc.cdl maxmoc.txt tmp.nc moc.nc area_moc.nc area_ave_moc.nc moc.cdl moc2.cdl area_ave_moc2.nc area_ave_moc3.nc 
+done
+rm -f template_maxmoc.cdl
+
+rm -f time.nc
+time=`ncdump -c ${grid_V_file} |grep -i unlimited|awk  '{print $1}'`
+${ncks} -h -O -v ${time} ${grid_V_file} time.nc
+${ncrename} -v ${time},time time.nc 
+${ncks} -h -A time.nc ${output1}.nc
+${ncks} -h -A time.nc maxmoc_${Myexpid}_${chunkname}_0-500_$basin.nc
+${ncks} -h -A time.nc maxmoc_${Myexpid}_${chunkname}_300-5000_$basin.nc
+${ncks} -h -A time.nc ${output3}.nc
+
+
+############################## End of computing AMOC ########################################
+
+#
+### Sea ice area
+#
+############################ Beginning of computing Sea ice  ##################################
+
+output=ice_${Myexpid}_${chunkname}
+
+cp ${CON_FILES}/ice_template.nc toto_N.nc # heatc.nc is a file that contains a template for the ohc NetCDF output
+cp ${CON_FILES}/ice_template.nc toto_S.nc 
+
+for t in $(seq 1 1 $nt); do
+ rm -f tmp.nc ice.txt
+ cdo seltimestep,$t ${icemod_file} tmp.nc
+ ${cdficediags} tmp.nc>ice.txt  
+
+ for d in N S;do
+ ncdump toto_${d}.nc  > ice_template.cdl
+ sia=`grep ${d}Area ice.txt |awk '{print $4}'` 
+ sie=`grep ${d}Extend ice.txt|awk '{print $4}'`
+ echo ${sia} ${sie}>> ice_${d}.txt 
+ sed -e "s/sia =.*/sia = $sia ;/" ice_template.cdl > ice_template2.cdl
+ sed -e "s/sie =.*/sie = $sie ;/" ice_template2.cdl > ice_template.cdl
+ ncgen -o ice.nc ice_template.cdl
+ ${cdo} cat ice.nc ${output}_${d}.nc
+ done  #loop for N and S
+
+done # loop for time
+
+ncatted -O -a units,sia,m,c,"10^9 km2" ${output}_S.nc
+ncatted -O -a units,sie,m,c,"10^9 km2" ${output}_S.nc
+ncatted -O -a units,sia,m,c,"10^9 km2" ${output}_N.nc
+ncatted -O -a units,sie,m,c,"10^9 km2" ${output}_N.nc
+
+# add the time information 
+rm -f time.nc ice_template.cdl ice_template2.cdl ice.nc
+time=`ncdump -c ${icemod_file} |grep -i unlimited|awk  '{print $1}'`
+${ncks} -h -O -v ${time} ${icemod_file} time.nc
+${ncrename} -v ${time},time time.nc
+${ncks} -h -A time.nc ${output}_N.nc
+${ncks} -h -A time.nc ${output}_S.nc
+
+
+#
+# Modify headers
+#
+
+for D in N S; do
+  sia_min=`cat ice_${D}.txt | awk '{print $1}' | sort -n | head -1`;
+  sia_max=`cat ice_${D}.txt | awk '{print $1}' | sort -n | tail -n 1`;
+  ${ncatted} -h -a valid_min,sia,m,f,$sia_min ${output}_${D}.nc
+  ${ncatted} -h -a valid_max,sia,m,f,$sia_max ${output}_${D}.nc
+# 
+  sie_min=`cat ice_${D}.txt | awk '{print $2}' | sort -n | head -1`;
+  sie_max=`cat ice_${D}.txt | awk '{print $2}' | sort -n | tail -n 1`;
+  ${ncatted} -h -a valid_min,sie,m,f,$sie_min ${output}_${D}.nc
+  ${ncatted} -h -a valid_max,sie,m,f,$sie_max ${output}_${D}.nc
+done
+
+#  
+#
+
+
+
+############################## End of computing sea ice ########################################
+
+
+# end of diagnostics 
+#
+
+touch %JOBNAME%.nemo_post
+
+
+touch %LOGDIR%/%JOBNAME%_COMPLETED

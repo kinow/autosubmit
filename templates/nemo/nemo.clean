@@ -1,0 +1,126 @@
+set -evx
+date
+
+Myexpid=%EXPID%
+Mymember=MEMBER
+START_date=SDATE
+WRITINGDIR="/gpfs/scratch/ecm86/ecm86859/nemo-ecearth"
+RUN_dir=${WRITINGDIR}/${Myexpid}/${START_date}
+#
+#
+# Chunk management
+#
+chunk=CHUNK
+Chunk_last=Chunk_LAST 
+
+Chunk_start_date=Chunk_START_DATE
+Chunk_end_date=Chunk_END_DATE
+
+#in days
+chunk_end_in_days=1825
+
+# in hours
+
+Chk_length=$(( ${chunk} * ${chunk_end_in_days} * 24 )) # In hours
+Chunk_length=`printf '%08d' ${Chk_length}`
+
+#in month
+RUN_chunk_size=%Chunk_SIZE_MONTH%
+#
+# Output path on HSM
+#
+PATHOUT="/HSM/ecm86/ecearth/${Myexpid}/${START_date}"  
+mkdir -p ${PATHOUT}
+
+output_dir=${RUN_dir}/Output_${chunk}
+mkdir -p ${output_dir} 
+###############################################################################
+#                               SAVE RESTARTS
+###############################################################################
+PATHOUT_RES="${PATHOUT}/restarts"
+mkdir -p ${PATHOUT_RES}
+
+for REST in RESTO ; do
+    case ${REST} in
+         RESTA) PATHSU="/IFS_Restart_${chunk}"
+                FILEPREF=""
+         ;;
+         RESTO) PATHSU=""
+                PATHSU="/NEMO_Restart_${chunk}"
+                FILEPREF="ORCA1_${Chunk_length}_restart"
+         ;;
+    esac
+#
+    Basedir="${RUN_dir}${PATHSU}"
+    if [[ -d ${Basedir} ]] ; then
+       ls -l ${Basedir}/${FILEPREF}*
+    else
+       exit 1
+    fi
+#
+# Create and copy tar file
+#
+    tarfile="${REST}_${Myexpid}_${START_date}_fc${Mymember}_${Chunk_start_date}-${Chunk_end_date}.tar"
+    tar -cvf $tarfile ${Basedir}/${FILEPREF}*
+    cp $tarfile $PATHOUT_RES
+#
+# Check target file
+#
+    locfile=`md5sum ${tarfile}|cut -d" " -f1`
+    remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
+    rm -f ${RUN_dir}/rest_${chunk}
+    if [[ "$locfile" == "$remfile" ]] ; then
+       echo "The file has been correctly stored"
+       touch ${RUN_dir}/rest_${chunk}
+       rm -f $tarfile
+    else
+       exit 1
+    fi
+    date
+done
+
+
+if [[ -d ${output_dir} ]] ; then
+   cd $output_dir
+else
+   exit
+fi
+
+PATHOUT_OUT="${PATHOUT}/outputs"
+mkdir -p ${PATHOUT_OUT}
+#############################################
+#
+########### Save Ocean files ################
+#
+#############################################
+chunkname=${START_date}_${Chunk_start_date}-${Chunk_end_date}
+output_files=`ls *heatc*.nc *moc*.nc ice*.nc *zmlo*.nc`
+tarfile=diags_${Myexpid}_${chunkname}.tar
+#
+# Copying the monthly means
+#
+tar -rvf ../${tarfile} ${output_files}
+cp ../$tarfile $PATHOUT_OUT
+#
+rm -f ${RUN_dir}/outo_${chunk}
+locfile=`md5sum ../${tarfile}|cut -d" " -f1`
+remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
+if [[ "$locfile" == "$remfile" ]] ; then
+   echo "The file has been correctly stored"
+   touch ${RUN_dir}/outo_${chunk}
+   rm -f ../$tarfile
+   rm -r ${output_dir}
+   rm -f ${output_files}
+   if [[ $Chunk_last = .TRUE. ]]; then
+    rm -r $RUN_dir
+   fi
+else
+   exit 1
+fi
+
+date
+
+
+
+
+touch %LOGDIR%/%JOBNAME%_COMPLETED

@@ -1,0 +1,211 @@
+set -exuv
+date
+
+#
+# Basic Definitions
+#
+
+VERSION=%VERSION%
+MEMBER=%MEMBER%
+EXPID=%EXPID%
+START_date=%SDATE%
+case $VERSION in
+     v2.1) ECEARTH=/gpfs/projects/ecm86/ecm86503/ecearth2.1
+           SCRIPTDIR=/gpfs/projects/ecm86/ecearth/V2.1/setup
+           TESTDATADIR=/gpfs/projects/ecm86/ecearth/V2.1/inidata
+     ;;
+     v2.2.0) ECEARTH=/gpfs/projects/ecm86/ecearth/v2.2.0
+           SCRIPTDIR=/gpfs/projects/ecm86/ecearth/v2.2.0/setup
+           TESTDATADIR=/gpfs/projects/ecm86/ecearth/v2.2.0/inidata
+     ;;
+     v2.2.1) ECEARTH=/gpfs/projects/ecm86/ecearth/v2.2.1
+             SCRIPTDIR=/gpfs/projects/ecm86/ecearth/v2.2.1/setup
+             TESTDATADIR=/gpfs/projects/ecm86/ecearth/v2.2.1/inidata
+     ;;
+     v2.2.2) ECEARTH=/gpfs/projects/ecm86/ecearth/v2.2.2
+             SCRIPTDIR=/gpfs/projects/ecm86/ecearth/v2.2.2/setup
+             TESTDATADIR=/gpfs/projects/ecm86/ecearth/v2.2.2/inidata
+esac
+
+#
+# Model Configuration
+#
+PATH=${SCRIPTDIR}:${PATH}
+WRITINGDIR=/gpfs/scratch/ecm86/${USER}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
+mkdir -p $RUN_dir
+cd $RUN_dir
+INIPATH=${RUN_dir}/inidata
+
+#
+# IFS
+#
+IFS_resolution=%IFS_resolution%
+IFS_nproc=%IFS_nproc%
+NPRTRVIFS=%NPRTRVIFS%
+NPROMA=%NPROMA%
+LFASTRES=%LFASTRES%
+IFSDIR=${ECEARTH}
+IFS_exe=${IFSDIR}/bin/ifsMASTER
+
+export OASIS3=%OASIS3%
+export OASIS3DEBUGLEVEL=%OASIS3DEBUGLEVEL%
+export DR_HOOK_IGNORE_SIGNALS=%DR_HOOK_IGNORE_SIGNALS%
+
+ulimit -c 1000000
+export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
+export MBX_SIZE=%MBX_SIZE%
+
+RUN_coupFreq=%RUN_coupFreq%
+
+NFRP=%NFRP% # Frequency of postprocessing in hours
+ADVSCH=%ADVSCH% # Ocean advection scheme
+
+##########
+#Here we assume all initial conditions has been copied or linked to the RUN_dir
+#############
+
+#
+# Chunk management
+#
+chunk=%CHUNK%
+day_prev=%PREV%
+
+#in days
+Chunk_start_date=%Chunk_START_DATE%
+Chunk_end_date=%Chunk_END_DATE%
+RUN_days=%RUN_DAYS%
+# in hours
+Chunk_length=$(( ${RUN_days} * 24 )) # In hours
+Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
+Chunk_last=%Chunk_LAST%
+
+# Run Directory Initialization
+# 
+if [[ $chunk == 1 ]]; then
+ rm -f ${RUN_dir}/anaisout
+ rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+ echo "FIRST Chunk"
+ echo "Chunk_length: ${Chunk_length}"
+ LFASTRES=.FALSE.
+else
+ rm -f ${RUN_dir}/anaisout
+ rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+ echo "Chunk: ${chunk}"
+ echo "Chunk_length: ${Chunk_length}"
+ LFASTRES=.TRUE.
+fi
+
+CMIP5=%CMIP5%
+LCMIP5=%LCMIP5%
+Nrcp=%Nrcp%
+RCP=%RCP%
+if [[ $CMIP5 = .TRUE. ]] ; then
+   LCMIP5=true
+   NFRP=3 # Frequency of postprocessing in hours
+   RUN_coupFreq=6 # Becomes NFRCO
+   WAM=false
+   ADVSCH=tvd # Ocean advection scheme
+   if [[ $RCP = 3-PD ]] ; then
+      Nrcp=1
+   fi
+   if [[ $RCP = 4.5 ]] ; then
+      Nrcp=2
+   fi
+   if [[ $RCP = 6.0 ]] ; then
+      Nrcp=3
+   fi
+   if [[ $RCP = 8.5 ]] ; then
+      Nrcp=4
+   fi
+fi
+
+#
+# Control the use of the scenario
+#
+    if [[ Lrcp == TRUE ]] ; then
+       CNrcp=$Nrcp
+    else
+       CNrcp=0
+    fi
+#
+
+if [[ ! -a finished_chunk_${chunk} ]] ; then
+
+ case $VERSION in
+     v2.1) EXPVER=$(${SCRIPTDIR}/setupifs_${VERSION}.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o ${Chunk_last} -1 ${TESTDATADIR} -2 ${EXPID})
+     ;;
+     v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES)
+     ;;
+     v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES -4 $NFRP)
+     ;;
+#    v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${LCMIP5} -6 ${CNrcp} -7 ${LHVOLCA})
+#     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${LCMIP5} -6 ${CNrcp})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs-amip.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${LCMIP5} -6 ${CNrcp})
+     ;;
+ esac
+
+ if [[ $chunk == 1 ]]; then
+  rm -f rcf
+  rm -f *f00000000*
+  rm -f postins 
+  rm -f dirlist
+  rm -f ICM*
+  ln -sf ${INIPATH}/* .
+ fi
+
+ ls -l
+#
+# Location of the executables
+# 
+ IFS_exe="${IFS_exe}"
+#
+# Model Run
+#
+# set +e is required because there are random errors at the end
+# of each chunk
+#
+ set +e
+ time srun -n $IFS_nproc -l ${IFS_exe} -v ecmwf -e ${EXPVER}
+ set -e
+ echo "finished chunk"
+ date
+fi
+
+
+#
+# Save IFS restart files and prepare for continuation of the run
+#
+
+Chunk_end=$((Chunk_length+Chunk_last_day_prev))
+Chunk_restart_tag=`printf "%06d0000" $(( ${Chunk_last_day_prev}/24+${Chunk_length}/24 ))`
+
+if [[ `ls -1 guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9]` = '0' ]]; then
+ echo "EC-Earth RUN FAILED"
+ exit 1
+fi
+
+Chunk_last_day_prev=$((${Chunk_last_day_prev} + ${Chunk_length}))
+echo "Chunk_last_day_prev: ${Chunk_last_day_prev}"
+
+mkdir -p IFS_Restart_${chunk}
+mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] gxtrarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] surf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+ tmrf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] IFS_Restart_${chunk}
+ln -sf IFS_Restart_${chunk}/* .
+cp rcf IFS_Restart_${chunk}
+
+#  
+# Move the output for postprocessing
+#
+
+output_dir="Output_${chunk}"
+mkdir -p ${output_dir}
+mv ICMGG${EXPID}+* ICMSH${EXPID}+*  ${output_dir}/.
+
+chmod 775 -R ${RUN_dir}/
+
+touch %LOGDIR%/%JOBNAME%_COMPLETED
+
+date

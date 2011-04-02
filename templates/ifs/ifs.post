@@ -1,0 +1,149 @@
+set -exuv
+date
+
+VERSION=%VERSION%
+EXPID=%EXPID%
+MEMBER=%MEMBER%
+START_date=%SDATE%
+SCRATCH_dir=/gpfs/scratch/ecm86
+ECEARTH_dir=/gpfs/projects/ecm86/ecearth
+WRITINGDIR=${SCRATCH_dir}/${USER}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
+#
+# Chunk management
+#
+chunk=%CHUNK%
+
+Chunk_start_date=%Chunk_START_DATE%
+Chunk_end_date=%Chunk_END_DATE%
+nyearini=%Starting_DATE_YEAR%
+nmonthini=%Starting_DATE_MONTH%
+
+#in days
+RUN_days=%RUN_DAYS%
+
+# in hours
+Chunk_length=$(( ${RUN_days} * 24 )) # In hours
+
+#in month
+RUN_chunk_size=%Chunk_SIZE_MONTH%
+#
+# Output path on HSM
+#
+output_dir=$RUN_dir/Output_${chunk}
+scratch_output_dir=${TMPDIR}/${USER}/Output_${chunk}
+find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
+find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
+
+if [[ -d ${output_dir} ]] ; then
+   mkdir -p $scratch_output_dir
+   cd $output_dir
+else
+   exit
+fi
+
+#
+# Compute atmospheric monthly means // ????
+#
+if [[ ! -a %JOBNAME%.opost ]] ; then
+ cdo="/gpfs/apps/CDO/1.1.1/64/bin/cdo"
+ PATHGRIBAPI=%PATHGRIBAPI%
+
+ sdyear=`echo $START_date|cut -c1-4`
+ sdmon=`echo $START_date|cut -c5-6`
+ #
+ # Store special files with daily output
+ #
+ if [[ $chunk = 1 ]] ; then
+ #
+ # Prepare the initial conditions for storage
+ #
+ 	for type in SH GG ; do
+ 		prefix=ICM${type}${EXPID}
+ 		cp ${output_dir}/${prefix}+000000 ${output_dir}/ICM${type}_${EXPID}_${START_date}_000000.grb
+ 	done
+ else
+#
+# Prepare the file that contains the last time step of the previous chunk
+# This is the correct output to use in versions earlier than 2.2.2 as the last output
+# from the previous chunk has not updated the instantaneous fields in IFS (the fluxes
+# are equivalent in both files)
+#
+	month=$((sdmon-1+(chunk-1)*RUN_chunk_size))
+	year=$((sdyear+((month-1)/12)))
+	month=$((month-((month-1)/12)*12))
+	month=`printf '%02d' ${month}`
+	for type in SH GG ; do
+	file=ICM${type}${EXPID}+${year}${month}
+	fileout=ICM${type}_${EXPID}_${START_date}_${year}${month}_soc
+	cp ${output_dir}/${file} ${output_dir}/${fileout}.grb
+	done
+ fi
+
+
+ nmon=1
+ year=${nyearini}
+ while [[ $nmon -le $RUN_chunk_size ]] ; do
+      date
+      month=$((nmonthini+(chunk-1)*RUN_chunk_size+nmon-1))
+      year=$((nyearini+((month-1)/12)))
+      month=$((month-((month-1)/12)*12))
+      month=`printf '%02d' ${month}`
+      for type in SH GG ; do
+          prefix=ICM${type}${EXPID}
+          file=${prefix}+${year}${month}
+          if [[ ! -a ${file}.grb ]] ; then
+	   cp ${file} $scratch_output_dir
+	   cd $scratch_output_dir
+           cp ${file} ${file}.tmp
+           for PAR in `${PATHGRIBAPI}/grib_ls ${file} | head -n -3 | tr -s ' ' | cut -f3 -d' ' |  sort -n | uniq | grep ^[0-9]` ; do
+              if [[ $PAR = 152.128 || $PAR = 133.128 || $PAR = 246.128 || $PAR = 247.128 || $PAR = 248.128 ]] ; then
+                 rm -f ${PAR}.grb
+                 ${PATHGRIBAPI}/grib_copy -w param=${PAR} ${file}.tmp ${PAR}.grb
+                 if [[ $PAR = 152.128 ]] ; then
+                    rm -f ${PAR}.grb
+                 fi
+                 mv ${file}.tmp ${file}.tmp2
+                 ${PATHGRIBAPI}/grib_copy -w param!=${PAR} ${file}.tmp2 ${file}.tmp
+              fi
+           done
+           for PAR in 133.128 246.128 247.128 248.128 ; do
+              if [[ -a ${PAR}.grb ]] ; then
+                 ${cdo} -R -r -t ecmwf -f nc splitvar ${PAR}.grb ${file}_
+                 rm -f ${PAR}.grb
+              fi
+           done
+           ${cdo} -R -r -t ecmwf -f nc splitvar ${file}.tmp ${file}_
+	   rm -f ${file}.tmp ${file}.tmp2
+#
+           date
+           for infile in `ls ${file}_*.nc` ; do
+              name=`basename $infile .nc`
+              quant=`echo $name | sed s/${prefix}+${year}${month}_//`
+              outfile=IM_${quant}_${year}${month}
+              ${cdo} -f nc -r -timmean ${prefix}+${year}${month}_${quant}.nc ${outfile}_mm.nc  # needed because last timestep is the 00:00 hours of the next day of the month
+              mv ${outfile}_mm.nc ${outfile}_mm.nc.tmp
+              ${cdo} shifttime,-1month ${outfile}_mm.nc.tmp ${outfile}_mm.nc # Shift the time to the correct month
+              rm -f ${prefix}+${year}${month}_${quant}.nc
+           done
+           ${cdo} -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
+           gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
+           rm -f IM_*_${year}${month}_mm.nc
+ 	   mv ${file} ${output_dir}/${file}.grb
+	   mv MMA_* ${output_dir}
+	   cd ${output_dir}
+	   rm ${file}
+          fi
+      done
+      nmon=$((nmon+1))
+ done
+
+ touch %JOBNAME%.apost
+fi
+
+if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]] ; then
+ touch %LOGDIR%/%JOBNAME%_COMPLETED
+fi
+
+date
