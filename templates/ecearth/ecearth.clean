@@ -1,13 +1,10 @@
 set -evx
 date
-#
-# Defitions of Path
-#
-SCRATCH_DIR=%SCRATCH_DIR%
 
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
+SCRATCH_DIR=%SCRATCH_DIR%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 HSMdir=%HSMdir%
@@ -35,7 +32,7 @@ RUN_chunk_size=%CHUNKSIZE%
 #
 # Output path on HSM
 #
-PATHOUT="${HSMdir}/${EXPID}/${START_date}/${MEMBER}"
+PATHOUT="${HSMdir}/exp/ecearth/${EXPID}/${START_date}/${MEMBER}"
 if [[ ! -d ${PATHOUT} ]] ; then
    echo "HOUSTON we have a problem!"
    echo " this directory should already exist ! ${PATHOUT}"
@@ -58,7 +55,7 @@ if [[ ! -d ${PATHOUT_RES} ]] ; then
    mkdir -p ${PATHOUT_RES}
 fi
 
-for REST in RESTA ; do
+for REST in RESTA RESTO ; do
     case ${REST} in
          RESTA) PATHSU="/IFS_Restart_${chunk}"
                 FILEPREF=""
@@ -99,9 +96,11 @@ for REST in RESTA ; do
     fi
 done
 
-if [[ -a RESTA_${chunk} ]] ; then
+if [[ -a RESTA_${chunk} && -a RESTO_${chunk} ]] ; then
 touch ${RUN_dir}/rest_${chunk}
 fi
+
+
 
 if [[ -d ${output_dir} ]] ; then
    cd $output_dir
@@ -113,6 +112,39 @@ PATHOUT_OUT="${PATHOUT}/outputs"
 if [[ ! -d ${PATHOUT_OUT} ]] ; then
    mkdir -p ${PATHOUT_OUT}
 fi   
+#############################################
+#
+########### Save Ocean files ################
+#
+#############################################
+
+
+tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+touch ../$tarfile
+#
+# Copying the monthly means
+#
+prefix=ORCA1_MM_${Chunk_start_date}_${Chunk_end_date}
+grid_types="grid_W grid_T grid_U grid_V icemod"
+for grid_type in ${grid_types}; do
+    output_file=${prefix}_${grid_type}.nc.gz
+    tar -rvf ../${tarfile} ${output_file}
+done
+cp ../$tarfile $PATHOUT_OUT
+#
+rm -f ${RUN_dir}/outo_${chunk}
+locfile=`md5sum ../${tarfile}|cut -d" " -f1`
+remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
+if [[ "$locfile" == "$remfile" ]] ; then
+   echo "The file has been correctly stored"
+   touch ${RUN_dir}/outo_${chunk}
+   rm -f ../$tarfile
+else
+   exit 1
+fi
+
+date
+
 
 #############################################
 #
@@ -142,7 +174,7 @@ date
 #
 # Copying the atmospheric daily data (GRIB files)
 #
-savedd=true
+savedd=false
 if [[ $savedd = true ]] ; then
    for FILE in `ls ICM*grb` ; do
        cp $FILE ${PATHOUT_OUT}/.
@@ -162,7 +194,7 @@ fi
 
 cd $RUN_dir
 
-if [[  -a outa_$chunk ]] ; then
+if [[ -a outo_$chunk && -a outa_$chunk ]] ; then
 	echo "We are now removing ${output_dir}"
         rm -rf ${output_dir}
 fi
@@ -172,6 +204,9 @@ if [[ -a rest_$((chunk-1)) ]] ; then
         rm -rf IFS_Restart_$((chunk-1))
 fi
 
+
+
+
 find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
@@ -180,10 +215,8 @@ if [[ "$clast" == ".TRUE." ]] ; then
     cd $WRITINDIR
     echo "We are now removing ${RUN_dir}"
     rm -rf ${RUN_dir}
-    touch dir_${EXPID}_${Start_date}_${MEMBER}.REMOVED
+    touch dir_${EXPID}_${Start_date}_{MEMBER}.REMOVED
     touch ${DB_dir}/${EXPID}/${EXPID}_${Start_date}_{MEMBER}_READY
 fi
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
-
-date

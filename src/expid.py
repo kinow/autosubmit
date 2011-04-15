@@ -159,8 +159,8 @@ def prepare_conf_files(content, exp_id, hpc):
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /gpfs/projects/ecm86/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /gpfs/projects/ecm86/common/ecearth")
 	elif hpc == "hector":
-		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /gpfs/projects/ecm86/%(HPCUSER)s")
-		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /gpfs/projects/ecm86/common/ecearth")
+		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
+		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 	elif hpc == "ithaca":
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--new', '-n', nargs = 1, choices = ('coupled', 'ifs', 'nemo'))
+	group.add_argument('--new', '-n', nargs = 1, choices = ('ecearth', 'ifs', 'nemo'))
 	group.add_argument('--copy', '-c', nargs = 1)
 	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca'))
 	parser.add_argument('--description', '-d', nargs = 1)
@@ -206,7 +206,9 @@ if __name__ == "__main__":
 
 		print "Copying templates files..."
 		# list all files in templates of type args.new[0]
-		files = os.listdir('../templates/' + args.new[0])
+		print args.new[0]
+		print os.listdir('../templates/' + args.new[0])
+		files = [f for f in os.listdir('../templates/' + args.new[0]) if os.path.isfile('../templates/' + args.new[0] + "/" + f)]
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
@@ -231,8 +233,11 @@ if __name__ == "__main__":
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
+	shutil.copy('../templates/' + args.HPC[0] + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"pkl")
+	print "Creating plot directory..."
+	os.mkdir(DB_DIR+exp_id+"/"+"plot")
 	print "Remember to MODIFY the config files!"

@@ -66,7 +66,7 @@ class HPCQueue:
 			print 'Could not create the DIR on HPC' 
 	
 	def	send_script(self,job_script):
-		(status, output) = getstatusoutput('scp ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir + '/')
+		(status, output) = getstatusoutput('scp ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir)
 		if(status == 0):
    			print 'The script has been sent'
 		else:	
@@ -95,7 +95,7 @@ class HPCQueue:
 
 	def normal_stop(self,	signum,	frame):
 		sleep(SLEEPING_TIME)
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._status_cmd	+ ' "')
+		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
 		for job_id in self.jobs_in_queue(output):
 			self.cancel_job(job_id)
 			
@@ -103,10 +103,10 @@ class HPCQueue:
 
 	def smart_stop(self,	signum,	frame):
 		sleep(SLEEPING_TIME)
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._status_cmd	+ ' "')
+		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
 		print self.jobs_in_queue(output)
 		while self.jobs_in_queue(output):
 			print	self.jobs_in_queue(output)
 			sleep(SLEEPING_TIME)
-			(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._status_cmd	+ ' "')
+			(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
 		exit(0)

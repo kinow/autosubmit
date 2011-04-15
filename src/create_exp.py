@@ -4,7 +4,7 @@ from sys import exit, argv
 from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
-from config_parser import config_parser, expdef_parser
+from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import CreateTreeList
 from os import path
 import cPickle as pickle
@@ -28,25 +28,21 @@ if __name__ == "__main__":
 		exit(1)
 
 
-	#already_submitted = int(config_parser.get('config','alreadysubmitted'))
-	#total_jobs = int(config_parser.get('config','totaljobs'))
-	#template = config_parser.get('config','jobtemplate')
-	expid = conf_parser.get('config','expid')
-	#maxWaitingJobs = int(config_parser.get('config','maxwaitingjobs'))
-	#safetysleeptime = int(config_parser.get('config','safetysleeptime'))
-	#if(config_parser.get('config', 'hpcarch') == "marenostrum"):
-		#queue = MnQueue(expid)
-	#elif(config_parser.get('config', 'hpcarch') == "ithaca"):
-		#queue = ItQueue(expid)
+	expid = conf_parser.get('config', 'expid')
 
-	print expid
-	exp_parser_file = conf_parser.get('config','EXPDEFFILE')
-	print exp_parser_file
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 
 	job_list = JobList(expid)
+
 	exp_parser = expdef_parser(exp_parser_file)
 	expdef = exp_parser.items('expdef')
+
+	arch_parser = archdef_parser(arch_parser_file)
+	expdef += arch_parser.items('archdef')
+
 	parameters = dict()
+
 	for item in expdef:
 		parameters[item[0]] = item[1]
 

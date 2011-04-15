@@ -19,7 +19,7 @@ def config_parser(filename):
 	loglevel = ['debug', 'info', 'warning', 'error', 'critical']
 	
 	#option that must be in config file and has no default value
-	mandatory_opt = ['expid', 'clean', 'restart', 'hpcfiledir']
+	mandatory_opt = ['expid', 'clean', 'restart']
 	
 	# default value in case this options does not exist on config file
 	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'JOBTEMPLATE': 'jobtemplate.cmd', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote', 'AUTOFILEDIR': 'AUTOSUB_WORKING_COPY/tmp'})
@@ -68,6 +68,20 @@ def expdef_parser(filename):
 	parser.optionxform = str
 	parser.read(filename)
 	print parser.items('expdef')
+	return parser
+
+def archdef_parser(filename):
+
+	# check file existance
+	if(not os.path.isfile(filename)):
+		print "File does not exist"
+		sys.exit()
+
+	# load default values
+	parser = SafeConfigParser()
+	parser.optionxform = str
+	parser.read(filename)
+	print parser.items('archdef')
 	return parser
 
 if __name__ == "__main__":

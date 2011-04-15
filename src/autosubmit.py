@@ -6,19 +6,20 @@ import logging
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 import dir_config
+from config_parser import config_parser, expdef_parser
 from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
 import cPickle as pickle
+from dir_config import LOCAL_ROOT_DIR
 
 ####################
 # Global Variables
 ####################
 
-logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(name)s %(levelname)s %(message)s',
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
-                    filename='../tmp/myauto.log',
+                    filename='myauto.log',
                     filemode='w')
 logger = logging.getLogger("AutoLog")
 
@@ -41,7 +42,10 @@ if __name__ == "__main__":
 		sys.exit(1)
  
 
-	conf_parser = config_parser(argv[1])
+	conf_parser = config_parser(sys.argv[1])
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	exp_parser = expdef_parser(exp_parser_file)
+
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
 	myTemplate = conf_parser.get('config','jobtemplate')
@@ -68,7 +72,8 @@ if __name__ == "__main__":
 	signal.signal(signal.SIGQUIT, queue.smart_stop)
 	signal.signal(signal.SIGINT, queue.normal_stop)
  
-	filename = LOCAL_ROOT_DIR + "/" + sys.argv[1] + '/pkl/job_list_'+ sys.argv[1] +'.pkl'
+	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
+	print filename
 
 	#the experiment should be loaded as well
 	if (os.path.exists(filename)):
@@ -79,10 +84,11 @@ if __name__ == "__main__":
 		sys.exit()
 
 	logger.debug("Length of joblist: ",len(joblist))
-	totaljobs = len(joblist)
-	logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
+	#totaljobs = len(joblist)
+	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
-	template_rootname=expparser.get('common_parameters','TEMPLATE') 
+	template_rootname = exp_parser.get('expdef','TEMPLATE') 
+	queue.check_remote_log_dir()
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
@@ -91,15 +97,15 @@ if __name__ == "__main__":
 		logger.info("Saving joblist")
 		joblist.save()
   
-		if parser.get('config','verbose').lower()=='true':
+		if conf_parser.get('config','verbose').lower()=='true':
 			logger.info("Active jobs in queues:\t%s" % active)
 			logger.info("Waiting jobs in queues:\t%s" % waiting)
 
 		if available == 0:
-			if  parser.get('config','verbose').lower()=='true':
+			if  conf_parser.get('config','verbose').lower()=='true':
 				logger.info("There's no room for more jobs...")
 		else:
-			if  parser.get('config','verbose').lower()=='true':
+			if  conf_parser.get('config','verbose').lower()=='true':
 				logger.info("We can safely submit %s jobs..." % available)
 	  
 		#get the list of jobs currently in the Queue
@@ -108,13 +114,12 @@ if __name__ == "__main__":
 		for job in jobinqueue:
 			job.print_job()
 			status = queue.check_job(job.get_id(), job.get_status())
-
-		if(status==Status.COMPLETED):
-			logger.debug("this job seems to have completed...checking")
-			queue.get_completed_files(job.get_name())
-			job.check_completion()
-		else:
-			job.set_status(status)
+			if(status == Status.COMPLETED):
+				logger.debug("this job seems to have completed...checking")
+				queue.get_completed_files(job.get_name())
+				job.check_completion()
+			else:
+				job.set_status(status)
 		#Uri add check if status UNKNOWN and exit if you want 
    
 		##after checking the jobs , no job should have the status "submitted"
@@ -130,12 +135,12 @@ if __name__ == "__main__":
 			logger.info("There is no job READY or available")
 			logger.info("Number of job ready: ",len(jobsavail))
 			logger.info("Number of jobs available in queue:", available)
-		elif (min(available,len(jobsavail)) > 0): 
+		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
 			logger.info("We are going to submit: ", min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
 			list_of_jobs_avail = sorted(jobsavail, key=lambda k:k.get_type())
      
-			for job in list_of_jobs_avail[0:min(available,len(jobsavail))]:
+			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:
 				print job.get_name()
 				scriptname = job.create_script(template_rootname) 
 				print scriptname
@@ -144,7 +149,7 @@ if __name__ == "__main__":
 				job.set_id(job_id)
 ##set status to "submitted"
 				job.set_status(Status.SUBMITTED)
-				if parser.get('config','clean').lower()=='true':
+				if conf_parser.get('config','clean').lower()=='true':
 					os.system("rm %s" % scriptname)
 
 		time.sleep(safetysleeptime)

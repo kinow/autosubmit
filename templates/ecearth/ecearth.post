@@ -44,43 +44,37 @@ else
 fi
 
 #
-# Compute atmospheric monthly means // ????
+# Rebuild ocean output
+#
+date
+if [[ ! -a %JOBNAME%.opost ]] ; then
+ rebuild_tool=${ECEARTH_DIR}/${VERSION}/sources/nemo/modipsl/modeles/IOIPSL/tools/rebuild
+ #
+ #cd $output_dir
+ cp ORCA1_* $scratch_output_dir
+ cd $scratch_output_dir
+
+ interval=MM
+ prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
+ grid_types="grid_W grid_T grid_U grid_V icemod"
+ for grid_type in ${grid_types}; do
+    output_file=${prefix}_${grid_type}.nc
+   ${rebuild_tool} -v -o ${output_file} ${prefix}_${grid_type}_00[01][0-9].nc
+    gzip -9 ${output_file}
+    rm -f ${prefix}_${grid_type}_00[01][0-9].nc
+    rm -f ${output_dir}/${prefix}_${grid_type}_00[01][0-9].nc
+    mv ${output_file}.gz $output_dir
+ done
+ cd $output_dir
+ touch %JOBNAME%.opost
+fi
+
+#
+# Compute atmospheric monthly means
 #
 if [[ ! -a %JOBNAME%.apost ]] ; then
  cdo="%CDOPATH%/cdo"
  PATHGRIBAPI=%PATHGRIBAPI%
-
- sdyear=`echo $START_date|cut -c1-4`
- sdmon=`echo $START_date|cut -c5-6`
- #
- # Store special files with daily output
- #
- if [[ $chunk = 1 ]] ; then
- #
- # Prepare the initial conditions for storage
- #
- 	for type in SH GG ; do
- 		prefix=ICM${type}${EXPID}
- 		cp ${output_dir}/${prefix}+000000 ${output_dir}/ICM${type}_${EXPID}_${START_date}_000000.grb
- 	done
- else
-#
-# Prepare the file that contains the last time step of the previous chunk
-# This is the correct output to use in versions earlier than 2.2.2 as the last output
-# from the previous chunk has not updated the instantaneous fields in IFS (the fluxes
-# are equivalent in both files)
-#
-	month=$((sdmon-1+(chunk-1)*RUN_chunk_size))
-	year=$((sdyear+((month-1)/12)))
-	month=$((month-((month-1)/12)*12))
-	month=`printf '%02d' ${month}`
-	for type in SH GG ; do
-	file=ICM${type}${EXPID}+${year}${month}
-	fileout=ICM${type}_${EXPID}_${START_date}_${year}${month}_soc
-	cp ${output_dir}/${file} ${output_dir}/${fileout}.grb
-	done
- fi
-
 
  nmon=1
  year=${nyearini}
@@ -142,8 +136,6 @@ if [[ ! -a %JOBNAME%.apost ]] ; then
  touch %JOBNAME%.apost
 fi
 
-if [[ -a %JOBNAME%.apost ]] ; then
+if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]] ; then
  touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
-fi
-
-date
+fi 

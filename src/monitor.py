@@ -4,14 +4,11 @@ import commands
 import pydot
 import pickle
 from job.job_list import JobList
-import time
 import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-import logging
 import sys
-
-job_logger = logging.getLogger("AutoLog.monitor")
+from dir_config import LOCAL_ROOT_DIR
+import argparse
+import time
 
 def ColorStatus(status):
 	color='white'
@@ -32,7 +29,7 @@ def ColorStatus(status):
 	return color
 
 def CreateTreeList(expid, joblist):
-	graph=pydot.Dot(graph_type='digraph')
+	graph = pydot.Dot(graph_type='digraph')
 	for job in joblist:
 		node_job = pydot.Node(job.get_name(),shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
 		graph.add_node(node_job)
@@ -44,33 +41,35 @@ def CreateTreeList(expid, joblist):
 				#graph.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
 				graph.add_edge(pydot.Edge(node_job, node_child))
 
-	pngfile=expid+'_graph.png'
-	pdffile=expid+'_graph.pdf'
-	#graph.set_graphviz_executables({'dot': '/gpfs/apps/GRAPHVIZ/2.26.3/bin/dot'})
-	graph.write_png(pngfile) 
-	#graph.write_pdf(pdffile) 
- 
+	return graph
+
+def GenerateOutput(expid, joblist, output_format="pdf"):
+	now = time.localtime()
+	output_date = time.strftime("%Y%m%d_%H%M", now) 
+	output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_" + output_date + "." + output_format
+
+	graph = CreateTreeList(expid, joblist)
+
+	if output_format == "png":
+		graph.write_png(output_file)
+	else:
+		graph.write_pdf(output_file)
 
 if __name__ == "__main__":
-	if not len(sys.argv)>0:
-		print "please give an expid... "
-		sys.exit()
-	else:  
-		expid=sys.argv[1]
+	parser = argparse.ArgumentParser(description='Plot autosubmit graph')
+	parser.add_argument('-e', '--expid', required=True, nargs = 1)
+	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
+	parser.add_argument('-o', '--output', required=True, nargs = 1, choices = ('pdf', 'png'), default = 'pdf')
 
-	if not len(sys.argv)>1:
-		print "please give a root name for the pickle... "
-		sys.exit()
-	else:  
-		rootname=sys.argv[2]
+	args = parser.parse_args()
 
-	filename='/cfu/autosubmit/' + expid + '/pkl/' +rootname+'_'+expid+'.pkl'
-	file1=open(filename,'r')
-	jobs=pickle.load(file(filename,'r'))
+	expid = args.expid[0]
+	root_name = args.joblist[0]
+	output = args.output[0]
+
+	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' +root_name + '_' + expid + '.pkl'
+	jobs = pickle.load(file(filename,'r'))
 	if not type(jobs) == type([]):
-		jobs=jobs.job_list
-	#dummy_list(jobs)
-	#for job in jobs:
-	# job.setExpid('ploum')
-	CreateTreeList(rootname+'_'+expid, jobs)
-	file1.close()
+		jobs = jobs.get_job_list()
+
+	GenerateOutput(expid, jobs, output)
