@@ -5,7 +5,7 @@ from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
 from config_parser import config_parser, expdef_parser, archdef_parser
-from monitor import CreateTreeList
+from monitor import GenerateOutput
 from os import path
 import cPickle as pickle
 
@@ -53,4 +53,4 @@ if __name__ == "__main__":
 
 	job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
 	job_list.save()
-	CreateTreeList(expid, job_list.get_job_list())
+	GenerateOutput(expid, job_list.get_job_list(), pdf)
