@@ -9,23 +9,26 @@ import sys
 from dir_config import LOCAL_ROOT_DIR
 import argparse
 import time
+from job.job_common import Status
+
+table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'), (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red')])
 
 def ColorStatus(status):
-	color='white'
-	if status==0:
-		color='cyan'
-	elif status==1:
-		color='blue'
-	elif status==2:
-		color='pink'
-	elif status==3:
-		color='yellow'
-	elif status==4:
-		color='orange'
-	elif status==5:
-		color='green'
-	elif status==-1:
-		color='red'
+	color = table[Status.UNKNOWN]
+	if status == Status.WAITING:
+		color = table[Status.WAITING]
+	elif status == Status.READY:
+		color = table[Status.READY]
+	elif status == Status.SUBMITTED:
+		color = table[Status.SUBMITTED]
+	elif status == Status.QUEUING:
+		color = table[Status.QUEUING]
+	elif status == Status.RUNNING:
+		color = table[Status.RUNNING]
+	elif status == Status.COMPLETED:
+		color = table[Status.COMPLETED]
+	elif status == Status.FAILED:
+		color = table[Status.FAILED]
 	return color
 
 def CreateTreeList(expid, joblist):

@@ -8,6 +8,7 @@ from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from os import path
 import cPickle as pickle
+from dir_config import LOCAL_ROOT_DIR
 
 
 ####################
@@ -19,12 +20,12 @@ if __name__ == "__main__":
 		print "Missing config file or expid."
 		exit(1)
 
-	if (path.exists(argv[1])):
-		conf_parser = config_parser(argv[1])
-		#joblist = pickle.load(file(argv[2], 'rw'))
-		print "Using config file: %s" % argv[1]
+	filename = LOCAL_ROOT_DIR + "/" + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
+	if (path.exists(filename)):
+		conf_parser = config_parser(filename)
+		print "Using config file: %s" % filename
 	else:
-		print "The config file %s necessary does not exist." % argv[1]
+		print "The config file %s necessary does not exist." % filename
 		exit(1)
 
 
@@ -53,4 +54,4 @@ if __name__ == "__main__":
 
 	job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
 	job_list.save()
-	GenerateOutput(expid, job_list.get_job_list(), pdf)
+	GenerateOutput(expid, job_list.get_job_list(), 'pdf')

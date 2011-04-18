@@ -42,7 +42,7 @@ if __name__ == "__main__":
 		sys.exit(1)
  
 
-	conf_parser = config_parser(sys.argv[1])
+	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
 
