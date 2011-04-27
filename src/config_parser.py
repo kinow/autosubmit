@@ -67,7 +67,6 @@ def expdef_parser(filename):
 	parser = SafeConfigParser(default)
 	parser.optionxform = str
 	parser.read(filename)
-	print parser.items('expdef')
 	return parser
 
 def archdef_parser(filename):

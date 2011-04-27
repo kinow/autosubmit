@@ -36,8 +36,10 @@ if __name__ == "__main__":
 
 	job_list = JobList(expid)
 
+	expdef = []
 	exp_parser = expdef_parser(exp_parser_file)
-	expdef = exp_parser.items('expdef')
+	for section in exp_parser.sections():
+		expdef += exp_parser.items(section)
 
 	arch_parser = archdef_parser(arch_parser_file)
 	expdef += arch_parser.items('archdef')
@@ -47,10 +49,10 @@ if __name__ == "__main__":
 	for item in expdef:
 		parameters[item[0]] = item[1]
 
-	date_list = exp_parser.get('expdef','DATELIST').split(' ')
-	starting_chunk = int(exp_parser.get('expdef','CHUNKINI'))
-	num_chunks = int(exp_parser.get('expdef','NUMCHUNKS'))
-	member_list = exp_parser.get('expdef','MEMBERS').split(' ')
+	date_list = exp_parser.get('experiment','DATELIST').split(' ')
+	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
+	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
+	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
 
 	job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
 	job_list.save()

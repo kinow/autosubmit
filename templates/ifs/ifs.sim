@@ -57,8 +57,8 @@ IFSDIR=${ECEARTH}
 IFS_exe=${IFSDIR}/bin/ifsMASTER
 
 export OASIS3=%OASIS3%
-export OASIS3DEBUGLEVEL=%OASIS3DEBUGLEVEL%
-export DR_HOOK_IGNORE_SIGNALS=%DR_HOOK_IGNORE_SIGNALS%
+export OASIS3DEBUGLEVEL=3
+export DR_HOOK_IGNORE_SIGNALS='-1'
 
 ulimit -c 1000000
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
@@ -107,31 +107,38 @@ fi
 CMIP5=%CMIP5%
 LCMIP5=%LCMIP5%
 Nrcp=%Nrcp%
-RCP=%RCP%
-if [[ $CMIP5 = TRUE ]] ; then
+if [[ $CMIP5 == TRUE ]] ; then
    LCMIP5=true
    NFRP=3 # Frequency of postprocessing in hours
    RUN_coupFreq=6 # Becomes NFRCO
    WAM=false
    ADVSCH=tvd # Ocean advection scheme
-   if [[ $RCP = 3-PD ]] ; then
-      Nrcp=1
+   if [[ $Nrcp == 1 ]]; then
+	   RCP = 3-PD
    fi
-   if [[ $RCP = 4.5 ]] ; then
-      Nrcp=2
+   if [[ $Nrcp == 2 ]]; then
+	   RCP = 4.5
    fi
-   if [[ $RCP = 6.0 ]] ; then
-      Nrcp=3
+   if [[ $Nrcp == 3 ]]; then
+	   RCP = 6
    fi
-   if [[ $RCP = 8.5 ]] ; then
-      Nrcp=4
+   if [[ $Nrcp == 4 ]]; then
+	   RCP = 8.5
    fi
 fi
 
 #
 # Control the use of the scenario
 #
-    if [[ %Lrcp% == TRUE ]] ; then
+	if $VERSION == "v2.2.2":
+		yy = 2005
+	else: 
+		yy = 1999
+	Lrcp = FALSE
+	if chunk_start_year > yy:
+		Lrcp = TRUE
+
+    if [[ $Lrcp == TRUE ]] ; then
        CNrcp=$Nrcp
     else
        CNrcp=0
