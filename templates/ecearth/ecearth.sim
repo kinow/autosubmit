@@ -77,7 +77,6 @@ WAM=%WAM%
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
-ulimit -s unlimited
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
 export MBX_SIZE=%MBX_SIZE%
 

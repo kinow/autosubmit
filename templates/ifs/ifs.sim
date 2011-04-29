@@ -60,7 +60,6 @@ export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=3
 export DR_HOOK_IGNORE_SIGNALS='-1'
 
-ulimit -c 1000000
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
 export MBX_SIZE=%MBX_SIZE%
 
