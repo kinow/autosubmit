@@ -87,7 +87,7 @@ if __name__ == "__main__":
 	#totaljobs = len(joblist)
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
-	template_rootname = exp_parser.get('expdef','TEMPLATE') 
+	template_rootname = exp_parser.get('experiment','TEMPLATE') 
 	queue.check_remote_log_dir()
 	while joblist.get_active() :
 		active = len(joblist.get_running())
