@@ -141,7 +141,8 @@ if [[ $VERSION == "v2.2.2" ]]; then
 else
    yy=1999
 fi
-if [[ %Starting_DATE_YEAR% > $yy ]]; then
+
+if [[ `echo $Chunk_start_date | cut -c1-4` > $yy ]]; then
    Lrcp=TRUE
 fi
 

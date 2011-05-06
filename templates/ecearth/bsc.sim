@@ -4,7 +4,7 @@
 ###############################################################################
 #
 #@ job_name         = %JOBNAME%
-#@ wall_clock_limit = 06:00:00
+#@ wall_clock_limit = 10:00:00
 #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
 #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
 #@ total_tasks      = 45
