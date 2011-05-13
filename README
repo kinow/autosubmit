@@ -16,8 +16,8 @@ unique hexadecimal number.
 
 - Second Step:
 
-vi /cfu/autosubmit/i00f/conf/expdef_chex.conf
-vi /cfu/autosubmit/i00f/conf/autosubmit_chex.conf
+vi /cfu/autosubmit/chex/conf/expdef_chex.conf
+vi /cfu/autosubmit/chex/conf/autosubmit_chex.conf
 
 - Third Step:
 
@@ -31,13 +31,8 @@ nohup python autosubmit.py chex >& chex_01.log &
 HOW TO MONITOR
 ==============
 
-Autosubmit will be generating the plots to visualize the status of experiment 
-periodically at the following location:
-
-/cfu/autosubmit/chex/plot
-
-On the other hand, user can generate plots at any instance by following the 
-instructions given below:
+The following procedure could be adopted to generate the plots for visualizing
+the status of the experiment at any instance:
 
 cd src
 
@@ -47,6 +42,12 @@ python monitor.py -e chex -j job_list -o pdf
 or
 python monitor.py -e chex -j job_list -o png
 
+Here is below the location where user can find the generated plots with date and time
+stamp:
+
+/cfu/autosubmit/chex/plot/chex_date_time.pdf
+or 
+/cfu/autosubmit/chex/plot/chex_date_time.png
 
 HOW TO RESTART
 ==============
