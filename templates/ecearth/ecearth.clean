@@ -215,8 +215,8 @@ if [[ "$clast" == ".TRUE." ]] ; then
     cd $WRITINDIR
     echo "We are now removing ${RUN_dir}"
     rm -rf ${RUN_dir}
-    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${Start_date}_${MEMBER}.REMOVED
-    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/${EXPID}/${EXPID}_${Start_date}_${MEMBER}_READY
+    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
+    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/exp_${EXPID}_${START_date}_${MEMBER}_READY
 fi
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
