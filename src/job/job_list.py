@@ -181,7 +181,7 @@ class JobList:
 		# reset jobs that has failed less than 4 times
 		for job in self.get_failed():
 			job.inc_fail_count()
-			if job.get_fail_count < 4:
+			if job.get_fail_count() < 4:
 				job.set_status(Status.READY)
 			else:
 				# get all childrens of a job that has failed more than 3 times
