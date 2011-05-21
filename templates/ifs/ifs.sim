@@ -17,21 +17,21 @@ MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
 case $VERSION in
-     v2.1) ECEARTH=${ECEARTH_DIR}/v2.1
-           SCRIPTDIR=${ECEARTH_DIR}/v2.1/setup
-           TESTDATADIR=${ECEARTH_DIR}/v2.1/inidata
+     v2.1)   ECEARTH=${ECEARTH_DIR}/v2.1
+             SCRIPTDIR=${ECEARTH_DIR}/v2.1/setup
+             TESTDATADIR=${ECEARTH_DIR}/v2.1/inidata/testdata
      ;;
      v2.2.0) ECEARTH=${ECEARTH_DIR}/v2.2.0
-           SCRIPTDIR=${ECEARTH_DIR}/v2.2.0/setup
-           TESTDATADIR=${ECEARTH_DIR}/v2.2.0/inidata
+             SCRIPTDIR=${ECEARTH_DIR}/v2.2.0/setup
+             TESTDATADIR=${ECEARTH_DIR}/v2.2.0/inidata/testdata
      ;;
      v2.2.1) ECEARTH=${ECEARTH_DIR}/v2.2.1
              SCRIPTDIR=${ECEARTH_DIR}/v2.2.1/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.1/inidata
+             TESTDATADIR=${ECEARTH_DIR}/v2.2.1/inidata/testdata
      ;;
      v2.2.2) ECEARTH=${ECEARTH_DIR}/v2.2.2
              SCRIPTDIR=${ECEARTH_DIR}/v2.2.2/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata
+             TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata/testdata
 esac
 
 #
