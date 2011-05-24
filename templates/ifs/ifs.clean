@@ -35,7 +35,7 @@ RUN_chunk_size=%CHUNKSIZE%
 #
 # Output path on HSM
 #
-PATHOUT="${HSMdir}/exp/ecearth/${EXPID}/${START_date}/${MEMBER}"
+PATHOUT="${HSMdir}/exp/${EXPID}/${START_date}/${MEMBER}"
 if [[ ! -d ${PATHOUT} ]] ; then
    echo "HOUSTON we have a problem!"
    echo " this directory should already exist ! ${PATHOUT}"
