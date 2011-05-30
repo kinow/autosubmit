@@ -32,6 +32,11 @@ case $VERSION in
      v2.2.2) ECEARTH=${ECEARTH_DIR}/v2.2.2
              SCRIPTDIR=${ECEARTH_DIR}/v2.2.2/setup
              TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata/testdata
+     ;;
+     v2.2.3) ECEARTH=${ECEARTH_DIR}/v2.2.3
+             SCRIPTDIR=${ECEARTH_DIR}/v2.2.3/setup
+             TESTDATADIR=${ECEARTH_DIR}/v2.2.3/inidata/testdata
+
 esac
 
 #
@@ -136,7 +141,7 @@ fi
 #
 
 Lrcp=FALSE
-if [[ $VERSION == "v2.2.2" ]]; then
+if [[ $VERSION == "v2.2.2" || $VERSION == "v2.2.3" ]]; then
    yy=2005
 else
    yy=1999
@@ -164,6 +169,7 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      ;;
 #    v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp} -7 ${LHVOLCA})
      v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
  esac
 
@@ -173,7 +179,7 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
   ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
  fi
 #
- if [[ $VERSION = v2.2.2 || $VERSION = v2.2.1 || $VERSION = v2.2.0 ]] ; then
+ if [[ $VERSION = v2.2.3 || $VERSION = v2.2.2 || $VERSION = v2.2.1 || $VERSION = v2.2.0 ]] ; then
        if [[ ${Chunk_last_day_prev} != '0' ]]; then
           setupnemo.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH}
        else

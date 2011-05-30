@@ -32,6 +32,10 @@ case $VERSION in
      v2.2.2) ECEARTH=${ECEARTH_DIR}/v2.2.2
              SCRIPTDIR=${ECEARTH_DIR}/v2.2.2/setup
              TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata/testdata
+     ;;
+     v2.2.3) ECEARTH=${ECEARTH_DIR}/v2.2.3
+             SCRIPTDIR=${ECEARTH_DIR}/v2.2.3/setup
+             TESTDATADIR=${ECEARTH_DIR}/v2.2.3/inidata/testdata
 esac
 
 #
@@ -117,7 +121,7 @@ fi
 #
 
 Lrcp=FALSE
-if [[ $VERSION == "v2.2.2" ]]; then
+if [[ $VERSION == "v2.2.2" || $VERSION == "v2.2.3" ]]; then
    yy=2005
 else
    yy=1999
@@ -146,6 +150,7 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 #    v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp} -7 ${LHVOLCA})
 #     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs-amip.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs-amip.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
  esac
 
