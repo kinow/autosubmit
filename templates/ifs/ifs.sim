@@ -1,16 +1,16 @@
+%ENVIRONMENT%
+
 set -exuv
 date
 
 #
-# Defitions of Path
+# General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%ECEARTH_DIR%
 
-%ENVIRONMENT%
-
 #
-# Basic Definitions
+# Model Configuration
 #
 VERSION=%VERSION%
 MEMBER=%MEMBER%
@@ -39,16 +39,13 @@ case $VERSION in
      ;;
 esac
 
-#
-# Model Configuration
-#
 PATH=${SCRIPTDIR}:${PATH}
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+INIPATH=${RUN_dir}/inidata
 
 mkdir -p $RUN_dir
 cd $RUN_dir
-INIPATH=${RUN_dir}/inidata
 
 #
 # IFS

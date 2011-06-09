@@ -2,19 +2,23 @@ set -evx
 date
 
 #
-# Defitions of Path
+# General Paths
 #
-EXPID=%EXPID%
-MEMBER=%MEMBER%
-START_date=%SDATE%
 SCRATCH_DIR=%SCRATCH_DIR%
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
-RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 HSMdir=%HSMdir%
 DBdir=%DBdir%
 
 #
-# Chunk management
+# Model Configuration
+#
+EXPID=%EXPID%
+MEMBER=%MEMBER%
+START_date=%SDATE%
+WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
+#
+# Chunk Management
 #
 chunk=%CHUNK%
 Chunk_last=%Chunk_LAST%
