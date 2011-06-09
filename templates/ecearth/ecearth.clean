@@ -1,6 +1,9 @@
 set -evx
 date
 
+#
+# Defitions of Path
+#
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
@@ -19,7 +22,7 @@ Chunk_last=%Chunk_LAST%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 
-#in days
+# in days
 chunk_end_in_days=%Chunk_End_IN_DAYS%
 
 # in hours
@@ -27,8 +30,9 @@ chunk_end_in_days=%Chunk_End_IN_DAYS%
 Chk_length=$(( ${chunk_end_in_days} * 24 )) # In hours
 Chunk_length=`printf '%08d' ${Chk_length}`
 
-#in month
+# in months
 RUN_chunk_size=%CHUNKSIZE%
+
 #
 # Output path on HSM
 #
@@ -46,10 +50,12 @@ if [[ -d ${RUN_dir} ]] ; then
 else
    exit
 fi
+
 ###############################################################################
 #                               SAVE RESTARTS
 ###############################################################################
- PATHOUT_RES="${PATHOUT}/restarts"
+
+PATHOUT_RES="${PATHOUT}/restarts"
 
 if [[ ! -d ${PATHOUT_RES} ]] ; then
    mkdir -p ${PATHOUT_RES}
@@ -73,12 +79,14 @@ for REST in RESTA RESTO ; do
      else
        exit 1
      fi
+
 #
 # Create and copy tar file
 #
      tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
      tar -cvf $tarfile ${Basedir}/${FILEPREF}*
      cp $tarfile $PATHOUT_RES
+
 #
 # Check target file
 #
@@ -100,8 +108,6 @@ if [[ -a RESTA_${chunk} && -a RESTO_${chunk} ]] ; then
 touch ${RUN_dir}/rest_${chunk}
 fi
 
-
-
 if [[ -d ${output_dir} ]] ; then
    cd $output_dir
 else
@@ -112,15 +118,16 @@ PATHOUT_OUT="${PATHOUT}/outputs"
 if [[ ! -d ${PATHOUT_OUT} ]] ; then
    mkdir -p ${PATHOUT_OUT}
 fi   
+
 #############################################
 #
 ########### Save Ocean files ################
 #
 #############################################
 
-
 tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 touch ../$tarfile
+
 #
 # Copying the monthly means
 #
@@ -145,7 +152,6 @@ fi
 
 date
 
-
 #############################################
 #
 ########### Save Atmospheric files ##########
@@ -153,6 +159,7 @@ date
 #############################################
 
 tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+
 #
 # Copying the monthly means (atmospheric daily data are in GRIB files)
 #
@@ -204,9 +211,6 @@ if [[ -a rest_$((chunk-1)) ]] ; then
         rm -rf IFS_Restart_$((chunk-1))
 fi
 
-
-
-
 find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
@@ -220,3 +224,5 @@ if [[ "$clast" == ".TRUE." ]] ; then
 fi
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+
+date

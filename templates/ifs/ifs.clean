@@ -1,13 +1,13 @@
 set -evx
 date
+
 #
 # Defitions of Path
 #
-SCRATCH_DIR=%SCRATCH_DIR%
-
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
+SCRATCH_DIR=%SCRATCH_DIR%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 HSMdir=%HSMdir%
@@ -22,7 +22,7 @@ Chunk_last=%Chunk_LAST%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 
-#in days
+# in days
 chunk_end_in_days=%Chunk_End_IN_DAYS%
 
 # in hours
@@ -30,8 +30,9 @@ chunk_end_in_days=%Chunk_End_IN_DAYS%
 Chk_length=$(( ${chunk_end_in_days} * 24 )) # In hours
 Chunk_length=`printf '%08d' ${Chk_length}`
 
-#in month
+# in months
 RUN_chunk_size=%CHUNKSIZE%
+
 #
 # Output path on HSM
 #
@@ -49,6 +50,7 @@ if [[ -d ${RUN_dir} ]] ; then
 else
    exit
 fi
+
 ###############################################################################
 #                               SAVE RESTARTS
 ###############################################################################
@@ -82,6 +84,7 @@ for REST in RESTA ; do
      tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
      tar -cvf $tarfile ${Basedir}/${FILEPREF}*
      cp $tarfile $PATHOUT_RES
+
 #
 # Check target file
 #
@@ -121,6 +124,7 @@ fi
 #############################################
 
 tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+
 #
 # Copying the monthly means (atmospheric daily data are in GRIB files)
 #

@@ -20,14 +20,15 @@ Chunk_end_date=%Chunk_END_DATE%
 nyearini=%Starting_DATE_YEAR%
 nmonthini=%Starting_DATE_MONTH%
 
-#in days
+# in days
 RUN_days=%RUN_DAYS%
 
 # in hours
 Chunk_length=$(( ${RUN_days} * 24 )) # In hours
 
-#in month
+# in months
 RUN_chunk_size=%CHUNKSIZE%
+
 #
 # Output path on HSM
 #
@@ -80,7 +81,6 @@ if [[ ! -a %JOBNAME%.apost ]] ; then
 	cp ${output_dir}/${file} ${output_dir}/${fileout}.grb
 	done
  fi
-
 
  nmon=1
  year=${nyearini}

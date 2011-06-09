@@ -1,5 +1,6 @@
 set -exuv
 date
+
 #
 # Defitions of Path
 #
@@ -11,7 +12,6 @@ ECEARTH_DIR=%ECEARTH_DIR%
 #
 # Basic Definitions
 #
-
 VERSION=%VERSION%
 MEMBER=%MEMBER%
 EXPID=%EXPID%
@@ -36,6 +36,7 @@ case $VERSION in
      v2.2.3) ECEARTH=${ECEARTH_DIR}/v2.2.3
              SCRIPTDIR=${ECEARTH_DIR}/v2.2.3/setup
              TESTDATADIR=${ECEARTH_DIR}/v2.2.3/inidata/testdata
+     ;;
 esac
 
 #
@@ -63,7 +64,6 @@ IFS_exe=${IFSDIR}/bin/ifsMASTER
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=3
 export DR_HOOK_IGNORE_SIGNALS='-1'
-
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
 export MBX_SIZE=%MBX_SIZE%
 
@@ -72,8 +72,8 @@ RUN_coupFreq=%RUN_coupFreq%
 NFRP=%NFRP% # Frequency of postprocessing in hours
 ADVSCH=%ADVSCH% # Ocean advection scheme
 
-##########
-#Here we assume all initial conditions has been copied or linked to the RUN_dir
+#############
+# Here we assume all initial conditions has been copied or linked to the RUN_dir
 #############
 
 #
@@ -82,7 +82,7 @@ ADVSCH=%ADVSCH% # Ocean advection scheme
 chunk=%CHUNK%
 day_prev=%PREV%
 
-#in days
+# in days
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 RUN_days=%RUN_DAYS%
@@ -91,6 +91,7 @@ Chunk_length=$(( ${RUN_days} * 24 )) # In hours
 Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
 Chunk_last=%Chunk_LAST%
 
+#
 # Run Directory Initialization
 # 
 if [[ $chunk == 1 ]]; then
@@ -119,9 +120,8 @@ fi
 #
 # Control the use of the scenario
 #
-
 Lrcp=FALSE
-if [[ $VERSION == "v2.2.2" || $VERSION == "v2.2.3" ]]; then
+if [[ $VERSION == "v2.2.3" || $VERSION == "v2.2.2" ]]; then
    yy=2005
 else
    yy=1999
@@ -141,14 +141,12 @@ fi
 if [[ ! -a finished_chunk_${chunk} ]] ; then
 
  case $VERSION in
-     v2.1) EXPVER=$(${SCRIPTDIR}/setupifs_${VERSION}.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o ${Chunk_last} -1 ${TESTDATADIR} -2 ${EXPID})
+     v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs_${VERSION}.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o ${Chunk_last} -1 ${TESTDATADIR} -2 ${EXPID})
      ;;
      v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES)
      ;;
      v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES -4 $NFRP)
      ;;
-#    v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp} -7 ${LHVOLCA})
-#     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs-amip.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
      v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs-amip.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
@@ -165,18 +163,17 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
  fi
 
  ls -l
+
 #
 # Location of the executables
 # 
- IFS_exe="${IFS_exe}"
+IFS_exe="${IFS_exe}"
 
 %PARALLEL_RUN_IFS%
-
 
 #
 # Save IFS restart files and prepare for continuation of the run
 #
-
 Chunk_end=$((Chunk_length+Chunk_last_day_prev))
 Chunk_restart_tag=`printf "%06d0000" $(( ${Chunk_last_day_prev}/24+${Chunk_length}/24 ))`
 
@@ -190,15 +187,14 @@ echo "Chunk_last_day_prev: ${Chunk_last_day_prev}"
 
 mkdir -p IFS_Restart_${chunk}
 mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] gxtrarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
-srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] surf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
- tmrf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] IFS_Restart_${chunk}
+   srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] surf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   tmrf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] IFS_Restart_${chunk}
 ln -sf IFS_Restart_${chunk}/* .
 cp rcf IFS_Restart_${chunk}
 
 #  
 # Move the output for postprocessing
 #
-
 output_dir="Output_${chunk}"
 mkdir -p ${output_dir}
 mv ICMGG${EXPID}+* ICMSH${EXPID}+*  ${output_dir}/.

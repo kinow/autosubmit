@@ -20,14 +20,15 @@ Chunk_end_date=%Chunk_END_DATE%
 nyearini=%Starting_DATE_YEAR%
 nmonthini=%Starting_DATE_MONTH%
 
-#in days
+# in days
 RUN_days=%RUN_DAYS%
 
 # in hours
 Chunk_length=$(( ${RUN_days} * 24 )) # In hours
 
-#in month
+# in months
 RUN_chunk_size=%CHUNKSIZE%
+
 #
 # Output path on HSM
 #
@@ -138,4 +139,6 @@ fi
 
 if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]] ; then
  touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
-fi 
+fi
+
+date
