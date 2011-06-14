@@ -36,11 +36,15 @@ the status of the experiment at any instance:
 
 cd src
 
+- First step:
+
 python monitor.py -h
 
 python monitor.py -e chex -j job_list -o pdf
 or
 python monitor.py -e chex -j job_list -o png
+
+- Second step:
 
 Here is below the location where user can find the generated plots with date and time
 stamp:
@@ -52,4 +56,31 @@ or
 HOW TO RESTART
 ==============
 
+cd src
 
+- First step:
+
+python recovery.py -h
+
+python recovery.py -e chex --HPC ithaca
+
+- Second step:
+
+Here is below the location where user can find new pkl file:
+
+/cfu/autosubmit/chex/pkl/new_job_list_chex.pkl
+
+By following the instructions given in above section "HOW TO MONITOR", user can generate new plot
+to varify the recovered stuff before restarting the autosubmit.
+
+python monitor.py -e chex -j new_job_list -o pdf
+
+- Third step:
+
+cd /cfu/autosubmit/chex/pkl
+mv new_job_list_chex.pkl job_list_chex.pkl
+rm failed_job_list_chex.pkl
+
+- Fourth step:
+
+nohup python autosubmit.py chex >& chex_02.log &
