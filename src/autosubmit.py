@@ -146,10 +146,8 @@ if __name__ == "__main__":
 				queue.send_script(scriptname)
 				job_id = queue.submit_job(scriptname)
 				job.set_id(job_id)
-##set status to "submitted"
+				##set status to "submitted"
 				job.set_status(Status.SUBMITTED)
-				if conf_parser.get('config','clean').lower()=='true':
-					os.system("rm %s" % scriptname)
 
 		time.sleep(safetysleeptime)
  

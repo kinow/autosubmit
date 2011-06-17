@@ -19,7 +19,7 @@ def config_parser(filename):
 	loglevel = ['debug', 'info', 'warning', 'error', 'critical']
 	
 	#option that must be in config file and has no default value
-	mandatory_opt = ['expid', 'clean', 'restart']
+	mandatory_opt = ['expid']
 	
 	# default value in case this options does not exist on config file
 	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'JOBTEMPLATE': 'jobtemplate.cmd', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote', 'AUTOFILEDIR': 'AUTOSUB_WORKING_COPY/tmp'})
