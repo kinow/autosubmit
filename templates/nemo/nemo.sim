@@ -1,142 +1,137 @@
-set -evx
+set -exuv
 date
 
-# General settings
-
-set -exuv
 #
-Myversion=%VERSION%
-RUNdir=%RUNdir%
-Mymember=%MEMBER%
-Myexpid=%EXPID%
-START_date=%SDATE%
+# General Paths
+#
+SCRATCH_DIR=%SCRATCH_DIR%
 
 #
 # Model Configuration
 #
-#PATH=${SCRIPTDIR}:${PATH}
-WRITINGDIR=${RUNdir}/${USER}/nemo-ecearth/${Myexpid}
-
-mkdir -p ${WRITINGDIR}
-mkdir -p ${WRITINGDIR}/${START_date}
-
-HP=/gpfs/projects/ecm86/
-NEMODIR=${HP}/nemo/ecearth-v2.2
-SCRIPTDIR=$NEMODIR/testrun/scripts/common
-PATH=${SCRIPTDIR}:${PATH}
-DATADIR=$RUN_dir/inidata
-NEMO_config=ORCA1
-
-mkdir -p $RUN_dir
-ln -sf /gpfs/projects/ecm86/nemo/ecearth-v2.2/testdata/nemo/ORCA1/* $DATADIR/nemo/ORCA1/
-
-cd $RUN_dir
+VERSION=%VERSION%
+MEMBER=%MEMBER%
+EXPID=%EXPID%
+START_date=%SDATE%
 
 #
-# NEMO 
+###############################################################################
+# General settings
 #
-
-NEMO_nprocX=6
-NEMO_nprocY=6
-NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
-NEMO_exe=$NEMODIR/nemo/nemo_build/opa_exe.ORCA1_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}
-
-##########
-#Here we assume all initial conditions has been copied or linked to the RUN_dir
-#############
-
+NEMODIR=${SCRATCH_DIR}/models/nemo/${VERSION}-orca1
+WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+RUN_dir=${WRITINGDIR}/${MEMBER}
+NEMO_nproc=36
 
 #
 # Chunk management
 #
-chunk=CHUNK
-day_prev=$(( (CHUNK-1) * 1825 )) 
+chunk=%CHUNK%
+day_prev=$(( (CHUNK-1) * (RUN_days) ))
 
-#in days
-Chunk_start_date=Chunk_START_DATE
-Chunk_end_date=Chunk_END_DATE
-RUN_days=1825
+# in days
+Chunk_start_date=%Chunk_START_DATE%
+Chunk_end_date=%Chunk_END_DATE%
 # in hours
 Chunk_length=$(( ${RUN_days} * 24 )) # In hours
 Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
-Chunk_last=Chunk_LAST
-
-# Run Directory Initialization
-# 
-if [[ $chunk == 1 ]]; then
- rm -f ${RUN_dir}/anaisout
- rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
- echo "FIRST Chunk"
- echo "Chunk_length: ${Chunk_length}"
- LFASTRES=.FALSE.
-else
- rm -f ${RUN_dir}/anaisout
- rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
- echo "Chunk: ${chunk}"
- echo "Chunk_length: ${Chunk_length}"
- LFASTRES=.TRUE.
-fi
-
-# Changing ORCA1 namelist
-sed -e "s/nleapy     =.*/nleapy     =       0/" ${SCRIPTDIR}/setupnemoorca1.ksh > ./setupnemoorca1_EXPID.ksh  # no leap years
-chmod +x setupnemoorca1_EXPID.ksh
-
-if [[ ${Chunk_last_day_prev} != '0' ]]; then
-  ./setupnemoorca1_EXPID.ksh -g ${NEMO_config} -e ${NEMODIR} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${DATADIR} -1 $START_date
-else
-  ./setupnemoorca1_EXPID.ksh -g ${NEMO_config} -e ${NEMODIR} -l ${Chunk_length} -0 ${DATADIR} -1 $START_date
-fi
-
-
-
-export MBX_SIZE=512000000
-
-# Execution
-
-export OASIS3=simulate
-export OASIS3DEBUGLEVEL=3
-export DR_HOOK_IGNORE_SIGNALS='-1'
-
-ulimit -c 1000000
-set +e
-time srun -n $NEMO_nproc -l ${NEMO_exe} 
-
-set -e
-echo "finished chunk"
-date
+Chunk_last=%Chunk_LAST%
 
 #
-# Preparing restart
-# The NEMO restarts are not saved yet, they are created in a different part of the script
-#  
+###############################################################################
+# Options
+#
+SPINUP='yes'
+#
+case ${MEMBER} in
+  fc0|fc1|fc2|fc3) type=ERAINTERIM-ORCA1 ;;
+  fc4|fc5|fc6|fc7) type=DFS4.3 ;;
+esac
+#
+###############################################################################
+cd $RUN_dir
+#
+#
+RUN_year=`echo $Chunk_start_date | cut -c1-4`
+if [[ ${SPINUP} == 'yes' ]] ; then
+  RUN_days=365
+  listvars=( q2 qlw qsw t2 u10 v10 snow precip )
+  if [[ ${chunk} > 1 ]] ; then 
+    for var in ${listvars[@]} ; do
+    mv ${var}_core_y${RUN_year}.nc ${var}_core_y$((RUN_year+1)).nc
+    mv ${var}_core_y$((RUN_year-1)).nc ${var}_core_y${RUN_year}.nc
+    mv ${var}_core_y$((RUN_year-2)).nc ${var}_core_y$((RUN_year-1)).nc
+    done
+  fi
+else
+  RUN_days=%RUN_DAYS%
+fi
+#
+
+################################################################################
+#  Preparing restarts
+# ~~~~~~~~~~~~~~~~~~~~
+#
+if [[ ${SPINUP} == 'yes' && ${chunk} == 1 ]] ; then
+  restflag='.false.'
+else
+  restflag='.true.'
+  for ((l=0; l<$NEMO_nproc; l++)); do
+    ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_$(printf "%04d" $l).nc restart_$(printf "%04d" $l).nc
+    ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_ice_$(printf "%04d" $l).nc restart_ice_$(printf "%04d" $l).nc
+    rm -f ORCA1_$(printf "%08d" $((Chunk_last_day_prev+Chunk_length)))_restart_*.nc
+  done
+fi
+#
+################################################################################
+#
+#  Preparing NEMO namelists
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if [[ ${SPINUP} == 'yes' ]] ; then
+  restfreq=${Chunk_length}
+else
+  restfreq=24
+fi
+
+ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c 0 -f ${restfreq} -r $restflag -t ${type}
+  
+################################################################################
+#
+# Start running 
+# ~~~~~~~~~~~~~~~~
+#
+%PARALLEL_RUN_NEMO%
+
+# #############################################################################
+#
 # Move the output for postprocessing
 #
-
 output_dir="Output_${chunk}"
 mkdir -p ${output_dir}
-mv ORCA1_MM_*.nc ${output_dir}/. > /dev/null 2>&1
-
-
+mv ORCA1_1m_*.nc ${output_dir}/. > /dev/null 2>&1
 #
-#yves
+# #############################################################################
 #
-
+# Store the restarts  
+#
 mkdir -p NEMO_Restart_$chunk
+if [[ ${SPINUP} !=  'yes' ]] ; then
+  ldp0=$((Chunk_last_day_prev + 24 ))
+  while [[ $ldp0 -lt $((Chunk_last_day_prev+Chunk_length)) ]] ; do
+    ldp=`printf '%08d' $ldp0`
+    cp ORCA1_${ldp}_restart*nc NEMO_Restart_$chunk/.
+    ldp0=$((ldp0 + 24))
+  done
+fi
 ldp=`printf '%08d' $((Chunk_last_day_prev+Chunk_length))`
 cp ORCA1_${ldp}_restart*nc NEMO_Restart_$chunk/.
 if [[ $chunk > 1 ]] ; then
    ldp=`printf '%08d' ${Chunk_last_day_prev}`
    rm -f ORCA1_${ldp}_restart*nc
-   rm -f ORCA1_Restart/*
-   if [[ -a ${RUN_dir}/rest_$((chunk-1)) ]] ; then
-      rm -rf ${RUN_dir}/NEMO_Restart_$((chunk-1))
-   fi
 fi
-
-
-
 #
-find ${RUN_dir}/. -type d | xargs chmod 775 
-find ${RUN_dir}/. -type f | xargs chmod 775 
+###############################################################################
+#
+touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
-touch LOGDIR/JOBNAME_COMPLETED
+date
