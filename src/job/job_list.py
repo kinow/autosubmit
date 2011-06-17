@@ -7,16 +7,19 @@ import os
 import pickle
 from sys import	exit
 from dir_config import LOCAL_ROOT_DIR
+from shutil import move
+from time import localtime
 
 class JobList:
 	
 	def __init__(self, expid):
 		self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
-		self._update_file = "updated_job_list_" + expid + ".pkl"
+		self._update_file = "updated_list" + expid + ".txt"
 		self._failed_file = "failed_job_list_" + expid + ".pkl"
 		self._job_list_file = "job_list_" + expid + ".pkl"
 		self._job_list = list()
 		self._expid = expid
+		slef._stat_val = Status()
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		print "Creating job list\n"
@@ -165,48 +168,26 @@ class JobList:
 		# URi: should we check that the path exists?
 		print "Saving JobList: " + self._pkl_path + self._job_list_file
 		pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
+	
+	def update_from_file(self):
+		if(os.path.exists(self._pkl_path + self._update_file)):
+			for line in open (self._pkl_path + self._update_file):
+				if(self.get_job_by_name(line.split()[0])):
+					self.get_job_by_name(line.split()[0]).set_status(self._stat_val.retval(line.split()[1]))
+					self.get_job_by_name(line.split()[0]).set_fail_count(0)
+			now = localtime()
+			output_date = time.strftime("%Y%m%d_%H%M", now) 
+			move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
 	def update_list(self):
 		# load updated file list
-		updated_list = self.load_updated()
-		self._job_list += updated_list
-		# check	dependency	tree
+		self.update_from_file()
 		
-		# recover failed list
-		failed_list = self.load_failed()
-		# remove elements that are already in the job_list, may be because they have been updated
-		for failed_job in failed_list:
-			if self.get_job_by_name(failed_job.get_name()):
-				failed_list.remove(failed_job)
 		# reset jobs that has failed less than 4 times
 		for job in self.get_failed():
 			job.inc_fail_count()
 			if job.get_fail_count() < 4:
 				job.set_status(Status.READY)
-			else:
-				# get all childrens of a job that has failed more than 3 times
-				child_list = job.get_all_children()
-				# add job to the failed list
-				failed_list += [job]
-				# remove job from the "working" list
-				self._job_list.remove(job)
-				# add to the failed list all childrens of the failed job
-				#failed_list	+=	child_list
-				for child in child_list:
-					found = False
-					for failed_job in failed_list:
-						if failed_job.get_name() == child.get_name():
-							found = True
-					if not found:
-						failed_list += [child]
-				# remove all childrens of the failed job from the "working" list
-				for child in child_list:
-					print child.get_name()
-					if child in self._job_list:
-						print "Removing child: " + child.get_name()
-						self._job_list.remove(child)
-		self.save_failed(failed_list)
-
 		
 		# if waiting jobs has all parents completed change its State to READY
 		for job in self.get_waiting():
@@ -248,5 +229,5 @@ class JobList:
 						job.add_parent(parent)
 						
 	def check_genealogy(self):
-		"""When we have updated the joblist, parents and child list must	be	consistent"""
+		"""When we have updated the joblist, parents and child list must be consistent"""
 		pass

@@ -53,14 +53,13 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
-	if(hpcarch== "marenostrum"):
+	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
 	elif(hpcarch == "ithaca"):
 	   queue = ItQueue(expid)
 	elif(hpcarch == "hector"):
 	   queue = HtQueue(expid)
 
-	logger.debug("My template name is: %s" % myTemplate)
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
 	logger.info("Start with job number: %s" % alreadySubmitted)

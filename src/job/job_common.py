@@ -10,6 +10,8 @@ class Status:
 	COMPLETED = 5
 	FAILED = -1
 	UNKNOWN = -2
+	def retval(self, value):
+		return getattr(self, value)
 
 class Type:
 	"""Class to handle the type of a job.
