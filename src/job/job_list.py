@@ -5,7 +5,7 @@ from job_common import Type
 from job import Job
 import os
 import pickle
-from sys import	exit
+from sys import	exit, setrecursionlimit
 from dir_config import LOCAL_ROOT_DIR
 from shutil import move
 from time import localtime
@@ -166,6 +166,7 @@ class JobList:
 	
 	def save(self):
 		# URi: should we check that the path exists?
+		setrecursionlimit(10000)
 		print "Saving JobList: " + self._pkl_path + self._job_list_file
 		pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
 	
