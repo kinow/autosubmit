@@ -19,7 +19,7 @@ class JobList:
 		self._job_list_file = "job_list_" + expid + ".pkl"
 		self._job_list = list()
 		self._expid = expid
-		slef._stat_val = Status()
+		self._stat_val = Status()
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		print "Creating job list\n"
