@@ -210,6 +210,7 @@ class Job:
 		chunk_length_in_month = int(parameters['CHUNKSIZE'])
 		parameters['CHUNK'] = splittedname[3]
 		parameters['JOBNAME'] = self._name
+		parameters['JOBSHORTNAME'] = self._short_name
 		chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
 		chunk_end_date = chunk_date_lib.chunk_end_date(chunk_start_date,chunk_length_in_month)
 		run_days = chunk_date_lib.running_days(chunk_start_date,chunk_end_date)
