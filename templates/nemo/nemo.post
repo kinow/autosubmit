@@ -1,13 +1,13 @@
 set -exuv
 date
-
 #
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSMdir=%HSMdir%
 cdo="%CDOPATH%/cdo"
-
+CDFPATH="/gpfs/apps/CDFTOOLS/2.1"
+NCPATH="%NCPATH%"
 #
 # Model Configuration
 #
@@ -18,46 +18,22 @@ START_date=%SDATE%
 START_date_1=%DAY_BEFORE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
-#
-###############################################################################
-# General settings
-#
-NEMODIR=${SCRATCH_DIR}/models/nemo/${VERSION}-orca1
+NEMODIR=%NEMO_DIR%/${VERSION}-orca1
 TESTDATADIR=${NEMODIR}/inidata
-#
-#
-###############################################################################
-# Options
-#
-SPINUP='yes'
-#
-###############################################################################
-#
-cd $RUN_dir
-#
-###############################################################################
-#
-LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/opt/cray/netcdf/4.1.1.0/netcdf-pgi/lib
-#
 rebuild_tool=$NEMODIR/bin/rebuild
-#
-#
-###############################################################################
-cd $RUN_dir
-
 #
 # Chunk Management
 #
 chunk=%CHUNK%
-
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-nyearini=%Starting_DATE_YEAR%
-nmonthini=%Starting_DATE_MONTH%
+RUN_months=%CHUNKSIZE%
 #
 ###############################################################################
+#                             Rebuild ocean output                            #
+###############################################################################
 #
-cd Output_${chunk}
+cd $RUN_dir/Output_${chunk}
 #
 # Rebuild ocean output
 #
@@ -95,7 +71,7 @@ ln -sf ${TESTDATADIR}/mesh_mask_nemo.${VERSION}.nc mesh_zgr.nc
 ln -sf ${TESTDATADIR}/mesh_mask_nemo.${VERSION}.nc mask.nc
 ln -sf ${TESTDATADIR}/new_maskglo.nc new_maskglo.nc
 
-if [ ${SPINUP} == 'yes' ] ; then
+if [ %OCEAN_REDUCOUT% == 'TRUE' ] ; then
 list1=""
 list2=""
 list3=""
@@ -120,35 +96,35 @@ for jt in $(seq 1 1 ${RUN_months}); do
 #               Compute vertically averaged heat and salt content              #
 ################################################################################
 #
-  ${CDOPATH}/cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 0 300
+  ${CDFPATH}/cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 0 300
   ${NCPATH}/ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc vertmean.nc
   mv vertmean.nc ${prefix}_sal_0-300m_$jt.nc
   list1=${list1}" "${prefix}_sal_0-300m_$jt.nc
   #
-  ${CDOPATH}/cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 300 5400
+  ${CDFPATH}/cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 300 5400
   ${NCPATH}/ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc vertmean.nc
   mv vertmean.nc ${prefix}_sal_300-5400m_$jt.nc
   list2=${list2}" "${prefix}_sal_300-5400m_$jt.nc
   #
-  ${CDOPATH}/cdfmxlhcsc timestep_${jt}_${prefix}_grid_T.nc density 0.01
+  ${CDFPATH}/cdfmxlhcsc timestep_${jt}_${prefix}_grid_T.nc density 0.01
   ${NCPATH}/ncrename -O -d time_counter,time -v time_counter,time mxlhcsc.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc mxlhcsc.nc
   mv mxlhcsc.nc ${prefix}_heat_sal_mxl_$jt.nc
   list3=${list3}" "${prefix}_heat_sal_mxl_$jt.nc
   #
-  ${CDOPATH}/cdfmoc timestep_${jt}_${prefix}_grid_V.nc
+  ${CDFPATH}/cdfmoc timestep_${jt}_${prefix}_grid_V.nc
   ${NCPATH}/ncrename -O -d time_counter,time -v time_counter,time moc.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_V.nc moc.nc
   mv moc.nc ${prefix}_moc_$jt.nc
   list4=${list4}" "${prefix}_moc_$jt.nc
   #
-  ${CDOPATH}/cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc
+  ${CDFPATH}/cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc
   ${NCPATH}/ncrename -O -v sobarstf,sobarstfu -d time_counter,time -v time_counter,time psi.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_U.nc psi.nc
   mv psi.nc ${prefix}_psi_U_$jt.nc
-  ${CDOPATH}/cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc V
+  ${CDFPATH}/cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc V
   ${NCPATH}/ncrename -O -v sobarstf,sobarstfv -d time_counter,time -v time_counter,time psi.nc
   ${NCPATH}/ncks -A -v time timestep_${jt}_${prefix}_grid_U.nc psi.nc
   mv psi.nc ${prefix}_psi_V_$jt.nc
@@ -171,7 +147,6 @@ rm -f ${list1} ${list2} ${list3} ${list4} ${list5} ${list6} ${list7} ${list8} ${
 #
 fi
 #
-
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date

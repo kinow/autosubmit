@@ -1,11 +1,9 @@
 set -exuv
 date
-
 #
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-
 #
 # Model Configuration
 #
@@ -13,48 +11,38 @@ VERSION=%VERSION%
 MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
-
-#
-###############################################################################
-# General settings
-#
-NEMODIR=${SCRATCH_DIR}/models/nemo/${VERSION}-orca1
+NEMODIR=%NEMO_DIR%/${VERSION}-orca1
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
-NEMO_nproc=36
-
+NEMO_nproc=`echo %NEMO_nprocX%*%NEMO_nprocY% | bc`
 #
 # Chunk management
 #
 chunk=%CHUNK%
-day_prev=$(( (CHUNK-1) * (RUN_days) ))
-
-# in days
+if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'ERA-INTERIM-ORCA1' ]] ; then
+  RUN_days=%RUN_DAYS%
+  day_prev=%PREV%
+  Chunk_length=$(( %RUN_DAYS% * 24 )) # In hours
+  leapy=1 
+else
+  RUN_days=365
+  day_prev=$(( (chunk-1) * ${RUN_days} ))
+  Chunk_length=$(( ${RUN_days} * 24 )) # In hours
+  leapy=0
+fi
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-# in hours
-Chunk_length=$(( ${RUN_days} * 24 )) # In hours
 Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
 Chunk_last=%Chunk_LAST%
-
-#
-###############################################################################
-# Options
-#
-SPINUP='yes'
-#
-case ${MEMBER} in
-  fc0|fc1|fc2|fc3) type=ERAINTERIM-ORCA1 ;;
-  fc4|fc5|fc6|fc7) type=DFS4.3 ;;
-esac
+RUN_year=`echo $Chunk_start_date | cut -c1-4`
 #
 ###############################################################################
 cd $RUN_dir
 #
+#  Preparing forcings
+# ~~~~~~~~~~~~~~~~~~~~~
 #
-RUN_year=`echo $Chunk_start_date | cut -c1-4`
-if [[ ${SPINUP} == 'yes' ]] ; then
-  RUN_days=365
+if [[ %OCEAN_FORCYEAR% != -1  ]] ; then
   listvars=( q2 qlw qsw t2 u10 v10 snow precip )
   if [[ ${chunk} > 1 ]] ; then 
     for var in ${listvars[@]} ; do
@@ -63,8 +51,6 @@ if [[ ${SPINUP} == 'yes' ]] ; then
     mv ${var}_core_y$((RUN_year-2)).nc ${var}_core_y$((RUN_year-1)).nc
     done
   fi
-else
-  RUN_days=%RUN_DAYS%
 fi
 #
 
@@ -72,7 +58,7 @@ fi
 #  Preparing restarts
 # ~~~~~~~~~~~~~~~~~~~~
 #
-if [[ ${SPINUP} == 'yes' && ${chunk} == 1 ]] ; then
+if [[ ${chunk} == 1 ]] ; then
   restflag='.false.'
 else
   restflag='.true.'
@@ -87,19 +73,14 @@ fi
 #
 #  Preparing NEMO namelists
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-if [[ ${SPINUP} == 'yes' ]] ; then
-  restfreq=${Chunk_length}
-else
-  restfreq=24
-fi
 
-ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c 0 -f ${restfreq} -r $restflag -t ${type}
-  
+ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${Chunk_length} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.'
+ 
 ################################################################################
 #
 # Start running 
 # ~~~~~~~~~~~~~~~~
-#
+
 %PARALLEL_RUN_NEMO%
 
 # #############################################################################
@@ -115,14 +96,6 @@ mv ORCA1_1m_*.nc ${output_dir}/. > /dev/null 2>&1
 # Store the restarts  
 #
 mkdir -p NEMO_Restart_$chunk
-if [[ ${SPINUP} !=  'yes' ]] ; then
-  ldp0=$((Chunk_last_day_prev + 24 ))
-  while [[ $ldp0 -lt $((Chunk_last_day_prev+Chunk_length)) ]] ; do
-    ldp=`printf '%08d' $ldp0`
-    cp ORCA1_${ldp}_restart*nc NEMO_Restart_$chunk/.
-    ldp0=$((ldp0 + 24))
-  done
-fi
 ldp=`printf '%08d' $((Chunk_last_day_prev+Chunk_length))`
 cp ORCA1_${ldp}_restart*nc NEMO_Restart_$chunk/.
 if [[ $chunk > 1 ]] ; then
