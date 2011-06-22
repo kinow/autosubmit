@@ -1,13 +1,11 @@
 set -exuv
 date
-
 #
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSMdir=%HSMdir%
 DBdir=%DBdir%
-
 #
 # Model Configuration
 #
@@ -16,59 +14,36 @@ MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
-
+PATHOUT="${HSMdir}/exp/${EXPID}/${MEMBER}"
+PATHFORC=${HSMdir}/ecearth/nemo_forcing
 #
 # Chunk management
 #
 chunk=%CHUNK%
 Chunk_last=%Chunk_LAST%
-
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-
-#
-###############################################################################
-# General settings
-#
-PATHOUT="${HSMdir}/exp/${EXPID}/${MEMBER}"
-PATHFORC=${HSMdir}/nemo_forcing
-
-
-###############################################################################
-# Options
-#
-SPINUP='yes'
-case ${MEMBER} in
-  fc0|fc2) PATHFORC=${PATHFORC}/ERAINTERIM ; type=ERAINTERIM-ORCA1; FORCING_YEAR=1989 ;;
-  fc1|fc3) PATHFORC=${PATHFORC}/ERAINTERIM ; type=ERAINTERIM-ORCA1; FORCING_YEAR=1999 ;;
-  fc4|fc6) PATHFORC=${PATHFORC}/DFS4.3 ; type=DFS4.3; FORCING_YEAR=1958 ;;
-  fc5|fc7) PATHFORC=${PATHFORC}/DFS4.3 ; type=DFS4.3; FORCING_YEAR=1968 ;;
-esac
-#
-###############################################################################
-cd $RUN_dir
-#
-# Chunk management
-#
-if [[ ${SPINUP} == 'yes' ]] ; then
-  RUN_days=365
-else
-  RUN_days=%RUN_DAYS%
-fi
-day_prev=$(( (CHUNK-1) * (RUN_days) ))
-
 RUN_year=`echo ${Chunk_start_date} | cut -c1-4`
-if [[ ${SPINUP} != 'yes' ]] ; then
-  FORCING_YEAR=$RUN_year
+if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'ERA-INTERIM-ORCA1' ]] ; then
+  RUN_days=%RUN_DAYS%
+  day_prev=%PREV%
+else
+  RUN_days=365
+  day_prev=$(( (${chunk}-1) * ${RUN_days} ))
 fi
-#
-# in hours
-Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
+if [[ %OCEAN_FORCYEAR% == -1 ]]; then
+  FORCING_YEAR=$RUN_year
+else
+  FORCING_YEAR=%OCEAN_FORCYEAR%
+fi
 Chunk_length=$(( ${RUN_days} * 24 )) # In hours
+Chunk_last_day_prev=$(( ${day_prev} * 24 )) # In hours
 #
 ###############################################################################
 #                               SAVE RESTARTS                                 # 
 ###############################################################################
+#
+cd $RUN_dir
 #
 PATHOUT_RES="${PATHOUT}/restarts"
 mkdir -p ${PATHOUT_RES}               # Where the restarts are to be stored
@@ -76,13 +51,6 @@ mkdir -p ${PATHOUT_RES}               # Where the restarts are to be stored
 Basedir="${RUN_dir}/NEMO_Restart_${chunk}"
 if [[ -d ${Basedir} ]] ; then
   listfile=`ls ${Basedir}/ORCA1_$(printf "%08d" $((Chunk_last_day_prev+Chunk_length)) )_restart*`
-  if [[ ${SPINUP} != 'yes' ]] ; then
-    ldp0=$((Chunk_last_day_prev + 24 ))
-    while [ $ldp0 -lt $((Chunk_last_day_prev+Chunk_length)) ] ; do
-      listfile=${listfile}" "`ls ${Basedir}/ORCA1_$(printf "%08d" ldp0)_restart*` 
-      ldp0=$((ldp0 + 24))
-    done
-  fi
 else
   exit 1
 fi                                    # Which restarts to store
@@ -112,7 +80,7 @@ mkdir -p ${PATHOUT_OUT}                # Where the outputs are to be stored
 output_dir=${RUN_dir}/Output_${chunk}
 if [[ -d ${output_dir} ]] ; then
   cd ${output_dir}
-  if [ ${SPINUP} == 'yes' ] ; then
+  if [[ %OCEAN_REDUCOUT% == 'TRUE' ]] ; then
     listfile2=`ls sstsimld*.nc ice*.nc t3d*.nc sal*.nc heat*.nc moc*.nc psi*.nc `
   else
     listfile2=`ls *grid_T.nc *grid_V.nc *grid_U.nc *grid_W.nc *icemod.nc`
@@ -140,20 +108,28 @@ fi                                    # Check if the storage is ok before rm
 #                            PREPARE NEXT FORCINGS                             #
 ################################################################################
 #
+cd ${RUN_dir}
+
+case ${MEMBER} in
+  fc0|fc2) PATHFORC=${PATHFORC}/ERAINTERIM ; type=ERAINTERIM-ORCA1 ;;
+  fc1|fc3) PATHFORC=${PATHFORC}/ERAINTERIM ; type=ERAINTERIM-ORCA1 ;;
+  fc4|fc6) PATHFORC=${PATHFORC}/DFS4.3 ; type=DFS4.3 ;;
+  fc5|fc7) PATHFORC=${PATHFORC}/DFS4.3 ; type=DFS4.3 ;;
+esac
+
 listvars=( q2 qlw qsw t2 u10 v10 snow precip )
 
-if [ ! ${SPINUP} == 'yes' ] ; then
-cd ${RUN_dir}
-for var in ${listvars[@]} ; do
-  if [[ -e ${var}_core_y$((RUN_year-1)).nc ]] ; then
-    rm -f ${var}_core_y$((RUN_year-1)).nc
-  fi
-  if [[ -e ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ]] ; then
-    cp ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ${var}_core_y$((RUN_year+3)).nc
-  else
-    cp ${var}_core_y$((RUN_YEAR+2)).nc ${var}_core_y$((RUN_year+3)).nc
-  fi
-done
+if [ %OCEAN_FORCYEAR% == -1 ] ; then
+  for var in ${listvars[@]} ; do
+    if [[ -e ${var}_core_y$((RUN_year-1)).nc ]] ; then
+      rm -f ${var}_core_y$((RUN_year-1)).nc
+    fi
+    if [[ -e ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ]] ; then
+      cp ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ${var}_core_y$((RUN_year+3)).nc
+    else
+      cp ${var}_core_y$((RUN_YEAR+2)).nc ${var}_core_y$((RUN_year+3)).nc
+    fi
+  done
 fi
 #
 ################################################################################
@@ -178,3 +154,4 @@ fi
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
+
