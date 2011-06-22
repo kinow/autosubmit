@@ -71,7 +71,7 @@ Here is below the location where user can find new pkl file:
 /cfu/autosubmit/chex/pkl/new_job_list_chex.pkl
 
 By following the instructions given in above section "HOW TO MONITOR", user can generate new plot
-to varify the recovered stuff before restarting the autosubmit.
+to verify the recovered stuff before restarting the autosubmit.
 
 python monitor.py -e chex -j new_job_list -o pdf
 
