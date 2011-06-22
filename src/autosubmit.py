@@ -129,7 +129,13 @@ if __name__ == "__main__":
 		logger.info("There are %s active jobs" % len(activejobs))
 
 		## get the list of jobs READY
-		jobsavail=joblist.get_ready()
+		jobsavail = joblist.get_ready()
+
+		# this code limit the total number of simulation jobs which can run at the same time
+		sim_jobs = [job for job in activejobs if job.get_type() == Type.SIMULATION]
+		if (len(sim_jobs) > 5):
+			jobsavail = [job for job in jobsavail if job.get_type() != Type.SIMULATION]
+
 		if (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
 			logger.info("Number of job ready: ",len(jobsavail))
