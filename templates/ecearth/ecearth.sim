@@ -10,7 +10,7 @@ SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%ECEARTH_DIR%
 
 #
-# Model Configuration 
+# Model Configuration
 #
 VERSION=%VERSION%
 MEMBER=%MEMBER%

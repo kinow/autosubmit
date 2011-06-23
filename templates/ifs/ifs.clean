@@ -58,7 +58,7 @@ fi
 ###############################################################################
 #                               SAVE RESTARTS
 ###############################################################################
- PATHOUT_RES="${PATHOUT}/restarts"
+PATHOUT_RES="${PATHOUT}/restarts"
 
 if [[ ! -d ${PATHOUT_RES} ]] ; then
    mkdir -p ${PATHOUT_RES}
@@ -82,6 +82,7 @@ for REST in RESTA ; do
      else
        exit 1
      fi
+
 #
 # Create and copy tar file
 #
