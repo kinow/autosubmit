@@ -8,7 +8,7 @@ from queue.mnqueue import MnQueue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
-from job.job_common import Status
+from job.job_common import Status, Type
 from job.job_list import JobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
