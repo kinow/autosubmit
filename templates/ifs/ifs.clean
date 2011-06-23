@@ -5,8 +5,8 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-HSMdir=%HSMdir%
-DBdir=%DBdir%
+HSMdir=%HSM_DIR%
+DBdir=%DB_DIR%
 
 #
 # Model Configuration

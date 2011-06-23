@@ -4,7 +4,7 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-HSMdir=%HSMdir%
+HSMdir=%HSM_DIR%
 cdo="%CDOPATH%/cdo"
 CDFPATH="/gpfs/apps/CDFTOOLS/2.1"
 NCPATH="%NCPATH%"

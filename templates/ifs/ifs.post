@@ -42,7 +42,7 @@ RUN_chunk_size=%CHUNKSIZE%
 # Output path on HSM
 #
 output_dir=$RUN_dir/Output_${chunk}
-scratch_output_dir=%SCRATCH_OUTPUT_ROOT_DIR%/${USER}/out_${EXPID}_${START_date}_${MEMBER}_${chunk}
+scratch_output_dir=%SCRATCH_TMP_DIR%/${USER}/out_${EXPID}_${START_date}_${MEMBER}_${chunk}
 find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
 find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
 
