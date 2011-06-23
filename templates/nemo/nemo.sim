@@ -81,7 +81,16 @@ ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_
 # Start running 
 # ~~~~~~~~~~~~~~~~
 
+if [ ${VERSION} == v3.2 ] ; then
+  NEMO_exe=opa
+else
+  NEMO_exe=nemo.exe
+fi
+chmod 770 NEMO_exe 
+
 %PARALLEL_RUN_NEMO%
+echo "finished chunk"
+date
 
 # #############################################################################
 #

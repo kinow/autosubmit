@@ -213,6 +213,9 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
  OASIS3_exe="${OASIS3_exe}"
 
 %PARALLEL_RUN_ECEARTH%
+ echo "finished chunk"
+ date
+fi
 
 #
 # Copy the ocean restarts to a directory.

@@ -170,9 +170,12 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 #
 # Location of the executables
 # 
-IFS_exe="${IFS_exe}"
+ IFS_exe="${IFS_exe}"
 
 %PARALLEL_RUN_IFS%
+ echo "finished chunk"
+ date
+fi
 
 #
 # Save IFS restart files and prepare for continuation of the run
