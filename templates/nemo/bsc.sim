@@ -8,7 +8,7 @@
 #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
 #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
 #@ total_tasks      = 36
-#@ initialdir       = %INITIALDIR% 
+#@ initialdir       = %SCRATCH_DIR%
 #@ tasks_per_node   = 4
 #@ tracing          = 1
 #
