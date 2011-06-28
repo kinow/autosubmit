@@ -27,11 +27,11 @@ Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 
 # in days
-chunk_end_in_days=%Chunk_End_IN_DAYS%
+Chunk_end_in_days=%Chunk_End_IN_DAYS%
 
 # in hours
 
-Chk_length=$(( ${chunk_end_in_days} * 24 )) # In hours
+Chk_length=$(( ${Chunk_end_in_days} * 24 )) # In hours
 Chunk_length=`printf '%08d' ${Chk_length}`
 
 # in months
@@ -70,7 +70,6 @@ for REST in RESTA RESTO ; do
                 FILEPREF=""
          ;;
          RESTO) PATHSU="/NEMO_Restart_${chunk}"
-#               PATHSU="/NEMO_Restart_${chunk}"
                 FILEPREF="ORCA1_${Chunk_length}_restart"
          ;;
     esac
@@ -95,7 +94,6 @@ for REST in RESTA RESTO ; do
 #
      locfile=`md5sum ${tarfile}|cut -d" " -f1`
      remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-#    rm -f ${RUN_dir}/rest_${chunk}
      if [[ "$locfile" == "$remfile" ]] ; then
        echo "The file has been correctly stored"
        touch ${RUN_dir}/${REST}_${chunk}
@@ -184,8 +182,8 @@ date
 #
 # Copying the atmospheric daily data (GRIB files)
 #
-savedd=false
-if [[ $savedd = true ]] ; then
+SAVEDD=%SAVEDD%
+if [[ $SAVEDD == TRUE ]] ; then
    for FILE in `ls ICM*grb` ; do
        cp $FILE ${PATHOUT_OUT}/.
        chmod 775 ${PATHOUT_OUT}/*
@@ -217,8 +215,7 @@ fi
 find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
-clast=%Chunk_LAST%
-if [[ "$clast" == ".TRUE." ]] ; then
+if [[ $Chunk_last == TRUE ]] ; then
     cd $WRITINDIR
     echo "We are now removing ${RUN_dir}"
     rm -rf ${RUN_dir}

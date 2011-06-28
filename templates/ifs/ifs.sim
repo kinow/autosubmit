@@ -58,18 +58,20 @@ IFS_resolution=%IFS_resolution%
 IFS_nproc=%IFS_nproc%
 NPRTRVIFS=%NPRTRVIFS%
 NPROMA=%NPROMA%
-LFASTRES=%LFASTRES%
-IFSDIR=${ECEARTH}
-IFS_exe=${IFSDIR}/bin/ifsMASTER
+IFS_exe=${ECEARTH}/bin/ifsMASTER
 
+#
+# COMMON
+#
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=3
 export DR_HOOK_IGNORE_SIGNALS='-1'
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
 export MBX_SIZE=%MBX_SIZE%
 
-RUN_coupFreq=%RUN_coupFreq%
-
+CMIP5=%CMIP5%
+Nrcp=%Nrcp%
+RUN_coupFreq=%RUN_coupFreq% # Becomes NFRCO
 NFRP=%NFRP% # Frequency of postprocessing in hours
 ADVSCH=%ADVSCH% # Ocean advection scheme
 
@@ -95,7 +97,7 @@ Chunk_last=%Chunk_LAST%
 #
 # Run Directory Initialization
 # 
-if [[ $chunk == 1 ]]; then
+if [[ $chunk == 1 ]] ; then
  rm -f ${RUN_dir}/anaisout
  rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "FIRST Chunk"
@@ -109,30 +111,21 @@ else
  LFASTRES=.TRUE.
 fi
 
-CMIP5=%CMIP5%
-Nrcp=%Nrcp%
-if [[ $CMIP5 == TRUE ]]; then
-   NFRP=3 # Frequency of postprocessing in hours
-   RUN_coupFreq=3 # Becomes NFRCO
-   WAM=false
-   ADVSCH=tvd # Ocean advection scheme
-fi
-
 #
 # Control the use of the scenario
 #
 Lrcp=FALSE
-if [[ $VERSION == "v2.2.3" || $VERSION == "v2.2.2" ]]; then
+if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" ]] ; then
    yy=2005
 else
    yy=1999
 fi
 
-if [[ `echo $Chunk_start_date | cut -c1-4` > $yy ]]; then
+if [[ `echo $Chunk_start_date | cut -c1-4` > $yy ]] ; then
    Lrcp=TRUE
 fi
 
-if [[ $Lrcp == TRUE ]]; then
+if [[ $Lrcp == TRUE ]] ; then
    CNrcp=$Nrcp
 else
    CNrcp=0
@@ -156,7 +149,7 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      ;;
  esac
 
- if [[ $chunk == 1 ]]; then
+ if [[ $chunk == 1 ]] ; then
   rm -f rcf
   rm -f *f00000000*
   rm -f postins 
@@ -183,7 +176,7 @@ fi
 Chunk_end=$((Chunk_length+Chunk_last_day_prev))
 Chunk_restart_tag=`printf "%06d0000" $(( ${Chunk_last_day_prev}/24+${Chunk_length}/24 ))`
 
-if [[ `ls -1 guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9]` = '0' ]]; then
+if [[ `ls -1 guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9]` = '0' ]] ; then
  echo "EC-Earth RUN FAILED"
  exit 1
 fi
