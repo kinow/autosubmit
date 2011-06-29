@@ -8,13 +8,13 @@ import pickle
 from sys import	exit, setrecursionlimit
 from dir_config import LOCAL_ROOT_DIR
 from shutil import move
-from time import localtime
+from time import localtime, strftime
 
 class JobList:
 	
 	def __init__(self, expid):
 		self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
-		self._update_file = "updated_list" + expid + ".txt"
+		self._update_file = "updated_list_" + expid + ".txt"
 		self._failed_file = "failed_job_list_" + expid + ".pkl"
 		self._job_list_file = "job_list_" + expid + ".pkl"
 		self._job_list = list()
@@ -57,7 +57,7 @@ class JobList:
 						init_job.set_parents([])
 						sim_job.set_parents([init_job.get_name()])
 						self._job_list += [init_job]
-					if (chunk < starting_chunk + num_chunks	-	1):
+					if (chunk < starting_chunk + num_chunks	- 1):
 						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk+1) + "_" + "sim"
 						sim_job.add_children(childjob_name)
 					if (chunk < starting_chunk + num_chunks - 2):
@@ -177,7 +177,7 @@ class JobList:
 					self.get_job_by_name(line.split()[0]).set_status(self._stat_val.retval(line.split()[1]))
 					self.get_job_by_name(line.split()[0]).set_fail_count(0)
 			now = localtime()
-			output_date = time.strftime("%Y%m%d_%H%M", now) 
+			output_date = strftime("%Y%m%d_%H%M", now) 
 			move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
 	def update_list(self):
