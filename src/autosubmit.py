@@ -134,7 +134,7 @@ if __name__ == "__main__":
 		# this code limit the total number of simulation jobs which can run at the same time
 		sim_jobs = [job for job in activejobs if job.get_type() == Type.SIMULATION]
 		if (len(sim_jobs) > 5):
-			jobsavail = [job for job in jobsavail if job.get_type() != Type.SIMULATION]
+			jobsavail = [job for job in joblist.get_running() if job.get_type() != Type.SIMULATION]
 
 		if (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
