@@ -156,15 +156,15 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
  case $VERSION in
      v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs_${VERSION}.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o ${Chunk_last} -1 ${TESTDATADIR} -2 ${EXPID})
      ;;
-     v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES)
+     v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR -1 ${NPRTRVIFS}} -2 ${EXPID} -3 $LFASTRES)
      ;;
-     v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 $LFASTRES -4 $NFRP)
+     v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p $NPROMA -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 $LFASTRES -4 $NFRP)
      ;;
-     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
-     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o ${Chunk_last} -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 ${LFASTRES} -4 ${NFRP} -5 ${CMIP5} -6 ${CNrcp})
      ;;
  esac
 
