@@ -183,7 +183,6 @@ find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
 if [[ $Chunk_last == TRUE ]] ; then
-    cd $WRITINDIR
     echo "We are now removing ${RUN_dir}"
     rm -rf ${RUN_dir}
     touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
