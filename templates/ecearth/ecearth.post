@@ -41,7 +41,7 @@ RUN_chunk_size=%CHUNKSIZE%
 #
 # Output path on HSM
 #
-output_dir=$RUN_dir/Output_${chunk}
+output_dir=${RUN_dir}/Output_${chunk}
 scratch_output_dir=%SCRATCH_TMP_DIR%/${USER}/out_${EXPID}_${START_date}_${MEMBER}_${chunk}
 find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
 find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
@@ -58,25 +58,22 @@ fi
 #
 date
 if [[ ! -a %JOBNAME%.opost ]] ; then
- rebuild_tool=${ECEARTH_DIR}/${VERSION}/sources/nemo/modipsl/modeles/IOIPSL/tools/rebuild
- #
- #cd $output_dir
- cp ORCA1_* $scratch_output_dir
- cd $scratch_output_dir
-
- interval=MM
- prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
- grid_types="grid_W grid_T grid_U grid_V icemod"
- for grid_type in ${grid_types}; do
-    output_file=${prefix}_${grid_type}.nc
-   ${rebuild_tool} -v -o ${output_file} ${prefix}_${grid_type}_00[01][0-9].nc
-    gzip -9 ${output_file}
-    rm -f ${prefix}_${grid_type}_00[01][0-9].nc
-    rm -f ${output_dir}/${prefix}_${grid_type}_00[01][0-9].nc
-    mv ${output_file}.gz $output_dir
- done
- cd $output_dir
- touch %JOBNAME%.opost
+   rebuild_tool=${ECEARTH_DIR}/${VERSION}/sources/nemo/modipsl/modeles/IOIPSL/tools/rebuild
+   cp ORCA1_* $scratch_output_dir
+   cd $scratch_output_dir
+   interval=MM
+   prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
+   grid_types="grid_W grid_T grid_U grid_V icemod"
+   for grid_type in ${grid_types}; do
+       output_file=${prefix}_${grid_type}.nc
+       ${rebuild_tool} -v -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+       gzip -9 ${output_file}
+       rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+       rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+       mv ${output_file}.gz $output_dir
+   done
+   cd $output_dir
+   touch %JOBNAME%.opost
 fi
 
 #

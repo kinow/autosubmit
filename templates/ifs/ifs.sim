@@ -108,6 +108,8 @@ else
  rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "Chunk: ${chunk}"
  echo "Chunk_length: ${Chunk_length}"
+ ln -sf IFS_Restart_$((chunk-1))/* .
+ rm rcf; cp IFS_Restart_$((chunk-1))/rcf .
  LFASTRES=.TRUE.
 fi
 
@@ -166,39 +168,50 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
  IFS_exe="${IFS_exe}"
 
 %PARALLEL_RUN_IFS%
+
  echo "finished chunk"
  date
 fi
 
 #
-# Save IFS restart files and prepare for continuation of the run
+# Check either simulation completed successfully or not
 #
-Chunk_end=$((Chunk_length+Chunk_last_day_prev))
-Chunk_restart_tag=`printf "%06d0000" $(( ${Chunk_last_day_prev}/24+${Chunk_length}/24 ))`
+Chunk_end=$((Chunk_last_day_prev+Chunk_length))
+Chunk_restart_tag=`printf "%06d0000" $((Chunk_end/24))`
 
-if [[ `ls -1 guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9]` = '0' ]] ; then
- echo "EC-Earth RUN FAILED"
- exit 1
+tmp=`ls -1 guarf${Chunk_restart_tag}.*`
+if [[ $? = 0 ]]; then
+   touch finished_chunk_${chunk}
+else
+   echo "SIMULATION FAILED"
+   exit 1
 fi
 
-Chunk_last_day_prev=$((${Chunk_last_day_prev} + ${Chunk_length}))
-echo "Chunk_last_day_prev: ${Chunk_last_day_prev}"
-
-mkdir -p IFS_Restart_${chunk}
-mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] gxtrarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
-   srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] surf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
-   tmrf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] IFS_Restart_${chunk}
-ln -sf IFS_Restart_${chunk}/* .
-cp rcf IFS_Restart_${chunk}
-
-#  
-# Move the output for postprocessing
 #
-output_dir="Output_${chunk}"
-mkdir -p ${output_dir}
-mv ICMGG${EXPID}+* ICMSH${EXPID}+*  ${output_dir}/.
+# Save IFS restart files
+#
+mkdir -p IFS_Restart_${chunk}
 
-chmod 775 -R ${RUN_dir}/
+mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   gxtrarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   surf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   tmrf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+   rcf IFS_Restart_${chunk}
+rm -f guarf* gxtrarf* srf* surf* tmrf*
+
+if [[ -a rest_$((chunk-2)) ]] ; then
+   rm -rf IFS_Restart_$((chunk-2))
+fi
+
+#
+# Save NEMO & IFS output for postprocessing
+#
+output_dir=${RUN_dir}/Output_${chunk}
+mkdir -p $output_dir
+mv ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir
+
+chmod 775 -R ${RUN_dir}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
