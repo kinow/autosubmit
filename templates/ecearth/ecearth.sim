@@ -232,10 +232,10 @@ fi
 #
 # Save NEMO restart files
 #
-mkdir -p NEMO_Restart_$chunk
+mkdir -p NEMO_Restart_${chunk}
 
 ldp=`printf '%08d' $Chunk_end`
-mv ORCA1_${ldp}_restart*.nc NEMO_Restart_$chunk
+mv ORCA1_${ldp}_restart*.nc NEMO_Restart_${chunk}
 
 ldp=`printf '%08d' ${Chunk_last_day_prev}`
 rm -f ORCA1_${ldp}_restart*.nc restart_* ORCA1_Restart/*
@@ -268,7 +268,7 @@ output_dir=${RUN_dir}/Output_${chunk}
 mkdir -p $output_dir
 mv ORCA1_MM_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir 
 
-chmod 775 -R ${RUN_dir}
+chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} $output_dir
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 

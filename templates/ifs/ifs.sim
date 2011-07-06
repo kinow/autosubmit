@@ -205,13 +205,13 @@ if [[ -a rest_$((chunk-2)) ]] ; then
 fi
 
 #
-# Save NEMO & IFS output for postprocessing
+# Save IFS output for postprocessing
 #
 output_dir=${RUN_dir}/Output_${chunk}
 mkdir -p $output_dir
 mv ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir
 
-chmod 775 -R ${RUN_dir}
+chmod 775 -R IFS_Restart_${chunk} $output_dir
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
