@@ -77,6 +77,7 @@ fi
 # ~~~~~~~~~~~~~~~~~~~
 #
 if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
+  rm -f data_1m_potential_temperature_nomask.nc data_1m_salinity_nomask.nc sss_1m.nc sst_1m.nc
   cp nudg_chunk${chunk}.nc data_1m_potential_temperature_nomask.nc
   cp nudg_chunk${chunk}.nc data_1m_salinity_nomask.nc
   ncks -O -d deptht,0 nudg_chunk${chunk}.nc toto.nc

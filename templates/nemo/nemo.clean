@@ -17,7 +17,7 @@ WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
 PATHOUT="${HSMdir}/exp/${EXPID}/${MEMBER}"
 PATHFORC=${HSMdir}/fg/ocean
-PATHNUDG=${HSMdir}/nudging/fa9p/${MEMBER}
+PATHNUDG=${HSMdir}/nudging/%OCEAN_NUDDATA%/${MEMBER}
 #
 # Chunk management
 #
@@ -160,8 +160,8 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     ${NCPATH}/ncks -d 10,12 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
     ${NCPATH}/ncks -d 1,3 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
     for ((mon=4;mon<=9;mon++)) ; do
-      if [[ -e ${PATHNUDG}/fa9p_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/fa9p_1m_$((RUN_year+1))0$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0$mon.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0$mon.nc.gz
         gunzip nudg_chunk$((chunk+2))_0$mon.nc.gz
       else
         ${NCPATH}/ncks -d time,$mon nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0$mon.nc
@@ -172,16 +172,16 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     6)
     ${NCPATH}/ncks -d 4,9 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_4-9.nc
     for ((mon=10;mon<=12;mon++)) ; do
-      if [[ -e ${PATHNUDG}/fa9p_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/fa9p_1m_$((RUN_year+1))$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_$mon.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_$mon.nc.gz
         gunzip nudg_chunk$((chunk+2))_$mon.nc.gz
       else
         ${NCPATH}/ncks -d time,$mon nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_$mon.nc
       fi
     done
     for ((mon=1;mon<=3;mon++)) ; do
-      if [[ -e ${PATHNUDG}/fa9p_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/fa9p_1m_$((RUN_year+2))0$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0$mon.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0$mon_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0$mon.nc.gz
         gunzip nudg_chunk$((chunk+2))_0$mon.nc.gz
       else
         ${NCPATH}/ncks -d time,$mon nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0$mon.nc
