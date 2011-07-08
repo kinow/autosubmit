@@ -6,6 +6,7 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
+PATH=%NCOPATH%:${PATH}
 #
 # Model Configuration
 #
@@ -131,7 +132,8 @@ if [ ${VERSION} == v3.2 ] ; then
 else
   NEMO_exe=nemo.exe
 fi
-chmod 770 $NEMO_exe
+cp $NEMODIR/bin/${NEMO_exe}  opa
+chmod 770 opa
 
 %PARALLEL_RUN_NEMO%
 echo "finished chunk"
