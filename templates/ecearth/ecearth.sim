@@ -221,8 +221,8 @@ fi
 Chunk_end=$((Chunk_last_day_prev+Chunk_length))
 Chunk_restart_tag=`printf "%06d0000" $((Chunk_end/24))`
 
-tmp=`ls -1 guarf${Chunk_restart_tag}.*`
-if [[ $? = 0 ]]; then
+ls -1 guarf${Chunk_restart_tag}.*
+if [[ $? == 0 ]]; then
    touch finished_chunk_${chunk}
 else
    echo "SIMULATION FAILED"
