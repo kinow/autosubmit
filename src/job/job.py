@@ -230,9 +230,9 @@ class Job:
 		parameters['Chunk_START_YEAR'] = str(chunk_start_year)
 		parameters['Chunk_START_MONTH'] = str(chunk_start_month)
 		if total_chunk == chunk:
-			parameters['Chunk_LAST'] = '.TRUE.'
+			parameters['Chunk_LAST'] = 'TRUE'
 		else:
-			parameters['Chunk_LAST'] = '.FALSE.'
+			parameters['Chunk_LAST'] = 'FALSE'
 		  
 		if (self._type == Type.SIMULATION):
 			print "jobType: %s" %str(self._type)
