@@ -82,7 +82,7 @@ if __name__ == "__main__":
 		logger.error("The pickle file %s necessary does not exist." % filename)
 		sys.exit()
 
-	logger.debug("Length of joblist: ",len(joblist))
+	logger.debug("Length of joblist: %s", % len(joblist))
 	#totaljobs = len(joblist)
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
@@ -109,12 +109,12 @@ if __name__ == "__main__":
 	  
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
-		logger.info("number of jobs in queue :%s" % len(jobinqueue)) 
+		logger.info("Number of jobs in queue: %s" % len(jobinqueue)) 
 		for job in jobinqueue:
 			job.print_job()
 			status = queue.check_job(job.get_id(), job.get_status())
 			if(status == Status.COMPLETED):
-				logger.debug("this job seems to have completed...checking")
+				logger.debug("This job seems to have completed...checking")
 				queue.get_completed_files(job.get_name())
 				job.check_completion()
 			else:
@@ -129,13 +129,7 @@ if __name__ == "__main__":
 		logger.info("There are %s active jobs" % len(activejobs))
 
 		## get the list of jobs READY
-		
-                jobsavail = joblist.get_ready()
-
-		# this code limit the total number of simulation jobs which can run at the same time
-		sim_jobs = [job for job in activejobs if job.get_type() == Type.SIMULATION]
-		if (len(sim_jobs) > 5):
-			jobsavail = [job for job in joblist.get_running() if job.get_type() != Type.SIMULATION]
+		jobsavail = joblist.get_ready()
 
 		if (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
@@ -144,7 +138,8 @@ if __name__ == "__main__":
 		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
 			logger.info("We are going to submit: ", min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
-			list_of_jobs_avail = sorted(jobsavail, key=lambda k:k.get_type())
+			s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
      
 			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:
 				print job.get_name()
@@ -159,4 +154,3 @@ if __name__ == "__main__":
 		time.sleep(safetysleeptime)
  
 logger.info("Finished job submission")
- 
