@@ -82,7 +82,7 @@ if __name__ == "__main__":
 		logger.error("The pickle file %s necessary does not exist." % filename)
 		sys.exit()
 
-	logger.debug("Length of joblist: %s", % len(joblist))
+	logger.debug("Length of joblist: %s" % len(joblist))
 	#totaljobs = len(joblist)
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
