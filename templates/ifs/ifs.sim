@@ -59,7 +59,7 @@ IFS_nproc=%IFS_nproc%
 NPRTRVIFS=%NPRTRVIFS%
 NPROMA=%NPROMA%
 WAM=%WAM%
-WAM=`echo $WAM | tr [:upper:][:lower:]`
+WAM=`echo $WAM | tr [:upper:] [:lower:]`
 IFS_exe=${ECEARTH}/bin/ifsMASTER
 
 #
