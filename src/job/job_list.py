@@ -170,7 +170,7 @@ class JobList:
 		print "Saving JobList: " + self._pkl_path + self._job_list_file
 		pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
 	
-	def update_from_file(self):
+	def update_from_file(self, store_change=True):
 		if(os.path.exists(self._pkl_path + self._update_file)):
 			for line in open (self._pkl_path + self._update_file):
 				if(self.get_job_by_name(line.split()[0])):
@@ -178,7 +178,8 @@ class JobList:
 					self.get_job_by_name(line.split()[0]).set_fail_count(0)
 			now = localtime()
 			output_date = strftime("%Y%m%d_%H%M", now) 
-			move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
+			if(store_change):
+				move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
 	def update_list(self):
 		# load updated file list
