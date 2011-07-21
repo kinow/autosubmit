@@ -38,7 +38,7 @@ else
       01) RUN_days=181 
       day_prev=$(( ( (chunk-1) / 2 ) * 365 ))
       ;; 
-      06) RUN_days=184 
+      07) RUN_days=184 
       day_prev=$(( ( (chunk-1) / 2 ) * 365 + 181 ))
       ;;
     esac
@@ -61,7 +61,7 @@ cd $RUN_dir
 #  Preparing forcings
 # ~~~~~~~~~~~~~~~~~~~~~
 #
-if [[ %OCEAN_FORCYEAR% != -1  ]] ; then
+if [[ %OCEAN_FORCYEAR% != -1 && ${Chunk_start_month} == 01 ]] ; then
   listvars=( q2 qlw qsw t2 u10 v10 snow precip )
   if [[ ${chunk} > 1 ]] ; then 
     for var in ${listvars[@]} ; do
@@ -95,11 +95,11 @@ fi
 #  Preparing restarts
 # ~~~~~~~~~~~~~~~~~~~~
 #
-case %OCEAN_ini% in
-  's4') restflag='.true.' ;;
-  'fa9p') restflag='.true.' ;;
-  *) restflag='.false.' ;;
-esac
+if [[ ${chunk} == 1 && %OCEAN_ini% == 'clim' ]] ; then
+  restflag='.false.'
+else
+  restflag='.true.'
+fi
 
 if [[ ${chunk} > 1 ]] ; then
   for ((l=0; l<$NEMO_nproc; l++)); do
@@ -124,8 +124,8 @@ ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_
  
 ################################################################################
 #
-# Start running 
-# ~~~~~~~~~~~~~~~~
+#  Start running 
+# ~~~~~~~~~~~~~~~
 #
 if [ ${VERSION} == v3.2 ] ; then
   NEMO_exe=opa
@@ -141,7 +141,8 @@ date
 
 # #############################################################################
 #
-# Move the output for postprocessing
+#  Move the output for postprocessing
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #
 output_dir="Output_${chunk}"
 mkdir -p ${output_dir}
@@ -149,15 +150,16 @@ mv ORCA1_1m_*.nc ${output_dir}/. > /dev/null 2>&1
 #
 # #############################################################################
 #
-# Store the restarts  
+#  Store the restarts  
+# ~~~~~~~~~~~~~~~~~~~~
 #
 mkdir -p NEMO_Restart_$chunk
 if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
-  ldp0=$((Chunk_last_day_prev))
-  for ((jm=${Chunk_start_month};jm<=${Chunk_end_month};++)); do
+  ldp0=${Chunk_last_day_prev}
+  for ((jm=${Chunk_start_month}; jm<=${Chunk_end_month}; jm++)); do
     case $jm in
       2) nday=28 ;;
-      1|3|5|7|8|10) nday=31;;
+      1|3|5|7|8|10|12) nday=31;;
       4|6|9|11) nday=30;;
     esac
     if [[ ${leapy} == 1 && ${jm} == 2 && $((RUN_year%4)) == 0 ]] ; then
@@ -170,15 +172,20 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
       fi
     fi
     ldp1=$((ldp0+nday*24))
-    while [[ $ldp0 -lt ldp1 ]] ; do
-      ldp=`printf '%08d' $ldp0`
-      rm -f ORCA1_${ldp}_restart*nc
+    while [[ $ldp0 -lt $ldp1 ]] ; do
+      rm -f ORCA1_$(printf "%08d" $ldp0)_restart*nc
       ldp0=$((ldp0 + 24))
     done
-    mv ORCA1_${ldp}_restart*nc NEMO_Restart_$chunk/.
+    for ((nproc=0; nproc<=$(($NEMO_nproc-1)); nproc++)) ; do
+      mv ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_$(printf "%04d" $nproc).nc
+      mv ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_ice_$(printf "%04d" $nproc).nc
+    done
   done
 fi
-cp NEMO_Restart_$chunk/ORCA1_${ldp}_restart*nc .
+for ((nproc=0; nproc<=$((NEMO_nproc-1)); nproc++)) ; do
+  cp NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" ${Chunk_end_month})${nday}_restart_$(printf "%04d" $nproc).nc ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc
+  cp NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" ${Chunk_end_month})${nday}_restart_ice_$(printf "%04d" $nproc).nc ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc
+done
 
 if [[ $chunk > 1 ]] ; then
    ldp=`printf '%08d' ${Chunk_last_day_prev}`
