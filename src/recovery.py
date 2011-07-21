@@ -44,7 +44,7 @@ if __name__ == '__main__':
 	else:
 		l1.update_from_file(False)
 
-	GenerateOutput(expid, l1.get_job_list())
-
 	if(save):
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
+
+	GenerateOutput(expid, l1.get_job_list())

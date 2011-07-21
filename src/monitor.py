@@ -33,16 +33,30 @@ def ColorStatus(status):
 
 def CreateTreeList(expid, joblist):
 	graph = pydot.Dot(graph_type='digraph')
+
+	legend = pydot.Subgraph(graph_name = 'Legend', label = 'Legend', rank = "source")
+	legend.add_node(pydot.Node(name='WAITING', shape='box', style="filled", fillcolor=table[Status.WAITING]))
+	legend.add_node(pydot.Node(name='READY', shape='box', style="filled", fillcolor=table[Status.READY]))
+	legend.add_node(pydot.Node(name='SUBMITTED', shape='box', style="filled", fillcolor=table[Status.SUBMITTED]))
+	legend.add_node(pydot.Node(name='QUEUING', shape='box', style="filled", fillcolor=table[Status.QUEUING]))
+	legend.add_node(pydot.Node(name='RUNNING', shape='box', style="filled", fillcolor=table[Status.RUNNING]))
+	legend.add_node(pydot.Node(name='COMPLETED', shape='box', style="filled", fillcolor=table[Status.COMPLETED]))
+	legend.add_node(pydot.Node(name='FAILED', shape='box', style="filled", fillcolor=table[Status.FAILED]))
+	graph.add_subgraph(legend)
+
+	exp = pydot.Subgraph(graph_name = 'Experiment', label = expid)
 	for job in joblist:
 		node_job = pydot.Node(job.get_name(),shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
-		graph.add_node(node_job)
-		#graph.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
+		exp.add_node(node_job)
+		#exp.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
 		if job.has_children()!=0:
 			for child in job.get_children():
 				node_child=pydot.Node(child.get_name() ,shape='box', style="filled", fillcolor=ColorStatus(child.get_status()))
-				graph.add_node(node_child)
-				#graph.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
-				graph.add_edge(pydot.Edge(node_job, node_child))
+				exp.add_node(node_child)
+				#exp.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
+				exp.add_edge(pydot.Edge(node_job, node_child))
+
+	graph.add_subgraph(exp)
 
 	return graph
 
