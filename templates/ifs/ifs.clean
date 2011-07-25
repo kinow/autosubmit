@@ -174,17 +174,24 @@ if [[  -a outa_$chunk ]] ; then
    rm -rf ${output_dir}
 fi
 
-find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
-find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
-
 if [[ $Chunk_last == TRUE ]] ; then
    cd $WRITINGDIR
+
+   echo "We are now changing permissions for generated output ${PATHOUT}"
+   find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
+   find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
+
    echo "We are now removing ${RUN_dir}"
    rm -rf ${RUN_dir}
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/exp_${EXPID}_${START_date}_${MEMBER}_READY
-fi
+   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   echo "We are now storing log files"
+   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
+   tar -cvf $PATHOUT/$tarfile %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/*${EXPID}_${START_date}_${MEMBER}*
+else
+   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+fi
 
 date
