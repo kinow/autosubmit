@@ -16,7 +16,7 @@ class MnQueue(HPCQueue):
 		self._job_status['COMPLETED'] = ['Completed']
 		self._job_status['RUNNING'] = ['Running']
 		self._job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
-		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
+		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
 		self._expid = expid
 		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + expid + "/LOG_" + expid
 		#(status, user) = getstatusoutput('ssh '+self._host+' "whoami"')
