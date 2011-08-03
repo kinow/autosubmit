@@ -42,7 +42,7 @@ RUN_chunk_size=%CHUNKSIZE%
 # Output path on HSM
 #
 output_dir=${RUN_dir}/Output_${chunk}
-scratch_output_dir=%SCRATCH_TMP_DIR%/${USER}/out_${EXPID}_${START_date}_${MEMBER}_${chunk}
+scratch_output_dir=%SCRATCH_TMP_DIR%/${USER}/%JOBNAME%
 find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
 find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
 
@@ -142,6 +142,7 @@ if [[ ! -a %JOBNAME%.apost ]] ; then
 fi
 
 if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]] ; then
+ rm -rf $scratch_output_dir
  touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 

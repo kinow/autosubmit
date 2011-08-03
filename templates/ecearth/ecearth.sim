@@ -212,8 +212,7 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 
 %PARALLEL_RUN_ECEARTH%
 
- echo "finished chunk"
- date
+date
 fi
 
 #
@@ -224,9 +223,10 @@ Chunk_restart_tag=`printf "%06d0000" $((Chunk_end/24))`
 
 ls -1 guarf${Chunk_restart_tag}.*
 if [[ $? == 0 ]]; then
+   echo "finished chunk"
    touch finished_chunk_${chunk}
 else
-   echo "SIMULATION FAILED"
+   echo "failed chunk"
    exit 1
 fi
 
