@@ -171,13 +171,19 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
       fi
     fi
 
-    inputfiles=`ls ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice_0*.nc`
-    ${rebuild_tool} -o ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice.nc $inputfiles
-    rm -f $inputfiles
+    if [[ -e ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice_0000.nc ]] ; then 
+      inputfiles=`ls ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice_0*.nc`
+      rm -f ${EXPID}_${MEMBER}_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice.nc
+      ${rebuild_tool} -o ${EXPID}_${MEMBER}_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_ice.nc $inputfiles
+      rm -f $inputfiles
+    fi
 
-    inputfiles=`ls ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_0*.nc`
-    ${rebuild_tool} -o ${EXPID}_${MEMBER}_${RUN_year}$(printf "%02d" ${jm})${nday}_restart.nc $inputfiles
-    rm -f $inputfiles
+    if [[ -e ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_0000.nc ]] ; then
+      inputfiles=`ls ORCA1_${RUN_year}$(printf "%02d" ${jm})${nday}_restart_0*.nc`
+      rm -f ${EXPID}_${MEMBER}_${RUN_year}$(printf "%02d" ${jm})${nday}_restart.nc
+      ${rebuild_tool} -o ${EXPID}_${MEMBER}_${RUN_year}$(printf "%02d" ${jm})${nday}_restart.nc $inputfiles
+      rm -f $inputfiles
+    fi
   done
 fi
 #

@@ -18,6 +18,7 @@ RUN_dir=${WRITINGDIR}/${MEMBER}
 PATHOUT="${HSMdir}/exp/${EXPID}/${MEMBER}"
 PATHFORC=${HSMdir}/fg/ocean
 PATHNUDG=${HSMdir}/nudging/%OCEAN_NUDDATA%/${MEMBER}
+PATHIC=${HSMdir}/ic
 #
 # Chunk management
 #
@@ -60,27 +61,41 @@ PATHOUT_RES="${PATHOUT}/restarts"
 mkdir -p ${PATHOUT_RES}               # Where the restarts are to be stored
 #
 rstdir="${RUN_dir}/NEMO_Restart_${chunk}"
+listfile=""
 if [[ -d ${rstdir} ]] ; then
   cd ${rstdir}
-  listfile=`ls *_restart*`
+  if [ -e ${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc ] ; then
+    listfile=`ls *_restart*.nc`
+  fi
 else
   exit 1
 fi                                    # Which restarts to store
 #
 tarfile="restart_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-tar -cvf $tarfile ${listfile}
-cp $tarfile $PATHOUT_RES              # Store
-#
-locfile=`md5sum ${tarfile}|cut -d" " -f1`              
-remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-rm -f ${RUN_dir}/rest_${chunk}
-if [[ "$locfile" == "$remfile" ]] ; then
-  echo "The file has been correctly stored"
-  touch ${RUN_dir}/rest_${chunk}
-  rm -f $tarfile
-else
-  exit 1
+if [[ ! -e $tarfile ]] ; then
+  tar -cvf $tarfile ${listfile}
+  cp $tarfile $PATHOUT_RES              # Store
+  #
+  locfile=`md5sum ${tarfile}|cut -d" " -f1`              
+  remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
+  if [[ "$locfile" == "$remfile" ]] ; then
+    echo "The file has been correctly stored"
+  else
+    exit 1
+  fi
 fi                                     # Check if the storage is ok before rm
+#
+if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
+#                                      # Save restarts as new initial cond. 
+  if [[ ${listfile} != "" ]] ; then gzip ${listfile} ; fi
+  restarts_ocean=`ls *restart.nc.gz`
+  restarts_ice=`ls *restart_ice.nc.gz`
+  mkdir -p $PATHIC/ocean/${EXPID}
+  mkdir -p $PATHIC/ice/${EXPID}
+  cp $restarts_ocean $PATHIC/ocean/${EXPID}/.  
+  cp $restarts_ice $PATHIC/ice/${EXPID}/.
+#
+fi
 #
 ###############################################################################
 #                               SAVE OUTPUTS                                  #
@@ -107,10 +122,8 @@ cp $tarfile $PATHOUT_OUT              # Store
 #
 locfile=`md5sum ${tarfile}|cut -d" " -f1`
 remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
-rm -f ${RUN_dir}/outo_${chunk}
 if [[ "$locfile" == "$remfile" ]] ; then
   echo "The file has been correctly stored"
-  touch ${RUN_dir}/outo_${chunk}
   rm -f ../$tarfile
 else
   exit 1
@@ -143,7 +156,7 @@ if [ %OCEAN_FORCYEAR% == -1 ] ; then
     if [[ -e ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ]] ; then
       cp ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ${var}_core_y$((RUN_year+3)).nc
     else
-      cp ${var}_core_y$((RUN_YEAR+2)).nc ${var}_core_y$((RUN_year+3)).nc
+      cp ${var}_core_y$((RUN_year+2)).nc ${var}_core_y$((RUN_year+3)).nc
     fi
   done
 fi
@@ -161,7 +174,7 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     for ((mon=4;mon<=9;mon++)) ; do
       if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
-        gunzip nudg_chunk$((chunk+2))_0${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi
@@ -173,7 +186,7 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     for ((mon=10;mon<=12;mon++)) ; do
       if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
-        gunzip nudg_chunk$((chunk+2))_${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc
       fi
@@ -181,7 +194,7 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     for ((mon=1;mon<=3;mon++)) ; do
       if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
-        gunzip nudg_chunk$((chunk+2))_0${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi

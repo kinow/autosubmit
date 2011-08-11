@@ -102,10 +102,19 @@ else
 fi
 
 if [[ ${chunk} > 1 ]] ; then
+  if [[ -e restart.nc ]] ; then
+    rm -f restart.nc restart_ice.nc
+  fi
   for ((l=0; l<$NEMO_nproc; l++)); do
     ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_$(printf "%04d" $l).nc restart_$(printf "%04d" $l).nc
     ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_ice_$(printf "%04d" $l).nc restart_ice_$(printf "%04d" $l).nc
-    rm -f ORCA1_$(printf "%08d" $((Chunk_last_day_prev+Chunk_length)))_restart_*.nc
+    ldp=$((Chunk_last_day_prev + 24))
+    while [[ $ldp -le $((Chunk_last_day_prev+Chunk_length)) ]] ; do
+      if [[ -e ORCA1_$(printf "%08d" $ldp)_restart_0000.nc ]] ; then
+        rm -f ORCA1_$(printf "%08d" $ldp)_restart*nc
+      fi
+      ldp=$((ldp + 24))
+    done
   done
 fi
 #
@@ -120,6 +129,7 @@ else
   freq=${Chunk_length}
 fi
 
+rm -f ORCA1_1m*
 ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp}
  
 ################################################################################
