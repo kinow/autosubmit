@@ -51,9 +51,7 @@ class HPCQueue:
 			elif (job_status in self._job_status['FAILED']):
 				job_status = Status.FAILED
 			else:
-				print "Unknown status:"+job_status
 				job_status = Status.UNKNOWN
-                                
 		else:
 			####BOUOUOUOU	NOT	GOOD!
 			job_status = Status.COMPLETED
