@@ -69,14 +69,16 @@ def GenerateOutput(expid, joblist, output_format="pdf"):
 
 	if output_format == "png":
 		graph.write_png(output_file)
-	else:
+	elif output_format == "pdf":
 		graph.write_pdf(output_file)
+	elif output_format == "ps":
+		graph.write_ps(output_file)
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Plot autosubmit graph')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
-	parser.add_argument('-o', '--output', required=True, nargs = 1, choices = ('pdf', 'png'), default = 'pdf')
+	parser.add_argument('-o', '--output', required=True, nargs = 1, choices = ('pdf', 'png', 'ps'), default = 'pdf')
 
 	args = parser.parse_args()
 
