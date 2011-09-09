@@ -8,6 +8,7 @@ import argparse
 from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
+from sys import setrecursionlimit
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='Autosubmit recovery')
@@ -35,6 +36,7 @@ if __name__ == '__main__':
 				job.set_status(Status.COMPLETED)
 				print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"
 
+		setrecursionlimit(10000)
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
 
 
@@ -45,6 +47,7 @@ if __name__ == '__main__':
 		l1.update_from_file(False)
 
 	if(save):
+		setrecursionlimit(10000)
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
 
 	GenerateOutput(expid, l1.get_job_list())

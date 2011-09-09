@@ -161,7 +161,7 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
       1|3|5|7|8|10|12) nday=31;;
       4|6|9|11) nday=30;;
     esac
-    if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'ERA-INTERIM-ORCA1' && ${jm} == 2 && $((RUN_year%4)) == 0 ]] ; then
+    if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'eraint' && ${jm} == 2 && $((RUN_year%4)) == 0 ]] ; then
       nday=29
       if [[ $((RUN_year%100)) == 0 ]] ; then
         nday=28

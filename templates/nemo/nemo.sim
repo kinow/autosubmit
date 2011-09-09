@@ -26,7 +26,7 @@ Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 Chunk_start_month=`echo ${Chunk_start_date} | cut -c5-6`
 Chunk_end_month=`echo ${Chunk_end_date} | cut -c5-6`
-if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'ERA-INTERIM-ORCA1' ]] ; then
+if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'eraint' ]] ; then
   RUN_days=%RUN_DAYS%
   day_prev=%PREV%
   leapy=1 
@@ -186,15 +186,24 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
       rm -f ORCA1_$(printf "%08d" $ldp0)_restart*nc
       ldp0=$((ldp0 + 24))
     done
-    for ((nproc=0; nproc<=$(($NEMO_nproc-1)); nproc++)) ; do
-      mv ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_$(printf "%04d" $nproc).nc
-      mv ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_ice_$(printf "%04d" $nproc).nc
-    done
+    if [[ ${jm} -lt ${Chunk_end_month} ]] ; then
+      for ((nproc=0; nproc<=$(($NEMO_nproc-1)); nproc++)) ; do
+        mv ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_$(printf "%04d" $nproc).nc
+        mv ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $jm)${nday}_restart_ice_$(printf "%04d" $nproc).nc
+      done
+    fi
   done
+else
+  case ${Chunk_end_month} in
+    01|03|05|07|08|10|12) nday=31;;
+    04|06|09|11) nday=30;;
+  esac
+  ldp0=$((Chunk_last_day_prev+Chunk_length))
 fi
+
 for ((nproc=0; nproc<=$((NEMO_nproc-1)); nproc++)) ; do
-  cp NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" ${Chunk_end_month})${nday}_restart_$(printf "%04d" $nproc).nc ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc
-  cp NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" ${Chunk_end_month})${nday}_restart_ice_$(printf "%04d" $nproc).nc ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc
+  cp ORCA1_$(printf "%08d" $ldp0)_restart_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $Chunk_end_month)${nday}_restart_$(printf "%04d" $nproc).nc
+  cp ORCA1_$(printf "%08d" $ldp0)_restart_ice_$(printf "%04d" $nproc).nc NEMO_Restart_$chunk/ORCA1_${RUN_year}$(printf "%02d" $Chunk_end_month)${nday}_restart_ice_$(printf "%04d" $nproc).nc
 done
 
 if [[ $chunk > 1 ]] ; then

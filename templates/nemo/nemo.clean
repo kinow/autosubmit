@@ -16,7 +16,7 @@ START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
 PATHOUT="${HSMdir}/exp/${EXPID}/${MEMBER}"
-PATHFORC=${HSMdir}/fg/ocean
+PATHFORC=${HSMdir}/fg/ocean/%OCEAN_FORCTYPE%
 PATHNUDG=${HSMdir}/nudging/%OCEAN_NUDDATA%/${MEMBER}
 PATHIC=${HSMdir}/ic
 #
@@ -29,7 +29,7 @@ Chunk_end_date=%Chunk_END_DATE%
 RUN_year=`echo ${Chunk_start_date} | cut -c1-4`
 Chunk_start_month=`echo ${Chunk_start_date} | cut -c5-6`
 Chunk_end_month=`echo ${Chunk_end_date} | cut -c5-6`
-if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'ERA-INTERIM-ORCA1' ]] ; then
+if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'eraint' ]] ; then
   RUN_days=%RUN_DAYS%
   day_prev=%PREV%
 else
@@ -64,7 +64,7 @@ rstdir="${RUN_dir}/NEMO_Restart_${chunk}"
 listfile=""
 if [[ -d ${rstdir} ]] ; then
   cd ${rstdir}
-  if [ -e ${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc ] ; then
+  if [[ -e ${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc || -e ORCA1_${Chunk_end_date}_restart_0000.nc ]] ; then
     listfile=`ls *_restart*.nc`
   fi
 else
@@ -135,11 +135,6 @@ fi                                    # Check if the storage is ok before rm
 #
 cd ${RUN_dir}
 #
-case %OCEAN_FORCTYPE% in
-  'ERAINTERIM-ORCA1') PATHFORC=${PATHFORC}/ERAINTERIM ; type=ERAINTERIM-ORCA1 ;;
-  'DFS4.3') PATHFORC=${PATHFORC}/DFS4.3 ; type=DFS4.3 ;;
-esac
-
 if [[ %OCEAN_FORCYEAR% == -1 ]]; then
   FORCING_YEAR=$RUN_year
 else
@@ -148,6 +143,7 @@ fi
 
 listvars=( q2 qlw qsw t2 u10 v10 snow precip )
 
+type=%OCEAN_FORCTYPE%
 if [ %OCEAN_FORCYEAR% == -1 ] ; then
   for var in ${listvars[@]} ; do
     if [[ -e ${var}_core_y$((RUN_year-2)).nc ]] ; then
@@ -172,35 +168,35 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     ${NCOPATH}/ncks -O -d time_counter,9,11 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
     ${NCOPATH}/ncks -O -d time_counter,0,2 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
     for ((mon=4;mon<=9;mon++)) ; do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))0${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))0${mon}_grid_T.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi
     done
-    ${NCOPATH}/ncrcat -O -n 6,2,1 nudg_chunk$((chunk+2))_04.nc nudg_chunk$((chunk+2))_4-9.nc
+    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 6,2,1 nudg_chunk$((chunk+2))_04.nc nudg_chunk$((chunk+2))_4-9.nc
     ;;
     07)
     ${NCOPATH}/ncks -O -d time_counter,3,8 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_4-9.nc
     for ((mon=10;mon<=12;mon++)) ; do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+1))${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))${mon}_grid_T.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc
       fi
     done
     for ((mon=1;mon<=3;mon++)) ; do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz ]] ; then
-        cp ${PATHNUDG}/%OCEAN_NUDDATA%_1m_$((RUN_year+2))0${mon}_grid_T_02.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+2))0${mon}_grid_T.nc.gz ]] ; then
+        cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+2))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi
     done
-    ${NCOPATH}/ncrcat -O -n 3,2,1 nudg_chunk$((chunk+2))_10.nc nudg_chunk$((chunk+2))_10-12.nc
-    ${NCOPATH}/ncrcat -O -n 3,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_1-3.nc
+    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_10.nc nudg_chunk$((chunk+2))_10-12.nc
+    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_1-3.nc
     ;;
     *) echo "not coded yet. Please start date month Jan or Jun" ;;   
   esac
@@ -213,11 +209,11 @@ fi
 #                          CLEAN FROM PREVIOUS CHUNK                           #
 ################################################################################
 #
-if [ -d ${RUN_dir}/NEMO_Restart_$((chunk-1)) ] ; then
-  rm -rf ${RUN_dir}/NEMO_Restart_$((chunk-1))
+if [ -d ${RUN_dir}/NEMO_Restart_$((chunk-2)) ] ; then
+  rm -rf ${RUN_dir}/NEMO_Restart_$((chunk-2))
 fi
-if [ -d ${RUN_dir}/Output_$((chunk-1)) ] ; then
-  rm -rf ${RUN_dir}/Output_$((chunk-1))
+if [ -d ${RUN_dir}/Output_$((chunk-2)) ] ; then
+  rm -rf ${RUN_dir}/Output_$((chunk-2))
 fi
 #
 ################################################################################
