@@ -58,37 +58,6 @@ fi
 #
 if [[ ! -a %JOBNAME%.apost ]] ; then
 
- sdyear=`echo $START_date|cut -c1-4`
- sdmon=`echo $START_date|cut -c5-6`
- #
- # Store special files with daily output
- #
- if [[ $chunk = 1 ]] ; then
- #
- # Prepare the initial conditions for storage
- #
- 	for type in SH GG ; do
- 		prefix=ICM${type}${EXPID}
- 		cp ${output_dir}/${prefix}+000000 ${output_dir}/ICM${type}_${EXPID}_${START_date}_000000.grb
- 	done
- else
-#
-# Prepare the file that contains the last time step of the previous chunk
-# This is the correct output to use in versions earlier than 2.2.2 as the last output
-# from the previous chunk has not updated the instantaneous fields in IFS (the fluxes
-# are equivalent in both files)
-#
-	month=$((sdmon-1+(chunk-1)*RUN_chunk_size))
-	year=$((sdyear+((month-1)/12)))
-	month=$((month-((month-1)/12)*12))
-	month=`printf '%02d' ${month}`
-	for type in SH GG ; do
-	file=ICM${type}${EXPID}+${year}${month}
-	fileout=ICM${type}_${EXPID}_${START_date}_${year}${month}_soc
-	cp ${output_dir}/${file} ${output_dir}/${fileout}.grb
-	done
- fi
-
  nmon=1
  year=${nyearini}
  while [[ $nmon -le $RUN_chunk_size ]] ; do
