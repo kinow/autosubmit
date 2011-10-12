@@ -132,7 +132,11 @@ touch ../$tarfile
 #
 # Copying the monthly means
 #
-prefix=ORCA1_MM_${Chunk_start_date}_${Chunk_end_date}
+case $SAVEDDO in 
+  'TRUE' ) interval=DD ;;
+  'FALSE' ) interval=MM ;;
+esac
+prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
 grid_types="grid_W grid_T grid_U grid_V icemod"
 for grid_type in ${grid_types}; do
     output_file=${prefix}_${grid_type}.nc.gz

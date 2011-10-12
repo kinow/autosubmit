@@ -18,7 +18,7 @@ MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-
+SAVEDDO=${SAVEDDO}
 #
 # Chunk Management
 #
@@ -61,7 +61,10 @@ if [[ ! -a %JOBNAME%.opost ]] ; then
    rebuild_tool=${ECEARTH_DIR}/${VERSION}/sources/nemo/modipsl/modeles/IOIPSL/tools/rebuild
    cp ORCA1_* $scratch_output_dir
    cd $scratch_output_dir
-   interval=MM
+   case ${SAVEDDO} in
+     'TRUE') interval=DD ;;
+     'FALSE') interval=MM ;;
+   esac
    prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
    grid_types="grid_W grid_T grid_U grid_V icemod"
    for grid_type in ${grid_types}; do

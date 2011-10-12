@@ -72,6 +72,7 @@ NEMO_nprocX=%NEMO_nprocX%
 NEMO_nprocY=%NEMO_nprocY%
 NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
 NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}
+SAVEDDO=%SAVEDDO%
 
 #
 # OASIS
@@ -180,15 +181,15 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 #
  if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" || $VERSION == "v2.2.1" || $VERSION == "v2.2.0" ]] ; then
        if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-          setupnemo.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH}
+          ${SCRIPTDIR}/setupnemo_new.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -s ${SAVEDDO}
        else
-          setupnemo.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH}
+          ${SCRIPTDIR}/setupnemo_new.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -s ${SAVEDDO}
        fi
  else
        if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-          setupnemo.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date}
+          ${SCRIPTDIR}/setupnemo_new.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -s ${SAVEDDO}
        else
-          setupnemo.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date}
+          ${SCRIPTDIR}/setupnemo_new.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -s ${SAVEDDO}
        fi
  fi
 
@@ -267,7 +268,13 @@ fi
 #
 output_dir=${RUN_dir}/Output_${chunk}
 mkdir -p $output_dir
-mv ORCA1_MM_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir 
+
+case ${SAVEDDO} in
+  'TRUE') interval=DD ;;
+  'FALSE') interval=MM ;;
+esac
+
+mv ORCA1_${interval}_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir 
 
 chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} $output_dir
 
