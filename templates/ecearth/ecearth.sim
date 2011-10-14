@@ -270,7 +270,7 @@ output_dir=${RUN_dir}/Output_${chunk}
 mkdir -p $output_dir
 
 case ${SAVEDDO} in
-  'TRUE') interval=DD ;;
+  'TRUE') interval=1d ;;
   'FALSE') interval=MM ;;
 esac
 

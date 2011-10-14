@@ -16,7 +16,7 @@ MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-
+SAVEDDO=%SAVEDDO%
 #
 # Chunk Management
 #
@@ -133,7 +133,7 @@ touch ../$tarfile
 # Copying the monthly means
 #
 case $SAVEDDO in 
-  'TRUE' ) interval=DD ;;
+  'TRUE' ) interval=1d ;;
   'FALSE' ) interval=MM ;;
 esac
 prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
