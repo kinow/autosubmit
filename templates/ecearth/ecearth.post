@@ -26,8 +26,11 @@ chunk=%CHUNK%
 
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-nyearini=%Starting_DATE_YEAR%
-nmonthini=%Starting_DATE_MONTH%
+ATM_rstdate=%ATM_rstdate%
+#
+if [[ $ATM_rstdate == '' ]] ; then ATM_rstdate=${START_date} ; fi
+nmonthini=`echo $ATM_rstdate | cut -c5-6`
+nyearini=`echo $ATM_rstdate | cut -c1-4`
 
 # in days
 RUN_days=%RUN_DAYS%
