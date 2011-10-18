@@ -54,7 +54,7 @@ def set_experiment(name, exp_type, description):
 
 	(conn, cursor) = open_conn()
 	try:
-		cursor.execute('insert into experiment values(null, ?, ?, ?)', (id, name, exp_type, description))
+		cursor.execute('insert into experiment values(null, ?, ?, ?)', (name, exp_type, description))
 	except sql.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s - %s already exists!!!' % (name, exp_type)
