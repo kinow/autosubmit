@@ -182,6 +182,9 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
       fi
     fi
     ldp1=$((ldp0+nday*24))
+    if [[ $jm -eq ${Chunk_start_month} ]] ; then 
+      ldp0=$((ldp0 + 24))
+    fi
     while [[ $ldp0 -lt $ldp1 ]] ; do
       rm -f ORCA1_$(printf "%08d" $ldp0)_restart*nc
       ldp0=$((ldp0 + 24))
