@@ -142,8 +142,8 @@ if [ ${VERSION} == v3.2 ] ; then
 else
   NEMO_exe=nemo.exe
 fi
-cp $NEMODIR/bin/${NEMO_exe}  opa
-chmod 770 opa
+cp $NEMODIR/bin/${NEMO_exe} ${NEMO_exe} 
+chmod 770 ${NEMO_exe}
 
 %PARALLEL_RUN_NEMO%
 echo "finished chunk"
