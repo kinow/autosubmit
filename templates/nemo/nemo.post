@@ -38,7 +38,13 @@ RUN_year=`echo $Chunk_start_date | cut -c1-4`
 #
 cd $RUN_dir/Output_${chunk}
 #
-interval=1m
+if [[ %SAVEDDO% == 'TRUE' ]] ; then
+  interval=1d
+  ntimesteps=$((RUN_months*24))
+else
+  interval=1m
+  ntimesteps=${RUN_months}
+fi
 prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
 grid_types="icemod grid_T grid_V grid_U grid_W"
 #
@@ -46,7 +52,7 @@ for grid_type in ${grid_types}; do
 
   output_file=${prefix}_${grid_type}.nc
 
-  for ((i=1;i<=${RUN_months};i++));do
+  for ((i=1;i<=${ntimesteps};i++));do
 
     if [ ! -e timestep_${i}_${output_file} ];then 
       listfile=`ls ${prefix}_${grid_type}_*`
@@ -84,7 +90,7 @@ list8=""
 list9=""
 fixname=${EXPID}_${MEMBER}_${START_date}_${Chunk_start_date}_${Chunk_end_date}
 
-for jt in $(seq 1 1 ${RUN_months}); do  
+for jt in $(seq 1 1 ${ntimesteps}); do  
 
    ncks -O -v sosstsst,sosaline,somixhgt,somxl010 timestep_${jt}_${prefix}_grid_T.nc sstsimld_${fixname}_${jt}.nc
    ncks -O -v isnowthi,iicethic,ileadfra,iicetemp timestep_${jt}_${prefix}_icemod.nc ice_${fixname}_${jt}.nc
@@ -146,6 +152,19 @@ ncrcat -O ${list9} t3d_${fixname}.nc
 #
 rm -f ${list1} ${list2} ${list3} ${list4} ${list5} ${list6} ${list7} ${list8} ${list9}
 #
+else 
+  
+  for grid_type in ${grid_types}; do
+
+    output_file=${prefix}_${grid_type}.nc
+    lstfiles=""
+    for ((i=1;i<=${ntimesteps};i++));do
+      lstfiles=$lstfiles" "timestep_${i}_${output_file}.nc 
+    done
+    ncrcat -O $lstfiles ${output_file}.nc 
+    rm -f $lstfiles 
+  done
+
 fi
 #
 ###############################################################################

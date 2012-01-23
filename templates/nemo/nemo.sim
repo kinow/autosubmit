@@ -59,7 +59,7 @@ RUN_year=`echo $Chunk_start_date | cut -c1-4`
 cd $RUN_dir
 #
 #  Preparing forcings
-# ~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~
 #
 if [[ %OCEAN_FORCYEAR% != -1 && ${Chunk_start_month} == 01 ]] ; then
   listvars=( q2 qlw qsw t2 u10 v10 snow precip )
@@ -88,6 +88,12 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
   ddamp='.true.'
 else
   ddamp='.false.'
+fi
+
+if [ ${VERSION} == v3.3 ] ; then
+  cp sss_1m.nc sss_y${RUN_year}.nc
+  cp sst_1m.nc sst_y${RUN_year}.nc
+  rm -f sst_$((RUN_year-1)).nc sss_$((RUN_year-1)).nc
 fi
 #
 ################################################################################
@@ -129,9 +135,9 @@ else
   freq=${Chunk_length}
 fi
 
-rm -f ORCA1_1m*
-ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp}
- 
+rm -f ORCA1_1m* ORCA1_1d*
+ksh $NEMODIR/setup/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
+
 ################################################################################
 #
 #  Start running 
@@ -156,7 +162,11 @@ date
 #
 output_dir="Output_${chunk}"
 mkdir -p ${output_dir}
-mv ORCA1_1m_*.nc ${output_dir}/. > /dev/null 2>&1
+if [[ %SAVEDDO% == 'TRUE' ]] ; then
+  mv ORCA1_1d_*.nc ${output_dir}/. > /dev/null 2>&1
+else
+  mv ORCA1_1m_*.nc ${output_dir}/. > /dev/null 2>&1
+fi
 #
 # #############################################################################
 #

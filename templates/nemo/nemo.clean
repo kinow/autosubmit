@@ -109,14 +109,15 @@ if [[ -d ${output_dir} ]] ; then
   cd ${output_dir}
   if [[ %OCEAN_REDUCOUT% == 'TRUE' ]] ; then
     listfile2=`ls sstsimld*.nc ice*.nc t3d*.nc sal*.nc heat*.nc moc*.nc psi*.nc `
+    tarfile="diags_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
   else
     listfile2=`ls *grid_T.nc *grid_V.nc *grid_U.nc *grid_W.nc *icemod.nc`
+    tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
   fi
 else
   exit 1
 fi                                   
 #
-tarfile="diags_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 tar -cvf $tarfile ${listfile2}
 cp $tarfile $PATHOUT_OUT              # Store
 #
