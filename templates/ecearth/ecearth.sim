@@ -245,7 +245,7 @@ mv ORCA1_${ldp}_restart*.nc NEMO_Restart_${chunk}
 ldp=`printf '%08d' ${Chunk_last_day_prev}`
 rm -f ORCA1_${ldp}_restart*.nc restart_* ORCA1_Restart/*
 
-if [[ -a rest_$((chunk-2)) ]] ; then
+if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]] ; then
    rm -rf NEMO_Restart_$((chunk-2))
 fi
 
@@ -262,7 +262,7 @@ mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
    rcf IFS_Restart_${chunk}
 rm -f guarf* gxtrarf* srf* surf* tmrf*
 
-if [[ -a rest_$((chunk-2)) ]] ; then
+if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]] ; then
    rm -rf IFS_Restart_$((chunk-2))
 fi
 

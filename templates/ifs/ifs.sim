@@ -203,7 +203,7 @@ mv guarf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
    rcf IFS_Restart_${chunk}
 rm -f guarf* gxtrarf* srf* surf* tmrf*
 
-if [[ -a rest_$((chunk-2)) ]] ; then
+if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]] ; then
    rm -rf IFS_Restart_$((chunk-2))
 fi
 

@@ -109,10 +109,9 @@ if [[ ! -a %JOBNAME%.apost ]]; then
 	          cp ${file} $tmp_output_dir
 	          cd $tmp_output_dir
               cp ${file} ${file}.tmp
-              # PARS=`grib_ls ${file} | head -n -3 | tr -s ' ' | cut -f3 -d ' ' | sort -n | uniq | grep ^[0-9]`
               case $type in
-               SH) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f7 -d ' ' | sort -n | uniq | grep ^[0-9]`;;
-               GG) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f6 -d ' ' | sort -n | uniq | grep ^[0-9]`;;
+               SH) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f7 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # tested with grib_api
+               GG) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f6 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # version 1.9.9
               esac
               for PAR in $PARS; do
                   if [[ $PAR == 133.128 || $PAR == 152.128 || \
