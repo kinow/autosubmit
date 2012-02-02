@@ -9,6 +9,7 @@ date
 SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%MODELS_DIR%/ecearth
 PATH=%GRIBAPIPATH2%:${PATH}
+USER=%HPCUSER%
 
 #
 # Model Configuration

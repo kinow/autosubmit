@@ -7,6 +7,7 @@ date
 SCRATCH_DIR=%SCRATCH_DIR%
 HSMdir=%HSM_DIR%
 DBdir=%DB_DIR%
+USER=%HPCUSER%
 
 #
 # Model Configuration

@@ -5,11 +5,10 @@
 #
 #$ -S /bin/sh
 #$ -N %JOBNAME%
-#$ -e /share/scratch/cfu/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-#$ -o /share/scratch/cfu/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+#$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+#$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -V
 #$ -q medium.q
 #$ -pe orte 45
 #
 ###############################################################################
-
