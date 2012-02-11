@@ -37,6 +37,7 @@ if __name__ == '__main__':
 				print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"
 
 		setrecursionlimit(10000)
+		l1.update_list()
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
 
 

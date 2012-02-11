@@ -105,6 +105,10 @@ class JobList:
 		"""Returns a list of jobs waiting"""
 		return [job for job in self._job_list if job.get_status() == Status.WAITING]
 
+	def get_unknown(self):
+		"""Returns a list of jobs unknown"""
+		return [job for job in self._job_list if job.get_status() == Status.UNKNOWN]
+
 	def get_in_queue(self):
 		"""Returns a list of jobs in the queue (Submitted, Running, Queuing)"""
 		return self.get_submitted() + self.get_running() + self.get_queuing()
@@ -119,7 +123,7 @@ class JobList:
 
 	def get_active(self):
 		"""Returns a list of active jobs (In queue, Ready)"""
-		return self.get_in_queue() + self.get_ready()
+		return self.get_in_queue() + self.get_ready() + self.get_unknown()
 	
 	def get_job_by_name(self, name):
 		"""Returns the job that its name matches name"""
