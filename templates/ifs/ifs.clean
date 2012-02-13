@@ -106,6 +106,7 @@ for REST in RESTA ; do
 done
 
 if [[ -a RESTA_${chunk} ]] ; then
+   rm ${RUN_dir}/RESTA_${chunk}
    touch ${RUN_dir}/rest_${chunk}
 fi
 
@@ -171,13 +172,14 @@ cd $RUN_dir
 
 if [[  -a outa_$chunk ]] ; then
    echo "We are now removing ${output_dir}"
-   rm -rf ${output_dir}
+   rm -rf ${output_dir} outa_$chunk
+   touch out_$chunk
 fi
 
 find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
-if [[ $Chunk_last == TRUE ]] ; then
+if [[ $Chunk_last == TRUE && -a rest_$((chunk-1)) && -a out_$((chunk-1)) ]] ; then
    cd $WRITINGDIR
 
    echo "We are now removing ${RUN_dir}"
