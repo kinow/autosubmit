@@ -86,8 +86,8 @@ class HPCQueue:
 			return False
 	
 	def submit_job(self, job_script):
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._submit_cmd +' ' + self._remote_log_dir + '/' + str(job_script) + '"')
-		print 'ssh ' + self._host + ' "' + self._submit_cmd + ' ' + self._remote_log_dir + '/' + str(job_script)
+		(status, output) = getstatusoutput('ssh ' + self._host + ' "cd ' + self._remote_log_dir + '; ' + self._submit_cmd + ' ' + str(job_script) + '"')
+		print 'ssh ' + self._host + ' "cd ' + self._remote_log_dir + '; ' + self._submit_cmd + ' ' + str(job_script) + '"'
 		if(status == 0):
 			job_id = self.get_submitted_job_id(output)
 			print job_id
@@ -110,3 +110,6 @@ class HPCQueue:
 			sleep(SLEEPING_TIME)
 			(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
 		exit(0)
+	
+	def set_host(self, new_hostname):
+		self._host = new_hostname
