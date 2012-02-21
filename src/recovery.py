@@ -8,6 +8,7 @@ import argparse
 from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
+from queue.lgqueue import LgQueue
 from sys import setrecursionlimit
 
 if __name__ == '__main__':
@@ -30,8 +31,17 @@ if __name__ == '__main__':
 			queue = MnQueue(expid)
 		elif sc == 'i':
 			queue = ItQueue(expid)
+		elif sc == 'l':
+			## in lindgren arch must set-up both serial and parallel queues
+			serialQueue = LgQueue(expid)
+			parallelQueue = LgQueue(expid)
 
 		for job in l1.get_active():
+			## in lindgren arch must select serial or parallel queue acording to the job type
+			if (sc == 'l' and job.get_type() == Type.SIMULATION):
+				queue = parallelQueue
+			elif(sc == 'l' and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+				queue = serialQueue
 			if queue.get_completed_files(job.get_name()):
 				job.set_status(Status.COMPLETED)
 				print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"

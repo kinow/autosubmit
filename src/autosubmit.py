@@ -5,6 +5,7 @@ import signal
 import logging
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
+from queue.lgqueue import LgQueue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
@@ -59,6 +60,12 @@ if __name__ == "__main__":
 	   queue = ItQueue(expid)
 	elif(hpcarch == "hector"):
 	   queue = HtQueue(expid)
+	## in lindgren arch must set-up both serial and parallel queues
+	elif(hpcarch == "lindgren"):
+	   serialQueue = LgQueue(expid)
+	   serialQueue.set_host("lindgren")
+	   parallelQueue = LgQueue(expid)
+	   parallelQueue.set_host("lindgren")
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -68,8 +75,16 @@ if __name__ == "__main__":
 	logger.info("Starting job submission...")
 
 
-	signal.signal(signal.SIGQUIT, queue.smart_stop)
-	signal.signal(signal.SIGINT, queue.normal_stop)
+	## in lindgren arch must signal both serial and parallel queues
+	if(hpcarch == "lindgren"):
+		signal.signal(signal.SIGQUIT, serialQueue.smart_stop)
+		signal.signal(signal.SIGINT, serialQueue.normal_stop)
+		signal.signal(signal.SIGQUIT, parallelQueue.smart_stop)
+		signal.signal(signal.SIGINT, parallelQueue.normal_stop)
+	else:
+		signal.signal(signal.SIGQUIT, queue.smart_stop)
+		signal.signal(signal.SIGINT, queue.normal_stop)
+
  
 	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
 	print filename
@@ -87,7 +102,13 @@ if __name__ == "__main__":
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
 	template_rootname = exp_parser.get('experiment','TEMPLATE') 
-	queue.check_remote_log_dir()
+	## in lindgren arch must check both serial and parallel queues
+	if(hpcarch == "lindgren"):
+		serialQueue.check_remote_log_dir()
+		parallelQueue.check_remote_log_dir()
+	else:
+		queue.check_remote_log_dir()
+
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
@@ -112,6 +133,11 @@ if __name__ == "__main__":
 		logger.info("Number of jobs in queue: %s" % len(jobinqueue)) 
 		for job in jobinqueue:
 			job.print_job()
+			## in lindgren arch must select serial or parallel queue acording to the job type
+			if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
+				queue = parallelQueue
+			elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+				queue = serialQueue
 			status = queue.check_job(job.get_id(), job.get_status())
 			if(status == Status.COMPLETED):
 				logger.debug("This job seems to have completed...checking")
@@ -133,10 +159,10 @@ if __name__ == "__main__":
 
 		if (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
-			logger.info("Number of job ready: ",len(jobsavail))
-			logger.info("Number of jobs available in queue:", available)
+			logger.info("Number of jobs ready: %s" % len(jobsavail))
+			logger.info("Number of jobs available in queue: %s" % available)
 		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
-			logger.info("We are going to submit: ", min(available,len(jobsavail)))
+			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
 			s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
@@ -145,6 +171,15 @@ if __name__ == "__main__":
 				print job.get_name()
 				scriptname = job.create_script(template_rootname) 
 				print scriptname
+				## in lindgren arch must select serial or parallel queue acording to the job type
+				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
+					queue = parallelQueue
+					logger.info("Submitting to parallel queue...")
+					print("Submitting to parallel queue...")
+				elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+					queue = serialQueue
+					logger.info("Submitting to serial queue...")
+					print("Submitting to serial queue...")
 				queue.send_script(scriptname)
 				job_id = queue.submit_job(scriptname)
 				job.set_id(job_id)
