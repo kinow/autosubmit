@@ -194,10 +194,10 @@ fi
 #
 Chunk_restart_tag=`printf "%06d0000" $(( Chunk_end / 24 ))`
 
-if [[ -a srf${Chunk_restart_tag}.0001 ]]; then
+ls -1 *${Chunk_restart_tag}*
+if [[ $? == 0 ]]; then
    echo "finished chunk"
    touch finished_chunk_${chunk}
-   ls -l srf${Chunk_restart_tag}.*
 else
    echo "failed chunk"
    exit 1
@@ -209,12 +209,12 @@ fi
 mkdir -p NEMO_Restart_${chunk}
 
 ldp=`printf '%08d' $Chunk_end`
-mv ${EXPID}_${ldp}_restart*.nc NEMO_Restart_${chunk}
+mv *${ldp}* NEMO_Restart_${chunk}
 rm -f restart_*
 
 mkdir -p IFS_Restart_${chunk}
 
-mv srf${Chunk_restart_tag}.[0-9][0-9][0-9][0-9] \
+mv *${Chunk_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf*
 
