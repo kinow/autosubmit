@@ -62,6 +62,7 @@ if [[ ! -a %JOBNAME%.apost ]] ; then
  year=${nyearini}
  while [[ $nmon -le $RUN_chunk_size ]] ; do
       date
+      nmonthini=${nmonthini#0}
       month=$((nmonthini+(chunk-1)*RUN_chunk_size+nmon-1))
       year=$((nyearini+((month-1)/12)))
       month=$((month-((month-1)/12)*12))

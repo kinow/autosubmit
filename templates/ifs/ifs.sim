@@ -197,7 +197,7 @@ mkdir -p IFS_Restart_${chunk}
 
 mv *${Chunk_restart_tag}* \
    rcf IFS_Restart_${chunk}
-rm -f guarf* gxtrarf* srf* surf* tmrf*
+rm -f srf* guarf* gxtrarf* surf* tmrf*
 
 if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]] ; then
    rm -rf IFS_Restart_$((chunk-2))

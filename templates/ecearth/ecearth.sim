@@ -71,7 +71,8 @@ NEMO_config=`echo ${NEMO_resolution} | tr [a-z] [A-Z]`
 NEMO_nprocX=%NEMO_nprocX%
 NEMO_nprocY=%NEMO_nprocY%
 NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
-case %ICE_ini% in
+ICE_ini=%ICE_ini%
+case $ICE_ini in
   'GLORYS2V1' ) NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}.GLORYS ;;
   *) NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY} ;;
 esac
