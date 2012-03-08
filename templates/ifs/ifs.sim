@@ -60,6 +60,9 @@ NPRTRVIFS=%NPRTRVIFS%
 NPROMA=%NPROMA%
 WAM=%WAM%
 WAM=`echo $WAM | tr [:upper:] [:lower:]`
+CMIP5=%CMIP5%
+Nrcp=%Nrcp% # RCP value
+NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
 NHINCSOL=%NHINCSOL%
 IFS_exe=${ECEARTH}/bin/ifsMASTER
@@ -67,17 +70,12 @@ IFS_exe=${ECEARTH}/bin/ifsMASTER
 #
 # COMMON
 #
+RUN_coupFreq=%RUN_coupFreq% # Becomes NFRCO
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=3
 export DR_HOOK_IGNORE_SIGNALS='-1'
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
 export MBX_SIZE=%MBX_SIZE%
-
-CMIP5=%CMIP5%
-Nrcp=%Nrcp%
-RUN_coupFreq=%RUN_coupFreq% # Becomes NFRCO
-NFRP=%NFRP% # Frequency of postprocessing in hours
-ADVSCH=%ADVSCH% # Ocean advection scheme
 
 #
 # Chunk management
