@@ -17,24 +17,25 @@ START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 SAVEDDO=%SAVEDDO%
+
 #
 # Chunk Management
 #
 chunk=%CHUNK%
 Chunk_last=%Chunk_LAST%
-
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 
-# in days
+# In days
 Chunk_end_in_days=%Chunk_End_IN_DAYS%
-
-# in hours
-
-Chk_length=$(( ${Chunk_end_in_days} * 24 )) # In hours
+# In hours
+Chk_length=$((Chunk_end_in_days*24))
+day_prev_rst=%day_prev_rst%
+if [[ $day_prev_rst != '' ]]; then
+   Chk_length=$(($((Chunk_end_in_days+day_prev_rst))*24))
+fi
 Chunk_length=`printf '%08d' ${Chk_length}`
-
-# in months
+# In months
 RUN_chunk_size=%CHUNKSIZE%
 
 #
