@@ -112,7 +112,6 @@ else
  echo "Chunk_length: ${Chunk_length}"
  rm -f rcf
  ln -sf IFS_Restart_$((chunk-1))/* .
- ln -sf NEMO_Restart_$((chunk-1))/* .
  LFASTRES=TRUE
 fi
 
