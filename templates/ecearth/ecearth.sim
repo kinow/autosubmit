@@ -57,9 +57,8 @@ cd $RUN_dir
 IFS_resolution=%IFS_resolution%
 IFS_nproc=%IFS_nproc%
 NPRTRVIFS=%NPRTRVIFS%
-NPROMA=%NPROMA%
-WAM=%WAM%
-WAM=`echo $WAM | tr [:upper:] [:lower:]`
+NPROMA=40 # No need to change this
+WAM=false # No need to change this
 CMIP5=%CMIP5%
 Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
@@ -102,7 +101,7 @@ export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
-export MBX_SIZE=%MBX_SIZE%
+export MBX_SIZE=512000000 # No need to change this
 
 #
 # Chunk management

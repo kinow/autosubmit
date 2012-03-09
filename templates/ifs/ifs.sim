@@ -57,9 +57,8 @@ cd $RUN_dir
 IFS_resolution=%IFS_resolution%
 IFS_nproc=%IFS_nproc%
 NPRTRVIFS=%NPRTRVIFS%
-NPROMA=%NPROMA%
-WAM=%WAM%
-WAM=`echo $WAM | tr [:upper:] [:lower:]`
+NPROMA=40 # No need to change this
+WAM=false # No need to change this
 CMIP5=%CMIP5%
 Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
@@ -75,7 +74,7 @@ export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=3
 export DR_HOOK_IGNORE_SIGNALS='-1'
 export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definitions
-export MBX_SIZE=%MBX_SIZE%
+export MBX_SIZE=512000000 # No need to change this
 
 #
 # Chunk management
@@ -150,8 +149,6 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
      ;;
  esac
-
- fi
 
  ls -l
 
