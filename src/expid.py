@@ -250,4 +250,5 @@ if __name__ == "__main__":
 	os.mkdir(DB_DIR+exp_id+"/"+"pkl")
 	print "Creating plot directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"plot")
+	os.chmod(DB_DIR+exp_id+"/"+"plot",0o775)
 	print "Remember to MODIFY the config files!"
