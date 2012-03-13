@@ -20,9 +20,13 @@ EXPID=%EXPID%
 START_date=%SDATE%
 
 case $VERSION in
-     v3.1.2) ECEARTH=${ECEARTH_DIR}/v3.1.2
-             CTRLDIR=${ECEARTH_DIR}/v3.1.2/setup/ctrl
-             INIDATADIR=${ECEARTH_DIR}/v3.1.2/inidata
+     v3.1-r437) ECEARTH=${ECEARTH_DIR}/v3.1-r437
+                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r437/setup/ctrl
+                ini_data_dir=${ECEARTH_DIR}/v3.1-r437/inidata
+     ;;
+     v3.1-r593) ECEARTH=${ECEARTH_DIR}/v3.1-r593
+                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r593/setup/ctrl
+                ini_data_dir=${ECEARTH_DIR}/v3.1-r593/inidata
      ;;
 esac
 
@@ -39,27 +43,20 @@ cd $RUN_dir
 ifs_grid=%IFS_resolution%
 ifs_numproc=%IFS_nproc%
 ifs_exe_file=${ECEARTH}/bin/ifsmaster-eexcon
-
+cpl_freq_hrs=%RUN_coupFreq%
 nfrp=%NFRP%
 ifs_time_step_sec=3600
 ifs_output_freq=$(( nfrp * 3600 / ifs_time_step_sec ))
 ifs_di_freq=$(( 1 * 3600 / ifs_time_step_sec ))
-
-# More control over IFS domain decomposition:
-# ifs_nprgpns=32
-# ifs_nprgpew=32
-# ifs_nprtrw=289
-# ifs_nprtrv=4
-
 ifs_lastout=true
-llast=TRUE
 
 #
 # NEMO 
 #
 nem_grid=%NEMO_resolution%
+seaice=LIM2
 nem_numproc=%NEMO_nproc%
-nem_exe_file=${ECEARTH}/bin/nemo.exe
+nem_exe_file=${ECEARTH}/bin/nemo-${nem_grid}-${seaice}.exe
 nem_time_step_sec=3600
 lim_time_step_sec=3600
 advsch=%ADVSCH%
@@ -108,7 +105,7 @@ leg_end_sec=$(( Chunk_end * 3600 ))
 #
 # IFS climatology data
 #
-icmclfile=${INIDATADIR}/ifs/${ifs_grid}/climate/ICMCL
+icmclfile=${ini_data_dir}/ifs/${ifs_grid}/climate/ICMCL
 tempfile=tmp.$$
 
 # Create data for december, the year before the leg starts
@@ -168,13 +165,27 @@ fi
 if [[ ! -a finished_chunk_${chunk} ]]; then
 
    # IFS, NEMO, LIM namelist and OASIS namcouple files
-   . ${CTRLDIR}/namelist.ifs.sh   > fort.4
-   . ${CTRLDIR}/namelist.nemo.sh  > namelist
-   . ${CTRLDIR}/namelist.lim2.sh  > namelist_ice
-   . ${CTRLDIR}/namcouple.sh      > namcouple
+  . ${ctrl_file_dir}/namelist.ifs.sh   > fort.4
+  . ${ctrl_file_dir}/namelist.lim2.sh  > namelist_ice
+  . ${ctrl_file_dir}/namcouple.sh      > namcouple
 
-   # Split OASIS namcouple file
-   ${oas_namcut_script} ${oas_numproc} namcouple
+  case ${nem_grid} in
+          ORCA1L46)   . ${ctrl_file_dir}/namelist.nemo-orca1.sh    > namelist
+                      ;;
+          ORCA025L46) . ${ctrl_file_dir}/namelist.nemo-orca025.sh  > namelist
+                      ;;
+          *)          error "Unsupported grid type: ${nem_grid}"
+                      ;;
+  esac
+
+  # Split OASIS namcouple file (if necessary)
+  if (( oas_numproc == 1 )); then
+     ln -sf namcouple namcouple_0
+  elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]; then
+     ${oas_namcut_script} ${oas_numproc} namcouple
+  else
+     error "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
+  fi
 
    ls -l
 

@@ -230,4 +230,3 @@ if [[ $Chunk_last == TRUE && -a rest_$((chunk-1)) && -a out_$((chunk-1)) ]]; the
    tar -cvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}*
 
 fi
-
