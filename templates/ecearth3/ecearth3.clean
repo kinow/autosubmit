@@ -211,22 +211,17 @@ find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
-date
-
-#
-# Tail of the experiment
-#
 if [[ $Chunk_last == TRUE && -a rest_$((chunk-1)) && -a out_$((chunk-1)) ]]; then
-
-   echo "Delete ${RUN_dir}"
    cd $WRITINGDIR
+   echo "Delete ${RUN_dir}"
    rm -rf ${RUN_dir}
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/exp_${EXPID}_${START_date}_${MEMBER}_READY
-
-   echo "Save Log files at permanent storage"
-   cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
-   tar -cvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}*
-
 fi
+
+cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+echo "Save log files belong to this chunk at permanent storage"
+tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
+tar -rvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_{chunk}_*
+
+date

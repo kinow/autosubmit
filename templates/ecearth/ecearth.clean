@@ -217,20 +217,19 @@ fi
 find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
 find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
+touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+
 if [[ $Chunk_last == TRUE && -a rest_$((chunk-1)) && -a out_$((chunk-1)) ]] ; then
    cd $WRITINGDIR
-
    echo "We are now removing ${RUN_dir}"
    rm -rf ${RUN_dir}
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/exp_${EXPID}_${START_date}_${MEMBER}_READY
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
-
-   echo "We are now storing log files"
-   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
-   tar -cvf $PATHOUT/$tarfile %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/*${EXPID}_${START_date}_${MEMBER}*
-else
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
+
+cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+echo "We are now storing log files belong to this chunk"
+tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
+tar -rvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_{chunk}_*
 
 date
