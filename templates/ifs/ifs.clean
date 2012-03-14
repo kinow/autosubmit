@@ -192,6 +192,6 @@ fi
 cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 echo "We are now storing log files belong to this chunk"
 tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
-tar -rvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_{chunk}_*
+tar -rvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_${chunk}_*
 
 date
