@@ -77,8 +77,8 @@ NEMO_nprocX=%NEMO_nprocX%
 NEMO_nprocY=%NEMO_nprocY%
 NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
 NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}
-ICM_ini=%ICM_ini%
-if [[ $ICM_ini != '' ]]; then
+ICE_ini=%ICE_ini%
+if [[ $ICE_ini != '' ]]; then
    case $ICE_ini in
     'GLORYS2V1' ) NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}.GLORYS ;;
    esac
@@ -163,6 +163,7 @@ fi
 
 if [[ ! -a finished_chunk_${chunk} ]] ; then
 
+# setupifs.ksh
  case $VERSION in
      v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o .${Chunk_last}. -1 ${TESTDATADIR} -2 ${EXPID})
      ;;
@@ -178,24 +179,26 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      ;;
  esac
 
+# setupoasis.ksh
  if [[ ${OASIS3_oldWeights} == false ]] ; then
   ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
  else
   ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
  fi
-#
+
+# setupnemo.ksh
  if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" || $VERSION == "v2.2.1" || $VERSION == "v2.2.0" ]] ; then
-       if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-          ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
-       else
-          ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
-       fi
+    if [[ ${Chunk_last_day_prev} != '0' ]] ; then
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+    else
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+    fi
  else
-       if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-          ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
-       else
-          ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
-       fi
+    if [[ ${Chunk_last_day_prev} != '0' ]] ; then
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
+    else
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
+    fi
  fi
 
  ls -l

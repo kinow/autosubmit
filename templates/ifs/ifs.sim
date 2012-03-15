@@ -135,6 +135,7 @@ fi
 
 if [[ ! -a finished_chunk_${chunk} ]] ; then
 
+# setupifs.ksh
  case $VERSION in
      v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o .${Chunk_last}. -1 ${TESTDATADIR} -2 ${EXPID})
      ;;
