@@ -26,13 +26,12 @@ chunk=%CHUNK%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 Chunk_last=%Chunk_LAST%
-# in days
-Chunk_end_in_days=%Chunk_End_IN_DAYS%
-# in hours
-Chk_length=$(( ${Chunk_end_in_days} * 24 ))
-Chunk_length=`printf '%08d' ${Chk_length}`
-# in months
-RUN_chunk_size=%CHUNKSIZE%
+# In months
+RUN_months=%CHUNKSIZE%
+# In days
+RUN_days=%RUN_DAYS%
+# In hours
+RUN_hours=$((RUN_days*24))
 
 #
 # Output Path on HSM (permanent storage)
@@ -63,25 +62,17 @@ fi
 
 for REST in RESTA RESTO ; do
     case ${REST} in
-         RESTA) PATHSU="/IFS_Restart_${chunk}"
-                FILEPREF=""
+         RESTA) PATHSU="IFS_Restart_${chunk}"
+                FILEPREF="*"
          ;;
-         RESTO) PATHSU="/NEMO_Restart_${chunk}"
-                FILEPREF="${EXPID}_${Chunk_length}_restart"
+         RESTO) PATHSU="NEMO_Restart_${chunk}"
+                FILEPREF="*"
          ;;
     esac
-# 
-    if [[ ! -a ${REST}_${chunk} ]]; then
-       Basedir="${RUN_dir}${PATHSU}"
-       if [[ -d ${Basedir} ]]; then
-          ls -l ${Basedir}/${FILEPREF}*
-       else
-          exit 1
-       fi
 
        # Create and copy tar file
        tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-       tar -cvf $tarfile ${Basedir}/${FILEPREF}*
+       tar -cvf $tarfile ${RUN_dir}/${PATHSU}/${FILEPREF}
        cp $tarfile $PATHOUT_RES
 
        # Check target file

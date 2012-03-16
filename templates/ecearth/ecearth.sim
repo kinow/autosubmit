@@ -104,21 +104,25 @@ export LOCAL_DEFINITION_TEMPLATES=${ECEARTH}/sources/ifs/src/emos/local_definiti
 export MBX_SIZE=512000000 # No need to change this
 
 #
-# Chunk management
+# Chunk Management
 #
 chunk=%CHUNK%
+Chunk_start_date=%Chunk_START_DATE%
+Chunk_end_date=%Chunk_END_DATE%
+Chunk_last=%Chunk_LAST%
+# In months
+RUN_months=%CHUNKSIZE%
+# In days
+RUN_days=%RUN_DAYS%
+# In hours
+RUN_hours=$((RUN_days*24))
+# Last Day Previous
 day_prev=%PREV%
 day_prev_rst=%day_prev_rst%
 if [[ $day_prev_rst != '' ]]; then
- day_prev=$((day_prev+day_prev_rst))
+ day_prev=$((day_prev_rst+day_prev))
 fi
-# In days
-Chunk_start_date=%Chunk_START_DATE%
-Chunk_end_date=%Chunk_END_DATE%
-RUN_days=%RUN_DAYS%
-# In hours
-Chunk_length=$(( ${RUN_days} * 24 ))
-Chunk_last_day_prev=$(( ${day_prev} * 24 ))
+Chunk_last_day_prev=$((day_prev*24))
 
 #
 # Run Directory Initialization
@@ -127,13 +131,13 @@ if [[ $chunk == 1 ]] ; then
  rm -f ${RUN_dir}/anaisout
  rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "FIRST Chunk"
- echo "Chunk_length: ${Chunk_length}"
+ echo "Chunk_lenght: ${RUN_hours}"
  LFASTRES=FALSE
 else
  rm -f ${RUN_dir}/anaisout
  rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "Chunk: ${chunk}"
- echo "Chunk_length: ${Chunk_length}"
+ echo "Chunk_length: ${RUN_hours}"
  rm -f rcf
  ln -sf IFS_Restart_$((chunk-1))/* .
  ln -sf NEMO_Restart_$((chunk-1))/* .
@@ -165,37 +169,37 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 
 # setupifs.ksh
  case $VERSION in
-     v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o .${Chunk_last}. -1 ${TESTDATADIR} -2 ${EXPID})
+     v2.1)   EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -o .${Chunk_last}. -1 ${TESTDATADIR} -2 ${EXPID})
      ;;
-     v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}.)
+     v2.2.0) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}.)
      ;;
-     v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP})
+     v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP})
      ;;
-     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
      ;;
-     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+Chunk_length)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
      ;;
  esac
 
 # setupoasis.ksh
  if [[ ${OASIS3_oldWeights} == false ]] ; then
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
+  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
  else
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
+  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
  fi
 
 # setupnemo.ksh
  if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" || $VERSION == "v2.2.1" || $VERSION == "v2.2.0" ]] ; then
     if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
     else
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${Chunk_length} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
     fi
  else
     if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
     else
        ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
     fi
@@ -218,7 +222,7 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_end=$((Chunk_last_day_prev+Chunk_length))
+Chunk_end=$((Chunk_last_day_prev+RUN_hours))
 Chunk_restart_tag=`printf "%06d0000" $((Chunk_end/24))`
 
 ls -1 *${Chunk_restart_tag}*
@@ -250,7 +254,6 @@ rm -f srf* guarf* gxtrarf* surf* tmrf*
 #
 # Delete NEMO & IFS restart files (which has been stored correctly)
 #
-
 if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]] ; then
    rm -rf NEMO_Restart_$((chunk-2))
 fi

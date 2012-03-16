@@ -25,19 +25,13 @@ RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 chunk=%CHUNK%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-ATM_rstdate=%ATM_rstdate%
-if [[ $ATM_rstdate == '' ]] ; then 
-   ATM_rstdate=${START_date}
-fi
-nmonthini=`echo $ATM_rstdate | cut -c5-6`
-nyearini=`echo $ATM_rstdate | cut -c1-4`
-
-# in days
+Chunk_last=%Chunk_LAST%
+# In months
+RUN_months=%CHUNKSIZE%
+# In days
 RUN_days=%RUN_DAYS%
-# in hours
-Chunk_length=$(( ${RUN_days} * 24 )) # In hours
-# in months
-RUN_chunk_size=%CHUNKSIZE%
+# In hours
+RUN_hours=$((RUN_days*24))
 
 #
 # Output path on HSM
@@ -57,14 +51,20 @@ fi
 #
 # Compute atmospheric monthly means
 #
-if [[ ! -a %JOBNAME%.apost ]] ; then
+ATM_rstdate=%ATM_rstdate%
+if [[ $ATM_rstdate == '' ]] ; then 
+   ATM_rstdate=${START_date}
+fi
+nmonthini=`echo $ATM_rstdate | cut -c5-6`
+nyearini=`echo $ATM_rstdate | cut -c1-4`
 
+if [[ ! -a %JOBNAME%.apost ]] ; then
  nmon=1
  year=${nyearini}
- while [[ $nmon -le $RUN_chunk_size ]] ; do
+ while [[ $nmon -le $RUN_months ]] ; do
       date
       nmonthini=${nmonthini#0}
-      month=$((nmonthini+(chunk-1)*RUN_chunk_size+nmon-1))
+      month=$((nmonthini+(chunk-1)*RUN_months+nmon-1))
       year=$((nyearini+((month-1)/12)))
       month=$((month-((month-1)/12)*12))
       month=`printf '%02d' ${month}`

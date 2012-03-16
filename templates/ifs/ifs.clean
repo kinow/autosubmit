@@ -21,21 +21,15 @@ RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 # Chunk Management
 #
 chunk=%CHUNK%
-Chunk_last=%Chunk_LAST%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
-
-# In days
-Chunk_end_in_days=%Chunk_End_IN_DAYS%
-# In hours
-Chk_length=$((Chunk_end_in_days*24))
-day_prev_rst=%day_prev_rst%
-if [[ $day_prev_rst != '' ]]; then
-   Chk_length=$(($((Chunk_end_in_days+day_prev_rst))*24))
-fi
-Chunk_length=`printf '%08d' ${Chk_length}`
+Chunk_last=%Chunk_LAST%
 # In months
-RUN_chunk_size=%CHUNKSIZE%
+RUN_months=%CHUNKSIZE%
+# In days
+RUN_days=%RUN_DAYS%
+# In hours
+RUN_hours=$((RUN_days*24))
 
 #
 # Output path on HSM
@@ -66,43 +60,34 @@ fi
 
 for REST in RESTA ; do
     case ${REST} in
-         RESTA) PATHSU="/IFS_Restart_${chunk}"
-                FILEPREF=""
+         RESTA) PATHSU="IFS_Restart_${chunk}"
+                FILEPREF="*"
          ;;
-         RESTO) PATHSU="/NEMO_Restart_${chunk}"
-                FILEPREF="ORCA1_${Chunk_length}_restart"
+         RESTO) PATHSU="NEMO_Restart_${chunk}"
+                FILEPREF="*"
          ;;
     esac
-# 
-    if [[ ! -a ${REST}_${chunk} ]] ; then
-       Basedir="${RUN_dir}${PATHSU}"
-       if [[ -d ${Basedir} ]] ; then
-          ls -l ${Basedir}/${FILEPREF}*
-       else
-          exit 1
-    fi
 
 #
 # Create and copy tar file
 #
-     tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-     tar -cvf $tarfile ${Basedir}/${FILEPREF}*
-     cp $tarfile $PATHOUT_RES
+    tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+    tar -cvf $tarfile ${RUN_dir}/${PATHSU}/${FILEPREF}
+    cp $tarfile $PATHOUT_RES
 
 #
 # Check target file
 #
-     locfile=`md5sum ${tarfile}|cut -d" " -f1`
-     remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-     if [[ "$locfile" == "$remfile" ]] ; then
+    locfile=`md5sum ${tarfile}|cut -d" " -f1`
+    remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
+    if [[ "$locfile" == "$remfile" ]] ; then
        echo "The file has been correctly stored"
        touch ${RUN_dir}/${REST}_${chunk}
        rm -f $tarfile
-     else
+    else
        exit 1
-     fi
-     date
     fi
+    date
 done
 
 if [[ -a RESTA_${chunk} ]] ; then
@@ -168,6 +153,9 @@ if [[ $SAVEDD == TRUE ]] ; then
 fi
 #
 
+#
+# Tail of the chunk
+#
 cd $RUN_dir
 
 if [[  -a outa_$chunk ]] ; then

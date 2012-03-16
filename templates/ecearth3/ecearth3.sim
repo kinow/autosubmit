@@ -81,26 +81,31 @@ export GRIB_SAMPLES_PATH=%GRIBAPIPATH2_SAM%
 export GRIB_BIN_PATH=%GRIBAPIPATH2%
 
 #
-# Chunk management
+# Chunk Management
 #
 chunk=%CHUNK%
-day_prev=%PREV%
 Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
+Chunk_last=%Chunk_LAST%
 leg_start_date_yyyymmdd=$Chunk_start_date
 leg_start_date_yyyy=`echo $Chunk_start_date | cut -c1-4`
 leg_end_date_yyyy=`echo $Chunk_end_date | cut -c1-4`
-
-# in days
+# In days
 RUN_days=%RUN_DAYS%
-# in hours
-Chunk_length=$(( RUN_days * 24 ))
-Chunk_last_day_prev=$(( day_prev * 24 ))
-Chunk_end=$(( Chunk_last_day_prev + Chunk_length ))
-# in seconds
-leg_length_sec=$(( Chunk_length * 3600 ))
-leg_start_sec=$(( Chunk_last_day_prev * 3600 ))
-leg_end_sec=$(( Chunk_end * 3600 ))
+# In hours
+RUN_hours=$((RUN_days*24))
+# Last Day Previous
+day_prev=%PREV%
+day_prev_rst=%day_prev_rst%
+if [[ $day_prev_rst != '' ]]; then
+ day_prev=$((day_prev_rst+day_prev))
+fi
+Chunk_last_day_prev=$((day_prev*24))
+Chunk_end=$((Chunk_last_day_prev+RUN_hours))
+# In seconds
+leg_length_sec=$((RUN_hours*3600))
+leg_start_sec=$((Chunk_last_day_prev*3600))
+leg_end_sec=$((Chunk_end*3600))
 
 #
 # IFS climatology data
@@ -136,11 +141,11 @@ rm -f ${tempfile}
 # 
 if [[ $chunk == 1 ]]; then
    echo "FIRST Chunk"
-   echo "Chunk_length: ${Chunk_length}"
+   echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=false
 else
    echo "Chunk: ${chunk}"
-   echo "Chunk_length: ${Chunk_length}"
+   echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=true
    rm -f ${RUN_dir}/anaisout_*
    if [[ ! -d IFS_Restart_$((chunk-1)) && ! -d NEMO_Restart_$((chunk-1)) ]]; then
