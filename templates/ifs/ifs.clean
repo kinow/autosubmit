@@ -49,9 +49,9 @@ else
    exit
 fi
 
-###############################################################################
-#                               SAVE RESTARTS
-###############################################################################
+#
+# Save Restart Files
+#
 PATHOUT_RES="${PATHOUT}/restarts"
 
 if [[ ! -d ${PATHOUT_RES} ]] ; then
@@ -68,16 +68,12 @@ for REST in RESTA ; do
          ;;
     esac
 
-#
-# Create and copy tar file
-#
+    # Create and copy tar file
     tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
     tar -cvf $tarfile ${RUN_dir}/${PATHSU}/${FILEPREF}
     cp $tarfile $PATHOUT_RES
 
-#
-# Check target file
-#
+    # Check target file
     locfile=`md5sum ${tarfile}|cut -d" " -f1`
     remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
     if [[ "$locfile" == "$remfile" ]] ; then
@@ -106,17 +102,14 @@ if [[ ! -d ${PATHOUT_OUT} ]] ; then
    mkdir -p ${PATHOUT_OUT}
 fi   
 
-#############################################
-#
-########### Save Atmospheric files ##########
-#
-#############################################
 
+#
+# Save Atmospheric Output Files 
+#
+SAVEDD=%SAVEDD%
 tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
-#
 # Copying the monthly means (atmospheric daily data are in GRIB files)
-#
 tar -cvf ../$tarfile MMA_${EXPID}_*.nc.gz
 cp ../$tarfile $PATHOUT_OUT
 #
@@ -132,15 +125,12 @@ else
 fi
 date
 
-#
 # Copying the atmospheric daily data (GRIB files)
-#
-SAVEDD=%SAVEDD%
 if [[ $SAVEDD == TRUE ]] ; then
    for FILE in `ls ICM*grb` ; do
        cp $FILE ${PATHOUT_OUT}/.
        chmod 775 ${PATHOUT_OUT}/*
-#
+       #
        locfile=`md5sum ${FILE}|cut -d" " -f1`
        remfile=`md5sum ${PATHOUT_OUT}/${FILE}|cut -d" " -f1`
        if [[ "$locfile" == "$remfile" ]] ; then
@@ -151,12 +141,10 @@ if [[ $SAVEDD == TRUE ]] ; then
        fi
    done
 fi
-#
 
 #
 # Tail of the chunk
 #
-cd $RUN_dir
 
 if [[  -a outa_$chunk ]] ; then
    echo "We are now removing ${output_dir}"

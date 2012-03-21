@@ -89,10 +89,7 @@ RUN_months=%CHUNKSIZE%
 RUN_days=%RUN_DAYS%
 # In hours
 RUN_hours=$((RUN_days*24))
-
-#
 # Last Day Previous
-#
 day_prev=%PREV%
 day_prev_rst=%day_prev_rst%
 if [[ $day_prev_rst != '' ]]; then
