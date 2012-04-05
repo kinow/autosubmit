@@ -17,7 +17,6 @@ MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-SAVEDDO=%SAVEDDO%
 
 #
 # Chunk Management
@@ -60,7 +59,7 @@ if [[ ! -d ${PATHOUT_RES} ]]; then
    mkdir -p ${PATHOUT_RES}
 fi
 
-for REST in RESTA RESTO ; do
+for REST in RESTA RESTO; do
     case ${REST} in
          RESTA) PATHSU="IFS_Restart_${chunk}"
                 FILEPREF="*"
@@ -70,26 +69,25 @@ for REST in RESTA RESTO ; do
          ;;
     esac
 
-       # Create and copy tar file
-       tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-       tar -cvf $tarfile ${RUN_dir}/${PATHSU}/${FILEPREF}
-       cp $tarfile $PATHOUT_RES
+    # Create and copy tar file
+    tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+    tar -cvf $tarfile ${PATHSU}/${FILEPREF}
+    cp $tarfile $PATHOUT_RES
 
-       # Check target file
-       locfile=`md5sum ${tarfile}|cut -d" " -f1`
-       remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-       if [[ "$locfile" == "$remfile" ]] ; then
-          echo "${tarfile} file has been stored correctly"
-          touch ${RUN_dir}/${REST}_${chunk}
-          rm -f $tarfile
-       else
-          exit 1
-       fi
-     date
+    # Check target file
+    locfile=`md5sum ${tarfile}|cut -d" " -f1`
+    remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
+    if [[ "$locfile" == "$remfile" ]] ; then
+       echo "The file has been correctly stored"
+       touch ${RUN_dir}/${REST}_${chunk}
+       rm -f $tarfile
+    else
+       exit 1
     fi
+    date
 done
 
-if [[ -a RESTA_${chunk} && -a RESTO_${chunk} ]] ; then
+if [[ -a RESTA_${chunk} && -a RESTO_${chunk} ]]; then
    rm ${RUN_dir}/RESTA_${chunk} ${RUN_dir}/RESTO_${chunk}
    touch ${RUN_dir}/rest_${chunk}
 fi
@@ -104,7 +102,6 @@ fi
 # Save NEMO & IFS output files at permanent storage and clean disk
 #
 PATHOUT_OUT="${PATHOUT}/outputs"
-
 if [[ ! -d ${PATHOUT_OUT} ]]; then
    mkdir -p ${PATHOUT_OUT}
 fi   
@@ -112,6 +109,7 @@ fi
 #
 # Save Ocean files
 #
+SAVEDDO=%SAVEDDO%
 tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 touch ../$tarfile
 
@@ -150,6 +148,7 @@ date
 #
 # Save Atmospheric files
 #
+SAVEDD=%SAVEDD%
 tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
 # Copying the monthly means
@@ -169,12 +168,11 @@ fi
 date
 
 # Copying the daily data (GRIB files)
-SAVEDD=%SAVEDD%
 if [[ $SAVEDD == TRUE ]]; then
    for FILE in `ls ICM*grb` ; do
        cp $FILE ${PATHOUT_OUT}/.
        chmod 775 ${PATHOUT_OUT}/*
-#
+       #
        locfile=`md5sum ${FILE}|cut -d" " -f1`
        remfile=`md5sum ${PATHOUT_OUT}/${FILE}|cut -d" " -f1`
        if [[ "$locfile" == "$remfile" ]]; then
@@ -189,10 +187,8 @@ fi
 #
 # Tail of the chunk
 #
-cd $RUN_dir
-
 if [[ -a outo_$chunk && -a outa_$chunk ]]; then
-   echo "Delete ${output_dir}"
+   echo "We are now removing ${output_dir}"
    rm -rf ${output_dir} outo_$chunk outa_$chunk
    touch out_$chunk
 fi
@@ -202,17 +198,17 @@ find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
-if [[ $Chunk_last == TRUE && -a rest_$((chunk-1)) && -a out_$((chunk-1)) ]]; then
-   cd $WRITINGDIR
-   echo "Delete ${RUN_dir}"
-   rm -rf ${RUN_dir}
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/exp_${EXPID}_${START_date}_${MEMBER}_READY
+if [[ $Chunk_last == TRUE ]]; then
+   cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+   if [[ -a ${RUN_dir}/rest_$((chunk-1)) && -a ${RUN_dir}/out_$((chunk-1)) ]]; then
+      echo "We are now removing ${RUN_dir}"
+      rm -rf ${RUN_dir}
+      touch dir_${EXPID}_${START_date}_${MEMBER}_REMOVED
+      touch exp_${EXPID}_${START_date}_${MEMBER}_READY
+   fi
+   echo "We are now storing log files"
+   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar.gz"
+   tar -cvzf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_*
 fi
-
-cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-echo "Save log files belong to this chunk at permanent storage"
-tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar"
-tar -rvf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_${chunk}_*
 
 date
