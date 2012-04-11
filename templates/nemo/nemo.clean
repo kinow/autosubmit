@@ -147,11 +147,15 @@ listvars=( q2 qlw qsw t2 u10 v10 snow precip )
 type=%OCEAN_FORCTYPE%
 if [ %OCEAN_FORCYEAR% == -1 ] ; then
   for var in ${listvars[@]} ; do
+    case $var in
+      'u10'|'v10') midname=${MEMBER}_${type} ;;
+      *) midname=${type} ;;
+    esac
     if [[ -e ${var}_core_y$((RUN_year-2)).nc ]] ; then
       rm -f ${var}_core_y$((RUN_year-2)).nc
     fi
-    if [[ -e ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ]] ; then
-      cp ${PATHFORC}/${var}_${type}_$((FORCING_YEAR+3)).nc ${var}_core_y$((RUN_year+3)).nc
+    if [[ -e ${PATHFORC}/${var}_${midname}_$((FORCING_YEAR+3)).nc ]] ; then
+      cp ${PATHFORC}/${var}_${midname}_$((FORCING_YEAR+3)).nc ${var}_core_y$((RUN_year+3)).nc
     else
       cp ${var}_core_y$((RUN_year+2)).nc ${var}_core_y$((RUN_year+3)).nc
     fi

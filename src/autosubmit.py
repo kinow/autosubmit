@@ -20,7 +20,7 @@ from dir_config import LOCAL_ROOT_DIR
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
                     datefmt='%a, %d %b %Y %H:%M:%S',
-                    filename='myauto.log',
+                    filename='myauto'+sys.argv[1]+'.log',
                     filemode='w')
 logger = logging.getLogger("AutoLog")
 
