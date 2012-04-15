@@ -8,6 +8,7 @@
 #$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -V
+#$ -l h_rt=7200
 #$ -q serial.q
 #
 ###############################################################################
