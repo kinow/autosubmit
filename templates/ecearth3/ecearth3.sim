@@ -158,7 +158,7 @@ else
       exit 1
    fi
    ln -sf IFS_Restart_$((chunk-1))/* .
-   rm rcf; cp IFS_Restart_$((chunk-1))/rcf .
+   rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ns=$(printf %08d $(( leg_start_sec / nem_time_step_sec )))
    for n in $(seq 0 $((nem_numproc-1))); do
        np=$(printf %04d ${n})

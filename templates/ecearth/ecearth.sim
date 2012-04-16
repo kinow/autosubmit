@@ -138,8 +138,8 @@ else
  rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "Chunk: ${chunk}"
  echo "Chunk_length: ${RUN_hours}"
- rm -f rcf
  ln -sf IFS_Restart_$((chunk-1))/* .
+ rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
  ln -sf NEMO_Restart_$((chunk-1))/* .
  LFASTRES=TRUE
 fi
