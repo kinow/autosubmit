@@ -6,6 +6,7 @@ import logging
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
+from queue.psqueue import PsQueue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
@@ -62,8 +63,8 @@ if __name__ == "__main__":
 	   queue = HtQueue(expid)
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
-	   serialQueue = LgQueue(expid)
-	   serialQueue.set_host("lindgren")
+	   serialQueue = PsQueue(expid)
+	   serialQueue.set_host("ellen")
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
 

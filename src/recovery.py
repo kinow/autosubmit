@@ -9,6 +9,7 @@ from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
 from queue.lgqueue import LgQueue
+from queue.psqueue import PsQueue
 from sys import setrecursionlimit
 
 if __name__ == '__main__':
@@ -33,7 +34,7 @@ if __name__ == '__main__':
 			queue = ItQueue(expid)
 		elif sc == 'l':
 			## in lindgren arch must set-up both serial and parallel queues
-			serialQueue = LgQueue(expid)
+			serialQueue = PsQueue(expid)
 			parallelQueue = LgQueue(expid)
 
 		for job in l1.get_active():
