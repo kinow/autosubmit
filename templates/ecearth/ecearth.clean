@@ -200,7 +200,8 @@ if [[ $Chunk_last == TRUE ]]; then
       touch exp_${EXPID}_${START_date}_${MEMBER}_READY
    fi
    echo "We are now storing log files"
-   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}.tar.gz"
+   stamp=`date +%Y%m%d_%H%M`
+   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}_${stamp}.tar.gz"
    tar -cvzf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_*
 fi
 
