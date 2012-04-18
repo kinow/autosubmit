@@ -131,7 +131,7 @@ if [[ $chunk == 1 ]] ; then
  rm -f ${RUN_dir}/anaisout
  rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
  echo "FIRST Chunk"
- echo "Chunk_lenght: ${RUN_hours}"
+ echo "Chunk_length: ${RUN_hours}"
  LFASTRES=FALSE
 else
  rm -f ${RUN_dir}/anaisout

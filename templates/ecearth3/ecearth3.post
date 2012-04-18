@@ -107,16 +107,16 @@ if [[ ! -a %JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-	          cp ${file} $tmp_output_dir
-	          cd $tmp_output_dir
+              cp ${file} $tmp_output_dir
+              cd $tmp_output_dir
               cp ${file} ${file}.tmp
               case $type in
                SH) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f7 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # tested with grib_api
                GG) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f6 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # version 1.9.9
               esac
               for PAR in $PARS; do
-                  if [[ $PAR == 133.128 || $PAR == 152.128 || \
-                        $PAR == 246.128 || $PAR == 247.128 || $PAR == 248.128 ]]; then
+                  if [[ $PAR == 133.128 || $PAR == 152.128 || $PAR == 246.128 || \
+                        $PAR == 247.128 || $PAR == 248.128 ]]; then
                      rm -f ${PAR}.grb
                      grib_copy -w param=${PAR} ${file}.tmp ${PAR}.grb
                      if [[ $PAR == 152.128 ]]; then
