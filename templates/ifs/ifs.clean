@@ -147,6 +147,7 @@ fi
 #
 # Tail of the chunk
 #
+cd $RUN_dir
 if [[  -a outa_$chunk ]]; then
    echo "We are now removing ${output_dir}"
    rm -rf ${output_dir} outa_$chunk
