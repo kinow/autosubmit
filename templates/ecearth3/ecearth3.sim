@@ -28,6 +28,10 @@ case $VERSION in
                 ctrl_file_dir=${ECEARTH_DIR}/v3.1-r593/setup/ctrl
                 ini_data_dir=${ECEARTH_DIR}/v3.1-r593/inidata
      ;;
+     v3.1-r650) ECEARTH=${ECEARTH_DIR}/v3.1-r650
+                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r650/setup/ctrl
+                ini_data_dir=${ECEARTH_DIR}/v3.1-r650/inidata
+     ;;
 esac
 
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
@@ -42,22 +46,39 @@ cd $RUN_dir
 #
 ifs_grid=%IFS_resolution%
 ifs_numproc=%IFS_nproc%
+nprtrv=%NPRTRVIFS%
 ifs_exe_file=${ECEARTH}/bin/ifsmaster-eexcon
-cpl_freq_hrs=%RUN_coupFreq%
 nfrp=%NFRP%
-ifs_time_step_sec=3600
+case ${ifs_grid} in
+     T159L*)  ifs_time_step_sec=3600
+     ;;
+     T255L*)  ifs_time_step_sec=2700
+     ;;
+     T799L*)  ifs_time_step_sec=720
+     ;;
+     *) error "Unsupported grid type: ${ifs_grid}"
+     ;;
+esac
 ifs_output_freq=$(( nfrp * 3600 / ifs_time_step_sec ))
 ifs_di_freq=$(( 1 * 3600 / ifs_time_step_sec ))
+ifs_ddh_freq=$(( 1 * 3600 / ifs_time_step_sec ))
 ifs_lastout=true
 
 #
 # NEMO 
 #
 nem_grid=%NEMO_resolution%
-seaice=LIM2
+seaice=lim2
 nem_numproc=%NEMO_nproc%
 nem_exe_file=${ECEARTH}/bin/nemo-${nem_grid}-${seaice}.exe
-nem_time_step_sec=3600
+case ${nem_grid} in
+     ORCA1L46)   nem_time_step_sec=3600
+     ;;
+     ORCA025L46) nem_time_step_sec=1200
+     ;;
+     *) error "Unsupported grid type: ${nem_grid}"
+    ;;
+esac
 lim_time_step_sec=3600
 advsch=%ADVSCH%
 
@@ -66,13 +87,13 @@ advsch=%ADVSCH%
 #
 oas_numproc=%OASIS_nproc%
 oas_exe_file=${ECEARTH}/bin/oasis3.MPI1.x
-cpl_freq_hrs=%RUN_coupFreq%
 oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
 
 #
 # COMMON
 #
 exp_name=$EXPID
+cpl_freq_hrs=%RUN_coupFreq%
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
@@ -108,45 +129,18 @@ leg_start_sec=$((Chunk_last_day_prev*3600))
 leg_end_sec=$((Chunk_end*3600))
 
 #
-# IFS climatology data
-#
-icmclfile=${ini_data_dir}/ifs/${ifs_grid}/climate/ICMCL
-tempfile=tmp.$$
-
-# Create data for december, the year before the leg starts
-grib_set \
--s dataDate=$(printf "%04d" $((leg_start_date_yyyy-1)))1215 ${icmclfile}-12 \
-                                                            ICMCL${EXPID}INIT
-
-# Create data for all month in the years of the leg
-for (( y=${leg_start_date_yyyy}; y<=${leg_end_date_yyyy}; y++ )); do
-    yy=$(printf "%04d" $y)
-    for m in $(seq 1 12); do
-        mm=$(printf "%02d" $m)
-        grib_set -s dataDate=${yy}${mm}15 ${icmclfile}-${mm} ${tempfile}
-        cat ${tempfile} >> ICMCL${EXPID}INIT
-    done
-done
-
-# Create data for january, the year after the leg ends
-grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
-                                                                          ${tempfile}
-cat ${tempfile} >> ICMCL${EXPID}INIT
-
-# Clean up
-rm -f ${tempfile}
-
-#
 # Run Directory Initialization
 # 
 if [[ $chunk == 1 ]]; then
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=false
+   rstctl=0 # need to set 1; if nemo is being started from rest
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=true
+   rstctl=2 # need to set 1; if nemo is being started from rest
    rm -f ${RUN_dir}/anaisout_*
    if [[ ! -d IFS_Restart_$((chunk-1)) && ! -d NEMO_Restart_$((chunk-1)) ]]; then
       rm finished_chunk_${chunk}
@@ -169,48 +163,90 @@ fi
 
 if [[ ! -a finished_chunk_${chunk} ]]; then
 
-   # IFS, NEMO, LIM namelist and OASIS namcouple files
-  . ${ctrl_file_dir}/namelist.ifs.sh   > fort.4
-  . ${ctrl_file_dir}/namelist.lim2.sh  > namelist_ice
-  . ${ctrl_file_dir}/namcouple.sh      > namcouple
+#
+# Create some control files
+#
 
-  case ${nem_grid} in
-          ORCA1L46)   . ${ctrl_file_dir}/namelist.nemo-orca1.sh    > namelist
-                      ;;
-          ORCA025L46) . ${ctrl_file_dir}/namelist.nemo-orca025.sh  > namelist
-                      ;;
-          *)          error "Unsupported grid type: ${nem_grid}"
-                      ;;
-  esac
+# IFS, NEMO, LIM namelist and OASIS namcouple files
+. ${ctrl_file_dir}/namelist.ifs.sh   > fort.4
+. ${ctrl_file_dir}/namelist.${seaice}.sh  > namelist_ice
+. ${ctrl_file_dir}/namcouple.sh      > namcouple
 
-  # Split OASIS namcouple file (if necessary)
-  if (( oas_numproc == 1 )); then
-     ln -sf namcouple namcouple_0
-  elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]; then
-     ${oas_namcut_script} ${oas_numproc} namcouple
-  else
-     error "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
-  fi
+case ${nem_grid} in
+        ORCA1L46)   . ${ctrl_file_dir}/namelist.nemo-orca1.sh    > namelist
+                    ;;
+        ORCA025L46) . ${ctrl_file_dir}/namelist.nemo-orca025.sh  > namelist
+                    ;;
+        *)          error "Unsupported grid type: ${nem_grid}"
+                    ;;
+esac
 
-   ls -l
+# Split OASIS namcouple file (if necessary)
+if (( oas_numproc == 1 ))
+then
+    ln -s namcouple namcouple_0
+elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]
+then
+    ${oas_namcut_script} ${oas_numproc} namcouple
+else
+    error "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
+fi
 
-   #
-   # Location of the executables
-   # 
-   ln -sf ${ifs_exe_file}
-   ln -sf ${nem_exe_file}
-   ln -sf ${oas_exe_file}
-   %PARALLEL_RUN_ECEARTH3%
+#
+# IFS climatology data
+#
+icmclfile=${ini_data_dir}/ifs/${ifs_grid}/climate/ICMCL
+tempfile=tmp.$$
 
-   date
+# Create data for december, the year before the leg starts
+grib_set \
+-s dataDate=$(printf "%04d" $((leg_start_date_yyyy-1)))1215 ${icmclfile}-12 \
+                                                       ICMCL${exp_name}INIT
+
+# Create data for all month in the years of the leg
+for (( y=${leg_start_date_yyyy} ; y<=${leg_end_date_yyyy} ; y++ ))
+do
+    yy=$(printf "%04d" $y)
+    for m in {1..12}
+    do
+        mm=$(printf "%02d" $m)
+        grib_set -s dataDate=${yy}${mm}15 ${icmclfile}-${mm} ${tempfile}
+        cat ${tempfile} >> ICMCL${exp_name}INIT
+    done
+done
+
+# Create data for january, the year after the leg ends
+grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
+                                                                          ${tempfile}
+cat ${tempfile} >> ICMCL${exp_name}INIT
+
+# Clean up
+rm -f ${tempfile}
+
+#
+# Location of the executables
+# 
+ ln -sf ${ifs_exe_file}
+ ln -sf ${nem_exe_file}
+ ln -sf ${oas_exe_file}
+
+#
+# Model Run
+#
+ ls -l
+ date
+%PARALLEL_RUN_ECEARTH3%
+
+ date
 fi
 
 #
 # Check either simulation completed successfully or not
 #
-Chunk_restart_tag=`printf "%06d0000" $(( Chunk_end / 24 ))`
+Chunk_atm_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
+Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
 
-ls -1 *${Chunk_restart_tag}*
+ls -1 *${Chunk_atm_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
    touch finished_chunk_${chunk}
@@ -223,21 +259,17 @@ fi
 # Save NEMO & IFS restart files
 #
 mkdir -p NEMO_Restart_${chunk}
-
-ldp=`printf '%08d' $Chunk_end`
-mv *${ldp}* NEMO_Restart_${chunk}
+mv *${Chunk_nem_restart_tag}* NEMO_Restart_${chunk}
 rm -f restart_*
 
 mkdir -p IFS_Restart_${chunk}
-
-mv *${Chunk_restart_tag}* \
+mv *${Chunk_atm_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf*
 
 #
 # Delete NEMO & IFS restart files (which has been stored correctly)
 #
-
 if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]]; then
  rm -rf NEMO_Restart_$((chunk-2))
 fi
@@ -249,12 +281,10 @@ fi
 #
 # Save NEMO & IFS output for postprocessing
 #
-output_dir=${RUN_dir}/Output_${chunk}
-mkdir -p $output_dir
+mkdir -p Output_${chunk}
+mv ${EXPID}_??_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
-mv ${EXPID}_??_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir
-
-chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} $output_dir
+chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
