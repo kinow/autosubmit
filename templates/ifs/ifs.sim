@@ -96,24 +96,25 @@ if [[ $day_prev_rst != '' ]]; then
  day_prev=$((day_prev_rst+day_prev))
 fi
 Chunk_last_day_prev=$((day_prev*24))
+Chunk_end=$((Chunk_last_day_prev+RUN_hours))
 
 #
 # Run Directory Initialization
 # 
-if [[ $chunk == 1 ]] ; then
- rm -f ${RUN_dir}/anaisout
- rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
- echo "FIRST Chunk"
- echo "Chunk_length: ${RUN_hours}"
- LFASTRES=FALSE
+if [[ $chunk == 1 ]]; then
+   rm -f ${RUN_dir}/anaisout
+   rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+   echo "FIRST Chunk"
+   echo "Chunk_length: ${RUN_hours}"
+   LFASTRES=FALSE
 else
- rm -f ${RUN_dir}/anaisout
- rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
- echo "Chunk: ${chunk}"
- echo "Chunk_length: ${RUN_hours}"
- ln -sf IFS_Restart_$((chunk-1))/* .
- rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
- LFASTRES=TRUE
+   rm -f ${RUN_dir}/anaisout
+   rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+   echo "Chunk: ${chunk}"
+   echo "Chunk_length: ${RUN_hours}"
+   ln -sf IFS_Restart_$((chunk-1))/* .
+   rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
+   LFASTRES=TRUE
 fi
 
 #
@@ -162,18 +163,22 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 # 
  IFS_exe="${IFS_exe}"
 
+#
+# Model Run
+#
+ ls -l
+ date
 %PARALLEL_RUN_IFS%
 
-date
+ date
 fi
 
 #
 # Check either simulation completed successfully or not
 #
-Chunk_end=$((Chunk_last_day_prev+RUN_hours))
-Chunk_restart_tag=`printf "%06d0000" $((Chunk_end/24))`
+Chunk_atm_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
-ls -1 *${Chunk_restart_tag}*
+ls -1 *${Chunk_atm_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
    touch finished_chunk_${chunk}
@@ -187,7 +192,7 @@ fi
 #
 mkdir -p IFS_Restart_${chunk}
 
-mv *${Chunk_restart_tag}* \
+mv *${Chunk_atm_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf* guarf* gxtrarf* surf* tmrf*
 
@@ -195,18 +200,17 @@ rm -f srf* guarf* gxtrarf* surf* tmrf*
 # Delete IFS restart files (which has been stored correctly)
 #
 
-if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]] ; then
-   rm -rf IFS_Restart_$((chunk-2))
+if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]]; then
+ rm -rf IFS_Restart_$((chunk-2))
 fi
 
 #
 # Save IFS output for postprocessing
 #
-output_dir=${RUN_dir}/Output_${chunk}
-mkdir -p $output_dir
-mv ICMGG${EXPID}+* ICMSH${EXPID}+* $output_dir
+mkdir -p Output_${chunk}
+mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
-chmod 775 -R IFS_Restart_${chunk} $output_dir
+chmod 775 -R IFS_Restart_${chunk} Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
