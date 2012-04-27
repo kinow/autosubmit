@@ -111,6 +111,8 @@ Chunk_last=%Chunk_LAST%
 leg_start_date_yyyymmdd=$Chunk_start_date
 leg_start_date_yyyy=`echo $Chunk_start_date | cut -c1-4`
 leg_end_date_yyyy=`echo $Chunk_end_date | cut -c1-4`
+# In months
+RUN_months=%CHUNKSIZE%
 # In days
 RUN_days=%RUN_DAYS%
 # In hours
@@ -142,15 +144,6 @@ else
    leg_is_restart=true
    rstctl=2 # need to set 1; if nemo is being started from rest
    rm -f ${RUN_dir}/anaisout_*
-   if [[ ! -d IFS_Restart_$((chunk-1)) && ! -d NEMO_Restart_$((chunk-1)) ]]; then
-      rm finished_chunk_${chunk}
-      # adopt some mechanism to copy respective restart
-      # files if available at permanent storage.
-      # Even if not available at permanent storage then exit
-      # with the following message.
-      echo "respective restart files does not exist ????"
-      exit 1
-   fi
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ns=$(printf %08d $(( leg_start_sec / nem_time_step_sec )))
@@ -243,10 +236,10 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_atm_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
+Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
-ls -1 *${Chunk_atm_restart_tag}*
+ls -1 *${Chunk_ifs_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
    touch finished_chunk_${chunk}
@@ -260,10 +253,10 @@ fi
 #
 mkdir -p NEMO_Restart_${chunk}
 mv *${Chunk_nem_restart_tag}* NEMO_Restart_${chunk}
-rm -f restart_*
+rm -f restart*
 
 mkdir -p IFS_Restart_${chunk}
-mv *${Chunk_atm_restart_tag}* \
+mv *${Chunk_ifs_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf*
 
@@ -271,7 +264,7 @@ rm -f srf*
 # Delete NEMO & IFS restart files (which has been stored correctly)
 #
 if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]]; then
- rm -rf NEMO_Restart_$((chunk-2))
+   rm -rf NEMO_Restart_$((chunk-2))
 fi
 
 if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]]; then

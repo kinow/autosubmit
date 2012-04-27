@@ -136,7 +136,7 @@ if [[ ! -a %JOBNAME%.apost ]]; then
               cdo -R -r -t ecmwf -f nc splitvar ${file}.tmp ${file}_
               ls -l ${file}_*.nc
               rm -f ${file}.tmp ${file}.tmp2
-#
+              #
               date
               for infile in `ls ${file}_*.nc`; do
                   name=`basename $infile .nc`

@@ -176,9 +176,9 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_atm_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
+Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
-ls -1 *${Chunk_atm_restart_tag}*
+ls -1 *${Chunk_ifs_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
    touch finished_chunk_${chunk}
@@ -191,15 +191,13 @@ fi
 # Save IFS restart files
 #
 mkdir -p IFS_Restart_${chunk}
-
-mv *${Chunk_atm_restart_tag}* \
+mv *${Chunk_ifs_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf* guarf* gxtrarf* surf* tmrf*
 
 #
 # Delete IFS restart files (which has been stored correctly)
 #
-
 if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]]; then
  rm -rf IFS_Restart_$((chunk-2))
 fi
