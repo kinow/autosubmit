@@ -170,7 +170,7 @@ class JobList:
 	
 	def save(self):
 		# URi: should we check that the path exists?
-		setrecursionlimit(10000)
+		setrecursionlimit(50000)
 		print "Saving JobList: " + self._pkl_path + self._job_list_file
 		pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
 	

@@ -19,7 +19,8 @@ START_date_1=%DAY_BEFORE%
 WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
 NEMODIR=%MODELS_DIR%/nemo/${VERSION}-orca1
-TESTDATADIR=${NEMODIR}/inidata
+CON_FILES=${NEMODIR}/inidata
+PATHCOMMONOCEANDIAG=${NEMODIR}/inidata
 rebuild_tool=$NEMODIR/bin/rebuild
 #
 # Chunk Management
@@ -73,10 +74,7 @@ done
 #                         Select some outputs to save                          #
 ################################################################################
 #
-ln -sf ${TESTDATADIR}/mesh_mask_nemo.${VERSION}.nc mesh_hgr.nc
-ln -sf ${TESTDATADIR}/mesh_mask_nemo.${VERSION}.nc mesh_zgr.nc
-ln -sf ${TESTDATADIR}/mesh_mask_nemo.${VERSION}.nc mask.nc
-ln -sf ${TESTDATADIR}/new_maskglo.nc new_maskglo.nc
+source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 
 if [ %OCEAN_REDUCOUT% == 'TRUE' ] ; then
 list1=""
@@ -90,53 +88,32 @@ list8=""
 list9=""
 fixname=${EXPID}_${MEMBER}_${START_date}_${Chunk_start_date}_${Chunk_end_date}
 
-for jt in $(seq 1 1 ${ntimesteps}); do  
+for ((jt=1;jt<=${ntimesteps};jt++)); do  
 
-   ncks -O -v sosstsst,sosaline,somixhgt,somxl010 timestep_${jt}_${prefix}_grid_T.nc sstsimld_${fixname}_${jt}.nc
-   ncks -O -v isnowthi,iicethic,ileadfra,iicetemp timestep_${jt}_${prefix}_icemod.nc ice_${fixname}_${jt}.nc
-   ncks -O -v votemper timestep_${jt}_${prefix}_grid_T.nc t3d_${fixname}_${jt}.nc
-   list7=${list7}" "sstsimld_${fixname}_${jt}.nc
-   list8=${list8}" "ice_${fixname}_${jt}.nc
-   list9=${list9}" "t3d_${fixname}_${jt}.nc
+  reduce_mmo timestep_${jt}_${prefix}_grid_T.nc timestep_${jt}_${prefix}_icemod.nc ${fixname}_${jt}.nc
+  list7=${list7}" "sstsimld_${fixname}_${jt}.nc
+  list8=${list8}" "ice_${fixname}_${jt}.nc
+  list9=${list9}" "t3d_${fixname}_${jt}.nc
 #
 ################################################################################
 #               Compute vertically averaged heat and salt content              #
 ################################################################################
-#
-  cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 0 300
-  ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc vertmean.nc
-  mv vertmean.nc ${prefix}_sal_0-300m_$jt.nc
+
+  vertmeansal timestep_${jt}_${prefix}_grid_T.nc 0 300 ${prefix}_sal_0-300m_${jt}.nc
   list1=${list1}" "${prefix}_sal_0-300m_$jt.nc
   #
-  cdfvertmean timestep_${jt}_${prefix}_grid_T.nc vosaline T 300 5400
-  ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc vertmean.nc
-  mv vertmean.nc ${prefix}_sal_300-5400m_$jt.nc
+  vertmeansal timestep_${jt}_${prefix}_grid_T.nc 300 5400 ${prefix}_sal_300-5400m_${jt}.nc
   list2=${list2}" "${prefix}_sal_300-5400m_$jt.nc
   #
-  cdfmxlhcsc timestep_${jt}_${prefix}_grid_T.nc density 0.01
-  ncrename -O -d time_counter,time -v time_counter,time mxlhcsc.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_T.nc mxlhcsc.nc
-  mv mxlhcsc.nc ${prefix}_heat_sal_mxl_$jt.nc
+  heat_sal_mxl timestep_${jt}_${prefix}_grid_T.nc ${prefix}_heat_sal_mxl_${jt}.nc
   list3=${list3}" "${prefix}_heat_sal_mxl_$jt.nc
   #
-  cdfmoc timestep_${jt}_${prefix}_grid_V.nc
-  ncrename -O -d time_counter,time -v time_counter,time moc.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_V.nc moc.nc
-  mv moc.nc ${prefix}_moc_$jt.nc
+  moc timestep_${jt}_${prefix}_grid_V.nc ${prefix}_moc_${jt}.nc ${prefix}_moc_${jt}.nc
   list4=${list4}" "${prefix}_moc_$jt.nc
   #
-  cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc
-  ncrename -O -v sobarstf,sobarstfu -d time_counter,time -v time_counter,time psi.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_U.nc psi.nc
-  mv psi.nc ${prefix}_psi_U_$jt.nc
-  cdfpsi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc V
-  ncrename -O -v sobarstf,sobarstfv -d time_counter,time -v time_counter,time psi.nc
-  ncks -A -v time timestep_${jt}_${prefix}_grid_U.nc psi.nc
-  mv psi.nc ${prefix}_psi_V_$jt.nc
-  list5=${list5}" "${prefix}_psi_U_$jt.nc
-  list6=${list6}" "${prefix}_psi_V_$jt.nc
+  psi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc ${prefix}_${jt}
+  list5=${list5}" "psi_U_${prefix}_$jt.nc
+  list6=${list6}" "psi_V_${prefix}_$jt.nc
   #
 done
 

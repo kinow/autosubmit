@@ -111,18 +111,20 @@ if [[ ${chunk} > 1 ]] ; then
   if [[ -e restart.nc ]] ; then
     rm -f restart.nc restart_ice.nc
   fi
-  for ((l=0; l<$NEMO_nproc; l++)); do
+fi
+for ((l=0; l<$NEMO_nproc; l++)); do
+  if [[ ${chunk} > 1 ]] ; then
     ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_$(printf "%04d" $l).nc restart_$(printf "%04d" $l).nc
     ln -sf ORCA1_$(printf "%08d" ${Chunk_last_day_prev})_restart_ice_$(printf "%04d" $l).nc restart_ice_$(printf "%04d" $l).nc
-    ldp=$((Chunk_last_day_prev + 24))
-    while [[ $ldp -le $((Chunk_last_day_prev+Chunk_length)) ]] ; do
-      if [[ -e ORCA1_$(printf "%08d" $ldp)_restart_0000.nc ]] ; then
-        rm -f ORCA1_$(printf "%08d" $ldp)_restart*nc
-      fi
-      ldp=$((ldp + 24))
-    done
-  done
-fi
+  fi
+done
+ldp=$((Chunk_last_day_prev + 24))
+while [[ $ldp -le $((Chunk_last_day_prev+Chunk_length)) ]] ; do
+  if [[ -e ORCA1_$(printf "%08d" $ldp)_restart_0000.nc ]] ; then
+    rm -f ORCA1_$(printf "%08d" $ldp)_restart*nc
+  fi
+  ldp=$((ldp + 24))
+done
 #
 ################################################################################
 #
