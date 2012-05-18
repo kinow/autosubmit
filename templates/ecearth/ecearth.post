@@ -5,7 +5,7 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/ecearth
+ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 PATH=%CDOPATH%:${PATH}
 PATH=%GRIBAPIPATH%:${PATH}
 
@@ -16,7 +16,7 @@ VERSION=%VERSION%
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 SAVEDDO=%SAVEDDO%
 
@@ -38,7 +38,7 @@ RUN_hours=$((RUN_days*24))
 # Model output path w.r.t chunk number
 #
 output_dir=${RUN_dir}/Output_${chunk}
-tmp_output_dir=%SCRATCH_TMP_DIR%/${USER}/%JOBNAME%
+tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
 find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
 

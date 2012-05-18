@@ -7,7 +7,7 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/ecearth
+ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 
 #
 # Model Configuration
@@ -44,7 +44,8 @@ case $VERSION in
 esac
 
 PATH=${SCRIPTDIR}:${PATH}
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+BINPATH=${WRITINGDIR}/bin
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 
@@ -64,7 +65,7 @@ Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
 NHINCSOL=%NHINCSOL%
-IFS_exe=${ECEARTH}/bin/ifsMASTER
+IFS_exe=${BINPATH}/ifsMASTER
 
 #
 # NEMO 
@@ -76,11 +77,11 @@ ADVSCH=%ADVSCH% # Ocean advection scheme
 NEMO_nprocX=%NEMO_nprocX%
 NEMO_nprocY=%NEMO_nprocY%
 NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
-NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}
+NEMO_exe=${BINPATH}/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}
 ICE_ini=%ICE_ini%
 if [[ $ICE_ini != '' ]]; then
    case $ICE_ini in
-    'GLORYS2V1' ) NEMO_exe=${ECEARTH}/bin/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}.GLORYS ;;
+    'GLORYS2V1' ) NEMO_exe=${BINPATH}/opa_exe.${NEMO_config}_OASIS3.${NEMO_nprocX}.${NEMO_nprocY}.GLORYS ;;
    esac
 fi
 SAVEDDO=%SAVEDDO%
@@ -91,7 +92,7 @@ SAVEDDO=%SAVEDDO%
 OASIS3_oldWeights=true
 OASIS3_weightsDir=${TESTDATADIR}/oasis3/weights/big_endian/${IFS_resolution}_${NEMO_resolution}
 OASIS_nproc=%OASIS_nproc%
-OASIS3_exe=${ECEARTH}/bin/oasis3.MPI1.x
+OASIS3_exe=${BINPATH}/oasis3.MPI1.x
 
 #
 # COMMON

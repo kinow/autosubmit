@@ -14,8 +14,9 @@ VERSION=%VERSION%
 MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
-NEMODIR=%MODELS_DIR%/nemo/${VERSION}
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+NEMODIR=%MODELS_DIR%/%MODEL%/${VERSION}
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+BINPATH=${WRITINGDIR}/bin
 RUN_dir=${WRITINGDIR}/${MEMBER}
 NEMO_nproc=`echo %NEMO_nprocX%*%NEMO_nprocY% | bc`
 #
@@ -150,7 +151,7 @@ if [ ${VERSION} == v3.2 ] ; then
 else
   NEMO_exe=nemo.exe
 fi
-cp $NEMODIR/bin/${NEMO_exe} ${NEMO_exe} 
+cp $BINPATH/${NEMO_exe} ${NEMO_exe}
 chmod 770 ${NEMO_exe}
 
 %PARALLEL_RUN_NEMO%

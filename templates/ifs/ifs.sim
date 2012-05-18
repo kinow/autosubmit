@@ -7,7 +7,7 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/ecearth
+ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 
 #
 # Model Configuration
@@ -44,7 +44,8 @@ case $VERSION in
 esac
 
 PATH=${SCRIPTDIR}:${PATH}
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+BINPATH=${WRITINGDIR}/bin
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 
@@ -64,7 +65,7 @@ Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
 NHINCSOL=%NHINCSOL%
-IFS_exe=${ECEARTH}/bin/ifsMASTER
+IFS_exe=${BINPATH}/ifsMASTER
 
 #
 # COMMON

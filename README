@@ -51,6 +51,8 @@ unique hexadecimal number for the experiment.
 
 > python create_exp.py chex
 
+> ./setupexp.sh -e chex
+
 > nohup python autosubmit.py chex >& chex_01.log &
 
 

@@ -7,9 +7,8 @@ date
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/ecearth
+ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 PATH=%GRIBAPIPATH2%:${PATH}
-USER=%HPCUSER%
 
 #
 # Model Configuration
@@ -34,7 +33,8 @@ case $VERSION in
      ;;
 esac
 
-WRITINGDIR=${SCRATCH_DIR}/${USER}/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+BINPATH=${WRITINGDIR}/bin
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 
@@ -47,7 +47,7 @@ cd $RUN_dir
 ifs_grid=%IFS_resolution%
 ifs_numproc=%IFS_nproc%
 nprtrv=%NPRTRVIFS%
-ifs_exe_file=${ECEARTH}/bin/ifsmaster-eexcon
+ifs_exe_file=${BINPATH}/ifsmaster-eexcon
 nfrp=%NFRP%
 case ${ifs_grid} in
      T159L*)  ifs_time_step_sec=3600
@@ -70,7 +70,7 @@ ifs_lastout=true
 nem_grid=%NEMO_resolution%
 seaice=lim2
 nem_numproc=%NEMO_nproc%
-nem_exe_file=${ECEARTH}/bin/nemo-${nem_grid}-${seaice}.exe
+nem_exe_file=${BINPATH}/nemo-${nem_grid}-${seaice}.exe
 case ${nem_grid} in
      ORCA1L46)   nem_time_step_sec=3600
      ;;
@@ -86,7 +86,7 @@ advsch=%ADVSCH%
 # OASIS
 #
 oas_numproc=%OASIS_nproc%
-oas_exe_file=${ECEARTH}/bin/oasis3.MPI1.x
+oas_exe_file=${BINPATH}/oasis3.MPI1.x
 oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
 
 #
