@@ -27,10 +27,14 @@ MODSRC="modsrc.tar" # name for tar file; would be containing modified sources
 
 if [[ $MODEL != '' && $VERSION != '' ]]; then
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
- LIST=`diff -rqu sources $REALSOURCES | awk '{print $2}'`
- LSWC=`diff -rqu sources $REALSOURCES | awk '{print $2}' | wc -l`
- if [[ $LSWC -gt 0 ]]; then
-  tar -cvf conf/$MODSRC $LIST
+ if [[ -d sources && -d $REALSOURCES ]]; then
+  LIST=`diff -rqu sources $REALSOURCES | awk '{print $2}'`
+  LSWC=`diff -rqu sources $REALSOURCES | awk '{print $2}' | wc -l`
+  if [[ $LSWC -gt 0 ]]; then
+   tar -cvf conf/$MODSRC $LIST
+  fi
+ else
+  echo "sources are not available yet"
  fi
 else
  echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
@@ -38,6 +42,9 @@ else
 fi
 
 # setup process starts from here
+case $HPCARCH in
+ bsc) HPCARCH="mn" ;;
+esac
 SSH="ssh $HPCARCH"
 SETUP_DIR=$SCRATCH_DIR/$HPCUSER/$EXPID
 $SSH mkdir -p $SETUP_DIR/bin
