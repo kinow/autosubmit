@@ -8,8 +8,8 @@ class PsQueue(HPCQueue):
 	def __init__(self, expid):
 		self._host = "ellen"
 		self._cancel_cmd = "kill -SIGINT"
-		self._checkjob_cmd = "source ~/.profile; pscall.sh"
-		self._submit_cmd = "source ~/.profile; shcall.sh"
+		self._checkjob_cmd = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit/pscall.sh"
+		self._submit_cmd = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit/shcall.sh"
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['1']
 		self._job_status['RUNNING'] = ['0']
