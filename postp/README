@@ -1,0 +1,20 @@
+'siasiesiv'    : sea ice area + sea ice extent + sea ice volume
+'moc'          : Atlantic + Pacific + Indian + Indo-Pacific + Global 
+                 meridional overturning streamfunction
+'max_moc'      : Yearly maximum of the Atlantic meridional overturning 
+                 streamfunction between 38N-50N and 500-3000m and 
+                 at 40N
+'area_moc'     : Averaged Atlantic meridional overturning streamfunction
+                 between 40N-55N and 1km-2km and between 30N-40N and 1km-2km 
+'ice'          : sea ice thickness + sea ice concentration + snow thickness + 
+                 sea ice temperature 
+'sstsssmld'    : sea surface temperature + sea surface salinity + mixed layer 
+                 depth (potential density criteria)
+'heat_sal_mxl' : mixed layer heat and salt content (potential density criteria)
+'psi'          : barotropic streamfunction
+'usalc'        : upper layer salt content 0-300m
+'lmsalc'       : middle + lower layer salt content 300m-bottom
+'ohc'          : global total ocean heat content
+'uohc'         : global upper (0-350m) ocean heat content
+'mohc'         : global middle (350-800m) ocean heat content 
+'lohc'         : global lower (800m-bottom) ocean heat content

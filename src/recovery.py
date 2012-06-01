@@ -51,7 +51,7 @@ if __name__ == '__main__':
 				job.set_fail_count(0)
 				print "CHANGED: job: " + job.get_name() + " status to: READY"
 
-		setrecursionlimit(10000)
+		setrecursionlimit(50000)
 		l1.update_list()
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
 
@@ -63,7 +63,7 @@ if __name__ == '__main__':
 		l1.update_from_file(False)
 
 	if(save):
-		setrecursionlimit(10000)
+		setrecursionlimit(50000)
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/" + "/pkl/job_list_" + expid + ".pkl", 'w'))
 
 	GenerateOutput(expid, l1.get_job_list())
