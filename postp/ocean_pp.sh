@@ -21,8 +21,8 @@ year0=1951              # first year to post-process in the fist start date
 yearf=1970              # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 VERSION=v2.2            # NEMO version
-PATHCOMMONOCEANDIAG='/home/vguemas/autosubmit_version2/postp'
-CON_FILES='/home/vguemas/autosubmit_version2/postp/con_files'
+PATHCOMMONOCEANDIAG='/home/${USER}/autosubmit_version2/postp'
+CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 ###############################################################################
 #
