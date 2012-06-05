@@ -580,6 +580,14 @@ function concat {
   cdo mulc,$((12-$wgt)) part2.nc part2_bis.nc
   cdo add part1_bis.nc part2_bis.nc tmp2_bis.nc
   cdo divc,12 tmp2_bis.nc tmp2.nc
+  lstdims=`ncdump -h tmp2.nc | awk /dimensions:/,/variables:/ | grep -v dimensions: | grep -v variables: | awk '{print $1}'`
+  if [[ ${lstdims/lev} != ${lstdims} ]] ; then
+    ncrename -d lev,ensemble tmp2.nc 
+  else
+    ncecat -O -h tmp2.nc tmp2.nc
+    ncrename -h -O -d record,ensemble tmp2.nc tmp2.nc
+    ncpdq -O -h -a time,ensemble tmp2.nc tmp2.nc
+  fi
   rm -f part1.nc part2.nc part1_bis.nc part2_bis.nc tmp2_bis.nc
   ncks -O -d time,0,$((ntimes-2+10#${3}/12)) $1 tmp1.nc
   ncks -O -d time,1, $2 tmp3.nc

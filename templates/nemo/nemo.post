@@ -18,7 +18,7 @@ START_date=%SDATE%
 START_date_1=%DAY_BEFORE%
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
-NEMODIR=%MODELS_DIR%/%MODEL%/${VERSION}
+NEMODIR=%MODELS_DIR%/nemo/${VERSION}
 CON_FILES=${NEMODIR}/inidata
 PATHCOMMONOCEANDIAG=${NEMODIR}/inidata
 rebuild_tool=$NEMODIR/bin/rebuild
@@ -82,7 +82,6 @@ list2=""
 list3=""
 list4=""
 list5=""
-list6=""
 list7=""
 list8=""
 list9=""
@@ -91,7 +90,7 @@ fixname=${EXPID}_${MEMBER}_${START_date}_${Chunk_start_date}_${Chunk_end_date}
 for ((jt=1;jt<=${ntimesteps};jt++)); do  
 
   reduce_mmo timestep_${jt}_${prefix}_grid_T.nc timestep_${jt}_${prefix}_icemod.nc ${fixname}_${jt}.nc
-  list7=${list7}" "sstsimld_${fixname}_${jt}.nc
+  list7=${list7}" "sstsssmld_${fixname}_${jt}.nc
   list8=${list8}" "ice_${fixname}_${jt}.nc
   list9=${list9}" "t3d_${fixname}_${jt}.nc
 #
@@ -111,9 +110,8 @@ for ((jt=1;jt<=${ntimesteps};jt++)); do
   moc timestep_${jt}_${prefix}_grid_V.nc ${prefix}_moc_${jt}.nc ${prefix}_moc_${jt}.nc
   list4=${list4}" "${prefix}_moc_$jt.nc
   #
-  psi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc ${prefix}_${jt}
-  list5=${list5}" "psi_U_${prefix}_$jt.nc
-  list6=${list6}" "psi_V_${prefix}_$jt.nc
+  psi timestep_${jt}_${prefix}_grid_U.nc timestep_${jt}_${prefix}_grid_V.nc psi_${prefix}_${jt}.nc
+  list5=${list5}" "psi_${prefix}_$jt.nc
   #
 done
 
@@ -121,16 +119,15 @@ ncrcat -O ${list1} sal_0-300m_${fixname}.nc
 ncrcat -O ${list2} sal_300-5400m_${fixname}.nc
 ncrcat -O ${list3} heat_sal_mxl_${fixname}.nc
 ncrcat -O ${list4} moc_${fixname}.nc
-ncrcat -O ${list5} psi_U_${fixname}.nc
-ncrcat -O ${list6} psi_V_${fixname}.nc
-ncrcat -O ${list7} sstsimld_${fixname}.nc 
+ncrcat -O ${list5} psi_${fixname}.nc
+ncrcat -O ${list7} sstsssmld_${fixname}.nc 
 ncrcat -O ${list8} ice_${fixname}.nc
 ncrcat -O ${list9} t3d_${fixname}.nc
 #
 rm -f ${list1} ${list2} ${list3} ${list4} ${list5} ${list6} ${list7} ${list8} ${list9}
 #
 else 
-  
+ 
   for grid_type in ${grid_types}; do
 
     output_file=${prefix}_${grid_type}.nc
