@@ -161,8 +161,8 @@ typeset var lstfiles
 typeset var ntimes
 typeset var jt
 for root in ${listroots[@]} ; do
-  lstfiles=`ls *${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
-  ntimes=`ls *${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc" | wc -l`
+  lstfiles=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
+  ntimes=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc" | wc -l`
   ncrcat -O $lstfiles tmp_${root}.nc 
   cdo settaxis,${3}-09-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
   rm -f $lstfiles tmp_${root}.nc
@@ -178,7 +178,7 @@ done
 # $1 : starting date                                                          #
 # $2 : expid                                                                  #
 # $3 : member                                                                 #
-# $4 : starting leadtime                                                      #           
+# $4 : starting leadtime                                                      # 
 # $5 : end leadtime                                                           #
 # $6 : diags/MMO                                                              #
 #                                                                             #
@@ -279,12 +279,15 @@ typeset var jt
 for ((jt=1;jt<=$ntime;jt++)); do
  cdo seltimestep,$jt $1 intmoc.nc
  cdfmoc intmoc.nc
- ncwa -a x moc.nc outmoc_$jt.nc
+ ncwa -O -a x moc.nc outmoc_$jt.nc
  list=$list" "outmoc_$jt.nc
  rm -f intmoc.nc moc.nc
 done
 cdo cat $list $2
-ncrename -d gsize,y $2
+lstdims=`ncdump -h $2 | awk /dimensions:/,/variables:/ | grep -v dimensions: | grep -v variables: | awk '{print $1}'`
+if [[ ${lstdims/gsize} != ${lstdims} ]] ; then
+  ncrename -d gsize,y $2
+fi
 ncks -A -v nav_lon,nav_lat outmoc_1.nc $2
 ncks -A -v time $1 $2
 rm -f $list

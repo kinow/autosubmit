@@ -17,11 +17,11 @@ chunklen=6              # length of the chunks (in months)
 ltime0=                 # first leadtime to post-process
 ltimef=                 # last leadtime to postprocess
 # Fill up either ltime0/ltimef or year0/yearf
-year0=1951              # first year to post-process in the fist start date
+year0=1950              # first year to post-process in the fist start date
 yearf=1970              # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 VERSION=v2.2            # NEMO version
-PATHCOMMONOCEANDIAG='/home/${USER}/autosubmit_version2/postp'
+PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit_version2/postp'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 ###############################################################################
