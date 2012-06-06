@@ -124,7 +124,7 @@ ncrcat -O ${list7} sstsssmld_${fixname}.nc
 ncrcat -O ${list8} ice_${fixname}.nc
 ncrcat -O ${list9} t3d_${fixname}.nc
 #
-rm -f ${list1} ${list2} ${list3} ${list4} ${list5} ${list6} ${list7} ${list8} ${list9}
+rm -f ${list1} ${list2} ${list3} ${list4} ${list5} ${list7} ${list8} ${list9}
 #
 else 
  
