@@ -253,15 +253,17 @@ typeset var list=""
 typeset var jt 
 for ((jt=1;jt<=$ntime;jt++)); do
  cdo seltimestep,$jt $1 intheat_sal_mxl.nc
- cdfmxlhcsc intheat_sal_mxl.nc density 0.01
- mv mxlhcsc.nc outputintheat_sal_mxl_$jt.nc
+ cdfmxlheatc intheat_sal_mxl.nc 
+ cdfmxlsaltc intheat_sal_mxl.nc
+ ncks -A mxlsaltc.nc mxlheatc.nc
+ mv mxlheatc.nc outputintheat_sal_mxl_$jt.nc
  list=$list" "outputintheat_sal_mxl_$jt.nc
- rm -f intheat_sal_mxl.nc
+ rm -f intheat_sal_mxl.nc mxlsaltc.nc
 done
 cdo cat $list $2
 ncks -A -v time $1 $2
 rm -f $list
-setminmax $2 somxlsaltc somxlheatc somxl010
+setminmax $2 somxlsaltc somxlheatc
 }
 ###############################################################################
 #                      Compute the MOC for oceanic basins                     #
@@ -477,7 +479,8 @@ typeset var depmax=`cat depth.txt |head -${down} |tail -1 | awk '{print $2}' | a
 
 cp ${CON_FILES}/heatc_template.nc template_heatc.nc
 ncdump template_heatc.nc > template_heatc.cdl
-exec=/home/huidu/download/CDFTOOLS_2.1/cdfheatc-cfu
+#exec=/home/huidu/download/CDFTOOLS_2.1/cdfheatc-cfu
+exec=/home/vguemas/CDFTOOLS_2.1/cdfheatc-cfu
 #
 #  Define some parameters
 #
@@ -497,8 +500,8 @@ case $basin in
  'TPac') para="pac $mxl 0 0 -30 30" ; output='TPac_30S30N_'${output} ;;
  'Arct') para="atl $mxl 0 0 65 90" ; output='Arc_65N90N_'${output} ;;
  'Anta') para="all $mxl 0 0 -90 -60" ; output='Ant_90S60S_'${output} ;;
- 'TInd') para="ind $mxl 0 0 -30 30" ; output='TInd_30S30S_'${output} ;;
- 'Glob') para="0 0 0 0" ; exec=cdfheatc ; mxl=0 ;;
+ 'TInd') para="ind $mxl 0 0 -30 30" ; output='TInd_30S30N_'${output} ;;
+ 'Glob') para="all $mxl 0 0 0 0" ;;
 esac
 
 case $mxl in
@@ -516,6 +519,7 @@ for ((jt=1;jt<=$ntime;jt++)) ; do
  ncks -v somxl010,somixhgt tmpohc.nc mxl.nc
  #cdfmxl tmpohc.nc mxl.nc
  $exec tmpohc.nc $para $up $down > tmp.log
+ cat tmp.log
  thc=`cat tmp.log | grep "Total Heat content :" | awk '{print $5}'`;
  uhc=`cat tmp.log | grep "Total Heat content/volume" | awk '{print $5}'`;
  sed -e "s/thc =.*/thc = $thc ;/" template_heatc.cdl > template_heatc2.cdl

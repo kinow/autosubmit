@@ -18,3 +18,43 @@
 'uohc'         : global upper (0-350m) ocean heat content
 'mohc'         : global middle (350-800m) ocean heat content 
 'lohc'         : global lower (800m-bottom) ocean heat content
+'xohc'         : global mixed layer ocean heat content
+'NAtlohc'      : North Atlantic (10-65N) total ocean heat content
+'xNAtlohc'     : North Atlantic (10-65N) mixed layer ocean heat content 
+'uNAtlohc'     : North Atlantic (10-65N) upper (0-350m) ocean heat content 
+'mNAtlohc'     : North Atlantic (10-65N) middle (350-800m) ocean heat content
+'lNAtlohc'     : North Atlantic (10-65N) lower (800m-bottom) ocean heat content
+'NPacohc'      : North Pacific (10-70N) ocean heat content
+'xNPacohc'     : North Pacific (10-70N) mixed layer ocean heat content
+'uNPacohc'     : North Pacific (10-70N) upper (0-350m) ocean heat content
+'mNPacohc'     : North Pacific (10-70N) middle (350-800m) ocean heat content
+'lNPacohc'     : North Pacific (10-70N) lower (800m-bottom) ocean heat content
+'TAtlohc'      : Tropical Atlantic (30S-30N) ocean heat content
+'xTAtlohc'     : Tropical Atlantic (30S-30N) mixed layer ocean heat content
+'uTAtlohc'     : Tropical Atlantic (30S-30N) upper (0-350m) ocean heat content
+'mTAtlohc'     : Tropical Atlantic (30S-30N) middle (350-800m) ocean heat 
+                 content
+'lTAtlohc'     : Tropical Atlantic (30S-30N) lower (800m-bottom) ocean heat 
+                 content
+'TPacohc'      : Tropical Pacific (30S-30N) ocean heat content
+'xTPacohc'     : Tropical Pacific (30S-30N) mixed layer ocean heat content
+'uTPacohc'     : Tropical Pacific (30S-30N) upper (0-350m) ocean heat content
+'mTPacohc'     : Tropical Pacific (30S-30N) middle (350-800m) ocean heat content
+'lTPacohc'     : Tropical Pacific (30S-30N) lower (800m-bottom) ocean heat 
+                 content
+'TIndohc'      : Tropical Indian (30S-30N) ocean heat content
+'xTIndohc'     : Tropical Indian (30S-30N) mixed layer ocean heat content
+'uTIndohc'     : Tropical Indian (30S-30N) upper (0-350m) ocean heat content
+'mTIndohc'     : Tropical Indian (30S-30N) middle (350-800m) ocean heat content
+'lTIndohc'     : Tropical Indian (30S-30N) lower (800m-bottom) ocean heat 
+                 content
+'Antaohc'      : Antarctic (90-60S) ocean heat content
+'xAntaohc'     : Antarctic (90-60S) mixed layer ocean heat content
+'uAntaohc'     : Antarctic (90-60S) upper (0-350m) ocean heat content
+'mAntaohc'     : Antarctic (90-60S) middle (350-800m) ocean heat content
+'lAntaohc'     : Antarctic (90-60S) lower (800m-bottom) ocean heat content
+'Arctohc'      : Arctic (65-90N) ocean heat content
+'xArctohc'     : Arctic (65-90N) mixed layer ocean heat content
+'uArctohc'     : Arctic (65-90N) upper (0-350m) ocean heat content
+'mArctohc'     : Arctic (65-90N) middle (350-800m) ocean heat content
+'lArctohc'     : Arctic (65-90N) lower (800m-bottom) ocean heat content
