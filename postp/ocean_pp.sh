@@ -272,7 +272,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       #
       # Merging the result with the previous members if existing
       # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-      if [ -e ${pathout}/${prefix}${lsmbsb}_${lsyrso} ] ; then
+      if [ $lsyrsh != $lsyrso ] && [ -e ${pathout}/${prefix}${lsmbsb}_${lsyrso} ] ; then
         cp ${pathout}/${prefix}${lsmbsb}_${lsyrso} .
         gather_memb ${prefix} _${lsyrso} ${prefix}${lsmbso}_${lsyrso}
       else

@@ -162,14 +162,9 @@ typeset var ntimes
 typeset var jt
 for root in ${listroots[@]} ; do
   lstfiles=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
-  ntimes=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc" | wc -l`
   ncrcat -O $lstfiles tmp_${root}.nc 
   cdo settaxis,${3}-09-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
   rm -f $lstfiles tmp_${root}.nc
-  for ((jt=1;jt<=$ntimes;jt++)) ; do 
-    ncap2 -h -O -s "time($((jt-1)))=$((jt+(${3}-1957)*12-1))" ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
-  done
-  ncatted -O -a units,time,m,c,"months since 1957-09-15" ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
 done
 }
 ###############################################################################
@@ -538,7 +533,7 @@ setminmax ${output}$2 thc uhc
 #                    Set minimum and maximum attributes                       #
 #                                                                             #
 # $1 : input file                                                             #
-# $2 : input var                                                              #
+# $2 : input vars provided as a list                                          #
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
 ###############################################################################
