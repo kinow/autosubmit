@@ -109,7 +109,7 @@ done
 
 typeset var listroots
 case $8 in 
-  'diags' ) listroots="t3d" ;;
+  'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
   'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
 esac
 typeset var root
@@ -117,6 +117,10 @@ typeset var lstfiles
 for root in ${listroots[@]} ; do
   lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
+  if [[ $root == 'moc' ]] ; then 
+    ncrename -d gsize,y ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
+    ncks -A -v nav_lon,nav_lat `echo $lstfiles | awk '{print $1}' ` ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc 
+  fi
   rm -f $lstfiles
 done
 }
