@@ -114,6 +114,10 @@ if __name__ == "__main__":
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
 		available = maxWaitingJobs-waiting
+
+		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
+		totalJobs = int(conf_parser.get('config','totaljobs'))
+		logger.info("Jobs to submit: %s" % totalJobs)
   
 		logger.info("Saving joblist")
 		joblist.save()
