@@ -1,27 +1,30 @@
-#/bin/bash
+# /bin/bash
 set -evx
+# Define location of CDF tools.
+export PATH="$PATH:/cfu/software/cdftools2.1"
 
 listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
-expid=b02p              # expid or nemovar_s4 / nemovar_combine
+expid=i018              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
 # Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-listmemb=( 0 1 2 )      # list of members
-syeari=1950             # first start date
-syearf=1950             # last start date
+# listmemb=( 0 1 2 3 4 )  # list of members
+listmemb=( 0 1 2 3 4 )  # list of members
+syeari=1989             # first start date
+syearf=1989             # last start date
 moni=11                 # first month of the hindcast
 intsdate=1              # interval between start dates
-chunklen=6              # length of the chunks (in months)
+chunklen=4              # length of the chunks (in months)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ltime0=                 # first leadtime to post-process
-ltimef=                 # last leadtime to postprocess
+ltime0=1                # first leadtime to post-process
+ltimef=60               # last leadtime to postprocess
 # Fill up either ltime0/ltimef or year0/yearf
-year0=1950              # first year to post-process in the fist start date
-yearf=1970              # last year to post-process in the fist start date
+year0=                  # first year to post-process in the fist start date
+yearf=                  # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 VERSION=v2.2            # NEMO version
-PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit_version2/postp'
+PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/2.0_database/postp'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 ###############################################################################
