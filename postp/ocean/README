@@ -1,3 +1,6 @@
+To use the ocean diagnostic tools available here and to be able to create new diagnostics, you need first to add that line to your .bashrc: 
+PATH=/cfu/software/cdftools2.1/:$PATH
+################################################################################
 'siasiesiv'    : sea ice area + sea ice extent + sea ice volume
 'moc'          : Atlantic + Pacific + Indian + Indo-Pacific + Global 
                  meridional overturning streamfunction
