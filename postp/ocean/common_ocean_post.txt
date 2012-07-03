@@ -1,0 +1,642 @@
+###############################################################################
+#    This file gathers a set of bash functions that rely on cdftools to       #
+#    compute various ocean diagnostics :                                      #
+#                                                                             #
+# reduce_mmo                                                                  #
+# get_nemovar                                                                 #
+# get_diagsMMO                                                                #
+# clean_diagsMMO                                                              #
+# vertmeansal                                                                 #
+# heat_sal_mxl                                                                #
+# moc                                                                         #
+# psi                                                                         #
+# area_moc                                                                    #
+# max_moc                                                                     #
+# siasiesiv                                                                   #
+# ohc                                                                         #
+# setminmax                                                                   #
+# concat                                                                      #
+# gather_memb                                                                 #
+#                                                                             #
+#      Those functions would never have seen the day without Hui Du,          #
+#                     usually referred to as Super-Hui.                       #
+#                                                                             #
+#   He made a crucial work to develop what ended up below in the functions    #
+#   that computes the sea ice extent, sea ice area, ocean heat content and    #
+#   meridional overturning streamfunction.                                    #
+#   Especially, he developped new options from the cdftools sources to be     #
+#   able to compute the heat content in different basins.                     #
+#                                                                             #
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#               You want to make available a new diagnostic ?                 @
+#                                                                             @
+#  1) Get an MMO tar files from any experiment on cfunas                      @
+#  2) Write a bash function that works on a grid_T or grid_U or grid_V or     @
+#     grid_W file or a combination from this MMO file                         @
+#  --> You can test your function by defining the CON_FILES and VERSION       @
+#      variables and by sourcing the current file, the meshmasks will be      @
+#      available after sourcing, remember to source again after any           @
+#      modification of your function                                          @
+#  --> Your function should work on input files of any resolution             @
+#      ORCA1/ORCA025/ORCA2                                                    @
+#  --> Your function should work on input files of any time length            @
+#  --> The output file should contain a proper time axis that you can copy    @
+#      from your input file                                                   @
+#  --> The output file should be at most a 3d field including the time        @
+#      dimension                                                              @
+#  3) Write a short description of your function, and add its name to the     @
+#     list above                                                              @
+#  4) Go the the ocean_pp.sh script to add a call to your function            @
+#                                                                             @
+#                      Any doubt ---> vguemas@ic3.cat                         @
+#@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+#                         Link constant file for co                           #
+###############################################################################
+
+ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_hgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_zgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mask.nc
+ln -sf ${CON_FILES}/new_maskglo.${VERSION}.nc new_maskglo.nc
+
+###############################################################################
+#       Reduced number of variables in diag files to save disk space          #
+#                                                                             #
+# $1 : input grid_T file name                                                 #
+# $2 : input icemod file name                                                 #
+# $3 : suffix of output files with nc extension                               #
+#                                                                             #
+#         Created in February 2012      Author : vguemas@ic3.cat              #
+###############################################################################
+
+function reduce_mmo {
+ncks -O -v sosstsst,sosaline,somixhgt,somxl010 $1 sstsssmld_${3} 
+ncks -O -v isnowthi,iicethic,ileadfra,iicetemp $2 ice_${3} 
+ncks -O -v votemper $1 t3d_${3} 
+}
+###############################################################################
+#                    Copy diags or MMO files from cfunas                      #
+#                                                                             #
+# $1 : starting date                                                          #
+# $2 : expid                                                                  #
+# $3 : member                                                                 #
+# $4 : starting leadtime                                                      # 
+# $5 : end leadtime                                                           #
+# $6 : chunk length in month                                                  #
+# $7 : nemo/ecearth                                                           #
+# $8 : diags/MMO                                                              #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function get_diagsMMO {
+typeset var yyyy0=`echo $1|cut -c1-4`
+typeset var mm0=`echo $1|cut -c5-6`
+typeset var jt
+typeset var year1
+typeset var year2
+typeset var mon1
+typeset var mon2
+for ((jt=$4;jt<=$5;jt=$((jt+$6)))) ; do
+  year1=$(($yyyy0+(10#$mm0+$jt-2)/12)) 
+  mon1=$(((10#$mm0+$jt-2)%12+1))
+  year2=$(($yyyy0+(10#$mm0+$jt+$6-3)/12))
+  mon2=$(((10#$mm0+$jt+$6-3)%12+1)) 
+  cp /cfunas/exp/$7/$2/$1/fc$3/outputs/$8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar .
+  tar -xvf $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
+  rm -f $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
+  if [[ $8 == 'MMO' ]] ; then gunzip *.gz ; fi
+done
+
+typeset var listroots
+case $8 in 
+  'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
+  'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
+esac
+typeset var root
+typeset var lstfiles
+for root in ${listroots[@]} ; do
+  lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
+  cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
+  if [[ $root == 'moc' ]] ; then 
+    ncrename -d gsize,y ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
+    ncks -A -v nav_lon,nav_lat `echo $lstfiles | awk '{print $1}' ` ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc 
+  fi
+  rm -f $lstfiles
+done
+}
+###############################################################################
+#                         Copy NEMOVAR files from cfunas                      #
+#                                                                             #
+# $1 : expid                                                                  #
+# $2 : member                                                                 #
+# $3 : starting year                                                          # 
+# $4 : end year                                                               #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function get_nemovar {
+typeset var path
+typeset var yearf
+case $1 in
+  'nemovar_s4') path=/cfunas/exp/ECMWF/NEMOVAR_S4/outputs/fc$2/s4 ; yearf=2011 ;;
+  'nemovar_combine') path=/cfunas/exp/ECMWF/NEMOVAR_COMBINE/outputs/opa0/fa9p_1m ; yearf=2009 ;;
+esac
+typeset var year
+typeset var mon
+typeset var mona
+typeset var monb
+for ((year=$3;year<=$4;year=$((year+1)))) ; do
+  case $year in
+    $3) mona=9 ; monb=12 ;;
+    $yearf) mona=1; monb=6 ;;
+    $4) mona=1 ;monb=8 ;;
+    *) mona=1 ;monb=12 ;;
+  esac   
+  for ((mon=$mona;mon<=$monb;mon=$((mon+1)))); do
+    cp ${path}_fc$2_${year}$(printf "%02d" $mon)*.gz .
+  done
+done
+gunzip *.gz
+
+typeset var listroots="grid_T grid_U grid_V grid_W"
+typeset var root
+typeset var lstfiles
+typeset var ntimes
+typeset var jt
+for root in ${listroots[@]} ; do
+  lstfiles=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
+  ncrcat -O $lstfiles tmp_${root}.nc 
+  cdo settaxis,${3}-09-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
+  rm -f $lstfiles tmp_${root}.nc
+done
+}
+###############################################################################
+#                 Clean diags or MMO files after postprocessing               #
+#                                                                             #
+# $1 : starting date                                                          #
+# $2 : expid                                                                  #
+# $3 : member                                                                 #
+# $4 : starting leadtime                                                      # 
+# $5 : end leadtime                                                           #
+# $6 : diags/MMO                                                              #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function clean_diagsMMO {
+typeset var yyyy0=`echo $1|cut -c1-4`
+typeset var mm0=`echo $1|cut -c5-6`
+typeset var year1=$(($yyyy0+(10#$mm0+$4-2)/12))
+typeset var year2=$(($yyyy0+(10#$mm0+$5-2)/12))
+typeset var mon1=$(((10#$mm0+$4-2)%12+1))
+typeset var mon2=$(((10#$mm0+$5-2)%12+1))
+
+typeset var listroots
+if [[ $year1 == $yyyy0 && $(printf "%02d" $mon1) == $mm0 ]] ; then
+  case $6 in
+    'diags' ) listroots="t3d" ;;
+    'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
+  esac
+else
+  if [[ $6 == 'diags' ]] ; then
+    listroots="heat_sal_mxl ice moc psi_U psi_V sal_0-300m sal_300-5400m sstsssmld t3d" 
+  fi
+fi
+typeset var root
+typeset var lstfiles
+for root in ${listroots[@]} ; do
+  rm -f ${root}_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)_${year2}$(printf "%02d" $mon2).nc
+done
+}
+###############################################################################
+#                     Vertically averaged salt content                        #
+#                                                                             #
+# $1 : input grid_T file name                                                 #
+# $2 : upper depth of the layer (in meters)                                   #
+# $3 : lower depth of the layer (in meters)                                   #
+# $4 : output file name                                                       #
+#                                                                             #
+#         Created in February 2012      Author : vguemas@ic3.cat              #
+###############################################################################
+
+function vertmeansal {
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt
+for ((jt=1;jt<=$ntime;jt++)); do
+  cdo seltimestep,$jt $1 intvertmeansal.nc
+  cdfvertmean intvertmeansal.nc vosaline T $2 $3
+  ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
+  mv vertmean.nc outputvertmeansal_$jt.nc
+  list=$list" "outputvertmeansal_$jt.nc
+  rm -f intvertmeansal.nc
+done
+cdo cat $list $4
+ncks -A -v time $1 $4
+rm -f $list 
+setminmax $4 vertmeansal
+}
+###############################################################################
+#                    Compute mixed layer heat and salt content                #
+#                                                                             #
+# $1 : input grid_T file name                                                 #
+# $2 : output file name                                                       #
+#                                                                             #
+#         Created in February 2012      Author : vguemas@ic3.cat              #
+################################################################################
+
+function heat_sal_mxl {
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt 
+for ((jt=1;jt<=$ntime;jt++)); do
+ cdo seltimestep,$jt $1 intheat_sal_mxl.nc
+ cdfmxlheatc intheat_sal_mxl.nc 
+ cdfmxlsaltc intheat_sal_mxl.nc
+ ncks -A mxlsaltc.nc mxlheatc.nc
+ mv mxlheatc.nc outputintheat_sal_mxl_$jt.nc
+ list=$list" "outputintheat_sal_mxl_$jt.nc
+ rm -f intheat_sal_mxl.nc mxlsaltc.nc
+done
+cdo cat $list $2
+ncks -A -v time $1 $2
+rm -f $list
+setminmax $2 somxlsaltc somxlheatc
+}
+###############################################################################
+#                      Compute the MOC for oceanic basins                     #
+#                                                                             #
+# $1 : input grid_V file name                                                 #
+# $2 : output file name                                                       #
+#                                                                             #
+#         Created in March 2012         Author : vguemas@ic3.cat              #
+###############################################################################
+
+function moc {
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt
+for ((jt=1;jt<=$ntime;jt++)); do
+ cdo seltimestep,$jt $1 intmoc.nc
+ cdfmoc intmoc.nc
+ ncwa -O -a x moc.nc outmoc_$jt.nc
+ list=$list" "outmoc_$jt.nc
+ rm -f intmoc.nc moc.nc
+done
+cdo cat $list $2
+lstdims=`ncdump -h $2 | awk /dimensions:/,/variables:/ | grep -v dimensions: | grep -v variables: | awk '{print $1}'`
+if [[ ${lstdims/gsize} != ${lstdims} ]] ; then
+  ncrename -d gsize,y $2
+fi
+ncks -A -v nav_lon,nav_lat outmoc_1.nc $2
+ncks -A -v time $1 $2
+rm -f $list
+}
+###############################################################################
+#                                                                             #
+#                     Compute the barotropic stream function                  #
+#                                                                             #
+# $1 : input grid_U file name                                                 #
+# $2 : input grid_V file name                                                 #
+# $3 : output file name without nc extension                                  #
+#                                                                             #
+#         Created in March 2012         Author : vguemas@ic3.cat              #
+################################################################################
+
+function psi {
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt
+for ((jt=1;jt<=$ntime;jt++)); do
+  cdo seltimestep,$jt $1 intU.nc
+  cdo seltimestep,$jt $2 intV.nc
+  cdfpsi intU.nc intV.nc
+  mv psi.nc psi_U.nc
+  cdfpsi intU.nc intV.nc V 
+  mv psi.nc psi_V.nc
+  ncea psi_U.nc psi_V.nc psi_${jt}.nc
+  list=$list" "psi_$jt.nc
+  rm -f intU.nc intV.nc psi_U.nc psi_V.nc
+done
+cdo cat $list ${3}
+ncks -A -v time $1 ${3}
+rm -f $list
+}
+###############################################################################
+#                                                                             #
+#   Compute an Atlantic MOC index by averaging the meridional overturning     #
+#                in a latitude band between 1km and 2km                       #
+#                                                                             #
+# $1 : input moc file name                                                    #
+# $2 : latitude min                                                           #
+# $3 : latitude max                                                           #
+# $4 : output file name                                                       #
+#                                                                             #
+#         Created in March 2012         Author : vguemas@ic3.cat              #
+###############################################################################
+
+function area_moc {
+ncrename -O -d y,lat -v nav_lat,lat $1 tmpmoc.nc
+ncks -O -v zomsfatl,time,depthw,lat  tmpmoc.nc  tmpmoc.nc 
+ncks -d lat,$2,$3 -d depthw,-2000.,-1000. tmpmoc.nc area_moc.nc
+cdo vertmean area_moc.nc area_ave_moc.nc
+ncap -O -s "coslat[lat]=cos(lat[lat]*3.141592657/180.0)" area_ave_moc.nc area_ave_moc2.nc
+ncwa -w coslat -a lat area_ave_moc2.nc area_ave_moc3.nc
+ncks -O -v zomsfatl,time area_ave_moc3.nc $4
+rm -f tmpmoc.nc area_moc.nc area_ave_moc2.nc area_ave_moc3.nc
+if [[ $4 != area_ave_moc.nc ]] ; then
+  rm -f area_ave_moc.nc
+fi
+}
+###############################################################################
+#                                                                             #
+#   Compute an Atlantic MOC index by finding the maximum  of the annual       #
+#        mean meridional overturning in a latitude / depth region             #
+#                                                                             #
+# $1 : input moc file name                                                    #
+# $2 : latitude min                                                           #
+# $3 : latitude max                                                           #
+# $4 : depth mean                                                             #
+# $5 : depth max                                                              #
+# $6 : output file name                                                       #
+#                                                                             #
+#         Created in March 2012         Author : vguemas@ic3.cat              #
+###############################################################################
+
+function max_moc {
+ncecat -h $1 tmpmoc1.nc
+ncrename -d record,x tmpmoc1.nc
+ncpdq -O -h -a time,x tmpmoc1.nc tmpmoc1.nc
+ncpdq -O -h -a depthw,x tmpmoc1.nc tmpmoc1.nc
+ncpdq -O -h -a y,x tmpmoc1.nc tmpmoc1.nc
+cdo yearmean tmpmoc1.nc tmpmoc.nc 
+typeset var ntime=`cdo ntime tmpmoc.nc`
+typeset var list=""
+for ((jt=1;jt<=$ntime;jt++)) ; do
+  cdo seltimestep,$jt tmpmoc.nc tmpmoc2.nc
+  cdfmaxmoc tmpmoc2.nc atl $2 $3 $4 $5
+  mv maxmoc.nc maxmoc_$jt.nc
+  list=${list}" "maxmoc_$jt.nc
+  rm -f tmpmoc2.nc
+done
+cdo cat $list $6
+ncks -A -v time tmpmoc.nc $6
+rm -f $list tmpmoc.nc tmpmoc1.nc
+}
+###############################################################################
+#                                                                             #
+#        Compute the sia extent, area and volume in both hemispheres          #
+#                                                                             #
+# $1 : input ice file name                                                    #
+# $2 : output file name                                                       #
+#                                                                             #
+#         Created in April 2012         Author : vguemas@ic3.cat              #
+###############################################################################
+
+function siasiesiv {
+cp ${CON_FILES}/ice_template.nc toto_N.nc
+cp ${CON_FILES}/ice_template.nc toto_S.nc
+  
+typeset var ntime=`cdo ntime $1`
+typeset var list1=""
+typeset var list2=""
+typeset var jt
+for ((jt=1;jt<=$ntime;jt++)) ; do
+  cdo seltimestep,$jt $1 tmpice.nc
+  cdficediags tmpice.nc>ice.txt
+  for d in N S;do
+    ncdump toto_${d}.nc  > ice_template.cdl
+    sia=`grep ${d}Area ice.txt |awk '{print $4}'`
+    sie=`grep ${d}Extend ice.txt|awk '{print $4}'`
+    siv=`grep ${d}Volume ice.txt|awk '{print $4}'`
+    sed -e "s/sia =.*/sia = $sia ;/" ice_template.cdl > ice_template2.cdl
+    sed -e "s/sie =.*/sie = $sie ;/" ice_template2.cdl > ice_template3.cdl
+    sed -e "s/siv =.*/siv = $siv ;/" ice_template3.cdl > ice_template.cdl
+    ncgen -o ice_${d}_${jt}.nc ice_template.cdl
+    rm -f ice_template.cdl ice_template2.cdl ice_template3.cdl
+  done
+  list1=$list1" "ice_N_${jt}.nc
+  list2=$list2" "ice_S_${jt}.nc
+  rm -f ice.txt tmpice.nc icediags.nc
+done
+cdo cat $list1 ice_N_${2}
+cdo cat $list2 ice_S_${2}
+ncks -A -v time $1 ice_N_${2}
+ncks -A -v time $1 ice_S_${2}
+rm -f $list1 $list2 toto_N.nc toto_S.nc
+setminmax ice_N_${2} sia sie siv
+setminmax ice_S_${2} sia sie siv
+}
+###############################################################################
+#                                                                             #
+#                    Compute the total ocean heat extent                      #
+#                                                                             #
+# $1 : input temperature file name                                            #
+# $2 : output file name                                                       #
+# $3 : basin (NAtl, NPac, TAtl, TPac, TInd, Anta, Arct, Glob) Default : Glob  #
+#      $4 = 0 if $3 = Glob                                                    #
+# $4 : mixed layer (1=only, 0=included, -1=without) Default : 0               # 
+# $5 : upper level of the layer (optional) Default : top                      #
+# $6 : lower level of the layer (optional) Default : bottom                   #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function ohc {
+cp ${CON_FILES}/depth.${VERSION}.txt depth.txt
+#
+# Input arguments
+#
+if [ -z "$3" ] ; then
+  typeset var basin='Glob'
+else
+  typeset var basin=$3
+fi
+if [ -z "$4" ] ; then
+  typeset var mxl=0
+else
+  typeset var mxl=$4
+fi
+if [ -z "$5" ] ; then 
+  typeset var up=1 
+else
+  typeset var up=$5
+fi
+if [ -z "$6" ] ; then
+  typeset var down=`cat depth.txt | wc -l`  
+else
+  typeset var down=$6
+fi
+
+if [[ ${up} -eq 1 ]] ; then
+  typeset var depmin=0
+else
+  typeset var depmin=`cat depth.txt |head -${up} |tail -1 | awk '{print $2}' | awk '{printf "%.0f",$1}'`
+fi
+typeset var depmax=`cat depth.txt |head -${down} |tail -1 | awk '{print $2}' | awk '{printf "%.0f",$1}'`;
+
+cp ${CON_FILES}/heatc_template.nc template_heatc.nc
+ncdump template_heatc.nc > template_heatc.cdl
+#exec=/home/huidu/download/CDFTOOLS_2.1/cdfheatc-cfu
+exec=/home/vguemas/CDFTOOLS_2.1/cdfheatc-cfu
+#
+#  Define some parameters
+#
+typeset var para
+typeset var output
+typeset var nlev=`cat depth.txt | wc -l`
+if [[ ! -z "$depmin" && ! -z "$depmax" ]] ; then
+  if [[ $depmin != 0 || ${down} != ${nlev} && ${down} != 0 ]] ; then
+    output=${depmin}-${depmax}'_'
+  fi
+fi
+
+case $basin in
+ 'NAtl') para="atl $mxl 0 0 10 65"; output='NAtl_10N65N_'${output} ;;
+ 'TAtl') para="atl $mxl 0 0 -30 30" ; output='TAtl_30S30N_'${output} ;;
+ 'NPac') para="pac $mxl 0 0 10 70" ; output='NPac_10N70N_'${output} ;;
+ 'TPac') para="pac $mxl 0 0 -30 30" ; output='TPac_30S30N_'${output} ;;
+ 'Arct') para="atl $mxl 0 0 65 90" ; output='Arc_65N90N_'${output} ;;
+ 'Anta') para="all $mxl 0 0 -90 -60" ; output='Ant_90S60S_'${output} ;;
+ 'TInd') para="ind $mxl 0 0 -30 30" ; output='TInd_30S30N_'${output} ;;
+ 'Glob') para="all $mxl 0 0 0 0" ;;
+esac
+
+case $mxl in
+ 1) output='mxl_'${output} ;;
+ -1) output='nonmxl_'${output} ;; 
+esac
+#
+# Compute ohc
+#
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt
+for ((jt=1;jt<=$ntime;jt++)) ; do
+ cdo seltimestep,$jt $1 tmpohc.nc
+ ncks -v somxl010,somixhgt tmpohc.nc mxl.nc
+ #cdfmxl tmpohc.nc mxl.nc
+ $exec tmpohc.nc $para $up $down > tmp.log
+ cat tmp.log
+ thc=`cat tmp.log | grep "Total Heat content :" | awk '{print $5}'`;
+ uhc=`cat tmp.log | grep "Total Heat content/volume" | awk '{print $5}'`;
+ sed -e "s/thc =.*/thc = $thc ;/" template_heatc.cdl > template_heatc2.cdl
+ sed -e "s/uhc =.*/uhc = $uhc ;/" template_heatc2.cdl > template_heatc.cdl
+ ncgen -o heatc_${jt}.nc template_heatc.cdl
+ rm -f template_heatc2.cdl tmpohc.nc mxl.nc tmp.log
+ list=$list" "heatc_${jt}.nc
+done
+cdo cat $list ${output}$2
+ncks -h -A -v time $1 ${output}$2
+rm -f $list template_heatc.nc template_heatc.cdl depth.txt
+setminmax ${output}$2 thc uhc
+}
+###############################################################################
+#                                                                             #
+#                    Set minimum and maximum attributes                       #
+#                                                                             #
+# $1 : input file                                                             #
+# $2 : input vars provided as a list                                          #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function setminmax {
+  cdo fldmax -timmax $1 intmax.nc
+  cdo fldmin -timmin $1 intmin.nc
+  typeset var listvars
+  typeset args=("$@")
+  typeset var ind
+  for ((ind=1;ind<$#;ind++)) ; do
+    listvars=$listvars" "${args[$ind]}
+  done
+  typeset name
+  for name in ${listvars[@]} ; do
+    typeset var var_max=`ncdump -v $name intmax.nc | tail -2 | head -1 | awk '{print $1}'`
+    ncatted -h -a valid_max,$name,m,f,$var_max $1
+    typeset var var_min=`ncdump -v $name intmin.nc | tail -2 | head -1 | awk '{print $1}'`
+    ncatted -h -a valid_min,$name,m,f,$var_min $1
+  done
+  rm -f intmax.nc intmin.nc
+}
+
+###############################################################################
+#                                                                             #
+#              Concatenate with a weight of the results obtained              #
+#                             on partial years                                #
+#                                                                             #
+# $1 : input file 1                                                           #
+# $2 : input file 2                                                           #
+# $3 : ending month file 1                                                    # 
+# $4 : output file                                                            #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################
+
+function concat {
+  typeset var wgt=$((10#${3}%12))
+  typeset var ntimes=`cdo ntime $1`
+  ncks -O -d time,$(($ntimes-1)) $1 part1.nc
+  ncks -O -d time,0 $2 part2.nc
+  cdo mulc,$wgt part1.nc part1_bis.nc
+  cdo mulc,$((12-$wgt)) part2.nc part2_bis.nc
+  cdo add part1_bis.nc part2_bis.nc tmp2_bis.nc
+  cdo divc,12 tmp2_bis.nc tmp2.nc
+  lstdims=`ncdump -h tmp2.nc | awk /dimensions:/,/variables:/ | grep -v dimensions: | grep -v variables: | awk '{print $1}'`
+  if [[ ${lstdims/lev} != ${lstdims} ]] ; then
+    ncrename -d lev,ensemble tmp2.nc 
+  else
+    ncecat -O -h tmp2.nc tmp2.nc
+    ncrename -h -O -d record,ensemble tmp2.nc tmp2.nc
+    ncpdq -O -h -a time,ensemble tmp2.nc tmp2.nc
+  fi
+  rm -f part1.nc part2.nc part1_bis.nc part2_bis.nc tmp2_bis.nc
+  ncks -O -d time,0,$((ntimes-2+10#${3}/12)) $1 tmp1.nc
+  ncks -O -d time,1, $2 tmp3.nc
+  ncrcat -O tmp1.nc tmp2.nc tmp3.nc $4
+  rm -f tmp1.nc tmp2.nc tmp3.nc
+}
+
+###############################################################################
+#                                                                             #
+#                Gather the members in a single netcdf file                   #
+#                                                                             #
+# $1 : prefix netcdf file name for all the members                            #
+# $2 : suffix netcdf file name for all the members                            #
+# $3 : output file name                                                       #
+#                                                                             #
+#         Created in May 2012           Author : vguemas@ic3.cat              #
+###############################################################################        
+
+function gather_memb {
+  typeset var lstfiles1=`ls ${1}*${2}`
+  typeset var file
+  typeset var ind=1
+  typeset var lstfiles2=""
+  for file in ${lstfiles1[@]} ; do
+    typeset var lstvars=`cdo showvar $file`
+    typeset var lstexclude=( 'nav_lon' 'nav_lat' )
+    for varex in ${lstexclude[@]} ; do
+      if [[ ${lstvars/${varex}/} != ${lstvars} ]] ; then
+        ncks -O -x -v ${varex} $file $file
+      fi
+    done
+    if [[ ! -z "`ncdump -h ${file} | grep ensemble | head -1 | awk '{print $3}' | grep [0-9]`" ]] ; then
+      typeset var nrec=`ncdump -h ${file} | grep ensemble | head -1 | awk '{print $3}' | grep [0-9]`
+      typeset var jrec
+      for ((jrec=1;jrec<=$nrec;jrec++)) ; do
+        ncks -d ensemble,$((jrec-1)) $file tmp_record_${ind}.nc
+        ncwa -O -a ensemble tmp_record_${ind}.nc tmp_record_${ind}.nc
+        lstfiles2=${lstfiles2}" "tmp_record_${ind}.nc
+        ind=$((ind+1))
+      done
+    else 
+      lstfiles2=${lstfiles2}" "$file
+    fi
+  done
+  ncecat -h ${lstfiles2} ${3}
+  rm -f tmp_record_*.nc
+  ncrename -h -O -d record,ensemble ${3} ${3}
+  ncpdq -O -h -a time,ensemble ${3} ${3}
+}
