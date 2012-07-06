@@ -70,11 +70,11 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     case $expid in 
       'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf}
       case $expid in
-        'nemovar_s4') endyear=2011 ;;
+        'nemovar_s4') endyear=2012 ;;
         'nemovar_combine') endyear=2009 ;;
       esac
       case $yearf in
-        $endyear) monf=6; ltimef=10 ;;
+        $endyear) monf=5; ltimef=9 ;;
         *) monf=$(( (10#$moni+10)%12+1 )) ;;
       esac
       ;;

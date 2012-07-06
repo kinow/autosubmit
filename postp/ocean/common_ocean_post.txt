@@ -115,7 +115,7 @@ esac
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
-  lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
+  lstfiles=`ls *${root}.nc | grep -v "${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
   if [[ $root == 'moc' ]] ; then 
     ncrename -d gsize,y ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
@@ -139,7 +139,7 @@ function get_nemovar {
 typeset var path
 typeset var yearf
 case $1 in
-  'nemovar_s4') path=/cfunas/exp/ECMWF/NEMOVAR_S4/outputs/fc$2/s4 ; yearf=2011 ;;
+  'nemovar_s4') path=/cfunas/exp/ECMWF/NEMOVAR_S4/outputs/fc$2/s4 ; yearf=2012 ;;
   'nemovar_combine') path=/cfunas/exp/ECMWF/NEMOVAR_COMBINE/outputs/opa0/fa9p_1m ; yearf=2009 ;;
 esac
 typeset var year
@@ -149,7 +149,7 @@ typeset var monb
 for ((year=$3;year<=$4;year=$((year+1)))) ; do
   case $year in
     $3) mona=9 ; monb=12 ;;
-    $yearf) mona=1; monb=6 ;;
+    $yearf) mona=1; monb=5 ;;
     $4) mona=1 ;monb=8 ;;
     *) mona=1 ;monb=12 ;;
   esac   
@@ -166,7 +166,7 @@ typeset var ntimes
 typeset var jt
 for root in ${listroots[@]} ; do
   lstfiles=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
-  ncrcat -O $lstfiles tmp_${root}.nc 
+  ncrcat -O -x -v vorbiasp $lstfiles tmp_${root}.nc 
   cdo settaxis,${3}-09-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
   rm -f $lstfiles tmp_${root}.nc
 done
@@ -193,16 +193,16 @@ typeset var mon1=$(((10#$mm0+$4-2)%12+1))
 typeset var mon2=$(((10#$mm0+$5-2)%12+1))
 
 typeset var listroots
-if [[ $year1 == $yyyy0 && $(printf "%02d" $mon1) == $mm0 ]] ; then
+#if [[ $year1 == $yyyy0 && $(printf "%02d" $mon1) == $mm0 ]] ; then
   case $6 in
     'diags' ) listroots="t3d" ;;
     'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
   esac
-else
-  if [[ $6 == 'diags' ]] ; then
-    listroots="heat_sal_mxl ice moc psi_U psi_V sal_0-300m sal_300-5400m sstsssmld t3d" 
-  fi
-fi
+#else
+#  if [[ $6 == 'diags' ]] ; then
+#    listroots="heat_sal_mxl ice moc psi_U psi_V sal_0-300m sal_300-5400m sstsssmld t3d" 
+#  fi
+#fi
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
