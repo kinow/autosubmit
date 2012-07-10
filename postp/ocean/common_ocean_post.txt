@@ -17,6 +17,7 @@
 # setminmax                                                                   #
 # concat                                                                      #
 # gather_memb                                                                 #
+# ohc_specified_layer
 #                                                                             #
 #      Those functions would never have seen the day without Hui Du,          #
 #                     usually referred to as Super-Hui.                       #
@@ -262,7 +263,44 @@ done
 cdo cat $list $2
 ncks -A -v time $1 $2
 rm -f $list
-setminmax $2 somxlsaltc somxlheatc
+setminmax $2 somxlsaltc somxlheatc somxl010
+}
+###############################################################################
+#          Pointwise Ocean Heat Content in a specified ocean thickness        #
+#          (J/m-2)
+#                                                                             #
+# $1 : input grid_T file name                                                 #
+# $2 : upper depth of the layer (in meters)                                   #
+# $3 : lower depth of the layer (in meters)                                   #
+# $4 : output file name                                                       #
+#                                                                             #
+#         Created in June 2012      Author : iandreu@ic3.cat                  #
+###############################################################################
+
+function ohc_specified_layer {
+typeset var ntime=`cdo ntime $1`
+typeset var list=""
+typeset var jt
+ncap2 -v -O -s "heatc_sl=tmask*e3t" mesh_zgr.nc e3t_file.nc
+ncrename -d t,time -d z,deptht e3t_file.nc
+for ((jt=1;jt<=$ntime;jt++)); do
+  cdo seltimestep,$jt $1 intohc_slayer.nc
+  ncks -O -v votemper intohc_slayer.nc intmeantem.nc
+  ncrename -v votemper,heatc_sl intmeantem.nc 
+  cdo mul intmeantem.nc e3t_file.nc heatc_sl_out.nc
+  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
+  cdfvertmean heatc_sl_out.nc heatc_sl T 0 300
+  ncrename -O -v sovertmean,heatc_sl -d time_counter,time -v time_counter,time vertmean.nc
+  ncwa -O -a deptht vertmean.nc vertmean.nc
+  ncap2 -s "heatc_sl=1020.0*4000*heatc_sl" vertmean.nc heatc_sl_$jt.nc
+  list=$list" "heatc_sl_$jt.nc
+  rm -f intohc_slayer.nc intmeantem.nc vertmean.nc heatc_sl_out.nc
+done
+cdo cat $list $4
+ncks -A -v time $1 $4
+rm -f $list 
+rm -f e3t_file.nc
+setminmax $4 heatc_sl
 }
 ###############################################################################
 #                      Compute the MOC for oceanic basins                     #
