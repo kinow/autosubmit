@@ -127,6 +127,12 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           fi      
         ;;
 
+        'ohc_specified_layer')
+          if [[ $typeoutput == 'MMO' ]] ; then
+            ohc_specified_layer grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0 300 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          fi
+        ;;
+
         'moc')
         if [[ $typeoutput == 'MMO' ]] ; then
           moc grid_V_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
@@ -205,6 +211,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'psi') dirout='psi' ; files=('psi') ;;
       'usalc') dirout='saltc' ; files=('sal_0-300m') ;;
       'lmsalc') dirout='saltc' ;  files=('sal_300-5400m') ;;
+      'ohc_specified_layer') dirout='heatc' ; files=('ohc_2d_avg_0-300m') ;;
     esac
     case `echo $post|cut -c$((${#post}-2))-${#post}` in
       'ohc') 
