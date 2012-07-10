@@ -263,7 +263,7 @@ done
 cdo cat $list $2
 ncks -A -v time $1 $2
 rm -f $list
-setminmax $2 somxlsaltc somxlheatc somxl010
+setminmax $2 somxlsaltc somxlheatc
 }
 ###############################################################################
 #          Pointwise Ocean Heat Content in a specified ocean thickness        #
