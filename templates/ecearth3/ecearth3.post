@@ -55,16 +55,12 @@ fi
 #
 date
 if [[ ! -a %JOBNAME%.opost ]]; then
+   grid_types="grid_T grid_U grid_V grid_W icemod"
    case ${SAVEDDO} in
     'TRUE') 
-     interval=1d 
-     grid_types="grid_T"
-     # grid_types="grid_W grid_T grid_U grid_V icemod" for 5d
-    ;;
+     interval=1d ;;
     'FALSE')
-     interval=1m
-     grid_types="grid_T"
-    ;;
+     interval=1m ;;
    esac
    cp ${EXPID}_${interval}_* $tmp_output_dir
    cd $tmp_output_dir

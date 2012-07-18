@@ -111,17 +111,13 @@ SAVEDDO=%SAVEDDO%
 tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 touch ../$tarfile
 
-# Copying the monthly means
+# Copying the monthly or daily means
+grid_types="grid_T grid_U grid_V grid_W icemod"
 case ${SAVEDDO} in
- 'TRUE') 
-  interval=1d 
-  grid_types="grid_T"
-  #grid_types="grid_W grid_T grid_U grid_V icemod" for 5d
- ;;
+ 'TRUE')
+  interval=1d ;;
  'FALSE')
-  interval=1m
-  grid_types="grid_T"
- ;;
+  interval=1m ;;
 esac
 prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
 for grid_type in ${grid_types}; do

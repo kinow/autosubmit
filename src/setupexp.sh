@@ -89,7 +89,7 @@ if [[ -f conf/$MODSRC ]]; then
       ln -sf $SETUP_DIR/sources/ifs*/bin/ifsmaster* $SETUP_DIR/bin ;\
      fi"
     ;;
-    v3.1*)
+    v3-*)
      $SSH "\
      cd $SETUP_DIR/sources/build-config ;\
      ./compilation.sh ;\
