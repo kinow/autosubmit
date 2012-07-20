@@ -128,15 +128,12 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         ;;
 
         'ohc_specified_layer')
-          if [[ $typeoutput == 'MMO' ]] ; then
-            ohc_specified_layer grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 300.0 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
-          fi
           case $typeoutput in
            'MMO' ) pref='grid_T' ;;
            'diags') pref='t3d' ;;
           esac
-          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0 300 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
-          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 300 800 ohc_2d_avg_300-800m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 300.0 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 300.0 800.0 ohc_2d_avg_300-800m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
         ;;
 
         'moc')
