@@ -244,6 +244,8 @@ if __name__ == "__main__":
 			sys.exit(1)
 	
 	shutil.copy('../templates/' + args.HPC[0] + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
+	if args.new[0] == "ecearth" or args.new[0] == "ecearth3" or args.new[0] == "nemo":
+		shutil.copy('../postp/ocean/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."
