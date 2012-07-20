@@ -18,20 +18,9 @@ MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
 
-case $VERSION in
-     v3.1-r437) ECEARTH=${ECEARTH_DIR}/v3.1-r437
-                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r437/setup/ctrl
-                ini_data_dir=${ECEARTH_DIR}/v3.1-r437/inidata
-     ;;
-     v3.1-r593) ECEARTH=${ECEARTH_DIR}/v3.1-r593
-                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r593/setup/ctrl
-                ini_data_dir=${ECEARTH_DIR}/v3.1-r593/inidata
-     ;;
-     v3.1-r650) ECEARTH=${ECEARTH_DIR}/v3.1-r650
-                ctrl_file_dir=${ECEARTH_DIR}/v3.1-r650/setup/ctrl
-                ini_data_dir=${ECEARTH_DIR}/v3.1-r650/inidata
-     ;;
-esac
+ECEARTH=${ECEARTH_DIR}/$VERSION
+ctrl_file_dir=${ECEARTH_DIR}/$VERSION/setup/ctrl
+ini_data_dir=${ECEARTH_DIR}/$VERSION/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/bin
@@ -50,14 +39,10 @@ nprtrv=%NPRTRVIFS%
 ifs_exe_file=${BINPATH}/ifsmaster-eexcon
 nfrp=%NFRP%
 case ${ifs_grid} in
-     T159L*)  ifs_time_step_sec=3600
-     ;;
-     T255L*)  ifs_time_step_sec=2700
-     ;;
-     T799L*)  ifs_time_step_sec=720
-     ;;
-     *) error "Unsupported grid type: ${ifs_grid}"
-     ;;
+     T159L*) ifs_time_step_sec=3600 ;;
+     T255L*) ifs_time_step_sec=2700 ;;
+     T799L*) ifs_time_step_sec=720  ;;
+     *) echo "Unsupported grid type: ${ifs_grid}" ;;
 esac
 ifs_output_freq=$(( nfrp * 3600 / ifs_time_step_sec ))
 ifs_di_freq=$(( 1 * 3600 / ifs_time_step_sec ))
@@ -68,16 +53,14 @@ ifs_lastout=true
 # NEMO 
 #
 nem_grid=%NEMO_resolution%
-seaice=lim2
+LIM=%LIM%
 nem_numproc=%NEMO_nproc%
-nem_exe_file=${BINPATH}/nemo-${nem_grid}-${seaice}.exe
+nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
+nem_exe_file=${BINPATH}/${nem_grid_wol}_${LIM}/nemo.exe
 case ${nem_grid} in
-     ORCA1L46)   nem_time_step_sec=3600
-     ;;
-     ORCA025L46) nem_time_step_sec=1200
-     ;;
-     *) error "Unsupported grid type: ${nem_grid}"
-    ;;
+     ORCA1*)   nem_time_step_sec=3600 ;;
+     ORCA025*) nem_time_step_sec=1200 ;;
+     *) echo "Unsupported grid type: ${nem_grid}" ;;
 esac
 lim_time_step_sec=3600
 advsch=%ADVSCH%
@@ -161,18 +144,10 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
 #
 
 # IFS, NEMO, LIM namelist and OASIS namcouple files
-. ${ctrl_file_dir}/namelist.ifs.sh   > fort.4
-. ${ctrl_file_dir}/namelist.${seaice}.sh  > namelist_ice
-. ${ctrl_file_dir}/namcouple.sh      > namcouple
-
-case ${nem_grid} in
-        ORCA1L46)   . ${ctrl_file_dir}/namelist.nemo-orca1.sh    > namelist
-                    ;;
-        ORCA025L46) . ${ctrl_file_dir}/namelist.nemo-orca025.sh  > namelist
-                    ;;
-        *)          error "Unsupported grid type: ${nem_grid}"
-                    ;;
-esac
+. ${ctrl_file_dir}/namelist.ifs.sh                                                 > fort.4
+. ${ctrl_file_dir}/namelist.nemo-$(echo $nem_grid_wol | tr [:upper:] [:lower:]).sh > namelist
+. ${ctrl_file_dir}/namelist.$(echo $LIM | tr [:upper:] [:lower:]).sh               > namelist_ice
+. ${ctrl_file_dir}/namcouple.sh                                                    > namcouple
 
 # Split OASIS namcouple file (if necessary)
 if (( oas_numproc == 1 ))
@@ -182,7 +157,7 @@ elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]
 then
     ${oas_namcut_script} ${oas_numproc} namcouple
 else
-    error "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
+    echo "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
 fi
 
 #

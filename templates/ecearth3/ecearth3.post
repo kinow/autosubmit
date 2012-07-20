@@ -55,29 +55,22 @@ fi
 #
 date
 if [[ ! -a %JOBNAME%.opost ]]; then
-   case ${SAVEDDO} in
-    'TRUE') 
-     interval=1d 
-     grid_types="grid_T"
-     # grid_types="grid_W grid_T grid_U grid_V icemod" for 5d
-    ;;
-    'FALSE')
-     interval=1m
-     grid_types="grid_T"
-    ;;
-   esac
-   cp ${EXPID}_${interval}_* $tmp_output_dir
-   cd $tmp_output_dir
-   prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
-   for grid_type in ${grid_types}; do
-       output_file=${prefix}_${grid_type}.nc
-       rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       gzip -9 ${output_file}
-       rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       mv ${output_file}.gz $output_dir
+   intervals=`ls -1 ${EXPID}_??_????????_????????_??????_0000.nc | cut -d '_' -f 2 | uniq`
+   for interval in ${intervals}; do
+       grid_types=`ls -1 ${EXPID}_${interval}_????????_????????_??????_0000.nc | cut -c 27-32`
+       cp ${EXPID}_${interval}_* $tmp_output_dir
+       cd $tmp_output_dir
+       prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
+       for grid_type in ${grid_types}; do
+           output_file=${prefix}_${grid_type}.nc
+           rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           gzip -9 ${output_file}
+           rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           mv ${output_file}.gz $output_dir
+       done
+       cd $output_dir
    done
-   cd $output_dir
    touch %JOBNAME%.opost
 fi
 
