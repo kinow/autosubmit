@@ -286,15 +286,43 @@ ncrename -d t,time -d z,deptht e3t_file.nc
 for ((jt=1;jt<=$ntime;jt++)); do
   cdo seltimestep,$jt $1 intohc_slayer.nc
   ncks -O -v votemper intohc_slayer.nc intmeantem.nc
-  ncrename -v votemper,heatc_sl intmeantem.nc 
+  ncrename -v votemper,heatc_sl intmeantem.nc
   cdo mul intmeantem.nc e3t_file.nc heatc_sl_out.nc
   ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
-  cdfvertmean heatc_sl_out.nc heatc_sl T 0 300
-  ncrename -O -v sovertmean,heatc_sl -d time_counter,time -v time_counter,time vertmean.nc
-  ncwa -O -a deptht vertmean.nc vertmean.nc
-  ncap2 -s "heatc_sl=1020.0*4000*heatc_sl" vertmean.nc heatc_sl_$jt.nc
+  # extract the data between the two given depths --> heatc_sl_top.nc
+  ncks -d deptht,$2,$3 heatc_sl_out.nc heatc_sl_top.nc
+  #perform the integration of ohc down to that level (main contribution)
+  ncap2 -O -s 'heatc_sl=heatc_sl.total($deptht)' heatc_sl_top.nc heatc_sl_top.nc
+  # now extract a few levels below, to compute the residual ohc 
+  lower_bnd=`echo "$3 + 200.0" | bc`
+  ncks -d deptht,$3,$lower_bnd heatc_sl_out.nc heatc_sl_bottom.nc
+  # obtain the weight for the extra level containing the 300 m
+  # deptht in the gridT files is positive
+  # weight = (300.0 - depth_top)/(depth_bottom - depth_top)
+  # and add the thickness down to 300 m in the next layer
+  ncpdq -a '-deptht' heatc_sl_top.nc heatc_sl_top_invert.nc
+  ncks -d deptht,0,0,1 heatc_sl_top_invert.nc level_above.nc
+  ncks -d deptht,0,0,1 heatc_sl_bottom.nc level_below.nc
+  ## Here, add the residual contribution, before adding it to the main contribution 
+  ncrename -v deptht,layerthcknss level_below.nc
+  ncrename -v deptht,layerthcknss level_above.nc
+  ncbo -A --op_typ=sub -v layerthcknss level_below.nc level_above.nc depth_diff_lay.nc
+  ncrename -v layerthcknss,heatc_sl depth_diff_lay.nc
+  ncap2 -s "heatc_sl=(300. - layerthcknss)" level_above.nc depth_diff_sublay.nc
+  ncbo --op_typ=/ -v heatc_sl depth_diff_sublay.nc depth_diff_lay.nc factor.nc
+  ncrename -v heatc_sl,factor factor.nc
+  ncks -A -v factor factor.nc level_below.nc
+  rm -f depth_diff_sublay.nc depth_diff_lay.nc
+  ncap2 -O -s "heatc_sl=(factor * heatc_sl)" level_below.nc level_below.nc
+  ncwa -O -a deptht level_below.nc level_below.nc
+  ncbo --op_typ=+ -v heatc_sl heatc_sl_top.nc level_below.nc total_heatc_sl.nc
+  ncap2 -s "heatc_sl=1020.0*4000*heatc_sl" total_heatc_sl.nc heatc_sl_$jt.nc
   list=$list" "heatc_sl_$jt.nc
-  rm -f intohc_slayer.nc intmeantem.nc vertmean.nc heatc_sl_out.nc
+  rm -f depth_diff_lay.nc depth_diff_sublay.nc
+  rm -f heatc_sl_out.nc heatc_sl_top.nc heatc_sl_top_invert.nc heatc_sl_bottom.nc 
+  rm -f level_above.nc level_below.nc
+  rm -f intohc_slayer.nc intmeantem.nc vertmean.nc total_heatc_sl.nc
+  rm -f factor.nc
 done
 cdo cat $list $4
 ncks -A -v time $1 $4
