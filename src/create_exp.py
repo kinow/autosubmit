@@ -14,6 +14,11 @@ import json
 import re
 
 def create_json(text):
+	list_sd = []
+	list_m = []
+	list_ms = []
+	list_cs = []
+	data = []
 	pattern_sd = "\d{8}"
 	pattern_m = "fc\d"
 
@@ -74,13 +79,6 @@ if __name__ == "__main__":
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 
-	rerun = exp_parser.get('experiment','RERUN').lower()
-
-	if (rerun == 'false'):
-		job_list = JobList(expid)
-	else if (rerun == 'true'):
-		job_list = FailedJobList(expid)
-
 	expdef = []
 	exp_parser = expdef_parser(exp_parser_file)
 	for section in exp_parser.sections():
@@ -98,10 +96,17 @@ if __name__ == "__main__":
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
 	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
+	rerun = exp_parser.get('experiment','RERUN').lower()
+
+	if (rerun == 'false'):
+		job_list = JobList(expid)
+	elif (rerun == 'true'):
+		job_list = FailedJobList(expid)
+
 
 	if (rerun == 'false'):
 		job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
-	else if (rerun == 'true'):
+	elif (rerun == 'true'):
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, parameters)
 

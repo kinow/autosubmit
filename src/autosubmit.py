@@ -56,7 +56,7 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
-	rerun = exp_parser.get('experiment','rerun').lower()
+	rerun = exp_parser.get('experiment','RERUN').lower()
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
 	elif(hpcarch == "ithaca"):
@@ -91,7 +91,7 @@ if __name__ == "__main__":
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
-	else if(rerun == 'true'):
+	elif(rerun == 'true'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/failed_job_list_'+ expid +'.pkl'
 	print filename
 

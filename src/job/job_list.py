@@ -259,16 +259,17 @@ class FailedJobList:
 			for member in date['ms']:
 				print member['m']
 				starting_chunk = int(member['cs'][0])
-				last_chunk = int(member['cs'][len(member['cs'])-1])
+				if (len(member['cs']) > 1):
+					last_chunk = int(member['cs'][len(member['cs'])-1])
+				else:
+					last_chunk = starting_chunk
 				for	chunk in member['cs']:
 					print chunk
-					rootjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk) + "_"
+					chunk = int(chunk)
+					rootjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk) + "_"
 					post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
 					clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
-					if	(starting_chunk	== chunk and chunk != 1):
-						sim_job = Job(rootjob_name + "sim", 0, Status.READY, Type.SIMULATION)
-					else:
-						sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
+					sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
 						
 					# set dependency of postprocessing jobs
 					post_job.set_parents([sim_job.get_name()])
@@ -280,7 +281,8 @@ class FailedJobList:
 					
 					# set status of first chunk to READY
 					if (chunk > starting_chunk):
-						parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-1) + "_" + "clean"
+						prev_chunk = member['cs'][member['cs'].index(str(chunk))-1]
+						parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
 						sim_job.set_parents([parentjob_name])
 					if (chunk == starting_chunk):
 						init_job = Job(rootjob_name + "init", 0, Status.READY, Type.INITIALISATION)
@@ -288,8 +290,9 @@ class FailedJobList:
 						init_job.set_parents([])
 						sim_job.set_parents([init_job.get_name()])
 						self._job_list += [init_job]
-					if (chunk < last_chunk - 1):
-						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(next_chunk) + "_" + "sim"
+					if (chunk < last_chunk): ####REVISAR <--- ###
+						next_chunk = member['cs'][member['cs'].index(str(chunk))+1]
+						childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
 						clean_job.add_children(childjob_name)
 
 					self._job_list += [sim_job, post_job, clean_job]
