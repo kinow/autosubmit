@@ -55,9 +55,9 @@ fi
 #
 date
 if [[ ! -a %JOBNAME%.opost ]]; then
-   intervals=`ls -1 ${EXPID}_??_????????_????????_??????_0000.nc | cut -d '_' -f 2 | uniq`
+   intervals=`ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -d '_' -f 2 | uniq`
    for interval in ${intervals}; do
-       grid_types=`ls -1 ${EXPID}_${interval}_????????_????????_??????_0000.nc | cut -c 27-32`
+       grid_types=`ls -1 ${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 27-32`
        cp ${EXPID}_${interval}_* $tmp_output_dir
        cd $tmp_output_dir
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}

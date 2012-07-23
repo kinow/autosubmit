@@ -152,7 +152,7 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
 # Split OASIS namcouple file (if necessary)
 if (( oas_numproc == 1 ))
 then
-    ln -s namcouple namcouple_0
+    ln -sf namcouple namcouple_0
 elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]
 then
     ${oas_namcut_script} ${oas_numproc} namcouple
