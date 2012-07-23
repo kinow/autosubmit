@@ -33,6 +33,13 @@ RUN_months=%CHUNKSIZE%
 RUN_days=%RUN_DAYS%
 # In hours
 RUN_hours=$((RUN_days*24))
+#
+#
+###############################################################################
+#                   Include ocean post processing functions                   #
+###############################################################################
+#
+%INCLUDE_POSTP%
 
 #
 # Model output path w.r.t chunk number
