@@ -250,52 +250,87 @@ class FailedJobList:
 		self._expid = expid
 		self._stat_val = Status()
 
-	def create(self, chunk_list, parameters):
+	def create(self, chunk_list, starting_chunk, num_chunks, parameters):
 		print "Creating job list\n"
 		data = json.loads(chunk_list)
 		print data
+		
 		for date in data['sds']:
 			print date['sd']
 			for member in date['ms']:
 				print member['m']
-				starting_chunk = int(member['cs'][0])
+				
+				first_chunk = int(member['cs'][0])
+				
 				if (len(member['cs']) > 1):
 					last_chunk = int(member['cs'][len(member['cs'])-1])
 				else:
-					last_chunk = starting_chunk
+					last_chunk = first_chunk
+				
+				initjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(starting_chunk) + "_"
+				init_job = Job(initjob_name + "init", 0, Status.READY, Type.INITIALISATION)
+				init_job.set_parents([])
+				self._job_list += [init_job]
+
 				for	chunk in member['cs']:
-					print chunk
 					chunk = int(chunk)
 					rootjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk) + "_"
 					post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
 					clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
 					sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
-						
 					# set dependency of postprocessing jobs
+					sim_job.set_children([post_job.get_name()])
 					post_job.set_parents([sim_job.get_name()])
 					post_job.set_children([clean_job.get_name()])
-					# set parents of clean job
 					clean_job.set_parents([post_job.get_name()])
-					# set first child of simulation job
-					sim_job.set_children([post_job.get_name()])
-					
-					# set status of first chunk to READY
-					if (chunk > starting_chunk):
-						prev_chunk = member['cs'][member['cs'].index(str(chunk))-1]
-						parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
-						sim_job.set_parents([parentjob_name])
-					if (chunk == starting_chunk):
-						init_job = Job(rootjob_name + "init", 0, Status.READY, Type.INITIALISATION)
-						init_job.set_children([sim_job.get_name()])
-						init_job.set_parents([])
-						sim_job.set_parents([init_job.get_name()])
-						self._job_list += [init_job]
-					if (chunk < last_chunk): ####REVISAR <--- ###
-						next_chunk = member['cs'][member['cs'].index(str(chunk))+1]
-						childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
-						clean_job.add_children(childjob_name)
 
-					self._job_list += [sim_job, post_job, clean_job]
+					if (chunk-1 <= 0):
+						sim_job.set_parents([init_job.get_name()])
+						if (chunk == first_chunk):
+							init_job.set_children([sim_job.get_name()])
+							sim_job.set_parents([init_job.get_name()])
+						if (chunk > first_chunk):
+							prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-1])
+							if (prev_chunk != chunk-1):
+								parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+								sim_job.set_parents([parentjob_name])
+						if (chunk < last_chunk):
+							next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
+							if (next_chunk != chunk+1):
+								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
+								clean_job.add_children(childjob_name)
+						self._job_list += [sim_job, post_job, clean_job]
+
+					else:
+						prevjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_"
+						prev_clean_job = Job(prevjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
+						prev_clean_job.set_children([sim_job.get_name()])
+						sim_job.set_parents([prev_clean_job.get_name()])
+						if (chunk == first_chunk):
+							init_job.set_children([prev_clean_job.get_name()])
+							prev_clean_job.set_parents([init_job.get_name()])
+						if (chunk > first_chunk):
+							prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-1])
+							if (prev_chunk != chunk-1):
+								parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+								prev_clean_job.set_parents([parentjob_name])
+						if (chunk < last_chunk):
+							next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
+							if (next_chunk != chunk+1):
+								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
+								clean_job.add_children(childjob_name)
+						self._job_list += [prev_clean_job, sim_job, post_job, clean_job]
+												
+						
+				if (member['cs'] == []):
+					clean_job = init_job
+				if (last_chunk != num_chunks):
+					finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(num_chunks) + "_" + "clean"
+					final_job = Job(finaljob_name , 0, Status.WAITING, Type.CLEANING)
+					final_job.set_parents([clean_job.get_name()])
+					clean_job.add_children(finaljob_name)
+					self._job_list += [final_job]
+		
 
 		self.update_genealogy()
 		for job in self._job_list:

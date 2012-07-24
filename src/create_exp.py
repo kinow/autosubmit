@@ -33,7 +33,8 @@ def create_json(text):
 			for match in re.split(pattern_m, element):
 				cs = match[match.find("[")+1:match.find("]")]
 				if cs != "":
-					list_cs.append(cs.split(", "))
+					list_cs.append(cs.replace(" ", "").split(","))
+			print list_cs
 			i = 0
 			for match in re.findall(pattern_m, element):
 				c = {'m': match, 'cs': list_cs[i] }
@@ -108,7 +109,7 @@ if __name__ == "__main__":
 		job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
 	elif (rerun == 'true'):
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
-		job_list.create(chunk_list, parameters)
+		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
 
 	job_list.save()
 	GenerateOutput(expid, job_list.get_job_list(), 'pdf')
