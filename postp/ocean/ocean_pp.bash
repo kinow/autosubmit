@@ -1,11 +1,11 @@
-#/bin/bash
+#!/bin/bash
 set -evx
 
-listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
+listpost='ohc_specified_layer'
 expid=b02p              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
-# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
+# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 listmemb=( 0 1 2 )      # list of members
 syeari=1950             # first start date
@@ -17,11 +17,11 @@ chunklen=6              # length of the chunks (in months)
 ltime0=                 # first leadtime to post-process
 ltimef=                 # last leadtime to postprocess
 # Fill up either ltime0/ltimef or year0/yearf
-year0=1950              # first year to post-process in the fist start date
-yearf=1970              # last year to post-process in the fist start date
+year0=2000              # first year to post-process in the fist start date
+yearf=2025              # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 VERSION=v2.2            # NEMO version
-PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit_version2/postp'
+PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 ###############################################################################
@@ -70,11 +70,11 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     case $expid in 
       'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf}
       case $expid in
-        'nemovar_s4') endyear=2011 ;;
+        'nemovar_s4') endyear=2012 ;;
         'nemovar_combine') endyear=2009 ;;
       esac
       case $yearf in
-        $endyear) monf=6; ltimef=10 ;;
+        $endyear) monf=5; ltimef=9 ;;
         *) monf=$(( (10#$moni+10)%12+1 )) ;;
       esac
       ;;
@@ -125,6 +125,18 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           if [[ $typeoutput == 'MMO' ]] ; then
             vertmeansal grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0 300 sal_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
           fi      
+        ;;
+
+        'ohc_specified_layer')
+          if [[ $typeoutput == 'MMO' ]] ; then
+            ohc_specified_layer grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 300.0 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          fi
+          case $typeoutput in
+           'MMO' ) pref='grid_T' ;;
+           'diags') pref='t3d' ;;
+          esac
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0 300 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 300 800 ohc_2d_avg_300-800m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
         ;;
 
         'moc')
@@ -205,6 +217,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'psi') dirout='psi' ; files=('psi') ;;
       'usalc') dirout='saltc' ; files=('sal_0-300m') ;;
       'lmsalc') dirout='saltc' ;  files=('sal_300-5400m') ;;
+      'ohc_specified_layer') dirout='heatc' ; files=('ohc_2d_avg_0-300m' 'ohc_2d_avg_300-800m') ;;
     esac
     case `echo $post|cut -c$((${#post}-2))-${#post}` in
       'ohc') 

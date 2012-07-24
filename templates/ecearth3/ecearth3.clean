@@ -111,22 +111,15 @@ SAVEDDO=%SAVEDDO%
 tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 touch ../$tarfile
 
-# Copying the monthly means
-case ${SAVEDDO} in
- 'TRUE') 
-  interval=1d 
-  grid_types="grid_T"
-  #grid_types="grid_W grid_T grid_U grid_V icemod" for 5d
- ;;
- 'FALSE')
-  interval=1m
-  grid_types="grid_T"
- ;;
-esac
-prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
-for grid_type in ${grid_types}; do
-    output_file=${prefix}_${grid_type}.nc.gz
-    tar -rvf ../${tarfile} ${output_file}
+# Copying the 1d (daily), 5d (5 days), 1m (monthly), or any type of means available
+intervals=`ls -1 ${EXPID}_??_*.nc.gz | cut -d '_' -f 2 | uniq`
+for interval in ${intervals}; do
+    grid_types=`ls -1 ${EXPID}_${interval}_*.nc.gz | cut -c 27-32`
+    prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
+    for grid_type in ${grid_types}; do
+        output_file=${prefix}_${grid_type}.nc.gz
+        tar -rvf ../${tarfile} ${output_file}
+    done
 done
 cp ../$tarfile $PATHOUT_OUT
 #

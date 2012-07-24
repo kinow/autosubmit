@@ -61,3 +61,4 @@ PATH=/cfu/software/cdftools2.1/:$PATH
 'uArctohc'     : Arctic (65-90N) upper (0-350m) ocean heat content
 'mArctohc'     : Arctic (65-90N) middle (350-800m) ocean heat content
 'lArctohc'     : Arctic (65-90N) lower (800m-bottom) ocean heat content
+'ohc_specified_layer' : Pointwise ocean heat content in a specified ocean thickness (at present 0-300 m)

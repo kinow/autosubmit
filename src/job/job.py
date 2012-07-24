@@ -261,6 +261,7 @@ class Job:
 		print "My Template: %s" % mytemplate
 		#templateContent = file(hpcarch).read()
 		templateContent = file(mytemplate).read()
+		parameters['INCLUDE_POSTP'] = file(self._template_path + "/common_ocean_post.txt").read()
 		for key in parameters.keys():
 			if key in templateContent:
 				print "%s:\t%s" % (key,parameters[key])
