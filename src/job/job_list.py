@@ -259,6 +259,7 @@ class FailedJobList:
 			print date['sd']
 			for member in date['ms']:
 				print member['m']
+				print member['cs']
 				
 				first_chunk = int(member['cs'][0])
 				
@@ -272,6 +273,9 @@ class FailedJobList:
 				init_job.set_parents([])
 				self._job_list += [init_job]
 
+				prev_chunk = 0
+				prev_clean_job = []
+
 				for	chunk in member['cs']:
 					chunk = int(chunk)
 					rootjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk) + "_"
@@ -284,52 +288,61 @@ class FailedJobList:
 					post_job.set_children([clean_job.get_name()])
 					clean_job.set_parents([post_job.get_name()])
 
-					if (chunk-1 <= 0):
+					if (chunk == 1):
+						init_job.set_children([sim_job.get_name()])
 						sim_job.set_parents([init_job.get_name()])
-						if (chunk == first_chunk):
-							init_job.set_children([sim_job.get_name()])
-							sim_job.set_parents([init_job.get_name()])
-						if (chunk > first_chunk):
-							prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-1])
-							if (prev_chunk != chunk-1):
-								parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
-								sim_job.set_parents([parentjob_name])
-						if (chunk < last_chunk):
-							next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
-							if (next_chunk != chunk+1):
-								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
-								clean_job.add_children(childjob_name)
 						self._job_list += [sim_job, post_job, clean_job]
-
+					elif (chunk == first_chunk):
+						init_job.set_children([sim_job.get_name()])
+						sim_job.set_parents([init_job.get_name()])
+						self._job_list += [sim_job, post_job, clean_job]
 					else:
-						prevjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_"
-						prev_clean_job = Job(prevjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
-						prev_clean_job.set_children([sim_job.get_name()])
-						sim_job.set_parents([prev_clean_job.get_name()])
-						if (chunk == first_chunk):
-							init_job.set_children([prev_clean_job.get_name()])
-							prev_clean_job.set_parents([init_job.get_name()])
+						#prevjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_"
+						#prev_clean_job = Job(prevjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
+						#prev_clean_job.set_children([sim_job.get_name()])
+						#sim_job.set_parents([prev_clean_job.get_name()])
+
+						# Link parents:
 						if (chunk > first_chunk):
 							prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-1])
+							# in case reruning no consecutive chunk we need to create the previous clean job in the basis of chunk-1
 							if (prev_chunk != chunk-1):
-								parentjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
-								prev_clean_job.set_parents([parentjob_name])
-						if (chunk < last_chunk):
-							next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
-							if (next_chunk != chunk+1):
-								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
-								clean_job.add_children(childjob_name)
-						self._job_list += [prev_clean_job, sim_job, post_job, clean_job]
-												
+								prev_new_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_" + "clean"
+								prev_new_clean_job = Job(prev_new_job_name, 0, Status.WAITING, Type.CLEANING)
+								sim_job.set_parents([prev_new_clean_job.get_name()])
+								# Link parent and child for new clean job:
+								prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+								prev_new_clean_job.set_parents([prev_clean_job_name])
+								prev_new_clean_job.set_children([sim_job.get_name()])
+								# Add those to the list
+								self._job_list += [prev_new_clean_job, sim_job, post_job, clean_job]
+							# otherwise we should link backwards to the immediate before clean job
+							else:
+								prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+								sim_job.set_parents([prev_clean_job_name])
+								# Add those to the list
+								self._job_list += [sim_job, post_job, clean_job]
+					#Link child:								
+					if (chunk < last_chunk):
+						next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
+						# in case reruning no consecutive chunks we need to link next_chunk-1 clean job
+						if (next_chunk != chunk+1):
+							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
+							clean_job.add_children(childjob_name)
+						# otherwise we should link with next chunk sim job
+						else:
+							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
+							clean_job.add_children(childjob_name)
+											
 						
-				if (member['cs'] == []):
-					clean_job = init_job
-				if (last_chunk != num_chunks):
-					finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(num_chunks) + "_" + "clean"
-					final_job = Job(finaljob_name , 0, Status.WAITING, Type.CLEANING)
-					final_job.set_parents([clean_job.get_name()])
-					clean_job.add_children(finaljob_name)
-					self._job_list += [final_job]
+				#if (member['cs'] == []):
+				#	clean_job = init_job
+				#if (last_chunk != num_chunks):
+				#	finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(num_chunks) + "_" + "clean"
+				#	final_job = Job(finaljob_name , 0, Status.WAITING, Type.CLEANING)
+				#	final_job.set_parents([clean_job.get_name()])
+				#	clean_job.add_children(finaljob_name)
+				#	self._job_list += [final_job]
 		
 
 		self.update_genealogy()
