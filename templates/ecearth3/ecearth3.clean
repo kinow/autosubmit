@@ -49,6 +49,17 @@ else
 fi
 
 #
+# Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extend)
+#
+if [[ ! -d $output_dir ]]; then
+   rm -f *_$((chunk+1))
+   tar -xvf $PATHOUT/restarts/RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_*.tar
+   tar -xvf $PATHOUT/restarts/RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_*.tar
+   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   exit
+fi
+
+#
 # Save NEMO & IFS restart files at permanent storage and clean disk
 #
 PATHOUT_RES="${PATHOUT}/restarts"
