@@ -4,6 +4,7 @@ import commands
 import pydot
 import pickle
 from job.job_list import JobList
+from job.job_list import RerunJobList
 import matplotlib
 import sys
 from dir_config import LOCAL_ROOT_DIR

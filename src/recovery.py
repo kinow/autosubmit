@@ -3,7 +3,7 @@
 from dir_config import LOCAL_ROOT_DIR
 import pickle
 from job.job_list import JobList
-from job.job_list import FailedJobList
+from job.job_list import RerunJobList
 from job.job_common import Status
 import argparse
 from monitor import GenerateOutput

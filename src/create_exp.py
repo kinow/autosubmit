@@ -4,7 +4,7 @@ from sys import exit, argv
 from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
-from job.job_list import FailedJobList
+from job.job_list import RerunJobList
 from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from os import path
@@ -101,15 +101,12 @@ if __name__ == "__main__":
 
 	if (rerun == 'false'):
 		job_list = JobList(expid)
-	elif (rerun == 'true'):
-		job_list = FailedJobList(expid)
-
-
-	if (rerun == 'false'):
 		job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
 	elif (rerun == 'true'):
+		job_list = RerunJobList(expid)
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
+
 
 	job_list.save()
 	GenerateOutput(expid, job_list.get_job_list(), 'pdf')
