@@ -19,11 +19,11 @@ EXPID=%EXPID%
 START_date=%SDATE%
 
 ECEARTH=${ECEARTH_DIR}/$VERSION
-ctrl_file_dir=${ECEARTH_DIR}/$VERSION/setup/ctrl
 ini_data_dir=${ECEARTH_DIR}/$VERSION/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
-BINPATH=${WRITINGDIR}/bin
+BINPATH=${WRITINGDIR}/model/bin
+ctrl_file_dir=${WRITINGDIR}/model/setup/ctrl
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 

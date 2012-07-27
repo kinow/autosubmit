@@ -16,36 +16,13 @@ VERSION=%VERSION%
 MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
-case $VERSION in
-     v2.1)   ECEARTH=${ECEARTH_DIR}/v2.1
-             SCRIPTDIR=${ECEARTH_DIR}/v2.1/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.1/inidata/testdata
-     ;;
-     v2.2.0) ECEARTH=${ECEARTH_DIR}/v2.2.0
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.0/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.0/inidata/testdata
-     ;;
-     v2.2.1) ECEARTH=${ECEARTH_DIR}/v2.2.1
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.1/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.1/inidata/testdata
-     ;;
-     v2.2.2) ECEARTH=${ECEARTH_DIR}/v2.2.2
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.2/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata/testdata
-     ;;
-     v2.2.3) ECEARTH=${ECEARTH_DIR}/v2.2.3
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.3/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.3/inidata/testdata
-     ;;
-     v2.3.0) ECEARTH=${ECEARTH_DIR}/v2.3.0
-             SCRIPTDIR=${ECEARTH_DIR}/v2.3.0/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.3.0/inidata/testdata
-     ;;
-esac
 
-PATH=${SCRIPTDIR}:${PATH}
+ECEARTH=${ECEARTH_DIR}/v2.3.0
+TESTDATADIR=${ECEARTH_DIR}/v2.3.0/inidata/testdata
+
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
-BINPATH=${WRITINGDIR}/bin
+BINPATH=${WRITINGDIR}/model/bin
+SCRIPTDIR=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 

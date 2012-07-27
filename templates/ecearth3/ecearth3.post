@@ -51,7 +51,7 @@ find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
 find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
 
 if [[ -d ${output_dir} ]]; then
-   mkdir -p $tmp_output_dir
+   # mkdir -p $tmp_output_dir
    cd $output_dir
 else
    exit
@@ -65,18 +65,18 @@ if [[ ! -a %JOBNAME%.opost ]]; then
    intervals=`ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -d '_' -f 2 | uniq`
    for interval in ${intervals}; do
        grid_types=`ls -1 ${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 27-32`
-       cp ${EXPID}_${interval}_* $tmp_output_dir
-       cd $tmp_output_dir
+       # cp ${EXPID}_${interval}_* $tmp_output_dir
+       # cd $tmp_output_dir
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
        for grid_type in ${grid_types}; do
            output_file=${prefix}_${grid_type}.nc
            rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
            gzip -9 ${output_file}
            rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           mv ${output_file}.gz $output_dir
+           # rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           # mv ${output_file}.gz $output_dir
        done
-       cd $output_dir
+       # cd $output_dir
    done
    touch %JOBNAME%.opost
 fi
@@ -106,8 +106,8 @@ if [[ ! -a %JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-              cp ${file} $tmp_output_dir
-              cd $tmp_output_dir
+              # cp ${file} $tmp_output_dir
+              # cd $tmp_output_dir
               cp ${file} ${file}.tmp
               case $type in
                SH) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f7 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # tested with grib_api
@@ -151,10 +151,11 @@ if [[ ! -a %JOBNAME%.apost ]]; then
               cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
               gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
               rm -f IM_*_${year}${month}_mm.nc
-              mv ${file} ${output_dir}/${file}.grb
-              mv MMA_* ${output_dir}
-              cd ${output_dir}
-              rm ${file}
+              # mv ${file} ${output_dir}/${file}.grb
+              # mv MMA_* ${output_dir}
+              # cd ${output_dir}
+              # rm ${file}
+              mv ${file} ${file}.grb # extra line
            fi
        done
        nmon=$((nmon+1))
@@ -164,7 +165,7 @@ if [[ ! -a %JOBNAME%.apost ]]; then
 fi
 
 if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]]; then
-   rm -rf $tmp_output_dir
+   # rm -rf $tmp_output_dir
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 
