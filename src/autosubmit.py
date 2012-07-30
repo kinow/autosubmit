@@ -12,6 +12,7 @@ from config_parser import config_parser, expdef_parser
 from job.job import Job
 from job.job_common import Status, Type
 from job.job_list import JobList
+from job.job_list import FailedJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
 
@@ -55,6 +56,7 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
+	rerun = exp_parser.get('experiment','RERUN').lower()
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
 	elif(hpcarch == "ithaca"):
@@ -87,7 +89,10 @@ if __name__ == "__main__":
 		signal.signal(signal.SIGINT, queue.normal_stop)
 
  
-	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
+	if(rerun == 'false'):
+		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
+	elif(rerun == 'true'):
+		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/failed_job_list_'+ expid +'.pkl'
 	print filename
 
 	#the experiment should be loaded as well
