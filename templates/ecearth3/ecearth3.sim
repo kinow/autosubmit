@@ -122,18 +122,18 @@ if [[ $chunk == 1 ]]; then
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=false
    if [[ $OCEAN_ini != '' ]]; then
-      rstctl=1
-   else
       rstctl=0
+   else
+      rstctl=1
    fi
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=true
    if [[ $OCEAN_ini != '' ]]; then
-      rstctl=1
-   else
       rstctl=2
+   else
+      rstctl=1
    fi
    rm -f ${RUN_dir}/anaisout_*
    ln -sf IFS_Restart_$((chunk-1))/* .
