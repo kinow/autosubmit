@@ -52,6 +52,7 @@ ifs_lastout=true
 #
 # NEMO 
 #
+OCEAN_ini=%OCEAN_ini%
 nem_grid=%NEMO_resolution%
 LIM=%LIM%
 nem_numproc=%NEMO_nproc%
@@ -120,12 +121,20 @@ if [[ $chunk == 1 ]]; then
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=false
-   rstctl=0 # need to set 1; if nemo is being started from rest
+   if [[ $OCEAN_ini != '' ]]; then
+      rstctl=1
+   else
+      rstctl=0
+   fi
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=true
-   rstctl=2 # need to set 1; if nemo is being started from rest
+   if [[ $OCEAN_ini != '' ]]; then
+      rstctl=1
+   else
+      rstctl=2
+   fi
    rm -f ${RUN_dir}/anaisout_*
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
