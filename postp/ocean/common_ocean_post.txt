@@ -308,7 +308,7 @@ for ((jt=1;jt<=$ntime;jt++)); do
   ncrename -v deptht,layerthcknss level_above.nc
   ncbo -A --op_typ=sub -v layerthcknss level_below.nc level_above.nc depth_diff_lay.nc
   ncrename -v layerthcknss,heatc_sl depth_diff_lay.nc
-  ncap2 -s "heatc_sl=(300. - layerthcknss)" level_above.nc depth_diff_sublay.nc
+  ncap2 -s "heatc_sl=($3 - layerthcknss)" level_above.nc depth_diff_sublay.nc
   ncbo --op_typ=/ -v heatc_sl depth_diff_sublay.nc depth_diff_lay.nc factor.nc
   ncrename -v heatc_sl,factor factor.nc
   ncks -A -v factor factor.nc level_below.nc
