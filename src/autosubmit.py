@@ -12,7 +12,7 @@ from config_parser import config_parser, expdef_parser
 from job.job import Job
 from job.job_common import Status, Type
 from job.job_list import JobList
-from job.job_list import FailedJobList
+from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
 
@@ -92,7 +92,7 @@ if __name__ == "__main__":
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
 	elif(rerun == 'true'):
-		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/failed_job_list_'+ expid +'.pkl'
+		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_'+ expid +'.pkl'
 	print filename
 
 	#the experiment should be loaded as well

@@ -239,13 +239,13 @@ class JobList:
 		"""When we have updated the joblist, parents and child list must be consistent"""
 		pass
 
-class FailedJobList:
+class RerunJobList:
 	
 	def __init__(self, expid):
 		self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
 		self._update_file = "updated_list_" + expid + ".txt"
 		self._failed_file = "failed_job_list_" + expid + ".pkl"
-		self._job_list_file = "failed_job_list_" + expid + ".pkl"
+		self._job_list_file = "rerun_job_list_" + expid + ".pkl"
 		self._job_list = list()
 		self._expid = expid
 		self._stat_val = Status()

@@ -81,8 +81,34 @@ HOW TO RESTART EXPERIMENT
 
 > python recovery.py -h
 
-> python recovery.py -e chex -g # getting/fetching completed files
+> python recovery.py -e chex -j job_list -g # getting/fetching completed files
 
-> python recovery.py -e chex -s # saving the pickle file
+> python recovery.py -e chex -j job_list -s # saving the pickle file
 
 > nohup python autosubmit.py chex >& chex_02.log &
+
+
+HOW TO RERUN/EXTEND EXPERIMENT
+==============================
+
+> cd src
+
+> vi /cfu/autosubmit/chex/conf/expdef_chex.conf # modify RERUN, CHUNKLIST
+
+> python create_exp.py chex
+
+> nohup python autosubmit.py chex >& chex_03.log &
+
+Monitor for RERUN
+------------------
+
+> python monitor.py -e chex -j rerun_job_list -o pdf
+
+Recovery for RERUN
+-------------------
+
+> python recovery.py -e chex -j rerun_job_list -g 
+
+> python recovery.py -e chex -j rerun_job_list -s
+
+
