@@ -34,7 +34,7 @@
 #  1) Get an MMO tar files from any experiment on cfunas                      @
 #  2) Write a bash function that works on a grid_T or grid_U or grid_V or     @
 #     grid_W file or a combination from this MMO file                         @
-#  --> You can test your function by defining the CON_FILES and VERSION       @
+#  --> You can test your function by defining the CON_FILES and NEMOVERSION   @
 #      variables and by sourcing the current file, the meshmasks will be      @
 #      available after sourcing, remember to source again after any           @
 #      modification of your function                                          @
@@ -54,10 +54,10 @@
 #                         Link constant file for co                           #
 ###############################################################################
 
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_hgr.nc
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_zgr.nc
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mask.nc
-ln -sf ${CON_FILES}/new_maskglo.${VERSION}.nc new_maskglo.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mesh_hgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mesh_zgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mask.nc
+ln -sf ${CON_FILES}/new_maskglo.${NEMOVERSION}.nc new_maskglo.nc
 
 ###############################################################################
 #       Reduced number of variables in diag files to save disk space          #
@@ -510,7 +510,7 @@ setminmax ice_S_${2} sia sie siv
 ###############################################################################
 
 function ohc {
-cp ${CON_FILES}/depth.${VERSION}.txt depth.txt
+cp ${CON_FILES}/depth.${NEMOVERSION}.txt depth.txt
 #
 # Input arguments
 #

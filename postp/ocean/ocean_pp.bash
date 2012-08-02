@@ -20,7 +20,7 @@ ltimef=                 # last leadtime to postprocess
 year0=1950              # first year to post-process in the fist start date
 yearf=1970              # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-VERSION=v2.2            # NEMO version
+NEMOVERSION=v2.2            # NEMO version
 PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
@@ -50,7 +50,7 @@ source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 # Loop on start dates (monf = last month to be post-processed)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 case $expid in
-  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; VERSION='nemovar' ;;
+  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar' ;;
 esac
 monf=$(( (10#$moni+10)%12+1 ))
 for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
