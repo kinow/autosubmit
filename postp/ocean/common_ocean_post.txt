@@ -251,19 +251,24 @@ function heat_sal_mxl {
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt 
+typeset var lstvars=`cdo showvar $1`
 for ((jt=1;jt<=$ntime;jt++)); do
  cdo seltimestep,$jt $1 intheat_sal_mxl.nc
  cdfmxlheatc intheat_sal_mxl.nc 
- cdfmxlsaltc intheat_sal_mxl.nc
- ncks -A mxlsaltc.nc mxlheatc.nc
+ if [[ $lstvars != ${lstvars/vosaline} ]] ; then  
+   cdfmxlsaltc intheat_sal_mxl.nc
+   ncks -A mxlsaltc.nc mxlheatc.nc  
+   rm -f mxlsaltc.nc
+ fi
  mv mxlheatc.nc outputintheat_sal_mxl_$jt.nc
  list=$list" "outputintheat_sal_mxl_$jt.nc
- rm -f intheat_sal_mxl.nc mxlsaltc.nc
+ rm -f intheat_sal_mxl.nc
 done
 cdo cat $list $2
 ncks -A -v time $1 $2
 rm -f $list
-setminmax $2 somxlsaltc somxlheatc
+setminmax $2 somxlheatc
+if [[ $lstvars != ${lstvars/vosaline} ]] ; then setminmax $2 somxlsaltc ; fi
 }
 ###############################################################################
 #          Pointwise Ocean Heat Content in a specified ocean thickness        #

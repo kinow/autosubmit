@@ -42,7 +42,6 @@ fi
 # Preparing WORKDIR and set of available functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 WORKDIR=/scratch/tmp/post_ocean/$$
-chmod 775 /scratch/tmp/post_ocean
 mkdir -p $WORKDIR
 cd $WORKDIR
 source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
@@ -300,3 +299,4 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
   yearf=""
 done
 rm -rf $WORKDIR
+chmod 775 /scratch/tmp/post_ocean
