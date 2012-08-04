@@ -398,23 +398,43 @@ rm -f $list
 #                                                                             #
 #   Compute an Atlantic MOC index by averaging the meridional overturning     #
 #                in a latitude band between 1km and 2km                       #
+#        or any other index averaging the meridional overturning in           #
+#                   a given basin and a given domain                          #
 #                                                                             #
 # $1 : input moc file name                                                    #
 # $2 : latitude min                                                           #
 # $3 : latitude max                                                           #
 # $4 : output file name                                                       #
+# $5 : depth min (default : 1km)                                              #
+# $6 : depth max (default : 2km)                                              #
+# $7 : basin (default :  zomsfatl)                                            # 
 #                                                                             #
 #         Created in March 2012         Author : vguemas@ic3.cat              #
 ###############################################################################
 
 function area_moc {
+if [ -z "$5" ] ; then
+  typeset var depmin=-1000.0
+else
+  typeset var depmin=-$5
+fi
+if [ -z "$6" ] ; then
+  typeset var depmax=-2000.0
+else
+  typeset var depmax=-$6
+fi
+if [ -z "$7" ] ; then
+  typeset var basin=zomsfatl
+else
+  typeset var basin=$7
+fi
 ncrename -O -d y,lat -v nav_lat,lat $1 tmpmoc.nc
-ncks -O -v zomsfatl,time,depthw,lat  tmpmoc.nc  tmpmoc.nc 
-ncks -d lat,$2,$3 -d depthw,-2000.,-1000. tmpmoc.nc area_moc.nc
+ncks -O -v $basin,time,depthw,lat  tmpmoc.nc  tmpmoc.nc 
+ncks -d lat,$2,$3 -d depthw,${depmax},${depmin} tmpmoc.nc area_moc.nc
 cdo vertmean area_moc.nc area_ave_moc.nc
 ncap -O -s "coslat[lat]=cos(lat[lat]*3.141592657/180.0)" area_ave_moc.nc area_ave_moc2.nc
 ncwa -w coslat -a lat area_ave_moc2.nc area_ave_moc3.nc
-ncks -O -v zomsfatl,time area_ave_moc3.nc $4
+ncks -O -v $basin,time area_ave_moc3.nc $4
 rm -f tmpmoc.nc area_moc.nc area_ave_moc2.nc area_ave_moc3.nc
 if [[ $4 != area_ave_moc.nc ]] ; then
   rm -f area_ave_moc.nc

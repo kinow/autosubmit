@@ -9,6 +9,8 @@ PATH=/cfu/software/cdftools2.1/:$PATH
                  at 40N
 'area_moc'     : Averaged Atlantic meridional overturning streamfunction
                  between 40N-55N and 1km-2km and between 30N-40N and 1km-2km 
+'stc'          : Subtropical cell strength, computed as the averaged Atlantic 
+                 and Pacific overturning streamfunction in 0-25N/S, 0-200m
 'ice'          : sea ice thickness + sea ice concentration + snow thickness + 
                  sea ice temperature 
 'sstsssmld'    : sea surface temperature + sea surface salinity + mixed layer 

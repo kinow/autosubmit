@@ -1,11 +1,11 @@
 #!/bin/bash
 set -evx
 
-listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
+listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
 expid=b02p              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
-# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
+# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 listmemb=( 0 1 2 )      # list of members
 syeari=1950             # first start date
@@ -28,7 +28,7 @@ rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 #
 # moc needs to be computed before max_moc and area_moc
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-if [[ ${listpost[@]##*moc*} != ${listpost[@]} ]] ; then
+if [[ ${listpost[@]##*moc*} != ${listpost[@]} ]] || [[ ${listpost[@]##*stc*} != ${listpost[@]}  ]] ; then
   if [[ ${listpost[@]#moc} != ${listpost[@]:1} ]] ; then
     listpost=( 'moc' "${listpost[@]#moc}" )
   fi
@@ -146,6 +146,13 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           max_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 38 50 500 2000 max_moc_38N50N_500m-2km_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
           max_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 40 40 0 10000 max_moc_40N_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
         ;;
+   
+        'stc')
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 25.0 NPac_stc_0N25N_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 zomsfpac
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc -25.0 0.0 SPac_stc_25S0S_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 zomsfpac
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 25.0 NAtl_stc_0N25N_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc -25.0 0.0 SAtl_stc_25S0S_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 
+        ;;
 
         'area_moc')
           area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 40.0 55.0 moc_40N55N_1-2km_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
@@ -205,6 +212,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 #                        Any doubt ---> vguemas@ic3.cat
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       'area_moc') dirout='moc'; files=('moc_40N55N_1-2km' 'moc_30N40N_1-2km') ;;
+      'stc') dirout='moc' ; files=( 'NPac_stc_0N25N_0-200m' 'SPac_stc_25S0S_0-200m' 'NAtl_stc_0N25N_0-200m' 'SAtl_stc_25SN0S_0-200m' ) ;; 
       'max_moc') dirout='moc' ; files=('max_moc_38N50N_500m-2km' 'max_moc_40N' ) ;;
       'siasiesiv' ) dirout='ice' ; files=('siasiesiv_N' 'siasiesiv_S') ;;
       'moc') dirout='moc' ; files=('moc') ;;
