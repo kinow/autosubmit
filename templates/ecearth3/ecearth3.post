@@ -7,13 +7,17 @@ date
 SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 PATH=%CDOPATH%:${PATH}
+PATH=%NCOPATH%:${PATH}
+PATH=%CDFPATH%:${PATH}
 PATH=%GRIBAPIPATH2%:${PATH}
 PATH=%REBUILDPATH%:${PATH}
 
+CON_FILES=${ECEARTH_DIR}/%VERSION%/inidata/nemo/%NEMO_resolution%
 #
 # Model Configuration
 #
 VERSION=%VERSION%
+NEMOVERSION=v3.3
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
@@ -40,9 +44,6 @@ RUN_hours=$((RUN_days*24))
 #                   Include ocean post processing functions                   #
 ###############################################################################
 #
-%INCLUDE_POSTP%
-
-#
 # Model output path w.r.t chunk number
 #
 output_dir=${RUN_dir}/Output_${chunk}
@@ -57,6 +58,8 @@ else
    exit
 fi
 
+%INCLUDE_POSTP%
+
 #
 # Rebuild ocean output
 #
@@ -65,22 +68,43 @@ if [[ ! -a %JOBNAME%.opost ]]; then
    intervals=`ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -d '_' -f 2 | uniq`
    for interval in ${intervals}; do
        grid_types=`ls -1 ${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 27-32`
-       # cp ${EXPID}_${interval}_* $tmp_output_dir
-       # cd $tmp_output_dir
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
-       for grid_type in ${grid_types}; do
+        for grid_type in ${grid_types}; do
            output_file=${prefix}_${grid_type}.nc
            rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           gzip -9 ${output_file}
            rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           # rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           # mv ${output_file}.gz $output_dir
        done
-       # cd $output_dir
    done
+#
+# Select a reduced set of outputs to save
+#
+   if [[ %OCEAN_REDUCOUT% == 'TRUE' ]] ; then
+     #
+     # A prerequisite to enter the common diagnostic post-processing 
+     cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+     #
+     # Mixed layer ocean heat content : somxlheatc
+     heat_sal_mxl toto.nc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+     ncrename -d time,time_counter heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+     ncks -A -v somxlheatc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+     rm -f heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+     #
+     # 0-300m ocean heat content : heatc_sl
+     ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+     ncrename -d time,time_counter ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+     ncks -A -v heatc_sl ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+     rm -f ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc toto.nc
+     ncks -O -x -v sohtc300 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+     #
+     # Select only the necessary outputs : surface currents only and remove 3d temperature
+     ncks -O -d depthv,0 -d depthu,0 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+     ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+     ncks -O -x -v votemper ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+   fi
+   gzip -9 *${EXPID}*.nc
+
    touch %JOBNAME%.opost
 fi
-
 #
 # Compute atmospheric monthly means
 #
