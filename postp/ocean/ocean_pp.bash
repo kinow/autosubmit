@@ -212,7 +212,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 #                        Any doubt ---> vguemas@ic3.cat
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       'area_moc') dirout='moc'; files=('moc_40N55N_1-2km' 'moc_30N40N_1-2km') ;;
-      'stc') dirout='moc' ; files=( 'NPac_stc_0N25N_0-200m' 'SPac_stc_25S0S_0-200m' 'NAtl_stc_0N25N_0-200m' 'SAtl_stc_25SN0S_0-200m' ) ;; 
+      'stc') dirout='moc' ; files=( 'NPac_stc_0N25N_0-200m' 'SPac_stc_25S0S_0-200m' 'NAtl_stc_0N25N_0-200m' 'SAtl_stc_25S0S_0-200m' ) ;; 
       'max_moc') dirout='moc' ; files=('max_moc_38N50N_500m-2km' 'max_moc_40N' ) ;;
       'siasiesiv' ) dirout='ice' ; files=('siasiesiv_N' 'siasiesiv_S') ;;
       'moc') dirout='moc' ; files=('moc') ;;
