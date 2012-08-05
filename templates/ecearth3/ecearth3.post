@@ -80,7 +80,8 @@ if [[ ! -a %JOBNAME%.opost ]]; then
 #
    if [[ %OCEAN_REDUCOUT% == 'TRUE' ]] ; then
      #
-     # A prerequisite to enter the common diagnostic post-processing 
+     # A prerequisite to enter the common diagnostic post-processing
+     if [[ -e toto.nc ]] ; then rm -f toto.nc ; fi 
      cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
      #
      # Mixed layer ocean heat content : somxlheatc
