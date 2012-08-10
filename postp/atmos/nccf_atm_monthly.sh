@@ -23,7 +23,7 @@ set -xv
 INSTITUTION="IC3            "
 SOURCE="EC-Earth2.3.0,NEMOVAR-COMBINE,DFS4.3,ERA40/Int,Atm_SV+O pert" # loaded from database (max length 60 char's) 
 #VAR_LST="T2M U10M V10M PRECIP SST MSL SSR STR SLHF SSHF SSRD TSR TSRC TTRC TTR T U V Z Q tasmax tasmin"
-VAR_LST="T2M U10M V10M PRECIP SST MSL SSR STR SLHF SSHF SSRD T U V Z Q"
+VAR_LST="T2M U10M V10M PRECIP SST MSL SSR STR SLHF SSHF SSRD TSR TSRC TTRC TTR T U V Z Q"
 LEVEL_LST="92500,85000,70000,60000,50000,20000,10000,5000,1000"
 MEM_LST=( fc0 fc1 fc2 fc3 fc4 )
 ENSEMBLE=${#MEM_LST[@]}
@@ -693,7 +693,7 @@ function save_final_output(){
  varnew=$1
  output=$2
 
- tardir=${SAVEDIR}/${expid}/monthly_mean/${varnew}_3hourly/
+ tardir=${SAVEDIR}/${expid}/monthly_mean/${varnew}_${NFRP}hourly/
  mkdir -p $tardir
  find ${SAVEDIR}/${expid}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
   if [ -e ${tardir}/${output} ] ; then
