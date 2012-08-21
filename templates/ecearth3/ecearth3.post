@@ -130,33 +130,20 @@ if [[ ! -a %JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-              cp ${file} ${file}.tmp
-              case $type in
-               SH) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f7 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # tested with grib_api
-               GG) PARS=`grib_ls -m ${file} | head -n -3 | tr -s ' ' | cut -f6 -d ' ' | sort -n | uniq | grep ^[0-9]`;; # version 1.9.9
+              echo write \"${file}_[param].grb\"\; > rules_file
+              grib_filter rules_file ${file}
+              case $type in # list of params, don't need!!
+               SH) params="152.128" ;;
+               GG) params="152.128" ;;
               esac
-              for PAR in $PARS; do
-                  if [[ $PAR == 133.128 || $PAR == 152.128 || $PAR == 246.128 || \
-                        $PAR == 247.128 || $PAR == 248.128 ]]; then
-                     rm -f ${PAR}.grb
-                     grib_copy -w param=${PAR} ${file}.tmp ${PAR}.grb
-                     if [[ $PAR == 152.128 ]]; then
-                        rm -f ${PAR}.grb
-                     fi
-                     mv ${file}.tmp ${file}.tmp2
-                     grib_copy -w param!=${PAR} ${file}.tmp2 ${file}.tmp
-                 fi
+              for param in ${params}; do
+                  rm -f ${file}_${param}.grb
               done
-              PARS="133.128 246.128 247.128 248.128"
-              for PAR in $PARS; do
-                  if [[ -a ${PAR}.grb ]]; then
-                     cdo -R -r -t ecmwf -f nc splitvar ${PAR}.grb ${file}_
-                     rm -f ${PAR}.grb
-                  fi
+              for gf in `ls ${file}_*.grb`; do
+                  cdo -R -r -t ecmwf -f nc splitvar ${gf} ${file}_
+                  rm -f ${gf}
               done
-              cdo -R -r -t ecmwf -f nc splitvar ${file}.tmp ${file}_
               ls -l ${file}_*.nc
-              rm -f ${file}.tmp ${file}.tmp2
               #
               date
               for infile in `ls ${file}_*.nc`; do
@@ -173,7 +160,7 @@ if [[ ! -a %JOBNAME%.apost ]]; then
               cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
               gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
               rm -f IM_*_${year}${month}_mm.nc
-              mv ${file} ${file}.grb # extra line
+              mv ${file} ${file}.grb
            fi
        done
        nmon=$((nmon+1))

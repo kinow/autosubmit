@@ -102,6 +102,9 @@ if [[ $day_prev_rst != '' ]]; then
 fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
+# restart tags
+Chunk_nem_restart_tag=$(printf %08d ${Chunk_end})
+Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
 #
 # Run Directory Initialization
@@ -146,8 +149,8 @@ fi
 
 if [[ ! -a finished_chunk_${chunk} ]] ; then
 
- rm -rf NEMO_Restart_${chunk}
- rm -rf IFS_Restart_${chunk}
+ rm -rf NEMO_Restart_${chunk} *${Chunk_nem_restart_tag}*
+ rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
 
 # setupifs.ksh
  case $VERSION in
@@ -187,8 +190,6 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
     fi
  fi
 
- ls -l
-
 #
 # Location of the executables
 # 
@@ -209,9 +210,6 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_nem_restart_tag=$(printf %08d ${Chunk_end})
-Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
-
 ls -1 *${Chunk_ifs_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
