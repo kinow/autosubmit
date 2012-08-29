@@ -636,7 +636,7 @@ setminmax ${output}$2 thc uhc
 function setminmax {
   cdo fldmax -timmax $1 intmax.nc
   cdo fldmin -timmin $1 intmin.nc
-  typeset var listvars
+  typeset var listvars=""
   typeset args=("$@")
   typeset var ind
   for ((ind=1;ind<$#;ind++)) ; do

@@ -113,6 +113,9 @@ Chunk_end=$((Chunk_last_day_prev+RUN_hours))
 leg_length_sec=$((RUN_hours*3600))
 leg_start_sec=$((Chunk_last_day_prev*3600))
 leg_end_sec=$((Chunk_end*3600))
+# restart tags
+Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
+Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
 #
 # Run Directory Initialization
@@ -121,6 +124,7 @@ if [[ $chunk == 1 ]]; then
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=false
+   rm -f ${RUN_dir}/anaisout_*
    if [[ $OCEAN_ini != '' ]]; then
       rstctl=0
    else
@@ -130,12 +134,12 @@ else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
    leg_is_restart=true
+   rm -f ${RUN_dir}/anaisout_*
    if [[ $OCEAN_ini != '' ]]; then
       rstctl=2
    else
       rstctl=1
    fi
-   rm -f ${RUN_dir}/anaisout_*
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ns=$(printf %08d $(( leg_start_sec / nem_time_step_sec )))
@@ -147,6 +151,10 @@ else
 fi
 
 if [[ ! -a finished_chunk_${chunk} ]]; then
+
+ rm -rf NEMO_Restart_${chunk} *${Chunk_nem_restart_tag}*
+ rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
+ rm -rf Output_${chunk}
 
 #
 # Create some control files
@@ -220,9 +228,6 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
-Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
-
 ls -1 *${Chunk_ifs_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"
@@ -237,7 +242,7 @@ fi
 #
 mkdir -p NEMO_Restart_${chunk}
 mv *${Chunk_nem_restart_tag}* NEMO_Restart_${chunk}
-rm -f restart*
+rm -f restart*_[0-9][0-9][0-9][0-9].nc
 
 mkdir -p IFS_Restart_${chunk}
 mv *${Chunk_ifs_restart_tag}* \
