@@ -56,7 +56,10 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
-	rerun = exp_parser.get('experiment','RERUN').lower()
+	if (exp_parser.has_option('experiment','RERUN')):
+		rerun = exp_parser.get('experiment','RERUN').lower()
+	else: 
+		rerun = 'false'
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
 	elif(hpcarch == "ithaca"):
@@ -66,7 +69,7 @@ if __name__ == "__main__":
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
-	   serialQueue.set_host("ellen")
+	   serialQueue.set_host("turing")
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
 
