@@ -1,66 +1,69 @@
-To use the ocean diagnostic tools available here and to be able to create new diagnostics, you need first to add that line to your .bashrc: 
+To use the ocean diagnostic tools available here and to be able to create new diagnostics, 
+you need first to add that line to your .bashrc: 
 PATH=/cfu/software/cdftools2.1/:$PATH
 ################################################################################
-'siasiesiv'    : sea ice area + sea ice extent + sea ice volume
-'moc'          : Atlantic + Pacific + Indian + Indo-Pacific + Global 
-                 meridional overturning streamfunction
-'max_moc'      : Yearly maximum of the Atlantic meridional overturning 
-                 streamfunction between 38N-50N and 500-3000m and 
-                 at 40N
-'area_moc'     : Averaged Atlantic meridional overturning streamfunction
-                 between 40N-55N and 1km-2km and between 30N-40N and 1km-2km 
-'stc'          : Subtropical cell strength, computed as the averaged Atlantic 
-                 and Pacific overturning streamfunction in 0-25N/S, 0-200m
-'ice'          : sea ice thickness + sea ice concentration + snow thickness + 
-                 sea ice temperature 
-'sstsssmld'    : sea surface temperature + sea surface salinity + mixed layer 
-                 depth (potential density criteria)
-'heat_sal_mxl' : mixed layer heat and salt content (potential density criteria)
-'psi'          : barotropic streamfunction
-'usalc'        : upper layer salt content 0-300m
-'lmsalc'       : middle + lower layer salt content 300m-bottom
-'ohc'          : global total ocean heat content
-'uohc'         : global upper (0-350m) ocean heat content
-'mohc'         : global middle (350-800m) ocean heat content 
-'lohc'         : global lower (800m-bottom) ocean heat content
-'xohc'         : global mixed layer ocean heat content
-'NAtlohc'      : North Atlantic (10-65N) total ocean heat content
-'xNAtlohc'     : North Atlantic (10-65N) mixed layer ocean heat content 
-'uNAtlohc'     : North Atlantic (10-65N) upper (0-350m) ocean heat content 
-'mNAtlohc'     : North Atlantic (10-65N) middle (350-800m) ocean heat content
-'lNAtlohc'     : North Atlantic (10-65N) lower (800m-bottom) ocean heat content
-'NPacohc'      : North Pacific (10-70N) ocean heat content
-'xNPacohc'     : North Pacific (10-70N) mixed layer ocean heat content
-'uNPacohc'     : North Pacific (10-70N) upper (0-350m) ocean heat content
-'mNPacohc'     : North Pacific (10-70N) middle (350-800m) ocean heat content
-'lNPacohc'     : North Pacific (10-70N) lower (800m-bottom) ocean heat content
-'TAtlohc'      : Tropical Atlantic (30S-30N) ocean heat content
-'xTAtlohc'     : Tropical Atlantic (30S-30N) mixed layer ocean heat content
-'uTAtlohc'     : Tropical Atlantic (30S-30N) upper (0-350m) ocean heat content
-'mTAtlohc'     : Tropical Atlantic (30S-30N) middle (350-800m) ocean heat 
-                 content
-'lTAtlohc'     : Tropical Atlantic (30S-30N) lower (800m-bottom) ocean heat 
-                 content
-'TPacohc'      : Tropical Pacific (30S-30N) ocean heat content
-'xTPacohc'     : Tropical Pacific (30S-30N) mixed layer ocean heat content
-'uTPacohc'     : Tropical Pacific (30S-30N) upper (0-350m) ocean heat content
-'mTPacohc'     : Tropical Pacific (30S-30N) middle (350-800m) ocean heat content
-'lTPacohc'     : Tropical Pacific (30S-30N) lower (800m-bottom) ocean heat 
-                 content
-'TIndohc'      : Tropical Indian (30S-30N) ocean heat content
-'xTIndohc'     : Tropical Indian (30S-30N) mixed layer ocean heat content
-'uTIndohc'     : Tropical Indian (30S-30N) upper (0-350m) ocean heat content
-'mTIndohc'     : Tropical Indian (30S-30N) middle (350-800m) ocean heat content
-'lTIndohc'     : Tropical Indian (30S-30N) lower (800m-bottom) ocean heat 
-                 content
-'Antaohc'      : Antarctic (90-60S) ocean heat content
-'xAntaohc'     : Antarctic (90-60S) mixed layer ocean heat content
-'uAntaohc'     : Antarctic (90-60S) upper (0-350m) ocean heat content
-'mAntaohc'     : Antarctic (90-60S) middle (350-800m) ocean heat content
-'lAntaohc'     : Antarctic (90-60S) lower (800m-bottom) ocean heat content
-'Arctohc'      : Arctic (65-90N) ocean heat content
-'xArctohc'     : Arctic (65-90N) mixed layer ocean heat content
-'uArctohc'     : Arctic (65-90N) upper (0-350m) ocean heat content
-'mArctohc'     : Arctic (65-90N) middle (350-800m) ocean heat content
-'lArctohc'     : Arctic (65-90N) lower (800m-bottom) ocean heat content
+'siasiesiv'           : sea ice area + sea ice extent + sea ice volume
+'moc'                 : Atlantic + Pacific + Indian + Indo-Pacific + Global 
+                        meridional overturning streamfunction
+'max_moc'             : Yearly maximum of the Atlantic meridional overturning 
+                        streamfunction between 38N-50N and 500-3000m and 
+                        at 40N
+'area_moc'            : Averaged Atlantic meridional overturning streamfunction
+                        between 40N-55N and 1km-2km and between 30N-40N and 1km-2km 
+'stc'                 : Subtropical cell strength, computed as the averaged Atlantic 
+                        and Pacific overturning streamfunction in 0-25N/S, 0-200m
+'ice'                 : sea ice thickness + sea ice concentration + snow thickness + 
+                        sea ice temperature 
+'sstsssmld'           : sea surface temperature + sea surface salinity + mixed layer 
+                        depth (potential density criteria)
+'heat_sal_mxl'        : mixed layer heat and salt content (potential density criteria)
+'psi'                 : barotropic streamfunction
+'usalc'               : upper layer salt content 0-300m
+'lmsalc'              : middle + lower layer salt content 300m-bottom
+'ohc'                 : global total ocean heat content
 'ohc_specified_layer' : Pointwise ocean heat content in a specified ocean thickness (at present 0-300 m)
+'uohc'                : global upper (0-350m) ocean heat content
+'mohc'                : global middle (350-800m) ocean heat content 
+'lohc'                : global lower (800m-bottom) ocean heat content
+'xohc'                : global mixed layer ocean heat content
+'vert_Tsections'      : zonal temperature sections along 45S, 0N, 45N, and
+                        meridional temperature sections along 30W, 80E, 180E
+'NAtlohc'             : North Atlantic (10-65N) total ocean heat content
+'xNAtlohc'            : North Atlantic (10-65N) mixed layer ocean heat content 
+'uNAtlohc'            : North Atlantic (10-65N) upper (0-350m) ocean heat content 
+'mNAtlohc'            : North Atlantic (10-65N) middle (350-800m) ocean heat content
+'lNAtlohc'            : North Atlantic (10-65N) lower (800m-bottom) ocean heat content
+'NPacohc'             : North Pacific (10-70N) ocean heat content
+'xNPacohc'            : North Pacific (10-70N) mixed layer ocean heat content
+'uNPacohc'            : North Pacific (10-70N) upper (0-350m) ocean heat content
+'mNPacohc'            : North Pacific (10-70N) middle (350-800m) ocean heat content
+'lNPacohc'            : North Pacific (10-70N) lower (800m-bottom) ocean heat content
+'TAtlohc'             : Tropical Atlantic (30S-30N) ocean heat content
+'xTAtlohc'            : Tropical Atlantic (30S-30N) mixed layer ocean heat content
+'uTAtlohc'            : Tropical Atlantic (30S-30N) upper (0-350m) ocean heat content
+'mTAtlohc'            : Tropical Atlantic (30S-30N) middle (350-800m) ocean heat 
+                        content
+'lTAtlohc'            : Tropical Atlantic (30S-30N) lower (800m-bottom) ocean heat 
+                        content
+'TPacohc'             : Tropical Pacific (30S-30N) ocean heat content
+'xTPacohc'            : Tropical Pacific (30S-30N) mixed layer ocean heat content
+'uTPacohc'            : Tropical Pacific (30S-30N) upper (0-350m) ocean heat content
+'mTPacohc'            : Tropical Pacific (30S-30N) middle (350-800m) ocean heat content
+'lTPacohc'            : Tropical Pacific (30S-30N) lower (800m-bottom) ocean heat 
+                        content
+'TIndohc'             : Tropical Indian (30S-30N) ocean heat content
+'xTIndohc'            : Tropical Indian (30S-30N) mixed layer ocean heat content
+'uTIndohc'            : Tropical Indian (30S-30N) upper (0-350m) ocean heat content
+'mTIndohc'            : Tropical Indian (30S-30N) middle (350-800m) ocean heat content
+'lTIndohc'            : Tropical Indian (30S-30N) lower (800m-bottom) ocean heat 
+                        content
+'Antaohc'             : Antarctic (90-60S) ocean heat content
+'xAntaohc'            : Antarctic (90-60S) mixed layer ocean heat content
+'uAntaohc'            : Antarctic (90-60S) upper (0-350m) ocean heat content
+'mAntaohc'            : Antarctic (90-60S) middle (350-800m) ocean heat content
+'lAntaohc'            : Antarctic (90-60S) lower (800m-bottom) ocean heat content
+'Arctohc'             : Arctic (65-90N) ocean heat content
+'xArctohc'            : Arctic (65-90N) mixed layer ocean heat content
+'uArctohc'            : Arctic (65-90N) upper (0-350m) ocean heat content
+'mArctohc'            : Arctic (65-90N) middle (350-800m) ocean heat content
+'lArctohc'            : Arctic (65-90N) lower (800m-bottom) ocean heat content
