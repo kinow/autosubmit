@@ -8,6 +8,7 @@ SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 PATH=%CDOPATH%:${PATH}
 PATH=%GRIBAPIPATH%:${PATH}
+PATH=%REBUILDPATH%:${PATH}
 
 #
 # Model Configuration
@@ -58,14 +59,13 @@ if [[ ! -a %JOBNAME%.opost ]]; then
      'TRUE') interval=1d ;;
      'FALSE') interval=MM ;;
    esac
-   rebuild_tool=${ECEARTH_DIR}/${VERSION}/sources/nemo/modipsl/modeles/IOIPSL/tools/rebuild
    cp ORCA1_* $tmp_output_dir
    cd $tmp_output_dir
    prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
    grid_types="grid_W grid_T grid_U grid_V icemod"
    for grid_type in ${grid_types}; do
        output_file=${prefix}_${grid_type}.nc
-       ${rebuild_tool} -v -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+       rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
        gzip -9 ${output_file}
        rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
        rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc

@@ -17,7 +17,7 @@ class ItQueue(HPCQueue):
 		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
 		self._pathdir = "\$HOME/LOG_"+expid
 		self._expid = expid
-		self._remote_log_dir = "/share/scratch/cfu/\$USER/" + expid + "/LOG_" + expid
+		self._remote_log_dir = "/scratch/cfu/\$USER/" + expid + "/LOG_" + expid
 		
 	def parse_job_output(self, output):
 		return output
