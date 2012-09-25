@@ -13,8 +13,8 @@ class ItQueue(HPCQueue):
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['c']
 		self._job_status['RUNNING'] = ['r', 't', 'Rr', 'Rt']
-		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
-		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
+		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq', 'Rs', 'Rts', 'RS', 'RtS', 'RT', 'RtT']
+		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw', 's', 'ts', 'S', 'tS', 'T', 'tT', 'dr', 'dt', 'dRr', 'dRt', 'ds', 'dS', 'dT', 'dRs', 'dRS', 'dRT']
 		self._pathdir = "\$HOME/LOG_"+expid
 		self._expid = expid
 		self._remote_log_dir = "/scratch/cfu/\$USER/" + expid + "/LOG_" + expid
