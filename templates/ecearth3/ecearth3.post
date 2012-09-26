@@ -11,7 +11,8 @@ PATH=%CDOPATH%:${PATH}
 PATH=%NCOPATH%:${PATH}
 PATH=%CDFPATH%:${PATH}
 PATH=%GRIBAPIPATH2%:${PATH}
-PATH=%REBUILDPATH%:${PATH}
+# PATH=%REBUILDPATH%:${PATH}
+PATH=%REBUILD_NEMOPATH%:${PATH}
 
 #
 # Model Configuration
@@ -65,8 +66,10 @@ if [[ ! -a %JOBNAME%.rebuild ]]; then
        grid_types=`ls -1 ${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 27-32`
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
        for grid_type in ${grid_types}; do
-           output_file=${prefix}_${grid_type}.nc
-           rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           # output_file=${prefix}_${grid_type}.nc
+           # rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           output_file=${prefix}_${grid_type}
+           rebuild_nemo ${output_file} %NEMO_nproc%
            rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
        done
    done
