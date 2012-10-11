@@ -3,28 +3,37 @@
 from xml.dom.minidom import parseString
 from hpcqueue import HPCQueue
 from time import sleep
-from commands import getstatusoutput
 
 class MnQueue(HPCQueue):
 	def __init__(self, expid):
 		self._host = "mn"
-		self._cancel_cmd = "mncancel"
-		self._checkjob_cmd = "checkjob --xml"
-		self._submit_cmd = "mnsubmit"
-		self._status_cmd = "mnq --xml"
+		self._expid = expid
+		self._hpcuser = "\$USER"
+		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._cancel_cmd = "ssh " + self._host + " mncancel"
+		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
+		self._status_cmd = "ssh " + self._host + " mnq --xml"
+		self._put_cmd = "scp"
+		self._get_cmd = "scp"
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['Completed']
 		self._job_status['RUNNING'] = ['Running']
 		self._job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
-		self._expid = expid
-		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + expid + "/LOG_" + expid
-		#(status, user) = getstatusoutput('ssh '+self._host+' "whoami"')
-		#if(status == 0):
-			#self._remote_log_dir = "/gpfs/scratch/ecm86/" + user + "/" + expid
-		#else:
-			#self._remote_log_dir  = "\$HOME/LOG_"+expid
-		self.check_remote_log_dir()
+
+	def get_submit_cmd(self):
+		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
+		return self._submit_cmd
+
+	def get_remote_log_dir(self):
+		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
+		return slef._remote_log_dir
+
+	def get_mkdir_cmd(self):
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+		return self._mkdir_cmd
 	
 	def parse_job_output(self, output):
 		dom = parseString(output)

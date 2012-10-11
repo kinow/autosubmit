@@ -6,19 +6,35 @@ from time import sleep
 
 class PsQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "ellen"
-		self._cancel_cmd = "kill -SIGINT"
-		self._checkjob_cmd = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit/pscall.sh"
-		self._submit_cmd = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit/shcall.sh"
+		self._host = "localhost"
+		self._expid = expid
+		self._hpcuser = "\$USER"
+		self._remote_log_dir = "/cfs/klemming/scratch/\${USER:0:1}/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._cancel_cmd = "ssh " + self._host + " kill -SIGINT"
+		self._checkjob_cmd = "ssh " + self._host + " /cfs/klemming/nobackup/a/asifsami/common/autosubmit/pscall.sh"
+		self._submit_cmd = "ssh " + self._host + " /cfs/klemming/nobackup/a/asifsami/common/autosubmit/shcall.sh " + self._remote_log_dir + " "
+		self._put_cmd = "scp"
+		self._get_cmd = "scp"
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['1']
 		self._job_status['RUNNING'] = ['0']
 		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
 		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
-		self._pathdir = "\$HOME/LOG_"+expid
-		self._expid = expid
-		self._remote_log_dir = "/cfs/klemming/scratch/\${USER:0:1}/\$USER/" + expid + "/LOG_" + expid
+		self._pathdir = "\$HOME/LOG_" + self._expid
 		
+	def get_submit_cmd(self):
+		self._submit_cmd = "ssh " + self._host + "/cfs/klemming/nobackup/a/asifsami/common/autosubmit/shcall.sh " + self._remote_log_dir + " "
+		return self._submit_cmd
+
+	def get_remote_log_dir(self):
+		self._remote_log_dir = "/cfs/klemming/scratch/\${USER:0:1}/\$USER/" + self._expid + "/LOG_" + self._expid
+		return self._remote_log_dir
+
+	def get_mkdir_cmd(self):
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+		return self._mkdir_cmd
+	
 	def parse_job_output(self, output):
 		return output
 

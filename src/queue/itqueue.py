@@ -7,24 +7,36 @@ from time import sleep
 class ItQueue(HPCQueue):
 	def __init__(self, expid):
 		self._host = "ithaca"
-		self._cancel_cmd = "qdel"
-		self._checkjob_cmd = "qstatjob.sh"
-		self._submit_cmd = "qsub"
+		self._expid = expid
+		self._hpcuser = "\$USER"
+		self._remote_log_dir = "/share/scratch/cfu/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._cancel_cmd = "ssh " + self._host + " qdel"
+		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
+		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		self._put_cmd = "scp"
+		self._get_cmd = "scp"
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['c']
 		self._job_status['RUNNING'] = ['r', 't', 'Rr', 'Rt']
 		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
 		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
-		self._pathdir = "\$HOME/LOG_"+expid
-		self._expid = expid
-		self._remote_log_dir = "/share/scratch/cfu/\$USER/" + expid + "/LOG_" + expid
+		self._pathdir = "\$HOME/LOG_" + self._expid
+	
+	def get_submit_cmd(self):
+		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		return self._submit_cmd
+
+	def get_remote_log_dir(self):
+		self._remote_log_dir = "/share/scratch/cfu/\$USER/" + self._expid + "/LOG_" + self._expid
+		return self._remote_log_dir
+	
+	def get_mkdir_cmd(self):
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+		return self._mkdir_cmd
 		
 	def parse_job_output(self, output):
 		return output
-		#dom = parseString(output)
-		#job_xml = dom.getElementsByTagName("JAT_status")
-		#job_state = job_xml[0].firstChild.nodeValue
-		#return job_state
 
 	def get_submitted_job_id(self, output):
 		return output.split(' ')[2]

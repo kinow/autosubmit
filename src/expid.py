@@ -18,6 +18,7 @@ DEFAULT_EXPID_BSC = "b000"
 DEFAULT_EXPID_HEC = "h000"
 DEFAULT_EXPID_ITH = "i000"
 DEFAULT_EXPID_LIN = "l000"
+DEFAULT_EXPID_ECM = "e000"
 
 def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
 	"""Convert positive integer to a base36 string."""
@@ -96,6 +97,8 @@ def last_name(HPC):
 		hpc_name = "i___"
 	elif HPC == 'lindgren':
 		hpc_name = "l___"
+	elif HPC == 'ecmwf':
+		hpc_name = "e___"
 	cursor.execute('select name from experiment where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
 	row = cursor.fetchone()
 	if row == None:
@@ -114,6 +117,8 @@ def new_experiment(exp_type, HPC, description):
 			new_name = DEFAULT_EXPID_ITH
 		elif HPC == 'lindgren':
 			new_name = DEFAULT_EXPID_LIN
+		elif HPC == 'ecmwf':
+			new_name = DEFAULT_EXPID_ECM
 	else:
 		new_name = next_name(last_exp_name)
 	set_experiment(new_name, exp_type, description)
@@ -173,7 +178,10 @@ def prepare_conf_files(content, exp_id, hpc):
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 	elif hpc == "lindgren":
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
-		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")#}}}
+		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
+	elif hpc == "ecmwf":
+		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
+		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 
 	return content
 
@@ -187,7 +195,7 @@ if __name__ == "__main__":
 	group = parser.add_mutually_exclusive_group()
 	group.add_argument('--new', '-n', nargs = 1, choices = ('ecearth', 'ecearth3', 'ifs', 'nemo'))
 	group.add_argument('--copy', '-c', nargs = 1)
-	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca', 'lindgren'))
+	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf'))
 	parser.add_argument('--description', '-d', nargs = 1)
 
 	args = parser.parse_args()

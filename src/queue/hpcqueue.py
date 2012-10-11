@@ -11,7 +11,8 @@ SLEEPING_TIME = 30
 class HPCQueue:
 	def cancel_job(self, job_id):
 		print 'ssh ' + self._host + ' "' + self._cancel_cmd + ' ' + str(job_id) + '"'
-		(status, output) = getstatusoutput('ssh '+self._host+' "'+self._cancel_cmd+' ' + str(job_id) + '"')
+		print self._cancel_cmd + ' ' + str(job_id)
+		(status, output) = getstatusoutput(self._cancel_cmd+' ' + str(job_id))
 	
 	def check_job(self, job_id, current_state):
 		job_status = Status.UNKNOWN
@@ -23,8 +24,9 @@ class HPCQueue:
 			return job_status 
 
 		retry = 10;
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' %s"' % str(job_id))
+		(status, output) = getstatusoutput(self._checkjob_cmd + ' %s' % str(job_id))
 		print 'ssh '+self._host+' "'+self._checkjob_cmd+' %s"' % str(job_id)
+		print self._checkjob_cmd + ' %s' % str(job_id)
 		print status
 		print output
 		# retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a COMPLETE status from queue due to the 5 min lifetime
@@ -32,7 +34,7 @@ class HPCQueue:
 			if(current_state == Status.RUNNING):
 				retry -= 1
 			print('Can not get job status, retrying in 10 sec\n');
-			(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' %s"' % str(job_id))
+			(status, output) = getstatusoutput(self._checkjob_cmd + ' %s' % str(job_id))
 			print status
 			print output
 			# URi: logger
@@ -58,7 +60,10 @@ class HPCQueue:
 		return job_status
 	
 	def	check_remote_log_dir(self):
-		(status, output) = getstatusoutput('ssh '+self._host+' "mkdir -p ' + self._remote_log_dir + '"')
+		#(status, output) = getstatusoutput(self._mkdir_cmd + self._remote_log_dir)
+		(status, output) = getstatusoutput(self.get_mkdir_cmd())
+		#print self._mkdir_cmd + self._remote_log_dir
+		print self._mkdir_cmd
 		print output
 		if(status == 0):
 			print '%s has been created on %s .' %(self._remote_log_dir, self._host)
@@ -66,7 +71,7 @@ class HPCQueue:
 			print 'Could not create the DIR on HPC' 
 	
 	def	send_script(self,job_script):
-		(status, output) = getstatusoutput('scp ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir)
+		(status, output) = getstatusoutput(self._put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir + "/" + str(job_script))
 		if(status == 0):
    			print 'The script has been sent'
 		else:	
@@ -76,8 +81,9 @@ class HPCQueue:
 		# wait five secons to check get file
 		sleep(5)
 		filename=jobname+'_COMPLETED'
-		(status, output) = getstatusoutput('scp '+ self._host + ':' + self._remote_log_dir + '/'+filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/')
+		(status, output) = getstatusoutput(self._get_cmd + ' '+ self._host + ':' + self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + filename)
 		print 'scp '+ self._host + ':' +self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/'
+		print self._get_cmd + ' '+ self._host + ':' +self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + filename
 		if(status == 0):
 			print 'The COMPLETED files have been transfered'
 			return True
@@ -86,8 +92,9 @@ class HPCQueue:
 			return False
 	
 	def submit_job(self, job_script):
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "cd ' + self._remote_log_dir + '; ' + self._submit_cmd + ' ' + str(job_script) + '"')
+		(status, output) = getstatusoutput(self._submit_cmd + str(job_script))
 		print 'ssh ' + self._host + ' "cd ' + self._remote_log_dir + '; ' + self._submit_cmd + ' ' + str(job_script) + '"'
+		print self._submit_cmd + str(job_script)
 		if(status == 0):
 			job_id = self.get_submitted_job_id(output)
 			print job_id
@@ -95,7 +102,7 @@ class HPCQueue:
 
 	def normal_stop(self,	signum,	frame):
 		sleep(SLEEPING_TIME)
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
+		(status, output) = getstatusoutput(self._checkjob_cmd + ' ')
 		for job_id in self.jobs_in_queue(output):
 			self.cancel_job(job_id)
 			
@@ -103,13 +110,20 @@ class HPCQueue:
 
 	def smart_stop(self,	signum,	frame):
 		sleep(SLEEPING_TIME)
-		(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
+		(status, output) = getstatusoutput(self._checkjob_cmd + ' ')
 		print self.jobs_in_queue(output)
 		while self.jobs_in_queue(output):
 			print	self.jobs_in_queue(output)
 			sleep(SLEEPING_TIME)
-			(status, output) = getstatusoutput('ssh ' + self._host + ' "' + self._checkjob_cmd + ' "')
+			(status, output) = getstatusoutput(self._checkjob_cmd + ' ')
 		exit(0)
 	
 	def set_host(self, new_hostname):
 		self._host = new_hostname
+
+	def set_hpcuser(self, new_hpcuser):
+		self._hpcuser = new_hpcuser
+
+	def set_remote_log_dir(self, new_remote_log_dir):
+		self._remote_log_dir = new_remote_log_dir
+

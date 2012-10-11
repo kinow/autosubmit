@@ -11,6 +11,7 @@ from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
 from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
+from queue.ecqueue import EcQueue
 from sys import setrecursionlimit
 
 if __name__ == '__main__':
@@ -39,6 +40,8 @@ if __name__ == '__main__':
 			## in lindgren arch must set-up both serial and parallel queues
 			serialQueue = PsQueue(expid)
 			parallelQueue = LgQueue(expid)
+		elif sc == 'e':
+			queue = EcQueue(expid)
 
 		for job in l1.get_active():
 			## in lindgren arch must select serial or parallel queue acording to the job type
