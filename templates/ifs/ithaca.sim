@@ -8,8 +8,6 @@
 #$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -V
-#$ -l h_rt=18000
-#$ -q medium.q
-#$ -pe orte 100
+#$ -pe orte 45
 #
 ###############################################################################

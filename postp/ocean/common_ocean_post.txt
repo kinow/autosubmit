@@ -34,7 +34,7 @@
 #  1) Get an MMO tar files from any experiment on cfunas                      @
 #  2) Write a bash function that works on a grid_T or grid_U or grid_V or     @
 #     grid_W file or a combination from this MMO file                         @
-#  --> You can test your function by defining the CON_FILES and VERSION       @
+#  --> You can test your function by defining the CON_FILES and NEMOVERSION   @
 #      variables and by sourcing the current file, the meshmasks will be      @
 #      available after sourcing, remember to source again after any           @
 #      modification of your function                                          @
@@ -54,10 +54,10 @@
 #                         Link constant file for co                           #
 ###############################################################################
 
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_hgr.nc
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mesh_zgr.nc
-ln -sf ${CON_FILES}/mesh_mask_nemo.${VERSION}.nc mask.nc
-ln -sf ${CON_FILES}/new_maskglo.${VERSION}.nc new_maskglo.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mesh_hgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mesh_zgr.nc
+ln -sf ${CON_FILES}/mesh_mask_nemo.${NEMOVERSION}.nc mask.nc
+ln -sf ${CON_FILES}/new_maskglo.${NEMOVERSION}.nc new_maskglo.nc
 
 ###############################################################################
 #       Reduced number of variables in diag files to save disk space          #
@@ -251,19 +251,24 @@ function heat_sal_mxl {
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt 
+typeset var lstvars=`cdo showvar $1`
 for ((jt=1;jt<=$ntime;jt++)); do
  cdo seltimestep,$jt $1 intheat_sal_mxl.nc
  cdfmxlheatc intheat_sal_mxl.nc 
- cdfmxlsaltc intheat_sal_mxl.nc
- ncks -A mxlsaltc.nc mxlheatc.nc
+ if [[ $lstvars != ${lstvars/vosaline} ]] ; then  
+   cdfmxlsaltc intheat_sal_mxl.nc
+   ncks -A mxlsaltc.nc mxlheatc.nc  
+   rm -f mxlsaltc.nc
+ fi
  mv mxlheatc.nc outputintheat_sal_mxl_$jt.nc
  list=$list" "outputintheat_sal_mxl_$jt.nc
- rm -f intheat_sal_mxl.nc mxlsaltc.nc
+ rm -f intheat_sal_mxl.nc
 done
 cdo cat $list $2
 ncks -A -v time $1 $2
 rm -f $list
-setminmax $2 somxlsaltc somxlheatc
+setminmax $2 somxlheatc
+if [[ $lstvars != ${lstvars/vosaline} ]] ; then setminmax $2 somxlsaltc ; fi
 }
 ###############################################################################
 #          Pointwise Ocean Heat Content in a specified ocean thickness        #
@@ -308,7 +313,7 @@ for ((jt=1;jt<=$ntime;jt++)); do
   ncrename -v deptht,layerthcknss level_above.nc
   ncbo -A --op_typ=sub -v layerthcknss level_below.nc level_above.nc depth_diff_lay.nc
   ncrename -v layerthcknss,heatc_sl depth_diff_lay.nc
-  ncap2 -s "heatc_sl=(300. - layerthcknss)" level_above.nc depth_diff_sublay.nc
+  ncap2 -s "heatc_sl=($3 - layerthcknss)" level_above.nc depth_diff_sublay.nc
   ncbo --op_typ=/ -v heatc_sl depth_diff_sublay.nc depth_diff_lay.nc factor.nc
   ncrename -v heatc_sl,factor factor.nc
   ncks -A -v factor factor.nc level_below.nc
@@ -393,23 +398,43 @@ rm -f $list
 #                                                                             #
 #   Compute an Atlantic MOC index by averaging the meridional overturning     #
 #                in a latitude band between 1km and 2km                       #
+#        or any other index averaging the meridional overturning in           #
+#                   a given basin and a given domain                          #
 #                                                                             #
 # $1 : input moc file name                                                    #
 # $2 : latitude min                                                           #
 # $3 : latitude max                                                           #
 # $4 : output file name                                                       #
+# $5 : depth min (default : 1km)                                              #
+# $6 : depth max (default : 2km)                                              #
+# $7 : basin (default :  zomsfatl)                                            # 
 #                                                                             #
 #         Created in March 2012         Author : vguemas@ic3.cat              #
 ###############################################################################
 
 function area_moc {
+if [ -z "$5" ] ; then
+  typeset var depmin=-1000.0
+else
+  typeset var depmin=-$5
+fi
+if [ -z "$6" ] ; then
+  typeset var depmax=-2000.0
+else
+  typeset var depmax=-$6
+fi
+if [ -z "$7" ] ; then
+  typeset var basin=zomsfatl
+else
+  typeset var basin=$7
+fi
 ncrename -O -d y,lat -v nav_lat,lat $1 tmpmoc.nc
-ncks -O -v zomsfatl,time,depthw,lat  tmpmoc.nc  tmpmoc.nc 
-ncks -d lat,$2,$3 -d depthw,-2000.,-1000. tmpmoc.nc area_moc.nc
+ncks -O -v $basin,time,depthw,lat  tmpmoc.nc  tmpmoc.nc 
+ncks -d lat,$2,$3 -d depthw,${depmax},${depmin} tmpmoc.nc area_moc.nc
 cdo vertmean area_moc.nc area_ave_moc.nc
 ncap -O -s "coslat[lat]=cos(lat[lat]*3.141592657/180.0)" area_ave_moc.nc area_ave_moc2.nc
 ncwa -w coslat -a lat area_ave_moc2.nc area_ave_moc3.nc
-ncks -O -v zomsfatl,time area_ave_moc3.nc $4
+ncks -O -v $basin,time area_ave_moc3.nc $4
 rm -f tmpmoc.nc area_moc.nc area_ave_moc2.nc area_ave_moc3.nc
 if [[ $4 != area_ave_moc.nc ]] ; then
   rm -f area_ave_moc.nc
@@ -510,7 +535,7 @@ setminmax ice_S_${2} sia sie siv
 ###############################################################################
 
 function ohc {
-cp ${CON_FILES}/depth.${VERSION}.txt depth.txt
+cp ${CON_FILES}/depth.${NEMOVERSION}.txt depth.txt
 #
 # Input arguments
 #
@@ -600,6 +625,85 @@ setminmax ${output}$2 thc uhc
 }
 ###############################################################################
 #                                                                             #
+#                    Cut a meridional or zonal section                        #
+#                                                                             #
+#                                                                             #
+# $1 : input file                                                             #
+# $2 : input var                                                              #
+# $3 : Z/M   (zonal / meridional section)                                     #
+# $4 : lat/lon                                                                #
+# $5 : output file                                                            #
+#                                                                             #
+###############################################################################
+
+function cutsection {
+  typeset var ntime=`cdo ntime $1`
+  typeset var nx=`ncdump -h $1|grep 'x = '|head -1|cut -f3 -d" "`
+  typeset var ny=`ncdump -h $1|grep 'y = '|head -1|cut -f3 -d" "`
+  typeset var nz=`ncdump -h $1|grep 'depth'|head -1|cut -f3 -d" "`
+cat>section.R<<EOF1
+  library(ncdf) 
+  # Get latitudes, longitudes, depth, mask
+  fncm=open.ncdf('mesh_hgr.nc')
+  lon=get.var.ncdf(fncm,'nav_lon')
+  lat=get.var.ncdf(fncm,'nav_lat')
+  close.ncdf(fncm)
+  fncm=open.ncdf('mesh_zgr.nc')
+  depth=get.var.ncdf(fncm,'nav_lev')
+  close.ncdf(fncm)
+  fncm=open.ncdf('mask.nc')
+  mask=get.var.ncdf(fncm,switch('$2','vozocrtx'='umask','vomecrty'='vmask','tmask'))
+  close.ncdf(fncm)
+  # Latitude / longitude of the zonal / meridional section
+  exactpos=$4
+  if ('$3'=='M') {
+    while (exactpos<min(lon)) {exactpos=exactpos+360}
+    while (exactpos>max(lon)) {exactpos=exactpos-360}
+  }
+  # Collect the indexes defining the section
+  listi=array(dim=switch('$3','Z'=$nx-2,'M'=$ny-1))
+  listj=array(dim=switch('$3','Z'=$nx-2,'M'=$ny-1))
+  for (jpt in 1:length(listi)) {
+    vect=switch('$3','Z'=lat[jpt,],'M'=lon[,jpt+1])
+    if (min(abs(vect-exactpos))<(2*360./$nx)) {
+      pos=sort(abs(vect-exactpos),index.return=T)\$ix[1]
+      listi[jpt]=switch('$3','Z'=jpt+1,'M'=pos)
+      listj[jpt]=switch('$3','Z'=pos,'M'=jpt)
+    }
+  }
+  listi=listi[is.na(listi)==F]
+  listj=listj[is.na(listj)==F]
+  print(listi)
+  print(listj)
+  # Select variable at those indexes
+  fnc1=open.ncdf('$1')
+  varout=array(dim=c(length(listi),$nz,$ntime))
+  for (jt in 1:$ntime) {
+    varin=get.var.ncdf(fnc1,'$2',start=c(1,1,1,jt),count=c($nx,$ny,$nz,1))
+    varin[which(mask<0.5)]=1e20
+    for (jpt in 1:length(listi)) {
+      varout[jpt,,jt]=varin[listi[jpt],listj[jpt],]
+    }  
+  }
+  close.ncdf(fnc1)
+  # Write the output
+  wtime=dim.def.ncdf("time","",seq(1,$ntime)) 
+  dimout=array(dim=length(listi))
+  for (jpt in 1:length(listi)) {
+    dimout[jpt]=switch('$3','Z'=lon[listi[jpt],listj[jpt]],'M'=lat[listi[jpt],listj[jpt]])
+  }
+  wsec=switch('$3','Z'=dim.def.ncdf("lon","",dimout),'M'=dim.def.ncdf("lat","",dimout))
+  wdep=dim.def.ncdf("deptht","",depth)
+  wvar=var.def.ncdf("$2","",list(wsec,wdep,wtime),1e20)
+  fnc2=create.ncdf('$5',wvar)
+  put.var.ncdf(fnc2,wvar,varout)
+  close.ncdf(fnc2)
+EOF1
+R CMD BATCH section.R
+ncks -h -A -v time $1 $5
+}
+###############################################################################
+#                                                                             #
 #                    Set minimum and maximum attributes                       #
 #                                                                             #
 # $1 : input file                                                             #
@@ -611,7 +715,7 @@ setminmax ${output}$2 thc uhc
 function setminmax {
   cdo fldmax -timmax $1 intmax.nc
   cdo fldmin -timmin $1 intmin.nc
-  typeset var listvars
+  typeset var listvars=""
   typeset args=("$@")
   typeset var ind
   for ((ind=1;ind<$#;ind++)) ; do

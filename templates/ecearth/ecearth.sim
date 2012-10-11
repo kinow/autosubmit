@@ -16,36 +16,13 @@ VERSION=%VERSION%
 MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
-case $VERSION in
-     v2.1)   ECEARTH=${ECEARTH_DIR}/v2.1
-             SCRIPTDIR=${ECEARTH_DIR}/v2.1/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.1/inidata/testdata
-     ;;
-     v2.2.0) ECEARTH=${ECEARTH_DIR}/v2.2.0
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.0/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.0/inidata/testdata
-     ;;
-     v2.2.1) ECEARTH=${ECEARTH_DIR}/v2.2.1
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.1/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.1/inidata/testdata
-     ;;
-     v2.2.2) ECEARTH=${ECEARTH_DIR}/v2.2.2
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.2/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.2/inidata/testdata
-     ;;
-     v2.2.3) ECEARTH=${ECEARTH_DIR}/v2.2.3
-             SCRIPTDIR=${ECEARTH_DIR}/v2.2.3/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.2.3/inidata/testdata
-     ;;
-     v2.3.0) ECEARTH=${ECEARTH_DIR}/v2.3.0
-             SCRIPTDIR=${ECEARTH_DIR}/v2.3.0/setup
-             TESTDATADIR=${ECEARTH_DIR}/v2.3.0/inidata/testdata
-     ;;
-esac
 
-PATH=${SCRIPTDIR}:${PATH}
+ECEARTH=${ECEARTH_DIR}/$VERSION
+TESTDATADIR=${ECEARTH_DIR}/$VERSION/inidata/testdata
+
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
-BINPATH=${WRITINGDIR}/bin
+BINPATH=${WRITINGDIR}/model/bin
+SCRIPTDIR=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 INIPATH=${RUN_dir}/inidata
 
@@ -125,6 +102,9 @@ if [[ $day_prev_rst != '' ]]; then
 fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
+# restart tags
+Chunk_nem_restart_tag=$(printf %08d ${Chunk_end})
+Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 
 #
 # Run Directory Initialization
@@ -141,8 +121,7 @@ else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
    ln -sf IFS_Restart_$((chunk-1))/* .
-   if [[ -e rcf ]] ; then rm rcf ; fi  
-   cp IFS_Restart_$((chunk-1))/rcf .
+   rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ln -sf NEMO_Restart_$((chunk-1))/* .
    LFASTRES=TRUE
 fi
@@ -168,10 +147,10 @@ else
 fi
 #
 
-if [[ -d NEMO_Restart_${chunk} ]] ; then rm -rf NEMO_Restart_${chunk} ; fi
-if [[ -d IFS_Restart_${chunk} ]] ; then rm -rf IFS_Restart_${chunk} ; fi
-
 if [[ ! -a finished_chunk_${chunk} ]] ; then
+
+ rm -rf NEMO_Restart_${chunk} *${Chunk_nem_restart_tag}*
+ rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
 
 # setupifs.ksh
  case $VERSION in
@@ -211,8 +190,6 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
     fi
  fi
 
- ls -l
-
 #
 # Location of the executables
 # 
@@ -233,9 +210,6 @@ fi
 #
 # Check either simulation completed successfully or not
 #
-Chunk_nem_restart_tag=$(printf %08d ${Chunk_end})
-Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
-
 ls -1 *${Chunk_ifs_restart_tag}*
 if [[ $? == 0 ]]; then
    echo "finished chunk"

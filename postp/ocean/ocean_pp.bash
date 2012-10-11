@@ -1,11 +1,11 @@
 #!/bin/bash
 set -evx
 
-listpost='ohc_specified_layer'
+listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'vert_Tsections' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
 expid=b02p              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
-# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
+# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 listmemb=( 0 1 2 )      # list of members
 syeari=1950             # first start date
@@ -17,10 +17,10 @@ chunklen=6              # length of the chunks (in months)
 ltime0=                 # first leadtime to post-process
 ltimef=                 # last leadtime to postprocess
 # Fill up either ltime0/ltimef or year0/yearf
-year0=2000              # first year to post-process in the fist start date
-yearf=2025              # last year to post-process in the fist start date
+year0=1950              # first year to post-process in the fist start date
+yearf=1970              # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-VERSION=v2.2            # NEMO version
+NEMOVERSION=v2.2            # NEMO version
 PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
@@ -28,7 +28,7 @@ rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 #
 # moc needs to be computed before max_moc and area_moc
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-if [[ ${listpost[@]##*moc*} != ${listpost[@]} ]] ; then
+if [[ ${listpost[@]##*moc*} != ${listpost[@]} ]] || [[ ${listpost[@]##*stc*} != ${listpost[@]}  ]] ; then
   if [[ ${listpost[@]#moc} != ${listpost[@]:1} ]] ; then
     listpost=( 'moc' "${listpost[@]#moc}" )
   fi
@@ -49,7 +49,7 @@ source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 # Loop on start dates (monf = last month to be post-processed)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 case $expid in
-  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; VERSION='nemovar' ;;
+  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar' ;;
 esac
 monf=$(( (10#$moni+10)%12+1 ))
 for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
@@ -128,15 +128,25 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         ;;
 
         'ohc_specified_layer')
-          if [[ $typeoutput == 'MMO' ]] ; then
-            ohc_specified_layer grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 300.0 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
-          fi
           case $typeoutput in
            'MMO' ) pref='grid_T' ;;
            'diags') pref='t3d' ;;
           esac
-          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0 300 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
-          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 300 800 ohc_2d_avg_300-800m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 300.0 ohc_2d_avg_0-300m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          ohc_specified_layer ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 300.0 800.0 ohc_2d_avg_300-800m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+        ;;
+ 
+        'vert_Tsections')
+          case $typeoutput in
+           'MMO' ) pref='grid_T' ;;
+           'diags') pref='t3d' ;;
+          esac
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper Z 0 temp_0N_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper Z 45 temp_45N_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper Z -45 temp_45S_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper M -30 temp_30W_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper M 180 temp_180E_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+          cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper M 80 temp_80E_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
         ;;
 
         'moc')
@@ -148,6 +158,13 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         'max_moc')
           max_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 38 50 500 2000 max_moc_38N50N_500m-2km_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
           max_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 40 40 0 10000 max_moc_40N_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+        ;;
+   
+        'stc')
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 25.0 NPac_stc_0N25N_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 zomsfpac
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc -25.0 0.0 SPac_stc_25S0S_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 zomsfpac
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 25.0 NAtl_stc_0N25N_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 
+          area_moc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc -25.0 0.0 SAtl_stc_25S0S_0-200m_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc 0.0 200.0 
         ;;
 
         'area_moc')
@@ -208,6 +225,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 #                        Any doubt ---> vguemas@ic3.cat
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       'area_moc') dirout='moc'; files=('moc_40N55N_1-2km' 'moc_30N40N_1-2km') ;;
+      'stc') dirout='moc' ; files=( 'NPac_stc_0N25N_0-200m' 'SPac_stc_25S0S_0-200m' 'NAtl_stc_0N25N_0-200m' 'SAtl_stc_25S0S_0-200m' ) ;; 
       'max_moc') dirout='moc' ; files=('max_moc_38N50N_500m-2km' 'max_moc_40N' ) ;;
       'siasiesiv' ) dirout='ice' ; files=('siasiesiv_N' 'siasiesiv_S') ;;
       'moc') dirout='moc' ; files=('moc') ;;
@@ -218,6 +236,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'usalc') dirout='saltc' ; files=('sal_0-300m') ;;
       'lmsalc') dirout='saltc' ;  files=('sal_300-5400m') ;;
       'ohc_specified_layer') dirout='heatc' ; files=('ohc_2d_avg_0-300m' 'ohc_2d_avg_300-800m') ;;
+      'vert_Tsections') dirout='sections' ; files=('temp_0N' 'temp_45N' 'temp_45S' 'temp_30W' 'temp_80E' 'temp_180E') ;;
     esac
     case `echo $post|cut -c$((${#post}-2))-${#post}` in
       'ohc') 
@@ -302,3 +321,4 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
   yearf=""
 done
 rm -rf $WORKDIR
+chmod 775 /scratch/tmp/post_ocean

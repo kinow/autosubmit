@@ -19,12 +19,12 @@ set -xv
 ####  User Defined Variables  #### 
 ##################################
 
-VERSION=2.3.0
+VERSION=3
 INSTITUTION="IC3            "
-SOURCE="EC-Earth2.3.0,NEMOVAR-COMBINE,DFS4.3,ERA40/Int,Atm_SV+O pert" # loaded from database (max length 60 char's)
+SOURCE="EC-Earth3,GLORYS2v1,ERA40/Int,Atm_SV+O pert" # loaded from database (max length 60 char's)
 VAR_LST="T2M SST MSL PRECIP SSR STR SLHF SSHF D2M U10M V10M SD SSRD STRD TTR TSR E STL1 TCC T U V Z Q MX2T MN2T"
 LEVEL_LST="92500,85000,70000,60000,50000,20000,10000,5000,1000"
-MEM_LST=( fc0 fc1 fc2 fc3 fc4 )
+MEM_LST=( fc0 )
 ENSEMBLE=${#MEM_LST[@]}
 DATADIR=/media/nas_data/cfu/exp                # where ICMGG* & ICMSH* files located
 SAVEDIR=/cfunas/exp/ecearth                    # for Saving outputs
