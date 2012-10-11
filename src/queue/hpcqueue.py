@@ -10,7 +10,6 @@ SLEEPING_TIME = 30
 
 class HPCQueue:
 	def cancel_job(self, job_id):
-		print 'ssh ' + self._host + ' "' + self._cancel_cmd + ' ' + str(job_id) + '"'
 		print self._cancel_cmd + ' ' + str(job_id)
 		(status, output) = getstatusoutput(self._cancel_cmd+' ' + str(job_id))
 	
@@ -25,7 +24,6 @@ class HPCQueue:
 
 		retry = 10;
 		(status, output) = getstatusoutput(self._checkjob_cmd + ' %s' % str(job_id))
-		print 'ssh '+self._host+' "'+self._checkjob_cmd+' %s"' % str(job_id)
 		print self._checkjob_cmd + ' %s' % str(job_id)
 		print status
 		print output
@@ -60,9 +58,7 @@ class HPCQueue:
 		return job_status
 	
 	def	check_remote_log_dir(self):
-		#(status, output) = getstatusoutput(self._mkdir_cmd + self._remote_log_dir)
 		(status, output) = getstatusoutput(self.get_mkdir_cmd())
-		#print self._mkdir_cmd + self._remote_log_dir
 		print self._mkdir_cmd
 		print output
 		if(status == 0):
@@ -82,7 +78,6 @@ class HPCQueue:
 		sleep(5)
 		filename=jobname+'_COMPLETED'
 		(status, output) = getstatusoutput(self._get_cmd + ' '+ self._host + ':' + self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + filename)
-		print 'scp '+ self._host + ':' +self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/'
 		print self._get_cmd + ' '+ self._host + ':' +self._remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + filename
 		if(status == 0):
 			print 'The COMPLETED files have been transfered'
@@ -93,7 +88,6 @@ class HPCQueue:
 	
 	def submit_job(self, job_script):
 		(status, output) = getstatusoutput(self._submit_cmd + str(job_script))
-		print 'ssh ' + self._host + ' "cd ' + self._remote_log_dir + '; ' + self._submit_cmd + ' ' + str(job_script) + '"'
 		print self._submit_cmd + str(job_script)
 		if(status == 0):
 			job_id = self.get_submitted_job_id(output)

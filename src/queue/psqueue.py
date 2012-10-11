@@ -6,7 +6,7 @@ from time import sleep
 
 class PsQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "localhost"
+		self._host = "ellen"
 		self._expid = expid
 		self._hpcuser = "\$USER"
 		self._remote_log_dir = "/cfs/klemming/scratch/\${USER:0:1}/\$USER/" + self._expid + "/LOG_" + self._expid
