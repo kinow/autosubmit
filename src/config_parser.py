@@ -14,7 +14,7 @@ def check_values(value, valid_values):
 		invalid_values = True
 
 def config_parser(filename):
-	hpcarch = ['bsc', 'ithaca', 'lindgren']
+	hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf']
 	runmode = ['local', 'remote']
 	loglevel = ['debug', 'info', 'warning', 'error', 'critical']
 	

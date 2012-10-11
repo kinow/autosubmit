@@ -7,6 +7,7 @@ from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
+from queue.ecqueue import EcQueue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
@@ -56,6 +57,7 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
+	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
@@ -72,6 +74,9 @@ if __name__ == "__main__":
 	   serialQueue.set_host("turing")
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
+	elif(hpcarch == "ecmwf"):
+	   queue = EcQueue(expid)
+	   queue.set_hpcuser(hpcuser)
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
