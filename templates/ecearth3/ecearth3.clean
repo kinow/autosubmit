@@ -1,5 +1,24 @@
-set -evx
+set -xuve
 date
+
+#
+# HPC Arch
+#
+HPCARCH=%HPCARCH%
+case $HPCARCH in
+ ecmwf)
+  MKDIR="eval emkdir -p"
+  CP="eval ecp -o"
+  LS="eval els"
+  CHMOD="eval echmod 775"
+ ;;
+ *)
+  MKDIR="mkdir -p"
+  CP="cp -f"
+  LS="ls"
+  CHMOD="chmod 775"
+ ;;
+esac
 
 #
 # General Paths
@@ -34,170 +53,137 @@ RUN_hours=$((RUN_days*24))
 # Output Path on HSM (permanent storage)
 #
 PATHOUT="${HSMdir}/exp/${EXPID}/${START_date}/${MEMBER}"
-if [[ ! -d ${PATHOUT} ]]; then
+$LS ${PATHOUT}
+if [[ $? -ne 0 ]]; then
    echo "HOUSTON we have a problem!"
    echo " this directory should already exist! ${PATHOUT}"
    exit
 fi
 
 output_dir=${RUN_dir}/Output_${chunk}
-
-if [[ -d ${RUN_dir} ]]; then
-   cd $RUN_dir
-else
+if [[ ! -d ${RUN_dir} ]]; then
    exit
 fi
+cd $RUN_dir
 
 #
 # Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extend)
 #
 if [[ ! -d $output_dir ]]; then
    rm -f *_$((chunk+1))
-   tar -xvf $PATHOUT/restarts/RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_*.tar
-   tar -xvf $PATHOUT/restarts/RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_*.tar
+   RESTA="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+   RESTO="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+   $CP ${PATHOUT}/restarts/$RESTA .; $CP ${PATHOUT}/restarts/$RESTO .
+   tar -xvf $RESTA; tar -xvf $RESTO
+   rm -f $RESTA $RESTO
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
    exit
 fi
 
 #
-# Save NEMO & IFS restart files at permanent storage and clean disk
+# Save NEMO & IFS restart files at permanent storage
 #
 PATHOUT_RES="${PATHOUT}/restarts"
+$MKDIR ${PATHOUT_RES}
 
-if [[ ! -d ${PATHOUT_RES} ]]; then
-   mkdir -p ${PATHOUT_RES}
-fi
+if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
-for REST in RESTA RESTO; do
-    case ${REST} in
-         RESTA) PATHSU="IFS_Restart_${chunk}"
-                FILEPREF="*"
-         ;;
-         RESTO) PATHSU="NEMO_Restart_${chunk}"
-                FILEPREF="*"
-         ;;
-    esac
+   for REST in RESTA RESTO; do
+       case ${REST} in
+            RESTA) PATHSU="IFS_Restart_${chunk}"
+                   FILEPREF="*"
+            ;;
+            RESTO) PATHSU="NEMO_Restart_${chunk}"
+                   FILEPREF="*"
+            ;;
+       esac
 
-    # Create and copy tar file
-    tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-    tar -cvf $tarfile ${PATHSU}/${FILEPREF}
-    cp $tarfile $PATHOUT_RES
+   # Create and copy tar file
+   tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+   tar -cvf $tarfile ${PATHSU}/${FILEPREF}
+   $CP $tarfile $PATHOUT_RES
+   $CHMOD $PATHOUT_RES/$tarfile
+   rm -f $tarfile
+   touch ${RUN_dir}/${REST}_${chunk}
+   done
 
-    # Check target file
-    locfile=`md5sum ${tarfile}|cut -d" " -f1`
-    remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-    if [[ "$locfile" == "$remfile" ]] ; then
-       echo "The file has been correctly stored"
-       touch ${RUN_dir}/${REST}_${chunk}
-       rm -f $tarfile
-    else
-       exit 1
-    fi
-    date
-done
-
-if [[ -a RESTA_${chunk} && -a RESTO_${chunk} ]]; then
-   rm ${RUN_dir}/RESTA_${chunk} ${RUN_dir}/RESTO_${chunk}
-   touch ${RUN_dir}/rest_${chunk}
-fi
-
-if [[ -d ${output_dir} ]]; then
-   cd $output_dir
-else
-   exit
+   if [[ -a ${RUN_dir}/RESTA_${chunk} && -a ${RUN_dir}/RESTO_${chunk} ]]; then
+      rm -f ${RUN_dir}/RESTA_${chunk} ${RUN_dir}/RESTO_${chunk}
+      touch ${RUN_dir}/rest_${chunk}
+   fi
 fi
 
 #
 # Save NEMO & IFS output files at permanent storage and clean disk
 #
-PATHOUT_OUT="${PATHOUT}/outputs"
-if [[ ! -d ${PATHOUT_OUT} ]]; then
-   mkdir -p ${PATHOUT_OUT}
-fi   
+if [[ ! -a ${RUN_dir}/out_$chunk ]]; then
 
-#
-# Save Ocean files
-#
-SAVEDDO=%SAVEDDO%
-tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-touch ../$tarfile
+   if [[ ! -d ${output_dir} ]]; then
+      exit
+   fi
+   cd $output_dir
 
-# Copying the 1d (daily), 5d (5 days), 1m (monthly), or any type of means available
-intervals=`ls -1 ${EXPID}_??_*.nc.gz | cut -d '_' -f 2 | uniq`
-for interval in ${intervals}; do
-    grid_types=`ls -1 ${EXPID}_${interval}_*.nc.gz | cut -c 27-32`
-    prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
-    for grid_type in ${grid_types}; do
-        output_file=${prefix}_${grid_type}.nc.gz
-        tar -rvf ../${tarfile} ${output_file}
-    done
-done
-cp ../$tarfile $PATHOUT_OUT
-#
-rm -f ${RUN_dir}/outo_${chunk}
-locfile=`md5sum ../${tarfile}|cut -d" " -f1`
-remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
-if [[ "$locfile" == "$remfile" ]]; then
-   echo "${tarfile} file has been stored correctly"
-   touch ${RUN_dir}/outo_${chunk}
-   rm -f ../$tarfile
-else
-   exit 1
-fi
+   PATHOUT_OUT="${PATHOUT}/outputs"
+   $MKDIR ${PATHOUT_OUT}
 
-date
+   # Save Ocean files
+   if [[ ! -a ${RUN_dir}/outo_${chunk} ]]; then
+      SAVEDDO=%SAVEDDO%
+      tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      touch ../$tarfile
 
-#
-# Save Atmospheric files
-#
-SAVEDD=%SAVEDD%
-tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      # Copying the 1d (daily), 5d (5 days), 1m (monthly), or any type of means available
+      intervals=`ls -1 ${EXPID}_??_*.nc.gz | cut -d '_' -f 2 | uniq`
+      for interval in ${intervals}; do
+          grid_types=`ls -1 ${EXPID}_${interval}_*.nc.gz | cut -c 27-32`
+          prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
+          for grid_type in ${grid_types}; do
+              output_file=${prefix}_${grid_type}.nc.gz
+              tar -rvf ../${tarfile} ${output_file}
+          done
+      done
+      $CP ../$tarfile $PATHOUT_OUT
+      $CHMOD $PATHOUT_OUT/$tarfile
+      rm -f ../$tarfile
+      touch ${RUN_dir}/outo_${chunk}
+   fi
 
-# Copying the monthly means
-tar -cvf ../$tarfile MMA_${EXPID}_*.nc.gz
-cp ../$tarfile $PATHOUT_OUT
-#
-rm -f ${RUN_dir}/outa_${chunk}
-locfile=`md5sum ../${tarfile}|cut -d" " -f1`
-remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
-if [[ "$locfile" == "$remfile" ]] ; then
-   echo "${tarfile} file has been stored correctly"
-   touch ${RUN_dir}/outa_${chunk}
-   rm -f ../$tarfile
-else
-   exit 1
-fi
-date
+   # Save Atmospheric files
+   if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
+      SAVEDD=%SAVEDD%
+      tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
-# Copying the daily data (GRIB files)
-if [[ $SAVEDD == TRUE ]]; then
-   for FILE in `ls ICM*grb` ; do
-       cp $FILE ${PATHOUT_OUT}/.
-       chmod 775 ${PATHOUT_OUT}/*
-       #
-       locfile=`md5sum ${FILE}|cut -d" " -f1`
-       remfile=`md5sum ${PATHOUT_OUT}/${FILE}|cut -d" " -f1`
-       if [[ "$locfile" == "$remfile" ]]; then
-          echo "${FILE} has been stored correctly"
-       else
-          rm -f ${RUN_dir}/outa_${chunk}
-          exit 1
-       fi
-   done
+      # Copying the monthly means
+      tar -cvf ../$tarfile MMA_${EXPID}_*.nc.gz
+      $CP ../$tarfile $PATHOUT_OUT
+      $CHMOD $PATHOUT_OUT/$tarfile
+      rm -f ../$tarfile
+
+      # Copying the daily data (GRIB files)
+      if [[ $SAVEDD == TRUE ]]; then
+         for grbfile in `ls ICM*grb`; do
+             $CP $grbfile $PATHOUT_OUT
+             $CHMOD $PATHOUT_OUT/$grbfile
+             rm -f $grbfile
+         done
+      fi
+      touch ${RUN_dir}/outa_${chunk}
+   fi
+
+   if [[ -a ${RUN_dir}/outo_$chunk && -a ${RUN_dir}/outa_$chunk ]]; then
+      rm -f ${RUN_dir}/outo_$chunk ${RUN_dir}/outa_$chunk
+      touch ${RUN_dir}/out_$chunk
+   fi
 fi
 
 #
 # Tail of the chunk
 #
 cd $RUN_dir
-if [[ -a outo_$chunk && -a outa_$chunk ]]; then
+if [[ -a rest_$chunk && -a out_$chunk ]]; then
    echo "We are now removing ${output_dir}"
-   rm -rf ${output_dir} outo_$chunk outa_$chunk
-   touch out_$chunk
+   rm -rf $output_dir
 fi
-
-find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
-find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
@@ -211,8 +197,15 @@ if [[ $Chunk_last == TRUE ]]; then
    fi
    echo "We are now storing log files"
    stamp=`date +%Y%m%d_%H%M`
-   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}_${stamp}.tar.gz"
-   tar -cvzf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_*
+   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}_${stamp}.tar"
+   set +e
+   tar -cvf $tarfile *${EXPID}_${START_date}_${MEMBER}_*
+   set -e
+   gzip -9 $tarfile
+   $CP $tarfile.gz $PATHOUT
+   $CHMOD $PATHOUT/*
+   rm -f $tarfile.gz
 fi
 
 date
+

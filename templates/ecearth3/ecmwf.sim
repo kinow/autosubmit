@@ -1,13 +1,19 @@
-#@ shell            = /usr/bin/ksh 
-#@ class            = np 
-#@ job_type         = parallel 
-#@ job_name         = %JOBNAME%
-#@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out 
-#@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err 
-#@ notification     = always  
-#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb) 
-#@ node             = 2 
-#@ tasks_per_node   = 32
-#@ cpu_limit        = 12:00:00
-#@ wall_clock_limit = 24:00:00
+#!/bin/ksh
+###############################################################################
+#                              RUN EC_EARTH
+###############################################################################
+#
+#@ shell            = /usr/bin/ksh
+#@ class            = np
+#@ job_type         = parallel
+#@ job_name         = %JOBNAME% 
+#@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
+#@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+#@ notification     = error
+#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+#@ ec_smt           = no
+#@ total_tasks      = 346
+#@ wall_clock_limit = 2:00:00
 #@ queue
+#
+###############################################################################

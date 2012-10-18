@@ -1,4 +1,4 @@
-set -exuv
+set -xuve
 date
 
 #
@@ -44,15 +44,10 @@ RUN_hours=$((RUN_days*24))
 # Model output path w.r.t chunk number
 #
 output_dir=${RUN_dir}/Output_${chunk}
-tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
-find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
-find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
-
-if [[ -d ${output_dir} ]]; then
-   cd $output_dir
-else
+if [[ ! -d ${output_dir} ]]; then
    exit
 fi
+cd $output_dir
 
 #
 # Deal with Ocean's output

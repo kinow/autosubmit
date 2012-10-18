@@ -19,15 +19,12 @@ EXPID=%EXPID%
 START_date=%SDATE%
 
 ECEARTH=${ECEARTH_DIR}/$VERSION
-ini_data_dir=${ECEARTH_DIR}/$VERSION/inidata
+ini_data_dir=${ECEARTH}/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 ctrl_file_dir=${WRITINGDIR}/model/setup/ctrl
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-INIPATH=${RUN_dir}/inidata
-
-mkdir -p $RUN_dir
 cd $RUN_dir
 
 #
@@ -155,10 +152,15 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  rm -rf NEMO_Restart_${chunk} *${Chunk_nem_restart_tag}*
  rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
  rm -rf Output_${chunk}
+ rm -f rest_${chunk} out_${chunk}
 
 #
 # Create some control files
 #
+
+# IOM files
+ln -sf ${ctrl_file_dir}/xmlio_server.def
+ln -sf ${ctrl_file_dir}/iodef.$(echo $LIM | tr [:upper:] [:lower:]).xml iodef.xml
 
 # IFS, NEMO, LIM namelist and OASIS namcouple files
 . ${ctrl_file_dir}/namelist.ifs.sh                                                 > fort.4
@@ -189,10 +191,10 @@ grib_set \
                                                        ICMCL${exp_name}INIT
 
 # Create data for all month in the years of the leg
-for (( y=${leg_start_date_yyyy} ; y<=${leg_end_date_yyyy} ; y++ ))
+for y in $(seq ${leg_start_date_yyyy} ${leg_end_date_yyyy})
 do
     yy=$(printf "%04d" $y)
-    for m in {1..12}
+    for m in $(seq 1 12)
     do
         mm=$(printf "%02d" $m)
         grib_set -s dataDate=${yy}${mm}15 ${icmclfile}-${mm} ${tempfile}
@@ -265,8 +267,6 @@ fi
 #
 mkdir -p Output_${chunk}
 mv ${EXPID}_??_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
-
-chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
