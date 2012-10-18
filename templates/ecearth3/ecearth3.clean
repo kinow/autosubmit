@@ -24,7 +24,7 @@ esac
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
-HSMdir=%HSM_DIR%
+HSM_DIR=%HSM_DIR%
 
 #
 # Model Configuration
@@ -52,7 +52,7 @@ RUN_hours=$((RUN_days*24))
 #
 # Output Path on HSM (permanent storage)
 #
-PATHOUT="${HSMdir}/exp/${EXPID}/${START_date}/${MEMBER}"
+PATHOUT="${HSM_DIR}/exp/${EXPID}/${START_date}/${MEMBER}"
 $LS ${PATHOUT}
 if [[ $? -ne 0 ]]; then
    echo "HOUSTON we have a problem!"
