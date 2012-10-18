@@ -53,8 +53,8 @@ class Job:
 		print 'TYPE: %s' % self._type
 		print 'PARENTS: %s' % [ p._name for p in self._parents ]
 		print 'CHILDREN: %s' % [ c._name for c in self._children ]
-		print 'FAIL_COUNT: %s' % self._hpcarch
-		print 'HPCARCH: %s' % self._fail_count
+		print 'FAIL_COUNT: %s' % self._fail_count
+		print 'HPCARCH: %s' % self._hpcarch
 		print 'EXPID: %s' % self._expid 
  
  
@@ -273,7 +273,6 @@ class Job:
 		templateContent = file(mytemplate).read()
 		parameters['INCLUDE_POSTP'] = file(self._template_path + "/common_ocean_post.txt").read()
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['HPCARCH'] = str(self._hpcarch)
 		for key in parameters.keys():
 			if key in templateContent:
 				print "%s:\t%s" % (key,parameters[key])
