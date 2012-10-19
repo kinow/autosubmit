@@ -1,6 +1,6 @@
 %ENVIRONMENT%
 
-set -exuv
+set -xuve
 date
 
 #

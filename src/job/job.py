@@ -23,6 +23,7 @@ class Job:
 		self._parents = list()
 		self._children = list()
 		self._fail_count = 0
+		self._hpcarch = ""
 		self._expid = n[0]
 		self._complete = True
 		self._parameters = dict()
@@ -37,6 +38,7 @@ class Job:
 		del self._parents
 		del self._children
 		del self._fail_count
+		del self._hpcarch
 		del self._expid
 		del self._complete
 		del self._parameters
@@ -51,7 +53,8 @@ class Job:
 		print 'TYPE: %s' % self._type
 		print 'PARENTS: %s' % [ p._name for p in self._parents ]
 		print 'CHILDREN: %s' % [ c._name for c in self._children ]
-		print 'fail_countS: %s' % self._fail_count
+		print 'FAIL_COUNT: %s' % self._fail_count
+		print 'HPCARCH: %s' % self._hpcarch
 		print 'EXPID: %s' % self._expid 
  
  
@@ -103,6 +106,10 @@ class Job:
 		"""Returns the number	of	failures"""
 		return self._fail_count
  
+	def get_hpcarch(self):
+		"""Returns the HPC architecture"""
+		return self._hpcarch
+
 	def	get_parameters(self):
 		''' Return the parameters list'''
 		return	self._parameters
@@ -140,6 +147,9 @@ class Job:
 	
 	def inc_fail_count(self):
 		self._fail_count += 1
+	
+	def set_hpcarch(self, new_hpcarch):
+		self._hpcarch = new_hpcarch
  
 	def add_parent(self, new_parent):
 		self._parents += [new_parent]
@@ -262,6 +272,7 @@ class Job:
 		#templateContent = file(hpcarch).read()
 		templateContent = file(mytemplate).read()
 		parameters['INCLUDE_POSTP'] = file(self._template_path + "/common_ocean_post.txt").read()
+		parameters['FAIL_COUNT'] = str(self._fail_count)
 		for key in parameters.keys():
 			if key in templateContent:
 				print "%s:\t%s" % (key,parameters[key])

@@ -1,4 +1,4 @@
-set -exuv
+set -xuve
 date
 
 #
