@@ -71,7 +71,7 @@ if __name__ == "__main__":
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
-	   serialQueue.set_host("turing")
+	   serialQueue.set_host("ellen")
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
 	elif(hpcarch == "ecmwf"):
