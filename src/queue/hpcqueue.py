@@ -68,6 +68,7 @@ class HPCQueue:
 	
 	def	send_script(self,job_script):
 		(status, output) = getstatusoutput(self._put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir + "/" + str(job_script))
+		print self._put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self._expid + '/tmp/' + str(job_script) + ' ' + self._host + ':' + self._remote_log_dir + "/" + str(job_script)
 		if(status == 0):
    			print 'The script has been sent'
 		else:	
