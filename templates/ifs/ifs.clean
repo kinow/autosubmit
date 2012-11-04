@@ -2,6 +2,25 @@ set -xuve
 date
 
 #
+# HPC Arch
+#
+HPCARCH=%HPCARCH%
+case $HPCARCH in
+ ecmwf)
+  MKDIR="eval emkdir -p"
+  CP="eval ecp -o"
+  LS="eval els"
+  CHMOD="eval echmod 664"
+ ;;
+ *)
+  MKDIR="mkdir -p"
+  CP="cp -f"
+  LS="ls"
+  CHMOD="chmod 664"
+ ;;
+esac
+
+#
 # General Paths
 #
 SCRATCH_DIR=%SCRATCH_DIR%
@@ -34,138 +53,103 @@ RUN_hours=$((RUN_days*24))
 # Output Path on HSM (permanent storage)
 #
 PATHOUT="${HSM_DIR}/exp/${EXPID}/${START_date}/${MEMBER}"
-if [[ ! -d ${PATHOUT} ]]; then
+$LS ${PATHOUT}
+if [[ $? -ne 0 ]]; then
    echo "HOUSTON we have a problem!"
    echo " this directory should already exist! ${PATHOUT}"
    exit
 fi
 
 output_dir=${RUN_dir}/Output_${chunk}
-
-if [[ -d ${RUN_dir} ]]; then
-   cd $RUN_dir
-else
+if [[ ! -d ${RUN_dir} ]]; then
    exit
 fi
 
 #
-# Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extend)
+# Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extended)
 #
-if [[ ! -d $output_dir ]]; then
+cd $RUN_dir
+RERUN=%RERUN%
+if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
    rm -f *_$((chunk+1))
-   tar -xvf $PATHOUT/restarts/RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_*.tar
+   RESTA="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+   $CP ${PATHOUT}/restarts/$RESTA .
+   tar -xvf $RESTA
+   rm -f $RESTA
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
    exit
 fi
 
 #
-# Save IFS restart files at permanent storage and clean disk
+# Save IFS restart files at permanent storage
 #
-PATHOUT_RES="${PATHOUT}/restarts"
+cd $RUN_dir
+if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
-if [[ ! -d ${PATHOUT_RES} ]]; then
-   mkdir -p ${PATHOUT_RES}
-fi
+   PATHOUT_RES="${PATHOUT}/restarts"
+   $MKDIR ${PATHOUT_RES}
 
-for REST in RESTA; do
-    case ${REST} in
-         RESTA) PATHSU="IFS_Restart_${chunk}"
-                FILEPREF="*"
-         ;;
-         RESTO) PATHSU="NEMO_Restart_${chunk}"
-                FILEPREF="*"
-         ;;
-    esac
+   # Save Atmospheric files
+   if [[ ! -a ${RUN_dir}/resta_${chunk} ]]; then
+      tarfile="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile IFS_Restart_${chunk}
+      $CP $tarfile $PATHOUT_RES
+      $CHMOD $PATHOUT_RES/$tarfile
+      rm -f $tarfile
+      touch ${RUN_dir}/resta_${chunk}
+   fi
 
-    # Create and copy tar file
-    tarfile="${REST}_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-    tar -cvf $tarfile ${PATHSU}/${FILEPREF}
-    cp $tarfile $PATHOUT_RES
-
-    # Check target file
-    locfile=`md5sum ${tarfile}|cut -d" " -f1`
-    remfile=`md5sum ${PATHOUT_RES}/${tarfile}|cut -d" " -f1`
-    if [[ "$locfile" == "$remfile" ]] ; then
-       echo "The file has been correctly stored"
-       touch ${RUN_dir}/${REST}_${chunk}
-       rm -f $tarfile
-    else
-       exit 1
-    fi
-    date
-done
-
-if [[ -a RESTA_${chunk} ]]; then
-   rm ${RUN_dir}/RESTA_${chunk}
-   touch ${RUN_dir}/rest_${chunk}
-fi
-
-if [[ -d ${output_dir} ]]; then
-   cd $output_dir
-else
-   exit
+   if [[ -a ${RUN_dir}/resta_${chunk} ]]; then
+      rm -f ${RUN_dir}/resta_${chunk}
+      touch ${RUN_dir}/rest_${chunk}
+   fi
 fi
 
 #
 # Save IFS output files at permanent storage and clean disk
 #
-PATHOUT_OUT="${PATHOUT}/outputs"
-if [[ ! -d ${PATHOUT_OUT} ]]; then
-   mkdir -p ${PATHOUT_OUT}
-fi   
+cd $output_dir
+if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 
+   PATHOUT_OUT="${PATHOUT}/outputs"
+   $MKDIR ${PATHOUT_OUT}
 
-#
-# Save Atmospheric files
-#
-SAVEDD=%SAVEDD%
-tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+   # Save Atmospheric files
+   if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
+      tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
-# Copying the monthly means
-tar -cvf ../$tarfile MMA_${EXPID}_*.nc.gz
-cp ../$tarfile $PATHOUT_OUT
-#
-rm -f ${RUN_dir}/outa_${chunk}
-locfile=`md5sum ../${tarfile}|cut -d" " -f1`
-remfile=`md5sum ${PATHOUT_OUT}/${tarfile}|cut -d" " -f1`
-if [[ "$locfile" == "$remfile" ]] ; then
-   echo "${tarfile} file has been stored correctly"
-   touch ${RUN_dir}/outa_${chunk}
-   rm -f ../$tarfile
-else
-   exit 1
-fi
-date
+      # Copying the monthly means
+      ls -1 MMA_${EXPID}_*.nc.gz | xargs tar -cvf ../$tarfile
+      $CP ../$tarfile $PATHOUT_OUT
+      $CHMOD $PATHOUT_OUT/$tarfile
+      rm -f ../$tarfile
 
-# Copying the daily data (GRIB files)
-if [[ $SAVEDD == TRUE ]]; then
-   for FILE in `ls ICM*grb` ; do
-       cp $FILE ${PATHOUT_OUT}/.
-       chmod 775 ${PATHOUT_OUT}/*
-       #
-       locfile=`md5sum ${FILE}|cut -d" " -f1`
-       remfile=`md5sum ${PATHOUT_OUT}/${FILE}|cut -d" " -f1`
-       if [[ "$locfile" == "$remfile" ]]; then
-          echo "${FILE} has been stored correctly"
-       else
-          rm -f ${RUN_dir}/outa_${chunk}
-          exit 1
-       fi
-   done
+      # Copying the daily data (GRIB files)
+      SAVEDD=%SAVEDD%
+      if [[ $SAVEDD == TRUE ]]; then
+         for grbfile in `ls ICM*grb`; do
+             $CP $grbfile $PATHOUT_OUT
+             $CHMOD $PATHOUT_OUT/$grbfile
+             rm -f $grbfile
+         done
+      fi
+      touch ${RUN_dir}/outa_${chunk}
+   fi
+
+   if [[ -a ${RUN_dir}/outa_$chunk ]]; then
+      rm -f ${RUN_dir}/outa_$chunk
+      touch ${RUN_dir}/out_$chunk
+   fi
 fi
 
 #
 # Tail of the chunk
 #
 cd $RUN_dir
-if [[  -a outa_$chunk ]]; then
+if [[ -a rest_$chunk && -a out_$chunk ]]; then
    echo "We are now removing ${output_dir}"
-   rm -rf ${output_dir} outa_$chunk
-   touch out_$chunk
+   rm -rf $output_dir
 fi
-
-find ${PATHOUT}/. -type d | xargs chmod 775 2>/dev/null
-find ${PATHOUT}/. -type f | xargs chmod 664 2>/dev/null
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
@@ -179,8 +163,15 @@ if [[ $Chunk_last == TRUE ]]; then
    fi
    echo "We are now storing log files"
    stamp=`date +%Y%m%d_%H%M`
-   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}_${stamp}.tar.gz"
-   tar -cvzf $PATHOUT/$tarfile *${EXPID}_${START_date}_${MEMBER}_*
+   tarfile="logfiles_${EXPID}_${START_date}_${MEMBER}_${stamp}.tar"
+   set +e
+   ls -1 *${EXPID}_${START_date}_${MEMBER}_* | xargs tar -cvf ../$tarfile
+   set -e
+   gzip -9 ../$tarfile
+   $CP ../$tarfile.gz $PATHOUT
+   $CHMOD $PATHOUT/$tarfile.gz
+   rm -f ../$tarfile.gz
 fi
 
 date
+

@@ -18,15 +18,12 @@ EXPID=%EXPID%
 START_date=%SDATE%
 
 ECEARTH=${ECEARTH_DIR}/$VERSION
-TESTDATADIR=${ECEARTH_DIR}/$VERSION/inidata/testdata
+TESTDATADIR=${ECEARTH}/inidata/testdata
 
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 SCRIPTDIR=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-INIPATH=${RUN_dir}/inidata
-
-mkdir -p $RUN_dir
 cd $RUN_dir
 
 #
@@ -110,20 +107,20 @@ Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 # Run Directory Initialization
 # 
 if [[ $chunk == 1 ]]; then
-   rm -f ${RUN_dir}/anaisout
-   rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
    LFASTRES=FALSE
-else
    rm -f ${RUN_dir}/anaisout
-   rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+   rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
+   LFASTRES=TRUE
+   rm -f ${RUN_dir}/anaisout
+   rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ln -sf NEMO_Restart_$((chunk-1))/* .
-   LFASTRES=TRUE
 fi
 
 #
@@ -246,15 +243,11 @@ fi
 #
 # Save NEMO & IFS output for postprocessing
 #
-case ${SAVEDDO} in
-  'TRUE') interval=1d ;;
-  'FALSE') interval=MM ;;
-esac
 mkdir -p Output_${chunk}
-mv ORCA1_${interval}_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk} 
-
-chmod 775 -R NEMO_Restart_${chunk} IFS_Restart_${chunk} Output_${chunk}
+mv ORCA1_??_*.nc Output_${chunk}
+mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
+

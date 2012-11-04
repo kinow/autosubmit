@@ -6,7 +6,10 @@ date
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+PATH=%NCDFPATH%:${PATH}
 PATH=%CDOPATH%:${PATH}
+PATH=%NCOPATH%:${PATH}
+PATH=%CDFPATH%:${PATH}
 PATH=%GRIBAPIPATH%:${PATH}
 PATH=%REBUILDPATH%:${PATH}
 
@@ -19,7 +22,8 @@ MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-SAVEDDO=%SAVEDDO%
+# CON_FILES=${ECEARTH_DIR}/%VERSION%/inidata/nemo/%NEMO_resolution% (not included yet)
+# NEMOVERSION=v3.3 (not included yet)
 
 #
 # Chunk Management
@@ -39,53 +43,83 @@ RUN_hours=$((RUN_days*24))
 # Model output path w.r.t chunk number
 #
 output_dir=${RUN_dir}/Output_${chunk}
-tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
-find ${output_dir}/. -type d | xargs chmod 775 2>/dev/null
-find ${output_dir}/. -type f | xargs chmod 664 2>/dev/null
-
-if [[ -d ${output_dir} ]]; then
-   mkdir -p $tmp_output_dir
-   cd $output_dir
-else
+if [[ ! -d ${output_dir} ]]; then
    exit
 fi
+tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
+rm -rf $tmp_output_dir; mkdir -p $tmp_output_dir
 
 #
-# Rebuild ocean output
+# Deal with Ocean's output
 #
-date
-if [[ ! -a %JOBNAME%.opost ]]; then
-   case ${SAVEDDO} in
-     'TRUE') interval=1d ;;
-     'FALSE') interval=MM ;;
-   esac
-   cp ORCA1_* $tmp_output_dir
-   cd $tmp_output_dir
-   prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
-   grid_types="grid_W grid_T grid_U grid_V icemod"
-   for grid_type in ${grid_types}; do
-       output_file=${prefix}_${grid_type}.nc
-       rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       gzip -9 ${output_file}
-       rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       rm -f ${output_dir}/${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-       mv ${output_file}.gz $output_dir
+
+# Rebuild
+cd $output_dir
+if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
+   intervals=`ls -1 ORCA1_??_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -d '_' -f 2 | uniq`
+   for interval in ${intervals}; do
+       grid_types=`ls -1 ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 28-33`
+       prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
+       for grid_type in ${grid_types}; do
+           input_files=${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           output_file=${prefix}_${grid_type}.nc
+           cp $input_files $tmp_output_dir
+           cd $tmp_output_dir
+           rebuild -v 3 -o $output_file $input_files
+           rm -f $input_files
+           rm -f $output_dir/$input_files
+           mv $output_file $output_dir
+           cd $output_dir
+       done
    done
-   cd $output_dir
-   touch %JOBNAME%.opost
+   touch $output_dir/%JOBNAME%.rebuild
+fi
+
+# Select a reduced set of outputs to save
+# Include ocean post processing functions
+cd $output_dir
+# INCLUDE_POSTP (not included yet)
+if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
+   OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
+   if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+      #
+      # A prerequisite to enter the common diagnostic post-processing
+      if [[ -e toto.nc ]] ; then rm -f toto.nc ; fi 
+      cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+      #
+      # Mixed layer ocean heat content : somxlheatc
+      heat_sal_mxl toto.nc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+      ncrename -d time,time_counter heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+      ncks -A -v somxlheatc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      rm -f heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+      #
+      # 0-300m ocean heat content : heatc_sl
+      ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+      ncrename -d time,time_counter ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
+      ncks -A -v heatc_sl ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      rm -f ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc toto.nc
+      ncks -O -x -v sohtc300 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      #
+      # Select only the necessary outputs : surface currents only and remove 3d temperature
+      ncks -O -d depthv,0 -d depthu,0 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -O -x -v votemper ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+   fi
+   gzip -9 ORCA1_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc
+   touch $output_dir/%JOBNAME%.opost
 fi
 
 #
-# Compute atmospheric monthly means
+# Deal with Atmosphere's output
 #
-ATM_rstdate=%ATM_rstdate%
-if [[ $ATM_rstdate == '' ]]; then
-   ATM_rstdate=${START_date}
-fi
-nmonthini=`echo $ATM_rstdate | cut -c5-6`
-nyearini=`echo $ATM_rstdate | cut -c1-4`
-
-if [[ ! -a %JOBNAME%.apost ]]; then
+cd $output_dir
+if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
+ ATM_rstdate=%ATM_rstdate%
+ if [[ $ATM_rstdate == '' ]]; then
+    ATM_rstdate=${START_date}
+ fi
+ nmonthini=`echo $ATM_rstdate | cut -c5-6`
+ nyearini=`echo $ATM_rstdate | cut -c1-4`
  nmon=1
  year=${nyearini}
  while [[ $nmon -le $RUN_months ]]; do
@@ -100,32 +134,22 @@ if [[ ! -a %JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-              cp ${file} $tmp_output_dir
+              cp $file $tmp_output_dir
               cd $tmp_output_dir
-              cp ${file} ${file}.tmp
-              PARS=`grib_ls ${file} | head -n -3 | tr -s ' ' | cut -f3 -d ' ' |  sort -n | uniq | grep ^[0-9]` # tested with grib_api v1.8.0
-              for PAR in $PARS; do
-                  if [[ $PAR == 133.128 || $PAR == 152.128 || $PAR == 246.128 || \
-                        $PAR == 247.128 || $PAR == 248.128 ]]; then
-                     rm -f ${PAR}.grb
-                     grib_copy -w param=${PAR} ${file}.tmp ${PAR}.grb
-                     if [[ $PAR == 152.128 ]]; then
-                        rm -f ${PAR}.grb
-                     fi
-                     mv ${file}.tmp ${file}.tmp2
-                     grib_copy -w param!=${PAR} ${file}.tmp2 ${file}.tmp
-                 fi
+              echo write \"${file}_[param].grb\"\; > rules_file
+              grib_filter rules_file ${file}
+              case $type in # list of params, don't need!!
+               SH) params="152.128" ;;
+               GG) params="152.128" ;;
+              esac
+              for param in ${params}; do
+                  rm -f ${file}_${param}.grb
               done
-              PARS="133.128 246.128 247.128 248.128"
-              for PAR in $PARS; do
-                  if [[ -a ${PAR}.grb ]]; then
-                     cdo -R -r -t ecmwf -f nc splitvar ${PAR}.grb ${file}_
-                     rm -f ${PAR}.grb
-                  fi
+              for gf in `ls ${file}_*.grb`; do
+                  cdo -R -r -t ecmwf -f nc splitvar ${gf} ${file}_
+                  rm -f ${gf}
               done
-              cdo -R -r -t ecmwf -f nc splitvar ${file}.tmp ${file}_
               ls -l ${file}_*.nc
-              rm -f ${file}.tmp ${file}.tmp2
               #
               date
               for infile in `ls ${file}_*.nc`; do
@@ -141,20 +165,20 @@ if [[ ! -a %JOBNAME%.apost ]]; then
               done
               cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
               gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
-              rm -f IM_*_${year}${month}_mm.nc
-              mv ${file} ${output_dir}/${file}.grb
-              mv MMA_* ${output_dir}
-              cd ${output_dir}
-              rm ${file}
+              rm -f IM_*_${year}${month}_mm.nc*
+              rm -f $file
+              mv MMA_* $output_dir
+              cd $output_dir
+              mv $file ${file}.grb
            fi
        done
        nmon=$((nmon+1))
  done
 
- touch %JOBNAME%.apost
+ touch $output_dir/%JOBNAME%.apost
 fi
 
-if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]]; then
+if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    rm -rf $tmp_output_dir
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi

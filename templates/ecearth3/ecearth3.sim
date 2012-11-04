@@ -275,7 +275,8 @@ fi
 # Save NEMO & IFS output for postprocessing
 #
 mkdir -p Output_${chunk}
-mv ${EXPID}_??_*.nc ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
+mv ${EXPID}_??_*.nc Output_${chunk}
+mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 

@@ -10,13 +10,13 @@ case $HPCARCH in
   MKDIR="eval emkdir -p"
   CP="eval ecp -o"
   LS="eval els"
-  CHMOD="eval echmod 775"
+  CHMOD="eval echmod 664"
  ;;
  *)
   MKDIR="mkdir -p"
   CP="cp -f"
   LS="ls"
-  CHMOD="chmod 775"
+  CHMOD="chmod 664"
  ;;
 esac
 
@@ -64,12 +64,13 @@ output_dir=${RUN_dir}/Output_${chunk}
 if [[ ! -d ${RUN_dir} ]]; then
    exit
 fi
-cd $RUN_dir
 
 #
-# Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extend)
+# Prepar restarts (in case, if some chunks need to be rerun or the experiment is to be extended)
 #
-if [[ ! -d $output_dir ]]; then
+cd $RUN_dir
+RERUN=%RERUN%
+if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
    rm -f *_$((chunk+1))
    RESTA="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
    RESTO="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
@@ -83,6 +84,7 @@ fi
 #
 # Save NEMO & IFS restart files at permanent storage
 #
+cd $RUN_dir
 if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    PATHOUT_RES="${PATHOUT}/restarts"
@@ -90,8 +92,8 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
-      tarfile="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-      tar -cvf $tarfile IFS_Restart_${chunk}
+      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile NEMO_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
       $CHMOD $PATHOUT_RES/$tarfile
       rm -f $tarfile
@@ -100,8 +102,8 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    # Save Atmospheric files
    if [[ ! -a ${RUN_dir}/resta_${chunk} ]]; then
-      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-      tar -cvf $tarfile NEMO_Restart_${chunk}
+      tarfile="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile IFS_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
       $CHMOD $PATHOUT_RES/$tarfile
       rm -f $tarfile
@@ -117,23 +119,18 @@ fi
 #
 # Save NEMO & IFS output files at permanent storage and clean disk
 #
+cd $output_dir
 if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
-
-   if [[ ! -d ${output_dir} ]]; then
-      exit
-   fi
-   cd $output_dir
 
    PATHOUT_OUT="${PATHOUT}/outputs"
    $MKDIR ${PATHOUT_OUT}
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/outo_${chunk} ]]; then
-      SAVEDDO=%SAVEDDO%
       tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
-      # Copying the 1d (daily), 5d (5 days), 1m (monthly), or any type of means available
-      ls -1 ${EXPID}_??_*.nc.gz | xargs tar -cvf ../${tarfile}
+      # Copying the means available
+      ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc.gz | xargs tar -cvf ../${tarfile}
       $CP ../$tarfile $PATHOUT_OUT
       $CHMOD $PATHOUT_OUT/$tarfile
       rm -f ../$tarfile
@@ -142,7 +139,6 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 
    # Save Atmospheric files
    if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
-      SAVEDD=%SAVEDD%
       tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
 
       # Copying the monthly means
@@ -152,6 +148,7 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       rm -f ../$tarfile
 
       # Copying the daily data (GRIB files)
+      SAVEDD=%SAVEDD%
       if [[ $SAVEDD == TRUE ]]; then
          for grbfile in `ls ICM*grb`; do
              $CP $grbfile $PATHOUT_OUT
@@ -195,7 +192,7 @@ if [[ $Chunk_last == TRUE ]]; then
    set -e
    gzip -9 ../$tarfile
    $CP ../$tarfile.gz $PATHOUT
-   $CHMOD $PATHOUT/*
+   $CHMOD $PATHOUT/$tarfile.gz
    rm -f ../$tarfile.gz
 fi
 

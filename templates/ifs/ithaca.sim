@@ -8,6 +8,6 @@
 #$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
 #$ -V
-#$ -pe orte 45
+#$ -pe orte 40
 #
 ###############################################################################

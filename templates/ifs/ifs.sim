@@ -18,15 +18,12 @@ EXPID=%EXPID%
 START_date=%SDATE%
 
 ECEARTH=${ECEARTH_DIR}/$VERSION
-TESTDATADIR=${ECEARTH_DIR}/$VERSION/inidata/testdata
+TESTDATADIR=${ECEARTH}/inidata/testdata
 
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 SCRIPTDIR=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-INIPATH=${RUN_dir}/inidata
-
-mkdir -p $RUN_dir
 cd $RUN_dir
 
 #
@@ -82,19 +79,19 @@ Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 # Run Directory Initialization
 # 
 if [[ $chunk == 1 ]]; then
-   rm -f ${RUN_dir}/anaisout
-   rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
    LFASTRES=FALSE
-else
    rm -f ${RUN_dir}/anaisout
-   rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+   rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
+   LFASTRES=TRUE
+   rm -f ${RUN_dir}/anaisout
+   rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
-   LFASTRES=TRUE
 fi
 
 #
@@ -137,7 +134,6 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
      ;;
  esac
-
 
 #
 # Location of the executables
@@ -187,8 +183,7 @@ fi
 mkdir -p Output_${chunk}
 mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
-chmod 775 -R IFS_Restart_${chunk} Output_${chunk}
-
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
+
