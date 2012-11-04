@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/bin/ksh
 ###############################################################################
-#                              RUN EC_EARTH
+#                   WRITE EC_EARTH OUTPUT ON HSM
 ###############################################################################
 #
-#!/bin/sh --login
+#!/bin/ksh --login
 #PBS -N %JOBNAME%
-#PBS -l mppwidth=360
-#PBS -l mppnppn=24
-#PBS -l walltime=2:00:00
+#PBS -l mppwidth=2
+#PBS -l mppnppn=1
+#PBS -l walltime=01:00:00
 #PBS -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #PBS -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #

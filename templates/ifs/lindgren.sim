@@ -1,13 +1,14 @@
-#!/bin/sh
+#!/bin/ksh
 ###############################################################################
 #                              RUN EC_EARTH
 ###############################################################################
 #
-#$ -S /bin/sh
-#$ -N %JOBNAME%
-#$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-#$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-#$ -V
-#$ -pe orte 57
+#!/bin/ksh --login
+#PBS -N %JOBNAME%
+#PBS -l mppwidth=40
+#PBS -l mppnppn=24
+#PBS -l walltime=3:00:00
+#PBS -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+#PBS -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #
 ###############################################################################

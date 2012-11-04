@@ -1,0 +1,114 @@
+set -xuve
+date
+
+#
+# General Paths
+#
+SCRATCH_DIR=%SCRATCH_DIR%
+ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+PATH=%CDOPATH%:${PATH}
+PATH=%GRIBAPIPATH2%:${PATH}
+
+#
+# Model Configuration
+#
+VERSION=%VERSION%
+EXPID=%EXPID%
+MEMBER=%MEMBER%
+START_date=%SDATE%
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
+#
+# Chunk Management
+#
+chunk=%CHUNK%
+Chunk_start_date=%Chunk_START_DATE%
+Chunk_end_date=%Chunk_END_DATE%
+Chunk_last=%Chunk_LAST%
+# In months
+RUN_months=%CHUNKSIZE%
+# In days
+RUN_days=%RUN_DAYS%
+# In hours
+RUN_hours=$((RUN_days*24))
+
+#
+# Model output path w.r.t chunk number
+#
+output_dir=${RUN_dir}/Output_${chunk}
+if [[ ! -d ${output_dir} ]]; then
+   exit
+fi
+
+
+#
+# Deal with Atmosphere's output
+#
+cd $output_dir
+if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
+ ATM_rstdate=%ATM_rstdate%
+ if [[ $ATM_rstdate == '' ]]; then
+    ATM_rstdate=${START_date}
+ fi
+ nmonthini=`echo $ATM_rstdate | cut -c5-6`
+ nyearini=`echo $ATM_rstdate | cut -c1-4`
+ nmon=1
+ year=${nyearini}
+ while [[ $nmon -le $RUN_months ]]; do
+       date
+       nmonthini=${nmonthini#0}
+       month=$((nmonthini+(chunk-1)*RUN_months+nmon-1))
+       year=$((nyearini+((month-1)/12)))
+       month=$((month-((month-1)/12)*12))
+       month=`printf '%02d' ${month}`
+       types="SH GG"
+       for type in $types; do
+           prefix=ICM${type}${EXPID}
+           file=${prefix}+${year}${month}
+           if [[ ! -a ${file}.grb ]]; then
+              echo write \"${file}_[param].grb\"\; > rules_file
+              grib_filter rules_file ${file}
+              case $type in # list of params, don't need!!
+               SH) params="152.128" ;;
+               GG) params="152.128" ;;
+              esac
+              for param in ${params}; do
+                  rm -f ${file}_${param}.grb
+              done
+              for gf in `ls ${file}_*.grb`; do
+                  cdo -R -r -t ecmwf -f nc splitvar ${gf} ${file}_
+                  rm -f ${gf}
+              done
+              ls -l ${file}_*.nc
+              #
+              date
+              for infile in `ls ${file}_*.nc`; do
+                  name=`basename $infile .nc`
+                  quant=`echo $name | sed s/${prefix}+${year}${month}_//`
+                  outfile=IM_${quant}_${year}${month}
+                  # Needed because last timestep is the 00:00 hours of the next day of the month
+                  cdo -f nc -r -timmean ${prefix}+${year}${month}_${quant}.nc ${outfile}_mm.nc
+                  mv ${outfile}_mm.nc ${outfile}_mm.nc.tmp
+                  # Shift the time to the correct month
+                  cdo shifttime,-1month ${outfile}_mm.nc.tmp ${outfile}_mm.nc
+                  rm -f ${prefix}+${year}${month}_${quant}.nc
+              done
+              cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
+              gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
+              rm -f IM_*_${year}${month}_mm.nc*
+              mv $file ${file}.grb
+           fi
+       done
+       nmon=$((nmon+1))
+ done
+
+ touch $output_dir/%JOBNAME%.apost
+fi
+
+if [[ -a $output_dir/%JOBNAME%.apost ]]; then
+   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+fi
+
+date
+
