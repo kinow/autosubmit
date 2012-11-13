@@ -8,6 +8,7 @@ HSM_DIR=%HSM_DIR%
 PATH=%NCOPATH%:${PATH}
 PATH=%CDOPATH%:${PATH}
 PATH=%CDFPATH%:${PATH}
+PATH=%REBUILDPATH%:${PATH}
 #
 # Model Configuration
 #
@@ -69,7 +70,7 @@ for grid_type in ${grid_types}; do
         cdo seltimestep,${i} ${file} timestep_${i}_${file}
       done
       inputfiles=`ls timestep_${i}*${grid_type}_*.nc`
-      ${rebuild_tool} -o timestep_${i}_${output_file} ${inputfiles}; rm -f ${inputfiles}
+      rebuild -v 3 -o timestep_${i}_${output_file} ${inputfiles}; rm -f ${inputfiles}
     fi
 
   done
