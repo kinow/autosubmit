@@ -139,7 +139,7 @@ else
  
   for grid_type in ${grid_types}; do
 
-    output_file=${prefix}_${grid_type}.nc
+    output_file=${prefix}_${grid_type}
     lstfiles=""
     for ((i=1;i<=${ntimesteps};i++));do
       lstfiles=$lstfiles" "timestep_${i}_${output_file}.nc 
