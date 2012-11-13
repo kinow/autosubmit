@@ -22,6 +22,7 @@ NEMODIR=%MODELS_DIR%/nemo/${VERSION}
 CON_FILES=${NEMODIR}/inidata
 PATHCOMMONOCEANDIAG=${NEMODIR}/inidata
 rebuild_tool=$NEMODIR/bin/rebuild
+NEMOVERSION=$VERSION
 #
 # Chunk Management
 #
