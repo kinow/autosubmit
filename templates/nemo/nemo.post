@@ -5,6 +5,7 @@ date
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSM_DIR=%HSM_DIR%
+PATH=%NCDFPATH%:${PATH}
 PATH=%NCOPATH%:${PATH}
 PATH=%CDOPATH%:${PATH}
 PATH=%CDFPATH%:${PATH}
@@ -21,7 +22,6 @@ WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
 NEMODIR=%MODELS_DIR%/nemo/${VERSION}
 CON_FILES=${NEMODIR}/inidata
-PATHCOMMONOCEANDIAG=${NEMODIR}/inidata
 rebuild_tool=$NEMODIR/bin/rebuild
 NEMOVERSION=$VERSION
 #
@@ -35,18 +35,16 @@ Chunk_end_month=`echo ${Chunk_end_date} | cut -c5-6`
 RUN_months=%CHUNKSIZE%
 RUN_year=`echo $Chunk_start_date | cut -c1-4`
 #
+cd $RUN_dir/Output_${chunk}
 ###############################################################################
 #                   Include ocean post processing functions                   #
 ###############################################################################
 #
 %INCLUDE_POSTP%
-
 #
 ###############################################################################
 #                             Rebuild ocean output                            #
 ###############################################################################
-#
-cd $RUN_dir/Output_${chunk}
 #
 if [[ %SAVEDDO% == 'TRUE' ]] ; then
   interval=1d
@@ -56,7 +54,10 @@ else
   ntimesteps=${RUN_months}
 fi
 prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
-grid_types="icemod grid_T grid_V grid_U grid_W"
+case %LIM% in 
+  'LIM3') grid_types="icemoa icemod grid_T grid_V grid_U grid_W" ;;
+  'LIM2') grid_types="icemod grid_T grid_V grid_U grid_W" ;;
+esac
 #
 for grid_type in ${grid_types}; do
 
@@ -83,7 +84,6 @@ done
 #                         Select some outputs to save                          #
 ################################################################################
 #
-source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 
 if [ %OCEAN_REDUCOUT% == 'TRUE' ] ; then
 list1=""
