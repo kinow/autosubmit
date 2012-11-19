@@ -34,6 +34,31 @@ Chunk_start_month=`echo ${Chunk_start_date} | cut -c5-6`
 Chunk_end_month=`echo ${Chunk_end_date} | cut -c5-6`
 RUN_months=%CHUNKSIZE%
 RUN_year=`echo $Chunk_start_date | cut -c1-4`
+if [[ %OCEAN_FORCYEAR% == -1 && %OCEAN_FORCTYPE% == 'eraint' ]] ; then
+  RUN_days=%RUN_DAYS%
+  day_prev=%PREV%
+  leapy=1 
+else
+  Chunk_length_month=$((${Chunk_end_month}-${Chunk_start_month}+1))
+  case ${Chunk_length_month} in
+    6) 
+    case ${Chunk_start_month} in
+      01) RUN_days=181 
+      day_prev=$(( ( (chunk-1) / 2 ) * 365 ))
+      ;; 
+      07) RUN_days=184 
+      day_prev=$(( ( (chunk-1) / 2 ) * 365 + 181 ))
+      ;;
+    esac
+    ;;
+    12) RUN_days=365 
+    day_prev=$(( (chunk-1) * 365 ))
+    ;;
+  esac
+  leapy=0
+fi
+#
+###############################################################################
 #
 cd $RUN_dir/Output_${chunk}
 ###############################################################################
@@ -48,7 +73,7 @@ cd $RUN_dir/Output_${chunk}
 #
 if [[ %SAVEDDO% == 'TRUE' ]] ; then
   interval=1d
-  ntimesteps=$((RUN_months*24))
+  ntimesteps=${RUN_days}
 else
   interval=1m
   ntimesteps=${RUN_months}
