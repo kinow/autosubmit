@@ -145,7 +145,12 @@ if [[ -f conf/$MODSRC ]]; then
      cd $MAIN/model/sources/NEMOGCM/CONFIG ;\
      ./compilation.sh ;\
      if [[ $? -eq 0 ]]; then \
-      ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/ORCA2_LIM/BLD/bin/*.exe $BIN ;\
+      OCONFIGS=`$SSH ls -1 $MAIN/model/sources/NEMOGCM/CONFIG | grep ORCA1`
+      for OCONFIG in $OCONFIGS; do
+       $SSH "\
+       mkdir -p $BIN/$OCONFIG ;\
+       ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
+      done
      fi"
     ;;
     *)
