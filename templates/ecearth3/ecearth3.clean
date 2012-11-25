@@ -72,17 +72,18 @@ cd $RUN_dir
 RERUN=%RERUN%
 if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
    rm -f *_$((chunk+1))
+   RESTC="RESTC_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
    RESTA="RESTA_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
    RESTO="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-   $CP ${PATHOUT}/restarts/$RESTA .; $CP ${PATHOUT}/restarts/$RESTO .
-   tar -xvf $RESTA; tar -xvf $RESTO
-   rm -f $RESTA $RESTO
+   $CP ${PATHOUT}/restarts/$RESTC .; $CP ${PATHOUT}/restarts/$RESTA .; $CP ${PATHOUT}/restarts/$RESTO .
+   tar -xvf $RESTC; tar -xvf $RESTA; tar -xvf $RESTO
+   rm -f $RESTC $RESTA $RESTO 
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
    exit
 fi
 
 #
-# Save NEMO & IFS restart files at permanent storage
+# Save OASIS, IFS and NEMO restart files at permanent storage
 #
 cd $RUN_dir
 if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
@@ -90,14 +91,14 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
    PATHOUT_RES="${PATHOUT}/restarts"
    $MKDIR ${PATHOUT_RES}
 
-   # Save Ocean files
-   if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
-      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-      tar -cvf $tarfile NEMO_Restart_${chunk}
+   # Save Coupler files
+   if [[ ! -a ${RUN_dir}/restc_${chunk} ]]; then
+      tarfile="RESTC_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile OASIS_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
       $CHMOD $PATHOUT_RES/$tarfile
       rm -f $tarfile
-      touch ${RUN_dir}/resto_${chunk}
+      touch ${RUN_dir}/restc_${chunk}
    fi
 
    # Save Atmospheric files
@@ -110,32 +111,30 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
       touch ${RUN_dir}/resta_${chunk}
    fi
 
-   if [[ -a ${RUN_dir}/resto_${chunk} && -a ${RUN_dir}/resta_${chunk} ]]; then
-      rm -f ${RUN_dir}/resto_${chunk} ${RUN_dir}/resta_${chunk}
+   # Save Ocean files
+   if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
+      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile NEMO_Restart_${chunk}
+      $CP $tarfile $PATHOUT_RES
+      $CHMOD $PATHOUT_RES/$tarfile
+      rm -f $tarfile
+      touch ${RUN_dir}/resto_${chunk}
+   fi
+
+   if [[ -a ${RUN_dir}/restc_${chunk} && -a ${RUN_dir}/resta_${chunk} && -a ${RUN_dir}/resto_${chunk} ]]; then
+      rm -f ${RUN_dir}/restc_${chunk} ${RUN_dir}/resta_${chunk} ${RUN_dir}/resto_${chunk}
       touch ${RUN_dir}/rest_${chunk}
    fi
 fi
 
 #
-# Save NEMO & IFS output files at permanent storage and clean disk
+# Save IFS & NEMO output files at permanent storage and clean disk
 #
 cd $output_dir
 if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 
    PATHOUT_OUT="${PATHOUT}/outputs"
    $MKDIR ${PATHOUT_OUT}
-
-   # Save Ocean files
-   if [[ ! -a ${RUN_dir}/outo_${chunk} ]]; then
-      tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-
-      # Copying the means available
-      ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc.gz | xargs tar -cvf ../${tarfile}
-      $CP ../$tarfile $PATHOUT_OUT
-      $CHMOD $PATHOUT_OUT/$tarfile
-      rm -f ../$tarfile
-      touch ${RUN_dir}/outo_${chunk}
-   fi
 
    # Save Atmospheric files
    if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
@@ -159,8 +158,20 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       touch ${RUN_dir}/outa_${chunk}
    fi
 
-   if [[ -a ${RUN_dir}/outo_$chunk && -a ${RUN_dir}/outa_$chunk ]]; then
-      rm -f ${RUN_dir}/outo_$chunk ${RUN_dir}/outa_$chunk
+   # Save Ocean files
+   if [[ ! -a ${RUN_dir}/outo_${chunk} ]]; then
+      tarfile="MMO_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+
+      # Copying the means available
+      ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc.gz | xargs tar -cvf ../${tarfile}
+      $CP ../$tarfile $PATHOUT_OUT
+      $CHMOD $PATHOUT_OUT/$tarfile
+      rm -f ../$tarfile
+      touch ${RUN_dir}/outo_${chunk}
+   fi
+
+   if [[ -a ${RUN_dir}/outa_$chunk && -a ${RUN_dir}/outo_$chunk ]]; then
+      rm -f ${RUN_dir}/outa_$chunk ${RUN_dir}/outo_$chunk
       touch ${RUN_dir}/out_$chunk
    fi
 fi

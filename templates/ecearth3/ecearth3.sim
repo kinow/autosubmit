@@ -76,6 +76,11 @@ nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 #
 oas_numproc=%OASIS_nproc%
 oas_exe_file=${BINPATH}/oasis3.MPI1.x
+# Restart files for the coupling fields
+oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
+              QS___OCE QS___ICE QNS__OCE QNS__ICE DQDT_ICE \
+              PRCP_LIQ PRCP_SOL EVAP_TOT EVAP_ICE RNF__OCE CALV_OCE \
+              O_SSTSST O_TepIce O_AlbIce OIceFrac O_IceTck O_SnwTck"
 oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
 oas_rnf_fluxcorr=0.87
 
@@ -146,6 +151,9 @@ else
    else
       rstctl=1
    fi
+   for f in ${oas_cpl_flds}; do
+       rm -f $f; cp OASIS_Restart_$((chunk-1))/$f .
+   done
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
    ns=$(printf %08d $(( leg_start_sec / nem_time_step_sec )))
@@ -158,6 +166,7 @@ fi
 
 if [[ ! -a finished_chunk_${chunk} ]]; then
 
+ rm -rf OASIS_Restart_${chunk}
  rm -rf NEMO_Restart_${chunk} *${Chunk_nem_restart_tag}*
  rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
  rm -rf Output_${chunk}
@@ -249,34 +258,43 @@ else
 fi
 
 #
-# Save NEMO & IFS restart files
+# Save OASIS, NEMO and IFS restart files
 #
-mkdir -p NEMO_Restart_${chunk}
-mv *${Chunk_nem_restart_tag}* NEMO_Restart_${chunk}
-rm -f restart*_[0-9][0-9][0-9][0-9].nc
+mkdir -p OASIS_Restart_${chunk}
+for f in ${oas_cpl_flds}; do
+    mv $f OASIS_Restart_${chunk}
+done
 
 mkdir -p IFS_Restart_${chunk}
 mv *${Chunk_ifs_restart_tag}* \
    rcf IFS_Restart_${chunk}
 rm -f srf*
 
+mkdir -p NEMO_Restart_${chunk}
+mv *${Chunk_nem_restart_tag}* NEMO_Restart_${chunk}
+rm -f restart*_[0-9][0-9][0-9][0-9].nc
+
 #
-# Delete NEMO & IFS restart files (which has been stored correctly)
+# Delete OASIS, IFS and NEMO restart files (which has been stored correctly)
 #
-if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]]; then
-   rm -rf NEMO_Restart_$((chunk-2))
+if [[ -a rest_$((chunk-2)) && -d OASIS_Restart_$((chunk-2)) ]]; then
+ rm -rf OASIS_Restart_$((chunk-2))
 fi
 
 if [[ -a rest_$((chunk-2)) && -d IFS_Restart_$((chunk-2)) ]]; then
  rm -rf IFS_Restart_$((chunk-2))
 fi
 
+if [[ -a rest_$((chunk-2)) && -d NEMO_Restart_$((chunk-2)) ]]; then
+   rm -rf NEMO_Restart_$((chunk-2))
+fi
+
 #
-# Save NEMO & IFS output for postprocessing
+# Save IFS & NEMO output for postprocessing
 #
 mkdir -p Output_${chunk}
-mv ${EXPID}_??_*.nc Output_${chunk}
 mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
+mv ${EXPID}_??_*.nc Output_${chunk}
 
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
