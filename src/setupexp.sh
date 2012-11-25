@@ -62,6 +62,7 @@ MAIN=$SCRATCH_DIR/$HPCUSER/$EXPID
 # process for bin (deal with modsrc.tar)
 BIN=$MAIN/model/bin
 $SSH mkdir -p $BIN
+$SSH rm -rf $BIN/*
 if [[ -f conf/$MODSRC ]]; then
  # copy modified sources at HPC
  scp conf/$MODSRC $HPCARCH:$MAIN
@@ -78,7 +79,6 @@ if [[ -f conf/$MODSRC ]]; then
  tar -xvf $MODSRC"
 
  # re-compile sources; assuming that everything is not being compiled from scratch (by default)
- $SSH rm -rf $BIN/*
  case $MODEL in
   ecearth)
    case $VERSION in
@@ -171,12 +171,12 @@ fi
 # process for setup (deal with modsetup.tar)
 SETUP=$MAIN/model/setup
 $SSH mkdir -p $SETUP
+$SSH rm -rf $SETUP/*
 if [[ -f conf/$MODSETUP ]]; then
  # copy modified setup (scripts) at HPC
  scp conf/$MODSETUP $HPCARCH:$MAIN
 
  # copy setup scripts; assuming that those are already available at HPC
- $SSH rm -rf $SETUP/*
  $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
 
  # inflate modified setup scripts
