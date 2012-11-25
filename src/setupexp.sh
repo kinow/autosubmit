@@ -176,6 +176,7 @@ if [[ -f conf/$MODSETUP ]]; then
  scp conf/$MODSETUP $HPCARCH:$MAIN
 
  # copy setup scripts; assuming that those are already available at HPC
+ $SSH rm -rf $SETUP/*
  $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
 
  # inflate modified setup scripts
