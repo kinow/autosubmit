@@ -187,7 +187,7 @@ if [[ -f conf/$MODSETUP ]]; then
 else
  # if there is nothing modified into setup (scripts) then link already available setup 
  # correctly under ../../$EXPID/model/setup
- $SSH ln -sf $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
+ $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
 fi
 
 date
