@@ -48,9 +48,20 @@ ifs_ddh_freq=$(( 120 * 3600 / ifs_time_step_sec ))
 ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
-ifs_cmip5=FALSE
+ifs_cmip5=%CMIP5%
 ifs_cmip5_rcp=0
 ifs_volcanoes=FALSE
+ifs_leco2var=FALSE
+ifs_nhincsol=0
+ifs_ncmip5fixyr=0
+if [[ $ifs_cmip5 == TRUE ]]; then
+   ifs_cmip5_rcp=%Nrcp%
+   ifs_volcanoes=TRUE
+   ifs_leco2var=TRUE
+   ifs_nhincsol=%NHINCSOL%
+   ifs_ncmip5fixyr=%NFIXYR%
+fi
+
 
 #
 # COMMON
@@ -111,6 +122,14 @@ else
    ln -sf IFS_Restart_$((chunk-1))/* .
    rm -f rcf; cp IFS_Restart_$((chunk-1))/rcf .
 fi
+
+#
+# Control the use of the scenario
+#
+if [[ `echo $Chunk_start_date | cut -c1-4` < 2006 ]] ; then
+   ifs_cmip5_rcp=0
+fi
+#
 
 if [[ ! -a finished_chunk_${chunk} ]]; then
 
