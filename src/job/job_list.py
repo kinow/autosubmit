@@ -321,8 +321,8 @@ class RerunJobList:
 							else:
 								prev_sim_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "sim"
 								sim_job.set_parents([prev_sim_job_name])
-								if (chunk > second__chunk):
-									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+								if (chunk > second_chunk):
+									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
 									sim_job.set_parents([prev_clean_job_name])
 								# Add those to the list
 								self._job_list += [sim_job, post_job, clean_job]
@@ -340,7 +340,7 @@ class RerunJobList:
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
 							sim_job.add_children(childjob_name)
 							if (chunk < second_last_chunk):
-								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
+								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
 								clean_job.add_children(childjob_name)
 
 											
