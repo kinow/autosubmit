@@ -1,24 +1,25 @@
 #!/bin/bash
 set -evx
 
-listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'vert_Tsections' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
-expid=b02p              # expid or nemovar_s4 / nemovar_combine
+listpost=( '3dtemp' 'TSec_ave190-220E' )
+#listpost=('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'vert_Tsections' '3dtemp' 'TSec_ave190-220E' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
+expid=i00k              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
-# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
+# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' '3dtemp' 'TSec_ave190-220E' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-listmemb=( 0 1 2 )      # list of members
-syeari=1950             # first start date
-syearf=1950             # last start date
+listmemb=( 1 2 3 4 )    # list of members
+syeari=1960             # first start date
+syearf=1960             # last start date
 moni=11                 # first month of the hindcast
 intsdate=1              # interval between start dates
-chunklen=6              # length of the chunks (in months)
+chunklen=4              # length of the chunks (in months)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-ltime0=                 # first leadtime to post-process
-ltimef=                 # last leadtime to postprocess
+ltime0=1                 # first leadtime to post-process
+ltimef=120               # last leadtime to postprocess
 # Fill up either ltime0/ltimef or year0/yearf
-year0=1950              # first year to post-process in the fist start date
-yearf=1970              # last year to post-process in the fist start date
+year0=                   # first year to post-process in the fist start date
+yearf=                   # last year to post-process in the fist start date
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 NEMOVERSION=v2.2            # NEMO version
 PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
@@ -31,6 +32,14 @@ rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
 if [[ ${listpost[@]##*moc*} != ${listpost[@]} ]] || [[ ${listpost[@]##*stc*} != ${listpost[@]}  ]] ; then
   if [[ ${listpost[@]#moc} != ${listpost[@]:1} ]] ; then
     listpost=( 'moc' "${listpost[@]#moc}" )
+  fi
+fi
+#
+# 3d interpolation required before average T sections over longitudes
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+if [[ ${listpost[@]##Tsec_ave*} != ${listpost[@]} ]] ; then
+  if [[ ${listpost[@]#3dtemp} != ${listpost[@]:1} ]] ; then
+    listpost=( '3dtemp' "${listpost[@]#3dtemp}" )
   fi
 fi
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -149,6 +158,18 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper M 80 temp_80E_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
         ;;
 
+        '3dtemp')
+          case $typeoutput in
+           'MMO' ) pref='grid_T' ;;
+           'diags') pref='t3d' ;;
+          esac
+          interp3d ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc votemper regular3dT_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+        ;;
+
+        'TSec_ave190-220E')
+          cdo zonmean -sellonlatbox,190,220,-90,90 regular3dT_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc TSec_ave190-220E_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
+        ;;        
+
         'moc')
         if [[ $typeoutput == 'MMO' ]] ; then
           moc grid_V_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc moc_${expid}_${yeari}${moni}01_fc${memb}_${year0}${moni}_${yearf}$(printf "%02d" ${monf}).nc
@@ -237,6 +258,8 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'lmsalc') dirout='saltc' ;  files=('sal_300-5400m') ;;
       'ohc_specified_layer') dirout='heatc' ; files=('ohc_2d_avg_0-300m' 'ohc_2d_avg_300-800m') ;;
       'vert_Tsections') dirout='sections' ; files=('temp_0N' 'temp_45N' 'temp_45S' 'temp_30W' 'temp_80E' 'temp_180E') ;;
+      '3dtemp') dirout='InterpT' ; files=('regular3dT') ;;
+      'TSec_ave190-220E') dirout='sections' ; files=('TSec_ave190-220E') ;;
     esac
     case `echo $post|cut -c$((${#post}-2))-${#post}` in
       'ohc') 

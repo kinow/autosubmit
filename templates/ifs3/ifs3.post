@@ -7,7 +7,7 @@ date
 SCRATCH_DIR=%SCRATCH_DIR%
 ECEARTH_DIR=%MODELS_DIR%/%MODEL%
 PATH=%CDOPATH%:${PATH}
-PATH=%GRIBAPIPATH%:${PATH}
+PATH=%GRIBAPIPATH2%:${PATH}
 
 #
 # Model Configuration
@@ -40,8 +40,7 @@ output_dir=${RUN_dir}/Output_${chunk}
 if [[ ! -d ${output_dir} ]]; then
    exit
 fi
-tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
-rm -rf $tmp_output_dir; mkdir -p $tmp_output_dir
+
 
 #
 # Deal with Atmosphere's output
@@ -68,8 +67,6 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-              cp $file $tmp_output_dir
-              cd $tmp_output_dir
               echo write \"${file}_[param].grb\"\; > rules_file
               grib_filter rules_file ${file}
               case $type in # list of params, don't need!!
@@ -100,9 +97,6 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
               cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
               gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
               rm -f IM_*_${year}${month}_mm.nc*
-              rm -f $file
-              mv MMA_* $output_dir
-              cd $output_dir
               mv $file ${file}.grb
            fi
        done
@@ -113,7 +107,6 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
 fi
 
 if [[ -a $output_dir/%JOBNAME%.apost ]]; then
-   rm -rf $tmp_output_dir
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 

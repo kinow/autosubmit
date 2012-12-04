@@ -26,8 +26,11 @@ PATH=/cfu/software/cdftools2.1/:$PATH
 'mohc'                : global middle (350-800m) ocean heat content 
 'lohc'                : global lower (800m-bottom) ocean heat content
 'xohc'                : global mixed layer ocean heat content
+'TSec_ave190-220E'    : meridional temperature section averaged between 190E and 220E
 'vert_Tsections'      : zonal temperature sections along 45S, 0N, 45N, and
                         meridional temperature sections along 30W, 80E, 180E
+'3dtemp'              : 3-dimensional temperature interpolated horizontally onto the
+                        atmospheric grid
 'NAtlohc'             : North Atlantic (10-65N) total ocean heat content
 'xNAtlohc'            : North Atlantic (10-65N) mixed layer ocean heat content 
 'uNAtlohc'            : North Atlantic (10-65N) upper (0-350m) ocean heat content 

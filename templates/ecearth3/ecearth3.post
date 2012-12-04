@@ -47,35 +47,37 @@ output_dir=${RUN_dir}/Output_${chunk}
 if [[ ! -d ${output_dir} ]]; then
    exit
 fi
-cd $output_dir
 
 #
 # Deal with Ocean's output
 #
 
 # Rebuild
-date
-if [[ ! -a %JOBNAME%.rebuild ]]; then
+cd $output_dir
+if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
    intervals=`ls -1 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -d '_' -f 2 | uniq`
    for interval in ${intervals}; do
        grid_types=`ls -1 ${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}_??????_0000.nc | cut -c 27-32`
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
        for grid_type in ${grid_types}; do
+           input_files=${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
            # output_file=${prefix}_${grid_type}.nc
-           # rebuild -v 3 -o ${output_file} ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           # rebuild -v 3 -o $output_file $input_files
            output_file=${prefix}_${grid_type}
-           rebuild_nemo ${output_file} %NEMO_nproc%
-           rm -f ${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+           rebuild_nemo $output_file %NEMO_nproc%
+           rm -f $input_files
        done
    done
-   touch %JOBNAME%.rebuild
+   touch $output_dir/%JOBNAME%.rebuild
 fi
 
 # Select a reduced set of outputs to save
 # Include ocean post processing functions
+cd $output_dir
 %INCLUDE_POSTP%
-if [[ ! -a %JOBNAME%.opost ]]; then
-   if [[ %OCEAN_REDUCOUT% == 'TRUE' ]] ; then
+if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
+   OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
+   if [[ $OCEAN_REDUCOUT == TRUE ]]; then
       #
       # A prerequisite to enter the common diagnostic post-processing
       if [[ -e toto.nc ]] ; then rm -f toto.nc ; fi 
@@ -99,21 +101,21 @@ if [[ ! -a %JOBNAME%.opost ]]; then
       ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       ncks -O -x -v votemper ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
    fi
-   gzip -9 *${EXPID}*.nc
-   touch %JOBNAME%.opost
+   gzip -9 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc
+   touch $output_dir/%JOBNAME%.opost
 fi
 
 #
 # Deal with Atmosphere's output
 #
-ATM_rstdate=%ATM_rstdate%
-if [[ $ATM_rstdate == '' ]]; then
-   ATM_rstdate=${START_date}
-fi
-nmonthini=`echo $ATM_rstdate | cut -c5-6`
-nyearini=`echo $ATM_rstdate | cut -c1-4`
-
-if [[ ! -a %JOBNAME%.apost ]]; then
+cd $output_dir
+if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
+ ATM_rstdate=%ATM_rstdate%
+ if [[ $ATM_rstdate == '' ]]; then
+    ATM_rstdate=${START_date}
+ fi
+ nmonthini=`echo $ATM_rstdate | cut -c5-6`
+ nyearini=`echo $ATM_rstdate | cut -c1-4`
  nmon=1
  year=${nyearini}
  while [[ $nmon -le $RUN_months ]]; do
@@ -157,17 +159,17 @@ if [[ ! -a %JOBNAME%.apost ]]; then
               done
               cdo -f nc -r -merge IM_*_${year}${month}_mm.nc MMA_${EXPID}_${type}_${year}${month}.nc
               gzip -9 MMA_${EXPID}_${type}_${year}${month}.nc
-              rm -f IM_*_${year}${month}_mm.nc
-              mv ${file} ${file}.grb
+              rm -f IM_*_${year}${month}_mm.nc*
+              mv $file ${file}.grb
            fi
        done
        nmon=$((nmon+1))
  done
 
- touch %JOBNAME%.apost
+ touch $output_dir/%JOBNAME%.apost
 fi
 
-if [[ -a %JOBNAME%.opost && -a %JOBNAME%.apost ]]; then
+if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 

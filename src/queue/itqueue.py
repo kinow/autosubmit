@@ -9,7 +9,7 @@ class ItQueue(HPCQueue):
 		self._host = "ithaca"
 		self._expid = expid
 		self._hpcuser = "\$USER"
-		self._remote_log_dir = "/share/scratch/cfu/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._remote_log_dir = "/scratch/cfu/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
 		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"

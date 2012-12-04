@@ -62,6 +62,7 @@ MAIN=$SCRATCH_DIR/$HPCUSER/$EXPID
 # process for bin (deal with modsrc.tar)
 BIN=$MAIN/model/bin
 $SSH mkdir -p $BIN
+$SSH rm -rf $BIN/*
 if [[ -f conf/$MODSRC ]]; then
  # copy modified sources at HPC
  scp conf/$MODSRC $HPCARCH:$MAIN
@@ -78,7 +79,6 @@ if [[ -f conf/$MODSRC ]]; then
  tar -xvf $MODSRC"
 
  # re-compile sources; assuming that everything is not being compiled from scratch (by default)
- $SSH rm -rf $BIN/*
  case $MODEL in
   ecearth)
    case $VERSION in
@@ -145,7 +145,12 @@ if [[ -f conf/$MODSRC ]]; then
      cd $MAIN/model/sources/NEMOGCM/CONFIG ;\
      ./compilation.sh ;\
      if [[ $? -eq 0 ]]; then \
-      ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/ORCA2_LIM/BLD/bin/*.exe $BIN ;\
+      OCONFIGS=`$SSH ls -1 $MAIN/model/sources/NEMOGCM/CONFIG | grep ORCA1`
+      for OCONFIG in $OCONFIGS; do
+       $SSH "\
+       mkdir -p $BIN/$OCONFIG ;\
+       ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
+      done
      fi"
     ;;
     *)
@@ -166,6 +171,7 @@ fi
 # process for setup (deal with modsetup.tar)
 SETUP=$MAIN/model/setup
 $SSH mkdir -p $SETUP
+$SSH rm -rf $SETUP/*
 if [[ -f conf/$MODSETUP ]]; then
  # copy modified setup (scripts) at HPC
  scp conf/$MODSETUP $HPCARCH:$MAIN

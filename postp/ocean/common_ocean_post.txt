@@ -8,16 +8,18 @@
 # clean_diagsMMO                                                              #
 # vertmeansal                                                                 #
 # heat_sal_mxl                                                                #
+# cutsection                                                                  #
 # moc                                                                         #
 # psi                                                                         #
 # area_moc                                                                    #
 # max_moc                                                                     #
 # siasiesiv                                                                   #
 # ohc                                                                         #
+# interp3d                                                                    #
 # setminmax                                                                   #
 # concat                                                                      #
 # gather_memb                                                                 #
-# ohc_specified_layer
+# ohc_specified_layer                                                         #
 #                                                                             #
 #      Those functions would never have seen the day without Hui Du,          #
 #                     usually referred to as Super-Hui.                       #
@@ -71,7 +73,12 @@ ln -sf ${CON_FILES}/new_maskglo.${NEMOVERSION}.nc new_maskglo.nc
 
 function reduce_mmo {
 ncks -O -v sosstsst,sosaline,somixhgt,somxl010 $1 sstsssmld_${3} 
-ncks -O -v isnowthi,iicethic,ileadfra,iicetemp $2 ice_${3} 
+typeset var lstvars=`cdo showvar $2`
+if [[ ${lstvars/ileadfra} != ${lstvars} ]]  ; then
+  ncks -O -v isnowthi,iicethic,ileadfra,iicetemp $2 ice_${3} 
+else 
+  ncks -O -v isnowthi,iicethic,iiceconc,iicetemp $2 ice_${3}
+fi
 ncks -O -v votemper $1 t3d_${3} 
 }
 ###############################################################################
@@ -116,7 +123,13 @@ esac
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
-  lstfiles=`ls *${root}.nc | grep -v "${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
+  lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc*_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
+  if [[ $root == 'grid_T' || $root == 't3d' ]] ; then
+    for file in $lstfiles ; do 
+      ncatted -O -a valid_max,votemper,d,, $file $file
+      ncatted -O -a valid_min,votemper,d,, $file $file
+    done 
+  fi
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
   if [[ $root == 'moc' ]] ; then 
     ncrename -d gsize,y ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
@@ -565,7 +578,7 @@ if [[ ${up} -eq 1 ]] ; then
 else
   typeset var depmin=`cat depth.txt |head -${up} |tail -1 | awk '{print $2}' | awk '{printf "%.0f",$1}'`
 fi
-typeset var depmax=`cat depth.txt |head -${down} |tail -1 | awk '{print $2}' | awk '{printf "%.0f",$1}'`;
+typeset var depmax=`cat depth.txt |head -${down} |tail -1 | awk '{print $2}' | awk '{printf "%.0f",$1}'`
 
 cp ${CON_FILES}/heatc_template.nc template_heatc.nc
 ncdump template_heatc.nc > template_heatc.cdl
@@ -633,6 +646,8 @@ setminmax ${output}$2 thc uhc
 # $3 : Z/M   (zonal / meridional section)                                     #
 # $4 : lat/lon                                                                #
 # $5 : output file                                                            #
+#                                                                             #
+#         Created in September 2012     Author : vguemas@ic3.cat              #
 #                                                                             #
 ###############################################################################
 
@@ -702,6 +717,47 @@ EOF1
 R CMD BATCH section.R
 ncks -h -A -v time $1 $5
 }
+###############################################################################
+#                                                                             #
+#   3-dimensional conservative interpolation to the regular atmospheric grid  #
+#                                                                             #
+# $1 : input file                                                             #
+# $2 : input var                                                              #
+# $3 : output file                                                            #
+#                                                                             #
+#         Created in November 2012      Author : vguemas@ic3.cat              #
+#                                                                             #
+###############################################################################
+
+function interp3d {
+  typeset var nz=`ncdump -h $1|grep 'deptht'|head -1|cut -f3 -d" "`
+  ln -sf  /cfu/pub/scripts/interpolation/scrip_use scrip_use
+  for ((lev=1;lev<=$nz;lev++)) ; do
+    ncks -d deptht,$((lev-1)) -v $2 $1 tmp_${lev}.nc
+    ncwa -O -h -a deptht tmp_${lev}.nc tmp_${lev}.nc
+    ln -sf /cfu/autosubmit/con_files/weigths/rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc .
+    cat > scrip_use_in <<EOF
+&remap_inputs
+    remap_wgt   = 'rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc'
+    infile      = 'tmp_${lev}.nc'
+    invertlat   = FALSE
+    var         = '$2'
+    fromregular = FALSE
+    outfile     = 'tmp_$(printf "%02d" $lev).nc'
+/
+EOF
+    ./scrip_use
+    ncecat -O -h tmp_$(printf "%02d" $lev).nc tmp_$(printf "%02d" $lev).nc
+    ncrename -h -O -d record,deptht tmp_$(printf "%02d" $lev).nc tmp_$(printf "%02d" $lev).nc 
+  done
+  ncrcat -n $nz,2,1 -v $2 tmp_01.nc tmpout.nc
+  ncpdq -O -h -a time,deptht tmpout.nc tmp2out.nc 
+  ncks -A -v deptht $1 tmp2out.nc
+  cdo setgrid,t106grid tmp2out.nc tmp3out.nc
+  cdo invertlatdata tmp3out.nc $3
+  rm -f tmp_* tmpout.nc tmp2out.nc tmp3out.nc rmp_orca1t_to_t106_EcEarthv2_lev* scrip_use scrip_use_in
+}
+
 ###############################################################################
 #                                                                             #
 #                    Set minimum and maximum attributes                       #

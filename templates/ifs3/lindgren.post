@@ -1,13 +1,14 @@
 #!/bin/sh
 ###############################################################################
-#                              RUN EC_EARTH
+#                      POSTPROCESS EC_EARTH
 ###############################################################################
 #
-#$ -S /bin/sh
-#$ -N %JOBNAME%
-#$ -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-#$ -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-#$ -V
-#$ -pe orte 57
+#!/bin/sh --login
+#PBS -N %JOBNAME%
+#PBS -l mppwidth=2
+#PBS -l mppnppn=1
+#PBS -l walltime=01:00:00
+#PBS -e %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+#PBS -o %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #
 ###############################################################################
