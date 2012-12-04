@@ -136,6 +136,9 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  rm -rf IFS_Restart_${chunk} *${Chunk_ifs_restart_tag}*
  rm -rf Output_${chunk}
  rm -f rest_${chunk} out_${chunk}
+ if [[ -a NODE.001_01 ]]; then
+    mv NODE.001_01 NODE.001_01.$((chunk-1)).$$
+ fi
 
 #
 # Create some control files
