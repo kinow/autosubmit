@@ -264,7 +264,9 @@ class RerunJobList:
 				first_chunk = int(member['cs'][0])
 				
 				if (len(member['cs']) > 1):
+					second_chunk = int(member['cs'][1]) 
 					last_chunk = int(member['cs'][len(member['cs'])-1])
+					second_last_chunk = int(member['cs'][len(member['cs'])-2]) 
 				else:
 					last_chunk = first_chunk
 				
@@ -302,6 +304,8 @@ class RerunJobList:
 					else:
 						if (chunk > first_chunk):
 							prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-1])
+							if (chunk > second_chunk):
+								prev_prev_chunk = int(member['cs'][member['cs'].index(str(chunk))-2])
 							# in case reruning no consecutive chunk we need to create the previous clean job in the basis of chunk-1
 							if (prev_chunk != chunk-1):
 								prev_new_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_" + "clean"
@@ -315,13 +319,18 @@ class RerunJobList:
 								self._job_list += [prev_new_clean_job, sim_job, post_job, clean_job]
 							# otherwise we should link backwards to the immediate before clean job
 							else:
-								prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
-								sim_job.set_parents([prev_clean_job_name])
+								prev_sim_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "sim"
+								sim_job.set_parents([prev_sim_job_name])
+								if (chunk > second__chunk):
+									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "clean"
+									sim_job.set_parents([prev_clean_job_name])
 								# Add those to the list
 								self._job_list += [sim_job, post_job, clean_job]
 					#Link child:								
 					if (chunk < last_chunk):
 						next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
+						if (chunk < second_last_chunk):
+							next_next_chunk = int(member['cs'][member['cs'].index(str(chunk))+2])
 						# in case reruning no consecutive chunks we need to link next_chunk-1 clean job
 						if (next_chunk != chunk+1):
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
@@ -329,7 +338,11 @@ class RerunJobList:
 						# otherwise we should link with next chunk sim job
 						else:
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
-							clean_job.add_children(childjob_name)
+							sim_job.add_children(childjob_name)
+							if (chunk < second_last_chunk):
+								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
+								clean_job.add_children(childjob_name)
+
 											
 						
 				#if (member['cs'] == []):
