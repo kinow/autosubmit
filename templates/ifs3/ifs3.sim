@@ -93,10 +93,6 @@ RUN_days=%RUN_DAYS%
 RUN_hours=$((RUN_days*24))
 # Last Day Previous
 day_prev=%PREV%
-day_prev_rst=%day_prev_rst%
-if [[ $day_prev_rst != '' ]]; then
- day_prev=$((day_prev_rst+day_prev))
-fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
 # In seconds

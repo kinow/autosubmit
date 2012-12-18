@@ -60,6 +60,7 @@ if [[ $ICE_ini != '' ]]; then
    esac
 fi
 SAVEDDO=%SAVEDDO%
+GRESFILE=false # Handling global restart for NEMO
 
 #
 # OASIS
@@ -94,9 +95,13 @@ RUN_days=%RUN_DAYS%
 RUN_hours=$((RUN_days*24))
 # Last Day Previous
 day_prev=%PREV%
-day_prev_rst=%day_prev_rst%
-if [[ $day_prev_rst != '' ]]; then
- day_prev=$((day_prev_rst+day_prev))
+MODEL_rstini=%MODEL_rstini%
+if [[ $MODEL_rstini != '' ]]; then
+   day_prev_rst=$(cat day_prev_rst)
+   day_prev=$((day_prev_rst+day_prev))
+   if [[ $chunk == 1 ]]; then
+      GRESFILE=true
+   fi
 fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
@@ -113,11 +118,6 @@ if [[ $chunk == 1 ]]; then
    LFASTRES=FALSE
    rm -f ${RUN_dir}/anaisout
    rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
-   GRESFILE=false # Handling global restart for NEMO
-   MODEL_rstini=%MODEL_rstini%
-   if [[ $MODEL_rstini != '' ]]; then
-      GRESFILE=true
-   fi
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
@@ -165,9 +165,9 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
 
 # setupoasis.ksh
  if [[ ${OASIS3_oldWeights} == false ]] ; then
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
+    ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
  else
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
+    ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
  fi
 
 # setupnemo.ksh
