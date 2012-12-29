@@ -24,14 +24,13 @@ INSTITUTION="IC3            "
 SOURCE="EC-Earth2.3.0" # loaded from database (max length 60 char's) 
 VAR_LST="T2M D2M U10M V10M PRECIP CP E SF SST MSL SSR STR SLHF SSHF SSRD SSRU SSRC STRD STRU TSR TSRC TTRC TTR TCC"
 #VAR_LST="T U V W Q CL CIWC CILC"
-
 LEVEL_LST="92500,85000,70000,60000,50000,20000,10000,5000,1000"
-MEM_LST=( fc0 )
+MEM_LST=(  )                                   # supply list of members
 ENSEMBLE=${#MEM_LST[@]}
 DATADIR=/cfunas/exp/ecearth                    # where MMA files located
 SAVEDIR=/cfunas/exp/ecearth                    # for Saving outputs 
 HEAD_DIR=/cfu/pub/scripts/postp_ecearth/header # some of the header information
-WORKDIR=/scratch/tmp/$USER/nccf_atm_monthly_$$     # working dir
+WORKDIR=/scratch/tmp/$USER/nccf_atm_monthly_$$ # working dir
 NFRP=3 # ecearth output frequency (hours), this is for computing the accumulated precipitation 
        # and flux variables (solar and thermal radiation, sensible and latent fluxes)
 FACTOR=$((NFRP*3600)) # 3600 (seconds per hour)
@@ -779,7 +778,7 @@ function save_final_output(){
  varnew=$1
  output=$2
 
- tardir=${SAVEDIR}/${expid}/monthly_mean/${varnew}_3hourly/
+ tardir=${SAVEDIR}/${expid}/monthly_mean/${varnew}_${NFRP}hourly/
  mkdir -p $tardir
  find ${SAVEDIR}/${expid}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
   if [ -e ${tardir}/${output} ] ; then
