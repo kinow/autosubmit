@@ -77,6 +77,8 @@ if __name__ == "__main__":
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
 	   queue.set_hpcuser(hpcuser)
+	elif(hpcarch == "marenostrum3"):
+	   queue = Mn3Queue(expid)
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
