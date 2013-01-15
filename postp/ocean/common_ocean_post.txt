@@ -112,7 +112,7 @@ for ((jt=$4;jt<=$5;jt=$((jt+$6)))) ; do
   cp /cfunas/exp/$7/$2/$1/fc$3/outputs/$8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar .
   tar -xvf $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
   rm -f $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
-  if [[ $8 == 'MMO' ]] ; then gunzip *.gz ; fi
+  if [[ `ls *.gz` != '' ]] ; then gunzip *.gz ; fi
 done
 
 typeset var listroots
@@ -702,7 +702,7 @@ cat>section.R<<EOF1
   }
   close.ncdf(fnc1)
   # Write the output
-  wtime=dim.def.ncdf("time","",seq(1,$ntime)) 
+  wtime=dim.def.ncdf("time","",seq(1,$ntime),unlim=TRUE) 
   dimout=array(dim=length(listi))
   for (jpt in 1:length(listi)) {
     dimout[jpt]=switch('$3','Z'=lon[listi[jpt],listj[jpt]],'M'=lat[listi[jpt],listj[jpt]])
@@ -735,7 +735,7 @@ function interp3d {
   for ((lev=1;lev<=$nz;lev++)) ; do
     ncks -d deptht,$((lev-1)) -v $2 $1 tmp_${lev}.nc
     ncwa -O -h -a deptht tmp_${lev}.nc tmp_${lev}.nc
-    ln -sf /cfu/autosubmit/con_files/weigths/rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc .
+    ln -sf /cfu/autosubmit/con_files/weigths/${NEMOVERSION}/rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc .
     cat > scrip_use_in <<EOF
 &remap_inputs
     remap_wgt   = 'rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc'
