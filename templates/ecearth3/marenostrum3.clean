@@ -3,15 +3,9 @@
 #                   WRITE EC_EARTH OUTPUT ON HSM
 ###############################################################################
 #
-#@ shell            = /usr/bin/ksh 
-#@ class            = ns 
-#@ job_type         = serial 
-#@ job_name         = %JOBNAME%
-#@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out 
-#@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err 
-#@ notification     = error
-#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-#@ wall_clock_limit = 1:00:00
-#@ queue
+# BSUB -J %JOBNAME%
+# BSUB -oo %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%J.%EJ.out 
+# BSUB -eo %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%J.%EJ.err 
+# BSUB -W 01:00
 #
 ###############################################################################

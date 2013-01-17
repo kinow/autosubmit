@@ -8,6 +8,7 @@ from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
+from queue.mn3queue import Mn3Queue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
