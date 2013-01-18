@@ -254,7 +254,15 @@ class RerunJobList:
 		print "Creating job list\n"
 		data = json.loads(chunk_list)
 		print data
-		
+
+		setupjob_name = self._expid + "_sd_fc_0_" 
+		setup_job = Job(setupjob_name + "setup", 0, Status.READY, Type.SETUP)
+		setup_job.set_parents([])
+
+		transjob_name = self._expid + "_sd_fc_0_" 
+		trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
+
+
 		for date in data['sds']:
 			print date['sd']
 			for member in date['ms']:
@@ -272,7 +280,9 @@ class RerunJobList:
 				
 				initjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(starting_chunk) + "_"
 				init_job = Job(initjob_name + "init", 0, Status.READY, Type.INITIALISATION)
-				init_job.set_parents([])
+				init_job.set_parents([setup_job.get_name()])
+				#init_job.set_parents([])
+				setup_job.add_children(init_job.get_name())
 				self._job_list += [init_job]
 
 				for	chunk in member['cs']:
@@ -286,6 +296,7 @@ class RerunJobList:
 					post_job.set_parents([sim_job.get_name()])
 					post_job.set_children([clean_job.get_name()])
 					clean_job.set_parents([post_job.get_name()])
+					trans_job.set_parents([clean_job.get_name()])
 
 					# Link parents:
 					# if chunk is 1 then not needed to add the previous clean job
@@ -331,6 +342,8 @@ class RerunJobList:
 						next_chunk = int(member['cs'][member['cs'].index(str(chunk))+1])
 						if (chunk < second_last_chunk):
 							next_next_chunk = int(member['cs'][member['cs'].index(str(chunk))+2])
+						else:
+							clean_job.add_children(trans_job.get_name())
 						# in case reruning no consecutive chunks we need to link next_chunk-1 clean job
 						if (next_chunk != chunk+1):
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
@@ -342,6 +355,9 @@ class RerunJobList:
 							if (chunk < second_last_chunk):
 								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
 								clean_job.add_children(childjob_name)
+					else:
+						clean_job.add_children(trans_job.get_name())
+
 
 											
 						
@@ -354,6 +370,8 @@ class RerunJobList:
 				#	clean_job.add_children(finaljob_name)
 				#	self._job_list += [final_job]
 		
+		self._job_list += [setup_job]
+		self._job_list += [trans_job]
 
 		self.update_genealogy()
 		for job in self._job_list:
