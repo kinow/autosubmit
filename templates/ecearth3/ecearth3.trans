@@ -1,0 +1,159 @@
+
+##################################
+####  User Defined Variables  #### 
+##################################
+
+dst1=/cfunas/exp/ecearth # store logfiles, MM*, REST*
+dst2=/cfunas/exp/ecearth/gribfiles # store ICM*
+
+plt=%HPCARCH% # choose platform (ithaca, mn, mn-hsm, cfs-aux-4, ecmwf)
+types="logfiles MM REST ICM"
+expid=%EXPID% # supply expid: e.g. xxxx
+sdates=%SDATE% # supply list of start dates: e.g. 19601101 19651101 ...
+members=%MEMBER% # supply list of members: e.g. fc0 fc1 fc2 ...
+
+remove=TRUE # remove output from source
+#####  End of User Defined Variables  ####
+
+#################################
+####  User Defined Funtions  #### 
+#################################
+
+function transfer1(){
+ dst=$1/$expid/$s/$m/$2
+ if [[ $remove == TRUE ]]; then
+  RSYNC="rsync -acv --remove-sent-files"
+ else
+  RSYNC="rsync -acv"
+ fi
+ for l in $list; do
+  echo "tranfering file ... ${plt}:$l $dst"
+  $RSYNC ${plt}:${l} $dst
+  echo "done."
+  echo
+  echo
+ done
+}
+
+function transfer2(){
+ dst=$1/$expid/$s/$m/$2
+ ssh $plt mkdir -p $tmp
+ for l in $list; do
+  echo "tranfering file ... ${hsm}:$l $tmp"
+  ssh $plt rsync -acv ${hsm}:${l} $tmp
+  nl=`basename $l`
+  echo "tranfering file ... ${plt}:${tmp}/$nl $dst"
+  rsync -acv --remove-sent-files ${plt}:${tmp}/$nl $dst
+  if [[ $? -eq 0 && $remove == TRUE ]]; then
+   $sshplt rm -f $l
+  fi
+  echo "done."
+  echo
+  echo
+ done
+ ssh $plt rm -rf $tmp
+}
+
+function transfer3(){
+ dst=$1/$expid/$s/$m/$2
+ for l in $list; do
+  echo "tranfering file ... $src/$expid/$s/$m/$2/$l $dst/$l"
+  ecaccess-file-get $src/$expid/$s/$m/$2/$l $dst/$l
+  if [[ $? -eq 0 && $remove == TRUE ]]; then
+   ecaccess-file-delete -force $src/$expid/$s/$m/$2/$l
+  fi
+  echo "done."
+  echo
+  echo
+ done
+}
+####  End of the User Defined Functions  #### 
+
+###################################
+####  Main Part of the Script  ####
+###################################
+
+date
+echo "platform is: $plt"
+echo "expid is: $expid"
+echo "start dates: $sdates"
+echo "members per start date: $members"
+
+for s in $sdates; do
+ for m in $members; do
+
+  rmtlist="ssh $plt ls -1"
+  transfer="transfer1"
+
+  case $plt in
+   ithaca)
+    src=/share/data/cfu/exp
+   ;;
+   mn)
+    hsm="login8"
+    rmtlist="ssh $plt ssh $hsm ls -1"
+    src=/HSM/ecm86/exp
+    username=`ssh $plt env | grep -w USER | cut -d '=' -f2`
+    tmp=/gpfs/scratch/ecm86/$username/${expid}_data_transfer
+    transfer="transfer2"
+   ;;
+   mn-hsm)
+    src=/HSM/ecm86/exp
+   ;;
+   cfs-aux-4)
+    src=/cfs/klemming/nobackup/a/asifsami/exp
+   ;;
+   ecmwf)
+    src=ec:/c3m/exp
+    rmtlist="ecaccess-file-dir"
+    transfer="transfer3"
+   ;;
+   *)
+    echo "$plt is not a valid machine"
+   ;;
+  esac
+
+  for typ in $types; do
+   case $typ in
+    logfiles)
+     lswc=`$rmtlist $src/$expid/$s/$m/logfiles* | wc -l`
+     if [[ $lswc -gt 0 ]]; then
+      mkdir -p $dst1/$expid/$s/$m
+      list=`$rmtlist $src/$expid/$s/$m/logfiles*`
+      $transfer $dst1 ""
+     fi
+    ;;
+    MM)
+     lswc=`$rmtlist $src/$expid/$s/$m/outputs/MM* | wc -l`
+     if [[ $lswc -gt 0 ]]; then
+      mkdir -p $dst1/$expid/$s/$m/outputs
+      list=`$rmtlist $src/$expid/$s/$m/outputs/MM*`
+      $transfer $dst1 outputs
+     fi
+    ;;
+    REST)
+     lswc=`$rmtlist $src/$expid/$s/$m/restarts/REST* | wc -l`
+     if [[ $lswc -gt 0 ]]; then
+      mkdir -p $dst1/$expid/$s/$m/restarts
+      list=`$rmtlist $src/$expid/$s/$m/restarts/REST*`
+      $transfer $dst1 restarts
+     fi
+    ;;
+    ICM)
+     lswc=`$rmtlist $src/$expid/$s/$m/outputs/ICM* | wc -l`
+     if [[ $lswc -gt 0 ]]; then
+      mkdir -p $dst2/$expid/$s/$m/outputs
+      list=`$rmtlist $src/$expid/$s/$m/outputs/ICM*`
+      $transfer $dst2 outputs
+     fi
+    ;;
+    *)
+     echo "$typ is not a valid data type"
+    ;;
+   esac
+  done
+
+ done
+done
+date
+####  End of the Main Part of Script  ####
