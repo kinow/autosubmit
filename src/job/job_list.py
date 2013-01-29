@@ -255,12 +255,10 @@ class RerunJobList:
 		data = json.loads(chunk_list)
 		print data
 
-		setupjob_name = self._expid + "_sd_fc_0_" 
+		setupjob_name = self._expid + "_19000101_fc0_0_" 
 		setup_job = Job(setupjob_name + "setup", 0, Status.READY, Type.SETUP)
 		setup_job.set_parents([])
 
-		transjob_name = self._expid + "_sd_fc_0_" 
-		trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
 
 
 		for date in data['sds']:
@@ -279,11 +277,14 @@ class RerunJobList:
 					last_chunk = first_chunk
 				
 				initjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(starting_chunk) + "_"
-				init_job = Job(initjob_name + "init", 0, Status.READY, Type.INITIALISATION)
+				init_job = Job(initjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
 				init_job.set_parents([setup_job.get_name()])
+				transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(last_chunk) + "_" 
+				trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
 				#init_job.set_parents([])
 				setup_job.add_children(init_job.get_name())
 				self._job_list += [init_job]
+				self._job_list += [trans_job]
 
 				for	chunk in member['cs']:
 					chunk = int(chunk)
@@ -371,7 +372,6 @@ class RerunJobList:
 				#	self._job_list += [final_job]
 		
 		self._job_list += [setup_job]
-		self._job_list += [trans_job]
 
 		self.update_genealogy()
 		for job in self._job_list:

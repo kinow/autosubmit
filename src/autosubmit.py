@@ -80,6 +80,8 @@ if __name__ == "__main__":
 	   queue.set_hpcuser(hpcuser)
 	elif(hpcarch == "marenostrum3"):
 	   queue = Mn3Queue(expid)
+	localQueue = PsQueue(expid)
+	localQueue.set_host("turing")
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -99,6 +101,8 @@ if __name__ == "__main__":
 		signal.signal(signal.SIGQUIT, queue.smart_stop)
 		signal.signal(signal.SIGINT, queue.normal_stop)
 
+	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
+	signal.signal(signal.SIGINT, localQueue.normal_stop)
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
@@ -125,6 +129,8 @@ if __name__ == "__main__":
 		parallelQueue.check_remote_log_dir()
 	else:
 		queue.check_remote_log_dir()
+	
+	localQueue.check_remote_log_dir()
 
 	while joblist.get_active() :
 		active = len(joblist.get_running())
@@ -159,10 +165,16 @@ if __name__ == "__main__":
 				queue = parallelQueue
 			elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
 				queue = serialQueue
-			status = queue.check_job(job.get_id(), job.get_status())
+			if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+				status = localQueue.check_job(job.get_id(), job.get_status())
+			else:
+				status = queue.check_job(job.get_id(), job.get_status())
 			if(status == Status.COMPLETED):
 				logger.debug("This job seems to have completed...checking")
-				queue.get_completed_files(job.get_name())
+				if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+					localQueue.get_completed_files(job.get_name())
+				else:
+					queue.get_completed_files(job.get_name())
 				job.check_completion()
 			else:
 				job.set_status(status)
@@ -201,8 +213,17 @@ if __name__ == "__main__":
 					queue = serialQueue
 					logger.info("Submitting to serial queue...")
 					print("Submitting to serial queue...")
-				queue.send_script(scriptname)
-				job_id = queue.submit_job(scriptname)
+
+				if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+					logger.info("Submitting to local queue...")
+					print("Submitting to local queue...")
+					localQueue.send_script(scriptname)
+					job_id = localQueue.submit_job(scriptname)
+				else:
+					logger.info("Submitting to remote queue...")
+					print("Submitting to remote queue...")
+					queue.send_script(scriptname)
+					job_id = queue.submit_job(scriptname)
 				job.set_id(job_id)
 				##set status to "submitted"
 				job.set_status(Status.SUBMITTED)
