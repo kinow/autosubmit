@@ -11,48 +11,50 @@ from os import path
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
 import json
-import re
+from pyparsing import nestedExpr
+
+def get_members(out):
+		count = 0
+		data = []
+		for element in out:
+			if (count%2 == 0):
+				ms = {'m': out[count], 'cs': get_chunks(out[count+1])}
+				data.append(ms)
+				count = count + 1
+			else:
+				count = count + 1
+
+		return data
+
+def get_chunks(out):
+	count = 0
+	data = []
+	for element in out:
+		if (element.find("-") != -1):
+			numbers = element.split("-")
+			for count in range(int(numbers[0]), int(numbers[1])+1):
+				data.append(str(count))
+		else:
+			data.append(element)
+
+	return data
 
 def create_json(text):
-	list_sd = []
-	list_m = []
-	list_ms = []
-	list_cs = []
+	count = 0
 	data = []
-	pattern_sd = "\d{8}"
-	pattern_m = "fc\d"
-
-	tmp = text
-
-	for match in re.findall(pattern_sd, text):
-		list_sd.append(match) 
-
-	tmp = re.split(pattern_sd, text)
-	for element in tmp:
-		if element != "":
-			for match in re.split(pattern_m, element):
-				cs = match[match.find("[")+1:match.find("]")]
-				if cs != "":
-					list_cs.append(cs.replace(" ", "").split(","))
-			print list_cs
-			i = 0
-			for match in re.findall(pattern_m, element):
-				c = {'m': match, 'cs': list_cs[i] }
-				list_m.append(c)
-				i = i + 1
-
-			list_ms.append(list_m)
-			list_m = []
-			list_cs = []
+	#text = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 16651101 [ fc0 [1-30 31 32] ] ]"
 	
-	i = 0
-	for element in list_sd:
-		sd = {'sd': element, 'ms': list_ms[i]}
-		data.append(sd)
-		i = i + 1
-	
+	out = nestedExpr('[',']').parseString(text).asList()
+
+	for element in out[0]:
+		if (count%2 == 0):
+			sd = {'sd': out[0][count], 'ms': get_members(out[0][count+1])}
+			data.append(sd)
+			count = count + 1
+		else:
+			count = count + 1
+
 	sds = {'sds': data}
-
 	result = json.dumps(sds)
 	return result
 
