@@ -21,7 +21,7 @@ class Mn3Queue(HPCQueue):
 		self._job_status['COMPLETED'] = ['DONE']
 		self._job_status['RUNNING'] = ['RUN']
 		self._job_status['QUEUING'] = ['PEND', 'FW_PEND']
-		self._job_status['FAILED'] = ['SSUSP', 'USUSP']
+		self._job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
 
 	def get_submit_cmd(self):
 		self._submit_cmd = "ssh " + self._host + " bsub < " + self._remote_log_dir + "/" 
