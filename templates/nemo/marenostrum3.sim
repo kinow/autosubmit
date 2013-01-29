@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/bin/ksh
 ###############################################################################
-#                   WRITE EC_EARTH OUTPUT ON HSM
+#                                RUN NEMO3                                    #
 ###############################################################################
 #
 #BSUB -J %JOBNAME%
 #BSUB -oo %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out 
 #BSUB -eo %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
 #BSUB -W 02:00
+#BSUB -n 48
+#BSUB -R "span[ptile=16]"
 #
 ###############################################################################

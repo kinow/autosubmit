@@ -1,4 +1,4 @@
-%ENVIRONMENT%
+%ENVIRONMENT3%
 
 set -xuve
 date
