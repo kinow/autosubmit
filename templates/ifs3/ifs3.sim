@@ -195,13 +195,12 @@ fi
 # Check either simulation completed successfully or not
 #
 ls -1 *${Chunk_ifs_restart_tag}*
-if [[ $? == 0 ]]; then
-   echo "finished chunk"
-   touch finished_chunk_${chunk}
-else
+if [[ $? -ne 0 ]]; then
    echo "failed chunk"
    exit 1
 fi
+echo "finished chunk"
+touch finished_chunk_${chunk}
 
 #
 # Save IFS restart files

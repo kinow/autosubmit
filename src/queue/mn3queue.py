@@ -11,7 +11,7 @@ class Mn3Queue(HPCQueue):
 		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
-		self._submit_cmd = "ssh " + self._host + " bsub \< " + self._remote_log_dir + "/" 
+		self._submit_cmd = "ssh " + self._host + " /gpfs/projects/ecm86/common/autosubmit/bsub.sh " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " bjobs -w -X"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -24,7 +24,7 @@ class Mn3Queue(HPCQueue):
 		self._job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
 
 	def get_submit_cmd(self):
-		self._submit_cmd = "ssh " + self._host + " bsub < " + self._remote_log_dir + "/" 
+		self._submit_cmd = "ssh " + self._host + " /gpfs/projects/ecm86/common/autosubmit/bsub.sh " + self._remote_log_dir + "/" 
 		return self._submit_cmd
 
 	def get_remote_log_dir(self):
