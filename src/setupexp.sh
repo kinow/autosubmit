@@ -55,6 +55,7 @@ fi
 # setup process starts from here
 case $HPCARCH in
  bsc) HPCARCH="mn" ;;
+ marenostrum3) HPCARCH="mn" ;;
 esac
 SSH="ssh $HPCARCH"
 MAIN=$SCRATCH_DIR/$HPCUSER/$EXPID

@@ -8,6 +8,7 @@ from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
+from queue.mn3queue import Mn3Queue
 import dir_config
 from config_parser import config_parser, expdef_parser
 from job.job import Job
@@ -77,6 +78,8 @@ if __name__ == "__main__":
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
 	   queue.set_hpcuser(hpcuser)
+	elif(hpcarch == "marenostrum3"):
+	   queue = Mn3Queue(expid)
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
