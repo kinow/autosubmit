@@ -25,7 +25,16 @@ yearf=                  # last year to post-process in the fist start date
 # If you fill up the year argument, complete years will be processed, year by
 # year from moni 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-NEMOVERSION=v2.2            # NEMO version
+NEMOVERSION=Ec2.3_O1L42 # NEMO version
+# Valid options : Ec2.3_O1L42      for Ec-Earth 2.3 ORCA1    L42
+#                 Ec3.0_O1L46      for Ec-Earth 3.0 ORCA1    L46
+#                 Ec3.0_O25L46     for Ec-Earth 3.0 ORCA0.25 L46
+#                 N3.2_O1L42       for Nemo     3.2 ORCA1    L42
+#                 N3.3_O1L46       for Nemo     3.3 ORCA1    L42
+#                 nemovar_O1L42    for Nemo     COMBINE and ORAS4 ORCA1L42
+#                 === Development in progress : ===
+#                 glorys2v1_O25L75 for Nemo     GLORYS2v1    ORCA025L75
+#                 ucl_O2L31        for Nemo     UCL          ORCA2L31
 PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
@@ -65,7 +74,7 @@ source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 # Interval of lead months be post-processed
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 case $expid in
-  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar' ;;
+  'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar_O1L42' ;;
 esac
 if [[ ${listpost[@]##max_moc} != ${listpost[@]} ]] || [[ ! -z "$ltimef" ]] || [[ ! -z "$ltime0" ]] ; then 
   if [[ -z "$year0" ]] && [[ -z "$yearf" ]] ; then
@@ -102,7 +111,8 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         $endyear) monf=5; ltimef=9 ;;
       esac
       ;;
-      *) get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput  
+      *) freqout=${rootout:${#rootout}-12} ; freqout=${freqout/_mean} ; freqout=${freqout/*\/}
+      get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout
     esac
     #  
     # Ready for the post-processing
@@ -117,13 +127,29 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
         'sstsssmld')
           if [[ $typeoutput == 'MMO' ]] ; then
-            ncks -O -v sosstsst,sosaline,somixhgt,somxl010 grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            lstvars=`cdo showvar grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc`
+            lstextvar=( 'sosstsst' 'sosaline' 'somixhgt' 'somxl010' )
+            lstext=''
+            for varex in ${lstextvar[@]} ; do
+              if [[ ${lstvars/${varex}/} != ${lstvars} ]] ; then
+                lstext=${lstext}","${varex}
+              fi
+            done         
+            ncks -O -v ${lstext:1} grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
 
         'ice')
           if [[ $typeoutput == 'MMO' ]] ; then
-            ncks -O -v isnowthi,iicethic,ileadfra,iicetemp icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            lstvars=`cdo showvar icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc`
+            lstextvar=( 'isnowthi' 'iicethic' 'ileadfra' 'iicetemp' 'ice_pres' )
+            lstext=''
+            for varex in ${lstextvar[@]} ; do
+              if [[ ${lstvars/${varex}/} != ${lstvars} ]] ; then
+                lstext=${lstext}","${varex}
+              fi
+            done
+            ncks -O -v ${lstext:1} icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
        
@@ -224,9 +250,24 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         'ohc')
           case `echo $post | cut -c1` in
            'x') kmin=0 ; kmax=0 ; start=2 ; mxl=1 ;;
-           'l') kmin=25 ; kmax=42 ; start=2 ; mxl=0 ;;
-           'm') kmin=21 ; kmax=24 ; start=2 ; mxl=0 ;;
-           'u') kmin=1 ; kmax=20 ; start=2 ; mxl=0 ;;
+           'l') start=2 ; mxl=0
+               case $NEMOVERSION in
+               'Ec2.3_O1L42'|'N3.2_O1L42') kmin=25 ; kmax=42 ;;
+               'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmin=23 ; kmax=46 ;;
+              esac
+              ;;
+           'm') start=2 ; mxl=0
+              case $NEMOVERSION in
+               'Ec2.3_O1L42'|'N3.2_O1L42') kmin=21 ; kmax=24 ;;
+               'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmin=18 ; kmax=22 ;;
+              esac
+              ;;
+           'u') kmin=1 ; start=2 ; mxl=0
+              case $NEMOVERSION in
+               'Ec2.3_O1L42'|'N3.2_O1L42') kmax=20 ;;
+               'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmax=17 ;;
+              esac
+             ;;
             *)  kmin="" ; kmax="" ; start=1 ; mxl=0 ;;
           esac
           case `echo $post | cut -c${start}-$((start+3))` in
@@ -282,9 +323,24 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         file='heatc'
         case `echo $post | cut -c1` in
          'x') mxl=1 ; start=2 ;;
-         'l') file='800-5350_'${file} ; start=2 ; mxl=0 ;;
-         'm') file='373-657_'${file} ; start=2 ; mxl=0 ;;
-         'u') file='0-315_'${file}; start=2 ; mxl=0 ;;
+         'l') start=2 ; mxl=0
+             case $NEMOVERSION in
+             'Ec2.3_O1L42'|'N3.2_O1L42') file='800-5350_'${file} ;;
+             'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='855-5875_'${file} ;;
+            esac
+            ;;
+         'm') start=2 ; mxl=0 
+            case $NEMOVERSION in
+             'Ec2.3_O1L42'|'N3.2_O1L42') file='373-657_'${file} ;;
+             'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='382-735_'${file} ;;
+            esac
+            ;;
+         'u') start=2 ; mxl=0 
+            case $NEMOVERSION in
+             'Ec2.3_O1L42'|'N3.2_O1L42') file='0-315_'${file} ;;
+             'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='0-322_'${file} ;;
+            esac
+            ;;
           *) mxl=0 ; start=1 ;;
         esac
  
@@ -329,7 +385,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 #       you need to use the concat option rather than the ncrcat one below.
 #                        Any doubt ---> vguemas@ic3.cat
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      lsyrsb=${yeari}${moni}_$((year0-${monf}/12))$(printf "%02d" ${monf}).nc
+      lsyrsb=${yeari}${moni}_$((year0-${monf}/12))$(printf "%02d" $(((mon0-13)%12+12)) ).nc
       lsyrso=${yeari}${moni}_${yearf}$(printf "%02d" ${monf}).nc
       if [ -e ${pathout}/${prefix}${lsmbsh}_${lsyrsb} ] ; then
         case $post in 
