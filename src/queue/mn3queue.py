@@ -7,8 +7,12 @@ from time import sleep
 class Mn3Queue(HPCQueue):
 	def __init__(self, expid):
 		self._host = "mn"
+		self._scratch = "/gpfs/scratch"
+		self._project = "ecm86"
+		self._user = "ecm86603"
 		self._expid = expid
-		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
+		#self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
 		self._submit_cmd = "ssh " + self._host + " bsub \< " + self._remote_log_dir + "/" 
