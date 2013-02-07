@@ -113,11 +113,17 @@ class HPCQueue:
 			(status, output) = getstatusoutput(self._checkjob_cmd + ' ')
 		exit(0)
 	
-	def set_host(self, new_hostname):
-		self._host = new_hostname
+	def set_host(self, new_host):
+		self._host = new_host
+	
+	def set_scratch(self, new_scratch):
+		self._scratch = new_scratch
+		
+	def set_project(self, new_project):
+		self._project = new_project
 
-	def set_hpcuser(self, new_hpcuser):
-		self._hpcuser = new_hpcuser
+	def set_user(self, new_user):
+		self._user = new_user
 
 	def set_remote_log_dir(self, new_remote_log_dir):
 		self._remote_log_dir = new_remote_log_dir
