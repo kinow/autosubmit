@@ -58,6 +58,8 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
+	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
+	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
@@ -77,9 +79,13 @@ if __name__ == "__main__":
 	   parallelQueue.set_host("lindgren")
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
-	   queue.set_hpcuser(hpcuser)
+	   queue.set_user(hpcuser)
 	elif(hpcarch == "marenostrum3"):
 	   queue = Mn3Queue(expid)
+	   queue.set_host("mn-" + hpcproj)
+	   queue.set_scratch(scratch_dir)
+	   queue.set_project(hpcproj)
+	   queue.set_user(hpcuser)
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
