@@ -11,7 +11,6 @@ class Mn3Queue(HPCQueue):
 		self._project = "ecm86"
 		self._user = "ecm86603"
 		self._expid = expid
-		#self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
@@ -21,13 +20,13 @@ class Mn3Queue(HPCQueue):
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
-		#        RUN        SSUSP       USUSP      UNKNOWN    PEND FWD_PEND
 		self._job_status['COMPLETED'] = ['DONE']
 		self._job_status['RUNNING'] = ['RUN']
 		self._job_status['QUEUING'] = ['PEND', 'FW_PEND']
 		self._job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
 
 	def update_cmds(self):
+		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
 		self._submit_cmd = "ssh " + self._host + " bsub \< " + self._remote_log_dir + "/" 
@@ -36,6 +35,11 @@ class Mn3Queue(HPCQueue):
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 
+	def get_mkdir_cmd(self):
+		return self._mkdir_cmd
+
+	def get_remote_log_dir(self):
+		return self._remote_log_dir
 
 	def parse_job_output(self, output):
 		job_state = output.split('\n')[1].split()[2]
