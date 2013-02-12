@@ -82,7 +82,7 @@ if __name__ == "__main__":
 	   queue.set_user(hpcuser)
 	elif(hpcarch == "marenostrum3"):
 	   queue = Mn3Queue(expid)
-	   queue.set_host("mn-" + hpcuser)
+	   queue.set_host("mn-" + hpcproj)
 	   queue.set_scratch(scratch_dir)
 	   queue.set_project(hpcproj)
 	   queue.set_user(hpcuser)
