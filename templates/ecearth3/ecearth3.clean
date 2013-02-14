@@ -29,16 +29,24 @@ esac
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCPROJ%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
 
 #
 # Model Configuration
 #
 EXPID=%EXPID%
+VERSION=%VERSION%
 MEMBER=%MEMBER%
 START_date=%SDATE%
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+START_date_1=%DAY_BEFORE%
+
+ECEARTH=${MODEL_DIR}/$VERSION
+ini_data_dir=${ECEARTH}/inidata
+
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
 #
@@ -84,7 +92,7 @@ if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
    $CP ${PATHOUT}/restarts/$RESTC .; $CP ${PATHOUT}/restarts/$RESTA .; $CP ${PATHOUT}/restarts/$RESTO .
    tar -xvf $RESTC; tar -xvf $RESTA; tar -xvf $RESTO
    rm -f $RESTC $RESTA $RESTO 
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
    exit
 fi
 
@@ -191,10 +199,10 @@ if [[ -a rest_$chunk && -a out_$chunk ]]; then
    rm -rf $output_dir
 fi
 
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 if [[ $Chunk_last == TRUE ]]; then
-   cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+   cd %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
    if [[ -a ${RUN_dir}/rest_$((chunk-1)) && -a ${RUN_dir}/out_$((chunk-1)) ]]; then
       echo "We are now removing ${RUN_dir}"
       rm -rf ${RUN_dir}
