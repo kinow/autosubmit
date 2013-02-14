@@ -21,8 +21,8 @@ set -xv
 ##################################
 
 INSTITUTION="IC3            "
-SOURCE="EC-Earth2.3.0,NEMOVAR-COMBINE,DFS4.3,ERA40/Int,Atm_SV+O pert" # loaded from database (max length 60 char's)  
-VAR_LST="T2M D2M U10M V10M PRECIP CP E SF SST MSL SSR STR SLHF SSHF SSRD SSRU SSRC STRD STRU TSR TSRC TTRC TTR TCC T U V W Q CL CIWC CILC"
+SOURCE="EC-EARTH3.0" # loaded from database (max length 60 char's) 
+VAR_LST="T2M D2M U10M V10M PRECIP CP E SF SST MSL SSR STR SLHF SSHF SSRD SSRU SSRC STRD STRU TSR TSRC TTRC TTR TCC T U V Z Q"
 LEVEL_LST="92500,85000,70000,60000,50000,20000,10000,5000,1000"
 MEM_LST=(  )                                   # supply list of members
 ENSEMBLE=${#MEM_LST[@]}
@@ -30,7 +30,7 @@ DATADIR=/cfunas/exp/ecearth                    # where MMA files located
 SAVEDIR=/cfunas/exp/ecearth                    # for Saving outputs 
 HEAD_DIR=/cfu/pub/scripts/postp_ecearth/header # some of the header information
 WORKDIR=/scratch/tmp/$USER/nccf_atm_monthly_$$ # working dir
-NFRP=3 # ecearth output frequency (hours), this is for computing the accumulated precipitation 
+NFRP=6 # ecearth output frequency (hours), this is for computing the accumulated precipitation 
        # and flux variables (solar and thermal radiation, sensible and latent fluxes)
 FACTOR=$((NFRP*3600)) # 3600 (seconds per hour)
 #####  End of User Defined Dariables  ####

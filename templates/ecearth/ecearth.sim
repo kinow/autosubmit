@@ -38,6 +38,7 @@ CMIP5=%CMIP5%
 Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
+NFIXYR=%NFIXYR%
 NHINCSOL=%NHINCSOL%
 IFS_exe=${BINPATH}/ifsMASTER
 
@@ -59,6 +60,7 @@ if [[ $ICE_ini != '' ]]; then
    esac
 fi
 SAVEDDO=%SAVEDDO%
+GRESFILE=false # Handling global restart for NEMO
 
 #
 # OASIS
@@ -93,9 +95,13 @@ RUN_days=%RUN_DAYS%
 RUN_hours=$((RUN_days*24))
 # Last Day Previous
 day_prev=%PREV%
-day_prev_rst=%day_prev_rst%
-if [[ $day_prev_rst != '' ]]; then
- day_prev=$((day_prev_rst+day_prev))
+MODEL_rstini=%MODEL_rstini%
+if [[ $MODEL_rstini != '' ]]; then
+   day_prev_rst=$(cat day_prev_rst)
+   day_prev=$((day_prev_rst+day_prev))
+   if [[ $chunk == 1 ]]; then
+      GRESFILE=true
+   fi
 fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
@@ -126,21 +132,13 @@ fi
 #
 # Control the use of the scenario
 #
-Lrcp=FALSE
 if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" ]] ; then
-   yy=2005
+   yy=2006
 else
-   yy=1999
+   yy=2000
 fi
-
-if [[ `echo $Chunk_start_date | cut -c1-4` > $yy ]] ; then
-   Lrcp=TRUE
-fi
-
-if [[ $Lrcp == TRUE ]] ; then
-   CNrcp=$Nrcp
-else
-   CNrcp=0
+if [[ `echo $Chunk_start_date | cut -c1-4` < $yy ]] ; then
+   Nrcp=0
 fi
 #
 
@@ -157,33 +155,33 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      ;;
      v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP})
      ;;
-     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp})
      ;;
-     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp} -7 ${NFIXYR} -8 ${NHINCSOL})
      ;;
  esac
 
 # setupoasis.ksh
  if [[ ${OASIS3_oldWeights} == false ]] ; then
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
+    ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -0 ${TESTDATADIR}
  else
-  ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
+    ${SCRIPTDIR}/setupoasis3.ksh -r ${IFS_resolution} -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -n ${IFS_nproc} -p ${NEMO_nproc} -c ${RUN_coupFreq} -w -W ${OASIS3_weightsDir} -0 ${TESTDATADIR}
  fi
 
 # setupnemo.ksh
  if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" || $VERSION == "v2.2.1" || $VERSION == "v2.2.0" ]] ; then
     if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}.
     else
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}.
     fi
  else
     if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}.
     else
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO}
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}.
     fi
  fi
 
@@ -208,13 +206,12 @@ fi
 # Check either simulation completed successfully or not
 #
 ls -1 *${Chunk_ifs_restart_tag}*
-if [[ $? == 0 ]]; then
-   echo "finished chunk"
-   touch finished_chunk_${chunk}
-else
+if [[ $? -ne 0 ]]; then
    echo "failed chunk"
    exit 1
 fi
+echo "finished chunk"
+touch finished_chunk_${chunk}
 
 #
 # Save NEMO & IFS restart files
