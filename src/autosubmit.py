@@ -59,7 +59,7 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
-	hpcarch = conf_parser.get('config', 'hpcarch')
+	hpcarch = exp_parser.get('experiment', 'HPCARCH')
 	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
