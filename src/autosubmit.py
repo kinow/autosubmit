@@ -10,7 +10,7 @@ from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 import dir_config
-from config_parser import config_parser, expdef_parser
+from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
 from job.job_common import Status, Type
 from job.job_list import JobList
@@ -49,7 +49,9 @@ if __name__ == "__main__":
 
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
@@ -58,7 +60,7 @@ if __name__ == "__main__":
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	hpcarch = conf_parser.get('config', 'hpcarch')
-	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
+	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
