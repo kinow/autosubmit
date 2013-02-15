@@ -13,7 +13,7 @@ EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
 WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
-RUN_dir=${WRITINGDIR}/${MEMBER}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 PATHOUT="${HSM_DIR}/exp/${EXPID}/${MEMBER}"
 PATHFORC=${HSM_DIR}/fg/ocean/%OCEAN_FORCTYPE%
 PATHNUDG=${HSM_DIR}/nudging/%OCEAN_NUDDATA%/${MEMBER}
@@ -224,10 +224,10 @@ fi
 #                                FINAL CLEANING                                #
 ################################################################################
 #
-#if [[ $Chunk_last = .TRUE. ]]; then
-#  rm -r $RUN_dir
-#fi
-#
+if [[ $Chunk_last == 'TRUE' ]]; then
+  rm -r $RUN_dir
+fi
+
 touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
