@@ -5,7 +5,8 @@ PATH=/cfu/software/cdftools2.1/:$PATH
 #Launching instructions:
 
 ./ocean_pp.bash /home/$user/cfu_git/autosubmit/pp/ocean/config_file
-
+- You can copy and modify the config_file to any directory till you indicate the good path when launching ocean_pp.bash
+- ocean_pp.bash can be downloaded from git repository.
 
 #
 
