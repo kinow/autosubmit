@@ -1,5 +1,5 @@
 #!/bin/bash
-#This is an example of a configuration_file needed to launch ocean_pp_new.bash. For any other information about how to use it, you can refer to the cfu wiki
+#This is an example of a configuration_file needed to launch ocean_pp.bash. For any other information about how to use it, you can refer to the README or the cfu wiki.
 
 listpost=(  )          # Beware that the max_moc diagnostics can not be computed
 #                        if you don't process complete years (that's a 
