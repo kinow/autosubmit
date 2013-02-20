@@ -165,7 +165,8 @@ def close_conn(conn,cursor):
 #############################
 def prepare_conf_files(content, exp_id, hpc):
 	replace_strings = ['REMOTE_DIR =', 'ECEARTH_DIR =.']
-	content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
+	if re.search('EXPID =.*', content):
+		content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
 	if re.search('HPCARCH =.*', content):
 		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
 	for string in replace_strings:
