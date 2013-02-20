@@ -35,6 +35,9 @@ class Mn3Queue(HPCQueue):
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 
+	def get_submit_cmd(self):
+		return self._submit_cmd
+
 	def get_mkdir_cmd(self):
 		return self._mkdir_cmd
 
