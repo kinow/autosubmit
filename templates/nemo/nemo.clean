@@ -12,8 +12,13 @@ NCOPATH="%NCOPATH%"
 EXPID=%EXPID%
 MEMBER=%MEMBER%
 START_date=%SDATE%
+<<<<<<< HEAD
+WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+=======
 WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
 RUN_dir=${WRITINGDIR}/${MEMBER}
+>>>>>>> develop-projects
 PATHOUT="${HSM_DIR}/exp/${EXPID}/${MEMBER}"
 PATHFORC=${HSM_DIR}/fg/ocean/%OCEAN_FORCTYPE%
 PATHNUDG=${HSM_DIR}/nudging/%OCEAN_NUDDATA%/${MEMBER}
@@ -224,10 +229,10 @@ fi
 #                                FINAL CLEANING                                #
 ################################################################################
 #
-#if [[ $Chunk_last = .TRUE. ]]; then
-#  rm -r $RUN_dir
-#fi
-#
+if [[ $Chunk_last == 'TRUE' ]]; then
+  rm -r $RUN_dir
+fi
+
 touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date

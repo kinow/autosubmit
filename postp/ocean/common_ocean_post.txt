@@ -137,7 +137,7 @@ for root in ${listroots[@]} ; do
     done 
   fi
   file1=`echo "${lstfiles}" | tail -1`
-  lstvars=`cdo showvar $file1`
+  typeset var lstvars=`cdo showvar $file1`
   if [[ ${lstvars/iicenflx} != ${lstvars} ]] ; then for file in $lstfiles ; do ncks -O -x -v iicenflx $file $file ; done ; fi
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
   if [[ $root == 'moc' ]] ; then 
@@ -319,9 +319,9 @@ ncrename -d t,time -d z,deptht e3t_file.nc
 for ((jt=1;jt<=$ntime;jt++)); do
   cdo seltimestep,$jt $1 intohc_slayer.nc
   ncks -O -v votemper intohc_slayer.nc intmeantem.nc
-  ncrename -v votemper,heatc_sl intmeantem.nc
+  ncrename -v votemper,heatc_sl intmeantem.nc #to be commented
   cdo mul intmeantem.nc e3t_file.nc heatc_sl_out.nc
-  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
+#?  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
   # extract the data between the two given depths --> heatc_sl_top.nc
   ncks -d deptht,$2,$3 heatc_sl_out.nc heatc_sl_top.nc
   #perform the integration of ohc down to that level (main contribution)
@@ -343,7 +343,7 @@ for ((jt=1;jt<=$ntime;jt++)); do
   ncrename -v layerthcknss,heatc_sl depth_diff_lay.nc
   ncap2 -s "heatc_sl=($3 - layerthcknss)" level_above.nc depth_diff_sublay.nc
   ncbo --op_typ=/ -v heatc_sl depth_diff_sublay.nc depth_diff_lay.nc factor.nc
-  ncrename -v heatc_sl,factor factor.nc
+  ncrename -v heatc_sl,factor factor.nc #to be commented
   ncks -A -v factor factor.nc level_below.nc
   rm -f depth_diff_sublay.nc depth_diff_lay.nc
   ncap2 -O -s "heatc_sl=(factor * heatc_sl)" level_below.nc level_below.nc
@@ -484,24 +484,26 @@ fi
 ###############################################################################
 
 function max_moc {
-ncecat -h $1 tmpmoc1.nc
-ncrename -d record,x tmpmoc1.nc
-ncpdq -O -h -a time,x tmpmoc1.nc tmpmoc1.nc
-ncpdq -O -h -a depthw,x tmpmoc1.nc tmpmoc1.nc
-ncpdq -O -h -a y,x tmpmoc1.nc tmpmoc1.nc
-cdo yearmean tmpmoc1.nc tmpmoc.nc 
-typeset var ntime=`cdo ntime tmpmoc.nc`
-typeset var list=""
-for ((jt=1;jt<=$ntime;jt++)) ; do
-  cdo seltimestep,$jt tmpmoc.nc tmpmoc2.nc
-  cdfmaxmoc tmpmoc2.nc atl $2 $3 $4 $5
-  mv maxmoc.nc maxmoc_$jt.nc
-  list=${list}" "maxmoc_$jt.nc
-  rm -f tmpmoc2.nc
-done
-cdo cat $list $6
-ncks -A -v time tmpmoc.nc $6
-rm -f $list tmpmoc.nc tmpmoc1.nc
+if [ ! -f $6 ] ; then
+ ncecat -h $1 tmpmoc1.nc
+ ncrename -d record,x tmpmoc1.nc
+ ncpdq -O -h -a time,x tmpmoc1.nc tmpmoc1.nc
+ ncpdq -O -h -a depthw,x tmpmoc1.nc tmpmoc1.nc
+ ncpdq -O -h -a y,x tmpmoc1.nc tmpmoc1.nc
+ cdo yearmean tmpmoc1.nc tmpmoc.nc 
+ typeset var ntime=`cdo ntime tmpmoc.nc`
+ typeset var list=""
+ for ((jt=1;jt<=$ntime;jt++)) ; do
+   cdo seltimestep,$jt tmpmoc.nc tmpmoc2.nc
+   cdfmaxmoc tmpmoc2.nc atl $2 $3 $4 $5
+   mv maxmoc.nc maxmoc_$jt.nc
+   list=${list}" "maxmoc_$jt.nc
+   rm -f tmpmoc2.nc
+ done
+ cdo cat $list $6
+ ncks -A -v time tmpmoc.nc $6
+ rm -f $list tmpmoc.nc tmpmoc1.nc
+fi
 }
 ###############################################################################
 #                                                                             #
