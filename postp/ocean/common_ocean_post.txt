@@ -137,7 +137,7 @@ for root in ${listroots[@]} ; do
     done 
   fi
   file1=`echo "${lstfiles}" | tail -1`
-  lstvars=`cdo showvar $file1`
+  typeset var lstvars=`cdo showvar $file1`
   if [[ ${lstvars/iicenflx} != ${lstvars} ]] ; then for file in $lstfiles ; do ncks -O -x -v iicenflx $file $file ; done ; fi
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
   if [[ $root == 'moc' ]] ; then 
