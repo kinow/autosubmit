@@ -69,23 +69,23 @@ if __name__ == "__main__":
 		rerun = 'false'
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
-	   queue.set_host("bsc-" + hpcproj)
+	   queue.set_host("bsc")
 	elif(hpcarch == "ithaca"):
 	   queue = ItQueue(expid)
-	   queue.set_host("ithaca-" + hpcproj)
+	   queue.set_host("ithaca")
 	elif(hpcarch == "hector"):
 	   queue = HtQueue(expid)
-	   queue.set_host("hector-" + hpcproj)
+	   queue.set_host("hector")
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
-	   serialQueue.set_host("ellen-" + hpcproj)
+	   serialQueue.set_host("ellen")
 	   serialQueue.set_scratch(scratch_dir)
 	   serialQueue.set_project(hpcproj)
 	   serialQueue.set_user(hpcuser)
 	   serialQueue.update_cmds() 
 	   parallelQueue = LgQueue(expid)
-	   parallelQueue.set_host("lindgren-" + hpcproj)
+	   parallelQueue.set_host("lindgren")
 	   parallelQueue.set_scratch(scratch_dir)
 	   parallelQueue.set_project(hpcproj)
 	   parallelQueue.set_user(hpcuser)
@@ -93,7 +93,7 @@ if __name__ == "__main__":
 
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
-	   queue.set_host("ecmwf-" + hpcproj)
+	   queue.set_host("c2a")
 	elif(hpcarch == "marenostrum3"):
 	   queue = Mn3Queue(expid)
 	   queue.set_host("mn-" + hpcproj)

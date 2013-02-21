@@ -6,12 +6,12 @@ from time import sleep
 
 class ItQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "mn"
-		self._scratch =  "/scratch"
+		self._host = "ithaca"
+		self._scratch = "/scratch"
 		self._project = "cfu"
-		self._user = "\$USER"
+		self._user = "masif"
 		self._expid = expid
-		self._remote_log_dir = self.scratch + "/" + self._project +"/" + self._user +"/" + self._expid + "/LOG_" + self._expid
+		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
 		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"

@@ -6,7 +6,7 @@ from time import sleep
 
 class Mn3Queue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "mn"
+		self._host = "mn-ecm86"
 		self._scratch = "/gpfs/scratch"
 		self._project = "ecm86"
 		self._user = "ecm86603"
