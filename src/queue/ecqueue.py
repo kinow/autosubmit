@@ -8,35 +8,42 @@ from time import sleep
 class EcQueue(HPCQueue):
 	def __init__(self, expid):
 		self._host = "c2a"
+		self._scratch = "/scratch/ms"
+		self._project = "spesiccf"
+		self._user = "c3m"
 		self._expid = expid
-		self._hpcuser = "\$USER"
-		self._remote_log_dir = "/scratch/ms/spesiccf/" + self._hpcuser + "/" + self._expid + "/LOG_" + self._expid
+		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "eceaccess-job-delete"
 		self._checkjob_cmd = "ecaccess-job-list"
 		self._submit_cmd = "ecaccess-job-submit -queueName " + self._host + " " + LOCAL_ROOT_DIR + "/" + self._expid + "/tmp/"
-		#self._submit_cmd = "ecaccess-job-submit -queueName c1a -distant " + self._remote_log_dir + "/"
 		self._status_cmd = "ecaccess-job-get"
 		self._put_cmd = "ecaccess-file-put"
 		self._get_cmd = "ecaccess-file-get"
-		self._mkdir_cmd = "ecaccess-file-mkdir " + self._host + ":" + "/scratch/ms/spesiccf/" + self._hpcuser + "/" + self._expid + "; " + "ecaccess-file-mkdir " + self._host + ":" + self._remote_log_dir
-		#self._mkdir_cmd = "ecaccess-file-mkdir " + self._expid + "; " + "ecaccess-file-mkdir " + self._remote_log_dir
+		self._mkdir_cmd = "ecaccess-file-mkdir " + self._host + ":" + self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "; " + "ecaccess-file-mkdir " + self._host + ":" + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['DONE']
 		self._job_status['RUNNING'] = ['EXEC']
 		self._job_status['QUEUING'] = ['INIT', 'RETR', 'STDBY', 'WAIT']
 		self._job_status['FAILED'] = ['STOP']
 		self._pathdir = "\$HOME/LOG_" + self._expid
-		
-	def get_submit_cmd(self):
+	
+	def update_cmds(self):
+		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
+		self._cancel_cmd = "eceaccess-job-delete"
+		self._checkjob_cmd = "ecaccess-job-list"
 		self._submit_cmd = "ecaccess-job-submit -queueName " + self._host + " " + LOCAL_ROOT_DIR + "/" + self._expid + "/tmp/"
+		self._status_cmd = "ecaccess-job-get"
+		self._put_cmd = "ecaccess-file-put"
+		self._get_cmd = "ecaccess-file-get"
+		self._mkdir_cmd = "ecaccess-file-mkdir " + self._host + ":" + self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "; " + "ecaccess-file-mkdir " + self._host + ":" + self._remote_log_dir
+
+	def get_submit_cmd(self):
 		return self._submit_cmd
 
 	def get_remote_log_dir(self):
-		self._remote_log_dir = "/scratch/ms/spesiccf/" + self._hpcuser + "/" + self._expid + "/LOG_" + self._expid
 		return self._remote_log_dir
 
 	def get_mkdir_cmd(self):
-		self._mkdir_cmd = "ecaccess-file-mkdir " + self._host + ":" + "/scratch/ms/spesiccf/" + self._hpcuser + "/" + self._expid + "; " + "ecaccess-file-mkdir " + self._host + ":" + self.get_remote_log_dir()
 		return self._mkdir_cmd
 
 	def parse_job_output(self, output):
