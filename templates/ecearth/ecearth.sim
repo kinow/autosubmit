@@ -27,7 +27,7 @@ WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
 BINPATH=${WRITINGDIR}/model/bin
-ctrl_file_dir=${WRITINGDIR}/model/setup/ctrl
+SCRIPTDIR=${WRITINGDIR}/model/setup
 
 cd $RUN_dir
 
