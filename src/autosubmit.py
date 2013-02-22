@@ -79,18 +79,10 @@ if __name__ == "__main__":
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
-	   serialQueue.set_host("ellen")
-	   serialQueue.set_scratch(scratch_dir)
-	   serialQueue.set_project(hpcproj)
-	   serialQueue.set_user(hpcuser)
-	   serialQueue.update_cmds() 
+	   serialQueue.set_host("ellen") 
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
-	   parallelQueue.set_scratch(scratch_dir)
-	   parallelQueue.set_project(hpcproj)
-	   parallelQueue.set_user(hpcuser)
-	   parallelQueue.update_cmds() 
-
+	   
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
 	   queue.set_host("c2a")
@@ -98,11 +90,7 @@ if __name__ == "__main__":
 	   queue = Mn3Queue(expid)
 	   queue.set_host("mn-" + hpcproj)
 	
-	queue.set_scratch(scratch_dir)
-	queue.set_project(hpcproj)
-	queue.set_user(hpcuser)
-	queue.update_cmds()
-
+	
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
 	logger.info("Start with job number: %s" % alreadySubmitted)
@@ -117,9 +105,21 @@ if __name__ == "__main__":
 		signal.signal(signal.SIGINT, serialQueue.normal_stop)
 		signal.signal(signal.SIGQUIT, parallelQueue.smart_stop)
 		signal.signal(signal.SIGINT, parallelQueue.normal_stop)
+		serialQueue.set_scratch(scratch_dir)
+		serialQueue.set_project(hpcproj)
+		serialQueue.set_user(hpcuser)
+		serialQueue.update_cmds()
+		parallelQueue.set_scratch(scratch_dir)
+		parallelQueue.set_project(hpcproj)
+		parallelQueue.set_user(hpcuser)
+		parallelQueue.update_cmds() 
 	else:
 		signal.signal(signal.SIGQUIT, queue.smart_stop)
 		signal.signal(signal.SIGINT, queue.normal_stop)
+		queue.set_scratch(scratch_dir)
+		queue.set_project(hpcproj)
+		queue.set_user(hpcuser)
+		queue.update_cmds()
 
  
 	if(rerun == 'false'):
