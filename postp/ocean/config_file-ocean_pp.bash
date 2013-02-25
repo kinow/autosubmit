@@ -1,5 +1,5 @@
 #!/bin/bash
-#This is an example of a configuration_file needed to launch ocean_pp_new.bash. For any other information about how to use it, you can refer to the cfu wiki
+#This is an example of a configuration_file needed to launch ocean_pp.bash. For any other information about how to use it, you can refer to the README or the cfu wiki.
 
 listpost=(  )          # Beware that the max_moc diagnostics can not be computed
 #                        if you don't process complete years (that's a 
@@ -12,9 +12,9 @@ typeoutput='MMO'        # diags / MMO
 # Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' '3dtemp' 'TSec_ave190-220E' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 listmemb=( 0 1 2 3 4 )  # list of members
-syeari=1960             # first start date
-syearf=2005             # last start date
-moni=11                 # first month of the hindcast
+syeari=1960             # first start date, format "yyyy" 
+syearf=2005             # last start date, format "yyyy"
+moni=11                 # first month of the hindcast, format "mm", e.g. 05 for May
 intsdate=1              # interval between start dates
 chunklen=4              # length of the chunks (in months)
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

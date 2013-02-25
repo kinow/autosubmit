@@ -279,7 +279,7 @@ for MEM in ${MEM_LST[@]}; do
             ;;
           esac
           rm ${TMP_FILES}
-          cdo divc,${FACTOR} ${TMP_OUT} toto.nc; rm ${TMP_OUT};mv toto.nc ${TMP_OUT}
+#          cdo divc,${FACTOR} ${TMP_OUT} toto.nc; rm ${TMP_OUT};mv toto.nc ${TMP_OUT}
         ;;
       esac
   done # loop for VAR

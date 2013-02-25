@@ -433,7 +433,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         files=( $file ) 
     esac
     pathout=${rootout}/${dirout}
-    mkdir -p $pathout
+    mkdir -m ug+w -m o-w -p $pathout
     for file in ${files[@]} ; do
       prefix=${file}_${expid}_${yeari}${moni}01_fc
       lsmbso=0-${listmemb[${#listmemb[@]}-1]}
@@ -481,11 +481,17 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       #
       # Storing and cleaning
       # ~~~~~~~~~~~~~~~~~~~~~   
-      cp ${prefix}${lsmbso}_${lsyrso} ${pathout}/. 
+      cp ${prefix}${lsmbso}_${lsyrso} ${pathout}/. || { if [ -e ${pathout}/${prefix}${lsmbso}_${lsyrso} ];
+        then
+            echo "${prefix}${lsmbso}_${lsyrso} already exists in ${pathout}"
+            sleep 5
+        else
+            echo " problem writing file in ${pathout} directory"
+            exit
+        fi
+        }
       rm -f ${pathout}/${prefix}${lsmbsh}_${lsyrsb} ${prefix}${lsmbsh}_${lsyrso} ${prefix}${lsmbsb}_${lsyrso} ${pathout}/${prefix}${lsmbsb}_${lsyrso} ${prefix}${lsmbso}_${lsyrso} ${pathout}/${prefix}${lsmbsb}_${lsyrsh} ${prefix}${lsmbsb}_${lsyrsh}
     done
   done
 done
 rm -rf $WORKDIR
-#chmod 775 /scratch/tmp/post_ocean
-chmod 775 /scratch/pabretonniere/pp/ocean_pp_test
