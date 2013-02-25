@@ -274,7 +274,7 @@ typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt 
 typeset var lstvars=`cdo showvar $1`
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
  cdo seltimestep,$jt $1 intheat_sal_mxl.nc
  if [[ ${lstvars/somxl010} == ${lstvars} ]] ; then
   cdfmxl intheat_sal_mxl.nc mxl.nc
