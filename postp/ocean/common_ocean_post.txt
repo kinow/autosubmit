@@ -307,7 +307,7 @@ if [[ $lstvars != ${lstvars/vosaline} ]] ; then setminmax $2 somxlsaltc ; fi
 # $3 : lower depth of the layer (in meters)                                   #
 # $4 : output file name                                                       #
 #                                                                             #
-#         Created in June 2012      Author : iandreu@ic3.cat                  #
+# Created in June 2012      Author : isabel.andreu-burillo@ic3.cat            #
 ###############################################################################
 
 function ohc_specified_layer {
