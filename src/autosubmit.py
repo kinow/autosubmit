@@ -10,7 +10,7 @@ from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 import dir_config
-from config_parser import config_parser, expdef_parser
+from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
 from job.job_common import Status, Type
 from job.job_list import JobList
@@ -49,7 +49,9 @@ if __name__ == "__main__":
 
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
@@ -57,31 +59,49 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
-	hpcarch = conf_parser.get('config', 'hpcarch')
+	hpcarch = exp_parser.get('experiment', 'HPCARCH')
+	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
+	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
 		rerun = 'false'
+	if (exp_parser.has_option('experiment','SETUP')):
+		setup = exp_parser.get('experiment','SETUP').lower()
+	else: 
+		setup = 'false'
+	if (exp_parser.has_option('experiment','TRANSFER')):
+		transfer = exp_parser.get('experiment','TRANSFER').lower()
+	else: 
+		transfer = 'false'
+
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
+	   queue.set_host("bsc")
 	elif(hpcarch == "ithaca"):
 	   queue = ItQueue(expid)
+	   queue.set_host("ithaca")
 	elif(hpcarch == "hector"):
 	   queue = HtQueue(expid)
+	   queue.set_host("hector")
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
-	   serialQueue.set_host("ellen")
+	   serialQueue.set_host("ellen") 
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren")
+	   
 	elif(hpcarch == "ecmwf"):
 	   queue = EcQueue(expid)
-	   queue.set_hpcuser(hpcuser)
+	   queue.set_host("c2a")
 	elif(hpcarch == "marenostrum3"):
 	   queue = Mn3Queue(expid)
-	localQueue = PsQueue(expid)
-	localQueue.set_host("turing")
+	   queue.set_host("mn-" + hpcproj)
+
+	if (setup != 'false'  or transfer != 'false'):
+		localQueue = PsQueue(expid)
+		localQueue.set_host("turing")
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -97,9 +117,21 @@ if __name__ == "__main__":
 		signal.signal(signal.SIGINT, serialQueue.normal_stop)
 		signal.signal(signal.SIGQUIT, parallelQueue.smart_stop)
 		signal.signal(signal.SIGINT, parallelQueue.normal_stop)
+		serialQueue.set_scratch(scratch_dir)
+		serialQueue.set_project(hpcproj)
+		serialQueue.set_user(hpcuser)
+		serialQueue.update_cmds()
+		parallelQueue.set_scratch(scratch_dir)
+		parallelQueue.set_project(hpcproj)
+		parallelQueue.set_user(hpcuser)
+		parallelQueue.update_cmds() 
 	else:
 		signal.signal(signal.SIGQUIT, queue.smart_stop)
 		signal.signal(signal.SIGINT, queue.normal_stop)
+		queue.set_scratch(scratch_dir)
+		queue.set_project(hpcproj)
+		queue.set_user(hpcuser)
+		queue.update_cmds()
 
 	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
 	signal.signal(signal.SIGINT, localQueue.normal_stop)

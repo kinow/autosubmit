@@ -6,24 +6,29 @@ date
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCPROJ%/%HPCUSER%/%JOBNAME%
+HSM_DIR=%HSM_DIR%
 
 #
 # Model Configuration
 #
+EXPID=%EXPID%
 VERSION=%VERSION%
 MEMBER=%MEMBER%
-EXPID=%EXPID%
 START_date=%SDATE%
+START_date_1=%DAY_BEFORE%
 
-ECEARTH=${ECEARTH_DIR}/$VERSION
+ECEARTH=${MODEL_DIR}/$VERSION
 TESTDATADIR=${ECEARTH}/inidata/testdata
 
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
 BINPATH=${WRITINGDIR}/model/bin
 SCRIPTDIR=${WRITINGDIR}/model/setup
-RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
 cd $RUN_dir
 
 #
@@ -38,6 +43,7 @@ CMIP5=%CMIP5%
 Nrcp=%Nrcp% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
+NFIXYR=%NFIXYR%
 NHINCSOL=%NHINCSOL%
 IFS_exe=${BINPATH}/ifsMASTER
 
@@ -66,9 +72,10 @@ RUN_days=%RUN_DAYS%
 RUN_hours=$((RUN_days*24))
 # Last Day Previous
 day_prev=%PREV%
-day_prev_rst=%day_prev_rst%
-if [[ $day_prev_rst != '' ]]; then
- day_prev=$((day_prev_rst+day_prev))
+MODEL_rstini=%MODEL_rstini%
+if [[ $MODEL_rstini != '' ]]; then
+   day_prev_rst=$(cat day_prev_rst)
+   day_prev=$((day_prev_rst+day_prev))
 fi
 Chunk_last_day_prev=$((day_prev*24))
 Chunk_end=$((Chunk_last_day_prev+RUN_hours))
@@ -97,21 +104,13 @@ fi
 #
 # Control the use of the scenario
 #
-Lrcp=FALSE
 if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" ]] ; then
-   yy=2005
+   yy=2006
 else
-   yy=1999
+   yy=2000
 fi
-
-if [[ `echo $Chunk_start_date | cut -c1-4` > $yy ]] ; then
-   Lrcp=TRUE
-fi
-
-if [[ $Lrcp == TRUE ]] ; then
-   CNrcp=$Nrcp
-else
-   CNrcp=0
+if [[ `echo $Chunk_start_date | cut -c1-4` < $yy ]] ; then
+   Nrcp=0
 fi
 #
 
@@ -127,11 +126,11 @@ if [[ ! -a finished_chunk_${chunk} ]] ; then
      ;;
      v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP})
      ;;
-     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp})
      ;;
-     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${CNrcp} -8 ${NHINCSOL})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${Nrcp} -7 ${NFIXYR} -8 ${NHINCSOL})
      ;;
  esac
 
@@ -154,13 +153,12 @@ fi
 # Check either simulation completed successfully or not
 #
 ls -1 *${Chunk_ifs_restart_tag}*
-if [[ $? == 0 ]]; then
-   echo "finished chunk"
-   touch finished_chunk_${chunk}
-else
+if [[ $? -ne 0 ]]; then
    echo "failed chunk"
    exit 1
 fi
+echo "finished chunk"
+touch finished_chunk_${chunk}
 
 #
 # Save IFS restart files
@@ -183,7 +181,7 @@ fi
 mkdir -p Output_${chunk}
 mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
 

@@ -16,7 +16,8 @@ date
 
 # options and paths required for setting up experiment at HPC
 cd /cfu/autosubmit/$EXPID
-HPCARCH=`grep -w HPCARCH conf/autosubmit_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
+HPCARCH=`grep -w HPCARCH conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
+HPCPROJ=`grep -w HPCPROJ conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
 HPCUSER=`grep -w HPCUSER conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODEL=`grep -w MODEL conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 VERSION=`grep -w VERSION conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
@@ -54,10 +55,11 @@ fi
 
 # setup process starts from here
 case $HPCARCH in
- bsc) HPCARCH="mn" ;;
+ bsc) HPCARCH="mn-$HPCPROJ" ;;
+ marenostrum3) HPCARCH="mn-$HPCPROJ" ;;
 esac
 SSH="ssh $HPCARCH"
-MAIN=$SCRATCH_DIR/$HPCUSER/$EXPID
+MAIN=$SCRATCH_DIR/$HPCPROJ/$HPCUSER/$EXPID
 
 # process for bin (deal with modsrc.tar)
 BIN=$MAIN/model/bin
@@ -187,7 +189,7 @@ if [[ -f conf/$MODSETUP ]]; then
 else
  # if there is nothing modified into setup (scripts) then link already available setup 
  # correctly under ../../$EXPID/model/setup
- $SSH ln -sf $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
+ $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
 fi
 
 date
