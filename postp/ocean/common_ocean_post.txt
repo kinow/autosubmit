@@ -105,7 +105,7 @@ typeset var year1
 typeset var year2
 typeset var mon1
 typeset var mon2
-for jt in $(seq $4 6 $5) ; do
+for jt in $(seq $4 $6 $5) ; do
   year1=$(($yyyy0+(10#$mm0+$jt-2)/12)) 
   mon1=$(((10#$mm0+$jt-2)%12+1))
   year2=$(($yyyy0+(10#$mm0+$jt+$6-3)/12))
