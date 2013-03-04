@@ -221,7 +221,7 @@ for MEM in ${MEM_LST[@]}; do
         "PRECIP") # for precip, have to add CP and LSP to get total precip
 	      varnew=prlr
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,CP $f CP.$SUFFIX # select CP
             ncrename -h -v CP,prlr CP.$SUFFIX 
             cdo selname,LSP $f LSP.$SUFFIX # select LSP       
@@ -231,12 +231,12 @@ for MEM in ${MEM_LST[@]}; do
           done
           prlr_files=`ls ${varnew}*`
           cdo copy ${prlr_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r prlr*.nc CP* LSP*
+          rm -r tmp_prlr*.nc CP* LSP*
         ;;
         "SSRU")
           varnew=rsus
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,SSRD $f SSRD.$SUFFIX 
             ncrename -h -v SSRD,rsus SSRD.$SUFFIX
             cdo selname,SSR $f SSR.$SUFFIX        
@@ -246,12 +246,12 @@ for MEM in ${MEM_LST[@]}; do
           done
           rsus_files=`ls ${varnew}*`
           cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r rsus*.nc SSR* SSRD*
+          rm -r tmp_rsus*.nc SSR* SSRD*
         ;;
         "STRU")
           varnew=rlus
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,STRD $f STRD.$SUFFIX 
             ncrename -h -v STRD,rlus STRD.$SUFFIX
             cdo selname,STR $f STR.$SUFFIX                   
@@ -261,7 +261,7 @@ for MEM in ${MEM_LST[@]}; do
           done
           rsus_files=`ls ${varnew}*`
           cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r rlus*.nc STR* STRD*
+          rm -r tmp_rlus*.nc STR* STRD*
         ;;
         *)  
 	      new_name $VAR       
