@@ -12,12 +12,6 @@ case $HPCARCH in
   LS="eval els"
   CHMOD="eval echmod 664"
  ;;
- marenostrum3)
-  MKDIR="dtmkdir --blocking -p"
-  CP="dtcp --blocking -f"
-  LS="dtls --blocking"
-  CHMOD="dtchmod --blocking 664"
- ;;
  *)
   MKDIR="mkdir -p"
   CP="cp -f"
