@@ -91,14 +91,14 @@ function rtime(){
  DAY2=`echo $DATE2|cut -c7-8`
  SEC1=`date --utc --date "${YEAR1}-${MONTH1}-${DAY1}" +%s`
  SEC2=`date --utc --date "${YEAR2}-${MONTH2}-${DAY2}" +%s`
- case $FACTOR in 
-  hour)
-  FACTOR=3600 # 60*60
-  ;;
-  day)
-  FACTOR=86400 # 60*60*24
-  ;;
- esac
+# case $FACTOR in 
+#  hour)
+#  FACTOR=3600 # 60*60
+#  ;;
+#  day)
+#  FACTOR=86400 # 60*60*24
+#  ;;
+# esac
  REFTIME_VALUE=$(((SEC2-SEC1)/FACTOR))
 }
 
@@ -231,7 +231,7 @@ for MEM in ${MEM_LST[@]}; do
           done
           prlr_files=`ls ${varnew}*`
           cdo copy ${prlr_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r tmp_prlr*.nc CP* LSP*
+          rm -r prlr*.nc CP* LSP*
         ;;
         "SSRU")
           varnew=rsus
@@ -246,7 +246,7 @@ for MEM in ${MEM_LST[@]}; do
           done
           rsus_files=`ls ${varnew}*`
           cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r tmp_rsus*.nc SSR* SSRD*
+          rm -r rsus*.nc SSR* SSRD*
         ;;
         "STRU")
           varnew=rlus
@@ -261,7 +261,7 @@ for MEM in ${MEM_LST[@]}; do
           done
           rsus_files=`ls ${varnew}*`
           cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
-          rm -r tmp_rlus*.nc STR* STRD*
+          rm -r rlus*.nc STR* STRD*
         ;;
         *)  
 	      new_name $VAR       
