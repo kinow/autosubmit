@@ -6,6 +6,7 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 from job.job_common import Status
 import argparse
+from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
@@ -31,20 +32,54 @@ if __name__ == '__main__':
 	print expid
 	l1 = pickle.load(file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
+	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  expid + "/conf/" + "autosubmit_" + expid + ".conf")
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
+
+	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
+	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
+	hpcuser = exp_parser.get('experiment', 'HPCUSER')
+
 	if(args.get):
 		sc = expid[0]
 		if sc == 'b':
 			queue = MnQueue(expid)
+			queue.set_scratch(scratch_dir)
+			queue.set_project(hpcproj)
+			queue.set_user(hpcuser)
+			queue.update_cmds()
 		elif sc == 'i':
 			queue = ItQueue(expid)
+			queue.set_scratch(scratch_dir)
+			queue.set_project(hpcproj)
+			queue.set_user(hpcuser)
+			queue.update_cmds()
 		elif sc == 'l':
 			## in lindgren arch must set-up both serial and parallel queues
 			serialQueue = PsQueue(expid)
+			serialQueue.set_scratch(scratch_dir)
+			serialQueue.set_project(hpcproj)
+			serialQueue.set_user(hpcuser)
+			serialQueue.update_cmds()
 			parallelQueue = LgQueue(expid)
+			parallelQueue.set_scratch(scratch_dir)
+			parallelQueue.set_project(hpcproj)
+			parallelQueue.set_user(hpcuser)
+			parallelQueue.update_cmds()
 		elif sc == 'e':
 			queue = EcQueue(expid)
+			queue.set_scratch(scratch_dir)
+			queue.set_project(hpcproj)
+			queue.set_user(hpcuser)
+			queue.update_cmds()
 		elif sc == 'm':
 			queue = Mn3Queue(expid)
+			queue.set_scratch(scratch_dir)
+			queue.set_project(hpcproj)
+			queue.set_user(hpcuser)
+			queue.update_cmds()
 
 		for job in l1.get_active():
 			## in lindgren arch must select serial or parallel queue acording to the job type
