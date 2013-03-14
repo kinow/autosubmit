@@ -20,8 +20,9 @@ class Type:
 	POSTPROCESSING are single processor jobs
 	ClEANING are archiving job---> dealing with large transfer of data on tape
 	INITIALISATION are jobs which transfer data from tape to disk"""
-	TRANSFER = 5
-	SETUP = 4
+	TRANSFER = 6
+	LOCALSETUP = 5
+	REMOTESETUP = 4
 	SIMULATION = 3
 	POSTPROCESSING = 2
 	CLEANING = 1

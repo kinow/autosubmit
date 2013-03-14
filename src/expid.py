@@ -239,9 +239,19 @@ if __name__ == "__main__":
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
-			content = file("../templates/" + args.new[0] + "/" + args.HPC[0] + ext).read()
+			content = file("../headers/" + args.new[0] + "/" + args.HPC[0] + ext).read()
 			content += file("../templates/" + args.new[0] + "/" + args.new[0] + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+		# list all files in common templates
+		print os.listdir('../templates/common')
+		files = [f for f in os.listdir('../templates/common') if os.path.isfile('../templates/common' + "/" + f)]
+		extensions= set( f[f.index('.'):] for f in files)
+		# merge header and body of common template
+		for ext in extensions:
+			content = file("../headers/common" + "/" + args.HPC[0] + ext).read()
+			content += file("../templates/common" + "/" + "common" + ext).read()
+			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+
 	elif args.copy:
 		if os.path.exists(DB_DIR + args.copy[0]):
 			exp_id = copy_experiment(args.copy[0], args.HPC[0], args.description[0])
@@ -260,7 +270,7 @@ if __name__ == "__main__":
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
-	shutil.copy('../templates/' + args.HPC[0] + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
+	shutil.copy('../conf/archdef/' + args.HPC[0] + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	if args.new[0] == "ecearth" or args.new[0] == "ecearth3" or args.new[0] == "nemo":
 		shutil.copy('../postp/ocean/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
