@@ -99,7 +99,7 @@ if __name__ == "__main__":
 	   queue = Mn3Queue(expid)
 	   queue.set_host("mn-" + hpcproj)
 
-	if (setup != 'false'  or transfer != 'false'):
+	if (setup != 'false' or transfer != 'false'):
 		localQueue = PsQueue(expid)
 		localQueue.set_host("turing")
 
@@ -133,8 +133,9 @@ if __name__ == "__main__":
 		queue.set_user(hpcuser)
 		queue.update_cmds()
 
-	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
-	signal.signal(signal.SIGINT, localQueue.normal_stop)
+	if (setup != 'false' or transfer != 'false'):
+		signal.signal(signal.SIGQUIT, localQueue.smart_stop)
+		signal.signal(signal.SIGINT, localQueue.normal_stop)
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
@@ -162,7 +163,8 @@ if __name__ == "__main__":
 	else:
 		queue.check_remote_log_dir()
 	
-	localQueue.check_remote_log_dir()
+	if (setup != 'false' or transfer != 'false'):
+		localQueue.check_remote_log_dir()
 
 	while joblist.get_active() :
 		active = len(joblist.get_running())
