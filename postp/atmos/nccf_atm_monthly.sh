@@ -83,8 +83,8 @@ function rtime(){
  DATE1=$1
  DATE2=$2
 # FACTOR=day # h for hour, d for days
- echo "NFRP:",$NFRP
- FACTOR=day # h for hour, d for days
+# echo "NFRP:",$NFRP
+# FACTOR=day # h for hour, d for days
  YEAR1=`echo $DATE1|cut -c1-4`
  MONTH1=`echo $DATE1|cut -c5-6`
  DAY1=`echo $DATE1|cut -c7-8`
@@ -932,8 +932,6 @@ check_args $@
 #read config_file and initialize variables
 . ${config_file}
 FACTOR=$((NFRP*3600))
-echo $FACTOR
-exit
 ENSEMBLE=${#MEM_LST[@]}
 
 #rm -rf ${WORKDIR}
