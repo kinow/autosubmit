@@ -102,6 +102,10 @@ if __name__ == "__main__":
 	if (setup != 'false' or transfer != 'false'):
 		localQueue = PsQueue(expid)
 		localQueue.set_host("turing")
+		localQueue.set_scratch("/cfu/autosubmit")
+		localQueue.set_project(expid)
+		localQueue.set_user("tmp")
+		localQueue.update_cmds()
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -199,13 +203,13 @@ if __name__ == "__main__":
 				queue = parallelQueue
 			elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
 				queue = serialQueue
-			if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+			if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
 				status = localQueue.check_job(job.get_id(), job.get_status())
 			else:
 				status = queue.check_job(job.get_id(), job.get_status())
 			if(status == Status.COMPLETED):
 				logger.debug("This job seems to have completed...checking")
-				if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+				if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
 					localQueue.get_completed_files(job.get_name())
 				else:
 					queue.get_completed_files(job.get_name())
@@ -243,12 +247,12 @@ if __name__ == "__main__":
 					queue = parallelQueue
 					logger.info("Submitting to parallel queue...")
 					print("Submitting to parallel queue...")
-				elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+				elif(hpcarch == "lindgren" and (job.get_type() == Type.REMOTESETUP or job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
 					queue = serialQueue
 					logger.info("Submitting to serial queue...")
 					print("Submitting to serial queue...")
 
-				if(job.get_type() == Type.SETUP or job.get_type() == Type.TRANSFER):
+				if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
 					logger.info("Submitting to local queue...")
 					print("Submitting to local queue...")
 					localQueue.send_script(scriptname)

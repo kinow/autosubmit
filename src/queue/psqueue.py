@@ -6,7 +6,7 @@ from time import sleep
 
 class PsQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "ellen"
+		self._host = "turing"
 		self._scratch = "/cfs/klemming/scratch"
 		self._project = "a"
 		self._user = "asifsami"

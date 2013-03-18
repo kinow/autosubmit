@@ -255,14 +255,18 @@ class Job:
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.ini'
-		elif (self._type == Type.SETUP):
+		elif (self._type == Type.LOCALSETUP):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.setup'
+			mytemplate = templatename + '.localsetup'
+		elif (self._type == Type.REMOTESETUP):
+			print "jobType: %s" % self._type
+			##update parameters
+			mytemplate = templatename + '.remotesetup'
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.trans'
+			mytemplate = templatename + '.localtrans'
 		else: 
 			print "Unknown Job Type"
 		 
