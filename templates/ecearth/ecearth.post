@@ -30,7 +30,7 @@ TESTDATADIR=${ECEARTH}/inidata/testdata
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
-# CON_FILES=${ECEARTH}/inidata/nemo/%NEMO_resolution% (not included yet)
+# CON_FILES=${MODEL_DIR}/datcom/v2/inidata/nemo/%NEMO_resolution% (not included yet)
 # NEMOVERSION=v3.3 (not included yet)
 
 #
