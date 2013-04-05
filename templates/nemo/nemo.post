@@ -79,7 +79,7 @@ else
   ntimesteps=${RUN_months}
 fi
 prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
-case %LIM% in 
+case %ICE% in 
   'LIM3') grid_types="icemoa icemod grid_T grid_V grid_U grid_W" ;;
   'LIM2') grid_types="icemod grid_T grid_V grid_U grid_W" ;;
 esac

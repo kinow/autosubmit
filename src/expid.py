@@ -202,7 +202,7 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--new', '-n', nargs = 1, choices = ('ecearth', 'ecearth3', 'ifs', 'nemo'))
+	group.add_argument('--new', '-n', nargs = 1, choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo'))
 	group.add_argument('--copy', '-c', nargs = 1)
 	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'))
 	parser.add_argument('--description', '-d', nargs = 1)
