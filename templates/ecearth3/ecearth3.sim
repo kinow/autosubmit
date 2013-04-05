@@ -367,7 +367,7 @@ echo "finished chunk"
 touch finished_chunk_${chunk}
 
 #
-# Save OASIS, NEMO and IFS restart files
+# Save OASIS, IFS and NEMO restart files
 #
 mkdir -p OASIS_Restart_${chunk}
 for f in ${oas_cpl_flds}; do
