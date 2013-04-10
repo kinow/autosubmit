@@ -28,7 +28,7 @@ class JobList:
 			localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 			localsetup_job.set_parents([])
 			remotesetup = self._expid + "_19001101_fc0_1_" 
-			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.READY, Type.REMOTESETUP)
+			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
 			remotesetup_job.set_parents([remotesetup_job.get_name()])
 			localsetup_job.add_children(remotesetup_job.get_name())
 
@@ -62,7 +62,10 @@ class JobList:
 							parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
 							sim_job.add_parent(parentjob_name)
 					if (chunk == 1):
-						init_job = Job(rootjob_name + "init", 0, Status.READY, Type.INITIALISATION)
+						if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
+							init_job = Job(rootjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
+						else:
+							init_job = Job(rootjob_name + "init", 0, Status.READY, Type.INITIALISATION)
 						init_job.set_children([sim_job.get_name()])
 						if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
 							init_job.set_parents([remotesetup_job.get_name()])
@@ -278,7 +281,7 @@ class RerunJobList:
 			localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 			localsetup_job.set_parents([])
 			remotesetup = self._expid + "_19001101_fc0_1_" 
-			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.READY, Type.REMOTESETUP)
+			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
 			remotesetup_job.set_parents([remotesetup_job.get_name()])
 			localsetup_job.add_children(remotesetup_job.get_name())
 
