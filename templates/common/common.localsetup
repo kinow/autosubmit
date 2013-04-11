@@ -1,5 +1,3 @@
-#!/bin/bash
-
 set -xuve
 date
 
@@ -7,7 +5,7 @@ date
 # General Paths and Configurations
 #
 EXPID=%EXPID%
-HPCARCH=%HPCARCH
+HPCARCH=%HPCARCH%
 HPCPROJ=%HPCPROJ%
 HPCUSER=%HPCUSER%
 MODEL=%MODEL%
@@ -19,24 +17,22 @@ SCRATCH_DIR=%SCRATCH_DIR%
 # Prepare Modified Stuff
 #
 cd /cfu/autosubmit/$EXPID
+mkdir -p model
 
 if [[ $MODEL != '' && $VERSION != '' ]]; then
+ # register setup stuff w.r.t EXPID once
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ -d model/setup && -d $REALSETUP ]]; then
-  LIST=`diff -rqu model/setup $REALSETUP | awk '{print $2}'`
-  LSWC=`diff -rqu model/setup $REALSETUP | awk '{print $2}' | wc -l`
-  if [[ $LSWC -gt 0 ]]; then
-   tar -cvf conf/$modsetup.tar $LIST
-  fi
- else
-  echo "setup are not available yet"
+ if [[ ! -d model/setup ]]; then
+    cp -rp $REALSETUP model
  fi
+ tar -cvf conf/modsetup.tar model/setup
+ # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
   LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
   LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
   if [[ $LSWC -gt 0 ]]; then
-   tar -cvf conf/$modsrc.tar $LIST
+   tar -cvf conf/modsrc.tar $LIST
   fi
  else
   echo "sources are not available yet"
