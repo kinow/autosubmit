@@ -29,7 +29,7 @@ class JobList:
 			localsetup_job.set_parents([])
 			remotesetup = self._expid + "_19001101_fc0_1_" 
 			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-			remotesetup_job.set_parents([remotesetup_job.get_name()])
+			remotesetup_job.set_parents([localsetup_job.get_name()])
 			localsetup_job.add_children(remotesetup_job.get_name())
 
 		print "Creating job list\n"
@@ -282,7 +282,7 @@ class RerunJobList:
 			localsetup_job.set_parents([])
 			remotesetup = self._expid + "_19001101_fc0_1_" 
 			remotesetup_job = Job(localsetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-			remotesetup_job.set_parents([remotesetup_job.get_name()])
+			remotesetup_job.set_parents([localsetup_job.get_name()])
 			localsetup_job.add_children(remotesetup_job.get_name())
 
 
