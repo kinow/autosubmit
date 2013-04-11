@@ -5,7 +5,7 @@ date
 # General Paths and Configurations
 #
 EXPID=%EXPID%
-HPCARCH=%HPCARCH
+HPCARCH=%HPCARCH%
 HPCPROJ=%HPCPROJ%
 HPCUSER=%HPCUSER%
 MODEL=%MODEL%
@@ -20,9 +20,12 @@ WORKDIR=$SCRATCH_DIR/$HPCPROJ/$HPCUSER/$EXPID
 cd $WORKDIR
 
 # Prepare setup (namelist) directory
-rsync -acrv $MODELS_DIR/$MODEL/$VERSION/setup model
+SETUP=$WORKDIR/model/setup
+mkdir -p $SETUP
 if [[ -f modsetup.tar ]]; then
  tar -xvf modsetup.tar
+else
+ rsync -acrv $MODELS_DIR/$MODEL/$VERSION/setup model
 fi
  
 # Prepare bin directory
@@ -30,7 +33,7 @@ BIN=$WORKDIR/model/bin
 mkdir -p $BIN
 if [[ -f modsrc.tar ]]; then
  rsync -acrv $MODELS_DIR/$MODEL/$VERSION/sources model
- tar -xvf $modsrc.tar
+ tar -xvf modsrc.tar
  case $MODEL in
   ecearth)
    case $VERSION in

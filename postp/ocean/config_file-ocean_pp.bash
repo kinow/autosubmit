@@ -1,15 +1,14 @@
 #!/bin/bash
-#This is an example of a configuration_file needed to launch ocean_pp.bash. For any other information about how to use it, you can refer to the README or the cfu wiki.
+# This is an example of a configuration_file needed to launch ocean_pp.bash. For any other information about how to use it, you can refer to the README or the cfu wiki (http://ic3.cat/wikicfu/index.php/Tools#update_February_2013).
 
-listpost=(  )          # Beware that the max_moc diagnostics can not be computed
-#                        if you don't process complete years (that's a 
-#                        diagnostic computed from annual means ('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ext_raw_ice' (previously 'ice') 'ext_raw_oce' (previously 'sstsssmld') 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'vert_Tsections' 'vert_STsections' (new)'3dtemp' '3dsal'(new) 'TSec_ave190-220E' 'SSec_ave190-220E'(new) 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' ) 
-raw_vars_ocean=(   )    # If listpost=ext_raw_oce, variables to be treated. If nothing specified, all variables present in input file will be treated. If raw_vars='default', sosstsst, sosaline, somixhgt and somxl010 will be extracted.
-raw_vars_ice=(   )      # If listpost=ice, variables to be treated. If nothing specified, all variables will be treated. If raw_vars='default', isnowthi, iicethic, ileadfra, iicetemp, ice_pres will be extracted.
+listpost=(  )
+                        # Valid options : ('siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ext_raw_ice' (previously 'ice') 'ext_raw_oce' (previously 'sstsssmld') 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' 'vert_Tsections' 'vert_Ssections' '3dtemp' '3dsal' 'TSec_ave190-220E' 'SSec_ave190-220E' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
+                        # Beware that the max_moc diagnostics can not be computed if you don't process complete years (because that's a diagnostic computed from annual means)
+raw_vars_ocean=(   )    # If listpost contains "ext_raw_oce" option, this is the list ocean variables you want to extract. If nothing is specified, all variables present in input file will be treated. If raw_vars_ocean='default', sosstsst, sosaline, somixhgt and somxl010 will be extracted.
+raw_vars_ice=(   )      # If listpost contains "ext_raw_ice" option, this is the list of seaice variables you want to extract. If nothing is specified, all variables will be treated. If raw_vars_ice='default', isnowthi, iicethic, ileadfra, iicetemp, and ice_pres will be extracted.
 expid=i00k              # expid or nemovar_s4 / nemovar_combine
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
-# Possible options : ( 'siasiesiv' 'ohc' 'moc' 'max_moc' 'area_moc' 'ice' 'sstsssmld' 'heat_sal_mxl' 'psi' 'usalc' 'lmsalc' 'uohc' 'mohc' 'lohc' 'xohc' 'ohc_specified_layer' 'stc' '3dtemp' 'TSec_ave190-220E' 'NAtlohc' 'xNAtlohc' 'uNAtlohc' 'mNAtlohc' 'lNAtlohc' 'NPacohc' 'xNPacohc' 'uNPacohc' 'mNPacohc' 'lNPacohc' 'TAtlohc' 'xTAtlohc' 'uTAtlohc' 'mTAtlohc' 'lTAtlohc' 'TPacohc' 'xTPacohc' 'uTPacohc' 'mTPacohc' 'lTPacohc' 'TIndohc'  'xTIndohc' 'uTIndohc' 'mTIndohc' 'lTIndohc' 'Antaohc' 'xAntaohc' 'uAntaohc' 'mAntaohc' 'lAntaohc' 'Arctohc'  'xArctohc' 'uArctohc' 'mArctohc' 'lArctohc' )
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 listmemb=( 0 1 2 3 4 )  # list of members
 syeari=1960             # first start date, format "yyyy" 
@@ -36,6 +35,7 @@ NEMOVERSION=Ec2.3_O1L42 # NEMO version
 #                 === Development in progress : ===
 #                 glorys2v1_O25L75 for Nemo     GLORYS2v1    ORCA025L75
 #                 ucl_O2L31        for Nemo     UCL          ORCA2L31
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 PATHCOMMONOCEANDIAG='/home/'${USER}'/autosubmit/postp/ocean'
 CON_FILES='/cfu/autosubmit/con_files'
 rootout='/cfunas/exp/'${mod}'/'${expid}'/monthly_mean'
