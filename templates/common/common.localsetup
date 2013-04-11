@@ -67,7 +67,7 @@ case $HPCARCH in
  ;;
 esac
 
-touch /cfu/autosubmit/%EXPID%/tmp/%JOBNAME%_COMPLETED
+touch /cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
 

@@ -125,7 +125,7 @@ for s in $sdates; do
  done
 done
 
-touch /cfu/autosubmit/%EXPID%/tmp/%JOBNAME%_COMPLETED
+touch /cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
 
