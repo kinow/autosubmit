@@ -1,5 +1,5 @@
 Autosubmit is a tool to create, manage and monitor experiments by using 
-different (configured) HPC's/Clusters remotely via ssh.
+configured Computing Clusters, HPC's and Supercomputers remotely via ssh.
 
 
 HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK

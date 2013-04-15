@@ -91,14 +91,14 @@ function rtime(){
  DAY2=`echo $DATE2|cut -c7-8`
  SEC1=`date --utc --date "${YEAR1}-${MONTH1}-${DAY1}" +%s`
  SEC2=`date --utc --date "${YEAR2}-${MONTH2}-${DAY2}" +%s`
- case $FACTOR in 
-  hour)
-  FACTOR=3600 # 60*60
-  ;;
-  day)
-  FACTOR=86400 # 60*60*24
-  ;;
- esac
+# case $FACTOR in 
+#  hour)
+#  FACTOR=3600 # 60*60
+#  ;;
+#  day)
+#  FACTOR=86400 # 60*60*24
+#  ;;
+# esac
  REFTIME_VALUE=$(((SEC2-SEC1)/FACTOR))
 }
 
@@ -221,7 +221,7 @@ for MEM in ${MEM_LST[@]}; do
         "PRECIP") # for precip, have to add CP and LSP to get total precip
 	      varnew=prlr
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,CP $f CP.$SUFFIX # select CP
             ncrename -h -v CP,prlr CP.$SUFFIX 
             cdo selname,LSP $f LSP.$SUFFIX # select LSP       
@@ -236,7 +236,7 @@ for MEM in ${MEM_LST[@]}; do
         "SSRU")
           varnew=rsus
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,SSRD $f SSRD.$SUFFIX 
             ncrename -h -v SSRD,rsus SSRD.$SUFFIX
             cdo selname,SSR $f SSR.$SUFFIX        
@@ -251,7 +251,7 @@ for MEM in ${MEM_LST[@]}; do
         "STRU")
           varnew=rlus
           for f in ${FILES}; do
-            SUFFIX=$MEM.$f
+            SUFFIX=$MEM.${f%????}
             cdo selname,STRD $f STRD.$SUFFIX 
             ncrename -h -v STRD,rlus STRD.$SUFFIX
             cdo selname,STR $f STR.$SUFFIX                   
