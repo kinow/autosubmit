@@ -16,7 +16,10 @@ class Job:
 		self._name = name
 		n = name.split('_')
 		#self._short_name = n[0] + "_" + n[1][:6] + "_" + n[2][2:] + n[4][:1] + n[3]
-		self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+		if (len(n)>4):
+			self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+		else: 
+			self._short_name = name
 		self._id = id
 		self._status = status
 		self._type = jobtype
@@ -202,13 +205,20 @@ class Job:
 		scriptname = self._name+'.cmd'
 		parameters = self._parameters
 		splittedname = self._name.split('_')
-		parameters['SDATE'] = splittedname[1]
-		string_date = splittedname[1]
-		parameters['MEMBER'] = splittedname[2]
+		if (len(splittedname) > 4):
+			parameters['SDATE'] = splittedname[1]
+			string_date = splittedname[1]
+			parameters['MEMBER'] = splittedname[2]
+			parameters['CHUNK'] = splittedname[3]
+			chunk = int(splittedname[3])
+		else:
+			parameters['SDATE'] = '19000101'
+			string_date = '19000101'
+			parameters['MEMBER'] = 'fc0'
+			parameters['CHUNK'] = '0'
+			chunk = 0
 		total_chunk = int(parameters['NUMCHUNKS'])
-		chunk = int(splittedname[3])
 		chunk_length_in_month = int(parameters['CHUNKSIZE'])
-		parameters['CHUNK'] = splittedname[3]
 		parameters['JOBNAME'] = self._name
 		parameters['JOBSHORTNAME'] = self._short_name
 		chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
