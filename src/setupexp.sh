@@ -27,7 +27,9 @@ MODSRC="modsrc.tar" # name for tar file; would be containing modified sources
 MODSETUP="modsetup.tar" # name for tar file; would be containing modified setup (namelist etc)
 
 # prepare modified stuff correctly
+mkdir -p model
 if [[ $MODEL != '' && $VERSION != '' ]]; then
+ # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
   LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
@@ -38,16 +40,12 @@ if [[ $MODEL != '' && $VERSION != '' ]]; then
  else
   echo "sources are not available yet"
  fi
+ # register setup stuff w.r.t EXPID once
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ -d model/setup && -d $REALSETUP ]]; then
-  LIST=`diff -rqu model/setup $REALSETUP | awk '{print $2}'`
-  LSWC=`diff -rqu model/setup $REALSETUP | awk '{print $2}' | wc -l`
-  if [[ $LSWC -gt 0 ]]; then
-   tar -cvf conf/$MODSETUP $LIST
-  fi
- else
-  echo "setup are not available yet"
+ if [[ ! -d model/setup ]]; then
+    cp -rp $REALSETUP model/
  fi
+ tar -cvf conf/$MODSETUP model/setup
 else
  echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
  exit 1
@@ -179,7 +177,7 @@ if [[ -f conf/$MODSETUP ]]; then
  scp conf/$MODSETUP $HPCARCH:$MAIN
 
  # copy setup scripts; assuming that those are already available at HPC
- $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
+ #$SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
 
  # inflate modified setup scripts
  $SSH "\
@@ -187,7 +185,7 @@ if [[ -f conf/$MODSETUP ]]; then
  tar -xvf $MODSETUP"
 
 else
- # if there is nothing modified into setup (scripts) then link already available setup 
+ # if there is nothing modified into setup (scripts) then copy already available setup
  # correctly under ../../$EXPID/model/setup
  $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
 fi

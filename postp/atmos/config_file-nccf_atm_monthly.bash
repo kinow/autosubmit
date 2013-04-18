@@ -8,7 +8,6 @@ SAVEDIR="/cfunas/exp/ecearth"  # for Saving outputs
 HEAD_DIR="/cfu/pub/scripts/postp_ecearth/header" # some of the header information
 WORKDIR="/scratch/$USER/pp/nccf_atm_monthly_$$"
 NFRP=3 # ecearth output frequency (hours), this is for computing the accumulated precipitation and flux variables
-FACTOR=$((NFRP*3600)) 
 EXPID=i024
 SDATE=19800201
 LEAD_LIST=(1980 02 1982 02 12) #lead times to be treated (1st_year 1st_month last_year last_month chunk_size(in months)

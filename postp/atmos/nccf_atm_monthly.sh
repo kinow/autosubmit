@@ -82,7 +82,9 @@ function header(){
 function rtime(){
  DATE1=$1
  DATE2=$2
- FACTOR=day # h for hour, d for days
+# FACTOR=day # h for hour, d for days
+# echo "NFRP:",$NFRP
+# FACTOR=day # h for hour, d for days
  YEAR1=`echo $DATE1|cut -c1-4`
  MONTH1=`echo $DATE1|cut -c5-6`
  DAY1=`echo $DATE1|cut -c7-8`
@@ -167,6 +169,14 @@ else
    MON1=$(( ( $MON0 + ( $jt - 1 ) * ($CHUNK_SIZE) ) % 12))   
    YEAR2=$(( $YEAR1 + ( $MON1 + $CHUNK_SIZE-1 ) / 12  ))
    MON2=$(( ( $MON1 + $CHUNK_SIZE-1 ) % 12 ))
+   if [ $MON1 -eq 0 ];then
+    MON1=12
+    YEAR1=`expr $YEAR1 - 1 `
+   fi
+   if [ $MON2 -eq 0 ];then
+    MON2=12
+    YEAR2=`expr $YEAR2 - 1 `
+   fi
    jt=$(($jt+1))
    FILE=` ls ${DATADIR}/${EXPID}/${SDATE}/$MEM/outputs/MMA_${EXPID}_${SDATE}_${MEM}_${YEAR1}$(printf "%02d" $MON1)01-${YEAR2}$(printf "%02d" $MON2)*.tar`
    FILE_LIST="$FILE_LIST ${FILE}"
@@ -919,9 +929,11 @@ date
 
 config_file=$1
 check_args $@ 
-#read config_file
+#read config_file and initialize variables
 . ${config_file}
+FACTOR=$((NFRP*3600))
 ENSEMBLE=${#MEM_LST[@]}
+
 #rm -rf ${WORKDIR}
 mkdir -p ${WORKDIR}
 if [[ ! -d ${WORKDIR} ]]; then
