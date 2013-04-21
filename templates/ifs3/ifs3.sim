@@ -51,8 +51,8 @@ ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
 ifs_cmip5=%CMIP5%
-ifs_cmip5_rcp=%Nrcp%
-ifs_volcanoes=%VOLCANOES%
+ifs_cmip5_rcp=%NRCP%
+ifs_volcanoes=%LHVOLCA%
 ifs_ncmip5fixyr=%NFIXYR%
 
 # Selection

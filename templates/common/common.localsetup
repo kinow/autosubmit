@@ -13,6 +13,10 @@ VERSION=%VERSION%
 MODELS_DIR=%MODELS_DIR%
 SCRATCH_DIR=%SCRATCH_DIR%
 
+case $HPCARCH in
+ marenostrum3) HPCARCH="mn-$HPCPROJ" ;;
+esac
+
 #
 # Prepare Modified Stuff
 #
@@ -49,17 +53,15 @@ DEST=$SCRATCH_DIR/$HPCPROJ/$HPCUSER/$EXPID
 case $HPCARCH in
  ecmwf)
   DEST=c2a:$DEST
-  set +e
-  ecaccess-file-mkdir $DEST
-  set -e
+  export EcaccessWebtoolkitJava=/cfu/software/ecaccess-java
+  export PATH=$EcaccessWebtoolkitJava/bin:${PATH}
   cd conf
   for f in $(ls -1 *.tar); do
    ecaccess-file-put $f $DEST/$f
   done
  ;;
  *)
- ssh $HPCARCH mkdir -p $DEST
- rsync -acrv conf/*.tar $HPCARCH:$DEST
+  rsync -acrv conf/*.tar $HPCARCH:$DEST
  ;;
 esac
 

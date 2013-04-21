@@ -5,7 +5,9 @@ date
 #
 dst1=/cfunas/exp/ecearth # store logfiles, MM*, REST*
 dst2=/cfunas/exp/ecearth/gribfiles # store ICM*
-plt=%HPCARCH%
+arch=%HPCARCH%
+proj=%HPCPROJ%
+
 types="logfiles MM REST ICM"
 expid=%EXPID%
 sdates=%SDATE%
@@ -16,12 +18,12 @@ hsm_dir=%HSM_DIR%
 remove=TRUE
 
 # HPC Arch
-case $plt in
+case $arch in
  lindgren)
-  plt="cfs-aux-4"
+  arch="cfs-aux-4"
  ;;
  marenostrum3)
-  plt="mn-hsm"
+  arch="mn-dt-${proj}"
  ;;
 esac
 
@@ -36,8 +38,8 @@ function transfer1(){
   RSYNC="rsync -acv"
  fi
  for l in $list; do
-  echo "tranfering file ... ${plt}:$l $dst"
-  $RSYNC ${plt}:${l} $dst
+  echo "tranfering file ... ${arch}:$l $dst"
+  $RSYNC ${arch}:${l} $dst
   echo "done."
   echo
   echo
@@ -61,7 +63,7 @@ function transfer2(){
 #
 # Major Part of the Script
 #
-echo "platform is: $plt"
+echo "platform is: $arch"
 echo "expid is: $expid"
 echo "start dates: $sdates"
 echo "members per start date: $members"
@@ -69,12 +71,14 @@ echo "members per start date: $members"
 for s in $sdates; do
  for m in $members; do
 
-  rmtlist="ssh $plt ls -1"
+  rmtlist="ssh $arch ls -1"
   transfer="transfer1"
   src=$hsm_dir/exp
 
-  case $plt in
+  case $arch in
    ecmwf)
+    export EcaccessWebtoolkitJava=/cfu/software/ecaccess-java
+    export PATH=$EcaccessWebtoolkitJava/bin:${PATH}
     rmtlist="ecaccess-file-dir"
     transfer="transfer2"
    ;;
