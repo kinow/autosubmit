@@ -82,7 +82,7 @@ if [[ -f conf/$MODSRC ]]; then
  case $MODEL in
   ecearth)
    case $VERSION in
-    v2.*)
+    v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
      ./compilation.ksh ;\
@@ -92,20 +92,10 @@ if [[ -f conf/$MODSRC ]]; then
       ln -sf $MAIN/model/sources/ifs/bin/ifsMASTER $BIN ;\
      fi"
     ;;
-    v3.0*)
+    v3*)
      $SSH "\
      cd $MAIN/model/sources/build-config ;\
-     ./compilation.sh ;\
-     if [[ $? -eq 0 ]]; then \
-      ln -sf $MAIN/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN ;\
-      ln -sf $MAIN/model/sources/nemo*/bin/opa_* $BIN ;\
-      ln -sf $MAIN/model/sources/ifs*/bin/ifsmaster* $BIN ;\
-     fi"
-    ;;
-    v3-*)
-     $SSH "\
-     cd $MAIN/model/sources/build-config ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN ;\
       ln -sf $MAIN/model/sources/ifs*/bin/ifsmaster* $BIN ;\
@@ -173,17 +163,11 @@ SETUP=$MAIN/model/setup
 $SSH mkdir -p $SETUP
 $SSH rm -rf $SETUP/*
 if [[ -f conf/$MODSETUP ]]; then
- # copy modified setup (scripts) at HPC
+ # copy setup (scripts) at HPC and untar
  scp conf/$MODSETUP $HPCARCH:$MAIN
-
- # copy setup scripts; assuming that those are already available at HPC
- #$SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
-
- # inflate modified setup scripts
  $SSH "\
  cd $MAIN ;\
  tar -xvf $MODSETUP"
-
 else
  # if there is nothing modified into setup (scripts) then copy already available setup
  # correctly under ../../$EXPID/model/setup
