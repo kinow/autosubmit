@@ -205,44 +205,42 @@ class Job:
 		scriptname = self._name+'.cmd'
 		parameters = self._parameters
 		splittedname = self._name.split('_')
-		if (len(splittedname) > 4):
+		if (self._type == Type.TRANSFER):
+			parameters['SDATE'] = splittedname[1]
+			string_date = splittedname[1]
+			parameters['MEMBER'] = splittedname[2]
+		elif (self._type == Type.SIMULATION or self._type == Type.INITIALISATION or self._type == Type.POSTPROCESSING or self._type == Type.CLEANING):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
 			parameters['MEMBER'] = splittedname[2]
 			parameters['CHUNK'] = splittedname[3]
 			chunk = int(splittedname[3])
-		else:
-			parameters['SDATE'] = '19000101'
-			string_date = '19000101'
-			parameters['MEMBER'] = 'fc0'
-			parameters['CHUNK'] = '0'
-			chunk = 0
-		total_chunk = int(parameters['NUMCHUNKS'])
-		chunk_length_in_month = int(parameters['CHUNKSIZE'])
-		parameters['JOBNAME'] = self._name
-		parameters['JOBSHORTNAME'] = self._short_name
-		chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
-		chunk_end_date = chunk_date_lib.chunk_end_date(chunk_start_date,chunk_length_in_month)
-		run_days = chunk_date_lib.running_days(chunk_start_date,chunk_end_date)
-		prev_days = chunk_date_lib.previous_days(string_date,chunk_start_date)
-		chunk_end_days = chunk_date_lib.previous_days(string_date,chunk_end_date)
-		day_before = chunk_date_lib.previous_day(string_date)
-		chunk_end_date_1 = chunk_date_lib.previous_day(chunk_end_date)
-		parameters['DAY_BEFORE'] = day_before
-		parameters['Chunk_START_DATE'] = chunk_start_date
-		parameters['Chunk_END_DATE'] = chunk_end_date_1
-		parameters['RUN_DAYS'] = str(run_days)
-		parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
-		
-		chunk_start_month = chunk_date_lib.chunk_start_month(chunk_start_date)
-		chunk_start_year = chunk_date_lib.chunk_start_year(chunk_start_date)
-		  
-		parameters['Chunk_START_YEAR'] = str(chunk_start_year)
-		parameters['Chunk_START_MONTH'] = str(chunk_start_month)
-		if total_chunk == chunk:
-			parameters['Chunk_LAST'] = 'TRUE'
-		else:
-			parameters['Chunk_LAST'] = 'FALSE'
+			total_chunk = int(parameters['NUMCHUNKS'])
+			chunk_length_in_month = int(parameters['CHUNKSIZE'])
+			parameters['JOBNAME'] = self._name
+			parameters['JOBSHORTNAME'] = self._short_name
+			chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
+			chunk_end_date = chunk_date_lib.chunk_end_date(chunk_start_date,chunk_length_in_month)
+			run_days = chunk_date_lib.running_days(chunk_start_date,chunk_end_date)
+			prev_days = chunk_date_lib.previous_days(string_date,chunk_start_date)
+			chunk_end_days = chunk_date_lib.previous_days(string_date,chunk_end_date)
+			day_before = chunk_date_lib.previous_day(string_date)
+			chunk_end_date_1 = chunk_date_lib.previous_day(chunk_end_date)
+			parameters['DAY_BEFORE'] = day_before
+			parameters['Chunk_START_DATE'] = chunk_start_date
+			parameters['Chunk_END_DATE'] = chunk_end_date_1
+			parameters['RUN_DAYS'] = str(run_days)
+			parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
+			
+			chunk_start_month = chunk_date_lib.chunk_start_month(chunk_start_date)
+			chunk_start_year = chunk_date_lib.chunk_start_year(chunk_start_date)
+			  
+			parameters['Chunk_START_YEAR'] = str(chunk_start_year)
+			parameters['Chunk_START_MONTH'] = str(chunk_start_month)
+			if total_chunk == chunk:
+				parameters['Chunk_LAST'] = 'TRUE'
+			else:
+				parameters['Chunk_LAST'] = 'FALSE'
 		  
 		if (self._type == Type.SIMULATION):
 			print "jobType: %s" %str(self._type)
