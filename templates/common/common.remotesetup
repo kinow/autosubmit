@@ -46,7 +46,7 @@ if [[ -f modsrc.tar ]]; then
     ;;
     v3*)
      cd $WORKDIR/model/sources/build-config
-     ./compilation.sh
+     ./compilation.cmd
      ln -sf $WORKDIR/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN
      ln -sf $WORKDIR/model/sources/ifs*/bin/ifsmaster* $BIN
      OCONFIGS=$(ls -1 $WORKDIR/model/sources/nemo*/CONFIG | grep ORCA)
