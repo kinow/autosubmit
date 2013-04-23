@@ -6,6 +6,6 @@
 #BSUB -J %JOBNAME%
 #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out 
 #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-#BSUB -W 02:00
+#BSUB -W 10:00
 #
 ###############################################################################
