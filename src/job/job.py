@@ -205,6 +205,8 @@ class Job:
 		scriptname = self._name+'.cmd'
 		parameters = self._parameters
 		splittedname = self._name.split('_')
+		parameters['JOBNAME'] = self._name
+		parameters['JOBSHORTNAME'] = self._short_name
 		if (self._type == Type.TRANSFER):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
@@ -217,8 +219,6 @@ class Job:
 			chunk = int(splittedname[3])
 			total_chunk = int(parameters['NUMCHUNKS'])
 			chunk_length_in_month = int(parameters['CHUNKSIZE'])
-			parameters['JOBNAME'] = self._name
-			parameters['JOBSHORTNAME'] = self._short_name
 			chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
 			chunk_end_date = chunk_date_lib.chunk_end_date(chunk_start_date,chunk_length_in_month)
 			run_days = chunk_date_lib.running_days(chunk_start_date,chunk_end_date)
