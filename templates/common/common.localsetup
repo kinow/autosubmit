@@ -1,0 +1,71 @@
+set -xuve
+date
+
+#
+# General Paths and Configurations
+#
+EXPID=%EXPID%
+HPCARCH=%HPCARCH%
+HPCPROJ=%HPCPROJ%
+HPCUSER=%HPCUSER%
+MODEL=%MODEL%
+VERSION=%VERSION%
+MODELS_DIR=%MODELS_DIR%
+SCRATCH_DIR=%SCRATCH_DIR%
+
+case $HPCARCH in
+ marenostrum3) HPCARCH="mn-$HPCPROJ" ;;
+esac
+
+#
+# Prepare Modified Stuff
+#
+cd /cfu/autosubmit/$EXPID
+mkdir -p model
+
+if [[ $MODEL != '' && $VERSION != '' ]]; then
+ # register setup stuff w.r.t EXPID once
+ REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
+ if [[ ! -d model/setup ]]; then
+    cp -rp $REALSETUP model
+ fi
+ tar -cvf conf/modsetup.tar model/setup
+ # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
+ if [[ -d model/sources && -d $REALSOURCES ]]; then
+  LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
+  LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
+  if [[ $LSWC -gt 0 ]]; then
+   tar -cvf conf/modsrc.tar $LIST
+  fi
+ else
+  echo "sources are not available yet"
+ fi
+else
+ echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
+ exit 1
+fi
+
+#
+# Transfer Modified Stuff at HPC
+#
+DEST=$SCRATCH_DIR/$HPCPROJ/$HPCUSER/$EXPID
+case $HPCARCH in
+ ecmwf)
+  DEST=c2a:$DEST
+  export EcaccessWebtoolkitJava=/cfu/software/ecaccess-java
+  export PATH=$EcaccessWebtoolkitJava/bin:${PATH}
+  cd conf
+  for f in $(ls -1 *.tar); do
+   ecaccess-file-put $f $DEST/$f
+  done
+ ;;
+ *)
+  rsync -acrv conf/*.tar $HPCARCH:$DEST
+ ;;
+esac
+
+touch /cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%_COMPLETED
+
+date
+
