@@ -21,8 +21,10 @@ class JobList:
 		self._job_list = list()
 		self._expid = expid
 		self._stat_val = Status()
+		self._parameters = []
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
+		self._parameters = parameters
 		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
 			localsetupjob_name = self._expid + "_" 
 			localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
@@ -215,14 +217,24 @@ class JobList:
 			if(store_change):
 				move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
+	def update_parameters(self, parameters):
+		self._parameters = parameters
+
 	def update_list(self):
 		# load updated file list
 		self.update_from_file()
 		
 		# reset jobs that has failed less than 4 times
+		if (self._parameters.has_key('RETRIALS')):
+			retrials = int(self._parameters['RETRIALS'])
+		else:
+			retrials = 4
+		print "Retrials: "
+		print retrials
+
 		for job in self.get_failed():
 			job.inc_fail_count()
-			if job.get_fail_count() < 4:
+			if job.get_fail_count() < retrials:
 				job.set_status(Status.READY)
 		
 		# if waiting jobs has all parents completed change its State to READY
@@ -278,12 +290,14 @@ class RerunJobList:
 		self._job_list = list()
 		self._expid = expid
 		self._stat_val = Status()
+		self._parameters = []
 
 	def create(self, chunk_list, starting_chunk, num_chunks, parameters):
 		print "Creating job list\n"
 		data = json.loads(chunk_list)
 		print data
 		print parameters.has_key('SETUP') 
+		self._parameters = parameters
 
 		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
 			localsetupjob_name = self._expid + "_" 
@@ -539,14 +553,24 @@ class RerunJobList:
 			if(store_change):
 				move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
+	def update_parameters(self, parameters):
+		self._parameters = parameters
+
 	def update_list(self):
 		# load updated file list
 		self.update_from_file()
 		
 		# reset jobs that has failed less than 4 times
+		if (self._parameters.has_key('RETRIALS')):
+			retrials = int(self._parameters['RETRIALS'])
+		else:
+			retrials = 4
+		print "Retrials: "
+		print retrials
+
 		for job in self.get_failed():
 			job.inc_fail_count()
-			if job.get_fail_count() < 4:
+			if job.get_fail_count() < retrials:
 				job.set_status(Status.READY)
 		
 		# if waiting jobs has all parents completed change its State to READY

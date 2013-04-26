@@ -169,6 +169,20 @@ def prepare_conf_files(content, exp_id, hpc):
 		content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
 	if re.search('HPCARCH =.*', content):
 		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
+	if re.search('SAFETYSLEEPTIME =.*', content):
+		if hpc == "bsc":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+		elif hpc == "hector":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+		elif hpc == "ithaca":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+		elif hpc == "lindgren":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+		elif hpc == "ecmwf":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+		elif hpc == "marenostrum3": 
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+
 	for string in replace_strings:
 		if content.find(string) == -1:
 			return content
@@ -188,7 +202,7 @@ def prepare_conf_files(content, exp_id, hpc):
 	elif hpc == "ecmwf":
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
-	elif hpc == "marenostrum3":
+	elif hpc == "marenostrum3": 
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 

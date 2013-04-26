@@ -59,6 +59,7 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
+	retrials = int(conf_parser.get('config','retrials'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
 	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
@@ -75,6 +76,9 @@ if __name__ == "__main__":
 		transfer = exp_parser.get('experiment','TRANSFER').lower()
 	else: 
 		transfer = 'false'
+	
+	parameters = dict()
+	parameters['RETRIALS'] = retrials 
 
 	if(hpcarch == "bsc"):
 	   queue = MnQueue(expid)
@@ -112,6 +116,7 @@ if __name__ == "__main__":
 	logger.info("Start with job number: %s" % alreadySubmitted)
 	logger.info("Maximum waiting jobs in queues: %s" % maxWaitingJobs)
 	logger.info("Sleep: %s" % safetysleeptime)
+	logger.info("Retrials: %s" % retrials)
 	logger.info("Starting job submission...")
 
 
@@ -174,10 +179,20 @@ if __name__ == "__main__":
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
 		available = maxWaitingJobs-waiting
-
+	
+		# variables to be updated on the fly
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
+		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
+		logger.info("Sleep: %s" % safetysleeptime)
+		retrials = int(conf_parser.get('config','retrials'))
+		parameters['RETRIALS'] = retrials 
+		logger.info("Number of retrials: %s" % retrials)
+
+		# read FAIL_RETRIAL number if, blank at creation time put a given number
+		# check availability of machine, if not next iteration after sleep time
+		# check availability of jobs, if no new jobs submited and no jobs available, then stop
   
 		logger.info("Saving joblist")
 		joblist.save()
@@ -221,6 +236,7 @@ if __name__ == "__main__":
 		##after checking the jobs , no job should have the status "submitted"
 		##Uri throw an exception if this happens (warning type no exit)
    
+   		joblist.update_parameters(parameters)
 		joblist.update_list()
 		activejobs = joblist.get_active()
 		logger.info("There are %s active jobs" % len(activejobs))
