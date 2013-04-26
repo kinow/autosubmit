@@ -224,11 +224,11 @@ class JobList:
 		# load updated file list
 		self.update_from_file()
 		
-		# reset jobs that has failed less than 4 times
+		# reset jobs that has failed less than 10 times
 		if (self._parameters.has_key('RETRIALS')):
 			retrials = int(self._parameters['RETRIALS'])
 		else:
-			retrials = 4
+			retrials = 10
 		print "Retrials: "
 		print retrials
 
@@ -560,11 +560,11 @@ class RerunJobList:
 		# load updated file list
 		self.update_from_file()
 		
-		# reset jobs that has failed less than 4 times
+		# reset jobs that has failed less than 10 times
 		if (self._parameters.has_key('RETRIALS')):
 			retrials = int(self._parameters['RETRIALS'])
 		else:
-			retrials = 4
+			retrials = 10
 		print "Retrials: "
 		print retrials
 
