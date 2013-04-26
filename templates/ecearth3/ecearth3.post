@@ -4,26 +4,33 @@ date
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
+HSM_DIR=%HSM_DIR%
 PATH=%NCDFPATH%:${PATH}
 PATH=%CDOPATH%:${PATH}
 PATH=%NCOPATH%:${PATH}
 PATH=%CDFPATH%:${PATH}
 PATH=%GRIBAPIPATH2%:${PATH}
-# PATH=%REBUILDPATH%:${PATH}
 PATH=%REBUILD_NEMOPATH%:${PATH}
 
 #
 # Model Configuration
 #
-VERSION=%VERSION%
 EXPID=%EXPID%
+VERSION=%VERSION%
 MEMBER=%MEMBER%
 START_date=%SDATE%
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+START_date_1=%DAY_BEFORE%
+
+ECEARTH=${MODEL_DIR}/$VERSION
+ini_data_dir=${ECEARTH}/inidata
+
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-CON_FILES=${ECEARTH_DIR}/%VERSION%/inidata/nemo/%NEMO_resolution%
+
+CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
 NEMOVERSION=v3.3
 
 #
@@ -51,6 +58,41 @@ fi
 #
 # Deal with Ocean's output
 #
+# special function for rebuilding nemo output to overcome memory requirements
+function rebuild_nemo_special {
+output_file=$1
+nem_numproc=$2
+rm -rf ${output_file}_tmp_*
+
+for n in $(seq 0 $((nem_numproc-1))); do
+    nn=$(printf "%04d" ${n})
+    f="${output_file}_${nn}"
+    times=$(cdo ntime $f.nc | head -n 1)
+    for t in $(seq 0 $((times-1))); do
+        nt=$(printf "%06d" ${t})
+        tmp="${output_file}_tmp_${nt}_${nn}"
+        ncks -O -h -a -d time_counter,$t $f.nc $tmp.nc
+        ncdump $tmp.nc > $tmp.txt
+        head -n 4 $tmp.txt > head
+        sed '1,4d' $tmp.txt > last
+        tail -n 2 head | sort > prob
+        head -n 2 head > fix
+        cat fix prob > head
+        cat head last > $tmp.txt
+        ncgen $tmp.txt -o $tmp.nc
+        rm -f head fix prob last $tmp.txt
+    done
+done
+
+for t in $(seq 0 $((times-1))); do
+    nt=$(printf "%06d" ${t})
+    rebuild_nemo ${output_file}_tmp_${nt} $nem_numproc
+    rm -rf ${output_file}_tmp_${nt}_????.nc
+done
+
+ncrcat -O -h ${output_file}_tmp_??????.nc $output_file.nc
+rm -rf ${output_file}_tmp_??????.nc
+}
 
 # Rebuild
 cd $output_dir
@@ -61,10 +103,13 @@ if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
        prefix=${EXPID}_${interval}_${Chunk_start_date}_${Chunk_end_date}
        for grid_type in ${grid_types}; do
            input_files=${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
-           # output_file=${prefix}_${grid_type}.nc
-           # rebuild -v 3 -o $output_file $input_files
            output_file=${prefix}_${grid_type}
-           rebuild_nemo $output_file %NEMO_nproc%
+           if [[ $interval == "1d" ]]; then
+              rebuild_nemo $output_file %NEMO_nproc%
+              # rebuild_nemo_special $output_file %NEMO_nproc%
+           else
+              rebuild_nemo $output_file %NEMO_nproc%
+           fi
            rm -f $input_files
        done
    done
@@ -78,28 +123,32 @@ cd $output_dir
 if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
    OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
    if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+      if [[ ! -a $output_dir/%JOBNAME%.oreduced ]]; then
+         #
+         # A prerequisite to enter the common diagnostic post-processing
+         if [[ -e toto.nc ]]; then
+            rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
+         fi
+         cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+         #
+         # Mixed layer ocean heat content: somxlheatc
+         heat_sal_mxl toto.nc heat_sal_mxl.nc
+         ncrename -d time,time_counter heat_sal_mxl.nc
+         #
+         # 0-300m ocean heat content: heatc_sl
+         ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m.nc
+         ncrename -d time,time_counter ohc_2d_avg_0-300m.nc
+         #
+         touch $output_dir/%JOBNAME%.oreduced
+      fi
       #
-      # A prerequisite to enter the common diagnostic post-processing
-      if [[ -e toto.nc ]] ; then rm -f toto.nc ; fi 
-      cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
-      #
-      # Mixed layer ocean heat content : somxlheatc
-      heat_sal_mxl toto.nc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncrename -d time,time_counter heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncks -A -v somxlheatc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      rm -f heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      #
-      # 0-300m ocean heat content : heatc_sl
-      ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncrename -d time,time_counter ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncks -A -v heatc_sl ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      rm -f ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc toto.nc
-      ncks -O -x -v sohtc300 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      #
-      # Select only the necessary outputs : surface currents only and remove 3d temperature
-      ncks -O -d depthv,0 -d depthu,0 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      # Append reduced stuff, select surface currents, remove 3D temperature and rename a few variables
+      ncks -A -v somxlheatc heat_sal_mxl.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -O -d depthv,0 -d depthu,0 -x -v sohtc300 -x -v votemper \
+      ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncks -O -x -v votemper ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
    fi
    gzip -9 ${EXPID}_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc
    touch $output_dir/%JOBNAME%.opost
@@ -170,7 +219,7 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
 fi
 
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 
 date

@@ -1,21 +1,33 @@
 To use the ocean diagnostic tools available here and to be able to create new diagnostics, 
-you need first to add that line to your .bashrc: 
+you need first to add the following line to your .bashrc: 
 PATH=/cfu/software/cdftools2.1/:$PATH
-################################################################################
+
+#Launching instructions:
+
+./ocean_pp.bash $path_to_your_file/config_file-ocean_pp.bash
+- You can copy and modify the config_file to any directory if you indicate the good path when launching ocean_pp.bash
+- ocean_pp.bash, README and example of config_file-ocean_pp.bash can be downloaded from git repository: git clone https://dev.cfu.local/cfutools.git <localdir2>
+
+#
+
+####################### DIAGNOSTICS LIST #######################################
 'siasiesiv'           : sea ice area + sea ice extent + sea ice volume
 'moc'                 : Atlantic + Pacific + Indian + Indo-Pacific + Global 
                         meridional overturning streamfunction
 'max_moc'             : Yearly maximum of the Atlantic meridional overturning 
                         streamfunction between 38N-50N and 500-3000m and 
-                        at 40N
+                        at 40N.
+                        Beware that the max_moc diagnostics can not be computed
+                        if you don't process complete years, as it is a diagnostic
+                        computed from complete years.
 'area_moc'            : Averaged Atlantic meridional overturning streamfunction
                         between 40N-55N and 1km-2km and between 30N-40N and 1km-2km 
 'stc'                 : Subtropical cell strength, computed as the averaged Atlantic 
                         and Pacific overturning streamfunction in 0-25N/S, 0-200m
-'ice'                 : sea ice thickness + sea ice concentration + snow thickness + 
-                        sea ice temperature 
-'sstsssmld'           : sea surface temperature + sea surface salinity + mixed layer 
-                        depth (potential density criteria)
+'ext_raw_ice'         : raw ice varibales to be extracted from input files 
+                        (called "ice" before february 2013 update))
+'ext_raw_oce'         : raw ocean varibales to be extracted from input files
+                        (called "sstsssmld" before february 2013 update))
 'heat_sal_mxl'        : mixed layer heat and salt content (potential density criteria)
 'psi'                 : barotropic streamfunction
 'usalc'               : upper layer salt content 0-300m
@@ -27,10 +39,15 @@ PATH=/cfu/software/cdftools2.1/:$PATH
 'lohc'                : global lower (800m-bottom) ocean heat content
 'xohc'                : global mixed layer ocean heat content
 'TSec_ave190-220E'    : meridional temperature section averaged between 190E and 220E
+'SSec_ave190-220E'    : meridional salinity section averaged between 190E and 220E (added in february 2013 update)
 'vert_Tsections'      : zonal temperature sections along 45S, 0N, 45N, and
                         meridional temperature sections along 30W, 80E, 180E
+'vert_Ssections'      : zonal salinity sections along 45S, 0N, 45N, and
+                        meridional salinity sections along 30W, 80E, 180E (added in february 2013 update)
 '3dtemp'              : 3-dimensional temperature interpolated horizontally onto the
                         atmospheric grid
+'3dsal'               : 3-dimensional salinity interpolated horizontally onto the
+                        atmospheric grid (added in february 2013 update)
 'NAtlohc'             : North Atlantic (10-65N) total ocean heat content
 'xNAtlohc'            : North Atlantic (10-65N) mixed layer ocean heat content 
 'uNAtlohc'            : North Atlantic (10-65N) upper (0-350m) ocean heat content 

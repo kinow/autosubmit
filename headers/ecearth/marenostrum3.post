@@ -1,0 +1,14 @@
+#!/bin/ksh
+###############################################################################
+#                      POSTPROCESS EC_EARTH
+###############################################################################
+#
+#BSUB -J %JOBNAME%
+#BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out 
+#BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+#BSUB -W 02:00
+#BSUB -n 1
+#BSUB -R "span[ptile=16]"
+#BSUB -x
+#
+###############################################################################

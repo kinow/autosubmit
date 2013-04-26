@@ -4,8 +4,10 @@ date
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
+HSM_DIR=%HSM_DIR%
 PATH=%NCDFPATH%:${PATH}
 PATH=%CDOPATH%:${PATH}
 PATH=%NCOPATH%:${PATH}
@@ -16,13 +18,19 @@ PATH=%REBUILDPATH%:${PATH}
 #
 # Model Configuration
 #
-VERSION=%VERSION%
 EXPID=%EXPID%
+VERSION=%VERSION%
 MEMBER=%MEMBER%
 START_date=%SDATE%
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+START_date_1=%DAY_BEFORE%
+
+ECEARTH=${MODEL_DIR}/$VERSION
+TESTDATADIR=${ECEARTH}/inidata/testdata
+
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-# CON_FILES=${ECEARTH_DIR}/%VERSION%/inidata/nemo/%NEMO_resolution% (not included yet)
+
+# CON_FILES=${MODEL_DIR}/datcom/v2/inidata/nemo/%NEMO_resolution% (not included yet)
 # NEMOVERSION=v3.3 (not included yet)
 
 #
@@ -46,8 +54,7 @@ output_dir=${RUN_dir}/Output_${chunk}
 if [[ ! -d ${output_dir} ]]; then
    exit
 fi
-tmp_output_dir=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
-rm -rf $tmp_output_dir; mkdir -p $tmp_output_dir
+rm -rf $SCRATCH_TMP_DIR; mkdir -p $SCRATCH_TMP_DIR
 
 #
 # Deal with Ocean's output
@@ -63,8 +70,8 @@ if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
        for grid_type in ${grid_types}; do
            input_files=${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
            output_file=${prefix}_${grid_type}.nc
-           cp $input_files $tmp_output_dir
-           cd $tmp_output_dir
+           cp $input_files $SCRATCH_TMP_DIR
+           cd $SCRATCH_TMP_DIR
            rebuild -v 3 -o $output_file $input_files
            rm -f $input_files
            rm -f $output_dir/$input_files
@@ -82,28 +89,32 @@ cd $output_dir
 if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
    OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
    if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+      if [[ ! -a $output_dir/%JOBNAME%.oreduced ]]; then
+         #
+         # A prerequisite to enter the common diagnostic post-processing
+         if [[ -e toto.nc ]]; then
+            rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
+         fi
+         cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+         #
+         # Mixed layer ocean heat content: somxlheatc
+         heat_sal_mxl toto.nc heat_sal_mxl.nc
+         ncrename -d time,time_counter heat_sal_mxl.nc
+         #
+         # 0-300m ocean heat content: heatc_sl
+         ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m.nc
+         ncrename -d time,time_counter ohc_2d_avg_0-300m.nc
+         #
+         touch $output_dir/%JOBNAME%.oreduced
+      fi
       #
-      # A prerequisite to enter the common diagnostic post-processing
-      if [[ -e toto.nc ]] ; then rm -f toto.nc ; fi 
-      cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
-      #
-      # Mixed layer ocean heat content : somxlheatc
-      heat_sal_mxl toto.nc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncrename -d time,time_counter heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncks -A -v somxlheatc heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      rm -f heat_sal_mxl_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      #
-      # 0-300m ocean heat content : heatc_sl
-      ohc_specified_layer toto.nc 0.0 300.0 ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncrename -d time,time_counter ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc
-      ncks -A -v heatc_sl ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      rm -f ohc_2d_avg_0-300m_${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}.nc toto.nc
-      ncks -O -x -v sohtc300 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      #
-      # Select only the necessary outputs : surface currents only and remove 3d temperature
-      ncks -O -d depthv,0 -d depthu,0 ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      # Append reduced stuff, select surface currents, remove 3D temperature and rename a few variables
+      ncks -A -v somxlheatc heat_sal_mxl.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -O -d depthv,0 -d depthu,0 -x -v sohtc300 -x -v votemper \
+      ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncks -O -x -v votemper ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
    fi
    gzip -9 ORCA1_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc
    touch $output_dir/%JOBNAME%.opost
@@ -134,8 +145,8 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
            prefix=ICM${type}${EXPID}
            file=${prefix}+${year}${month}
            if [[ ! -a ${file}.grb ]]; then
-              cp $file $tmp_output_dir
-              cd $tmp_output_dir
+              cp $file $SCRATCH_TMP_DIR
+              cd $SCRATCH_TMP_DIR
               echo write \"${file}_[param].grb\"\; > rules_file
               grib_filter rules_file ${file}
               case $type in # list of params, don't need!!
@@ -179,8 +190,8 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
 fi
 
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
-   rm -rf $tmp_output_dir
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   rm -rf $SCRATCH_TMP_DIR
+   touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi
 
 date

@@ -16,7 +16,8 @@ date
 
 # options and paths required for setting up experiment at HPC
 cd /cfu/autosubmit/$EXPID
-HPCARCH=`grep -w HPCARCH conf/autosubmit_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
+HPCARCH=`grep -w HPCARCH conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
+HPCPROJ=`grep -w HPCPROJ conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
 HPCUSER=`grep -w HPCUSER conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODEL=`grep -w MODEL conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 VERSION=`grep -w VERSION conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
@@ -26,7 +27,9 @@ MODSRC="modsrc.tar" # name for tar file; would be containing modified sources
 MODSETUP="modsetup.tar" # name for tar file; would be containing modified setup (namelist etc)
 
 # prepare modified stuff correctly
+mkdir -p model
 if [[ $MODEL != '' && $VERSION != '' ]]; then
+ # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
   LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
@@ -37,16 +40,12 @@ if [[ $MODEL != '' && $VERSION != '' ]]; then
  else
   echo "sources are not available yet"
  fi
+ # register setup stuff w.r.t EXPID once
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ -d model/setup && -d $REALSETUP ]]; then
-  LIST=`diff -rqu model/setup $REALSETUP | awk '{print $2}'`
-  LSWC=`diff -rqu model/setup $REALSETUP | awk '{print $2}' | wc -l`
-  if [[ $LSWC -gt 0 ]]; then
-   tar -cvf conf/$MODSETUP $LIST
-  fi
- else
-  echo "setup are not available yet"
+ if [[ ! -d model/setup ]]; then
+    cp -rp $REALSETUP model/
  fi
+ tar -cvf conf/$MODSETUP model/setup
 else
  echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
  exit 1
@@ -54,11 +53,11 @@ fi
 
 # setup process starts from here
 case $HPCARCH in
- bsc) HPCARCH="mn" ;;
- marenostrum3) HPCARCH="mn" ;;
+ bsc) HPCARCH="mn-$HPCPROJ" ;;
+ marenostrum3) HPCARCH="mn-$HPCPROJ" ;;
 esac
 SSH="ssh $HPCARCH"
-MAIN=$SCRATCH_DIR/$HPCUSER/$EXPID
+MAIN=$SCRATCH_DIR/$HPCPROJ/$HPCUSER/$EXPID
 
 # process for bin (deal with modsrc.tar)
 BIN=$MAIN/model/bin
@@ -83,7 +82,7 @@ if [[ -f conf/$MODSRC ]]; then
  case $MODEL in
   ecearth)
    case $VERSION in
-    v2.*)
+    v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
      ./compilation.ksh ;\
@@ -93,20 +92,10 @@ if [[ -f conf/$MODSRC ]]; then
       ln -sf $MAIN/model/sources/ifs/bin/ifsMASTER $BIN ;\
      fi"
     ;;
-    v3.0*)
+    v3*)
      $SSH "\
      cd $MAIN/model/sources/build-config ;\
-     ./compilation.sh ;\
-     if [[ $? -eq 0 ]]; then \
-      ln -sf $MAIN/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN ;\
-      ln -sf $MAIN/model/sources/nemo*/bin/opa_* $BIN ;\
-      ln -sf $MAIN/model/sources/ifs*/bin/ifsmaster* $BIN ;\
-     fi"
-    ;;
-    v3-*)
-     $SSH "\
-     cd $MAIN/model/sources/build-config ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN ;\
       ln -sf $MAIN/model/sources/ifs*/bin/ifsmaster* $BIN ;\
@@ -174,19 +163,13 @@ SETUP=$MAIN/model/setup
 $SSH mkdir -p $SETUP
 $SSH rm -rf $SETUP/*
 if [[ -f conf/$MODSETUP ]]; then
- # copy modified setup (scripts) at HPC
+ # copy setup (scripts) at HPC and untar
  scp conf/$MODSETUP $HPCARCH:$MAIN
-
- # copy setup scripts; assuming that those are already available at HPC
- $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup $MAIN/model
-
- # inflate modified setup scripts
  $SSH "\
  cd $MAIN ;\
  tar -xvf $MODSETUP"
-
 else
- # if there is nothing modified into setup (scripts) then link already available setup 
+ # if there is nothing modified into setup (scripts) then copy already available setup
  # correctly under ../../$EXPID/model/setup
  $SSH cp -rp $MODELS_DIR/$MODEL/$VERSION/setup/* $SETUP
 fi

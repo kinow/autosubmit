@@ -1,39 +1,41 @@
-%ENVIRONMENT3%
-
 set -xuve
 date
 
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
-ECEARTH_DIR=%MODELS_DIR%/%MODEL%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
+HSM_DIR=%HSM_DIR%
 PATH=%GRIBAPIPATH2%:${PATH}
 
 #
 # Model Configuration
 #
+EXPID=%EXPID%
 VERSION=%VERSION%
 MEMBER=%MEMBER%
-EXPID=%EXPID%
 START_date=%SDATE%
+START_date_1=%DAY_BEFORE%
 
-ECEARTH=${ECEARTH_DIR}/$VERSION
+ECEARTH=${MODEL_DIR}/$VERSION
 ini_data_dir=${ECEARTH}/inidata
 
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
 BINPATH=${WRITINGDIR}/model/bin
 ctrl_file_dir=${WRITINGDIR}/model/setup/ctrl
-RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
 cd $RUN_dir
 
 #
 # IFS
 #
 ifs_grid=%IFS_resolution%
-ifs_grid_wol=`echo ${ifs_grid} | cut -d 'L' -f 1` # without level (wol)
+ifs_grid_wol=$(echo ${ifs_grid} | cut -d 'L' -f 1) # without level (wol)
 ifs_numproc=%IFS_nproc%
-nprtrv=%NPRTRVIFS%
 ifs_exe_file=${BINPATH}/ifsmaster-ecconf
 nfrp=%NFRP%
 case ${ifs_grid_wol} in
@@ -49,28 +51,25 @@ ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
 ifs_cmip5=%CMIP5%
-ifs_cmip5_rcp=0
-ifs_volcanoes=FALSE
-ifs_leco2var=FALSE
-ifs_nhincsol=0
-ifs_ncmip5fixyr=0
-if [[ $ifs_cmip5 == TRUE ]]; then
-   ifs_cmip5_rcp=%Nrcp%
-   ifs_volcanoes=TRUE
-   ifs_leco2var=TRUE
-   ifs_nhincsol=%NHINCSOL%
-   ifs_ncmip5fixyr=%NFIXYR%
-fi
+ifs_cmip5_rcp=%NRCP%
+ifs_volcanoes=%LHVOLCA%
+ifs_ncmip5fixyr=%NFIXYR%
+
+# Selection
+case $VERSION in
+ v3.0-r1012) nprtrv=%NPRTRVIFS% ;;
+ *) echo "nprtrv is no more needed" ;;
+esac
 
 #
 # NEMO 
 #
 OCEAN_ini=%OCEAN_ini%
 nem_grid=%NEMO_resolution%
-nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
-LIM=%LIM%
+nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
+ICE=%ICE%
 nem_numproc=%NEMO_nproc%
-nem_exe_file=${BINPATH}/${nem_grid}_${LIM}/nemo.exe
+nem_exe_file=${BINPATH}/${nem_grid}_${ICE}/nemo.exe
 case ${nem_grid_wol} in
      ORCA1)   nem_time_step_sec=3600 ;;
      ORCA025) nem_time_step_sec=1200 ;;
@@ -86,13 +85,20 @@ nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 #
 oas_numproc=%OASIS_nproc%
 oas_exe_file=${BINPATH}/oasis3.MPI1.x
-# Restart files for the coupling fields
+oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
 oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
               QS___OCE QS___ICE QNS__OCE QNS__ICE DQDT_ICE \
               PRCP_LIQ PRCP_SOL EVAP_TOT EVAP_ICE RNF__OCE CALV_OCE \
               O_SSTSST O_TepIce O_AlbIce OIceFrac O_IceTck O_SnwTck"
-oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
-oas_rnf_fluxcorr=0.87
+
+# Selection
+case $VERSION in
+ v3.0-r1012) oas_rnf_fluxcorr=0.87 ;;
+ *)
+  oas_rnf_fluxcorr=0.985
+  oas_qs_fluxcorr=0.985
+ ;;
+esac
 
 #
 # COMMON
@@ -114,8 +120,8 @@ Chunk_start_date=%Chunk_START_DATE%
 Chunk_end_date=%Chunk_END_DATE%
 Chunk_last=%Chunk_LAST%
 leg_start_date_yyyymmdd=$Chunk_start_date
-leg_start_date_yyyy=`echo $Chunk_start_date | cut -c1-4`
-leg_end_date_yyyy=`echo $Chunk_end_date | cut -c1-4`
+leg_start_date_yyyy=$(echo $Chunk_start_date | cut -c1-4)
+leg_end_date_yyyy=$(echo $Chunk_end_date | cut -c1-4)
 # In months
 RUN_months=%CHUNKSIZE%
 # In days
@@ -147,6 +153,94 @@ if [[ $chunk == 1 ]]; then
    else
       rstctl=1
    fi
+
+   # Files needed for IFS (linked)
+   # Other stuff
+   # Selection
+   case $VERSION in
+    v3.0-r1012)
+     ln -sf ${ini_data_dir}/ifs/postins
+     ln -sf ${ini_data_dir}/ifs/dirlist
+    ;;
+    *)
+     # Output control (ppt files)
+     mkdir -p postins
+     cp ${ctrl_file_dir}/ppt* postins/
+     f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
+     for t in $(seq $f_min $f_min 1439);do
+         hh=$(printf %02d $((t/60)) )
+         mm=$(printf %02d $((t%60)) )
+         ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
+     done
+     ls -1 postins/* > dirlist
+    ;;
+   esac
+   ln -sf ${ini_data_dir}/ifs/rtables/* .
+
+   # Files needed for NEMO (linked)
+   # Various stuff
+   ln -sf ${ini_data_dir}/nemo/${nem_grid}/bathy_meter.nc
+   ln -sf ${ini_data_dir}/nemo/${nem_grid}/coordinates.nc
+   ln -sf ${ini_data_dir}/nemo/${nem_grid}/ahmcoef
+
+   # Initial data
+   ln -sf ${ini_data_dir}/nemo/${nem_grid}/temperature_*.nc .
+   ln -sf ${ini_data_dir}/nemo/${nem_grid}/salinity_*.nc .
+
+   # Files needed for OASIS (linked)
+   # Name table file
+   ln -sf ${ini_data_dir}/oasis/cf_name_table.txt
+
+   oas_grid_dir=${ini_data_dir}/oasis/${ifs_grid_wol}-${nem_grid_wol}
+
+   # Run-off file
+   ln -sf ${oas_grid_dir}/runoff_maps.txt
+
+   # Grid definition files
+   ln -sf ${oas_grid_dir}/areas.nc
+   ln -sf ${oas_grid_dir}/grids.nc
+   ln -sf ${oas_grid_dir}/masks.nc
+
+   # Weight files
+   case ${ifs_grid_wol} in
+        T159) oas_agrd=080 ;;
+        T255) oas_agrd=128 ;;
+        T511) oas_agrd=256 ;;
+        T799) oas_agrd=400 ;;
+        *) echo "Unsupported horizontal resolution (IFS): ${ifs_grid_wol}" ;;
+   esac
+
+   case ${nem_grid_wol} in
+        ORCA1)   oas_ogrd=O1t0 ;;
+        ORCA025) oas_ogrd=Ot25 ;;
+        *) echo "Unsupported horizontal resolution (NEMO): ${nem_grid_wol}" ;;
+   esac
+
+   for n in $(seq 0 $((oas_numproc-1))); do
+       ln -sf \
+       ${oas_grid_dir}/rmp_A${oas_agrd}_to_${oas_ogrd}_GAUSWGT.nc \
+                       rmp_A${oas_agrd}_to_${oas_ogrd}_GAUSWGT_${n}.nc
+       ln -sf \
+       ${oas_grid_dir}/rmp_${oas_ogrd}_to_L${oas_agrd}_GAUSWGT.nc \
+                       rmp_${oas_ogrd}_to_L${oas_agrd}_GAUSWGT_${n}.nc
+   done
+
+   for f in ${oas_cpl_flds}; do
+       cp ${oas_grid_dir}/rst/$f .
+   done
+
+   # Files needed for common use from local inidata
+   ln -sf inidata/* .
+   if [[ -a inidata/rcf ]]; then
+      rm -f rcf; cp inidata/rcf .
+   fi
+
+   for f in ${oas_cpl_flds}; do
+       if [[ -a inidata/$f ]]; then
+          rm -f $f; cp inidata/$f .
+       fi
+   done
+
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
@@ -173,11 +267,14 @@ fi
 #
 # Control the use of the scenario
 #
-if [[ `echo $Chunk_start_date | cut -c1-4` < 2006 ]] ; then
+if [[ $(echo $Chunk_start_date | cut -c1-4) < 2006 ]] ; then
    ifs_cmip5_rcp=0
 fi
 #
 
+#
+# Final condition, before starting simulation
+#
 if [[ ! -a finished_chunk_${chunk} ]]; then
 
  rm -rf OASIS_Restart_${chunk}
@@ -192,77 +289,70 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
     mv NODE.001_01 NODE.001_01.$((chunk-1)).$$
  fi
 
-#
-# Create some control files
-#
+ # Create some control files
+ # IOM files
+ ln -sf ${ctrl_file_dir}/xmlio_server.def
+ ln -sf ${ctrl_file_dir}/iodef.$(echo $ICE | tr [:upper:] [:lower:]).xml iodef.xml
 
-# IOM files
-ln -sf ${ctrl_file_dir}/xmlio_server.def
-ln -sf ${ctrl_file_dir}/iodef.$(echo $LIM | tr [:upper:] [:lower:]).xml iodef.xml
+ # IFS, NEMO, LIM namelist and OASIS namcouple files
+ . ${ctrl_file_dir}/namelist.ifs-${ifs_grid}.sh > fort.4
+ . ${ctrl_file_dir}/namelist.nemo-${nem_grid}.sh > namelist
+ . ${ctrl_file_dir}/namelist.$(echo $ICE | tr [:upper:] [:lower:])-${nem_grid_wol}.sh > namelist_ice
+ . ${ctrl_file_dir}/namcouple.sh > namcouple
 
-# IFS, NEMO, LIM namelist and OASIS namcouple files
-. ${ctrl_file_dir}/namelist.ifs-${ifs_grid}.sh                                       > fort.4
-. ${ctrl_file_dir}/namelist.nemo-${nem_grid}.sh                                      > namelist
-. ${ctrl_file_dir}/namelist.$(echo $LIM | tr [:upper:] [:lower:])-${nem_grid_wol}.sh > namelist_ice
-. ${ctrl_file_dir}/namcouple.sh                                                      > namcouple
+ # Split OASIS namcouple file (if necessary)
+ if (( oas_numproc == 1 ))
+ then
+     ln -sf namcouple namcouple_0
+ elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]
+ then
+     ${oas_namcut_script} ${oas_numproc} namcouple
+ else
+     echo "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
+ fi
 
-# Split OASIS namcouple file (if necessary)
-if (( oas_numproc == 1 ))
-then
-    ln -sf namcouple namcouple_0
-elif [ -n "$oas_namcut_script" -a -x $oas_namcut_script ]
-then
-    ${oas_namcut_script} ${oas_numproc} namcouple
-else
-    echo "Couldn't run script to split the OASIS namcouple file (\$oas_namcut_script)."
-fi
+ # IFS climatology data
+ icmclfile=${ini_data_dir}/ifs/${ifs_grid}/climate/ICMCL
+ tempfile=tmp.$$
 
-#
-# IFS climatology data
-#
-icmclfile=${ini_data_dir}/ifs/${ifs_grid}/climate/ICMCL
-tempfile=tmp.$$
+ # Create data for december, the year before the leg starts
+ grib_set \
+ -s dataDate=$(printf "%04d" $((leg_start_date_yyyy-1)))1215 ${icmclfile}-12 \
+                                                        ICMCL${exp_name}INIT
 
-# Create data for december, the year before the leg starts
-grib_set \
--s dataDate=$(printf "%04d" $((leg_start_date_yyyy-1)))1215 ${icmclfile}-12 \
-                                                       ICMCL${exp_name}INIT
+ # Create data for all month in the years of the leg
+ for y in $(seq ${leg_start_date_yyyy} ${leg_end_date_yyyy})
+ do
+     yy=$(printf "%04d" $y)
+     for m in $(seq 1 12)
+     do
+         mm=$(printf "%02d" $m)
+         grib_set -s dataDate=${yy}${mm}15 ${icmclfile}-${mm} ${tempfile}
+         cat ${tempfile} >> ICMCL${exp_name}INIT
+     done
+ done
 
-# Create data for all month in the years of the leg
-for y in $(seq ${leg_start_date_yyyy} ${leg_end_date_yyyy})
-do
-    yy=$(printf "%04d" $y)
-    for m in $(seq 1 12)
-    do
-        mm=$(printf "%02d" $m)
-        grib_set -s dataDate=${yy}${mm}15 ${icmclfile}-${mm} ${tempfile}
-        cat ${tempfile} >> ICMCL${exp_name}INIT
-    done
-done
-
-# Create data for january, the year after the leg ends
-grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
+ # Create data for january, the year after the leg ends
+ grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
                                                                           ${tempfile}
-cat ${tempfile} >> ICMCL${exp_name}INIT
+ cat ${tempfile} >> ICMCL${exp_name}INIT
 
-# Clean up
-rm -f ${tempfile}
+ # Clean up
+ rm -f ${tempfile}
 
-#
-# Location of the executables
-# 
+ # Location of the executables
  ln -sf ${ifs_exe_file}
  ln -sf ${nem_exe_file}
  ln -sf ${oas_exe_file}
 
-#
-# Model Run
-#
+ # Model Run
  ls -l
  date
+%ENVIRONMENT3%
 %PARALLEL_RUN_ECEARTH3%
 
  date
+ ls -l
 fi
 
 #
@@ -277,7 +367,7 @@ echo "finished chunk"
 touch finished_chunk_${chunk}
 
 #
-# Save OASIS, NEMO and IFS restart files
+# Save OASIS, IFS and NEMO restart files
 #
 mkdir -p OASIS_Restart_${chunk}
 for f in ${oas_cpl_flds}; do
@@ -315,7 +405,7 @@ mkdir -p Output_${chunk}
 mv ICMGG${EXPID}+* ICMSH${EXPID}+* Output_${chunk}
 mv ${EXPID}_??_*.nc Output_${chunk}
 
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
 

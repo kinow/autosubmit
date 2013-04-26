@@ -92,6 +92,7 @@ ncks -O -v votemper $1 t3d_${3}
 # $6 : chunk length in month                                                  #
 # $7 : nemo/ecearth                                                           #
 # $8 : diags/MMO                                                              #
+# $9 : storage frequency (daily/monthly)                                      #
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
 ###############################################################################
@@ -104,7 +105,7 @@ typeset var year1
 typeset var year2
 typeset var mon1
 typeset var mon2
-for ((jt=$4;jt<=$5;jt=$((jt+$6)))) ; do
+for jt in $(seq $4 $6 $5) ; do
   year1=$(($yyyy0+(10#$mm0+$jt-2)/12)) 
   mon1=$(((10#$mm0+$jt-2)%12+1))
   year2=$(($yyyy0+(10#$mm0+$jt+$6-3)/12))
@@ -120,22 +121,30 @@ case $8 in
   'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
   'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
 esac
+case $9 in
+  'daily') freqexcl1='1m' ; freqexcl2='MM' ;;
+  'monthly' ) freqexcl1='1d' ; freqexcl2='DD' ;;
+  *) freqexcl1='1d' ; freqexcl2='DD' ;;
+esac
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
-  lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc*_$(($yyyy0+(10#$mm0+$4-1)/12))$(printf "%02d" $(((10#$mm0+$4-1)%12+1)))_${year2}$(printf "%02d" $mon2).nc"`
+  lstfiles=`ls *${root}* | grep -v "${root}_$2_$1_fc*_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc" | grep -v "${freqexcl1}" | grep -v "${freqexcl2}" `
   if [[ $root == 'grid_T' || $root == 't3d' ]] ; then
     for file in $lstfiles ; do 
       ncatted -O -a valid_max,votemper,d,, $file $file
       ncatted -O -a valid_min,votemper,d,, $file $file
     done 
   fi
+  file1=`echo "${lstfiles}" | tail -1`
+  typeset var lstvars=`cdo showvar $file1`
+  if [[ ${lstvars/iicenflx} != ${lstvars} ]] ; then for file in $lstfiles ; do ncks -O -x -v iicenflx $file $file ; done ; fi
   cdo mergetime $lstfiles ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
   if [[ $root == 'moc' ]] ; then 
     ncrename -d gsize,y ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc
     ncks -A -v nav_lon,nav_lat `echo $lstfiles | awk '{print $1}' ` ${root}_$2_$1_fc$3_$(($yyyy0+(10#$mm0+$4-2)/12))$(printf "%02d" $(((10#$mm0+$4-2)%12+1)))_${year2}$(printf "%02d" $mon2).nc 
   fi
-  rm -f $lstfiles
+  rm -f $lstfiles *${freqexcl1}* *${freqexcl2}*
 done
 }
 ###############################################################################
@@ -160,14 +169,14 @@ typeset var year
 typeset var mon
 typeset var mona
 typeset var monb
-for ((year=$3;year<=$4;year=$((year+1)))) ; do
+for year in $(seq $3 $4) ; do
   case $year in
     $3) mona=9 ; monb=12 ;;
     $yearf) mona=1; monb=5 ;;
     $4) mona=1 ;monb=8 ;;
     *) mona=1 ;monb=12 ;;
   esac   
-  for ((mon=$mona;mon<=$monb;mon=$((mon+1)))); do
+  for mon in $(seq $mona $monb); do
     cp ${path}_fc$2_${year}$(printf "%02d" $mon)*.gz .
   done
 done
@@ -238,7 +247,7 @@ function vertmeansal {
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
   cdo seltimestep,$jt $1 intvertmeansal.nc
   cdfvertmean intvertmeansal.nc vosaline T $2 $3
   ncrename -O -v sovertmean,vertmeansal -d time_counter,time -v time_counter,time vertmean.nc
@@ -265,8 +274,14 @@ typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt 
 typeset var lstvars=`cdo showvar $1`
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
  cdo seltimestep,$jt $1 intheat_sal_mxl.nc
+ if [[ ${lstvars/somxl010} == ${lstvars} ]] ; then
+  cdfmxl intheat_sal_mxl.nc mxl.nc
+  ncrename -d time_counter,time mxl.nc
+  ncks -A mxl.nc intheat_sal_mxl.nc
+  rm -f mxl.nc
+ fi
  cdfmxlheatc intheat_sal_mxl.nc 
  if [[ $lstvars != ${lstvars/vosaline} ]] ; then  
    cdfmxlsaltc intheat_sal_mxl.nc
@@ -292,7 +307,7 @@ if [[ $lstvars != ${lstvars/vosaline} ]] ; then setminmax $2 somxlsaltc ; fi
 # $3 : lower depth of the layer (in meters)                                   #
 # $4 : output file name                                                       #
 #                                                                             #
-#         Created in June 2012      Author : iandreu@ic3.cat                  #
+# Created in June 2012      Author : isabel.andreu-burillo@ic3.cat            #
 ###############################################################################
 
 function ohc_specified_layer {
@@ -301,12 +316,12 @@ typeset var list=""
 typeset var jt
 ncap2 -v -O -s "heatc_sl=tmask*e3t" mesh_zgr.nc e3t_file.nc
 ncrename -d t,time -d z,deptht e3t_file.nc
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
   cdo seltimestep,$jt $1 intohc_slayer.nc
   ncks -O -v votemper intohc_slayer.nc intmeantem.nc
-  ncrename -v votemper,heatc_sl intmeantem.nc
+  ncrename -v votemper,heatc_sl intmeantem.nc #to be commented
   cdo mul intmeantem.nc e3t_file.nc heatc_sl_out.nc
-  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
+#?  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
   # extract the data between the two given depths --> heatc_sl_top.nc
   ncks -d deptht,$2,$3 heatc_sl_out.nc heatc_sl_top.nc
   #perform the integration of ohc down to that level (main contribution)
@@ -328,7 +343,7 @@ for ((jt=1;jt<=$ntime;jt++)); do
   ncrename -v layerthcknss,heatc_sl depth_diff_lay.nc
   ncap2 -s "heatc_sl=($3 - layerthcknss)" level_above.nc depth_diff_sublay.nc
   ncbo --op_typ=/ -v heatc_sl depth_diff_sublay.nc depth_diff_lay.nc factor.nc
-  ncrename -v heatc_sl,factor factor.nc
+  ncrename -v heatc_sl,factor factor.nc #to be commented
   ncks -A -v factor factor.nc level_below.nc
   rm -f depth_diff_sublay.nc depth_diff_lay.nc
   ncap2 -O -s "heatc_sl=(factor * heatc_sl)" level_below.nc level_below.nc
@@ -361,7 +376,7 @@ function moc {
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
  cdo seltimestep,$jt $1 intmoc.nc
  cdfmoc intmoc.nc
  ncwa -O -a x moc.nc outmoc_$jt.nc
@@ -392,7 +407,7 @@ function psi {
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt
-for ((jt=1;jt<=$ntime;jt++)); do
+for jt in $(seq 1 $ntime); do
   cdo seltimestep,$jt $1 intU.nc
   cdo seltimestep,$jt $2 intV.nc
   cdfpsi intU.nc intV.nc
@@ -469,24 +484,26 @@ fi
 ###############################################################################
 
 function max_moc {
-ncecat -h $1 tmpmoc1.nc
-ncrename -d record,x tmpmoc1.nc
-ncpdq -O -h -a time,x tmpmoc1.nc tmpmoc1.nc
-ncpdq -O -h -a depthw,x tmpmoc1.nc tmpmoc1.nc
-ncpdq -O -h -a y,x tmpmoc1.nc tmpmoc1.nc
-cdo yearmean tmpmoc1.nc tmpmoc.nc 
-typeset var ntime=`cdo ntime tmpmoc.nc`
-typeset var list=""
-for ((jt=1;jt<=$ntime;jt++)) ; do
-  cdo seltimestep,$jt tmpmoc.nc tmpmoc2.nc
-  cdfmaxmoc tmpmoc2.nc atl $2 $3 $4 $5
-  mv maxmoc.nc maxmoc_$jt.nc
-  list=${list}" "maxmoc_$jt.nc
-  rm -f tmpmoc2.nc
-done
-cdo cat $list $6
-ncks -A -v time tmpmoc.nc $6
-rm -f $list tmpmoc.nc tmpmoc1.nc
+if [ ! -f $6 ] ; then
+ ncecat -h $1 tmpmoc1.nc
+ ncrename -d record,x tmpmoc1.nc
+ ncpdq -O -h -a time,x tmpmoc1.nc tmpmoc1.nc
+ ncpdq -O -h -a depthw,x tmpmoc1.nc tmpmoc1.nc
+ ncpdq -O -h -a y,x tmpmoc1.nc tmpmoc1.nc
+ cdo yearmean tmpmoc1.nc tmpmoc.nc 
+ typeset var ntime=`cdo ntime tmpmoc.nc`
+ typeset var list=""
+ for jt in $(seq 1 $ntime) ; do
+   cdo seltimestep,$jt tmpmoc.nc tmpmoc2.nc
+   cdfmaxmoc tmpmoc2.nc atl $2 $3 $4 $5
+   mv maxmoc.nc maxmoc_$jt.nc
+   list=${list}" "maxmoc_$jt.nc
+   rm -f tmpmoc2.nc
+ done
+ cdo cat $list $6
+ ncks -A -v time tmpmoc.nc $6
+ rm -f $list tmpmoc.nc tmpmoc1.nc
+fi
 }
 ###############################################################################
 #                                                                             #
@@ -501,12 +518,16 @@ rm -f $list tmpmoc.nc tmpmoc1.nc
 function siasiesiv {
 cp ${CON_FILES}/ice_template.nc toto_N.nc
 cp ${CON_FILES}/ice_template.nc toto_S.nc
+
+case ${NEMOVERSION} in
+  'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v ice_pres,ileadfra $1 ;;
+esac
   
 typeset var ntime=`cdo ntime $1`
 typeset var list1=""
 typeset var list2=""
 typeset var jt
-for ((jt=1;jt<=$ntime;jt++)) ; do
+for jt in $(seq 1 $ntime) ; do
   cdo seltimestep,$jt $1 tmpice.nc
   cdficediags tmpice.nc>ice.txt
   for d in N S;do
@@ -614,13 +635,17 @@ esac
 #
 # Compute ohc
 #
+typeset var lstvars=`cdo showvar $1`
 typeset var ntime=`cdo ntime $1`
 typeset var list=""
 typeset var jt
-for ((jt=1;jt<=$ntime;jt++)) ; do
+for jt in $(seq 1 $ntime) ; do
  cdo seltimestep,$jt $1 tmpohc.nc
- ncks -v somxl010,somixhgt tmpohc.nc mxl.nc
- #cdfmxl tmpohc.nc mxl.nc
+ if [[ ${lstvars/somxl010} != ${lstvars} ]] ; then
+  ncks -v somxl010 tmpohc.nc mxl.nc
+ else
+  cdfmxl tmpohc.nc mxl.nc
+ fi
  $exec tmpohc.nc $para $up $down > tmp.log
  cat tmp.log
  thc=`cat tmp.log | grep "Total Heat content :" | awk '{print $5}'`;
@@ -732,13 +757,13 @@ ncks -h -A -v time $1 $5
 function interp3d {
   typeset var nz=`ncdump -h $1|grep 'deptht'|head -1|cut -f3 -d" "`
   ln -sf  /cfu/pub/scripts/interpolation/scrip_use scrip_use
-  for ((lev=1;lev<=$nz;lev++)) ; do
+  for lev in $(seq 1 $nz) ; do
     ncks -d deptht,$((lev-1)) -v $2 $1 tmp_${lev}.nc
     ncwa -O -h -a deptht tmp_${lev}.nc tmp_${lev}.nc
-    ln -sf /cfu/autosubmit/con_files/weigths/${NEMOVERSION}/rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc .
+    ln -sf /cfu/autosubmit/con_files/weigths/${NEMOVERSION}/rmp_${NEMOVERSION}_to_*_lev${lev}.nc rmp_${NEMOVERSION}_to_regular_lev${lev}.nc
     cat > scrip_use_in <<EOF
 &remap_inputs
-    remap_wgt   = 'rmp_orca1t_to_t106_EcEarthv2_lev${lev}.nc'
+    remap_wgt   = 'rmp_${NEMOVERSION}_to_regular_lev${lev}.nc'
     infile      = 'tmp_${lev}.nc'
     invertlat   = FALSE
     var         = '$2'
@@ -755,7 +780,7 @@ EOF
   ncks -A -v deptht $1 tmp2out.nc
   cdo setgrid,t106grid tmp2out.nc tmp3out.nc
   cdo invertlatdata tmp3out.nc $3
-  rm -f tmp_* tmpout.nc tmp2out.nc tmp3out.nc rmp_orca1t_to_t106_EcEarthv2_lev* scrip_use scrip_use_in
+  rm -f tmp_* tmpout.nc tmp2out.nc tmp3out.nc rmp_${NEMOVERSION}_to_regular_lev* scrip_use scrip_use_in
 }
 
 ###############################################################################
@@ -842,8 +867,8 @@ function gather_memb {
   typeset var lstfiles2=""
   for file in ${lstfiles1[@]} ; do
     typeset var lstvars=`cdo showvar $file`
-    typeset var lstexclude=( 'nav_lon' 'nav_lat' )
-    for varex in ${lstexclude[@]} ; do
+    typeset var lstexclude="nav_lon nav_lat"
+    for varex in $lstexclude ; do
       if [[ ${lstvars/${varex}/} != ${lstvars} ]] ; then
         ncks -O -x -v ${varex} $file $file
       fi
@@ -851,7 +876,7 @@ function gather_memb {
     if [[ ! -z "`ncdump -h ${file} | grep ensemble | head -1 | awk '{print $3}' | grep [0-9]`" ]] ; then
       typeset var nrec=`ncdump -h ${file} | grep ensemble | head -1 | awk '{print $3}' | grep [0-9]`
       typeset var jrec
-      for ((jrec=1;jrec<=$nrec;jrec++)) ; do
+      for jrec in $(seq 1 $nrec) ; do
         ncks -d ensemble,$((jrec-1)) $file tmp_record_${ind}.nc
         ncwa -O -a ensemble tmp_record_${ind}.nc tmp_record_${ind}.nc
         lstfiles2=${lstfiles2}" "tmp_record_${ind}.nc

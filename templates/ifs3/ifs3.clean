@@ -12,12 +12,6 @@ case $HPCARCH in
   LS="eval els"
   CHMOD="eval echmod 664"
  ;;
- marenostrum3)
-  MKDIR="dtmkdir --blocking -p"
-  CP="dtcp --blocking -f"
-  LS="dtls --blocking"
-  CHMOD="dtchmod --blocking 664"
- ;;
  *)
   MKDIR="mkdir -p"
   CP="cp -f"
@@ -29,16 +23,24 @@ esac
 #
 # General Paths
 #
-SCRATCH_DIR=%SCRATCH_DIR%
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
 
 #
 # Model Configuration
 #
 EXPID=%EXPID%
+VERSION=%VERSION%
 MEMBER=%MEMBER%
 START_date=%SDATE%
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+START_date_1=%DAY_BEFORE%
+
+ECEARTH=${MODEL_DIR}/$VERSION
+ini_data_dir=${ECEARTH}/inidata
+
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
 #
@@ -82,7 +84,7 @@ if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
    $CP ${PATHOUT}/restarts/$RESTA .
    tar -xvf $RESTA
    rm -f $RESTA
-   touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+   touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
    exit
 fi
 
@@ -157,11 +159,11 @@ if [[ -a rest_$chunk && -a out_$chunk ]]; then
    rm -rf $output_dir
 fi
 
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 if [[ $Chunk_last == TRUE ]]; then
-   cd %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-   if [[ -a ${RUN_dir}/rest_$((chunk-1)) && -a ${RUN_dir}/out_$((chunk-1)) ]]; then
+   cd %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+   if [[ $chunk == 1 ]] || [[ -a ${RUN_dir}/rest_$((chunk-1)) && -a ${RUN_dir}/out_$((chunk-1)) ]]; then
       echo "We are now removing ${RUN_dir}"
       rm -rf ${RUN_dir}
       touch dir_${EXPID}_${START_date}_${MEMBER}_REMOVED

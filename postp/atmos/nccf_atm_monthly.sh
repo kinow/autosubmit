@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# nohup ./nccf_atm_monthly.sh expid startdate >& expid-startdate.log &
+# ./nccf_atm_monthly.sh path_to_config_file >& EXPID-startdate.log &
 #
 #
 # This script will extract variabls from EC-Earth monthly atmospheric output 
@@ -13,28 +13,8 @@
 #
 # Institut Català de Ciències del Clima / Climate Forecasting Unit (IC3/CFU)
 # Created:  February 22, 2010
-
+# Adapted: Pierre-Antoine Bretonnière - IC3 , January 2013
 set -xv
-
-##################################
-####  User Defined Variables  #### 
-##################################
-
-INSTITUTION="IC3            "
-SOURCE="EC-Earth2.3.0,NEMOVAR-COMBINE,DFS4.3,ERA40/Int,Atm_SV+O pert" # loaded from database (max length 60 char's)  
-VAR_LST="T2M D2M U10M V10M PRECIP CP E SF SST MSL SSR STR SLHF SSHF SSRD SSRU SSRC STRD STRU TSR TSRC TTRC TTR TCC T U V W Q CL CIWC CILC"
-LEVEL_LST="92500,85000,70000,60000,50000,20000,10000,5000,1000"
-MEM_LST=(  )                                   # supply list of members
-ENSEMBLE=${#MEM_LST[@]}
-DATADIR=/cfunas/exp/ecearth                    # where MMA files located
-SAVEDIR=/cfunas/exp/ecearth                    # for Saving outputs 
-HEAD_DIR=/cfu/pub/scripts/postp_ecearth/header # some of the header information
-WORKDIR=/scratch/tmp/$USER/nccf_atm_monthly_$$ # working dir
-NFRP=3 # ecearth output frequency (hours), this is for computing the accumulated precipitation 
-       # and flux variables (solar and thermal radiation, sensible and latent fluxes)
-FACTOR=$((NFRP*3600)) # 3600 (seconds per hour)
-#####  End of User Defined Dariables  ####
-
 
 #################################
 ####  User Defined Funtions  #### 
@@ -42,120 +22,53 @@ FACTOR=$((NFRP*3600)) # 3600 (seconds per hour)
 
 # check if args are ok
 function check_args(){
- if [ $# -ne 2 ]; then
+NB_ARGS=$#
+ if [ $# -ne 1 ] ; then
   echo
-  echo "USAGE: $(basename $0) <exp_id> <startdate> "
-  echo "For example: b014 19601101 "
+  echo "USAGE: config_file "
+  echo "For example: ./nccf_atm_monthly.new.sh /home/$user/cfu_git/autosubmit/pp/atmos/config_file "
   echo
   exit 1
  fi
 }
 
-get_args(){
-while getopts e:d:t:l:g: option
+function get_leadtime(){
+#gets lead_time and checks if all members have the same number of months
+NMONTH=9999999
+for DIR in $MEM_LST
 do
-  case $option in
-    e) EXPID=$OPTARG;;
-    d) DATA=$OPTARG;;
-    t) TYPE=$OPTARG;;
-    l) LATMAX=$OPTARG;;
-    g) IFGLOBAL=$OPTARG;;
-    \?) exit 1;;
-  esac
+ cd ${DATADIR}/${EXPID}/${SDATE}/${DIR}/outputs # hard coded
+ NFILE=`ls MMA*|wc -l`
+ for TMPFILE in `ls MMA*`
+  do
+     NMONTHS_LOC=`tar tvf $TMPFILE | grep GG | wc -l`
+    [ $NMONTH -ne $NMONTHS_LOC ] && [ $NMONTH -ne 9999999 ] && echo "all members or start dates don't have the same number of months, be careful" 
+    [ $NMONTH -ge $NMONTHS_LOC ] && NMONTH=$NMONTHS_LOC
+  done
+ NLT=$((NFILE*NMONTH))
+ cd ${WORKDIR}
 done
 }
 
-function get_leadtime(){
- cd ${DATADIR}/${expid}/${sdate}/fc0/outputs # hard coded
- nfile=`ls MMA*|wc -l`
- tmpfile=`ls MMA*|head -1`
- nmonth=`tar tvf $tmpfile |grep GG|wc -l`
- NLT=$((nfile*nmonth))
- cd ${WORKDIR}
-}
-
-function trim_zero(){
- echo $1 | sed 's/^0*//;s/^$/0/'
-}
-
-# fucntion leadtime2date, based on starting date and lead time to calculate date(year &  month) of the corresponding leadtime
-function leadtime2date(){
- inidate=$1
- offset=$2
-
- yy=`echo $inidate|cut -c1-4`
- mm=`echo $inidate|cut -c5-6`
- mm=`trim_zero $mm`
- yy1=$((yy+offset/12))
-
- nmonth=$((offset%12))
- mm1=$((mm+nmonth))
- if [ $mm1 -gt 12 ]; then
-  yy1=$((yy1+1))
-  mm1=$((mm1-12))
- fi
-
- if [ $mm1 -lt 10 ]; then
-  mm1="0$mm1"
- fi
- echo $yy1$mm1
-}
-
-# get the total number of hours for a specific month
-function get_hours(){
- yymm=$1
- year=`echo $yymm|cut -c1-4`
- month=`echo $yymm|cut -c5-6`
- ndays=$(cal $month $year |egrep "^[ 0-9][0-9]| [ 0-9][0-9]$" |wc -w)
- hours=$((ndays*24))
- echo $hours
-}
-
-# function to get reftime time
-function rtime(){
- date1=$1
- date2=$2
- factor=day # h for hour, d for days
- year1=`echo $date1|cut -c1-4`
- month1=`echo $date1|cut -c5-6`
- day1=`echo $date1|cut -c7-8`
- year2=`echo $date2|cut -c1-4`
- month2=`echo $date2|cut -c5-6`
- day2=`echo $date2|cut -c7-8`
- sec1=`date --utc --date "${year1}-${month1}-${day1}" +%s`
- sec2=`date --utc --date "${year2}-${month2}-${day2}" +%s`
- case $factor in 
-  hour)
-  factor=3600 # 60*60
-  ;;
-  day)
-  factor=86400 # 60*60*24
-  ;;
- esac
- reftime_value=$(((sec2-sec1)/factor))
-}
-
 function header(){
- sd=$1
- echo $sd
- rtime 19500101 ${sd}
+ SD=$1
+ rtime 19500101 ${SD}
  ncks -h -d ensemble,0,$((ENSEMBLE-1)),1 ${HEAD_DIR}/template.nc toto.nc # select sub member
  cp toto.nc toto1.nc
- time_bnd1=0
- time_bnd2=`get_hours $sd`
- leadtime=$(((time_bnd1+time_bnd2)/2))
+ TIME_BND1=0
+ TIME_BND2=`get_hours $SD`
+ LEADTIME=$(((TIME_BND1+TIME_BND2)/2))
 
- ncap2 -O -h -s "leadtime(0)=${leadtime};time_bnd(,0)=${time_bnd1};time_bnd(,1)=${time_bnd2}" toto.nc toto.nc
+ ncap2 -O -h -s "leadtime(0)=${LEADTIME};time_bnd(,0)=${TIME_BND1};time_bnd(,1)=${TIME_BND2}" toto.nc toto.nc
 
  for ((i=1;i<=$((NLT-1));i++)); do
-  fordate=`leadtime2date $sd $i`
-  echo $sd $i $fordate
-  interval=`get_hours $fordate`
-  time_bnd1=$time_bnd2
-  time_bnd2=$((time_bnd1+interval))
-  leadtime=$(((time_bnd1+time_bnd2)/2))
+  FORDATE=`leadtime2date $SD $i`
+  INTERVAL=`get_hours $FORDATE`
+  TIME_BND1=$TIME_BND2
+  TIME_BND2=$((TIME_BND1+INTERVAL))
+  LEADTIME=$(((TIME_BND1+TIME_BND2)/2))
   echo $fordate $interval $time_bnd1 $time_bnd2
-  ncap2 -O -h -s "reftime(0)=${reftime_value};leadtime(0)=${leadtime};time_bnd(,0)=${time_bnd1};time_bnd(,1)=${time_bnd2}" toto1.nc toto1.nc
+  ncap2 -O -h -s "reftime(0)=${REFTIME_VALUE};leadtime(0)=${LEADTIME};time_bnd(,0)=${TIME_BND1};time_bnd(,1)=${TIME_BND2}" toto1.nc toto1.nc
   ncrcat -O -h toto.nc toto1.nc toto.nc
  done
 
@@ -164,41 +77,343 @@ function header(){
  ncap2 -O -h -s "reftime(0)=reftime(1)" header.nc header.nc
 }
 
-# function to modify level information 
-modify_level(){
- ncatted -O -h -a standard_name,level_$2,o,c,"height" $1       # standard name
- ncatted -O -h -a long_name,level_$2,o,c,"reference height" $1 # long name
- ncatted -O -h -a data_type,level_$2,o,c,"float" $1            # data type
- ncatted -O -h -a units,level_$2,o,c,"m" $1                    # units
- ncatted -O -h -a axis,level_$2,o,c,"Z" $1                     # axis
- ncatted -O -h -a positive,level_$2,o,c,"up" $1         
+
+# function to get reftime time
+function rtime(){
+ DATE1=$1
+ DATE2=$2
+# FACTOR=day # h for hour, d for days
+# echo "NFRP:",$NFRP
+# FACTOR=day # h for hour, d for days
+ YEAR1=`echo $DATE1|cut -c1-4`
+ MONTH1=`echo $DATE1|cut -c5-6`
+ DAY1=`echo $DATE1|cut -c7-8`
+ YEAR2=`echo $DATE2|cut -c1-4`
+ MONTH2=`echo $DATE2|cut -c5-6`
+ DAY2=`echo $DATE2|cut -c7-8`
+ SEC1=`date --utc --date "${YEAR1}-${MONTH1}-${DAY1}" +%s`
+ SEC2=`date --utc --date "${YEAR2}-${MONTH2}-${DAY2}" +%s`
+# case $FACTOR in 
+#  hour)
+#  FACTOR=3600 # 60*60
+#  ;;
+#  day)
+#  FACTOR=86400 # 60*60*24
+#  ;;
+# esac
+ REFTIME_VALUE=$(((SEC2-SEC1)/FACTOR))
 }
 
-# function to changing part of the header information 
-correct_time(){
- ncap2 -O -h -s "time()=(time()+720)" $1 $1
- ncatted -O -h -a units,time,m,c,"hours since $sdate-$MM-$DD 00:00:00" $1
+
+function leadtime2date(){
+# function leadtime2date, based on starting date and lead time to calculate date(year &  month) of the corresponding leadtime
+ INIDATE=$1
+ OFFSET=$2
+
+ YY=`echo $INIDATE|cut -c1-4`
+ MM=`echo $INIDATE|cut -c5-6`
+ MM=`echo $MM | sed 's/^0*//;s/^$/0/' `
+ YY1=$((YY+offset/12))
+
+ NMONTH=$((offset%12))
+ MM1=$((MM+NMONTH))
+ if [ $MM1 -gt 12 ]; then
+  YY1=$((YY1+1))
+  MM1=$((MM1-12))
+ fi
+
+ if [ $MM1 -lt 10 ]; then
+  MM1="0$MM1"
+ fi
 }
 
-leadtime(){
- for ((i=0;i<=$((nt-2));i++)); do
-  ncap2 -O -h -s "leadtime($i)=(time($i)+(time($((i+1)))-time($i))/2);time_bnd($i,0)=time($i);time_bnd($i,1)=time($((i+1)))" $1 $1
- done
- ncap2 -O -h -s "leadtime($((nt-1)))=((leadtime($((nt-2)))+744));time_bnd($((nt-1)),0)=time($((nt-1)));time_bnd($((nt-1)),1)=(time($((nt-1)))+744)" $1 $1
+# get the total number of HOURS for a specific MONTH
+function get_hours(){
+ YYMM=$1
+ YEAR=`echo $YYMM|cut -c1-4`
+ MONTH=`echo $YYMM|cut -c5-6`
+ NDAYS=$(cal $MONTH $YEAR |egrep "^[ 0-9][0-9]| [ 0-9][0-9]$" |wc -w)
+ HOURS=$((NDAYS*24))
+ echo $HOURS
 }
 
-# delete the variable time
-delete_time(){
- ncrename -O -h -v time,kaka $1
- ncks -O -h -x -v kaka $1 $1
+
+function extract(){
+
+typeset var jt
+typeset var YEAR0
+typeset var YEARF
+typeset var MON0
+typeset var MONF
+
+for MEM in ${MEM_LST[@]}; do
+# untar and unzip MMA SH files and GG files 
+
+if [  -z ${LEAD_LIST[@]} ];then 
+ PATH_TO_SEARCH=${DATADIR}/${EXPID}/${SDATE}/$MEM
+ FILE_LIST=`find $PATH_TO_SEARCH -type f -iname "MMA*" 2> /dev/null`
+else
+ YEAR0=${LEAD_LIST[0]}
+ MON0=${LEAD_LIST[1]}
+ YEARF=${LEAD_LIST[2]}
+ MONF=${LEAD_LIST[3]}
+ CHUNK_SIZE=${LEAD_LIST[4]}
+ YYYY0=`echo $SDATE | cut -b -4`
+ MM0=`echo $SDATE | cut -b 5-6`
+ LTIME0=1
+ LTIMEF=$(( ( ($YEARF - $YEAR0) * 12 + $MONF - $MON0+1 )/$CHUNK_SIZE ))
+ jt=$LTIME0
+ while [ $jt -le $((LTIMEF)) ]
+  do 
+   YEAR1=$(( $YEAR0 +($MON0+($jt-1)*$CHUNK_SIZE-1)/ 12 ))
+   MON1=$(( ( $MON0 + ( $jt - 1 ) * ($CHUNK_SIZE) ) % 12))   
+   YEAR2=$(( $YEAR1 + ( $MON1 + $CHUNK_SIZE-1 ) / 12  ))
+   MON2=$(( ( $MON1 + $CHUNK_SIZE-1 ) % 12 ))
+   if [ $MON1 -eq 0 ];then
+    MON1=12
+    YEAR1=`expr $YEAR1 - 1 `
+   fi
+   if [ $MON2 -eq 0 ];then
+    MON2=12
+    YEAR2=`expr $YEAR2 - 1 `
+   fi
+   jt=$(($jt+1))
+   FILE=` ls ${DATADIR}/${EXPID}/${SDATE}/$MEM/outputs/MMA_${EXPID}_${SDATE}_${MEM}_${YEAR1}$(printf "%02d" $MON1)01-${YEAR2}$(printf "%02d" $MON2)*.tar`
+   FILE_LIST="$FILE_LIST ${FILE}"
+  done
+fi
+ echo ${FILE_LIST}
+    
+   for f in ${FILE_LIST};do
+     SH_FILES=`tar tf ${f}|grep SH`
+     for FILE in ${SH_FILES};do
+      tar xvf ${f} ${FILE} ;gunzip -q ${FILE}; mv ${FILE%???} ${FILE%???}.$MEM
+     done
+      GG_FILES=`tar tf ${f}|grep GG`
+      for FILE in ${GG_FILES};do
+       tar xvf ${f} ${FILE} ;gunzip -q ${FILE}; mv ${FILE%???} ${FILE%???}.$MEM
+      done
+    done
+done
 }
 
-delete_var(){
- ncrename -O -h -v $2,kaka $1
- ncks -O -h -x -v kaka $1 $1
+function read_vars(){
+#if no list of variables is provided in the namelist, looks for all variables in the files
+OUTPUT_FILE=$1
+GRID_TYPE=$2
+
+VAR_LST_DIM=`ncdump -h $OUTPUT_FILE | grep float | sed -e s/float//g | sed -e s/\,\ /@/g  | sed -e s/\;//g ` #get the names of the variables in output files
+for VAR_DIM in $VAR_LST_DIM
+do
+NB_DIMS=`echo $VAR_DIM | sed -e s/[^@]/\ /g | wc -w` #count the number of dimensions of each variable
+VAR=`echo $VAR_DIM | sed -e 's/(.*)//g' `
+case $GRID_TYPE in
+ GG)
+[ $NB_DIMS -eq 2 ] && VAR_LST_2D_GG=`echo ${VAR_LST_2D_GG} $VAR` || VAR_LST_3D_GG=`echo ${VAR_LST_3D_GG} $VAR` #create a separate list of variables for 2d and 3d
+;;
+ SH)
+[ $NB_DIMS -eq 2 ] && VAR_LST_2D_SH=`echo ${VAR_LST_2D_SH} $VAR` || VAR_LST_3D_SH=`echo ${VAR_LST_3D_SH} $VAR` #create a separate list of variables for 2d and 3d
+;;
+esac
+
+done
 }
 
-new_name(){
+# for surface variables (manipulate GG files)
+function surface(){
+echo ${MEM_LST[@]}
+for MEM in ${MEM_LST[@]}; do
+  FILES=`ls MMA*GG*.nc.$MEM` 
+####  process each variable  ####
+ for VAR in ${VAR_LST_2D[@]}; do # untar once and extract all the variables
+	new_name $VAR	
+      case $VAR in
+        "PRECIP") # for precip, have to add CP and LSP to get total precip
+	      varnew=prlr
+          for f in ${FILES}; do
+            SUFFIX=$MEM.${f%????}
+            cdo selname,CP $f CP.$SUFFIX # select CP
+            ncrename -h -v CP,prlr CP.$SUFFIX 
+            cdo selname,LSP $f LSP.$SUFFIX # select LSP       
+            ncrename -h -v LSP,prlr LSP.$SUFFIX
+            cdo add CP.$SUFFIX LSP.$SUFFIX ${varnew}.${SUFFIX} # add CP and LSP to get total precipitation 
+            cdo divc,${FACTOR} ${varnew}.${SUFFIX} toto.nc;rm ${varnew}.${SUFFIX}; mv toto.nc ${varnew}.${SUFFIX}
+          done
+          prlr_files=`ls ${varnew}*`
+          cdo copy ${prlr_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
+          rm -r prlr*.nc CP* LSP*
+        ;;
+        "SSRU")
+          varnew=rsus
+          for f in ${FILES}; do
+            SUFFIX=$MEM.${f%????}
+            cdo selname,SSRD $f SSRD.$SUFFIX 
+            ncrename -h -v SSRD,rsus SSRD.$SUFFIX
+            cdo selname,SSR $f SSR.$SUFFIX        
+            ncrename -h -v SSR,rsus SSR.$SUFFIX
+            cdo sub SSR.$SUFFIX SSRD.$SUFFIX ${varnew}.${SUFFIX}   
+            cdo divc,${FACTOR} ${varnew}.${SUFFIX} toto.nc;rm ${varnew}.${SUFFIX}; mv toto.nc ${varnew}.${SUFFIX}
+          done
+          rsus_files=`ls ${varnew}*`
+          cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
+          rm -r rsus*.nc SSR* SSRD*
+        ;;
+        "STRU")
+          varnew=rlus
+          for f in ${FILES}; do
+            SUFFIX=$MEM.${f%????}
+            cdo selname,STRD $f STRD.$SUFFIX 
+            ncrename -h -v STRD,rlus STRD.$SUFFIX
+            cdo selname,STR $f STR.$SUFFIX                   
+            ncrename -h -v STR,rlus STR.$SUFFIX
+            cdo sub STR.$SUFFIX STRD.$SUFFIX ${varnew}.${SUFFIX}   
+            cdo divc,${FACTOR} ${varnew}.${SUFFIX} toto.nc;rm ${varnew}.${SUFFIX}; mv toto.nc ${varnew}.${SUFFIX}
+          done
+          rsus_files=`ls ${varnew}*`
+          cdo copy ${rsus_files} tmp_${varnew}_$SDATE.$MEM.nc # combine all the time steps in one file
+          rm -r rlus*.nc STR* STRD*
+        ;;
+        *)  
+	      new_name $VAR       
+          for f in ${FILES};do
+            cdo selname,${VAR} ${f} ${VAR}.$MEM.${f%????}
+          done
+          TMP_FILES=`ls ${VAR}*.nc`
+          TMP_OUT=tmp_${varnew}_$SDATE.$MEM.nc
+          cdo copy ${TMP_FILES} ${TMP_OUT} # combine all the time steps in one file
+          ncrename -v ${VAR},${varnew} ${TMP_OUT}
+          case ${varnew} in
+            "rss"|"rls"|"rsscs"|"rsds"|"rlds"|"hflsd"|"hfssd"|"rlt"|"rst"|"rltcs"|"rstcs")
+            cdo divc,${FACTOR} ${TMP_OUT} toto.nc; rm ${TMP_OUT};mv toto.nc ${TMP_OUT}
+            ncatted -O -a units,${varnew},m,c,"W m-2" ${TMP_OUT}
+            ;;
+          esac
+          rm ${TMP_FILES}
+#          cdo divc,${FACTOR} ${TMP_OUT} toto.nc; rm ${TMP_OUT};mv toto.nc ${TMP_OUT}
+        ;;
+      esac
+  done # loop for VAR
+done # loop for members 
+
+# finish selecting the variables 
+# combine members and change the attributes
+ for VAR in ${VAR_LST_2D[@]}; do 
+    new_name $VAR
+    LSMBSH=${LISTMEMB[0]}-${LISTMEMB[${#LISTMEMB[@]}-1]}
+    PREVIOUS_FILE=`ls -tr ${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_3hourly/${varnew}_${SDATE}_*.nc | tail -1`
+    if [ ! -z $PREVIOUS_FILE ] ; then
+     cd ${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_3hourly/; FILE_NAME_PREVIOUS=`ls ${varnew}_${SDATE}_*.nc | tail -1 `; cd -
+     IDX_1ST=`echo ${varnew}_${SDATE}_ | wc -m `
+     FIRST_MEMBER_PREVIOUS=`echo $FILE_NAME_PREVIOUS | cut -b$IDX_1ST `
+     IDX_LST=` expr $IDX_1ST + 2 `
+     LAST_MEMBER_PREVIOUS=`echo $FILE_NAME_PREVIOUS  | cut -b$IDX_LST `
+#security check:
+     if [ $LAST_MEMBER_PREVIOUS -le `expr ${LISTMEMB[0]} - 1 ` ] ; then
+     cp $PREVIOUS_FILE tmp_$FILE_NAME_PREVIOUS
+       if [ $LAST_MEMBER_PREVIOUS -eq `expr ${LISTMEMB[0]} - 1 ` ] ; then
+        LSMBSH=${FIRST_MEMBER_PREVIOUS}-${LISTMEMB[${#LISTMEMB[@]}-1]}
+       else
+        echo "Actual list of members does not follow directly the ones already post-processed! Check you did not forget any members at the beginning of your list"
+        MISSING_FIRST=`expr ${LAST_MEMBER_PREVIOUS} + 1 `
+        MISSING_LAST=`expr ${LISTMEMB[0]} - 1 `
+        LSMBSH=${FIRST_MEMBER_PREVIOUS}_${LISTMEMB[${#LISTMEMB[@]}-1]}-${MISSING_FIRST}_${MISSING_LAST}
+       fi
+     else
+      echo "Some members are going to be treated twice! If you are not adding new lead_times, revise the consistency between your member list and the previously processed files"
+     fi
+    fi
+gather_memb tmp_${varnew}_$SDATE ${varnew}_${SDATE}_${LSMBSH}.nc $varnew $VAR
+output=${varnew}_${SDATE}_${LSMBSH}.nc
+
+##### Change the header informations #####
+#
+# Get the CFU standard attributes to be written in the variable
+#
+   	variables=`cat ${HEAD_DIR}/table_of_variable | cut -f$idx -d'|' | sed -e 's/ /@/g'`  #to be changed into more interactive with xml table
+  	cfustandard_name=`echo $variables | cut -f2 -d' ' | sed -e 's/@/ /g'`  # variable standard name
+   	cfulong_name=`echo $variables     | cut -f3 -d' ' | sed -e 's/@/ /g'`  # variable long name
+   	cfucell_methods=`echo $variables  | cut -f4 -d' ' | sed -e 's/@/ /g'`  # variable cell methods
+   	cfuunit=`echo $variables          | cut -f5 -d' ' | sed -e 's/@/ /g'`  # variable unit
+   	cfuunit_long=`echo $variables     | cut -f6 -d' ' | sed -e 's/@/ /g'`  # variable unit long name
+   	cfulevel_number=`echo $variables  | cut -f7 -d' ' | sed -e 's/@/ /g'`  # variable level
+   	cfulevel_type=`echo $variables    | cut -f8 -d' ' | sed -e 's/@/ /g'`  # variable level type
+   	cfulevel_units=`echo $variables   | cut -f9 -d' ' | sed -e 's/@/ /g'`  # variable level unit
+#
+# Adding the variable level
+#
+   	ncap2 -s level_${varnew}="$cfulevel_number" ${output} -h -O ${output}
+#
+# Removing unnecessary attributes
+#
+        for att in units valid_range actual_range code table GRID_TYPE ; do 
+	  ncatted -O -h -a ${att},${varnew},d,c, ${output}	
+        done
+#
+# Adding and modifying the {varnew}iable attributes
+#
+        ncatted -O -h -a _FillValue,${varnew},a,f,1.e+12 ${output}
+        ncatted -O -h -a standard_name,${varnew},o,c,"$cfustandard_name" ${output} # {varnew}iable standard name
+        ncatted -O -h -a long_name,${varnew},o,c,"$cfulong_name" ${output}         # {varnew}iable long name
+        ncatted -O -h -a cell_methods,${varnew},o,c,"$cfucell_methods" ${output}   # {varnew}iable cell methods
+        ncatted -O -h -a unit_long,${varnew},o,c,"$cfuunit_long" ${output}         # {varnew}iable long unit name
+        ncatted -O -h -a units,${varnew},o,c,"$cfuunit" ${output}                  # {varnew}iable units
+        ncatted -O -h -a data_type,level_${varnew},o,c,"$cfulevel_type" ${output}  # {varnew}iable level type
+        ncatted -O -h -a units,level_${varnew},o,c,"$cfulevel_units" ${output}     # {varnew}iable level units
+        ncatted -O -h -a coordinates,${varnew},o,c,"longitude latitude reftime leadtime time_bnd experiment_id source realization institution level_${varnew}" ${output} # variable coordinates
+#
+# If the NetCDF file had a horizontal axis name different from longitude
+#
+        ncrename -h -d lon,longitude -v lon,longitude  ${output}
+        ncrename -h -d record,ensemble ${output}
+#
+# If the NetCDF file had a vertical axis name different from latitude
+#
+        ncrename -h -d lat,latitude -v lat,latitude  ${output}
+#
+# Adding variable axis
+#
+        ncatted -O -h -a axis,longitude,o,c,"X" ${output}       # variable longitude axis
+        ncatted -O -h -a axis,latitude,o,c,"Y" ${output}        # variable latitude axis
+        ncatted -O -h -a axis,level_${varnew},o,c,"Z" ${output} # variable level axis
+# modify level information
+# reshape the dimension and make time unlimited 
+
+        ncpdq -O -h -a time,ensemble ${output} ${output}
+        ncks -h -A header.nc ${output}
+
+        nt=`cdo ntime ${output}`
+        ncatted -O -h -a standard_name,level_${varnew},c,c,"height" ${output}       # standard name
+        ncatted -O -h -a long_name,level_${varnew},c,c,"reference height" ${output} # long name
+        ncatted -O -h -a data_type,level_${varnew},c,c,"float" ${output}            # data type
+        ncatted -O -h -a units,level_${varnew},c,c,"m" ${output}                    # units
+        ncatted -O -h -a axis,level_${varnew},c,c,"Z" ${output}                     # axis
+        ncatted -O -h -a positive,level_${varnew},c,c,"up" ${output}
+        ncap2 -O -h -s "level_${varnew}=float(${cfulevel_number})" $output $output
+# delete history
+        ncatted -h -a history,global,d,, $output
+# change institution name
+	    ncatted -h -a institution,global,m,c,"IC3" $output
+
+# create a script to change the EXPID, insitutution, ensember, source and realiazation 
+	i=0 # index
+	for MEM in ${LISTMEMB[@]}; do
+
+cat>modify_ncvalue<<EOF
+ncap2 -O -h -s 'experiment_id($i,0:3)="$EXPID";realization($i)=$MEM;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
+EOF
+		cat modify_ncvalue
+		bash modify_ncvalue $output; rm modify_ncvalue
+		i=$((i+1))
+	done
+##
+        ncrename -O -h -v time,kaka $output # delete time variable 
+        ncks -O -h -x -v kaka $output $output # delete time variable
+        save_final_output $varnew $output
+
+ done # loop for variables 
+}
+
+function new_name(){  #to be rethought: make a match between var_name and xml table
       case $1 in # rename variable names in model output to the standard names which should be used in post-processed files 
         "T2M")
         varnew=tas
@@ -232,8 +447,9 @@ new_name(){
         varnew=evspsbl
         idx=28
         ;;
-        "SST")
-        VAR=SSTK
+        "SSTK")
+#        "SST")
+#weird...        VAR=SSTK
         varnew=tos
         idx=10
         ;;
@@ -309,10 +525,6 @@ new_name(){
         varnew=wap
         idx=34
         ;;
-        "CL")
-        varnew=cl
-        idx=35
-        ;;
         "CLWC")
         varnew=clw
         idx=36
@@ -341,353 +553,206 @@ new_name(){
         varnew=clt
         idx=33
         ;;
-      esac
-}
-
-# for surface variables (manipulate GG files)
-function surface(){
-echo ${MEM_LST[@]}
-for mem in ${MEM_LST[@]}; do
-    
-##### untar and unzip MMA files #####
-  path_to_search=${base_path}/$mem/outputs
-  cp $path_to_search/MMA*.tar . 
-  file_list=`ls MMA*.tar`
-  echo ${file_list}
-  for f in ${file_list};do
-    echo "FILE: $f -> ${file_list}"
-    tar xvf $f; rm *SH*.gz; gunzip -q *.gz
-    rm $f
-  done
-
-  files=`ls MMA*GG*.nc` 
-
-####  process each variable  ####
- for VAR in ${VAR_LST_2D[@]}; do # untar once and extract all the variables
-	new_name $VAR	
-      case $VAR in
-        "PRECIP") # for precip, have to add CP and LSP to get total precip
-	      varnew=prlr
-          for f in ${files}; do
-            suffix=$mem.$f
-            cdo selname,CP $f CP.$suffix # select CP
-            ncrename -h -v CP,prlr CP.$suffix 
-            cdo selname,LSP $f LSP.$suffix # select LSP       
-            ncrename -h -v LSP,prlr LSP.$suffix
-            cdo add CP.$suffix LSP.$suffix ${varnew}.${suffix} # add CP and LSP to get total precipitation 
-            cdo divc,${FACTOR} ${varnew}.${suffix} toto.nc;rm ${varnew}.${suffix}; mv toto.nc ${varnew}.${suffix}
-          done
-          prlr_files=`ls ${varnew}*`
-          cdo copy ${prlr_files} tmp_${varnew}_$sdate.$mem.nc # combine all the time steps in one file
-          rm -r prlr*.nc CP* LSP*
+        "CC")
+        varnew=cl
+        idx=35
+#pab!!!! new variables to be added when variable list read directly in outputs, some are missing
         ;;
-        "SSRU")
-          varnew=rsus
-          for f in ${files}; do
-            suffix=$mem.$f
-            cdo selname,SSRD $f SSRD.$suffix 
-            ncrename -h -v SSRD,rsus SSRD.$suffix
-            cdo selname,SSR $f SSR.$suffix        
-            ncrename -h -v SSR,rsus SSR.$suffix
-            cdo sub SSR.$suffix SSRD.$suffix ${varnew}.${suffix}   
-            cdo divc,${FACTOR} ${varnew}.${suffix} toto.nc;rm ${varnew}.${suffix}; mv toto.nc ${varnew}.${suffix}
-          done
-          rsus_files=`ls ${varnew}*`
-          cdo copy ${rsus_files} tmp_${varnew}_$sdate.$mem.nc # combine all the time steps in one file
-          rm -r rsus*.nc SSR* SSRD*
-        ;;
-        "STRU")
-          varnew=rlus
-          for f in ${files}; do
-            suffix=$mem.$f
-            cdo selname,STRD $f STRD.$suffix 
-            ncrename -h -v STRD,rlus STRD.$suffix
-            cdo selname,STR $f STR.$suffix                   
-            ncrename -h -v STR,rlus STR.$suffix
-            cdo sub STR.$suffix STRD.$suffix ${varnew}.${suffix}   
-            cdo divc,${FACTOR} ${varnew}.${suffix} toto.nc;rm ${varnew}.${suffix}; mv toto.nc ${varnew}.${suffix}
-          done
-          rsus_files=`ls ${varnew}*`
-          cdo copy ${rsus_files} tmp_${varnew}_$sdate.$mem.nc # combine all the time steps in one file
-          rm -r rlus*.nc STR* STRD*
-        ;;
-        *)  
-	      new_name $VAR       
-          for f in ${files};do
-            cdo selname,${VAR} ${f} ${VAR}.$mem.$f
-          done
-          tmp_files=`ls ${VAR}*.nc`
-          tmp_out=tmp_${varnew}_$sdate.$mem.nc
-          cdo copy ${tmp_files} ${tmp_out} # combine all the time steps in one file
-          ncrename -v ${VAR},${varnew} ${tmp_out}
-          case ${varnew} in
-            "rss"|"rls"|"rsscs"|"rsds"|"rlds"|"hflsd"|"hfssd"|"rlt"|"rst"|"rltcs"|"rstcs")
-            cdo divc,${FACTOR} ${tmp_out} toto.nc; rm ${tmp_out};mv toto.nc ${tmp_out}
-            ncatted -O -a units,${varnew},m,c,"W m-2" ${tmp_out}
-            ;;
-          esac
-          rm ${tmp_files}
+        *)
+        varnew=$1
+        idx=000
         ;;
       esac
-  done # loop for VAR
-  rm ${files}
-done # loop for members 
-
-# finish selecting the varialbes 
-# combine memebers and change the attributes
- for VAR in ${VAR_LST[@]}; do 
-    new_name $VAR
-   	output=${varnew}_$sdate.nc
-   	ncecat tmp_${varnew}_$sdate.*.nc ${output} # Combine all members in one file by add one more dimension 
-   	rm tmp_${varnew}_$sdate.*
-
-##### Change the header informations #####
-#
-# Get the CFU standard attributes to be written in the variable
-#
-   	variables=`cat ${HEAD_DIR}/table_of_variable | cut -f$idx -d'|' | sed -e 's/ /@/g'`
-  	cfustandard_name=`echo $variables | cut -f2 -d' ' | sed -e 's/@/ /g'`  # variable standard name
-   	cfulong_name=`echo $variables     | cut -f3 -d' ' | sed -e 's/@/ /g'`  # variable long name
-   	cfucell_methods=`echo $variables  | cut -f4 -d' ' | sed -e 's/@/ /g'`  # variable cell methods
-   	cfuunit=`echo $variables          | cut -f5 -d' ' | sed -e 's/@/ /g'`  # variable unit
-   	cfuunit_long=`echo $variables     | cut -f6 -d' ' | sed -e 's/@/ /g'`  # variable unit long name
-   	cfulevel_number=`echo $variables  | cut -f7 -d' ' | sed -e 's/@/ /g'`  # variable level
-   	cfulevel_type=`echo $variables    | cut -f8 -d' ' | sed -e 's/@/ /g'`  # variable level type
-   	cfulevel_units=`echo $variables   | cut -f9 -d' ' | sed -e 's/@/ /g'`  # variable level unit
-#
-# Adding the variable level
-#
-   	ncap2 -s level_${varnew}="$cfulevel_number" ${output} -h -O ${output}
-#
-# Removing unnecessary attributes
-#
-        for att in units valid_range actual_range code table grid_type ; do 
-	  ncatted -O -h -a ${att},${varnew},d,c, ${output}	
-        done
-#
-# Adding and modifying the {varnew}iable attributes
-#
-        ncatted -O -h -a _FillValue,${varnew},a,f,1.e+12 ${output}
-        ncatted -O -h -a standard_name,${varnew},o,c,"$cfustandard_name" ${output} # {varnew}iable standard name
-        ncatted -O -h -a long_name,${varnew},o,c,"$cfulong_name" ${output}         # {varnew}iable long name
-        ncatted -O -h -a cell_methods,${varnew},o,c,"$cfucell_methods" ${output}   # {varnew}iable cell methods
-        ncatted -O -h -a unit_long,${varnew},o,c,"$cfuunit_long" ${output}         # {varnew}iable long unit name
-        ncatted -O -h -a units,${varnew},o,c,"$cfuunit" ${output}                  # {varnew}iable units
-        ncatted -O -h -a data_type,level_${varnew},o,c,"$cfulevel_type" ${output}  # {varnew}iable level type
-        ncatted -O -h -a units,level_${varnew},o,c,"$cfulevel_units" ${output}     # {varnew}iable level units
-        ncatted -O -h -a coordinates,${varnew},o,c,"longitude latitude reftime leadtime time_bnd experiment_id source realization institution level_${varnew}" ${output} # variable coordinates
-#
-# If the NetCDF file had a horizontal axis name different from longitude
-#
-        ncrename -h -d lon,longitude -v lon,longitude -d record,ensemble ${output}
-#
-# If the NetCDF file had a vertical axis name different from latitude
-#
-        ncrename -h -d lat,latitude -v lat,latitude  ${output}
-#
-# Adding variable axis
-#
-        ncatted -O -h -a axis,longitude,o,c,"X" ${output}       # variable longitude axis
-        ncatted -O -h -a axis,latitude,o,c,"Y" ${output}        # variable latitude axis
-        ncatted -O -h -a axis,level_${varnew},o,c,"Z" ${output} # variable level axis
-# modify level information
-# reshape the dimension and make time unlimited 
-
-        ncpdq -O -h -a time,ensemble ${output} ${output}
-        ncks -h -A header.nc ${output}
-
-        nt=`cdo ntime ${output}`
-        ncatted -O -h -a standard_name,level_${varnew},c,c,"height" ${output}       # standard name
-        ncatted -O -h -a long_name,level_${varnew},c,c,"reference height" ${output} # long name
-        ncatted -O -h -a data_type,level_${varnew},c,c,"float" ${output}            # data type
-        ncatted -O -h -a units,level_${varnew},c,c,"m" ${output}                    # units
-        ncatted -O -h -a axis,level_${varnew},c,c,"Z" ${output}                     # axis
-        ncatted -O -h -a positive,level_${varnew},c,c,"up" ${output}
-        ncap2 -O -h -s "level_${varnew}=float(${cfulevel_number})" $output $output
-# delete history
-        ncatted -h -a history,global,d,, $output
-# change institution name
-	    ncatted -h -a institution,global,m,c,"IC3" $output
-
-# create a script to change the expid, insitutution, ensember, source and realiazation 
-	i=0 # index
-	for mem in ${MEM_LST[@]}; do
-		v=`echo $mem | sed -e 's/fc//g'` # real value of the member without "fc"
-cat>modify_ncvalue<<EOF
-ncap2 -O -h -s 'experiment_id($i,0:3)="$expid";realization($i)=$v;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
-EOF
-		cat modify_ncvalue
-		bash modify_ncvalue $output; rm modify_ncvalue
-		i=$((i+1))
-	done
-##
-        delete_time $output # delete time variable 
-        save_final_output $varnew $output
-
- done # loop for variables 
 }
 
-# for maximum and minimum temperature (manipulate daily data files)
-function maxmin(){
-for VAR in ${VAR_LST_MXMN[@]}; do
- new_name $VAR
- output=${VAR}_${sdate}.nc
- cp $DATADIR/${expid}/daily/$VAR/${VAR}_${sdate}_*.nc.gz .
- gunzip ${VAR}_${sdate}_*.nc.gz 
- sdate1=`echo ${sdate}|cut -c1-6`
- cdo timmean ${VAR}_${sdate}_${sdate1}.nc ${output}; rm ${VAR}_${sdate}_${sdate1}.nc
- files=`ls ${VAR}_${sdate}_*.nc` 
- for f in $files;do
-  cdo timmean $f toto.nc;rm $f
-  ncrcat -O -h ${output} toto.nc ${output};rm toto.nc
- done # loop for files
- ncrename -h -d lev,ensemble ${output}
- delete_var ${output} lev
- ncks -h -A header.nc ${output}
-#
-# Get the CFU standard attributes to be written in the variable
-#
-variables=`cat ${HEAD_DIR}/table_of_variable | cut -f$idx -d'|' | sed -e 's/ /@/g'`
-cfustandard_name=`echo $variables | cut -f2 -d' ' | sed -e 's/@/ /g'`  # variable standard name
-cfulong_name=`echo $variables     | cut -f3 -d' ' | sed -e 's/@/ /g'`  # variable long name
-cfucell_methods=`echo $variables  | cut -f4 -d' ' | sed -e 's/@/ /g'`  # variable cell methods
-cfuunit=`echo $variables          | cut -f5 -d' ' | sed -e 's/@/ /g'`  # variable unit
-cfuunit_long=`echo $variables     | cut -f6 -d' ' | sed -e 's/@/ /g'`  # variable unit long name
-cfulevel_number=`echo $variables  | cut -f7 -d' ' | sed -e 's/@/ /g'`  # variable level
-cfulevel_type=`echo $variables    | cut -f8 -d' ' | sed -e 's/@/ /g'`  # variable level type
-cfulevel_units=`echo $variables   | cut -f9 -d' ' | sed -e 's/@/ /g'`  # variable level unit
-#
-# Adding the variable level
-#
-ncap2 -s level_${varnew}="$cfulevel_number" ${output} -h -O ${output}
-#
-# Removing unnecessary attributes
-#
-for att in grid_type ; do 
- ncatted -O -h -a ${att},${varnew},d,c, ${output}      
-done
-#
-# Adding and modifying the {varnew}iable attributes
-#
-ncatted -O -h -a standard_name,${varnew},o,c,"$cfustandard_name" ${output} # {varnew}iable standard name
-ncatted -O -h -a long_name,${varnew},o,c,"$cfulong_name" ${output}         # {varnew}iable long name
-ncatted -O -h -a cell_methods,${varnew},o,c,"$cfucell_methods" ${output}   # {varnew}iable cell methods
-ncatted -O -h -a data_type,level_${varnew},o,c,"$cfulevel_type" ${output}  # {varnew}iable level type
-ncatted -O -h -a units,level_${varnew},o,c,"$cfulevel_units" ${output}     # {varnew}iable level units
-ncatted -O -h -a coordinates,${varnew},o,c,"longitude latitude reftime leadtime time_bnd experiment_id source realization institution level_${varnew}" ${output}
-#
-# Adding variable axis
-#
-ncatted -O -h -a axis,longitude,o,c,"X" ${output}       # variable longitude axis
-ncatted -O -h -a axis,latitude,o,c,"Y" ${output}        # variable latitude axis
-ncatted -O -h -a axis,level_${varnew},o,c,"Z" ${output} # variable level axis
-# delete history
-ncatted -h -a history,global,d,, $output
-# change institution name
-ncatted -h -a institution,global,m,c,"IC3" $output 
 
-# create a script to change the expid, insitutution, ensember, source and realiazation 
-	i=0 # index
-	for mem in ${MEM_LST[@]}; do
-		v=`echo $mem | sed -e 's/fc//g'` # real value of the member without "fc"
-cat>modify_ncvalue<<EOF
-ncap2 -O -h -s 'experiment_id($i,0:3)="$expid";realization($i)=$v;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
-EOF
-		cat modify_ncvalue
-		bash modify_ncvalue $output; rm modify_ncvalue
-		i=$((i+1))
-	done
-##
+function gather_memb {
 
-    save_final_output $varnew $output
-done # loop for variables 
+#  Gather the members in a single netcdf file 
+
+# $1 : prefix netcdf file name for all the members        
+# $2 : output file name                               
+# Created in May 2012           Author : vguemas@ic3.cat                            
+# Adapted for atmospherical outputs January 2013 pierre-antoine.bretonniere@ic3.cat 
+
+  OLD_FILE=`ls ${1}_*`
+  NEW_FILES=`ls ${1}.*`
+  VAR_LOC=$3
+  VAR_OLD=$4
+
+  rm -f tmp_cat.nc tmp_0_${OLD_FILE} tmp_${OLD_FILE} 
+  ncecat ${NEW_FILES} tmp_cat.nc
+  ncrename -d record,ensemble tmp_cat.nc
+  ncecat -O -h tmp_cat.nc tmp_cat2.nc
+  ncpdq -O -h -a ensemble,record tmp_cat2.nc tmp_cat2.nc
+  ncwa -O -h -a record tmp_cat2.nc tmp_cat2.nc
+  mv tmp_cat2.nc tmp_cat.nc #new
+ for var_check in $VAR_LST_3D_GG
+  do
+  if [ $VAR_OLD == $var_check ];then
+   ncks -O -h -a -v lon,lat,$VAR_LOC tmp_cat.nc tmp_cat.nc
+#   ncks -O -h -a -v lon,lat,$VAR_LOC tmp_cat2.nc tmp_cat3.nc
+#   mv tmp_cat3.nc tmp_cat.nc
+#  else
+#   mv tmp_cat2.nc tmp_cat.nc
+  fi
+ done
+ if [ ! -z $OLD_FILE ] ; then
+  ncks -C -O -v longitude,latitude,$VAR_LOC $OLD_FILE tmp_0_${OLD_FILE}
+  ncecat -O -h tmp_0_${OLD_FILE} tmp_${OLD_FILE}
+  ncpdq -O -h -a ensemble,record tmp_${OLD_FILE} tmp_${OLD_FILE}
+  ncwa -O -h -a record tmp_${OLD_FILE} tmp_${OLD_FILE}
+  ncrcat tmp_cat.nc tmp_${OLD_FILE} $2
+ else
+  mv tmp_cat.nc $2
+ fi
 }
 
-# for pressure level variables (manipulate SH files)
-extract(){
-for mem in ${MEM_LST[@]}; do
-# untar and unzip MMA SH files and GG files also if Q is in variable list
-    path_to_search=${base_path}/$mem
-    file_list=`find $path_to_search -type f -iname "mma*" 2> /dev/null`
-    for f in ${file_list};do
-     SH_files=`tar tf ${f}|grep SH`
-     for file in ${SH_files};do
-      tar xvf ${f} ${file};gunzip -q ${file}
-     done
-     if [[ $qq == 1 ]];then
-      GG_files=`tar tf ${f}|grep GG`
-      for file in ${GG_files};do
-       tar xvf ${f} ${file};gunzip -q ${file}
-      done
-     fi
-    done
-
+function save_final_output(){
+# save final post-processed output (file in *.nc format)
+ varnew=$1
+ output=$2
+   
+ TARDIR=${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_${NFRP}hourly
+ [ ! -d $TARDIR ] && mkdir -p $TARDIR
+ find ${SAVEDIR}/${EXPID}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
+  if [ -e ${TARDIR}/${output} ] ; then
+   mv ${output} new_${output}
+   ncpdq -O -h -a ensemble,time new_${output} new_${output} # shape the dimensions
+   mv ${TARDIR}/${output} old_${output}
+   ncpdq -O -h -a ensemble,time old_${output} old_${output} # shape the dimensions
+   ncrcat -O -h old_${output} new_${output} ${output}
+   ncpdq -O -h -a time,ensemble ${output} ${output}         # again reshape the dimensions as per requirement of final output
+   rm old_${output} new_${output}
+  fi
+ chmod 770 ${output}
+ mv ${output} ${TARDIR}
+#for tos, change value on land from 0 to NaN
+ if [ $varnew == "tos" ]; then
+#  ln -sf /cfunas/exp/ecearth/land_sea_mask_320x160.nc .
+  ln -sf ${MASK_PATH} .
+  cdo div `basename ${MASK_PATH}` `basename ${MASK_PATH}` mask1.nc
+#  cdo div land_sea_mask_320x160.nc land_sea_mask_320x160.nc mask1.nc
+  cdo div $output mask1.nc $output.tmp
+  mv $output.tmp $output
+  rm mask1.nc `basename ${MASK_PATH}`
+ fi
+#to make a smooth transition between the 2 versions of nccf_atm_monthly, as R functions look for atmospherical monthly means called $var_yyyymmdd.nc (without the members), a link between the 2 naming conventions is created so that R functions still work while they have not been updated.
+ ln -sf ${TARDIR}/${output} ${TARDIR}/${varnew}_${SDATE}.nc
+}
+   
 # Select variables and levels   
-   files=`ls MMA*SH*.nc`
-   echo $files
-   for f in ${files}; do   
-    for var in ${VAR_LST_3D[@]}; do
-      case $var in 
-	   T|U|V|Z)
+function combine_3d(){
+for MEM in ${MEM_LST[@]}; do
+   FILES=`ls MMA*SH*.nc.$MEM`
+   echo $FILES
+   for f in ${FILES}; do   
+    for var in ${VAR_LST_3D_SH[@]}; do
         new_name $var
-        tmp_out=tmp_${varnew}_$f
-        cdo selname,${var} -sellevel,${LEVEL_LST} ${f} ${tmp_out}
-      ;;
-     esac
+        TMP_OUT=tmp_${varnew}_$f
+        cdo selname,${var} -sellevel,${LEVEL_LST} ${f} ${TMP_OUT}
     done
     rm ${f}
    done
-
-   if [[ $qq == 1 ]];then
-    files=`ls MMA*GG*.nc`
-    echo $files
-    for f in ${files}; do
-     new_name Q
-     tmp_out=tmp_${varnew}_$f
-     cdo selname,Q -sellevel,${LEVEL_LST} ${f} ${tmp_out}
-   	 rm ${f}
+    FILES=`ls MMA*GG*.nc.$MEM`
+    for f in ${FILES}; do
+   for var in ${VAR_LST_3D_GG[@]}; do
+        new_name $var
+        TMP_OUT=tmp_${varnew}_$f
+     case $var in #pab
+       Q)  
+        cdo selname,${var} -sellevel,${LEVEL_LST} ${f} ${TMP_OUT} #
+       ;;
+       *)
+        cdo selname,${var} ${f} ${TMP_OUT} #pab
+        ;;
+      esac
     done
-   fi 
+    done
 
 # combine all time step in one file
      for var in ${VAR_LST_3D[@]}; do
 	  new_name $var
-      files=`ls tmp_${varnew}_*`
-      output=${varnew}_$sdate.$mem.nc
-      cdo copy ${files} ${output} # combine all the time steps in one file
+      FILES=`ls tmp_${varnew}_*`
+      output=${varnew}_$SDATE.$MEM.nc
+      cdo copy ${FILES} ${output} # combine all the time steps in one file
       ncrename -v ${var},${varnew} ${output}
-      rm -r ${files}
+      rm -r ${FILES}
     done #loop for variables 
 done # loop for members 
 }
+######end of combine3d ##########
+
 
 # interpolate from SH to regular grid
-regrid2x2(){
- for var in ${VAR_LST_3D[@]}; do
+function regrid2x2(){
+ for var in ${VAR_LST_3D_SH[@]}; do
    new_name $var
-   files=`ls ${varnew}_$sdate.*.nc`
-   for f in ${files}; do   
-    case $var in 
-     T|U|V|Z|W)
+   FILES=`ls ${varnew}_$SDATE.*.nc`
+   for f in ${FILES}; do   
       cdo -r sp2gp -selname,${varnew} ${f} rg_${f}; rm ${f}
-     ;;
-     Q|CC|CIWC|CLWC)
+   done
+ done
+ for var in ${VAR_LST_3D_GG[@]}; do
+   new_name $var
+   FILES=`ls ${varnew}_$SDATE.*.nc`
+   for f in ${FILES}; do
+ 
       cdo selname,${varnew} ${f} rg_${f}; rm ${f}
-     ;;
-    esac
    done
  done
 }
 
+
 function upper(){
    for var in ${VAR_LST_3D[@]}; do
     new_name $var
-	output=${varnew}_$sdate.nc
-	files=`ls rg_${varnew}_$sdate.*.nc`
-	ncecat ${files} ${output} # Combine all members in one file by add one more dimension 
-	rm ${files}
-	ncrename -d lon,longitude -d lat,latitude -d lev,level ${output}
-	ncrename -v lon,longitude -v lat,latitude -v lev,level ${output}
+
+
+    LSMBSH=${LISTMEMB[0]}-${LISTMEMB[${#LISTMEMB[@]}-1]}
+    PREVIOUS_FILE=`ls ${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_3hourly/${varnew}_${SDATE}_*.nc | tail -1`
+    if [  ! -z $PREVIOUS_FILE ] ; then
+     cd ${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_3hourly/; FILE_NAME_PREVIOUS=`ls ${varnew}_${SDATE}_*.nc | tail -1 `; cd -
+     IDX_1ST=`echo ${varnew}_${SDATE}_ | wc -m `
+     FIRST_MEMBER_PREVIOUS=`echo $FILE_NAME_PREVIOUS | cut -b$IDX_1ST `
+     IDX_LST=` expr $IDX_1ST + 2 `
+     LAST_MEMBER_PREVIOUS=`echo $FILE_NAME_PREVIOUS  | cut -b$IDX_LST `
+#security check:
+     if [ $LAST_MEMBER_PREVIOUS -le `expr ${LISTMEMB[0]} - 1 ` ] ; then
+        cp $PREVIOUS_FILE rg_$FILE_NAME_PREVIOUS
+       if [ $LAST_MEMBER_PREVIOUS -eq `expr ${LISTMEMB[0]} - 1 ` ] ; then
+        LSMBSH=${FIRST_MEMBER_PREVIOUS}-${LISTMEMB[${#LISTMEMB[@]}-1]}
+       else
+        echo "Actual list of members does not follow directly the ones already post-processed! Check you did not forget any members at the beginning of your list"
+        MISSING_FIRST=`expr ${LAST_MEMBER_PREVIOUS} + 1 `
+        MISSING_LAST=`expr ${LISTMEMB[0]} - 1 `
+        LSMBSH=${FIRST_MEMBER_PREVIOUS}_${LISTMEMB[${#LISTMEMB[@]}-1]}-${MISSING_FIRST}_${MISSING_LAST}
+       fi
+     else
+      echo "Some members are going to be treated twice! Revise the consistency between your member list and the previously processed files"
+     fi
+    fi
+    gather_memb rg_${varnew}_$SDATE ${varnew}_${SDATE}_${LSMBSH}.nc $varnew $VAR
+    output=${varnew}_${SDATE}_${LSMBSH}.nc
+	rm ${FILES}
+   for CHECK_VAR in $VAR_LST_3D_SH
+    do
+    if [ $CHECK_VAR == $var ];then
+    	ncrename -d lon,longitude -d lat,latitude -d lev,level ${output}
+    	ncrename -v lon,longitude -v lat,latitude -v lev,level ${output}
+    fi
+   done
+   for CHECK_VAR in $VAR_LST_3D_GG
+    do
+    if [ $CHECK_VAR == $var ];then
+#	ncrename -d lon,longitude -d lat,latitude -d mlev,level ${output}
+#    ncrename -v lon,longitude -v lat,latitude -v mlev,level ${output}
+	ncrename -d lon,longitude -d lat,latitude ${output}
+    ncrename -d mlev,level ${output}
+    ncrename -v lon,longitude -v lat,latitude ${output}
+    ncrename -v mlev,level ${output}
+    fi
+   done
 #
 # Get the CFU standard attributes to be written in the variable
 #
@@ -703,7 +768,7 @@ function upper(){
 #
 # modify variable attributes
 #
-        for att in units valid_range actual_range code table grid_type truncation; do
+        for att in units valid_range actual_range code table GRID_TYPE truncation; do
           ncatted -O -h -a ${att},${varnew},d,, ${output}
         done
 
@@ -749,50 +814,109 @@ function upper(){
 	    ncap2 -O -h -s "level()=level()/100" ${output} ${output} 
 
         ncpdq -O -h -a time,ensemble ${output} ${output} # reshape the dimension and make time unlimited
-      #  ncks  -h -A $HEAD_DIR/${sdate}.nc ${output}
+      #  ncks  -h -A $HEAD_DIR/${SDATE}.nc ${output}
         ncks  -h -A header.nc ${output}
-	    delete_time $output
+        ncrename -O -h -v time,kaka $output # delete time variable 
+        ncks -O -h -x -v kaka $output $output # delete time variable
         ncatted -h -a history,global,d,, $output  #delete history
         ncatted -h -a institution,global,m,c,"IC3" $output ## change institution name in global attributes
 
-# create a script to change the expid, insitutution, ensember, source and realiazation 
+# create a script to change the EXPID, insitutution, ensember, source and realiazation 
 	i=0 # index
-	for mem in ${MEM_LST[@]}; do
-		v=`echo $mem | sed -e 's/fc//g'` # real value of the member without "fc"
+	for mem in ${LISTMEMB[@]}; do
 cat>modify_ncvalue<<EOF
-ncap2 -O -h -s 'experiment_id($i,0:3)="$expid";realization($i)=$v;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
+ncap2 -O -h -s 'experiment_id($i,0:3)="$EXPID";realization($i)=$mem;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
 EOF
 		cat modify_ncvalue
 		bash modify_ncvalue $output; rm modify_ncvalue
 		i=$((i+1))
 	done
 ##
-        rm -f ${files}*
+#        rm -f ${files}*
         save_final_output $varnew $output
  done # loop over variables 
 }
 
-# save final post-processed output (file in *.nc format)
-function save_final_output(){
- varnew=$1
- output=$2
 
- tardir=${SAVEDIR}/${expid}/monthly_mean/${varnew}_${NFRP}hourly/
- mkdir -p $tardir
- find ${SAVEDIR}/${expid}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
-  if [ -e ${tardir}/${output} ] ; then
-   mv ${output} new_${output}
-   ncpdq -O -h -a ensemble,time new_${output} new_${output} # shape the dimensions
-   mv ${tardir}/${output} old_${output}
-   ncpdq -O -h -a ensemble,time old_${output} old_${output} # shape the dimensions
-   ncrcat -O -h old_${output} new_${output} ${output}
-   ncpdq -O -h -a time,ensemble ${output} ${output}         # again reshape the dimensions as per requirement of final output
-   rm old_${output} new_${output}
-  fi
- chmod 770 ${output}
- mv ${output} ${tardir}
+
+# for maximum and minimum temperature (manipulate daily data files)
+function maxmin(){
+for VAR in ${VAR_LST_MXMN[@]}; do
+ new_name $VAR
+ output=${VAR}_${SDATE}.nc
+ cp $DATADIR/${EXPID}/daily/$VAR/${VAR}_${SDATE}_*.nc.gz .
+ gunzip ${VAR}_${SDATE}_*.nc.gz 
+ SDATE1=`echo ${SDATE}|cut -c1-6`
+ cdo timmean ${VAR}_${SDATE}_${SDATE1}.nc ${output} ; rm ${VAR}_${SDATE}_${SDATE1}.nc
+ files=`ls ${VAR}_${SDATE}_*.nc` 
+ for f in $files;do
+  cdo timmean $f toto.nc;rm $f
+  ncrcat -O -h ${output} toto.nc ${output};rm toto.nc
+ done # loop for files
+ ncrename -h -d lev,ensemble ${output}
+ ncrename -O -h -v lev,kaka ${output} #delete lev var
+ ncks -O -h -x -v kaka ${output} ${output} #delete lev var
+ ncks -h -A header.nc ${output}
+#
+# Get the CFU standard attributes to be written in the variable
+#
+variables=`cat ${HEAD_DIR}/table_of_variable | cut -f$idx -d'|' | sed -e 's/ /@/g'`
+cfustandard_name=`echo $variables | cut -f2 -d' ' | sed -e 's/@/ /g'`  # variable standard name
+cfulong_name=`echo $variables     | cut -f3 -d' ' | sed -e 's/@/ /g'`  # variable long name
+cfucell_methods=`echo $variables  | cut -f4 -d' ' | sed -e 's/@/ /g'`  # variable cell methods
+cfuunit=`echo $variables          | cut -f5 -d' ' | sed -e 's/@/ /g'`  # variable unit
+cfuunit_long=`echo $variables     | cut -f6 -d' ' | sed -e 's/@/ /g'`  # variable unit long name
+cfulevel_number=`echo $variables  | cut -f7 -d' ' | sed -e 's/@/ /g'`  # variable level
+cfulevel_type=`echo $variables    | cut -f8 -d' ' | sed -e 's/@/ /g'`  # variable level type
+cfulevel_units=`echo $variables   | cut -f9 -d' ' | sed -e 's/@/ /g'`  # variable level unit
+#
+# Adding the variable level
+#
+ncap2 -s level_${varnew}="$cfulevel_number" ${output} -h -O ${output}
+#
+# Removing unnecessary attributes
+#
+for att in GRID_TYPE ; do 
+ ncatted -O -h -a ${att},${varnew},d,c, ${output}      
+done
+#
+# Adding and modifying the {varnew}iable attributes
+#
+ncatted -O -h -a standard_name,${varnew},o,c,"$cfustandard_name" ${output} # {varnew}iable standard name
+ncatted -O -h -a long_name,${varnew},o,c,"$cfulong_name" ${output}         # {varnew}iable long name
+ncatted -O -h -a cell_methods,${varnew},o,c,"$cfucell_methods" ${output}   # {varnew}iable cell methods
+ncatted -O -h -a data_type,level_${varnew},o,c,"$cfulevel_type" ${output}  # {varnew}iable level type
+ncatted -O -h -a units,level_${varnew},o,c,"$cfulevel_units" ${output}     # {varnew}iable level units
+ncatted -O -h -a coordinates,${varnew},o,c,"longitude latitude reftime leadtime time_bnd experiment_id source realization institution level_${varnew}" ${output}
+#
+# Adding variable axis
+#
+ncatted -O -h -a axis,longitude,o,c,"X" ${output}       # variable longitude axis
+ncatted -O -h -a axis,latitude,o,c,"Y" ${output}        # variable latitude axis
+ncatted -O -h -a axis,level_${varnew},o,c,"Z" ${output} # variable level axis
+# delete history
+ncatted -h -a history,global,d,, $output
+# change institution name
+ncatted -h -a institution,global,m,c,"IC3" $output 
+
+# create a script to change the EXPID, insitutution, ensember, source and realiazation 
+	i=0 # index
+	for mem in ${LISTMEMB[@]}; do
+cat>modify_ncvalue<<EOF
+ncap2 -O -h -s 'experiment_id($i,0:3)="$EXPID";realization($i)=$mem;institution($i,0:14)="$INSTITUTION";source($i,0:59)="$SOURCE"' \$1 \$1
+EOF
+		cat modify_ncvalue
+		bash modify_ncvalue $output; rm modify_ncvalue
+		i=$((i+1))
+	done
+##
+
+    save_final_output $varnew $output
+done # loop for variables 
 }
 ####  End of the User Defined Functions  #### 
+
+
 
 
 ###################################
@@ -803,58 +927,70 @@ function save_final_output(){
 
 date
 
-check_args $@
+config_file=$1
+check_args $@ 
+#read config_file and initialize variables
+. ${config_file}
+FACTOR=$((NFRP*3600))
+ENSEMBLE=${#MEM_LST[@]}
 
-expid=$1
-sdate=$2
-
-rm -rf ${WORKDIR}
+#rm -rf ${WORKDIR}
 mkdir -p ${WORKDIR}
 if [[ ! -d ${WORKDIR} ]]; then
  exit 1
 fi
+
 cd ${WORKDIR}
 
-base_path=${DATADIR}/${expid}/${sdate}
-mkdir -p ${SAVEDIR}/${expid}; # chmod -R 775 $SAVEDIR/${expid} 
+base_path=${DATADIR}/${EXPID}/${SDATE}
+mkdir -p ${SAVEDIR}/${EXPID}; # chmod -R 775 $SAVEDIR/${EXPID} 
 
-# seperate and count 2D&3D varaibles
-j=1
-k=1
-l=1
-qq=0
-for var in ${VAR_LST}; do
- if [[ $var == 'Q' ]] ;then
-  qq=1
- fi
- case $var in
- T2M|D2M|SST|MSL|PRECIP|SSR|STR|TTR|TSR|TSRC|TTRC|SLHF|SSHF|U10M|V10M|SSRD|CP|SF|E|SSRU|SSRC|STRU|STRD|TCC)
- VAR_LST_2D[$j]="$var"
- j=$((j+1))
- ;;
- T|U|V|Z|Q|W|CC|CIWC|CLWC)
- VAR_LST_3D[$k]="$var"
- k=$((k+1))
- ;;
- tasmax|tasmin)
- VAR_LST_MXMN[$l]="$var"
- l=$((l+1))
- ;;
- esac
-done
 
+LISTMEMB=(`echo ${MEM_LST[@]} | sed -e 's/fc//g'`) #member list without "fc"
 get_leadtime
-header $sdate
-
-if [[ ${#VAR_LST_2D[@]} > 0 ]]; then
- surface
+header $SDATE
+extract
+if [ -z ${VAR_LST_2D[@]}  ]; then
+ GG=`ls *GG* | head -1`
+ read_vars $GG GG
+ SH=`ls *SH* | head -1`
+ read_vars $SH SH
+rm /scratch/${USER}/pp/VAR_LST_2D.txt 
+VAR_LST_2D=`echo ${VAR_LST_2D_GG} ${VAR_LST_2D_SH}`
+echo $VAR_LST_2D >> /scratch/${USER}/pp/VAR_LST_2D.txt
+rm /scratch/${USER}/pp/VAR_LST_3D.txt 
+VAR_LST_3D=`echo ${VAR_LST_3D_GG} ${VAR_LST_3D_SH}`
+else
+ VAR_LST_3D_SH_DEFAULT='T U V W Z'
+ VAR_LST_3D_GG_DEFAULT='Q CC CIWC CLWC'
+ VAR_LST_2D_GG_DEFAULT='T2M D2M SSTK MSL PRECIP SSR STR TTR TSR TSRC TTRC SLHF SSHF U10M V10M SSRD CP SF E SSRU SSRC STRU STRD TCC'
+#if list of variables read from config_file, separation between GG and SH variables
+ for var in ${VAR_LST_3D[@]}
+ do
+  for var_sh in ${VAR_LST_3D_SH_DEFAULT[@]} 
+  do
+   [ $var == $var_sh ] && VAR_LST_3D_SH=`echo $VAR_LST_3D_SH $var`
+  done
+  for var_gg in ${VAR_LST_3D_GG_DEFAULT[@]}
+  do
+   [ $var == $var_gg ] && VAR_LST_3D_GG=`echo $VAR_LST_3D_GG $var`
+  done
+ done  
+ for var in ${VAR_LST_2D[@]}
+ do
+  for var_gg in ${VAR_LST_2D_GG_DEFAULT[@]}
+  do
+   [ $var == $var_gg ] && VAR_LST_2D_GG=`echo $VAR_LST_2D_GG $var`
+  done
+ done 
 fi
 
-if [[ ${#VAR_LST_3D[@]} > 0 ]]; then
- extract
- regrid2x2
- upper
-fi
+surface
+
+combine_3d
+regrid2x2
+upper
+
 
 if [[ ${#VAR_LST_MXMN[@]} > 0 ]]; then
  maxmin

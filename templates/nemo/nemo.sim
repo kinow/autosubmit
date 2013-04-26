@@ -15,10 +15,10 @@ MEMBER=%MEMBER%
 EXPID=%EXPID%
 START_date=%SDATE%
 NEMODIR=%MODELS_DIR%/nemo/${VERSION}
-WRITINGDIR=${SCRATCH_DIR}/%HPCUSER%/${EXPID}
+WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 SETUPPATH=${WRITINGDIR}/model/setup
-RUN_dir=${WRITINGDIR}/${MEMBER}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 NEMO_nproc=`echo %NEMO_nprocX%*%NEMO_nprocY% | bc`
 #
 # Chunk management
@@ -230,6 +230,6 @@ fi
 #
 ###############################################################################
 #
-touch %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
+touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 
 date
