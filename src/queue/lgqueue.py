@@ -14,6 +14,7 @@ class LgQueue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstat"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
 		self._put_cmd = "scp"
@@ -30,11 +31,15 @@ class LgQueue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstat"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+	
+	def get_checkhost_cmd(self):
+		return self._checkhost_cmd
 	
 	def get_submit_cmd(self):
 		return self._submit_cmd

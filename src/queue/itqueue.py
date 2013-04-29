@@ -14,6 +14,7 @@ class ItQueue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -29,10 +30,14 @@ class ItQueue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+
+	def get_checkhost_cmd(self):
+		reutrn self._checkhost_cmd
 
 	def get_mkdir_cmd(self):
 		return self._mkdir_cmd

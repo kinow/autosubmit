@@ -19,6 +19,7 @@ class PsQueue(HPCQueue):
 		#Ellen-->self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
 		self._cancel_cmd = "ssh " + self._host + " kill -SIGINT"
 		self._checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " + self._remote_log_dir + " "
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -38,11 +39,14 @@ class PsQueue(HPCQueue):
 		self._status_cmd = "ssh " + self._host + " bjobs -w -X"
 		self._cancel_cmd = "ssh " + self._host + " kill -SIGINT"
 		self._checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " + self._remote_log_dir + " "
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 
+	def get_checkhost_cmd(self):
+		return self._checkhost_cmd
 
 	def get_submit_cmd(self):
 		return self._submit_cmd

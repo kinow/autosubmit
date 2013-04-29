@@ -6,12 +6,15 @@ from time import sleep
 
 class MnQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "mn"
+		self._host = "mn-ecm86"
+		self._scratch = "/gpfs/scratch"
+		self._project = "ecm86"
+		self._user = "ecm86603"
 		self._expid = expid
-		self._hpcuser = "\$USER"
 		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " mncancel"
 		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " mnq --xml"
 		self._put_cmd = "scp"
@@ -23,8 +26,22 @@ class MnQueue(HPCQueue):
 		self._job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
 
-	def get_submit_cmd(self):
+	def update_cmds(self):
+		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
+		self._cancel_cmd = "ssh " + self._host + " mncancel"
+		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+		self._checkhost_cmd = "ssh " + self._host
 		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
+		self._status_cmd = "ssh " + self._host + " mnq --xml"
+		self._put_cmd = "scp"
+		self._get_cmd = "scp"
+		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+	
+	def get_checkhost_cmd(self):
+		return self._checkhost_cmd
+
+
+	def get_submit_cmd(self):
 		return self._submit_cmd
 
 	def get_remote_log_dir(self):
@@ -32,7 +49,6 @@ class MnQueue(HPCQueue):
 		return slef._remote_log_dir
 
 	def get_mkdir_cmd(self):
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		return self._mkdir_cmd
 	
 	def parse_job_output(self, output):

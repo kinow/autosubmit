@@ -165,14 +165,20 @@ if __name__ == "__main__":
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
 	template_rootname = exp_parser.get('experiment','TEMPLATE') 
+	
+	#check the availability of the Queue
 	## in lindgren arch must check both serial and parallel queues
 	if(hpcarch == "lindgren"):
+		queueavail = serialQueue.check_host()
 		serialQueue.check_remote_log_dir()
+		queueavail = queueavail and parallelQueue.check_host()
 		parallelQueue.check_remote_log_dir()
 	else:
+		queueavial = queue.check_host()
 		queue.check_remote_log_dir()
 	
 	if (setup != 'false' or transfer != 'false'):
+		queueavail = localQueue.check_host()
 		localQueue.check_remote_log_dir()
 
 	while joblist.get_active() :
@@ -211,31 +217,35 @@ if __name__ == "__main__":
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
 		logger.info("Number of jobs in queue: %s" % len(jobinqueue)) 
-		for job in jobinqueue:
-			job.print_job()
-			## in lindgren arch must select serial or parallel queue acording to the job type
-			if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
-				queue = parallelQueue
-			elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
-				queue = serialQueue
-			if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
-				status = localQueue.check_job(job.get_id(), job.get_status())
-			else:
-				status = queue.check_job(job.get_id(), job.get_status())
-			if(status == Status.COMPLETED):
-				logger.debug("This job seems to have completed...checking")
+
+		if not queueavail:
+			logger.info("There is no queue available")
+		else:
+			for job in jobinqueue:
+				job.print_job()
+				## in lindgren arch must select serial or parallel queue acording to the job type
+				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
+					queue = parallelQueue
+				elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+					queue = serialQueue
 				if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
-					localQueue.get_completed_files(job.get_name())
+					status = localQueue.check_job(job.get_id(), job.get_status())
 				else:
-					queue.get_completed_files(job.get_name())
-				job.check_completion()
-			else:
-				job.set_status(status)
-		#Uri add check if status UNKNOWN and exit if you want 
-   
-		##after checking the jobs , no job should have the status "submitted"
-		##Uri throw an exception if this happens (warning type no exit)
-   
+					status = queue.check_job(job.get_id(), job.get_status())
+				if(status == Status.COMPLETED):
+					logger.debug("This job seems to have completed...checking")
+					if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
+						localQueue.get_completed_files(job.get_name())
+					else:
+						queue.get_completed_files(job.get_name())
+					job.check_completion()
+				else:
+					job.set_status(status)
+			#Uri add check if status UNKNOWN and exit if you want 
+	   
+			##after checking the jobs , no job should have the status "submitted"
+			##Uri throw an exception if this happens (warning type no exit)
+	   
    		joblist.update_parameters(parameters)
 		joblist.update_list()
 		activejobs = joblist.get_active()
@@ -244,7 +254,9 @@ if __name__ == "__main__":
 		## get the list of jobs READY
 		jobsavail = joblist.get_ready()
 
-		if (min(available, len(jobsavail)) == 0):
+		if not queueavail:
+			logger.info("There is no queue available")
+		elif (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
 			logger.info("Number of jobs ready: %s" % len(jobsavail))
 			logger.info("Number of jobs available in queue: %s" % available)
