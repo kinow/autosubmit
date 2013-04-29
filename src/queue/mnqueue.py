@@ -14,7 +14,7 @@ class MnQueue(HPCQueue):
 		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " mncancel"
 		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
-		self._checkhost_cmd = "ssh " + self._host
+		self._checkhost_cmd = "ssh " + self._host + " echo 1"
 		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " mnq --xml"
 		self._put_cmd = "scp"
@@ -30,7 +30,7 @@ class MnQueue(HPCQueue):
 		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " mncancel"
 		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
-		self._checkhost_cmd = "ssh " + self._host
+		self._checkhost_cmd = "ssh " + self._host + " echo 1"
 		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " mnq --xml"
 		self._put_cmd = "scp"

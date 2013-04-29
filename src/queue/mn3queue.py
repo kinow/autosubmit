@@ -14,7 +14,7 @@ class Mn3Queue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
-		self._checkhost_cmd = "ssh " + self._host
+		self._checkhost_cmd = "ssh " + self._host + " echo 1"
 		self._submit_cmd = "ssh " + self._host + " /gpfs/projects/ecm86/common/autosubmit/bsub.sh " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " bjobs -w -X"
 		self._put_cmd = "scp"
@@ -30,7 +30,7 @@ class Mn3Queue(HPCQueue):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " bkill"
 		self._checkjob_cmd = "ssh " + self._host + " bjobs"
-		self._checkhost_cmd = "ssh " + self._host
+		self._checkhost_cmd = "ssh " + self._host + " echo 1"
 		self._submit_cmd = "ssh " + self._host + " /gpfs/projects/ecm86/common/autosubmit/bsub.sh " + self._remote_log_dir + "/" 
 		self._status_cmd = "ssh " + self._host + " bjobs -w -X"
 		self._put_cmd = "scp"
