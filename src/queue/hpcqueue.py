@@ -57,6 +57,15 @@ class HPCQueue:
 			job_status = Status.COMPLETED
 		return job_status
 	
+	def check_host(self):
+		(status, output) = getstatusoutput(self.get_checkhost_cmd())
+		if(status == 0):
+			print 'The host ' + self._host + ' is up'
+			return True
+		else:
+			print 'The host ' + self._host + ' is down'
+			return False
+	
 	def	check_remote_log_dir(self):
 		(status, output) = getstatusoutput(self.get_mkdir_cmd())
 		print self._mkdir_cmd
