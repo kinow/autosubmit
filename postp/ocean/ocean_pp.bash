@@ -64,6 +64,10 @@ source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 case $expid in
   'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar_O1L42' ;;
 esac
+case $expid in
+    'nemovar_s4') rootout='/cfunas/exp/ECMWF/NEMOVAR_S4/monthly_mean' ;;
+    'nemovar_combine') rootout='/cfunas/exp/ECMWF/NEMOVAR_COMBINE/monthly_mean' ;;
+esac
 if [[ ${listpost[@]##max_moc} != ${listpost[@]} ]] || [[ ! -z "$ltimef" ]] || [[ ! -z "$ltime0" ]] ; then 
   if [[ -z "$year0" ]] && [[ -z "$yearf" ]] ; then
     ltime0=$(((${year0}-${yeari})*12+1))

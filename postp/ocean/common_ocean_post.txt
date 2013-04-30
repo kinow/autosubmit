@@ -119,7 +119,7 @@ done
 typeset var listroots
 case $8 in 
   'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
-  'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
+  'MMO' ) listroots="grid_T grid_S grid_U grid_V grid_W icemod" ;;
 esac
 case $9 in
   'daily') freqexcl1='1m' ; freqexcl2='MM' ;;
