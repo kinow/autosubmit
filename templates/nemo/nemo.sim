@@ -1,7 +1,7 @@
 set -exuv
 date
 #
-%ENVIRONMENT%
+%ENVIRONMENT3%
 #
 # General Paths
 #
@@ -19,7 +19,7 @@ WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 SETUPPATH=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-NEMO_nproc=`echo %NEMO_nprocX%*%NEMO_nprocY% | bc`
+NEMO_nproc=%NEMO_nproc%
 #
 # Chunk management
 #
@@ -141,6 +141,8 @@ fi
 
 rm -f ORCA1_1m* ORCA1_1d*
 ksh $SETUPPATH/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
+ln -sf $SETUPPATH/xmlio_server.def
+ln -sf $SETUPPATH/iodef.xml .
 
 ################################################################################
 #
