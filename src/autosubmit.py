@@ -59,6 +59,7 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
+	retrials = int(conf_parser.get('config','retrials'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
 	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
@@ -75,16 +76,19 @@ if __name__ == "__main__":
 		transfer = exp_parser.get('experiment','TRANSFER').lower()
 	else: 
 		transfer = 'false'
+	
+	parameters = dict()
+	parameters['RETRIALS'] = retrials 
 
 	if(hpcarch == "bsc"):
-	   queue = MnQueue(expid)
-	   queue.set_host("bsc")
+	   remoteQueue = MnQueue(expid)
+	   remoteQueue.set_host("bsc")
 	elif(hpcarch == "ithaca"):
-	   queue = ItQueue(expid)
-	   queue.set_host("ithaca")
+	   remoteQueue = ItQueue(expid)
+	   remoteQueue.set_host("ithaca")
 	elif(hpcarch == "hector"):
-	   queue = HtQueue(expid)
-	   queue.set_host("hector")
+	   remoteQueue = HtQueue(expid)
+	   remoteQueue.set_host("hector")
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
@@ -93,13 +97,13 @@ if __name__ == "__main__":
 	   parallelQueue.set_host("lindgren")
 	   
 	elif(hpcarch == "ecmwf"):
-	   queue = EcQueue(expid)
-	   queue.set_host("c2a")
+	   remoteQueue = EcQueue(expid)
+	   remoteQueue.set_host("c2a")
 	elif(hpcarch == "marenostrum3"):
-	   queue = Mn3Queue(expid)
-	   queue.set_host("mn-" + hpcproj)
+	   remoteQueue = Mn3Queue(expid)
+	   remoteQueue.set_host("mn-" + hpcproj)
 
-	if (setup != 'false' or transfer != 'false'):
+	if (setup == 'true' or transfer == 'true'):
 		localQueue = PsQueue(expid)
 		localQueue.set_host("localhost")
 		localQueue.set_scratch("/cfu/autosubmit")
@@ -112,6 +116,7 @@ if __name__ == "__main__":
 	logger.info("Start with job number: %s" % alreadySubmitted)
 	logger.info("Maximum waiting jobs in queues: %s" % maxWaitingJobs)
 	logger.info("Sleep: %s" % safetysleeptime)
+	logger.info("Retrials: %s" % retrials)
 	logger.info("Starting job submission...")
 
 
@@ -130,14 +135,14 @@ if __name__ == "__main__":
 		parallelQueue.set_user(hpcuser)
 		parallelQueue.update_cmds() 
 	else:
-		signal.signal(signal.SIGQUIT, queue.smart_stop)
-		signal.signal(signal.SIGINT, queue.normal_stop)
-		queue.set_scratch(scratch_dir)
-		queue.set_project(hpcproj)
-		queue.set_user(hpcuser)
-		queue.update_cmds()
+		signal.signal(signal.SIGQUIT, remoteQueue.smart_stop)
+		signal.signal(signal.SIGINT, remoteQueue.normal_stop)
+		remoteQueue.set_scratch(scratch_dir)
+		remoteQueue.set_project(hpcproj)
+		remoteQueue.set_user(hpcuser)
+		remoteQueue.update_cmds()
 
-	if (setup != 'false' or transfer != 'false'):
+	if (setup == 'true' or transfer == 'true'):
 		signal.signal(signal.SIGQUIT, localQueue.smart_stop)
 		signal.signal(signal.SIGINT, localQueue.normal_stop)
  
@@ -160,24 +165,39 @@ if __name__ == "__main__":
 	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
 	template_rootname = exp_parser.get('experiment','TEMPLATE') 
+	
+	#check the availability of the Queue
 	## in lindgren arch must check both serial and parallel queues
 	if(hpcarch == "lindgren"):
 		serialQueue.check_remote_log_dir()
 		parallelQueue.check_remote_log_dir()
+		queue = serialQueue
 	else:
-		queue.check_remote_log_dir()
+		remoteQueue.check_remote_log_dir()
+		queue = remoteQueue
 	
-	if (setup != 'false' or transfer != 'false'):
+	if (setup == 'true' or transfer == 'true'):
 		localQueue.check_remote_log_dir()
+		queue = localQueue
 
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
 		available = maxWaitingJobs-waiting
-
+	
+		# variables to be updated on the fly
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
+		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
+		logger.info("Sleep: %s" % safetysleeptime)
+		retrials = int(conf_parser.get('config','retrials'))
+		parameters['RETRIALS'] = retrials 
+		logger.info("Number of retrials: %s" % retrials)
+
+		# read FAIL_RETRIAL number if, blank at creation time put a given number
+		# check availability of machine, if not next iteration after sleep time
+		# check availability of jobs, if no new jobs submited and no jobs available, then stop
   
 		logger.info("Saving joblist")
 		joblist.save()
@@ -196,31 +216,40 @@ if __name__ == "__main__":
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
 		logger.info("Number of jobs in queue: %s" % len(jobinqueue)) 
-		for job in jobinqueue:
-			job.print_job()
-			## in lindgren arch must select serial or parallel queue acording to the job type
-			if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
-				queue = parallelQueue
-			elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
-				queue = serialQueue
-			if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
-				status = localQueue.check_job(job.get_id(), job.get_status())
-			else:
-				status = queue.check_job(job.get_id(), job.get_status())
-			if(status == Status.COMPLETED):
-				logger.debug("This job seems to have completed...checking")
-				if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
-					localQueue.get_completed_files(job.get_name())
+		# Check queue aviailability		
+		queueavail = queue.check_host()
+		if not queueavail:
+			logger.info("There is no queue available")
+		else:
+			for job in jobinqueue:
+				job.print_job()
+				## in lindgren arch must select serial or parallel queue acording to the job type
+				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
+					queue = parallelQueue
+				elif(hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+					queue = serialQueue
+				elif(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
+					queue = localQueue
 				else:
-					queue.get_completed_files(job.get_name())
-				job.check_completion()
-			else:
-				job.set_status(status)
-		#Uri add check if status UNKNOWN and exit if you want 
-   
-		##after checking the jobs , no job should have the status "submitted"
-		##Uri throw an exception if this happens (warning type no exit)
-   
+					queue = remoteQueue
+				# Check queue aviailability		
+				queueavail = queue.check_host()
+				if not queueavail:
+					logger.info("There is no queue available")
+				else:
+					status = queue.check_job(job.get_id(), job.get_status())
+					if(status == Status.COMPLETED):
+						logger.debug("This job seems to have completed...checking")
+						queue.get_completed_files(job.get_name())
+						job.check_completion()
+					else:
+						job.set_status(status)
+			#Uri add check if status UNKNOWN and exit if you want 
+	   
+			##after checking the jobs , no job should have the status "submitted"
+			##Uri throw an exception if this happens (warning type no exit)
+	   
+   		joblist.update_parameters(parameters)
 		joblist.update_list()
 		activejobs = joblist.get_active()
 		logger.info("There are %s active jobs" % len(activejobs))
@@ -228,7 +257,9 @@ if __name__ == "__main__":
 		## get the list of jobs READY
 		jobsavail = joblist.get_ready()
 
-		if (min(available, len(jobsavail)) == 0):
+		if not queueavail:
+			logger.info("There is no queue available")
+		elif (min(available, len(jobsavail)) == 0):
 			logger.info("There is no job READY or available")
 			logger.info("Number of jobs ready: %s" % len(jobsavail))
 			logger.info("Number of jobs available in queue: %s" % available)
@@ -251,20 +282,24 @@ if __name__ == "__main__":
 					queue = serialQueue
 					logger.info("Submitting to serial queue...")
 					print("Submitting to serial queue...")
-
-				if(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
+				elif(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
+					queue = localQueue
 					logger.info("Submitting to local queue...")
 					print("Submitting to local queue...")
-					localQueue.send_script(scriptname)
-					job_id = localQueue.submit_job(scriptname)
 				else:
+					queue = remoteQueue
 					logger.info("Submitting to remote queue...")
 					print("Submitting to remote queue...")
+				# Check queue aviailability		
+				queueavail = queue.check_host()
+				if not queueavail:
+					logger.info("There is no queue available")
+				else:
 					queue.send_script(scriptname)
 					job_id = queue.submit_job(scriptname)
-				job.set_id(job_id)
-				##set status to "submitted"
-				job.set_status(Status.SUBMITTED)
+					job.set_id(job_id)
+					##set status to "submitted"
+					job.set_status(Status.SUBMITTED)
 
 		time.sleep(safetysleeptime)
  

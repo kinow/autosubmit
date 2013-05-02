@@ -15,15 +15,18 @@ class Status:
 
 class Type:
 	"""Class to handle the type of a job.
-	At the moment contains only 4 types:
+	At the moment contains 7 types:
 	SIMULATION are for multiprocessor jobs
 	POSTPROCESSING are single processor jobs
 	ClEANING are archiving job---> dealing with large transfer of data on tape
-	INITIALISATION are jobs which transfer data from tape to disk"""
-	TRANSFER = 6
-	LOCALSETUP = 5
-	REMOTESETUP = 4
+	INITIALISATION are jobs which transfer data from tape to disk
+	LOCALSETUP are for source code preparation local jobs
+	REMOTESETUP are for soruce code compilation jobs
+	TRANSFER are for downloading data jobs"""
+	LOCALSETUP = 6
+	REMOTESETUP = 5
+	INITIALISATION = 4
 	SIMULATION = 3
 	POSTPROCESSING = 2
 	CLEANING = 1
-	INITIALISATION = 0
+	TRANSFER = 0
