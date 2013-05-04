@@ -16,7 +16,7 @@ EXPID=%EXPID%
 START_date=%SDATE%
 NEMODIR=%MODELS_DIR%/nemo/${VERSION}
 WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
-BINPATH=${WRITINGDIR}/model/bin
+BINPATH=${WRITINGDIR}/model/bin/%NEMO_resolution%_%ICE%
 SETUPPATH=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 NEMO_nproc=%NEMO_nproc%
@@ -142,7 +142,7 @@ fi
 rm -f ORCA1_1m* ORCA1_1d*
 ksh $SETUPPATH/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
 ln -sf $SETUPPATH/xmlio_server.def
-ln -sf $SETUPPATH/iodef.xml .
+ln -sf $SETUPPATH/iodef.%ICE%.xml iodef.xml
 
 ################################################################################
 #
