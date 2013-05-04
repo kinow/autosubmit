@@ -68,10 +68,10 @@ case $expid in
     'nemovar_s4') rootout='/cfunas/exp/ECMWF/NEMOVAR_S4/monthly_mean' ;;
     'nemovar_combine') rootout='/cfunas/exp/ECMWF/NEMOVAR_COMBINE/monthly_mean' ;;
 esac
-if [[ ${listpost[@]##max_moc} != ${listpost[@]} ]] || [[ ! -z "$ltimef" ]] || [[ ! -z "$ltime0" ]] ; then 
-  if [[ -z "$year0" ]] && [[ -z "$yearf" ]] ; then
-    ltime0=$(((${year0}-${yeari})*12+1))
-    ltimef=$(((${yearf}-${yeari}+1-(10#$moni+10)/12)*12))
+if [[ ${listpost[@]##max_moc} != ${listpost[@]} ]] || [[ -z "$ltimef" ]] || [[ -z "$ltime0" ]] ; then 
+  if [[ ! -z "$year0" ]] && [[ ! -z "$yearf" ]] ; then
+    ltime0=$(((${year0}-${syeari})*12+1))
+    ltimef=$(((${yearf}-${syeari}+1-(10#$moni+10)/12)*12))
   else
     ltime0=$((((ltime0-1)/12)*12+1))
     ltimef=$((((ltimef+11)/12)*12))
