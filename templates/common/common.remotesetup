@@ -40,7 +40,7 @@ if [[ -f modsrc.tar ]]; then
     v2*)
      cd $WORKDIR/model/sources/build
      ./compilation.ksh
-     ln -sf $WORKDIR/model/sources/oasis3/prism_2-5/prism/*/bin/oasis3.MPI1.x 
+     ln -sf $WORKDIR/model/sources/oasis3/prism_2-5/prism/*/bin/oasis3.MPI1.x $BIN 
      ln -sf $WORKDIR/model/sources/nemo/nemo_build/opa_exe.* $BIN
      ln -sf $WORKDIR/model/sources/ifs/bin/ifsMASTER $BIN
     ;;

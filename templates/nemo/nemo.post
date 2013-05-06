@@ -1,3 +1,4 @@
+%ENVCOM%
 set -exuv
 date
 #
@@ -5,11 +6,6 @@ date
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSM_DIR=%HSM_DIR%
-PATH=%NCDFPATH%:${PATH}
-PATH=%NCOPATH%:${PATH}
-PATH=%CDOPATH%:${PATH}
-PATH=%CDFPATH%:${PATH}
-PATH=%REBUILDPATH%:${PATH}
 #
 # Model Configuration
 #

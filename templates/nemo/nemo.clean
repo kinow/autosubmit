@@ -1,3 +1,4 @@
+%ENVCOM%
 set -exuv
 date
 #
@@ -5,7 +6,6 @@ date
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSM_DIR=%HSM_DIR%
-NCOPATH="%NCOPATH%"
 #
 # Model Configuration
 #
@@ -169,26 +169,26 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
 
   case ${Chunk_start_month} in
     01)
-    ${NCOPATH}/ncks -O -d time_counter,9,11 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
-    ${NCOPATH}/ncks -O -d time_counter,0,2 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
+    ncks -O -d time_counter,9,11 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
+    ncks -O -d time_counter,0,2 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
     for ((mon=4;mon<=9;mon++)) ; do
       if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))0${mon}_grid_T.nc.gz ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
-        ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi
     done
-    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 6,2,1 nudg_chunk$((chunk+2))_04.nc nudg_chunk$((chunk+2))_4-9.nc
+    ncrcat -O -v votemper,vosaline -n 6,2,1 nudg_chunk$((chunk+2))_04.nc nudg_chunk$((chunk+2))_4-9.nc
     ;;
     07)
-    ${NCOPATH}/ncks -O -d time_counter,3,8 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_4-9.nc
+    ncks -O -d time_counter,3,8 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_4-9.nc
     for ((mon=10;mon<=12;mon++)) ; do
       if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))${mon}_grid_T.nc.gz ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+1))${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_${mon}.nc.gz
       else
-        ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc
       fi
     done
     for ((mon=1;mon<=3;mon++)) ; do
@@ -196,15 +196,15 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
         cp ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((RUN_year+2))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
-        ${NCOPATH}/ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
       fi
     done
-    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_10.nc nudg_chunk$((chunk+2))_10-12.nc
-    ${NCOPATH}/ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_1-3.nc
+    ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_10.nc nudg_chunk$((chunk+2))_10-12.nc
+    ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_1-3.nc
     ;;
     *) echo "not coded yet. Please start date month Jan or Jun" ;;   
   esac
-  ${NCOPATH}/ncrcat -O -v votemper,vosaline nudg_chunk$((chunk+2))_1-3.nc nudg_chunk$((chunk+2))_4-9.nc nudg_chunk$((chunk+2))_10-12.nc nudg_chunk$((chunk+2)).nc
+  ncrcat -O -v votemper,vosaline nudg_chunk$((chunk+2))_1-3.nc nudg_chunk$((chunk+2))_4-9.nc nudg_chunk$((chunk+2))_10-12.nc nudg_chunk$((chunk+2)).nc
   rm -f nudg_chunk$((chunk+2))_*.nc nudg_chunk${chunk}.nc
 
 fi

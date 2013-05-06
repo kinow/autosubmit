@@ -1,3 +1,4 @@
+%ENVCOM3%
 set -xuve
 date
 
@@ -8,7 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%GRIBAPIPATH2%:${PATH}
 
 #
 # Model Configuration
@@ -212,8 +212,8 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Model Run
  ls -l
  date
-%ENVIRONMENT3%
-%PARALLEL_RUN_IFS3%
+%ENVPARA3%
+%RUNPARAIFS3%
 
  date
  ls -l

@@ -1,3 +1,4 @@
+%ENVCOM%
 set -xuve
 date
 
@@ -141,8 +142,8 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Model Run
  ls -l
  date
-%ENVIRONMENT%
-%PARALLEL_RUN_IFS%
+%ENVPARA%
+%RUNPARAIFS%
 
  date
  ls -l

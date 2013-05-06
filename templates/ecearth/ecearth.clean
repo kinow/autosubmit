@@ -1,3 +1,4 @@
+%ENVCOM%
 set -xuve
 date
 

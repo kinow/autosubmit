@@ -1,7 +1,6 @@
+%ENVCOM%
 set -exuv
 date
-#
-%ENVIRONMENT3%
 #
 # General Paths
 #
@@ -156,8 +155,9 @@ else
 fi
 cp $BINPATH/${NEMO_exe} ${NEMO_exe}
 chmod 770 ${NEMO_exe}
-
-%PARALLEL_RUN_NEMO%
+# While running nemo ge "ece-v3.0.1" choosing ENVPARA3 & RUNPARANEM3 is essential
+%ENVPARA%
+%RUNPARANEM%
 echo "finished chunk"
 date
 
