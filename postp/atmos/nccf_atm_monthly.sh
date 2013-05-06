@@ -931,6 +931,10 @@ config_file=$1
 check_args $@ 
 #read config_file and initialize variables
 . ${config_file}
+#check 1st_month and last_month formats
+[ $MON0 -lt 10 ] && MON0=`echo $MON0 | cut -b 2  `
+[ $MONF -lt 10 ] && MONF=`echo $MONF | cut -b 2  `
+
 FACTOR=$((NFRP*3600))
 ENSEMBLE=${#MEM_LST[@]}
 
