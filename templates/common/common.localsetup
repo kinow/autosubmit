@@ -33,8 +33,12 @@ if [[ $MODEL != '' && $VERSION != '' ]]; then
  # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
-  LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
-  LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
+  tmp="/tmp/list.$$"
+  diff -rqu model/sources $REALSOURCES | grep Files | awk '{print $2}' > $tmp
+  diff -rqu model/sources $REALSOURCES | grep Only | sed -e 's/: /\//g' | awk '{print $3}' >> $tmp
+  LIST=$(cat $tmp)
+  LSWC=$(cat $tmp | wc -l)
+  rm -f $tmp
   if [[ $LSWC -gt 0 ]]; then
    tar -cvf conf/modsrc.tar $LIST
   fi
