@@ -1,7 +1,7 @@
 #!/bin/bash
 # ./setupexp.sh -e $expid
 
-EXPID=chex
+EXPID=cxxx
 
 while getopts e: option
 do
@@ -21,6 +21,7 @@ HPCPROJ=`grep -w HPCPROJ conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g
 HPCUSER=`grep -w HPCUSER conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODEL=`grep -w MODEL conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 VERSION=`grep -w VERSION conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
+EXPCLASS=`grep -w EXPCLASS conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODELS_DIR=`grep -w MODELS_DIR conf/archdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
 SCRATCH_DIR=`grep -w SCRATCH_DIR conf/archdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODSRC="modsrc.tar" # name for tar file; would be containing modified sources
