@@ -10,6 +10,7 @@ HPCPROJ=%HPCPROJ%
 HPCUSER=%HPCUSER%
 MODEL=%MODEL%
 VERSION=%VERSION%
+EXPCLASS=%EXPCLASS%
 MODELS_DIR=%MODELS_DIR%
 SCRATCH_DIR=%SCRATCH_DIR%
 
@@ -23,14 +24,30 @@ esac
 cd /cfu/autosubmit/$EXPID
 mkdir -p model
 
-if [[ $MODEL != '' && $VERSION != '' ]]; then
+if [[ $MODEL != '' && $VERSION != '' && $EXPCLASS != '' ]]; then
  # register setup stuff w.r.t EXPID once
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ ! -d model/setup ]]; then
-    cp -rp $REALSETUP model
+ if [[ ! -a conf/check.$MODEL.$VERSION.$EXPCLASS.lock ]]; then
+  cp -rp $REALSETUP model
+  case $MODEL in
+   ecearth)
+    case $VERSION  in
+     v2*)
+      cp -rp /cfu/models/$MODEL/datcom/v2/postp/$EXPCLASS/* model/setup
+     ;;
+     v3*)
+      cp -rp /cfu/models/$MODEL/datcom/v3/postp/$EXPCLASS/* model/setup/ctrl
+     ;;
+    esac
+   ;;
+   nemo)
+   ;;
+  esac
+  rm -f conf/check.*.lock
+  touch conf/check.$MODEL.$VERSION.$EXPCLASS.lock
  fi
  tar -cvf conf/modsetup.tar model/setup
- # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ # in case, user need to modify the sources; manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
   tmp="/tmp/list.$$"
@@ -46,7 +63,7 @@ if [[ $MODEL != '' && $VERSION != '' ]]; then
   echo "sources are not available yet"
  fi
 else
- echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
+ echo "MODEL, VERSION and EXPCLASS must be filled into expdef_${EXPID}.conf"
  exit 1
 fi
 

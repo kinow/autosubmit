@@ -111,25 +111,16 @@ if [[ $chunk == 1 ]]; then
 
    # Files needed for IFS (linked)
    # Other stuff
-   # Selection
-   case $VERSION in
-    v3.0-r1012)
-     ln -sf ${ini_data_dir}/ifs/postins
-     ln -sf ${ini_data_dir}/ifs/dirlist
-    ;;
-    *)
-     # Output control (ppt files)
-     mkdir -p postins
-     cp ${ctrl_file_dir}/ppt* postins/
-     f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
-     for t in $(seq $f_min $f_min 1439);do
-         hh=$(printf %02d $((t/60)) )
-         mm=$(printf %02d $((t%60)) )
-         ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
-     done
-     ls -1 postins/* > dirlist
-    ;;
-   esac
+   # Output control (ppt files)
+   mkdir -p postins
+   cp ${ctrl_file_dir}/ppt* postins/
+   f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
+   for t in $(seq $f_min $f_min 1439);do
+       hh=$(printf %02d $((t/60)) )
+       mm=$(printf %02d $((t%60)) )
+       ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
+   done
+   ls -1 postins/* > dirlist
    ln -sf ${ini_data_dir}/ifs/rtables/* .
 
    # Run-off file

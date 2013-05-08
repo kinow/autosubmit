@@ -90,7 +90,7 @@ if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
          if [[ -e toto.nc ]]; then
             rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
          fi
-         cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+         cdo mergetime ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
          #
          # Mixed layer ocean heat content: somxlheatc
          heat_sal_mxl toto.nc heat_sal_mxl.nc
@@ -104,11 +104,11 @@ if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
       fi
       #
       # Append reduced stuff, select surface currents, remove 3D temperature and rename a few variables
-      ncks -A -v somxlheatc heat_sal_mxl.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v somxlheatc heat_sal_mxl.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       ncks -O -d depthv,0 -d depthu,0 -x -v sohtc300 -x -v votemper \
-      ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
    fi
    gzip -9 ORCA1_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc

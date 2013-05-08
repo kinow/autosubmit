@@ -38,7 +38,7 @@ IFS_nproc=%IFS_nproc%
 NPRTRVIFS=%NPRTRVIFS%
 NPROMA=40 # No need to change this
 WAM=false # No need to change this
-CMIP5=%CMIP5%
+LCMIP5=%LCMIP5%
 NRCP=%NRCP% # RCP value
 NFRP=%NFRP% # Postprocessing frequency (in hours)
 LLAST=TRUE
@@ -90,6 +90,20 @@ if [[ $chunk == 1 ]]; then
    LFASTRES=FALSE
    rm -f ${RUN_dir}/anaisout
    rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
+
+   # Files needed for common use from local inidata and local setup
+   ln -sf $TESTDATADIR/ifs/$IFS_resolution/* .
+   rm -f rcf *f00000000* ICM*
+   rm -f postins dirlist
+   ln -sf $TESTDATADIR/nemo/$NEMO_config/* .
+   rm -f *restart*
+
+   ln -sf $SCRIPTDIR/postins .
+   ln -sf $SCRIPTDIR/dirlist .
+   ln -sf inidata/* .
+   if [[ -a inidata/rcf ]]; then
+      rm -f rcf; cp inidata/rcf .
+   fi
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
@@ -128,11 +142,11 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
      ;;
      v2.2.1) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP})
      ;;
-     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${NRCP})
+     v2.2.2) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP})
      ;;
-     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${NRCP})
+     v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${CMIP5}. -6 ${NRCP} -7 ${NFIXYR} -8 ${NHINCSOL})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP} -7 ${NFIXYR} -8 ${NHINCSOL})
      ;;
  esac
 

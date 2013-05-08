@@ -28,26 +28,47 @@ MODSETUP="modsetup.tar" # name for tar file; would be containing modified setup 
 
 # prepare modified stuff correctly
 mkdir -p model
+
 if [[ $MODEL != '' && $VERSION != '' ]]; then
- # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ # register setup stuff w.r.t EXPID once
+ REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
+ if [[ ! -a conf/check.$MODEL.$VERSION.$EXPCLASS.lock ]]; then
+  cp -rp $REALSETUP model
+  case $MODEL in
+   ecearth)
+    case $VERSION  in
+     v2*)
+      cp -rp /cfu/models/$MODEL/datcom/v2/postp/$EXPCLASS/* model/setup
+     ;;
+     v3*)
+      cp -rp /cfu/models/$MODEL/datcom/v3/postp/$EXPCLASS/* model/setup/ctrl
+     ;;
+    esac
+   ;;
+   nemo)
+   ;;
+  esac
+  rm -f conf/check.*.lock
+  touch conf/check.$MODEL.$VERSION.$EXPCLASS.lock
+ fi
+ tar -cvf conf/$MODSETUP model/setup
+ # in case, user need to modify the sources; manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
-  LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
-  LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
+  tmp="/tmp/list.$$"
+  diff -rqu model/sources $REALSOURCES | grep Files | awk '{print $2}' > $tmp
+  diff -rqu model/sources $REALSOURCES | grep Only | sed -e 's/: /\//g' | awk '{print $3}' >> $tmp
+  LIST=$(cat $tmp)
+  LSWC=$(cat $tmp | wc -l)
+  rm -f $tmp
   if [[ $LSWC -gt 0 ]]; then
    tar -cvf conf/$MODSRC $LIST
   fi
  else
   echo "sources are not available yet"
  fi
- # register setup stuff w.r.t EXPID once
- REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ ! -d model/setup ]]; then
-    cp -rp $REALSETUP model/
- fi
- tar -cvf conf/$MODSETUP model/setup
 else
- echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
+ echo "MODEL, VERSION and EXPCLASS must be filled into expdef_${EXPID}.conf"
  exit 1
 fi
 
@@ -175,3 +196,4 @@ else
 fi
 
 date
+
