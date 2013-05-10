@@ -107,7 +107,7 @@ if [[ -f conf/$MODSRC ]]; then
     v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
-     ./compilation.ksh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/oasis3/prism_2-5/prism/*/bin/oasis3.MPI1.x $BIN ;\
       ln -sf $MAIN/model/sources/nemo/nemo_build/opa_exe.* $BIN ;\
@@ -139,7 +139,7 @@ if [[ -f conf/$MODSRC ]]; then
     ecearth-v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
-     ./compilation.ksh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/nemo/nemo_build/opa_exe* $BIN ;\
      fi"
@@ -147,7 +147,7 @@ if [[ -f conf/$MODSRC ]]; then
     v3.2)
      $SSH "\
      cd $MAIN/model/sources/modipsl/config/ORCA2_LIM ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
      ln -sf $MAIN/model/sources/modipsl/bin/* $BIN ;\
      fi"
@@ -155,13 +155,26 @@ if [[ -f conf/$MODSRC ]]; then
     v3.3)
      $SSH "\
      cd $MAIN/model/sources/NEMOGCM/CONFIG ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       OCONFIGS=`$SSH ls -1 $MAIN/model/sources/NEMOGCM/CONFIG | grep ORCA1`
       for OCONFIG in $OCONFIGS; do
        $SSH "\
        mkdir -p $BIN/$OCONFIG ;\
        ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
+      done
+     fi"
+    ;;
+    ece-v3*)
+     $SSH "\
+     cd $MAIN/model/sources/build-config ;\
+     ./compilation.cmd ;\
+     if [[ $? -eq 0 ]]; then \
+      OCONFIGS=`$SSH ls -1 $MAIN/model/sources/nemo*/CONFIG | grep ORCA`
+      for OCONFIG in $OCONFIGS; do
+       $SSH "\
+       mkdir -p $BIN/$OCONFIG ;\
+       ln -sf $MAIN/model/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
       done
      fi"
     ;;

@@ -39,7 +39,7 @@ if [[ -f modsrc.tar ]]; then
    case $VERSION in
     v2*)
      cd $WORKDIR/model/sources/build
-     ./compilation.ksh
+     ./compilation.cmd
      ln -sf $WORKDIR/model/sources/oasis3/prism_2-5/prism/*/bin/oasis3.MPI1.x $BIN 
      ln -sf $WORKDIR/model/sources/nemo/nemo_build/opa_exe.* $BIN
      ln -sf $WORKDIR/model/sources/ifs/bin/ifsMASTER $BIN
@@ -64,21 +64,30 @@ if [[ -f modsrc.tar ]]; then
    case $VERSION in
     ecearth-v2*)
      cd $WORKDIR/model/sources/build
-     ./compilation.ksh
+     ./compilation.cmd
      ln -sf $WORKDIR/model/sources/nemo/nemo_build/opa_exe* $BIN
     ;;
     v3.2)
      cd $WORKDIR/model/sources/modipsl/config/ORCA2_LIM
-     ./compilation.sh
+     ./compilation.cmd
      ln -sf $WORKDIR/model/sources/modipsl/bin/* $BIN
     ;;
     v3.3)
      cd $WORKDIR/model/sources/NEMOGCM/CONFIG
-     ./compilation.sh
+     ./compilation.cmd
      OCONFIGS=$(ls -1 $WORKDIR/model/sources/NEMOGCM/CONFIG | grep ORCA1)
      for OCONFIG in $OCONFIGS; do
       mkdir -p $BIN/$OCONFIG
       ln -sf $WORKDIR/model/sources/NEMOGCM/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
+     done
+    ;;
+    ece-v3*)
+     cd $WORKDIR/model/sources/build-config
+     ./compilation.cmd
+     OCONFIGS=$(ls -1 $WORKDIR/model/sources/nemo*/CONFIG | grep ORCA)
+     for OCONFIG in $OCONFIGS; do
+      mkdir -p $BIN/$OCONFIG
+      ln -sf $WORKDIR/model/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
      done
     ;;
     *)
