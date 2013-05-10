@@ -118,7 +118,7 @@ done
 
 typeset var listroots
 case $8 in 
-  'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
+  'diags' ) if [[ $6 -lt 12 || $5 -gt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
   'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
 esac
 case $9 in
@@ -520,7 +520,8 @@ cp ${CON_FILES}/ice_template.nc toto_N.nc
 cp ${CON_FILES}/ice_template.nc toto_S.nc
 
 case ${NEMOVERSION} in
-  'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v ice_pres,ileadfra $1 ;;
+  #'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v ice_pres,ileadfra $1 ;;
+  'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v iiceconc,ileadfra $1 ;;
 esac
   
 typeset var ntime=`cdo ntime $1`

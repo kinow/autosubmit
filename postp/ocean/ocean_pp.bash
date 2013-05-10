@@ -143,7 +143,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         'ext_raw_ice')
           if [[ $typeoutput == 'MMO' ]] ; then
             lstvars=`cdo showvar icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc`
-            if [[ $raw_vars_ocean == '' ]] ; then
+            if [[ $raw_vars_ice == '' ]] ; then
                lstext=`echo $lstvars | sed s/\ /,/g`
             else
              if [[ $raw_vars_ice == 'default' ]] ; then
