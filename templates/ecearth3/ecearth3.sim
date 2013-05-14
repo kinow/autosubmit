@@ -9,7 +9,8 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-
+PATH=%GRIBAPIPATH2%:${PATH}
+PATH=%NCOPATH%:${PATH}
 #
 # Model Configuration
 #
@@ -77,6 +78,7 @@ case ${nem_grid_wol} in
 esac
 lim_time_step_sec=3600
 advsch=%ADVSCH%
+nudging=%OCEAN_NUDGING%
 nem_res_hor=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\1:')
 nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 
@@ -108,9 +110,9 @@ cpl_freq_hrs=%RUN_coupFreq%
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
-export GRIB_DEFINITION_PATH=%GRIBAPIPATH_DEF%
-export GRIB_SAMPLES_PATH=%GRIBAPIPATH_SAM%
-export GRIB_BIN_PATH=%GRIBAPIPATH%
+export GRIB_DEFINITION_PATH=%GRIBAPIPATH2_DEF%
+export GRIB_SAMPLES_PATH=%GRIBAPIPATH2_SAM%
+export GRIB_BIN_PATH=%GRIBAPIPATH2%
 
 #
 # Chunk Management
@@ -325,6 +327,28 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
 
  # Create data for january, the year after the leg ends
  grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
+
+# Preparing nudging
+
+if [[ %OCEAN_NUDGING% == 'TRUE' ]]; then
+   rm -f *temperature* *salinity* *sst* *sss* toto.nc
+   if [[ %OCEAN_NUDDATA% == 'glorys2v1' ]]; then
+      ncks -O -d nav_lev,0 nudg_chunk${chunk}.nc toto.nc
+      ncwa -O -a nav_lev toto.nc toto.nc
+   else
+      ncks -O -d deptht,0 nudg_chunk${chunk}.nc toto.nc 
+      ncwa -O -a deptht toto.nc toto.nc
+   fi
+   for mon in $(seq 1 12)
+   do
+     ncks -v votemper -d time,$((mon-1)) nudg_chunk${chunk}.nc temperature_m$(printf "%02d" $mon).nc
+     ncks -v vosaline -d time,$((mon-1)) nudg_chunk${chunk}.nc salinity_m$(printf "%02d" $mon).nc
+     ncks -v votemper -d time,$((mon-1)) toto.nc sst_m$(printf "%02d" $mon).nc
+     ncks -v vosaline -d time,$((mon-1)) toto.nc sss_m$(printf "%02d" $mon).nc
+   done
+fi
+#
+# IFS climatology data
                                                                           ${tempfile}
  cat ${tempfile} >> ICMCL${exp_name}INIT
 
