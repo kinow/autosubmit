@@ -22,6 +22,14 @@ case $HPCARCH in
 esac
 
 #
+# General Paths
+#
+MODEL_DIR=%MODELS_DIR%/%MODEL%
+SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
+SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
+HSM_DIR=%HSM_DIR%
+
+#
 # Model Configuration
 #
 EXPID=%EXPID%
@@ -29,25 +37,19 @@ VERSION=%VERSION%
 MEMBER=%MEMBER%
 START_date=%SDATE%
 START_date_1=%DAY_BEFORE%
-#
-# General Paths
-#
-MODEL_DIR=%MODELS_DIR%/%MODEL%
-SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
-SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
-HSM_DIR=%HSM_DIR%
-PATH=/gpfs/apps/MN3/NCO/4.2.3/bin:${PATH}
-PATHNUDG=${HSM_DIR}/nudging/%OCEAN_NUDDATA%/%NEMO_resolution%/${MEMBER}
-PATHIC=${HSM_DIR}/ic
 
 ECEARTH=${MODEL_DIR}/$VERSION
 ini_data_dir=${ECEARTH}/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
+PATHNUDG=${HSM_DIR}/nudging/%OCEAN_NUDDATA%/%NEMO_resolution%/${MEMBER}
+PATHIC=${HSM_DIR}/ic
 nem_grid=%NEMO_resolution%
 nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
 ICE=%ICE%
+
 #
 # Chunk Management
 #
@@ -196,15 +198,6 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 fi
 
 #
-# Tail of the chunk
-#
-cd $RUN_dir
-if [[ -a rest_$chunk && -a out_$chunk ]]; then
-   echo "We are now removing ${output_dir}"
-   rm -rf $output_dir
-fi
-
-#
 # Prepare Next Nudging Files
 #
 cd $RUN_dir
@@ -294,6 +287,15 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     *) echo "not coded yet. Please start date month Jan or Jun if your CHUNKSIZE=6 or start in Nov, March or Jul if your CHUNKSIZE=4 or in Nov, Feb, May, Aug if your CHUNKSIZE=3" ;;
   esac
 
+fi
+
+#
+# Tail of the chunk
+#
+cd $RUN_dir
+if [[ -a rest_$chunk && -a out_$chunk ]]; then
+   echo "We are now removing ${output_dir}"
+   rm -rf $output_dir
 fi
 
 touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED

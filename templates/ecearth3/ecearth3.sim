@@ -9,8 +9,7 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%GRIBAPIPATH2%:${PATH}
-PATH=%NCOPATH%:${PATH}
+
 #
 # Model Configuration
 #
@@ -110,9 +109,9 @@ cpl_freq_hrs=%RUN_coupFreq%
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
-export GRIB_DEFINITION_PATH=%GRIBAPIPATH2_DEF%
-export GRIB_SAMPLES_PATH=%GRIBAPIPATH2_SAM%
-export GRIB_BIN_PATH=%GRIBAPIPATH2%
+export GRIB_DEFINITION_PATH=%GRIBAPIPATH_DEF%
+export GRIB_SAMPLES_PATH=%GRIBAPIPATH_SAM%
+export GRIB_BIN_PATH=%GRIBAPIPATH%
 
 #
 # Chunk Management
@@ -327,6 +326,11 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
 
  # Create data for january, the year after the leg ends
  grib_set -s dataDate=$(printf "%04d" $((leg_end_date_yyyy+1)))0115 ${icmclfile}-01 \
+                                                                          ${tempfile}
+ cat ${tempfile} >> ICMCL${exp_name}INIT
+
+ # Clean up
+ rm -f ${tempfile}
 
 # Preparing nudging
 
@@ -347,13 +351,6 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]]; then
      ncks -v vosaline -d time,$((mon-1)) toto.nc sss_m$(printf "%02d" $mon).nc
    done
 fi
-#
-# IFS climatology data
-                                                                          ${tempfile}
- cat ${tempfile} >> ICMCL${exp_name}INIT
-
- # Clean up
- rm -f ${tempfile}
 
  # Location of the executables
  ln -sf ${ifs_exe_file}

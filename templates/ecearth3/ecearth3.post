@@ -9,12 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%NCDFPATH%:${PATH}
-PATH=%CDOPATH%:${PATH}
-PATH=%NCOPATH%:${PATH}
-PATH=%CDFPATH%:${PATH}
-PATH=%GRIBAPIPATH2%:${PATH}
-PATH=%REBUILD_NEMOPATH%:${PATH}
 
 #
 # Model Configuration
@@ -28,11 +22,12 @@ START_date_1=%DAY_BEFORE%
 ECEARTH=${MODEL_DIR}/$VERSION
 ini_data_dir=${ECEARTH}/inidata
 
+WRITINGDIR=${SCRATCH_DIR}/${EXPID}
+RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+
 nem_grid=%NEMO_resolution%
 nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
 
-WRITINGDIR=${SCRATCH_DIR}/${EXPID}
-RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
 CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
 NEMOVERSION=v3
