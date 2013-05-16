@@ -44,12 +44,6 @@ ini_data_dir=${ECEARTH}/inidata
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
-PATHNUDG=${HSM_DIR}/nudging/%OCEAN_NUDDATA%/%NEMO_resolution%/${MEMBER}
-PATHIC=${HSM_DIR}/ic
-nem_grid=%NEMO_resolution%
-nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
-ICE=%ICE%
-
 #
 # Chunk Management
 #
@@ -128,13 +122,6 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
-      if [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
-        cd NEMO_Restart_${chunk}
-        cp ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
-        cp ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
-        rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
-        cd ..
-      fi
       tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
       tar -cvf $tarfile NEMO_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
@@ -199,18 +186,35 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 fi
 
 #
-# Prepare Next Nudging Files
+# Ocean nudging (Virginie's stuff)
+# Dep: nco-v4.2.3
+# Ref: m00m
 #
 cd $RUN_dir
-
-if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
+OCEAN_NUDGING=%OCEAN_NUDGING%
+OCEAN_NUDDATA=%OCEAN_NUDDATA%
+OCEAN_ALLRST=%OCEAN_ALLRST%
+CHUNKSIZE=%CHUNKSIZE%
+if [[ $OCEAN_NUDGING != '' ]] && [[ $OCEAN_NUDGING == 'TRUE' ]] ; then
+  PATHNUDG=${HSM_DIR}/nudging/$OCEAN_NUDDATA/%NEMO_resolution%/${MEMBER}
+  PATHIC=${HSM_DIR}/ic
+  nem_grid=%NEMO_resolution%
+  nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
+  ICE=%ICE%
+  if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
+     cd NEMO_Restart_${chunk}
+     $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
+     $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
+     rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
+     cd ..
+  fi
   year=`echo ${Chunk_start_date} | cut -c1-4`
   month=`echo ${Chunk_start_date} | cut -c5-6`
   #
   #  To compensate for the lack of symbolic link at ECMWF
   #
-  if [[ %OCEAN_NUDDATA% == 'glorys2v1' ]] || [[ $year < 1993 ]] ; then
-    year=1992
+  if [[ $OCEAN_NUDDATA == 'glorys2v1' ]] || [[ $year < 1993 ]] ; then
+     year=1992
   fi
   #
   case ${month} in
@@ -219,8 +223,8 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     ncks -O -d time_counter,0,2 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
     for mon in $(seq 4 9)
     do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
-        $CP ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
@@ -233,8 +237,8 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     03|05)
     for mon in $(seq 1 9)
     do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
-        $CP ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
@@ -246,7 +250,7 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     rm -f nudg_chunk$((chunk+2))_*.nc nudg_chunk${chunk}.nc
     ;;
     07|08)
-    case %CHUNKSIZE% in
+    case $CHUNKSIZE in
     3|4)
      month0=0
      outputi=1
@@ -258,8 +262,8 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
      list_file='nudg_chunk'$((chunk+2))'_1-3.nc nudg_chunk'$((chunk+2))'_4-9.nc'
      for mon in $(seq 1 3)
      do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz ]] ; then
-        $CP ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
       else
         ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
@@ -271,8 +275,8 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]] ; then
     ncks -O -d time_counter,${month0},8 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${outputi}-9.nc
     for mon in $(seq 10 12)
     do
-      if [[ -e ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz ]] ; then
-        $CP ${PATHNUDG}/%OCEAN_NUDDATA%_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
         gunzip -f nudg_chunk$((chunk+2))_${mon}.nc.gz
       else
         ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc

@@ -341,11 +341,14 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Clean up
  rm -f ${tempfile}
 
-# Preparing nudging
-
-if [[ %OCEAN_NUDGING% == 'TRUE' ]]; then
+ # Ocean nudging (Virginie's stuff)
+ # Dep: special namelist, yet tested with ORCA025L46 only
+ # Ref: m00m
+ OCEAN_NUDGING=%OCEAN_NUDGING%
+ OCEAN_NUDDATA=%OCEAN_NUDDATA%
+ if [[ $OCEAN_NUDGING != '' ]] && [[ $OCEAN_NUDGING == 'TRUE' ]] ; then
    rm -f *temperature* *salinity* *sst* *sss* toto.nc
-   if [[ %OCEAN_NUDDATA% == 'glorys2v1' ]]; then
+   if [[ $OCEAN_NUDDATA == 'glorys2v1' ]]; then
       ncks -O -d nav_lev,0 nudg_chunk${chunk}.nc toto.nc
       ncwa -O -a nav_lev toto.nc toto.nc
    else
@@ -359,7 +362,7 @@ if [[ %OCEAN_NUDGING% == 'TRUE' ]]; then
      ncks -v votemper -d time,$((mon-1)) toto.nc sst_m$(printf "%02d" $mon).nc
      ncks -v vosaline -d time,$((mon-1)) toto.nc sss_m$(printf "%02d" $mon).nc
    done
-fi
+ fi
 
  # Location of the executables
  ln -sf ${ifs_exe_file}

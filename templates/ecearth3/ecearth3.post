@@ -25,9 +25,6 @@ ini_data_dir=${ECEARTH}/inidata
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 
-nem_grid=%NEMO_resolution%
-nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
-
 #
 # Chunk Management
 #
@@ -41,33 +38,12 @@ RUN_months=%CHUNKSIZE%
 RUN_days=%RUN_DAYS%
 # In hours
 RUN_hours=$((RUN_days*24))
-# Last Day Previous
-if [[ $chunk == 1 ]]; then
-  day_prev=0
-else
-  day_prev=%PREV%
-fi
-Chunk_last_day_prev=$((day_prev*24))
-Chunk_end=$((Chunk_last_day_prev+RUN_hours))
-# In seconds
-leg_end_sec=$((Chunk_end*3600))
-# restart tags
-case ${nem_grid_wol} in
-     ORCA1)   nem_time_step_sec=3600 ;;
-     ORCA025) nem_time_step_sec=1200 ;;
-     *) echo "Unsupported grid type: ${nem_grid_wol}" ;;
-esac
-Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
 
 #
 # Model output path w.r.t chunk number
 #
 output_dir=${RUN_dir}/Output_${chunk}
 if [[ ! -d ${output_dir} ]]; then
-   exit
-fi
-nemo_restart_dir=${RUN_dir}/NEMO_Restart_${chunk}
-if [[ ! -d ${nemo_restart_dir} ]]; then
    exit
 fi
 
@@ -132,7 +108,34 @@ if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
    touch $output_dir/%JOBNAME%.rebuild
 fi
 
-if [[ %OCEAN_ALLRST% == 'TRUE' ]]; then
+# Ocean nudging (Virginie's stuff)
+# Dep:
+# Ref: m00m 
+nem_grid=%NEMO_resolution%
+nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
+# Last Day Previous
+if [[ $chunk == 1 ]]; then
+  day_prev=0
+else
+  day_prev=%PREV%
+fi
+Chunk_last_day_prev=$((day_prev*24))
+Chunk_end=$((Chunk_last_day_prev+RUN_hours))
+# In seconds
+leg_end_sec=$((Chunk_end*3600))
+# restart tags
+case ${nem_grid_wol} in
+     ORCA1)   nem_time_step_sec=3600 ;;
+     ORCA025) nem_time_step_sec=1200 ;;
+     *) echo "Unsupported grid type: ${nem_grid_wol}" ;;
+esac
+Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
+nemo_restart_dir=${RUN_dir}/NEMO_Restart_${chunk}
+if [[ ! -d ${nemo_restart_dir} ]]; then
+   exit
+fi
+OCEAN_ALLRST=%OCEAN_ALLRST%
+if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
   cd $nemo_restart_dir 
   if [[ ! -a $nemo_restart_dir/%JOBNAME%.rebuild ]]; then
    grid_types="restart_ice restart_oce"
