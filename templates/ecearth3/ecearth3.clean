@@ -28,7 +28,7 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-
+PATHIC=${HSM_DIR}/ic
 #
 # Model Configuration
 #
@@ -43,7 +43,9 @@ ini_data_dir=${ECEARTH}/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-
+nem_grid=%NEMO_resolution%
+nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
+ICE=%ICE%
 #
 # Chunk Management
 #
@@ -122,6 +124,13 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
+      if [[ %OCEAN_ALLRST% != '' ]] && [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
+        cd NEMO_Restart_${chunk}
+        $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
+        $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
+        rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
+        cd ..
+      fi
       tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
       tar -cvf $tarfile NEMO_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
@@ -193,28 +202,16 @@ fi
 cd $RUN_dir
 OCEAN_NUDGING=%OCEAN_NUDGING%
 OCEAN_NUDDATA=%OCEAN_NUDDATA%
-OCEAN_ALLRST=%OCEAN_ALLRST%
 CHUNKSIZE=%CHUNKSIZE%
 if [[ $OCEAN_NUDGING != '' ]] && [[ $OCEAN_NUDGING == 'TRUE' ]] ; then
   PATHNUDG=${HSM_DIR}/nudging/$OCEAN_NUDDATA/%NEMO_resolution%/${MEMBER}
-  PATHIC=${HSM_DIR}/ic
-  nem_grid=%NEMO_resolution%
-  nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
-  ICE=%ICE%
-  if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
-     cd NEMO_Restart_${chunk}
-     $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
-     $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
-     rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
-     cd ..
-  fi
   year=`echo ${Chunk_start_date} | cut -c1-4`
   month=`echo ${Chunk_start_date} | cut -c5-6`
   #
   #  To compensate for the lack of symbolic link at ECMWF
   #
   if [[ $OCEAN_NUDDATA == 'glorys2v1' ]] || [[ $year < 1993 ]] ; then
-     year=1992
+    year=1992
   fi
   #
   case ${month} in

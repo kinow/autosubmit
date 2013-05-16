@@ -342,7 +342,7 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  rm -f ${tempfile}
 
  # Ocean nudging (Virginie's stuff)
- # Dep: special namelist, yet tested with ORCA025L46 only
+ # Dep: namelist to activate the nudging,ready and well-tested but available only on request to Virginie
  # Ref: m00m
  OCEAN_NUDGING=%OCEAN_NUDGING%
  OCEAN_NUDDATA=%OCEAN_NUDDATA%

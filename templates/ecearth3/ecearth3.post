@@ -150,7 +150,7 @@ if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
   fi
 fi
 
-# Ocean reduced output (Virginie's stuff)
+# Ocean reduced output (Virginie's stuff from summer 2012, modified by Asif afterwards)
 # Dep: nco-3.9.9, cdo-1.4.5.1, cdftools-2.1
 # Ref: l00w and l00v but special iodef.xml is needed with following daily data
 cd $output_dir
