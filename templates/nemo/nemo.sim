@@ -15,10 +15,13 @@ EXPID=%EXPID%
 START_date=%SDATE%
 NEMODIR=%MODELS_DIR%/nemo/${VERSION}
 WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
-BINPATH=${WRITINGDIR}/model/bin/%NEMO_resolution%_%ICE%
+BINPATH=${WRITINGDIR}/model/bin
 SETUPPATH=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 NEMO_nproc=%NEMO_nproc%
+NEMO_resolution=%NEMO_resolution%
+NEMO_resolution_wol=$(echo ${NEMO_resolution} | cut -d 'L' -f 1) # without level (wol)
+ICE=%ICE%
 #
 # Chunk management
 #
@@ -148,19 +151,31 @@ ln -sf $SETUPPATH/iodef.%ICE%.xml iodef.xml
 #  Start running 
 # ~~~~~~~~~~~~~~~
 #
-if [ ${VERSION} == v3.2 ] ; then
-  NEMO_exe=opa
+ENVPARA3=FALSE
+case $VERSION in
+ ecearth-v2*)
+  NEMO_exe=${BINPATH}/opa_exe.${NEMO_resolution_wol}_OASIS3.%NEMO_nprocX%.%NEMO_nprocY%
+ ;;
+ v3.2)
+  NEMO_exe=${BINPATH}/opa
+ ;;
+ v3.3)
+  NEMO_exe=${BINPATH}/${NEMO_resolution_wol}_${ICE}/nemo.exe
+ ;;
+ ece-v3*)
+  NEMO_exe=${BINPATH}/${NEMO_resolution}_${ICE}/nemo.exe
+  ENVPARA3=TRUE
+ ;;
+esac
+if [[ $ENVPARA3 == 'TRUE' ]]; then
+ %ENVPARA3%
+ %RUNPARANEM3%
 else
-  NEMO_exe=nemo.exe
-fi
-cp $BINPATH/${NEMO_exe} ${NEMO_exe}
-chmod 770 ${NEMO_exe}
-# While running nemo ge "ece-v3.0.1" choosing ENVPARA3 & RUNPARANEM3 is essential
-%ENVPARA%
-%RUNPARANEM%
+ %ENVPARA%
+ %RUNPARANEM%
+fi 
 echo "finished chunk"
 date
-
 # #############################################################################
 #
 #  Move the output for postprocessing
