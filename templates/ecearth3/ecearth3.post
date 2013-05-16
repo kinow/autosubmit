@@ -145,7 +145,6 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]]; then
      output_file=${EXPID}_${MEMBER}_${Chunk_end_date}_${grid_type}.nc
      rebuild_nemo ${prefix}_${grid_type} %NEMO_nproc%
      mv ${prefix}_${grid_type}.nc $output_file
-     rm -f $input_files
    done
    touch $nemo_restart_dir/%JOBNAME%.rebuild
   fi

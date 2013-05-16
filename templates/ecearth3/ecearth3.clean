@@ -132,6 +132,7 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
         cd NEMO_Restart_${chunk}
         cp ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
         cp ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
+        rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
         cd ..
       fi
       tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
