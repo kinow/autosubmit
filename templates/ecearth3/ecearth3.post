@@ -28,10 +28,6 @@ RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 nem_grid=%NEMO_resolution%
 nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
 
-
-CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
-NEMOVERSION=v3
-
 #
 # Chunk Management
 #
@@ -74,6 +70,7 @@ nemo_restart_dir=${RUN_dir}/NEMO_Restart_${chunk}
 if [[ ! -d ${nemo_restart_dir} ]]; then
    exit
 fi
+
 #
 # Deal with Ocean's output
 #
@@ -150,13 +147,16 @@ if [[ %OCEAN_ALLRST% == 'TRUE' ]]; then
   fi
 fi
 
-# Select a reduced set of outputs to save
-# Include ocean post processing functions
+# Ocean reduced output (Virginie's stuff)
+# Dep: nco-3.9.9, cdo-1.4.5.1, cdftools-2.1
+# Ref: l00w and l00v but special iodef.xml is needed with following daily data
 cd $output_dir
+CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
+NEMOVERSION=v3
 %INCLUDE_POSTP%
+OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
 if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
-   OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
-   if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+   if [[ $OCEAN_REDUCOUT != '' ]] && [[ $OCEAN_REDUCOUT == 'TRUE' ]] ; then
       if [[ ! -a $output_dir/%JOBNAME%.oreduced ]]; then
          #
          # A prerequisite to enter the common diagnostic post-processing
