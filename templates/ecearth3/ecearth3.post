@@ -150,7 +150,7 @@ if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
   fi
 fi
 
-# Ocean reduced output (Virginie's stuff from summer 2012, modified by Asif afterwards)
+# Ocean reduced output (Virginie & Asif 's stuff)
 # Dep: nco-3.9.9, cdo-1.4.5.1, cdftools-2.1
 # Ref: l00w and l00v but special iodef.xml is needed with following daily data
 cd $output_dir
@@ -251,10 +251,17 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
        done
        nmon=$((nmon+1))
  done
-
  touch $output_dir/%JOBNAME%.apost
 fi
 
+#
+# Cmorization of ocean and atmos.'s output (Pierre-Antoine & Asif's stuff)
+# Dep:
+# Ref: i030
+
+#
+# Tail of the chunk
+#
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi

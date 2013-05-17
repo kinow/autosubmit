@@ -180,10 +180,12 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
        done
        nmon=$((nmon+1))
  done
-
  touch $output_dir/%JOBNAME%.apost
 fi
 
+#
+# Tail of the chunk
+#
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    rm -rf $SCRATCH_TMP_DIR
    touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED

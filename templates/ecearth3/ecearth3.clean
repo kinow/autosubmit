@@ -29,6 +29,7 @@ SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
 PATHIC=${HSM_DIR}/ic
+
 #
 # Model Configuration
 #
@@ -46,6 +47,7 @@ RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
 nem_grid=%NEMO_resolution%
 nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
 ICE=%ICE%
+
 #
 # Chunk Management
 #
