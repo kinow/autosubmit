@@ -53,6 +53,7 @@ NEMO_resolution=%NEMO_resolution%
 NEMO_config=$NEMO_resolution
 NEMO_resolution=`echo ${NEMO_resolution} | tr [A-Z] [a-z]`
 ADVSCH=%ADVSCH% # Ocean advection scheme
+AHI0=350.e0 # horizontal eddy diffusivity coefficient for sea-ice (m2/s)
 NEMO_nprocX=%NEMO_nprocX%
 NEMO_nprocY=%NEMO_nprocY%
 NEMO_nproc=$((NEMO_nprocX*NEMO_nprocY))
@@ -194,15 +195,15 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # setupnemo.ksh
  if [[ $VERSION == "v2.3.0" || $VERSION == "v2.2.3" || $VERSION == "v2.2.2" || $VERSION == "v2.2.1" || $VERSION == "v2.2.0" ]] ; then
     if [[ ${Chunk_last_day_prev} != '0' ]] ; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}.
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}. -5 ${AHI0}
     else
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}.
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${RUN_hours} -0 ${TESTDATADIR} -1 ${START_date} -2 ${ADVSCH} -3 ${SAVEDDO} -4 .${GRESFILE}. -5 ${AHI0}
     fi
  else
     if [[ ${Chunk_last_day_prev} != '0' ]]; then
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}.
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l $((Chunk_last_day_prev+RUN_hours)) -p ${Chunk_last_day_prev} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}. -5 ${AHI0}
     else
-       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}.
+       ${SCRIPTDIR}/setupnemo2.ksh -g ${NEMO_config} -e ${ECEARTH} -l ${CHunk_length} -0 ${TESTDATADIR} -1 ${START_date} -3 ${SAVEDDO} -4 .${GRESFILE}. -5 ${AHI0}
     fi
  fi
 
