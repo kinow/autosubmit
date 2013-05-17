@@ -45,7 +45,7 @@ if [[ -f modsrc.tar ]]; then
      ln -sf $WORKDIR/model/sources/ifs/bin/ifsMASTER $BIN
     ;;
     v3*)
-     cd $WORKDIR/model/sources/build-config
+     cd $WORKDIR/model/sources/sources/build-config
      ./compilation.cmd
      ln -sf $WORKDIR/model/sources/sources/oasis*/*/bin/oasis3.MPI1.x $BIN
      ln -sf $WORKDIR/model/sources/sources/ifs*/bin/ifsmaster* $BIN
