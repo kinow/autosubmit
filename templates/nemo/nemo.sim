@@ -142,9 +142,9 @@ else
 fi
 
 rm -f ORCA1_1m* ORCA1_1d*
-ksh $SETUPPATH/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
-ln -sf $SETUPPATH/xmlio_server.def
-ln -sf $SETUPPATH/iodef.%ICE%.xml iodef.xml
+ksh $SETUPPATH/$NEMO_resolution/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
+ln -sf $SETUPPATH/$NEMO_resolution/xmlio_server.def
+ln -sf $SETUPPATH/$NEMO_resolution/iodef.%ICE%.xml iodef.xml
 
 ################################################################################
 #
