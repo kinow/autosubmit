@@ -86,7 +86,7 @@ nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 #
 oas_numproc=%OASIS_nproc%
 oas_exe_file=${BINPATH}/oasis3.MPI1.x
-oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
+oas_namcut_script=${ECEARTH}/sources/sources/util/namcouple-split/namsplit.pl
 oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
               QS___OCE QS___ICE QNS__OCE QNS__ICE DQDT_ICE \
               PRCP_LIQ PRCP_SOL EVAP_TOT EVAP_ICE RNF__OCE CALV_OCE \
