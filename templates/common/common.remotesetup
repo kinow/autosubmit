@@ -45,14 +45,14 @@ if [[ -f modsrc.tar ]]; then
      ln -sf $WORKDIR/model/sources/ifs/bin/ifsMASTER $BIN
     ;;
     v3*)
-     cd $WORKDIR/model/sources/build-config
+     cd $WORKDIR/model/sources/sources/build-config
      ./compilation.cmd
-     ln -sf $WORKDIR/model/sources/oasis*/*/bin/oasis3.MPI1.x $BIN
-     ln -sf $WORKDIR/model/sources/ifs*/bin/ifsmaster* $BIN
-     OCONFIGS=$(ls -1 $WORKDIR/model/sources/nemo*/CONFIG | grep ORCA)
+     ln -sf $WORKDIR/model/sources/sources/oasis*/*/bin/oasis3.MPI1.x $BIN
+     ln -sf $WORKDIR/model/sources/sources/ifs*/bin/ifsmaster* $BIN
+     OCONFIGS=$(ls -1 $WORKDIR/model/sources/sources/nemo*/CONFIG | grep ORCA)
      for OCONFIG in $OCONFIGS; do
       mkdir -p $BIN/$OCONFIG
-      ln -sf $WORKDIR/model/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
+      ln -sf $WORKDIR/model/sources/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
      done
     ;;
     *)
@@ -82,12 +82,12 @@ if [[ -f modsrc.tar ]]; then
      done
     ;;
     ece-v3*)
-     cd $WORKDIR/model/sources/build-config
+     cd $WORKDIR/model/sources/sources/build-config
      ./compilation.cmd
-     OCONFIGS=$(ls -1 $WORKDIR/model/sources/nemo*/CONFIG | grep ORCA)
+     OCONFIGS=$(ls -1 $WORKDIR/model/sources/sources/nemo*/CONFIG | grep ORCA)
      for OCONFIG in $OCONFIGS; do
       mkdir -p $BIN/$OCONFIG
-      ln -sf $WORKDIR/model/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
+      ln -sf $WORKDIR/model/sources/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG
      done
     ;;
     *)

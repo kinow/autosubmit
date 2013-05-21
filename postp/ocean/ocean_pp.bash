@@ -50,7 +50,7 @@ fi
 #    You have created a function ? If your new diagnostic relies on an already 
 #      existing diagnotics, you might need similar lignes to the above ones
 #                        Any doubt ---> vguemas@ic3.cat
-# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+# @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 #
 # Preparing WORKDIR and set of available functions
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -137,6 +137,8 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
             fi
                
             ncks -O -v ${lstext} grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+          else 
+            cp sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
 
@@ -160,6 +162,8 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
             fi
 
             ncks -O -v ${lstext} icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+          else
+            cp ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
        
@@ -227,23 +231,21 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
         ;;
 
         'vert_Ssections')
-          case $typeoutput in
-           'MMO' ) pref='grid_T' ;;
-           'diags') pref='s3d' ;;
-          esac
-          for coord in 0 45 -45 -30 180 80
-           do
-            if [[ $coord == '0' ]] || [[ $coord == '45' ]] || [[ $coord == '-45' ]] ; then  
-             [[ ` echo $coord | cut -b 1 ` == '-' ]] && direction=S || direction=N
-             z_m=Z 
-            else
-             [[ ` echo $coord | cut -b 1 ` == '-' ]] && direction=W || direction=E
-             z_m=M
-            fi
-             coord=`echo $coord | sed -e s/-//g`
-            [ ! -f sal_${coord}${direction}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ] && cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc vosaline $z_m $coord sal_${coord}${direction}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
-           done
- 
+          if [[ $typeoutput == 'MMO' ]] ; then
+           pref='grid_T'
+           for coord in 0 45 -45 -30 180 80
+            do
+             if [[ $coord == '0' ]] || [[ $coord == '45' ]] || [[ $coord == '-45' ]] ; then  
+              [[ ` echo $coord | cut -b 1 ` == '-' ]] && direction=S || direction=N
+              z_m=Z 
+             else
+              [[ ` echo $coord | cut -b 1 ` == '-' ]] && direction=W || direction=E
+              z_m=M
+             fi
+              coord=`echo $coord | sed -e s/-//g`
+             [ ! -f sal_${coord}${direction}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ] && cutsection ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc vosaline $z_m $coord sal_${coord}${direction}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            done
+          fi
         ;;
         '3dtemp')
           case $typeoutput in
@@ -258,15 +260,14 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           fi
         ;;
         '3dsal')
-          case $typeoutput in
-           'MMO' ) pref='grid_T' ;;
-           'diags') pref='s3d' ;;
-          esac
+          if [[ $typeoutput == 'MMO' ]] ; then
+           pref='grid_T' 
           if [ ! -f regular3dS_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ]; then
              echo " Warning: you are about to perform a 3d interpolation "
              [ $warning_S ] && echo "(because you asked for cross sections calculations)"
              echo "this might take time to complete (~days), be sure you really need/want to do this..."
              interp3d ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc vosaline regular3dS_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+          fi
           fi
         ;;
 
@@ -274,7 +275,9 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
           [ ! -f TSec_ave190-220E_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ] && cdo zonmean -sellonlatbox,190,220,-90,90 regular3dT_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc TSec_ave190-220E_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
         ;;        
         'SSec_ave190-220E')
+         if [[ $typeoutput == 'MMO' ]] ; then
           [ ! -f SSec_ave190-220E_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ] && cdo zonmean -sellonlatbox,190,220,-90,90 regular3dS_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc SSec_ave190-220E_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+         fi
         ;;        
 
         'moc')
@@ -353,7 +356,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
            'MMO' ) pref='grid_T' ;;
            'diags') 
              pref='t3d' 
-             ncks -A -v somxl010,somixhgt oce_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc t3d_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+             ncks -A -v somxl010,somixhgt sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc t3d_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
            ;;
           esac
           ohc ${pref}_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc heatc_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc $basin $mxl $kmin $kmax
@@ -383,7 +386,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'moc') dirout='moc' ; files=('moc') ;;
       'ext_raw_ice') dirout='ice' ; files=('ice_raw') ;;
       'ext_raw_oce') dirout='oce_raw' ; files=('oce_raw') ;;
-      'heat_sal_mxl') dirout='oce_raw' ; files=('heat_sal_mxl') ;;
+      'heat_sal_mxl') dirout='heatc' ; files=('heat_sal_mxl') ;;
       'psi') dirout='psi' ; files=('psi') ;;
       'usalc') dirout='saltc' ; files=('sal_0-300m') ;;
       'lmsalc') dirout='saltc' ;  files=('sal_300-5400m') ;;

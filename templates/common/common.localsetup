@@ -25,7 +25,9 @@ cd /cfu/autosubmit/$EXPID
 mkdir -p model
 
 if [[ $MODEL != '' && $VERSION != '' && $EXPCLASS != '' ]]; then
- # register setup stuff w.r.t EXPID once
+ # !!!! I M P O R T A N T !!!
+ # Register setup stuff w.r.t $EXPID once, in case user need to prepare setup manually
+ # then user must have to take care of creating "check.*.*.*.lock" manually but also once.
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
  if [[ ! -a conf/check.$MODEL.$VERSION.$EXPCLASS.lock ]]; then
   cp -rp $REALSETUP model
@@ -47,7 +49,9 @@ if [[ $MODEL != '' && $VERSION != '' && $EXPCLASS != '' ]]; then
   touch conf/check.$MODEL.$VERSION.$EXPCLASS.lock
  fi
  tar -cvf conf/modsetup.tar model/setup
- # in case, user need to modify the sources; manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ # !!!! I M P O R T A N T !!!
+ # By default, the sources are not available under $EXPID, in case user need to modify 
+ # the sources then user must have to preapre a set of sources manually first.
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
   tmp="/tmp/list.$$"

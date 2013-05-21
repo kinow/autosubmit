@@ -50,7 +50,7 @@ ifs_ddh_freq=$(( 120 * 3600 / ifs_time_step_sec ))
 ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
-ifs_cmip5=%CMIP5%
+ifs_cmip5=%LCMIP5%
 ifs_cmip5_rcp=%NRCP%
 ifs_volcanoes=%LHVOLCA%
 ifs_ncmip5fixyr=%NFIXYR%
@@ -118,7 +118,16 @@ if [[ $chunk == 1 ]]; then
    for t in $(seq $f_min $f_min 1439);do
        hh=$(printf %02d $((t/60)) )
        mm=$(printf %02d $((t%60)) )
-       ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
+       case $VERSION in
+        v3.0-r1012)
+         ln -sf ppt0000000000 postins/ppt00000000
+         ln -sf pptdddddd0000 postins/pptdddd0000
+         ln -sf pptdddddd0000 postins/pptdddd$hh$mm
+        ;;
+        *)
+         ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
+        ;;
+       esac
    done
    ls -1 postins/* > dirlist
    ln -sf ${ini_data_dir}/ifs/rtables/* .
