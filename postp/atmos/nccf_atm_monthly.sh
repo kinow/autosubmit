@@ -615,7 +615,8 @@ function save_final_output(){
    
  TARDIR=${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_${NFRP}hourly
  [ ! -d $TARDIR ] && mkdir -p $TARDIR
- find ${SAVEDIR}/${EXPID}/monthly_mean/. -type d | xargs chmod 664 2>/dev/null
+ find ${SAVEDIR}/${EXPID}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
+ find ${SAVEDIR}/${EXPID}/monthly_mean/. -type f | xargs chmod 664 2>/dev/null
   if [ -e ${TARDIR}/${output} ] ; then
    mv ${output} new_${output}
    ncpdq -O -h -a ensemble,time new_${output} new_${output} # shape the dimensions
