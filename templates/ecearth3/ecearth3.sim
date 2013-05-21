@@ -57,7 +57,7 @@ ifs_ncmip5fixyr=%NFIXYR%
 
 # Selection
 case $VERSION in
- v3.0-r1012) nprtrv=%NPRTRVIFS% ;;
+ v3.0) nprtrv=%NPRTRVIFS% ;;
  *) echo "nprtrv is no more needed" ;;
 esac
 
@@ -94,7 +94,7 @@ oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
 
 # Selection
 case $VERSION in
- v3.0-r1012) oas_rnf_fluxcorr=0.87 ;;
+ v3.0) oas_rnf_fluxcorr=0.87 ;;
  *)
   oas_rnf_fluxcorr=0.985
   oas_qs_fluxcorr=0.985
@@ -165,7 +165,7 @@ if [[ $chunk == 1 ]]; then
        hh=$(printf %02d $((t/60)) )
        mm=$(printf %02d $((t%60)) )
        case $VERSION in
-        v3.0-r1012)
+        v3.0)
          ln -sf ppt0000000000 postins/ppt00000000
          ln -sf pptdddddd0000 postins/pptdddd0000
          ln -sf pptdddddd0000 postins/pptdddd$hh$mm
