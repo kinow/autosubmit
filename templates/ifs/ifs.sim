@@ -45,6 +45,7 @@ LLAST=TRUE
 NFIXYR=%NFIXYR%
 NHINCSOL=1 # Needed for constant solar irradiance experiments then set 0
 IFS_exe=${BINPATH}/ifsMASTER
+GRESIFS=FALSE # Generate/Handle global restart files for IFS (default FALSE)
 
 #
 # COMMON
@@ -87,7 +88,10 @@ Chunk_ifs_restart_tag=$(printf %06d0000 $(( Chunk_end / 24 )))
 if [[ $chunk == 1 ]]; then
    echo "FIRST Chunk"
    echo "Chunk_length: ${RUN_hours}"
-   LFASTRES=FALSE
+   case $GRESIFS in
+    TRUE)  LFASTRES=FALSE; LFASTRESW=FALSE ;;
+    FALSE) LFASTRES=FALSE; LFASTRESW=TRUE ;;
+   esac
    rm -f ${RUN_dir}/anaisout
    rm -f ${RUN_dir}/mesh_*.nc ${RUN_dir}/mask*.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
 
@@ -107,7 +111,10 @@ if [[ $chunk == 1 ]]; then
 else
    echo "Chunk: ${chunk}"
    echo "Chunk_length: ${RUN_hours}"
-   LFASTRES=TRUE
+   case $GRESIFS in
+    TRUE)  LFASTRES=FALSE; LFASTRESW=FALSE ;;
+    FALSE) LFASTRES=TRUE;  LFASTRESW=TRUE ;;
+   esac
    rm -f ${RUN_dir}/anaisout
    rm -f ${RUN_dir}/mesh_zgr.nc ${RUN_dir}/mesh_hgr.nc ${RUN_dir}/mask.nc ${RUN_dir}/damping.coeff_[0-9][0-9][0-9][0-9].nc
    ln -sf IFS_Restart_$((chunk-1))/* .
@@ -146,7 +153,7 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
      ;;
      v2.2.3) EXPVER=$(${SCRIPTDIR}/setupifs.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP})
      ;;
-     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP} -7 ${NFIXYR} -8 ${NHINCSOL})
+     v2.3.0) EXPVER=$(${SCRIPTDIR}/setupifs2.ksh -r ${IFS_resolution} -e ${ECEARTH} -d ${Chunk_last_day_prev} -l $((Chunk_last_day_prev+RUN_hours)) -n ${IFS_nproc} -w ${WAM} -c ${RUN_coupFreq} -p ${NPROMA} -o .${LLAST}. -0 ${TESTDATADIR} -1 ${NPRTRVIFS} -2 ${EXPID} -3 .${LFASTRES}. -4 ${NFRP} -5 .${LCMIP5}. -6 ${NRCP} -7 ${NFIXYR} -8 ${NHINCSOL} -9 ${LFASTRESW})
      ;;
  esac
 
