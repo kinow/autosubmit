@@ -384,8 +384,10 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
       'max_moc') dirout='moc' ; files=('max_moc_38N50N_500m-2km' 'max_moc_40N' ) ;;
       'siasiesiv' ) dirout='ice' ; files=('siasiesiv_N' 'siasiesiv_S') ;;
       'moc') dirout='moc' ; files=('moc') ;;
-      'ext_raw_ice') dirout='ice' ; files=('ice_raw') ;;
-      'ext_raw_oce') dirout='oce_raw' ; files=('oce_raw') ;;
+#      'ext_raw_ice') dirout='ice' ; files=('ice_raw') ;;
+#      'ext_raw_oce') dirout='oce_raw' ; files=('oce_raw') ;;
+      'ext_raw_ice') dirout='ice' ; files=('ice') ;;
+      'ext_raw_oce') dirout='oce' ; files=('oce') ;;
       'heat_sal_mxl') dirout='heatc' ; files=('heat_sal_mxl') ;;
       'psi') dirout='psi' ; files=('psi') ;;
       'usalc') dirout='saltc' ; files=('sal_0-300m') ;;
