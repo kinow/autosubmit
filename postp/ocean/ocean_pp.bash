@@ -94,14 +94,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     # Fetching the files on cfunas
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     case $expid in 
-      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf}
-      case $expid in
-        'nemovar_s4') endyear=2012 ;;
-        'nemovar_combine') endyear=2009 ;;
-      esac
-      case $yearf in
-        $endyear) monf=5; ltimef=9 ;;
-      esac
+      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf}
       ;;
       *) freqout=${rootout:${#rootout}-12} ; freqout=${freqout/_mean} ; freqout=${freqout/*\/}
       get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout
@@ -468,7 +461,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 #       you need to use the concat option rather than the ncrcat one below.
 #                        Any doubt ---> vguemas@ic3.cat
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      lsyrsb=${yeari}${moni}_$((year0-${monf}/12))$(printf "%02d" $(((mon0-13)%12+12)) ).nc
+      lsyrsb=${yeari}${moni}_$((year0-(1-(10#$moni+10)/12)))$(printf "%02d" $(((mon0-13)%12+12)) ).nc
       lsyrso=${yeari}${moni}_${yearf}$(printf "%02d" ${monf}).nc
       if [ -e ${pathout}/${prefix}${lsmbsh}_${lsyrsb} ] ; then
         case $post in 
