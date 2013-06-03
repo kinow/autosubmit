@@ -3,6 +3,7 @@ import time, os, sys
 import commands
 import signal
 import logging
+import platform
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
@@ -105,7 +106,7 @@ if __name__ == "__main__":
 
 	if (setup == 'true' or transfer == 'true'):
 		localQueue = PsQueue(expid)
-		localQueue.set_host("\$HOSTNAME")
+		localQueue.set_host(platform.node())
 		localQueue.set_scratch("/cfu/autosubmit")
 		localQueue.set_project(expid)
 		localQueue.set_user("tmp")

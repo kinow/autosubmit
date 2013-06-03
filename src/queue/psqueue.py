@@ -3,10 +3,11 @@
 from xml.dom.minidom import parseString
 from hpcqueue import HPCQueue
 from time import sleep
+import platform
 
 class PsQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "\$HOSTNAME"
+		self._host = platform.node()
 		self._scratch = "/cfu/autosubmit"
 		self._project = ""
 		self._user = ""
