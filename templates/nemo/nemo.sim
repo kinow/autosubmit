@@ -1,7 +1,6 @@
+%ENVCOM%
 set -exuv
 date
-#
-%ENVIRONMENT%
 #
 # General Paths
 #
@@ -19,7 +18,10 @@ WRITINGDIR=${SCRATCH_DIR}/%HPCPROJ%/%HPCUSER%/${EXPID}
 BINPATH=${WRITINGDIR}/model/bin
 SETUPPATH=${WRITINGDIR}/model/setup
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-NEMO_nproc=`echo %NEMO_nprocX%*%NEMO_nprocY% | bc`
+NEMO_nproc=%NEMO_nproc%
+NEMO_resolution=%NEMO_resolution%
+NEMO_resolution_wol=$(echo ${NEMO_resolution} | cut -d 'L' -f 1) # without level (wol)
+ICE=%ICE%
 #
 # Chunk management
 #
@@ -140,25 +142,40 @@ else
 fi
 
 rm -f ORCA1_1m* ORCA1_1d*
-ksh $SETUPPATH/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
+ksh $SETUPPATH/$NEMO_resolution/create_namelist.${VERSION}.ksh -l $((Chunk_length+Chunk_last_day_prev)) -p ${Chunk_last_day_prev} -1 $Chunk_start_date -c ${leapy} -f ${freq} -r $restflag -t %OCEAN_FORCTYPE% -s '.true.' -d ${ddamp} -o %SAVEDDO%
+ln -sf $SETUPPATH/$NEMO_resolution/xmlio_server.def
+ln -sf $SETUPPATH/$NEMO_resolution/iodef.%ICE%.xml iodef.xml
 
 ################################################################################
 #
 #  Start running 
 # ~~~~~~~~~~~~~~~
 #
-if [ ${VERSION} == v3.2 ] ; then
-  NEMO_exe=opa
+ENVPARA3=FALSE
+case $VERSION in
+ ecearth-v2*)
+  NEMO_exe=${BINPATH}/opa_exe.${NEMO_resolution_wol}_OASIS3.%NEMO_nprocX%.%NEMO_nprocY%
+ ;;
+ v3.2)
+  NEMO_exe=${BINPATH}/opa
+ ;;
+ v3.3)
+  NEMO_exe=${BINPATH}/${NEMO_resolution_wol}_${ICE}/nemo.exe
+ ;;
+ ece-v3*)
+  NEMO_exe=${BINPATH}/${NEMO_resolution}_${ICE}/nemo.exe
+  ENVPARA3=TRUE
+ ;;
+esac
+if [[ $ENVPARA3 == 'TRUE' ]]; then
+ %ENVPARA3%
+ %RUNPARANEM3%
 else
-  NEMO_exe=nemo.exe
-fi
-cp $BINPATH/${NEMO_exe} ${NEMO_exe}
-chmod 770 ${NEMO_exe}
-
-%PARALLEL_RUN_NEMO%
+ %ENVPARA%
+ %RUNPARANEM%
+fi 
 echo "finished chunk"
 date
-
 # #############################################################################
 #
 #  Move the output for postprocessing

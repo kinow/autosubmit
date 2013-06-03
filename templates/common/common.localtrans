@@ -3,12 +3,12 @@ date
 #
 # General Paths and Configurations
 #
-dst1=/cfunas/exp/ecearth # store logfiles, MM*, REST*
+dst1=/cfunas/exp/%MODEL% # store logfiles, MM*, REST*
 dst2=/cfunas/exp/ecearth/gribfiles # store ICM*
 arch=%HPCARCH%
 proj=%HPCPROJ%
 
-types="logfiles MM REST ICM"
+types="logfiles diags MM restart REST ICM"
 expid=%EXPID%
 sdates=%SDATE%
 members=%MEMBER%
@@ -94,19 +94,19 @@ for s in $sdates; do
       $transfer $dst1 ""
      fi
     ;;
-    MM)
-     lswc=`$rmtlist $src/$expid/$s/$m/outputs/MM* | wc -l`
+    MM|diags)
+     lswc=`$rmtlist $src/$expid/$s/$m/outputs/${typ}* | wc -l`
      if [[ $lswc -gt 0 ]]; then
       mkdir -p $dst1/$expid/$s/$m/outputs
-      list=`$rmtlist $src/$expid/$s/$m/outputs/MM*`
+      list=`$rmtlist $src/$expid/$s/$m/outputs/${typ}*`
       $transfer $dst1 outputs
      fi
     ;;
-    REST)
-     lswc=`$rmtlist $src/$expid/$s/$m/restarts/REST* | wc -l`
+    REST|restart)
+     lswc=`$rmtlist $src/$expid/$s/$m/restarts/${typ}* | wc -l`
      if [[ $lswc -gt 0 ]]; then
       mkdir -p $dst1/$expid/$s/$m/restarts
-      list=`$rmtlist $src/$expid/$s/$m/restarts/REST*`
+      list=`$rmtlist $src/$expid/$s/$m/restarts/${typ}*`
       $transfer $dst1 restarts
      fi
     ;;

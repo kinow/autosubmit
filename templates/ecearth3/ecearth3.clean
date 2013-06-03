@@ -1,3 +1,4 @@
+%ENVCOM3%
 set -xuve
 date
 
@@ -27,6 +28,7 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
+PATHIC=${HSM_DIR}/ic
 
 #
 # Model Configuration
@@ -42,6 +44,9 @@ ini_data_dir=${ECEARTH}/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
+nem_grid=%NEMO_resolution%
+nem_grid_wol=`echo ${nem_grid} | cut -d 'L' -f 1` # without level (wol)
+ICE=%ICE%
 
 #
 # Chunk Management
@@ -121,6 +126,13 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
+      if [[ %OCEAN_ALLRST% != '' ]] && [[ %OCEAN_ALLRST% == 'TRUE' ]] ; then
+        cd NEMO_Restart_${chunk}
+        $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc $PATHIC/ice/${nem_grid_wol}_${ICE}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc
+        $CP ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc $PATHIC/ocean/${nem_grid}/${EXPID}/${EXPID}_${MEMBER}_${Chunk_end_date}_restart.nc
+        rm -f ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_ice.nc ${EXPID}_${MEMBER}_${Chunk_end_date}_restart_oce.nc
+        cd ..
+      fi
       tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
       tar -cvf $tarfile NEMO_Restart_${chunk}
       $CP $tarfile $PATHOUT_RES
@@ -155,8 +167,8 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       rm -f ../$tarfile
 
       # Copying the daily data (GRIB files)
-      SAVEDD=%SAVEDD%
-      if [[ $SAVEDD == TRUE ]]; then
+      SAVEDDA=%SAVEDDA%
+      if [[ $SAVEDDA == TRUE ]]; then
          for grbfile in `ls ICM*grb`; do
              $CP $grbfile $PATHOUT_OUT
              $CHMOD $PATHOUT_OUT/$grbfile
@@ -182,6 +194,103 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       rm -f ${RUN_dir}/outa_$chunk ${RUN_dir}/outo_$chunk
       touch ${RUN_dir}/out_$chunk
    fi
+fi
+
+#
+# Ocean nudging (Virginie's stuff)
+# Dep: nco-v4.2.3
+# Ref: m00m
+#
+cd $RUN_dir
+OCEAN_NUDGING=%OCEAN_NUDGING%
+OCEAN_NUDDATA=%OCEAN_NUDDATA%
+CHUNKSIZE=%CHUNKSIZE%
+if [[ $OCEAN_NUDGING != '' ]] && [[ $OCEAN_NUDGING == 'TRUE' ]] ; then
+  PATHNUDG=${HSM_DIR}/nudging/$OCEAN_NUDDATA/%NEMO_resolution%/${MEMBER}
+  year=`echo ${Chunk_start_date} | cut -c1-4`
+  month=`echo ${Chunk_start_date} | cut -c5-6`
+  #
+  #  To compensate for the lack of symbolic link at ECMWF
+  #
+  if [[ $OCEAN_NUDDATA == 'glorys2v1' ]] || [[ $year < 1993 ]] ; then
+    year=1992
+  fi
+  #
+  case ${month} in
+    01)
+    ncks -O -d time_counter,9,11 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
+    ncks -O -d time_counter,0,2 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_1-3.nc
+    for mon in $(seq 4 9)
+    do
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      else
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
+      fi
+    done
+    ncrcat -O -v votemper,vosaline -n 6,2,1 nudg_chunk$((chunk+2))_04.nc nudg_chunk$((chunk+2))_4-9.nc
+    ncrcat -O -v votemper,vosaline nudg_chunk$((chunk+2))_1-3.nc nudg_chunk$((chunk+2))_4-9.nc nudg_chunk$((chunk+2))_10-12.nc nudg_chunk$((chunk+2)).nc
+    rm -f nudg_chunk$((chunk+2))_*.nc nudg_chunk${chunk}.nc
+    ;;
+    03|05)
+    for mon in $(seq 1 9)
+    do
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      else
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
+      fi
+    done
+    ncks -O -d time_counter,9,11 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_10-12.nc
+    ncrcat -O -v votemper,vosaline -n 9,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_01-09.nc
+    ncrcat -O  nudg_chunk$((chunk+2))_01-09.nc nudg_chunk$((chunk+2))_10-12.nc nudg_chunk$((chunk+2)).nc
+    rm -f nudg_chunk$((chunk+2))_*.nc nudg_chunk${chunk}.nc
+    ;;
+    07|08)
+    case $CHUNKSIZE in
+    3|4)
+     month0=0
+     outputi=1
+     list_file='nudg_chunk'$((chunk+2))'_1-9.nc'
+    ;;
+    6)
+     month0=3
+     outputi=4
+     list_file='nudg_chunk'$((chunk+2))'_1-3.nc nudg_chunk'$((chunk+2))'_4-9.nc'
+     for mon in $(seq 1 3)
+     do
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+2))0${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_0${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_0${mon}.nc.gz
+      else
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_0${mon}.nc
+      fi
+    done
+    ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_01.nc nudg_chunk$((chunk+2))_1-3.nc
+    ;;
+    esac
+    ncks -O -d time_counter,${month0},8 nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${outputi}-9.nc
+    for mon in $(seq 10 12)
+    do
+      if [[ -e ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz ]] ; then
+        $CP ${PATHNUDG}/${OCEAN_NUDDATA}_${MEMBER}_$((year+1))${mon}_grid_T.nc.gz nudg_chunk$((chunk+2))_${mon}.nc.gz
+        gunzip -f nudg_chunk$((chunk+2))_${mon}.nc.gz
+      else
+        ncks -O -d time_counter,$((mon-1)) nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2))_${mon}.nc
+      fi
+    done
+    ncrcat -O -v votemper,vosaline -n 3,2,1 nudg_chunk$((chunk+2))_10.nc nudg_chunk$((chunk+2))_10-12.nc
+    ncrcat -O -v votemper,vosaline ${list_file} nudg_chunk$((chunk+2))_10-12.nc nudg_chunk$((chunk+2)).nc
+    rm -f nudg_chunk$((chunk+2))_*.nc nudg_chunk${chunk}.nc
+    ;;
+    02|11)
+    cp nudg_chunk$((chunk+1)).nc nudg_chunk$((chunk+2)).nc
+    ;;
+    *) echo "not coded yet. Please start date month Jan or Jun if your CHUNKSIZE=6 or start in Nov, March or Jul if your CHUNKSIZE=4 or in Nov, Feb, May, Aug if your CHUNKSIZE=3" ;;
+  esac
+
 fi
 
 #

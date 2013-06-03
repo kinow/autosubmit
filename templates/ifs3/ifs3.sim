@@ -1,3 +1,4 @@
+%ENVCOM3%
 set -xuve
 date
 
@@ -8,7 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%GRIBAPIPATH2%:${PATH}
 
 #
 # Model Configuration
@@ -50,14 +50,14 @@ ifs_ddh_freq=$(( 120 * 3600 / ifs_time_step_sec ))
 ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
-ifs_cmip5=%CMIP5%
+ifs_cmip5=%LCMIP5%
 ifs_cmip5_rcp=%NRCP%
 ifs_volcanoes=%LHVOLCA%
 ifs_ncmip5fixyr=%NFIXYR%
 
 # Selection
 case $VERSION in
- v3.0-r1012) nprtrv=%NPRTRVIFS% ;;
+ v3.0) nprtrv=%NPRTRVIFS% ;;
  *) echo "nprtrv is no more needed" ;;
 esac
 
@@ -111,25 +111,25 @@ if [[ $chunk == 1 ]]; then
 
    # Files needed for IFS (linked)
    # Other stuff
-   # Selection
-   case $VERSION in
-    v3.0-r1012)
-     ln -sf ${ini_data_dir}/ifs/postins
-     ln -sf ${ini_data_dir}/ifs/dirlist
-    ;;
-    *)
-     # Output control (ppt files)
-     mkdir -p postins
-     cp ${ctrl_file_dir}/ppt* postins/
-     f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
-     for t in $(seq $f_min $f_min 1439);do
-         hh=$(printf %02d $((t/60)) )
-         mm=$(printf %02d $((t%60)) )
+   # Output control (ppt files)
+   mkdir -p postins
+   cp ${ctrl_file_dir}/ppt* postins/
+   f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
+   for t in $(seq $f_min $f_min 1439);do
+       hh=$(printf %02d $((t/60)) )
+       mm=$(printf %02d $((t%60)) )
+       case $VERSION in
+        v3.0)
+         ln -sf ppt0000000000 postins/ppt00000000
+         ln -sf pptdddddd0000 postins/pptdddd0000
+         ln -sf pptdddddd0000 postins/pptdddd$hh$mm
+        ;;
+        *)
          ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
-     done
-     ls -1 postins/* > dirlist
-    ;;
-   esac
+        ;;
+       esac
+   done
+   ls -1 postins/* > dirlist
    ln -sf ${ini_data_dir}/ifs/rtables/* .
 
    # Run-off file
@@ -212,8 +212,8 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Model Run
  ls -l
  date
-%ENVIRONMENT3%
-%PARALLEL_RUN_IFS3%
+%ENVPARA3%
+%RUNPARAIFS3%
 
  date
  ls -l

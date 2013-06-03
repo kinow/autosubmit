@@ -1,3 +1,4 @@
+%ENVCOM%
 set -xuve
 date
 
@@ -133,8 +134,8 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       rm -f ../$tarfile
 
       # Copying the daily data (GRIB files)
-      SAVEDD=%SAVEDD%
-      if [[ $SAVEDD == TRUE ]]; then
+      SAVEDDA=%SAVEDDA%
+      if [[ $SAVEDDA == TRUE ]]; then
          for grbfile in `ls ICM*grb`; do
              $CP $grbfile $PATHOUT_OUT
              $CHMOD $PATHOUT_OUT/$grbfile

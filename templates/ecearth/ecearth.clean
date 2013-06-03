@@ -1,3 +1,4 @@
+%ENVCOM%
 set -xuve
 date
 
@@ -90,23 +91,13 @@ if [[ $RERUN == TRUE && ! -d $output_dir ]]; then
 fi
 
 #
-# Save NEMO & IFS restart files at permanent storage
+# Save IFS and NEMO restart files at permanent storage
 #
 cd $RUN_dir
 if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
 
    PATHOUT_RES="${PATHOUT}/restarts"
    $MKDIR ${PATHOUT_RES}
-
-   # Save Ocean files
-   if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
-      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
-      tar -cvf $tarfile NEMO_Restart_${chunk}
-      $CP $tarfile $PATHOUT_RES
-      $CHMOD $PATHOUT_RES/$tarfile
-      rm -f $tarfile
-      touch ${RUN_dir}/resto_${chunk}
-   fi
 
    # Save Atmospheric files
    if [[ ! -a ${RUN_dir}/resta_${chunk} ]]; then
@@ -118,20 +109,52 @@ if [[ ! -a ${RUN_dir}/rest_${chunk} ]]; then
       touch ${RUN_dir}/resta_${chunk}
    fi
 
-   if [[ -a ${RUN_dir}/resto_${chunk} && -a ${RUN_dir}/resta_${chunk} ]]; then
-      rm -f ${RUN_dir}/resto_${chunk} ${RUN_dir}/resta_${chunk}
+   # Save Ocean files
+   if [[ ! -a ${RUN_dir}/resto_${chunk} ]]; then
+      tarfile="RESTO_${EXPID}_${START_date}_${MEMBER}_${chunk}_${Chunk_start_date}-${Chunk_end_date}.tar"
+      tar -cvf $tarfile NEMO_Restart_${chunk}
+      $CP $tarfile $PATHOUT_RES
+      $CHMOD $PATHOUT_RES/$tarfile
+      rm -f $tarfile
+      touch ${RUN_dir}/resto_${chunk}
+   fi
+
+   if [[ -a ${RUN_dir}/resta_${chunk} && -a ${RUN_dir}/resto_${chunk} ]]; then
+      rm -f ${RUN_dir}/resta_${chunk} ${RUN_dir}/resto_${chunk}
       touch ${RUN_dir}/rest_${chunk}
    fi
 fi
 
 #
-# Save NEMO & IFS output files at permanent storage and clean disk
+# Save IFS & NEMO output files at permanent storage and clean disk
 #
 cd $output_dir
 if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
 
    PATHOUT_OUT="${PATHOUT}/outputs"
    $MKDIR ${PATHOUT_OUT}
+
+   # Save Atmospheric files
+   if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
+      tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
+
+      # Copying the monthly means
+      ls -1 MMA_${EXPID}_*.nc.gz | xargs tar -cvf ../$tarfile
+      $CP ../$tarfile $PATHOUT_OUT
+      $CHMOD $PATHOUT_OUT/$tarfile
+      rm -f ../$tarfile
+
+      # Copying the daily data (GRIB files)
+      SAVEDDA=%SAVEDDA%
+      if [[ $SAVEDDA == TRUE ]]; then
+         for grbfile in `ls ICM*grb`; do
+             $CP $grbfile $PATHOUT_OUT
+             $CHMOD $PATHOUT_OUT/$grbfile
+             rm -f $grbfile
+         done
+      fi
+      touch ${RUN_dir}/outa_${chunk}
+   fi
 
    # Save Ocean files
    if [[ ! -a ${RUN_dir}/outo_${chunk} ]]; then
@@ -145,30 +168,8 @@ if [[ ! -a ${RUN_dir}/out_${chunk} ]]; then
       touch ${RUN_dir}/outo_${chunk}
    fi
 
-   # Save Atmospheric files
-   if [[ ! -a ${RUN_dir}/outa_${chunk} ]]; then
-      tarfile="MMA_${EXPID}_${START_date}_${MEMBER}_${Chunk_start_date}-${Chunk_end_date}.tar"
-
-      # Copying the monthly means
-      ls -1 MMA_${EXPID}_*.nc.gz | xargs tar -cvf ../$tarfile
-      $CP ../$tarfile $PATHOUT_OUT
-      $CHMOD $PATHOUT_OUT/$tarfile
-      rm -f ../$tarfile
-
-      # Copying the daily data (GRIB files)
-      SAVEDD=%SAVEDD%
-      if [[ $SAVEDD == TRUE ]]; then
-         for grbfile in `ls ICM*grb`; do
-             $CP $grbfile $PATHOUT_OUT
-             $CHMOD $PATHOUT_OUT/$grbfile
-             rm -f $grbfile
-         done
-      fi
-      touch ${RUN_dir}/outa_${chunk}
-   fi
-
-   if [[ -a ${RUN_dir}/outo_$chunk && -a ${RUN_dir}/outa_$chunk ]]; then
-      rm -f ${RUN_dir}/outo_$chunk ${RUN_dir}/outa_$chunk
+   if [[ -a ${RUN_dir}/outa_$chunk && -a ${RUN_dir}/outo_$chunk ]]; then
+      rm -f ${RUN_dir}/outa_$chunk ${RUN_dir}/outo_$chunk
       touch ${RUN_dir}/out_$chunk
    fi
 fi

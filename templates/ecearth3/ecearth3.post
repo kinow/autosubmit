@@ -1,3 +1,4 @@
+%ENVCOM3%
 set -xuve
 date
 
@@ -8,12 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%NCDFPATH%:${PATH}
-PATH=%CDOPATH%:${PATH}
-PATH=%NCOPATH%:${PATH}
-PATH=%CDFPATH%:${PATH}
-PATH=%GRIBAPIPATH2%:${PATH}
-PATH=%REBUILD_NEMOPATH%:${PATH}
 
 #
 # Model Configuration
@@ -29,9 +24,6 @@ ini_data_dir=${ECEARTH}/inidata
 
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-
-CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
-NEMOVERSION=v3.3
 
 #
 # Chunk Management
@@ -116,13 +108,58 @@ if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
    touch $output_dir/%JOBNAME%.rebuild
 fi
 
-# Select a reduced set of outputs to save
-# Include ocean post processing functions
+# Ocean nudging (Virginie's stuff)
+# Dep:
+# Ref: m00m 
+nem_grid=%NEMO_resolution%
+nem_grid_wol=$(echo ${nem_grid} | cut -d 'L' -f 1) # without level (wol)
+# Last Day Previous
+if [[ $chunk == 1 ]]; then
+  day_prev=0
+else
+  day_prev=%PREV%
+fi
+Chunk_last_day_prev=$((day_prev*24))
+Chunk_end=$((Chunk_last_day_prev+RUN_hours))
+# In seconds
+leg_end_sec=$((Chunk_end*3600))
+# restart tags
+case ${nem_grid_wol} in
+     ORCA1)   nem_time_step_sec=3600 ;;
+     ORCA025) nem_time_step_sec=1200 ;;
+     *) echo "Unsupported grid type: ${nem_grid_wol}" ;;
+esac
+Chunk_nem_restart_tag=$(printf %08d $(( leg_end_sec / nem_time_step_sec )))
+nemo_restart_dir=${RUN_dir}/NEMO_Restart_${chunk}
+if [[ ! -d ${nemo_restart_dir} ]]; then
+   exit
+fi
+OCEAN_ALLRST=%OCEAN_ALLRST%
+if [[ $OCEAN_ALLRST != '' ]] && [[ $OCEAN_ALLRST == 'TRUE' ]] ; then
+  cd $nemo_restart_dir 
+  if [[ ! -a $nemo_restart_dir/%JOBNAME%.rebuild ]]; then
+   grid_types="restart_ice restart_oce"
+   prefix=${EXPID}_${Chunk_nem_restart_tag}
+   for grid_type in ${grid_types}; do
+     input_files=${prefix}_${grid_type}_[0-9][0-9][0-9][0-9].nc
+     output_file=${EXPID}_${MEMBER}_${Chunk_end_date}_${grid_type}.nc
+     rebuild_nemo ${prefix}_${grid_type} %NEMO_nproc%
+     mv ${prefix}_${grid_type}.nc $output_file
+   done
+   touch $nemo_restart_dir/%JOBNAME%.rebuild
+  fi
+fi
+
+# Ocean reduced output (Virginie & Asif 's stuff)
+# Dep: nco-3.9.9, cdo-1.4.5.1, cdftools-2.1
+# Ref: l00w and l00v but special iodef.xml is needed with following daily data
 cd $output_dir
+CON_FILES=${MODEL_DIR}/datcom/v3/inidata/nemo/%NEMO_resolution%
+NEMOVERSION=v3
 %INCLUDE_POSTP%
+OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
 if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
-   OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
-   if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+   if [[ $OCEAN_REDUCOUT != '' ]] && [[ $OCEAN_REDUCOUT == 'TRUE' ]] ; then
       if [[ ! -a $output_dir/%JOBNAME%.oreduced ]]; then
          #
          # A prerequisite to enter the common diagnostic post-processing
@@ -214,10 +251,17 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
        done
        nmon=$((nmon+1))
  done
-
  touch $output_dir/%JOBNAME%.apost
 fi
 
+#
+# Cmorization of ocean and atmos.'s output (Pierre-Antoine & Asif's stuff)
+# Dep:
+# Ref: i030
+
+#
+# Tail of the post
+#
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED
 fi

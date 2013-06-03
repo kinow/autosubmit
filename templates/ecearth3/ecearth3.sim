@@ -1,3 +1,4 @@
+%ENVCOM3%
 set -xuve
 date
 
@@ -8,7 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%GRIBAPIPATH2%:${PATH}
 
 #
 # Model Configuration
@@ -50,14 +50,14 @@ ifs_ddh_freq=$(( 120 * 3600 / ifs_time_step_sec ))
 ifs_lastout=true
 ifs_res_hor=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\1:')
 ifs_res_ver=$(echo ${ifs_grid} | sed 's:T\([0-9]*\)L\([0-9]*\):\2:')
-ifs_cmip5=%CMIP5%
+ifs_cmip5=%LCMIP5%
 ifs_cmip5_rcp=%NRCP%
 ifs_volcanoes=%LHVOLCA%
 ifs_ncmip5fixyr=%NFIXYR%
 
 # Selection
 case $VERSION in
- v3.0-r1012) nprtrv=%NPRTRVIFS% ;;
+ v3.0) nprtrv=%NPRTRVIFS% ;;
  *) echo "nprtrv is no more needed" ;;
 esac
 
@@ -77,6 +77,7 @@ case ${nem_grid_wol} in
 esac
 lim_time_step_sec=3600
 advsch=%ADVSCH%
+nudging=%OCEAN_NUDGING%
 nem_res_hor=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\1:')
 nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 
@@ -85,7 +86,7 @@ nem_res_ver=$(echo ${nem_grid} | sed 's:ORCA\([0-9]*\)L\([0-9]*\):\2:')
 #
 oas_numproc=%OASIS_nproc%
 oas_exe_file=${BINPATH}/oasis3.MPI1.x
-oas_namcut_script=${ECEARTH}/sources/util/namcouple-split/namsplit.pl
+oas_namcut_script=${ECEARTH}/sources/sources/util/namcouple-split/namsplit.pl
 oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
               QS___OCE QS___ICE QNS__OCE QNS__ICE DQDT_ICE \
               PRCP_LIQ PRCP_SOL EVAP_TOT EVAP_ICE RNF__OCE CALV_OCE \
@@ -93,7 +94,7 @@ oas_cpl_flds="TAUX_OCE TAUY_OCE TAUX_ICE TAUY_ICE \
 
 # Selection
 case $VERSION in
- v3.0-r1012) oas_rnf_fluxcorr=0.87 ;;
+ v3.0) oas_rnf_fluxcorr=0.87 ;;
  *)
   oas_rnf_fluxcorr=0.985
   oas_qs_fluxcorr=0.985
@@ -108,9 +109,9 @@ cpl_freq_hrs=%RUN_coupFreq%
 export OASIS3=%OASIS3%
 export OASIS3DEBUGLEVEL=2
 export DR_HOOK_IGNORE_SIGNALS='-1'
-export GRIB_DEFINITION_PATH=%GRIBAPIPATH2_DEF%
-export GRIB_SAMPLES_PATH=%GRIBAPIPATH2_SAM%
-export GRIB_BIN_PATH=%GRIBAPIPATH2%
+export GRIB_DEFINITION_PATH=%GRIBAPIPATH_DEF%
+export GRIB_SAMPLES_PATH=%GRIBAPIPATH_SAM%
+export GRIB_BIN_PATH=%GRIBAPIPATH%
 
 #
 # Chunk Management
@@ -156,25 +157,25 @@ if [[ $chunk == 1 ]]; then
 
    # Files needed for IFS (linked)
    # Other stuff
-   # Selection
-   case $VERSION in
-    v3.0-r1012)
-     ln -sf ${ini_data_dir}/ifs/postins
-     ln -sf ${ini_data_dir}/ifs/dirlist
-    ;;
-    *)
-     # Output control (ppt files)
-     mkdir -p postins
-     cp ${ctrl_file_dir}/ppt* postins/
-     f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
-     for t in $(seq $f_min $f_min 1439);do
-         hh=$(printf %02d $((t/60)) )
-         mm=$(printf %02d $((t%60)) )
+   # Output control (ppt files)
+   mkdir -p postins
+   cp ${ctrl_file_dir}/ppt* postins/
+   f_min=$(( ifs_output_freq * ifs_time_step_sec / 60 ))
+   for t in $(seq $f_min $f_min 1439);do
+       hh=$(printf %02d $((t/60)) )
+       mm=$(printf %02d $((t%60)) )
+       case $VERSION in
+        v3.0)
+         ln -sf ppt0000000000 postins/ppt00000000
+         ln -sf pptdddddd0000 postins/pptdddd0000
+         ln -sf pptdddddd0000 postins/pptdddd$hh$mm
+        ;;
+        *)
          ln -sf pptdddddd0000 postins/pptdddddd$hh$mm
-     done
-     ls -1 postins/* > dirlist
-    ;;
-   esac
+        ;;
+       esac
+   done
+   ls -1 postins/* > dirlist
    ln -sf ${ini_data_dir}/ifs/rtables/* .
 
    # Files needed for NEMO (linked)
@@ -340,6 +341,29 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Clean up
  rm -f ${tempfile}
 
+ # Ocean nudging (Virginie's stuff)
+ # Dep: namelist to activate the nudging,ready and well-tested but available only on request to Virginie
+ # Ref: m00m
+ OCEAN_NUDGING=%OCEAN_NUDGING%
+ OCEAN_NUDDATA=%OCEAN_NUDDATA%
+ if [[ $OCEAN_NUDGING != '' ]] && [[ $OCEAN_NUDGING == 'TRUE' ]] ; then
+   rm -f *temperature* *salinity* *sst* *sss* toto.nc
+   if [[ $OCEAN_NUDDATA == 'glorys2v1' ]]; then
+      ncks -O -d nav_lev,0 nudg_chunk${chunk}.nc toto.nc
+      ncwa -O -a nav_lev toto.nc toto.nc
+   else
+      ncks -O -d deptht,0 nudg_chunk${chunk}.nc toto.nc 
+      ncwa -O -a deptht toto.nc toto.nc
+   fi
+   for mon in $(seq 1 12)
+   do
+     ncks -v votemper -d time,$((mon-1)) nudg_chunk${chunk}.nc temperature_m$(printf "%02d" $mon).nc
+     ncks -v vosaline -d time,$((mon-1)) nudg_chunk${chunk}.nc salinity_m$(printf "%02d" $mon).nc
+     ncks -v votemper -d time,$((mon-1)) toto.nc sst_m$(printf "%02d" $mon).nc
+     ncks -v vosaline -d time,$((mon-1)) toto.nc sss_m$(printf "%02d" $mon).nc
+   done
+ fi
+
  # Location of the executables
  ln -sf ${ifs_exe_file}
  ln -sf ${nem_exe_file}
@@ -348,8 +372,8 @@ if [[ ! -a finished_chunk_${chunk} ]]; then
  # Model Run
  ls -l
  date
-%ENVIRONMENT3%
-%PARALLEL_RUN_ECEARTH3%
+%ENVPARA3%
+%RUNPARAECE3%
 
  date
  ls -l

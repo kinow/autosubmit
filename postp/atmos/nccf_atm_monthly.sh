@@ -559,7 +559,7 @@ function new_name(){  #to be rethought: make a match between var_name and xml ta
 #pab!!!! new variables to be added when variable list read directly in outputs, some are missing
         ;;
         *)
-        varnew=$1
+        varnew=` echo $1 | tr [A-Z] [a-z] `
         idx=000
         ;;
       esac
@@ -616,6 +616,7 @@ function save_final_output(){
  TARDIR=${SAVEDIR}/${EXPID}/monthly_mean/${varnew}_${NFRP}hourly
  [ ! -d $TARDIR ] && mkdir -p $TARDIR
  find ${SAVEDIR}/${EXPID}/monthly_mean/. -type d | xargs chmod 775 2>/dev/null
+ find ${SAVEDIR}/${EXPID}/monthly_mean/. -type f | xargs chmod 664 2>/dev/null
   if [ -e ${TARDIR}/${output} ] ; then
    mv ${output} new_${output}
    ncpdq -O -h -a ensemble,time new_${output} new_${output} # shape the dimensions
@@ -931,6 +932,10 @@ config_file=$1
 check_args $@ 
 #read config_file and initialize variables
 . ${config_file}
+#check 1st_month and last_month formats
+[ $MON0 -lt 10 ] && MON0=`echo $MON0 | cut -b 2  `
+[ $MONF -lt 10 ] && MONF=`echo $MONF | cut -b 2  `
+
 FACTOR=$((NFRP*3600))
 ENSEMBLE=${#MEM_LST[@]}
 

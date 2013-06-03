@@ -1,3 +1,4 @@
+%ENVCOM%
 set -xuve
 date
 
@@ -8,12 +9,6 @@ MODEL_DIR=%MODELS_DIR%/%MODEL%
 SCRATCH_DIR=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%
 SCRATCH_TMP_DIR=%SCRATCH_TMP_DIR%/%HPCUSER%/%JOBNAME%
 HSM_DIR=%HSM_DIR%
-PATH=%NCDFPATH%:${PATH}
-PATH=%CDOPATH%:${PATH}
-PATH=%NCOPATH%:${PATH}
-PATH=%CDFPATH%:${PATH}
-PATH=%GRIBAPIPATH%:${PATH}
-PATH=%REBUILDPATH%:${PATH}
 
 #
 # Model Configuration
@@ -29,9 +24,6 @@ TESTDATADIR=${ECEARTH}/inidata/testdata
 
 WRITINGDIR=${SCRATCH_DIR}/${EXPID}
 RUN_dir=${WRITINGDIR}/${START_date}/${MEMBER}
-
-# CON_FILES=${MODEL_DIR}/datcom/v2/inidata/nemo/%NEMO_resolution% (not included yet)
-# NEMOVERSION=v3.3 (not included yet)
 
 #
 # Chunk Management
@@ -82,20 +74,23 @@ if [[ ! -a $output_dir/%JOBNAME%.rebuild ]]; then
    touch $output_dir/%JOBNAME%.rebuild
 fi
 
-# Select a reduced set of outputs to save
-# Include ocean post processing functions
+# Ocean reduced output (Virginie's stuff)
+# Dep: nco-3.9.9, cdo-1.4.5.1, cdftools-2.1
+# Ref: ?
 cd $output_dir
-# INCLUDE_POSTP (not included yet)
+CON_FILES=${MODEL_DIR}/datcom/v2/inidata/nemo/%NEMO_resolution%
+NEMOVERSION=v2
+%INCLUDE_POSTP%
+OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
 if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
-   OCEAN_REDUCOUT=%OCEAN_REDUCOUT%
-   if [[ $OCEAN_REDUCOUT == TRUE ]]; then
+   if [[ $OCEAN_REDUCOUT != '' ]] && [[ $OCEAN_REDUCOUT == 'TRUE' ]] ; then
       if [[ ! -a $output_dir/%JOBNAME%.oreduced ]]; then
          #
          # A prerequisite to enter the common diagnostic post-processing
          if [[ -e toto.nc ]]; then
             rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
          fi
-         cdo mergetime ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
+         cdo mergetime ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc toto.nc
          #
          # Mixed layer ocean heat content: somxlheatc
          heat_sal_mxl toto.nc heat_sal_mxl.nc
@@ -109,11 +104,11 @@ if [[ ! -a $output_dir/%JOBNAME%.opost ]]; then
       fi
       #
       # Append reduced stuff, select surface currents, remove 3D temperature and rename a few variables
-      ncks -A -v somxlheatc heat_sal_mxl.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v somxlheatc heat_sal_mxl.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncks -A -v heatc_sl ohc_2d_avg_0-300m.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       ncks -O -d depthv,0 -d depthu,0 -x -v sohtc300 -x -v votemper \
-      ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
-      ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ${EXPID}_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
+      ncrename -v vozocrtx,sozocrtx -v vomecrty,somecrty ORCA1_1d_${Chunk_start_date}_${Chunk_end_date}_grid_T.nc
       rm -f toto.nc heat_sal_mxl.nc ohc_2d_avg_0-300m.nc
    fi
    gzip -9 ORCA1_??_${Chunk_start_date}_${Chunk_end_date}_??????.nc
@@ -185,10 +180,12 @@ if [[ ! -a $output_dir/%JOBNAME%.apost ]]; then
        done
        nmon=$((nmon+1))
  done
-
  touch $output_dir/%JOBNAME%.apost
 fi
 
+#
+# Tail of the post
+#
 if [[ -a $output_dir/%JOBNAME%.opost && -a $output_dir/%JOBNAME%.apost ]]; then
    rm -rf $SCRATCH_TMP_DIR
    touch %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_COMPLETED

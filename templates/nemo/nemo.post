@@ -1,3 +1,4 @@
+%ENVCOM%
 set -exuv
 date
 #
@@ -5,11 +6,6 @@ date
 #
 SCRATCH_DIR=%SCRATCH_DIR%
 HSM_DIR=%HSM_DIR%
-PATH=%NCDFPATH%:${PATH}
-PATH=%NCOPATH%:${PATH}
-PATH=%CDOPATH%:${PATH}
-PATH=%CDFPATH%:${PATH}
-PATH=%REBUILDPATH%:${PATH}
 #
 # Model Configuration
 #
@@ -80,7 +76,7 @@ else
 fi
 prefix=ORCA1_${interval}_${Chunk_start_date}_${Chunk_end_date}
 case %ICE% in 
-  'LIM3') grid_types="icemoa icemod grid_T grid_V grid_U grid_W" ;;
+  'LIM3') grid_types="icemoa icemod grid_T grid_V grid_U" ;;
   'LIM2') grid_types="icemod grid_T grid_V grid_U grid_W" ;;
 esac
 #

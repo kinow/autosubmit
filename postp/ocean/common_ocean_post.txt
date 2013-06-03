@@ -118,7 +118,7 @@ done
 
 typeset var listroots
 case $8 in 
-  'diags' ) if [[ $6 -lt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
+  'diags' ) if [[ $6 -lt 12 || $5 -gt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
   'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
 esac
 case $9 in
@@ -152,29 +152,44 @@ done
 #                                                                             #
 # $1 : expid                                                                  #
 # $2 : member                                                                 #
-# $3 : starting year                                                          # 
+# $3 : start year                                                             # 
 # $4 : end year                                                               #
+# $5 : start month                                                            #
+# $6 : end month                                                              #
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
 ###############################################################################
 
 function get_nemovar {
+
+if [ -z "$5" ] ; then
+  typeset var moni=9
+else
+  typeset var moni=$5
+fi
+
+if [ -z "$5" ] ; then
+  typeset var monf=8
+else
+  typeset var monf=$6
+fi
+
 typeset var path
 typeset var yearf
 case $1 in
-  'nemovar_s4') path=/cfunas/exp/ECMWF/NEMOVAR_S4/outputs/fc$2/s4 ; yearf=2012 ;;
-  'nemovar_combine') path=/cfunas/exp/ECMWF/NEMOVAR_COMBINE/outputs/opa0/fa9p_1m ; yearf=2009 ;;
+  'nemovar_s4') path=/cfunas/exp/ECMWF/NEMOVAR_S4/outputs/fc$2/s4 ;;
+  'nemovar_combine') path=/cfunas/exp/ECMWF/NEMOVAR_COMBINE/outputs/opa0/fa9p_1m ;;
 esac
 typeset var year
 typeset var mon
-typeset var mona
-typeset var monb
 for year in $(seq $3 $4) ; do
   case $year in
-    $3) mona=9 ; monb=12 ;;
-    $yearf) mona=1; monb=5 ;;
-    $4) mona=1 ;monb=8 ;;
-    *) mona=1 ;monb=12 ;;
+    $3) mona=${moni} ;;
+    *) mona=1 ;;
+  esac
+  case $year in
+    $4) monb=${monf} ;;
+    *) monb=12 ;;
   esac   
   for mon in $(seq $mona $monb); do
     cp ${path}_fc$2_${year}$(printf "%02d" $mon)*.gz .
@@ -190,7 +205,7 @@ typeset var jt
 for root in ${listroots[@]} ; do
   lstfiles=`ls *fc${2}*${root}* | grep -v "${root}_$1_195709_fc$2_${3}09_${4}$(printf "%02d" $monb).nc"`
   ncrcat -O -x -v vorbiasp $lstfiles tmp_${root}.nc 
-  cdo settaxis,${3}-09-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}09_${4}$(printf "%02d" $monb).nc
+  cdo settaxis,${3}-$(printf "%02d" $moni)-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}$(printf "%02d" $moni)_${4}$(printf "%02d" $monf).nc
   rm -f $lstfiles tmp_${root}.nc
 done
 }
@@ -216,16 +231,10 @@ typeset var mon1=$(((10#$mm0+$4-2)%12+1))
 typeset var mon2=$(((10#$mm0+$5-2)%12+1))
 
 typeset var listroots
-#if [[ $year1 == $yyyy0 && $(printf "%02d" $mon1) == $mm0 ]] ; then
   case $6 in
     'diags' ) listroots="t3d" ;;
     'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
   esac
-#else
-#  if [[ $6 == 'diags' ]] ; then
-#    listroots="heat_sal_mxl ice moc psi_U psi_V sal_0-300m sal_300-5400m sstsssmld t3d" 
-#  fi
-#fi
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
@@ -520,7 +529,8 @@ cp ${CON_FILES}/ice_template.nc toto_N.nc
 cp ${CON_FILES}/ice_template.nc toto_S.nc
 
 case ${NEMOVERSION} in
-  'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v ice_pres,ileadfra $1 ;;
+  #'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v ice_pres,ileadfra $1 ;;
+  'Ec3.0_O1L46'|'Ec3.0_O25L46') ncrename -v iiceconc,ileadfra $1 ;;
 esac
   
 typeset var ntime=`cdo ntime $1`

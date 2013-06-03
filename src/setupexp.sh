@@ -1,7 +1,7 @@
 #!/bin/bash
 # ./setupexp.sh -e $expid
 
-EXPID=chex
+EXPID=cxxx
 
 while getopts e: option
 do
@@ -21,6 +21,7 @@ HPCPROJ=`grep -w HPCPROJ conf/expdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g
 HPCUSER=`grep -w HPCUSER conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODEL=`grep -w MODEL conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 VERSION=`grep -w VERSION conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
+EXPCLASS=`grep -w EXPCLASS conf/expdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODELS_DIR=`grep -w MODELS_DIR conf/archdef_${EXPID}.conf | cut -d '=' -f2 |sed 's/ //g'`
 SCRATCH_DIR=`grep -w SCRATCH_DIR conf/archdef_${EXPID}.conf | cut -d '=' -f2 | sed 's/ //g'`
 MODSRC="modsrc.tar" # name for tar file; would be containing modified sources
@@ -28,26 +29,47 @@ MODSETUP="modsetup.tar" # name for tar file; would be containing modified setup 
 
 # prepare modified stuff correctly
 mkdir -p model
+
 if [[ $MODEL != '' && $VERSION != '' ]]; then
- # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ # register setup stuff w.r.t EXPID once
+ REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
+ if [[ ! -a conf/check.$MODEL.$VERSION.$EXPCLASS.lock ]]; then
+  cp -rp $REALSETUP model
+  case $MODEL in
+   ecearth)
+    case $VERSION  in
+     v2*)
+      cp -rp /cfu/models/$MODEL/datcom/v2/postp/$EXPCLASS/* model/setup
+     ;;
+     v3*)
+      cp -rp /cfu/models/$MODEL/datcom/v3/postp/$EXPCLASS/* model/setup/ctrl
+     ;;
+    esac
+   ;;
+   nemo)
+   ;;
+  esac
+  rm -f conf/check.*.lock
+  touch conf/check.$MODEL.$VERSION.$EXPCLASS.lock
+ fi
+ tar -cvf conf/$MODSETUP model/setup
+ # in case, user need to modify the sources; manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
-  LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
-  LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
+  tmp="/tmp/list.$$"
+  diff -rqu model/sources $REALSOURCES | grep Files | awk '{print $2}' > $tmp
+  diff -rqu model/sources $REALSOURCES | grep Only | sed -e 's/: /\//g' | awk '{print $3}' >> $tmp
+  LIST=$(cat $tmp)
+  LSWC=$(cat $tmp | wc -l)
+  rm -f $tmp
   if [[ $LSWC -gt 0 ]]; then
    tar -cvf conf/$MODSRC $LIST
   fi
  else
   echo "sources are not available yet"
  fi
- # register setup stuff w.r.t EXPID once
- REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ ! -d model/setup ]]; then
-    cp -rp $REALSETUP model/
- fi
- tar -cvf conf/$MODSETUP model/setup
 else
- echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
+ echo "MODEL, VERSION and EXPCLASS must be filled into expdef_${EXPID}.conf"
  exit 1
 fi
 
@@ -85,7 +107,7 @@ if [[ -f conf/$MODSRC ]]; then
     v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
-     ./compilation.ksh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/oasis3/prism_2-5/prism/*/bin/oasis3.MPI1.x $BIN ;\
       ln -sf $MAIN/model/sources/nemo/nemo_build/opa_exe.* $BIN ;\
@@ -117,7 +139,7 @@ if [[ -f conf/$MODSRC ]]; then
     ecearth-v2*)
      $SSH "\
      cd $MAIN/model/sources/build ;\
-     ./compilation.ksh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       ln -sf $MAIN/model/sources/nemo/nemo_build/opa_exe* $BIN ;\
      fi"
@@ -125,7 +147,7 @@ if [[ -f conf/$MODSRC ]]; then
     v3.2)
      $SSH "\
      cd $MAIN/model/sources/modipsl/config/ORCA2_LIM ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
      ln -sf $MAIN/model/sources/modipsl/bin/* $BIN ;\
      fi"
@@ -133,13 +155,26 @@ if [[ -f conf/$MODSRC ]]; then
     v3.3)
      $SSH "\
      cd $MAIN/model/sources/NEMOGCM/CONFIG ;\
-     ./compilation.sh ;\
+     ./compilation.cmd ;\
      if [[ $? -eq 0 ]]; then \
       OCONFIGS=`$SSH ls -1 $MAIN/model/sources/NEMOGCM/CONFIG | grep ORCA1`
       for OCONFIG in $OCONFIGS; do
        $SSH "\
        mkdir -p $BIN/$OCONFIG ;\
        ln -sf $MAIN/model/sources/NEMOGCM/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
+      done
+     fi"
+    ;;
+    ece-v3*)
+     $SSH "\
+     cd $MAIN/model/sources/build-config ;\
+     ./compilation.cmd ;\
+     if [[ $? -eq 0 ]]; then \
+      OCONFIGS=`$SSH ls -1 $MAIN/model/sources/nemo*/CONFIG | grep ORCA`
+      for OCONFIG in $OCONFIGS; do
+       $SSH "\
+       mkdir -p $BIN/$OCONFIG ;\
+       ln -sf $MAIN/model/sources/nemo*/CONFIG/$OCONFIG/BLD/bin/*.exe $BIN/$OCONFIG"
       done
      fi"
     ;;
@@ -175,3 +210,4 @@ else
 fi
 
 date
+

@@ -10,6 +10,7 @@ HPCPROJ=%HPCPROJ%
 HPCUSER=%HPCUSER%
 MODEL=%MODEL%
 VERSION=%VERSION%
+EXPCLASS=%EXPCLASS%
 MODELS_DIR=%MODELS_DIR%
 SCRATCH_DIR=%SCRATCH_DIR%
 
@@ -23,18 +24,42 @@ esac
 cd /cfu/autosubmit/$EXPID
 mkdir -p model
 
-if [[ $MODEL != '' && $VERSION != '' ]]; then
- # register setup stuff w.r.t EXPID once
+if [[ $MODEL != '' && $VERSION != '' && $EXPCLASS != '' ]]; then
+ # !!!! I M P O R T A N T !!!
+ # Register setup stuff w.r.t $EXPID once, in case user need to prepare setup manually
+ # then user must have to take care of creating "check.*.*.*.lock" manually but also once.
  REALSETUP="/cfu/models/$MODEL/$VERSION/setup"
- if [[ ! -d model/setup ]]; then
-    cp -rp $REALSETUP model
+ if [[ ! -a conf/check.$MODEL.$VERSION.$EXPCLASS.lock ]]; then
+  cp -rp $REALSETUP model
+  case $MODEL in
+   ecearth)
+    case $VERSION  in
+     v2*)
+      cp -rp /cfu/models/$MODEL/datcom/v2/postp/$EXPCLASS/* model/setup
+     ;;
+     v3*)
+      cp -rp /cfu/models/$MODEL/datcom/v3/postp/$EXPCLASS/* model/setup/ctrl
+     ;;
+    esac
+   ;;
+   nemo)
+   ;;
+  esac
+  rm -f conf/check.*.lock
+  touch conf/check.$MODEL.$VERSION.$EXPCLASS.lock
  fi
  tar -cvf conf/modsetup.tar model/setup
- # in case, user need to modify the sources manually prepare at "/cfu/autosubmit/$EXPID/model/sources"
+ # !!!! I M P O R T A N T !!!
+ # By default, the sources are not available under $EXPID, in case user need to modify 
+ # the sources then user must have to preapre a set of sources manually first.
  REALSOURCES="/cfu/models/$MODEL/$VERSION/sources"
  if [[ -d model/sources && -d $REALSOURCES ]]; then
-  LIST=`diff -rqu model/sources $REALSOURCES | awk '{print $2}'`
-  LSWC=`diff -rqu model/sources $REALSOURCES | awk '{print $2}' | wc -l`
+  tmp="/tmp/list.$$"
+  diff -rqu model/sources $REALSOURCES | grep Files | awk '{print $2}' > $tmp
+  diff -rqu model/sources $REALSOURCES | grep Only | sed -e 's/: /\//g' | awk '{print $3}' >> $tmp
+  LIST=$(cat $tmp)
+  LSWC=$(cat $tmp | wc -l)
+  rm -f $tmp
   if [[ $LSWC -gt 0 ]]; then
    tar -cvf conf/modsrc.tar $LIST
   fi
@@ -42,7 +67,7 @@ if [[ $MODEL != '' && $VERSION != '' ]]; then
   echo "sources are not available yet"
  fi
 else
- echo "MODEL and VERSION must be filled into expdef_${EXPID}.conf"
+ echo "MODEL, VERSION and EXPCLASS must be filled into expdef_${EXPID}.conf"
  exit 1
 fi
 
