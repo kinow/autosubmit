@@ -57,7 +57,6 @@ of three characters "xxx" are to represent unique alphanumeric identity for the 
 
 Cautions: 
 - Before launching autosubmit check the following stuff:
-> ssh localhost # essential with autosubmit v2.1
 > ssh ithaca # say for example similarly check other HPC's where password-less ssh is feasible
 - After launching autosubmit, one must be aware of login expeiry limit and policy (if applicable for any HPC) 
 and renew the login access accordingly (by using token/key etc) before expiry.
