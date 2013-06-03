@@ -6,7 +6,7 @@ from time import sleep
 
 class PsQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "localhost"
+		self._host = "\$HOSTNAME"
 		self._scratch = "/cfu/autosubmit"
 		self._project = ""
 		self._user = ""

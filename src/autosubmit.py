@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
 	if (setup == 'true' or transfer == 'true'):
 		localQueue = PsQueue(expid)
-		localQueue.set_host("localhost")
+		localQueue.set_host("\$HOSTNAME")
 		localQueue.set_scratch("/cfu/autosubmit")
 		localQueue.set_project(expid)
 		localQueue.set_user("tmp")
