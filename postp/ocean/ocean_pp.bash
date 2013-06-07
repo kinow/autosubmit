@@ -129,9 +129,9 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
              fi
             fi
                
-            ncks -O -v ${lstext} grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            ncks -O -v ${lstext} grid_T_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           else 
-            cp sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            cp sstsssmld_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc oce_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
 
@@ -154,9 +154,9 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
              fi
             fi
 
-            ncks -O -v ${lstext} icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            ncks -O -v ${lstext} icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           else
-            cp ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_raw_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
+            cp ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
        
