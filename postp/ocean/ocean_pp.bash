@@ -155,8 +155,6 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
             fi
 
             ncks -O -v ${lstext} icemod_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
-          else
-            cp ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc ice_${expid}_${yeari}${moni}01_fc${memb}_${year0}$(printf "%02d" ${mon0})_${yearf}$(printf "%02d" ${monf}).nc
           fi
         ;;
        
