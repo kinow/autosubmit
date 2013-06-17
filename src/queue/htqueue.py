@@ -15,7 +15,7 @@ class HtQueue(HPCQueue):
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstat"
 		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		self._submit_cmd = "ssh " + self._host + " qsub -v PBS_O_WORKDIR=" + self._remote_log_dir + " " + self._remote_log_dir + "/"
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -32,7 +32,7 @@ class HtQueue(HPCQueue):
 		self._cancel_cmd = "ssh " + self._host + " qdel"
 		self._checkjob_cmd = "ssh " + self._host + " qstat"
 		self._checkhost_cmd = "ssh " + self._host  + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		self._submit_cmd = "ssh " + self._host + " qsub -v PBS_O_WORKDIR=" + self._remote_log_dir + " " + self._remote_log_dir + "/"
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -51,7 +51,7 @@ class HtQueue(HPCQueue):
 		return self._mkdir_cmd
 
 	def parse_job_output(self, output):
-		job_state = output.split('\n')[5].split()[9]
+		job_state = output.split('\n')[2].split()[4]
 		return job_state
 
 	def get_submitted_job_id(self, output):
