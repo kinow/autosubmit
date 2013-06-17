@@ -4,7 +4,7 @@
 ###############################################################################
 #
 #!/bin/sh --login
-#PBS -N %JOBNAME%
+#PBS -N %JOBSHORTNAME%
 #PBS -l mppwidth=2
 #PBS -l mppnppn=1
 #PBS -l walltime=10:00:00
