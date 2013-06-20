@@ -29,8 +29,8 @@ class HPCQueue:
 		print output
 		# retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a COMPLETE status from queue due to the 5 min lifetime
 		while(status!=0 and retry>0):
-			if(current_state == Status.RUNNING):
-				retry -= 1
+			#if(current_state == Status.RUNNING):
+			retry -= 1
 			print('Can not get job status, retrying in 10 sec\n');
 			(status, output) = getstatusoutput(self._checkjob_cmd + ' %s' % str(job_id))
 			print status

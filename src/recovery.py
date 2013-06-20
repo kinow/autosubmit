@@ -14,6 +14,7 @@ from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
+from queue.htqueue import HtQueue
 from sys import setrecursionlimit
 
 if __name__ == '__main__':
@@ -41,21 +42,31 @@ if __name__ == '__main__':
 	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
+	
+	if (exp_parser.has_option('experiment','SETUP')):
+		setup = exp_parser.get('experiment','SETUP').lower()
+	else: 
+		setup = 'false'
+	if (exp_parser.has_option('experiment','TRANSFER')):
+		transfer = exp_parser.get('experiment','TRANSFER').lower()
+	else: 
+		transfer = 'false'
+
 
 	if(args.get):
 		sc = expid[0]
 		if sc == 'b':
-			queue = MnQueue(expid)
-			queue.set_scratch(scratch_dir)
-			queue.set_project(hpcproj)
-			queue.set_user(hpcuser)
-			queue.update_cmds()
+			remoteQueue = MnQueue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
 		elif sc == 'i':
-			queue = ItQueue(expid)
-			queue.set_scratch(scratch_dir)
-			queue.set_project(hpcproj)
-			queue.set_user(hpcuser)
-			queue.update_cmds()
+			remoteQueue = ItQueue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
 		elif sc == 'l':
 			## in lindgren arch must set-up both serial and parallel queues
 			serialQueue = PsQueue(expid)
@@ -69,17 +80,32 @@ if __name__ == '__main__':
 			parallelQueue.set_user(hpcuser)
 			parallelQueue.update_cmds()
 		elif sc == 'e':
-			queue = EcQueue(expid)
-			queue.set_scratch(scratch_dir)
-			queue.set_project(hpcproj)
-			queue.set_user(hpcuser)
-			queue.update_cmds()
+			remoteQueue = EcQueue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
 		elif sc == 'm':
-			queue = Mn3Queue(expid)
-			queue.set_scratch(scratch_dir)
-			queue.set_project(hpcproj)
-			queue.set_user(hpcuser)
-			queue.update_cmds()
+			remoteQueue = Mn3Queue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
+		elif sc == 'h':
+			remoteQueue = HtQueue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
+		
+		if (setup == 'true' or transfer == 'true'):
+			localQueue = PsQueue(expid)
+			localQueue.set_host(platform.node())
+			localQueue.set_scratch("/cfu/autosubmit")
+			localQueue.set_project(expid)
+			localQueue.set_user("tmp")
+			localQueue.update_cmds()
+
 
 		for job in l1.get_active():
 			## in lindgren arch must select serial or parallel queue acording to the job type
@@ -87,6 +113,10 @@ if __name__ == '__main__':
 				queue = parallelQueue
 			elif(sc == 'l' and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
 				queue = serialQueue
+			elif(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
+				queue = localQueue
+			else:
+				queue = remoteQueue
 			if queue.get_completed_files(job.get_name()):
 				job.set_status(Status.COMPLETED)
 				print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"

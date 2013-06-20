@@ -16,10 +16,11 @@ class Job:
 		self._name = name
 		n = name.split('_')
 		#self._short_name = n[0] + "_" + n[1][:6] + "_" + n[2][2:] + n[4][:1] + n[3]
+		##workaround limit 14 characters limit for variables in headers (i.e. job name in hector PBS pro header)
 		if (len(n)>4):
 			self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
 		else: 
-			self._short_name = name
+			self._short_name = name[:14]
 		self._id = id
 		self._status = status
 		self._type = jobtype

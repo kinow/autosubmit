@@ -173,7 +173,7 @@ def prepare_conf_files(content, exp_id, hpc):
 		if hpc == "bsc":
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
 		elif hpc == "hector":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 		elif hpc == "ithaca":
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
 		elif hpc == "lindgren":
