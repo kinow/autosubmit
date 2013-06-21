@@ -6,9 +6,12 @@ import sys, os
 import argparse
 import shutil
 import re
+import dir_config
+from dir_config import DB_DIR
+from dir_config import GIT_DIR
 
 # Database parameters
-DB_DIR = '/cfu/autosubmit/'
+#DB_DIR = '/cfu/autosubmit/'
 DB_FILE = 'ecearth.db'
 DB_NAME = 'ecearth'
 
@@ -216,9 +219,12 @@ if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
 	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--new', '-n', nargs = 1, choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo'))
+	group.add_argument('--new', '-n', nargs = 1)
 	group.add_argument('--copy', '-c', nargs = 1)
 	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'))
+	parser.add_argument('--model_name', '-M', nargs = 1, choices = ('ecearth', 'nemo'))
+	parser.add_argument('--model_version', '-m', nargs = 1)
+	parser.add_argument('--template_version', '-T', nargs = 1) ##find a way to allow only compatible ones with model_name
 	parser.add_argument('--description', '-d', nargs = 1)
 
 	args = parser.parse_args()
@@ -226,6 +232,7 @@ if __name__ == "__main__":
 		parser.error("Missing experiment description.")
 	if args.HPC is None:
 		parser.error("Missing HPC.");
+	##complete missing errors for new arguments
 
 	if args.new is None and args.copy is None:
 		parser.error("Missing method either New or Copy.")
@@ -234,6 +241,7 @@ if __name__ == "__main__":
 		os.mkdir(DB_DIR + exp_id)
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		os.mkdir(DB_DIR + exp_id + '/templates')
+		os.mkdir(DB_DIR + exp_id + '/model')
 		print "Copying config files..."
 		files = os.listdir('../conf')
 		for filename in files:
