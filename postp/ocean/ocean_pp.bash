@@ -63,10 +63,12 @@ source $PATHCOMMONOCEANDIAG/common_ocean_post.txt
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 case $expid in
   'nemovar_s4'|'nemovar_combine') moni=09 ; syeari=1957 ; syearf=1957 ; insdate=1 ; typeoutput='MMO' ; NEMOVERSION='nemovar_O1L42' ;;
+  'glorys2v1') moni=01 ; syeari=1993 ; syearf=1993 ; insdate=1 ; typeoutput='MMO' ;;
 esac
 case $expid in
     'nemovar_s4') rootout='/cfunas/exp/ECMWF/NEMOVAR_S4/monthly_mean' ;;
     'nemovar_combine') rootout='/cfunas/exp/ECMWF/NEMOVAR_COMBINE/monthly_mean' ;;
+    'glorys2v1') rootout='/cfunas/exp/MERCATOR/GLORYS2V1/monthly_mean';;
 esac
 if [[ ${listpost[@]##max_moc} != ${listpost[@]} ]] || [[ -z "$ltimef" ]] || [[ -z "$ltime0" ]] ; then 
   if [[ ! -z "$year0" ]] && [[ ! -z "$yearf" ]] ; then
@@ -96,6 +98,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     case $expid in 
       'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf}
       ;;
+      'glorys2v1') get_glorys ${year0} ${yearf} ${mon0} ${monf} ;;
       *) freqout=${rootout:${#rootout}-12} ; freqout=${freqout/_mean} ; freqout=${freqout/*\/}
       get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout
     esac
@@ -321,20 +324,23 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
            'x') kmin=0 ; kmax=0 ; start=2 ; mxl=1 ;;
            'l') start=2 ; mxl=0
                case $NEMOVERSION in
-               'Ec2.3_O1L42'|'N3.2_O1L42') kmin=25 ; kmax=42 ;;
+               'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') kmin=25 ; kmax=42 ;;
                'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmin=23 ; kmax=46 ;;
+               'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') kmin=45; kmax=75;;
               esac
               ;;
            'm') start=2 ; mxl=0
               case $NEMOVERSION in
-               'Ec2.3_O1L42'|'N3.2_O1L42') kmin=21 ; kmax=24 ;;
+               'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') kmin=21 ; kmax=24 ;;
                'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmin=18 ; kmax=22 ;;
+               'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') kmin=35; kmax=44;;
               esac
               ;;
            'u') kmin=1 ; start=2 ; mxl=0
               case $NEMOVERSION in
-               'Ec2.3_O1L42'|'N3.2_O1L42') kmax=20 ;;
+               'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') kmax=20 ;;
                'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') kmax=17 ;;
+               'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') kmax=34;;
               esac
              ;;
             *)  kmin="" ; kmax="" ; start=1 ; mxl=0 ;;
@@ -399,20 +405,23 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
          'x') mxl=1 ; start=2 ;;
          'l') start=2 ; mxl=0
              case $NEMOVERSION in
-             'Ec2.3_O1L42'|'N3.2_O1L42') file='800-5350_'${file} ;;
+             'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') file='800-5350_'${file} ;;
              'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='855-5875_'${file} ;;
+             'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') file='857-5902_'${file};;
             esac
             ;;
          'm') start=2 ; mxl=0 
             case $NEMOVERSION in
-             'Ec2.3_O1L42'|'N3.2_O1L42') file='373-657_'${file} ;;
+             'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') file='373-657_'${file} ;;
              'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='382-735_'${file} ;;
+             'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') file='301-773_'${file};;
             esac
             ;;
          'u') start=2 ; mxl=0 
             case $NEMOVERSION in
-             'Ec2.3_O1L42'|'N3.2_O1L42') file='0-315_'${file} ;;
+             'Ec2.3_O1L42'|'N3.2_O1L42'|'nemovar_O1L42') file='0-315_'${file} ;;
              'Ec3.0_O1L46'|'Ec3.0_O25L46'|'N3.3_O1L46') file='0-322_'${file} ;;
+             'Ec3.0_O1L75'|'Ec3.0_O25L75'|'glorys2v1_O25L75') file='0-271_'${file};;
             esac
             ;;
           *) mxl=0 ; start=1 ;;

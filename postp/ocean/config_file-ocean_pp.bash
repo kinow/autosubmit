@@ -6,7 +6,7 @@ listpost=(  )
                         # Beware that the max_moc diagnostics can not be computed if you don't process complete years (because that's a diagnostic computed from annual means)
 raw_vars_ocean=(   )    # If listpost contains "ext_raw_oce" option, this is the list ocean variables you want to extract. If nothing is specified, all variables present in input file will be treated. If raw_vars_ocean='default', sosstsst, sosaline, somixhgt and somxl010 will be extracted.
 raw_vars_ice=(   )      # If listpost contains "ext_raw_ice" option, this is the list of seaice variables you want to extract. If nothing is specified, all variables will be treated. If raw_vars_ice='default', isnowthi, iicethic, ileadfra, iicetemp, and ice_pres will be extracted.
-expid=i00k              # expid or nemovar_s4 / nemovar_combine
+expid=i00k              # expid or nemovar_s4 / nemovar_combine / glorys2v1
 mod='ecearth'           # nemo / ecearth
 typeoutput='MMO'        # diags / MMO
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

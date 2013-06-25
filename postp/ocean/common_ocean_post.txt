@@ -5,6 +5,7 @@
 # reduce_mmo                                                                  #
 # get_nemovar                                                                 #
 # get_diagsMMO                                                                #
+# get_glorys                                                                  #
 # clean_diagsMMO                                                              #
 # vertmeansal                                                                 #
 # heat_sal_mxl                                                                #
@@ -208,6 +209,34 @@ for root in ${listroots[@]} ; do
   cdo settaxis,${3}-$(printf "%02d" $moni)-15,12:00,1mon tmp_${root}.nc ${root}_$1_19570901_fc$2_${3}$(printf "%02d" $moni)_${4}$(printf "%02d" $monf).nc
   rm -f $lstfiles tmp_${root}.nc
 done
+}
+###############################################################################
+#                         Copy GLORYS files from cfunas                       #
+#                                                                             #
+# $1 : start year                                                             # 
+# $2 : end year                                                               #
+# $3 : start month                                                            #
+# $4 : end month                                                              #
+#                                                                             #
+#         Created in June 2013          Author : vguemas@ic3.cat              #
+###############################################################################
+
+function get_glorys {
+typeset var path=/cfunas/exp/MERCATOR/GLORYS2V1/outputs/ORCA025L75_glorys
+typeset var lstfiles=""
+for year in $(seq $1 $2) ; do
+  cp ${path}/vosaline_${year}.nc .
+  cp ${path}/votemper_${year}.nc .
+  ncks -A vosaline_${year}.nc votemper_${year}.nc
+  rm -f vosaline_${year}.nc
+  lstfiles=${lstfiles}" "votemper_${year}.nc
+done
+cdo cat ${lstfiles} tmp.nc
+cdo settaxis,${1}-$(printf "%02d" $3)-15,12:00,1mon tmp.nc tmp2.nc
+cdo seldate,${1}-$(printf "%02d" $3)-00,${2}-$(printf "%02d" $4)-31 tmp2.nc grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc
+rm -f ${lstfiles} tmp.nc tmp2.nc
+ncks -O -x -v nav_lon,nav_lat,x_2,y_2 grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc
+ncks -A -v nav_lon,nav_lat mesh_hgr.nc grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc
 }
 ###############################################################################
 #                 Clean diags or MMO files after postprocessing               #
