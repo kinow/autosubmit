@@ -232,7 +232,7 @@ for year in $(seq $1 $2) ; do
   lstfiles=${lstfiles}" "votemper_${year}.nc
 done
 cdo cat ${lstfiles} tmp.nc
-cdo settaxis,${1}-$(printf "%02d" $3)-15,12:00,1mon tmp.nc tmp2.nc
+cdo settaxis,${1}-01-15,12:00,1mon tmp.nc tmp2.nc
 cdo seldate,${1}-$(printf "%02d" $3)-00,${2}-$(printf "%02d" $4)-31 tmp2.nc grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc
 rm -f ${lstfiles} tmp.nc tmp2.nc
 ncks -O -x -v nav_lon,nav_lat,x_2,y_2 grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc grid_T_glorys2v1_19930101_fc0_${1}$(printf "%02d" $3)_${2}$(printf "%02d" $4).nc
