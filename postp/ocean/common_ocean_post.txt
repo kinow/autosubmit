@@ -94,8 +94,10 @@ ncks -O -v votemper $1 t3d_${3}
 # $7 : nemo/ecearth                                                           #
 # $8 : diags/MMO                                                              #
 # $9 : storage frequency (daily/monthly)                                      #
+# $10 : list of files extracted from the original tarballs
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
+#         Modified: June 2013           isabel.andreu-burillo@ic3.cat
 ###############################################################################
 
 function get_diagsMMO {
@@ -106,27 +108,30 @@ typeset var year1
 typeset var year2
 typeset var mon1
 typeset var mon2
+
+typeset var listroots
+case $8 in 
+  'diags' ) if [[ $6 -lt 12 || $5 -gt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
+  'MMO' ) listroots=${10} ;;
+esac
+case $9 in
+  'daily') freqkeep='1d'; freqexcl1='1m' ; freqexcl2='MM' ;;
+  'monthly' ) freqkeep='1m'; freqexcl1='1d' ; freqexcl2='DD' ;;
+  *) freqkeep='1m'; freqexcl1='1d' ; freqexcl2='DD' ;;
+esac
 for jt in $(seq $4 $6 $5) ; do
   year1=$(($yyyy0+(10#$mm0+$jt-2)/12)) 
   mon1=$(((10#$mm0+$jt-2)%12+1))
   year2=$(($yyyy0+(10#$mm0+$jt+$6-3)/12))
   mon2=$(((10#$mm0+$jt+$6-3)%12+1)) 
   cp /cfunas/exp/$7/$2/$1/fc$3/outputs/$8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar .
-  tar -xvf $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
+  for filetype in ${10}; do
+    tar --wildcards -xvf $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar "*${freqkeep}*${filetype}*"
+  done
   rm -f $8_$2_$1_fc$3_${year1}$(printf "%02d" $mon1)01-${year2}$(printf "%02d" $mon2)*.tar
   if [[ `ls *.gz` != '' ]] ; then gunzip *.gz ; fi
 done
 
-typeset var listroots
-case $8 in 
-  'diags' ) if [[ $6 -lt 12 || $5 -gt 12 ]] ; then listroots="t3d heat_sal_mxl ice moc psi sal_0-300m sal_300-5400m sstsssmld" ; fi ;;
-  'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
-esac
-case $9 in
-  'daily') freqexcl1='1m' ; freqexcl2='MM' ;;
-  'monthly' ) freqexcl1='1d' ; freqexcl2='DD' ;;
-  *) freqexcl1='1d' ; freqexcl2='DD' ;;
-esac
 typeset var root
 typeset var lstfiles
 for root in ${listroots[@]} ; do
@@ -157,8 +162,10 @@ done
 # $4 : end year                                                               #
 # $5 : start month                                                            #
 # $6 : end month                                                              #
+# $7 : list of files extracted from the original tarballs                     #
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
+#         Modified: June 2013           isabel.andreu-burillo@ic3.cat         #
 ###############################################################################
 
 function get_nemovar {
@@ -198,7 +205,7 @@ for year in $(seq $3 $4) ; do
 done
 gunzip *.gz
 
-typeset var listroots="grid_T grid_U grid_V grid_W"
+typeset var listroots=${7}
 typeset var root
 typeset var lstfiles
 typeset var ntimes
@@ -247,8 +254,10 @@ ncks -A -v nav_lon,nav_lat mesh_hgr.nc grid_T_glorys2v1_19930101_fc0_${1}$(print
 # $4 : starting leadtime                                                      # 
 # $5 : end leadtime                                                           #
 # $6 : diags/MMO                                                              #
+# $7 : list of files extracted from the original tarballs
 #                                                                             #
 #         Created in May 2012           Author : vguemas@ic3.cat              #
+#         Modified: June 2013           isabel.andreu-burillo@ic3.cat         #
 ###############################################################################
 
 function clean_diagsMMO {
@@ -262,7 +271,7 @@ typeset var mon2=$(((10#$mm0+$5-2)%12+1))
 typeset var listroots
   case $6 in
     'diags' ) listroots="t3d" ;;
-    'MMO' ) listroots="grid_T grid_U grid_V grid_W icemod" ;;
+    'MMO' ) listroots=${7} ;;
   esac
 typeset var root
 typeset var lstfiles
@@ -359,18 +368,17 @@ for jt in $(seq 1 $ntime); do
   ncks -O -v votemper intohc_slayer.nc intmeantem.nc
   ncrename -v votemper,heatc_sl intmeantem.nc #to be commented
   cdo mul intmeantem.nc e3t_file.nc heatc_sl_out.nc
-#?  ncks -A -m -v nav_lon,nav_lat $1 heatc_sl_out.nc
-  # extract the data between the two given depths --> heatc_sl_top.nc
+  ## extract the data between the two given depths --> heatc_sl_top.nc
   ncks -d deptht,$2,$3 heatc_sl_out.nc heatc_sl_top.nc
-  #perform the integration of ohc down to that level (main contribution)
+  ## perform the integration of ohc down to that level (main contribution)
   ncap2 -O -s 'heatc_sl=heatc_sl.total($deptht)' heatc_sl_top.nc heatc_sl_top.nc
-  # now extract a few levels below, to compute the residual ohc 
+  ## now extract a few levels below, to compute the residual ohc 
   lower_bnd=`echo "$3 + 200.0" | bc`
   ncks -d deptht,$3,$lower_bnd heatc_sl_out.nc heatc_sl_bottom.nc
-  # obtain the weight for the extra level containing the 300 m
-  # deptht in the gridT files is positive
-  # weight = (300.0 - depth_top)/(depth_bottom - depth_top)
-  # and add the thickness down to 300 m in the next layer
+  ## obtain the weight for the extra level containing the 300 m
+  ## deptht in the gridT files is positive
+  ## weight = (300.0 - depth_top)/(depth_bottom - depth_top)
+  ## and add the thickness down to 300 m in the next layer
   ncpdq -a '-deptht' heatc_sl_top.nc heatc_sl_top_invert.nc
   ncks -d deptht,0,0,1 heatc_sl_top_invert.nc level_above.nc
   ncks -d deptht,0,0,1 heatc_sl_bottom.nc level_below.nc

@@ -21,6 +21,25 @@ set -evx
 config_file=$1
 . ${config_file}
 
+list_files=''
+if [[ ${listpost[@]} =~ "3dtemp" ]] || [[ ${listpost[@]} =~ "3dsal" ]]; then
+    echo "The list of diags contains 3dtemp or 3dsal"
+    list_files=$(echo ${list_files} grid_T)
+fi
+if [[ ${listpost[@]} =~ "psi" ]]; then
+    echo "The list of diags contains psi"
+    list_files=$(echo ${list_files} grid_U grid_V)
+fi
+if [[ ${listpost[@]} =~ "moc" ]]; then
+    echo "The list of diags contains moc"
+    list_files=$(echo ${list_files} grid_V)
+fi
+
+if [[ ${listpost[@]} =~ "ice" ]]; then
+    echo "The list of diags contains ice"
+    list_files=$(echo ${list_files} icemod)
+fi
+
 
 ###############################################################################
 #
@@ -96,11 +115,11 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     # Fetching the files on cfunas
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     case $expid in 
-      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf}
+      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf} "${list_files}"
       ;;
       'glorys2v1') get_glorys ${year0} ${yearf} ${mon0} ${monf} ;;
       *) freqout=${rootout:${#rootout}-12} ; freqout=${freqout/_mean} ; freqout=${freqout/*\/}
-      get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout
+      get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout "${list_files}"
     esac
     #  
     # Ready for the post-processing
@@ -364,7 +383,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 
     # Removing the raw output from this start dates and this member
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    clean_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $typeoutput
+    clean_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $typeoutput "${list_files}"
   done
 
   # Prepare storage : choose output directory and file name
