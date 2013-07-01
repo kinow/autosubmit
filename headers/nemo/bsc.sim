@@ -1,0 +1,15 @@
+#!/bin/ksh
+###############################################################################
+#                                RUN NEMO3                                    #
+###############################################################################
+#
+#@ job_name         = %JOBNAME%
+#@ wall_clock_limit = 06:00:00
+#@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
+#@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
+#@ total_tasks      = 36
+#@ initialdir       = %SCRATCH_DIR%
+#@ tasks_per_node   = 4
+#@ tracing          = 1
+#
+###############################################################################

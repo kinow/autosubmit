@@ -1,0 +1,13 @@
+#!/bin/ksh
+###############################################################################
+#                         POSTPROCESS NEMO3 OUTPUTS                           #
+###############################################################################
+#
+#BSUB -J %JOBNAME%
+#BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out 
+#BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+#BSUB -W 02:00
+#BSUB -n 32
+#BSUB -R "span[ptile=16]"
+#
+###############################################################################
