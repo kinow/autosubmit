@@ -55,13 +55,13 @@ def next_name(name):
 	#Convert the name to base 36 in number add 1 and then encode it 
 	return base36encode(base36decode(name)+1)
 
-def set_experiment(name, exp_type, description):
+def set_experiment(name, exp_type, model_branch, template_branch, common_template_branch, ocean_diagnostics_branch, description):
 	check_db()
 	name = check_name(name)
 
 	(conn, cursor) = open_conn()
 	try:
-		cursor.execute('insert into experiment values(null, ?, ?, ?)', (name, exp_type, description))
+		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_branch, common_template_branch, ocean_diagnostics_branch))
 	except sql.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s - %s already exists!!!' % (name, exp_type)
@@ -113,12 +113,12 @@ def last_name(HPC):
 	close_conn(conn,cursor)
 	return row[0]
 
-def new_experiment(exp_type, HPC, description):
+def new_experiment(exp_type, HPC, model_branch, template_branch, common_template_branch, ocean_diagnostics_branch, description):
 	last_exp_name = last_name(HPC)
 	if last_exp_name == 'empty':
 		if HPC == 'bsc':
 			new_name = DEFAULT_EXPID_BSC
-		elif HPC == "hector":
+		elif HPC == 'hector':
 			new_name = DEFAULT_EXPID_HEC
 		elif HPC == 'ithaca':
 			new_name = DEFAULT_EXPID_ITH
@@ -130,7 +130,7 @@ def new_experiment(exp_type, HPC, description):
 			new_name = DEFAULT_EXPID_MN3
 	else:
 		new_name = next_name(last_exp_name)
-	set_experiment(new_name, exp_type, description)
+	set_experiment(new_name, exp_type, model_branch, template_branch, common_template_branch, ocean_diagnostics_branch, description)
 	print 'Thew new experiment "%s" has been registered.' % new_name
 	return new_name
 
@@ -219,16 +219,17 @@ def prepare_conf_files(content, exp_id, hpc):
 if __name__ == "__main__":
 
 	parser = argparse.ArgumentParser()
-	group = parser.add_mutually_exclusive_group()
-	group.add_argument('--new', '-n', action="store_true")
-	group.add_argument('--copy', '-c', nargs = 1)
-	parser.add_argument('--HPC', '-H', nargs = 1, choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'))
-	parser.add_argument('--model_name', '-M', nargs = 1, choices = ('ecearth3', 'ifs', 'nemo'))
-	parser.add_argument('--model_version', '-m', nargs = 1)
-	parser.add_argument('--template_name', '-T', nargs = 1, choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo')) 
-	parser.add_argument('--template_version', '-t', nargs = 1) ##find a way to allow only compatible ones with model_name
-	parser.add_argument('--common_template_version', '-o', nargs = 1) ##find a way to allow only compatible ones with model_name
-	parser.add_argument('--description', '-d', nargs = 1)
+	group1 = parser.add_mutually_exclusive_group(required = True)
+	group1.add_argument('--new', '-n', action = "store_true")
+	group1.add_argument('--copy', '-y', type = str)
+	group2 = parser.add_argument_group('experiment arguments')
+	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'), required = True)
+	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo'), required = True) 
+	group2.add_argument('--model_branch', '-m', type = str, default = 'master')
+	group2.add_argument('--template_branch', '-t', type = str, default = 'master') ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--common_template_branch', '-c', type = str, default = 'master') ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master') 
+	group2.add_argument('--description', '-d', type = str, required = True)
 
 	args = parser.parse_args()
 	if args.description is None:
@@ -240,41 +241,46 @@ if __name__ == "__main__":
 	if args.new is None and args.copy is None:
 		parser.error("Missing method either New or Copy.")
 	if args.new:
-		exp_id = new_experiment(args.template_name[0], args.HPC[0], args.description[0])
+		##new parameters to be inserted on database
+		##  --HPC  --model_name --model_branch  --template_branch --common_template_branch --ocean_diagnostics_branch --description
+		exp_id = new_experiment(args.model_name, args.HPC, args.model_branch, args.template_branch, args.common_template_branch, args.ocean_diagnostics_branch, args.description)
 		os.mkdir(DB_DIR + exp_id)
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
 		os.mkdir(DB_DIR + exp_id + '/templates')
-		os.mkdir(DB_DIR + exp_id + '/templates/' + args.template_name[0])
+		os.mkdir(DB_DIR + exp_id + '/templates/' + args.model_name)
 		print "Checking out templates and config files..."
-		if args.template_version:
-			(status, output) = getstatusoutput("git clone -b " + args.template_version[0] + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/" + args.template_name[0])
+		if args.template_branch is not 'master':
+			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/" + args.model_name)
 		else:
-			(status, output) = getstatusoutput("git clone -b " + args.template_name[0] + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/" + args.template_name[0])
+			(status, output) = getstatusoutput("git clone -b " + args.model_name + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/" + args.model_name)
 		
 		##now common templates are checked out with a git clone 
 		os.mkdir(DB_DIR + exp_id + '/templates/common')
 		print "Checking out common templates..."
-		if args.common_template_version:
-			(status, output) = getstatusoutput("git clone -b " + args.common_template_version[0] + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/common")
+		if args.common_template_branch is not 'master':
+			(status, output) = getstatusoutput("git clone -b " + args.common_template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/common")
 		else:
 			(status, output) = getstatusoutput("git clone -b common " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/common")
 
 		##now ocean diagnostics are checked out with a git clone 
 		os.mkdir(DB_DIR + exp_id + '/templates/ocean_diagnostics')
 		print "Checking out ocean diagnostics..."
-		(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics")
+		if args.ocean_diagnostics_branch is not 'master':
+			(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics")
+		else:
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics") 
 
 		print "Checking out model sources..."
-		#repo = Repo(GIT_DIR + "/" + args.model_name[0] + ".git")
+		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
 		#cloned_repo = repo.clone(DB_DIR + exp_id)
-		#if args.model_version:
-		#	cloned_repo.checkout('head', b=args.model_version[0]) 
+		#if args.model_branch:
+		#	cloned_repo.checkout('head', b=args.model_branch) 
 		os.mkdir(DB_DIR + exp_id + '/model')
-		if args.model_version:
-			(status, output) = getstatusoutput("git clone -b " + args.model_version[0] + " " + GIT_DIR + "/" + args.model_name[0] + ".git" + DB_DIR + exp_id + "/model")
+		if args.model_branch is not 'master':
+			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git" + DB_DIR + exp_id + "/model")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name[0] + ".git" + DB_DIR + exp_id + "/model")
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git" + DB_DIR + exp_id + "/model")
 
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
@@ -285,7 +291,7 @@ if __name__ == "__main__":
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
 				content = file('../conf/' + filename, 'r').read()
-				content = prepare_conf_files(content, exp_id, args.HPC[0])
+				content = prepare_conf_files(content, exp_id, args.HPC)
 				print DB_DIR + exp_id + "/conf/" + new_filename
 				file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
 
@@ -293,19 +299,19 @@ if __name__ == "__main__":
 		## probably not needed if autosubmit read separate files (this would break backwards compatibility)
 		## separate files would be useful to track versions per run ?
 		content = file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		content += file(DB_DIR + exp_id + "/templates/" + args.template_name[0] + "/" + args.template_name[0] + ".conf").read()
+		content += file(DB_DIR + exp_id + "/templates/" + args.model_name + "/" + args.model_name + ".conf").read()
 		content += file(DB_DIR + exp_id + "/templates/common/common.conf").read()
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 		print "Copying templates files..."
-		# list all files in templates of type args.template_name[0]
-		print os.listdir(DB_DIR + exp_id + '/templates/' + args.template_name[0] + "/" + args.template_name[0])
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/' + args.template_name[0] + "/" + args.template_name[0]) if os.path.isfile(DB_DIR + exp_id + '/templates/' + args.template_name[0] + "/" + args.template_name[0] + "/" + f)]
+		# list all files in templates of type args.model_name
+		print os.listdir(DB_DIR + exp_id + '/templates/' + args.model_name + "/" + args.model_name)
+		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/' + args.model_name + "/" + args.model_name) if os.path.isfile(DB_DIR + exp_id + '/templates/' + args.model_name + "/" + args.model_name + "/" + f)]
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
-			content = file("../headers/" + args.template_name[0] + "/" + args.HPC[0] + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/" + args.template_name[0] + "/" + args.template_name[0] + "/" + args.template_name[0] + ext).read()
+			content = file("../headers/" + args.model_name + "/" + args.HPC + ext).read()
+			content += file(DB_DIR + exp_id + "/templates/" + args.model_name + "/" + args.model_name + "/" + args.model_name + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 		# list all files in common templates
@@ -314,31 +320,31 @@ if __name__ == "__main__":
 		extensions= set( f[f.index('.'):] for f in files)
 		# merge header and body of common template
 		for ext in extensions:
-			content = file("../headers/common/" + args.HPC[0] + ext).read()
+			content = file("../headers/common/" + args.HPC + ext).read()
 			content += file(DB_DIR + exp_id + "/templates/common/common" + "/" + "common" + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 	elif args.copy:
-		if os.path.exists(DB_DIR + args.copy[0]):
-			exp_id = copy_experiment(args.copy[0], args.HPC[0], args.description[0])
+		if os.path.exists(DB_DIR + args.copy):
+			exp_id = copy_experiment(args.copy, args.HPC, args.description)
 			os.mkdir(DB_DIR + exp_id)
 			os.mkdir(DB_DIR + exp_id + '/conf')
 			print "Copying previous experiment config and templates directories"
-			files = os.listdir(DB_DIR + args.copy[0] + "/conf")
+			files = os.listdir(DB_DIR + args.copy + "/conf")
 			for filename in files:
-				if os.path.isfile(DB_DIR + args.copy[0] + "/conf/" + filename):
-					new_filename = filename.replace(args.copy[0], exp_id)
-					content = file(DB_DIR + args.copy[0] + "/conf/" + filename, 'r').read()
-					content = prepare_conf_files(content, exp_id, args.HPC[0])
+				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
+					new_filename = filename.replace(args.copy, exp_id)
+					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
+					content = prepare_conf_files(content, exp_id, args.HPC)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
-			shutil.copytree(DB_DIR+args.copy[0]+"/templates", DB_DIR + exp_id + "/templates")
+			shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
-	shutil.copy('../conf/archdef/' + args.HPC[0] + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
+	shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	##get from repository
-	if args.template_name[0] == "ecearth" or args.template_name[0] == "ecearth3" or args.template_name[0] == "nemo":
+	if args.model_name == "ecearth" or args.model_name == "ecearth3" or args.model_name == "nemo":
 		shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
