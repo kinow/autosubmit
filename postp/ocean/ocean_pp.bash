@@ -22,11 +22,7 @@ export PATH="/cfu/software/cdftools2.1:$PATH"
 config_file=$1
 . ${config_file}
 
-list_files=''
-if [[ ${listpost[@]} =~ "3dtemp" ]] || [[ ${listpost[@]} =~ "3dsal" ]]; then
-    echo "The list of diags contains 3dtemp or 3dsal"
-    list_files=$(echo ${list_files} grid_T)
-fi
+list_files='grid_T'
 if [[ ${listpost[@]} =~ "psi" ]]; then
     echo "The list of diags contains psi"
     list_files=$(echo ${list_files} grid_U grid_V)
