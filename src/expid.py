@@ -226,6 +226,7 @@ if __name__ == "__main__":
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master')
+	group2.add_argument('--model_sources', '-s', action = "store_true")
 	group2.add_argument('--template_branch', '-t', type = str, default = 'master') ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--common_template_branch', '-c', type = str, default = 'master') ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master') 
@@ -271,16 +272,17 @@ if __name__ == "__main__":
 		else:
 			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics") 
 
-		print "Checking out model sources..."
-		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
-		#cloned_repo = repo.clone(DB_DIR + exp_id)
-		#if args.model_branch:
-		#	cloned_repo.checkout('head', b=args.model_branch) 
-		os.mkdir(DB_DIR + exp_id + '/model')
-		if args.model_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git" + DB_DIR + exp_id + "/model")
-		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git" + DB_DIR + exp_id + "/model")
+		if args.model_sources:
+			print "Checking out model sources..."
+			#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
+			#cloned_repo = repo.clone(DB_DIR + exp_id)
+			#if args.model_branch:
+			#	cloned_repo.checkout('head', b=args.model_branch) 
+			os.mkdir(DB_DIR + exp_id + '/model')
+			if args.model_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
 
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
