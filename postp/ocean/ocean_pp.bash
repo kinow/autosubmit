@@ -1,6 +1,5 @@
 #!/bin/bash
 set -evx
-export PATH="/cfu/software/cdftools2.1:$PATH"
 
 #################################
 ####  User Defined Funtions  #### 
@@ -21,21 +20,6 @@ export PATH="/cfu/software/cdftools2.1:$PATH"
 
 config_file=$1
 . ${config_file}
-
-list_files='grid_T'
-if [[ ${listpost[@]} =~ "psi" ]]; then
-    echo "The list of diags contains psi"
-    list_files=$(echo ${list_files} grid_U grid_V)
-fi
-if [[ ${listpost[@]} =~ "moc" ]]; then
-    echo "The list of diags contains moc"
-    list_files=$(echo ${list_files} grid_V)
-fi
-
-if [[ ${listpost[@]} =~ "ice" ]]; then
-    echo "The list of diags contains ice"
-    list_files=$(echo ${list_files} icemod)
-fi
 
 
 ###############################################################################
@@ -112,11 +96,11 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
     # Fetching the files on cfunas
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     case $expid in 
-      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf} "${list_files}"
+      'nemovar_s4'|'nemovar_combine') get_nemovar ${expid} ${memb} ${year0} ${yearf} ${mon0} ${monf}
       ;;
       'glorys2v1') get_glorys ${year0} ${yearf} ${mon0} ${monf} ;;
       *) freqout=${rootout:${#rootout}-12} ; freqout=${freqout/_mean} ; freqout=${freqout/*\/}
-      get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout "${list_files}"
+      get_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $chunklen $mod $typeoutput $freqout
     esac
     #  
     # Ready for the post-processing
@@ -380,7 +364,7 @@ for ((yeari=$syeari;yeari<=$syearf;yeari=$(($yeari+intsdate)))) ; do
 
     # Removing the raw output from this start dates and this member
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    clean_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $typeoutput "${list_files}"
+    clean_diagsMMO ${yeari}${moni}01 ${expid} ${memb} $ltime0 $ltimef $typeoutput
   done
 
   # Prepare storage : choose output directory and file name
