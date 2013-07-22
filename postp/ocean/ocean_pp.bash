@@ -1,5 +1,6 @@
 #!/bin/bash
 set -evx
+export PATH="/cfu/software/cdftools2.1:$PATH"
 
 #################################
 ####  User Defined Funtions  #### 
