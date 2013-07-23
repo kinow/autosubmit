@@ -10,6 +10,7 @@ from queue.lgqueue import LgQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
+from queue.htqueue import HtQueue
 import dir_config
 from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
@@ -89,14 +90,13 @@ if __name__ == "__main__":
 	   remoteQueue.set_host("ithaca")
 	elif(hpcarch == "hector"):
 	   remoteQueue = HtQueue(expid)
-	   remoteQueue.set_host("hector")
+	   remoteQueue.set_host("ht-" + hpcproj)
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = PsQueue(expid)
 	   serialQueue.set_host("ellen") 
 	   parallelQueue = LgQueue(expid)
-	   parallelQueue.set_host("lindgren")
-	   
+	   parallelQueue.set_host("lindgren") 
 	elif(hpcarch == "ecmwf"):
 	   remoteQueue = EcQueue(expid)
 	   remoteQueue.set_host("c2a")
