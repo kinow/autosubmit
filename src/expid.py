@@ -247,7 +247,6 @@ if __name__ == "__main__":
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
 		os.mkdir(DB_DIR + exp_id + '/templates')
-		os.mkdir(DB_DIR + exp_id + '/templates/' + args.model_name)
 		print "Checking out templates and config files..."
 		if args.template_branch is not 'master':
 			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/templates")
@@ -262,17 +261,16 @@ if __name__ == "__main__":
 		else:
 			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics") 
 
-		if args.model_sources:
-			print "Checking out model sources..."
-			#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
-			#cloned_repo = repo.clone(DB_DIR + exp_id)
-			#if args.model_branch:
-			#	cloned_repo.checkout('head', b=args.model_branch) 
-			os.mkdir(DB_DIR + exp_id + '/model')
-			if args.model_branch is not 'master':
-				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
-			else:
-				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
+		print "Checking out model sources..."
+		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
+		#cloned_repo = repo.clone(DB_DIR + exp_id)
+		#if args.model_branch:
+		#	cloned_repo.checkout('head', b=args.model_branch) 
+		os.mkdir(DB_DIR + exp_id + '/model')
+		if args.model_branch is not 'master':
+			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
+		else:
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
 
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
@@ -297,13 +295,13 @@ if __name__ == "__main__":
 
 		print "Copying templates files..."
 		# list all files in templates of type args.model_name
-		print os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/" + args.model_name)
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/" + args.model_name) if os.path.isfile(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/" + args.model_name + "/" + f)]
+		print os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/")
+		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/") if os.path.isfile(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/" + f)]
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
 			content = file("../headers/" + args.model_name + "/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/templates/" + args.model_name + "/" + args.model_name + "/" + args.model_name + ext).read()
+			content += file(DB_DIR + exp_id + "/templates/templates/" + args.model_name + "/" + args.model_name + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 		# list all files in common templates
@@ -313,7 +311,7 @@ if __name__ == "__main__":
 		# merge header and body of common template
 		for ext in extensions:
 			content = file("../headers/common/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/templates/common" + "/" + "common" + ext).read()
+			content += file(DB_DIR + exp_id + "/templates/templates/common/" + "common" + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 	elif args.copy:
