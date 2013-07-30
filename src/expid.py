@@ -55,13 +55,13 @@ def next_name(name):
 	#Convert the name to base 36 in number add 1 and then encode it 
 	return base36encode(base36decode(name)+1)
 
-def set_experiment(name, exp_type, model_branch, template_branch, ocean_diagnostics_branch, description):
+def set_experiment(name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	check_db()
 	name = check_name(name)
 
 	(conn, cursor) = open_conn()
 	try:
-		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_branch, ocean_diagnostics_branch))
+		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_name, template_branch, ocean_diagnostics_branch))
 	except sql.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s - %s already exists!!!' % (name, exp_type)
@@ -113,7 +113,7 @@ def last_name(HPC):
 	close_conn(conn,cursor)
 	return row[0]
 
-def new_experiment(exp_type, HPC, model_branch, template_branch, ocean_diagnostics_branch, description):
+def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	last_exp_name = last_name(HPC)
 	if last_exp_name == 'empty':
 		if HPC == 'bsc':
@@ -130,7 +130,7 @@ def new_experiment(exp_type, HPC, model_branch, template_branch, ocean_diagnosti
 			new_name = DEFAULT_EXPID_MN3
 	else:
 		new_name = next_name(last_exp_name)
-	set_experiment(new_name, exp_type, model_branch, template_branch, ocean_diagnostics_branch, description)
+	set_experiment(new_name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
 	print 'Thew new experiment "%s" has been registered.' % new_name
 	return new_name
 
@@ -243,7 +243,7 @@ if __name__ == "__main__":
 	if args.new:
 		##new parameters to be inserted on database
 		##  --HPC  --model_name --model_branch  --template_name --template_branch --ocean_diagnostics_branch --description
-		exp_id = new_experiment(args.model_name, args.HPC, args.model_branch, args.template_branch, args.ocean_diagnostics_branch, args.description)
+		exp_id = new_experiment(args.model_name, args.HPC, args.model_branch, args.template_name, args.template_branch, args.ocean_diagnostics_branch, args.description)
 		os.mkdir(DB_DIR + exp_id)
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
