@@ -6,6 +6,7 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 from job.job_common import Status
 import argparse
+import platform
 from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
