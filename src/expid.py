@@ -55,13 +55,13 @@ def next_name(name):
 	#Convert the name to base 36 in number add 1 and then encode it 
 	return base36encode(base36decode(name)+1)
 
-def set_experiment(name, exp_type, model_branch, template_branch, ocean_diagnostics_branch, description):
+def set_experiment(name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	check_db()
 	name = check_name(name)
 
 	(conn, cursor) = open_conn()
 	try:
-		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_branch, ocean_diagnostics_branch))
+		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_name, template_branch, ocean_diagnostics_branch))
 	except sql.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s - %s already exists!!!' % (name, exp_type)
@@ -113,7 +113,7 @@ def last_name(HPC):
 	close_conn(conn,cursor)
 	return row[0]
 
-def new_experiment(exp_type, HPC, model_branch, template_branch, ocean_diagnostics_branch, description):
+def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	last_exp_name = last_name(HPC)
 	if last_exp_name == 'empty':
 		if HPC == 'bsc':
@@ -130,7 +130,7 @@ def new_experiment(exp_type, HPC, model_branch, template_branch, ocean_diagnosti
 			new_name = DEFAULT_EXPID_MN3
 	else:
 		new_name = next_name(last_exp_name)
-	set_experiment(new_name, exp_type, model_branch, template_branch, ocean_diagnostics_branch, description)
+	set_experiment(new_name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
 	print 'Thew new experiment "%s" has been registered.' % new_name
 	return new_name
 
@@ -224,8 +224,9 @@ if __name__ == "__main__":
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'), required = True)
-	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'ecearth3', 'ifs', 'ifs3', 'nemo'), required = True) 
-	group2.add_argument('--model_branch', '-m', type = str, default = 'master')
+	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
+	group2.add_argument('--model_branch', '-m', type = str, default = 'master', required = True)
+	group2.add_argument('--template_name', '-T', type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--template_branch', '-t', type = str, default = 'master') ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master') 
 	group2.add_argument('--description', '-d', type = str, required = True)
@@ -241,8 +242,8 @@ if __name__ == "__main__":
 		parser.error("Missing method either New or Copy.")
 	if args.new:
 		##new parameters to be inserted on database
-		##  --HPC  --model_name --model_branch  --template_branch --ocean_diagnostics_branch --description
-		exp_id = new_experiment(args.model_name, args.HPC, args.model_branch, args.template_branch, args.ocean_diagnostics_branch, args.description)
+		##  --HPC  --model_name --model_branch  --template_name --template_branch --ocean_diagnostics_branch --description
+		exp_id = new_experiment(args.model_name, args.HPC, args.model_branch, args.template_name, args.template_branch, args.ocean_diagnostics_branch, args.description)
 		os.mkdir(DB_DIR + exp_id)
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
@@ -289,19 +290,19 @@ if __name__ == "__main__":
 		## probably not needed if autosubmit read separate files (this would break backwards compatibility)
 		## separate files would be useful to track versions per run ?
 		content = file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		content += file(DB_DIR + exp_id + "/templates/templates/" + args.model_name + "/conf/" + args.model_name + ".conf").read()
 		content += file(DB_DIR + exp_id + "/templates/templates/common/conf/common.conf").read()
+		content += file(DB_DIR + exp_id + "/templates/templates/" + args.template_name + "/conf/" + args.template_name + ".conf").read()
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 		print "Copying templates files..."
-		# list all files in templates of type args.model_name
-		print os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/")
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/") if os.path.isfile(DB_DIR + exp_id + '/templates/templates/' + args.model_name + "/" + f)]
+		# list all files in templates of type args.template_name
+		print os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/")
+		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/" + f)]
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
-			content = file("../headers/" + args.model_name + "/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/templates/" + args.model_name + "/" + args.model_name + ext).read()
+			content = file("../headers/" + args.template_name + "/" + args.HPC + ext).read()
+			content += file(DB_DIR + exp_id + "/templates/templates/" + args.template_name + "/" + args.template_name + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 		# list all files in common templates
@@ -334,7 +335,7 @@ if __name__ == "__main__":
 	
 	shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	##get from repository
-	if args.model_name == "ecearth" or args.model_name == "ecearth3" or args.model_name == "nemo":
+	if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
 		shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
