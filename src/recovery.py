@@ -5,6 +5,7 @@ import pickle
 from job.job_list import JobList
 from job.job_list import RerunJobList
 from job.job_common import Status
+from job.job_common import Type
 import argparse
 import platform
 from config_parser import config_parser, expdef_parser, archdef_parser

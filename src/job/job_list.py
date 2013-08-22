@@ -326,10 +326,11 @@ class RerunJobList:
 					last_chunk = first_chunk
 				
 				initjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(starting_chunk) + "_"
-				init_job = Job(initjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
 				if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
+					init_job = Job(initjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
 					init_job.set_parents([remotesetup_job.get_name()])
 				else:
+					init_job = Job(initjob_name + "init", 0, Status.READY, Type.INITIALISATION)
 					init_job.set_parents([])
 
 				if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
