@@ -131,7 +131,7 @@ def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, 
 	else:
 		new_name = next_name(last_exp_name)
 	set_experiment(new_name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
-	print 'Thew new experiment "%s" has been registered.' % new_name
+	print 'The new experiment "%s" has been registered.' % new_name
 	return new_name
 
 def copy_experiment(name, HPC, description):
@@ -227,7 +227,7 @@ if __name__ == "__main__":
 	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = '{master (default), v3.0.1, v2.3.0, develop-v3.0.1, develop-v2.3.0, ...}', required = True)
 	group2.add_argument('--template_name', '-T', choices = ('ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3'), type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = '{master (defualt), develop, develop-SPPT, ...}') ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--template_branch', '-t', type = str, default = 'develop-1.1', help = '{develop-1.1 (defualt), develop, develop-SPPT, ...}') ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = '{master (default), develop, ...}') 
 	group2.add_argument('--description', '-d', type = str, required = True)
 
@@ -248,30 +248,29 @@ if __name__ == "__main__":
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
 		os.mkdir(DB_DIR + exp_id + '/templates')
+		os.mkdir(DB_DIR + exp_id + '/git')
 		print "Checking out templates and config files..."
 		if args.template_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/templates")
+			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/templates/templates")
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
 		
 		##now ocean diagnostics are checked out with a git clone 
-		os.mkdir(DB_DIR + exp_id + '/templates/ocean_diagnostics')
 		print "Checking out ocean diagnostics..."
 		if args.ocean_diagnostics_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics")
+			(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/templates/ocean_diagnostics") 
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics") 
 
 		print "Checking out model sources..."
 		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
 		#cloned_repo = repo.clone(DB_DIR + exp_id)
 		#if args.model_branch:
 		#	cloned_repo.checkout('head', b=args.model_branch) 
-		os.mkdir(DB_DIR + exp_id + '/model')
 		if args.model_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
+			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/model")
+			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
@@ -290,29 +289,29 @@ if __name__ == "__main__":
 		## probably not needed if autosubmit read separate files (this would break backwards compatibility)
 		## separate files would be useful to track versions per run ?
 		content = file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		content += file(DB_DIR + exp_id + "/templates/templates/common/conf/common.conf").read()
-		content += file(DB_DIR + exp_id + "/templates/templates/" + args.template_name + "/conf/" + args.template_name + ".conf").read()
+		content += file(DB_DIR + exp_id + "/git/templates/common/conf/common.conf").read()
+		content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/conf/" + args.template_name + ".conf").read()
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 		print "Copying templates files..."
 		# list all files in templates of type args.template_name
-		print os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/")
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/templates/templates/' + args.template_name + "/" + f)]
+		print os.listdir(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/")
+		files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/" + f)]
 		extensions = set( f[f.index('.'):] for f in files)
 		# merge header and body of template
 		for ext in extensions:
 			content = file("../headers/" + args.template_name + "/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/templates/" + args.template_name + "/" + args.template_name + ext).read()
+			content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/" + args.template_name + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 		# list all files in common templates
-		print os.listdir(DB_DIR + exp_id + '/templates/templates/common')
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/templates/templates/common') if os.path.isfile(DB_DIR + exp_id + '/templates/templates/common' + "/" + f)]
+		print os.listdir(DB_DIR + exp_id + '/git/templates/common')
+		files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/common') if os.path.isfile(DB_DIR + exp_id + '/git/templates/common' + "/" + f)]
 		extensions= set( f[f.index('.'):] for f in files)
 		# merge header and body of common template
 		for ext in extensions:
 			content = file("../headers/common/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/templates/templates/common/" + "common" + ext).read()
+			content += file(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext).read()
 			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 	elif args.copy:
@@ -335,8 +334,8 @@ if __name__ == "__main__":
 	
 	shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	##get from repository
-	if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
-		shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
+	#if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
+	#	shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."

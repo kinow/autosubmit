@@ -5,7 +5,7 @@ from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
-from config_parser import config_parser, expdef_parser, archdef_parser
+from config_parser import config_parser, expdef_parser, archdef_parser, incldef_parser
 from monitor import GenerateOutput
 from os import path
 import cPickle as pickle
@@ -81,6 +81,7 @@ if __name__ == "__main__":
 
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	incl_parser_file = conf_parser.get('config', 'INCLDEFFILE')
 
 	expdef = []
 	exp_parser = expdef_parser(exp_parser_file)
@@ -90,10 +91,19 @@ if __name__ == "__main__":
 	arch_parser = archdef_parser(arch_parser_file)
 	expdef += arch_parser.items('archdef')
 
+	incldef = []
+	incl_parser = incldef_parser(incl_parser_file)
+	incldef += incl_parser.items('incldef')
+	incldef = incldef[1:]
+
 	parameters = dict()
 
 	for item in expdef:
 		parameters[item[0]] = item[1]
+	
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
+
 
 	date_list = exp_parser.get('experiment','DATELIST').split(' ')
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
