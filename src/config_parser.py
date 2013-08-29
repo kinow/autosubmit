@@ -101,24 +101,8 @@ def archdef_parser(filename):
 	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
-	print parser.items('archdef')
+	#print parser.items('archdef')
 	return parser
-
-def incldef_parser(filename):
-
-	# check file existance
-	if (not os.path.isfile(filename)):
-		print "File does not exist"
-		sys.exit()
-
-	# load default vaules
-	parser = SafeConfigParser()
-	parser.optinxform = str
-	parser.read(filename)
-	print filename
-	print parser.items('incldef')
-	return parser
-
 
 if __name__ == "__main__":
 	if(len(sys.argv) != 2):
