@@ -83,9 +83,14 @@ if __name__ == "__main__":
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 
 	expdef = []
+	incldef = []
 	exp_parser = expdef_parser(exp_parser_file)
 	for section in exp_parser.sections():
-		expdef += exp_parser.items(section)
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
 
 	arch_parser = archdef_parser(arch_parser_file)
 	expdef += arch_parser.items('archdef')
@@ -94,6 +99,8 @@ if __name__ == "__main__":
 
 	for item in expdef:
 		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
 
 	date_list = exp_parser.get('experiment','DATELIST').split(' ')
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
