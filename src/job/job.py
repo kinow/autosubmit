@@ -248,6 +248,9 @@ class Job:
 			mytemplate = templatename + '.sim'
 			##update parameters
 			parameters['PREV'] = str(prev_days)
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
+			parameters['TASKTYPE'] = 'SIMULATION'
 		elif (self._type == Type.POSTPROCESSING):
 			print "jobType: %s " % str(self._type)
 			mytemplate = templatename + '.post'
@@ -256,38 +259,61 @@ class Job:
 			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
 			parameters['Starting_DATE_YEAR'] = str(starting_date_year)
 			parameters['Starting_DATE_MONTH'] = str(starting_date_month)
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_POST']
+			parameters['TASKTYPE'] = 'POSTPROCESSING'
 		elif (self._type == Type.CLEANING):
 			print "jobType: %s" % str(self._type)
 			##update parameters
 			mytemplate = templatename + '.clean'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
+			parameters['TASKTYPE'] = 'CLEANING'
 		elif (self._type == Type.INITIALISATION):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.ini'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_INI']
+			parameters['TASKTYPE'] = 'INITIALISATION'
 		elif (self._type == Type.LOCALSETUP):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.localsetup'
+			parameters['TASKTYPE'] = 'LOCAL SETUP'
 		elif (self._type == Type.REMOTESETUP):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.remotesetup'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+			parameters['TASKTYPE'] = 'REMOTE SETUP'
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.localtrans'
+			parameters['TASKTYPE'] = 'TRANSFER'
 		else: 
 			print "Unknown Job Type"
 		 
 		print "My Template: %s" % mytemplate
 		#templateContent = file(hpcarch).read()
 		templateContent = file(mytemplate).read()
-		parameters['INCLUDE_POSTP'] = file(self._template_path + "/common_ocean_post.txt").read()
+		#parameters['MODEL'] = str(templatename).upper()
+		parameters['TASKTYPE'] = str(self._type)
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		for key in parameters.keys():
+		# first value to be replaced is header as it contains inside other values between %% to be replaced later
+		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+		params = dict()
+		for key,value in parameters.items():
+			if value != 'HEADER':
+				params[key] = value
+
+		# use params dictionary to do not replace twice the header
+		for key in params.keys():
 			if key in templateContent:
-				print "%s:\t%s" % (key,parameters[key])
-				templateContent = templateContent.replace("%"+key+"%",parameters[key])
+				print "%s:\t%s" % (key,params[key])
+				templateContent = templateContent.replace("%"+key+"%",params[key])
 		
 		self.parameters = parameters 
 		file(self._tmp_path + scriptname, 'w').write(templateContent)

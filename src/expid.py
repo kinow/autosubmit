@@ -167,12 +167,14 @@ def close_conn(conn,cursor):
 #############################
 # Conf files
 #############################
-def prepare_conf_files(content, exp_id, hpc):
+def prepare_conf_files(content, exp_id, hpc, template_name):
 	replace_strings = ['REMOTE_DIR =', 'ECEARTH_DIR =.']
 	if re.search('EXPID =.*', content):
 		content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
 	if re.search('HPCARCH =.*', content):
 		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
+	if re.search('TEMPLATE_NAME =.*', content):
+		content = content.replace(re.search('TEMPLATE_NAME =.*', content).group(0), "TEMPLATE_NAME = " + template_name)
 	if re.search('SAFETYSLEEPTIME =.*', content):
 		if hpc == "bsc":
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
@@ -247,7 +249,6 @@ if __name__ == "__main__":
 		os.mkdir(DB_DIR + exp_id)
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
-		os.mkdir(DB_DIR + exp_id + '/templates')
 		os.mkdir(DB_DIR + exp_id + '/git')
 		print "Checking out templates and config files..."
 		if args.template_branch is not 'master':
@@ -281,7 +282,7 @@ if __name__ == "__main__":
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
 				content = file('../conf/' + filename, 'r').read()
-				content = prepare_conf_files(content, exp_id, args.HPC)
+				content = prepare_conf_files(content, exp_id, args.HPC, args.template_name)
 				print DB_DIR + exp_id + "/conf/" + new_filename
 				file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
 
@@ -292,27 +293,6 @@ if __name__ == "__main__":
 		content += file(DB_DIR + exp_id + "/git/templates/common/conf/common.conf").read()
 		content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/conf/" + args.template_name + ".conf").read()
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
-
-		print "Copying templates files..."
-		# list all files in templates of type args.template_name
-		print os.listdir(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/")
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/git/templates/' + args.template_name + "/" + f)]
-		extensions = set( f[f.index('.'):] for f in files)
-		# merge header and body of template
-		for ext in extensions:
-			content = file("../headers/" + args.template_name + "/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/" + args.template_name + ext).read()
-			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
-
-		# list all files in common templates
-		print os.listdir(DB_DIR + exp_id + '/git/templates/common')
-		files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/common') if os.path.isfile(DB_DIR + exp_id + '/git/templates/common' + "/" + f)]
-		extensions= set( f[f.index('.'):] for f in files)
-		# merge header and body of common template
-		for ext in extensions:
-			content = file("../headers/common/" + args.HPC + ext).read()
-			content += file(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext).read()
-			file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
 
 	elif args.copy:
 		if os.path.exists(DB_DIR + args.copy):
@@ -325,9 +305,9 @@ if __name__ == "__main__":
 				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
 					new_filename = filename.replace(args.copy, exp_id)
 					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
-					content = prepare_conf_files(content, exp_id, args.HPC)
+					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
-			shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
+			#shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)

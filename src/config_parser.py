@@ -101,7 +101,7 @@ def archdef_parser(filename):
 	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
-	#print parser.items('archdef')
+	print parser.items('archdef')
 	return parser
 
 if __name__ == "__main__":
