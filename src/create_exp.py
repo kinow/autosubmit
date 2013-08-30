@@ -8,8 +8,10 @@ from job.job_list import RerunJobList
 from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from os import path
+import sys, os
+import shutil
 import cPickle as pickle
-from dir_config import LOCAL_ROOT_DIR
+from dir_config import DB_DIR
 import json
 from pyparsing import nestedExpr
 
@@ -58,6 +60,41 @@ def create_json(text):
 	result = json.dumps(sds)
 	return result
 
+def create_templates(exp_id, template_name, HPC, header):
+
+	dir = DB_DIR + exp_id + '/templates'
+	if os.path.exists(dir):
+		shutil.rmtree(dir)
+	os.mkdir(dir)
+	
+	print exp_id
+	print template_name
+	print HPC
+	print header
+
+	print "Copying templates files..."
+	# list all files in templates of type template_name
+	print os.listdir(DB_DIR + exp_id + '/git/templates/' + template_name + "/")
+	files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/' + template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/git/templates/' + template_name + "/" + f)]
+	extensions = set( f[f.index('.'):] for f in files)
+	extensions.discard('.conf')
+	# merge header and body of template
+	for ext in extensions:
+		#content = header 
+		content = file(DB_DIR + exp_id + "/git/templates/" + template_name + "/" + template_name + ext).read()
+		file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+
+	# list all files in common templates
+	print os.listdir(DB_DIR + exp_id + '/git/templates/common')
+	files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/common') if os.path.isfile(DB_DIR + exp_id + '/git/templates/common' + "/" + f)]
+	extensions= set( f[f.index('.'):] for f in files)
+	extensions.discard('.conf')
+	# merge header and body of common template
+	for ext in extensions:
+		#content = header
+		content = file(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext).read()
+		file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+
 
 ####################
 # Main Program
@@ -68,7 +105,7 @@ if __name__ == "__main__":
 		print "Missing config file or expid."
 		exit(1)
 
-	filename = LOCAL_ROOT_DIR + "/" + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
+	filename = DB_DIR + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
 	if (path.exists(filename)):
 		conf_parser = config_parser(filename)
 		print "Using config file: %s" % filename
@@ -111,6 +148,9 @@ if __name__ == "__main__":
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else:
 		rerun = 'false'
+
+	print "Creating templates..."
+	create_templates(argv[1], exp_parser.get('DEFAULT','TEMPLATE_NAME'), exp_parser.get('DEFAULT','HPCARCH'), arch_parser.get('archdef','HEADER'))
 
 	if (rerun == 'false'):
 		job_list = JobList(expid)
