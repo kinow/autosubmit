@@ -12,7 +12,7 @@ import argparse
 import time
 from job.job_common import Status
 
-table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'), (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red')])
+table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'), (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
 
 def ColorStatus(status):
 	color = table[Status.UNKNOWN]
@@ -30,6 +30,8 @@ def ColorStatus(status):
 		color = table[Status.COMPLETED]
 	elif status == Status.FAILED:
 		color = table[Status.FAILED]
+	elif status == Status.SUSPENDED:
+		color = table[Status.SUSPENDED]
 	return color
 
 def CreateTreeList(expid, joblist):
@@ -43,6 +45,7 @@ def CreateTreeList(expid, joblist):
 	legend.add_node(pydot.Node(name='RUNNING', shape='box', style="filled", fillcolor=table[Status.RUNNING]))
 	legend.add_node(pydot.Node(name='COMPLETED', shape='box', style="filled", fillcolor=table[Status.COMPLETED]))
 	legend.add_node(pydot.Node(name='FAILED', shape='box', style="filled", fillcolor=table[Status.FAILED]))
+	legend.add_node(pydot.Node(name='SUSPENDED', shape='box', style="filled", fillcolor=table[Status.SUSPENDED]))
 	graph.add_subgraph(legend)
 
 	exp = pydot.Subgraph(graph_name = 'Experiment', label = expid)
