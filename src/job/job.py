@@ -18,7 +18,8 @@ class Job:
 		#self._short_name = n[0] + "_" + n[1][:6] + "_" + n[2][2:] + n[4][:1] + n[3]
 		##workaround limit 14 characters limit for variables in headers (i.e. job name in hector PBS pro header)
 		if (len(n)>4):
-			self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+			#self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
 		else: 
 			self._short_name = name[:14]
 		self._id = id
@@ -119,7 +120,8 @@ class Job:
 		self._name = newName
 		n = newName.split('_')
 		#self._short_name = n[0] + "_" + n[1][6:] + "_" + n[2][2:] + n[4][:1] + n[3]
-		self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+		#self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+		self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
  
 	def set_id(self, new_id):
 		self._id = new_id
@@ -203,9 +205,14 @@ class Job:
 
 	def	create_script(self, templatename):
 		templatename = self._template_path + templatename
-		scriptname = self._name+'.cmd'
-		parameters = self._parameters
 		splittedname = self._name.split('_')
+		if (splittedname[0][0] == 'h'):
+			scriptname = self._short_name+'.cmd'
+		else:
+			scriptname = self._name+'.cmd'
+		
+		parameters = self._parameters
+		
 		parameters['JOBNAME'] = self._name
 		parameters['JOBSHORTNAME'] = self._short_name
 		if (self._type == Type.TRANSFER):
