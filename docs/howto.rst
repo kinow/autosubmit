@@ -92,7 +92,7 @@ It can be found in ``/cfu/autosubmit/<expid>/plot/``
 
 * Fourth Step:
 
-After filling the experiment configuration and running “create_exp.py”, user will find ``/cfu/autosubmit/<expid>/sources``.
+After filling the experiment configuration and running “create_exp.py”, user will find ``/cfu/autosubmit/<expid>/moduel/sources``.
 
 Now the user can modify the sources under home infrastructure. If the variable SETUP in ``expdef_<expid>.conf`` is set to TRUE for the experiment (cxxx) then a first setup job will take care of transferring the modified sources at HPC, re-compiling the model and preparing new set of executables. On the other hand, a second setup job will prepare the executables which already exist at HPC.
 

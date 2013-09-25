@@ -20,8 +20,8 @@ class Job:
 		if (len(n)>4):
 			#self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
 			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
-		else: 
-			self._short_name = name[:14]
+		elif (len(n)==2): 
+			self._short_name = n[1]
 		self._id = id
 		self._status = status
 		self._type = jobtype
@@ -204,17 +204,18 @@ class Job:
 			self.set_status(Status.FAILED)
 
 	def	create_script(self, templatename):
+		parameters = self._parameters
+
 		templatename = self._template_path + templatename
 		splittedname = self._name.split('_')
-		if (splittedname[0][0] == 'h'):
-			scriptname = self._short_name+'.cmd'
-		else:
-			scriptname = self._name+'.cmd'
+		platform = splittedname[0][0]
+		if (platform == 'h'):
+			self._name = self._short_name
 		
-		parameters = self._parameters
-		
+		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		parameters['JOBSHORTNAME'] = self._short_name
+		
 		if (self._type == Type.TRANSFER):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
