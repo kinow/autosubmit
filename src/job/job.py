@@ -14,14 +14,17 @@ class Job:
   
 	def __init__(self, name, id, status, jobtype):
 		self._name = name
+		self._long_name = name
 		n = name.split('_')
-		#self._short_name = n[0] + "_" + n[1][:6] + "_" + n[2][2:] + n[4][:1] + n[3]
-		##workaround limit 14 characters limit for variables in headers (i.e. job name in hector PBS pro header)
-		if (len(n)>4):
-			#self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
+		##workaround limit 15 characters limit for variables in headers (i.e. job name in hector PBS pro header)
+		if (len(n)==5):
 			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
+		elif (len(n)==4):
+			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
 		elif (len(n)==2): 
 			self._short_name = n[1]
+		else:
+			self._short_name = n[0][:15]
 		self._id = id
 		self._status = status
 		self._type = jobtype
@@ -36,6 +39,8 @@ class Job:
 	
 	def delete(self):
 		del self._name
+		del self._long_name
+		del self._short_name 
 		del self._id
 		del self._status
 		del self._type
@@ -63,6 +68,10 @@ class Job:
 	def get_name(self):
 		"""Returns the job name"""
 		return self._name
+
+	def get_long_name(self):
+		"""Returns the job long name"""
+		return self._long_name
 
 	def get_short_name(self):
 		"""Returns the job short name"""
@@ -118,10 +127,17 @@ class Job:
 	
 	def set_name(self, newName):
 		self._name = newName
+
+	def set_short_name(self, newName):
 		n = newName.split('_')
-		#self._short_name = n[0] + "_" + n[1][6:] + "_" + n[2][2:] + n[4][:1] + n[3]
-		#self._short_name = n[3] + n[4][:1] + n[2][2:] + n[0] + "_" + n[1][:6]
-		self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
+		if (len(n)==5):
+			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
+		elif (len(n)==4):
+			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
+		elif (len(n)==2): 
+			self._short_name = n[1]
+		else:
+			self._short_name = n[0][:15]
  
 	def set_id(self, new_id):
 		self._id = new_id
@@ -208,10 +224,6 @@ class Job:
 
 		templatename = self._template_path + templatename
 		splittedname = self._name.split('_')
-		platform = splittedname[0][0]
-		if (platform == 'h'):
-			self._name = self._short_name
-		
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		parameters['JOBSHORTNAME'] = self._short_name

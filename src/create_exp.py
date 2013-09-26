@@ -114,5 +114,9 @@ if __name__ == "__main__":
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
 
 
+	platform = exp_parser.get('experiment', 'HPCARCH')
+	if (platform == 'hector'):
+		job_list.update_shortened_names()
+
 	job_list.save()
 	GenerateOutput(expid, job_list.get_job_list(), 'pdf')

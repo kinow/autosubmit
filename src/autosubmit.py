@@ -267,7 +267,9 @@ if __name__ == "__main__":
 		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
 			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
-			s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			#s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			s = sorted(jobsavail, key=lambda k:k.get_long_name().split('_')[1][:6])
+
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
      
 			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:

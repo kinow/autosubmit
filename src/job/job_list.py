@@ -247,6 +247,11 @@ class JobList:
 				job.set_status(Status.READY)
 		self.save()
 			
+	def update_shortened_names(self):
+		"""In some cases the scheduler only can operate with names shorter than 15 characters. Update the job list replacing job names by the corresponding shortened job name"""
+		for job in self._job_list:
+			job.set_name(job.get_short_name())
+
 	def update_genealogy(self):
 		"""When we have created the joblist, parents and child list just contain the names. Update the genealogy replacing job names by the corresponding job object"""
 		for job in self._job_list:
@@ -394,7 +399,7 @@ class RerunJobList:
 								sim_job.set_parents([prev_sim_job_name])
 								if (chunk > second_chunk):
 									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
-									sim_job.set_parents([prev_clean_job_name])
+									sim_job.add_parent(prev_clean_job_name)
 								# Add those to the list
 								self._job_list += [sim_job, post_job, clean_job]
 					#Link child:								
@@ -583,6 +588,11 @@ class RerunJobList:
 			if len(tmp) == len(job.get_parents()):
 				job.set_status(Status.READY)
 		self.save()
+
+	def update_shortened_names(self):
+		"""In some cases the scheduler only can operate with names shorter than 15 characters. Update the job list replacing job names by the corresponding shortened job name"""
+		for job in self._job_list:
+			job.set_name(job.get_short_name())
 			
 	def update_genealogy(self):
 		"""When we have created the joblist, parents and child list just contain the names. Update the genealogy replacing job names by the corresponding job object"""
