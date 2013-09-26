@@ -3,13 +3,10 @@
 #                              RUN EC_EARTH
 ###############################################################################
 #
-#!/bin/sh --login
-#PBS -N %JOBSHORTNAME%
+#PBS -N %JOBNAME%
 #PBS -l mppwidth=360
 #PBS -l mppnppn=24
 #PBS -l walltime=2:00:00
 #PBS -A %HPCPROJ%
-#PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-#PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #
 ###############################################################################

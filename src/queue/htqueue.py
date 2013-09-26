@@ -21,7 +21,7 @@ class HtQueue(HPCQueue):
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
-		self._job_status['COMPLETED'] = ['c']
+		self._job_status['COMPLETED'] = ['F', 'E', 'c']
 		self._job_status['RUNNING'] = ['R']
 		self._job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']

@@ -223,10 +223,9 @@ class Job:
 		parameters = self._parameters
 
 		templatename = self._template_path + templatename
-		splittedname = self._name.split('_')
+		splittedname = self._long_name.split('_')
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
-		parameters['JOBSHORTNAME'] = self._short_name
 		
 		if (self._type == Type.TRANSFER):
 			parameters['SDATE'] = splittedname[1]
