@@ -7,7 +7,7 @@
 #PBS -N %JOBNAME%
 #PBS -l mppwidth=2
 #PBS -l mppnppn=1
-#PBS -l walltime=10:00:00
+#PBS -l walltime=4:00:00
 #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
 #
