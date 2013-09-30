@@ -71,7 +71,11 @@ class Job:
 
 	def get_long_name(self):
 		"""Returns the job long name"""
-		return self._long_name
+		## name is returned instead of long_name. Just to ensure backwards compatibility with experiments that does not have long_name attribute.
+		if hasattr(self, '_long_name'):
+			return self._long_name
+		else:
+			return self._name
 
 	def get_short_name(self):
 		"""Returns the job short name"""
@@ -223,7 +227,7 @@ class Job:
 		parameters = self._parameters
 
 		templatename = self._template_path + templatename
-		splittedname = self._long_name.split('_')
+		splittedname = self.get_long_name().split('_')
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		
