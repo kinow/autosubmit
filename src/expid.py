@@ -290,8 +290,8 @@ if __name__ == "__main__":
 		## probably not needed if autosubmit read separate files (this would break backwards compatibility)
 		## separate files would be useful to track versions per run ?
 		content = file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		content += file(DB_DIR + exp_id + "/git/templates/common/conf/common.conf").read()
-		content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/conf/" + args.template_name + ".conf").read()
+		content += file(DB_DIR + exp_id + "/git/templates/common/common.conf").read()
+		content += file(DB_DIR + exp_id + "/git/templates/" + args.template_name + "/" + args.template_name + ".conf").read()
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 	elif args.copy:

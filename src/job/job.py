@@ -274,6 +274,7 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 			parameters['TASKTYPE'] = 'SIMULATION'
+			parameters['HEADER'] = parameters['HEADER_SIM']
 		elif (self._type == Type.POSTPROCESSING):
 			print "jobType: %s " % str(self._type)
 			mytemplate = templatename + '.post'
@@ -285,6 +286,7 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_POST']
 			parameters['TASKTYPE'] = 'POSTPROCESSING'
+			parameters['HEADER'] = parameters['HEADER_POST']
 		elif (self._type == Type.CLEANING):
 			print "jobType: %s" % str(self._type)
 			##update parameters
@@ -292,6 +294,7 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
 			parameters['TASKTYPE'] = 'CLEANING'
+			parameters['HEADER'] = parameters['HEADER_CLEAN']
 		elif (self._type == Type.INITIALISATION):
 			print "jobType: %s" % self._type
 			##update parameters
@@ -299,11 +302,13 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_INI']
 			parameters['TASKTYPE'] = 'INITIALISATION'
+			parameters['HEADER'] = parameters['HEADER_INI']
 		elif (self._type == Type.LOCALSETUP):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.localsetup'
 			parameters['TASKTYPE'] = 'LOCAL SETUP'
+			parameters['HEADER'] = parameters['HEADER_LOCALSETUP']
 		elif (self._type == Type.REMOTESETUP):
 			print "jobType: %s" % self._type
 			##update parameters
@@ -311,11 +316,13 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
 			parameters['TASKTYPE'] = 'REMOTE SETUP'
+			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = templatename + '.localtrans'
 			parameters['TASKTYPE'] = 'TRANSFER'
+			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
 		else: 
 			print "Unknown Job Type"
 		 

@@ -60,7 +60,7 @@ def create_json(text):
 	result = json.dumps(sds)
 	return result
 
-def create_templates(exp_id, template_name, HPC, header):
+def create_templates(exp_id, template_name, HPC):
 
 	dir = DB_DIR + exp_id + '/templates'
 	if os.path.exists(dir):
@@ -70,9 +70,11 @@ def create_templates(exp_id, template_name, HPC, header):
 	print exp_id
 	print template_name
 	print HPC
-	print header
 
-	print "Copying templates files..."
+	print "Symlinking model files..."
+	os.symlink(DB_DIR + exp_id + "/git/model", DB_DIR + exp_id + "/model")
+
+	print "Symlinking templates files..."
 	# list all files in templates of type template_name
 	print os.listdir(DB_DIR + exp_id + '/git/templates/' + template_name + "/")
 	files = [f for f in os.listdir(DB_DIR + exp_id + '/git/templates/' + template_name + "/") if os.path.isfile(DB_DIR + exp_id + '/git/templates/' + template_name + "/" + f)]
@@ -80,9 +82,10 @@ def create_templates(exp_id, template_name, HPC, header):
 	extensions.discard('.conf')
 	# merge header and body of template
 	for ext in extensions:
-		#content = header 
-		content = file(DB_DIR + exp_id + "/git/templates/" + template_name + "/" + template_name + ext).read()
-		file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+		#content = arch_parser.get('archdef','HEADER_' + ext.upper().replace(".",""))
+		#content += file(DB_DIR + exp_id + "/git/templates/" + template_name + "/" + template_name + ext).read()
+		#file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+		os.symlink(DB_DIR + exp_id + "/git/templates/" + template_name + "/" + template_name + ext, DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext)
 
 	# list all files in common templates
 	print os.listdir(DB_DIR + exp_id + '/git/templates/common')
@@ -91,9 +94,10 @@ def create_templates(exp_id, template_name, HPC, header):
 	extensions.discard('.conf')
 	# merge header and body of common template
 	for ext in extensions:
-		#content = header
-		content = file(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext).read()
-		file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+		#content = arch_parser.get('archdef','HEADER_' + ext.upper().replace(".",""))
+		#content += file(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext).read()
+		#file(DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext, 'w').write(content)
+		os.symlink(DB_DIR + exp_id + "/git/templates/common/" + "common" + ext, DB_DIR + exp_id + "/templates/" + "template_" + exp_id + ext)
 
 
 ####################
@@ -150,7 +154,7 @@ if __name__ == "__main__":
 		rerun = 'false'
 
 	print "Creating templates..."
-	create_templates(argv[1], exp_parser.get('DEFAULT','TEMPLATE_NAME'), exp_parser.get('DEFAULT','HPCARCH'), arch_parser.get('archdef','HEADER'))
+	create_templates(argv[1], exp_parser.get('DEFAULT','TEMPLATE_NAME'), exp_parser.get('DEFAULT','HPCARCH'))
 
 	if (rerun == 'false'):
 		job_list = JobList(expid)
