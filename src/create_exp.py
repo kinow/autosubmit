@@ -72,7 +72,8 @@ def create_templates(exp_id, template_name, HPC):
 	print HPC
 
 	print "Symlinking model files..."
-	os.symlink(DB_DIR + exp_id + "/git/model", DB_DIR + exp_id + "/model")
+	if not os.path.islink(DB_DIR + exp_id + "/model"):
+		os.symlink(DB_DIR + exp_id + "/git/model", DB_DIR + exp_id + "/model")
 
 	print "Symlinking templates files..."
 	# list all files in templates of type template_name
