@@ -327,11 +327,9 @@ class Job:
 			print "Unknown Job Type"
 		 
 		print "My Template: %s" % mytemplate
-		#templateContent = file(hpcarch).read()
 		templateContent = file(mytemplate).read()
-		#parameters['MODEL'] = str(templatename).upper()
-		parameters['TASKTYPE'] = str(self._type)
 		parameters['FAIL_COUNT'] = str(self._fail_count)
+		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
 		params = dict()
