@@ -167,7 +167,7 @@ def close_conn(conn,cursor):
 #############################
 # Conf files
 #############################
-def prepare_conf_files(content, exp_id, hpc, template_name):
+def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 	replace_strings = ['REMOTE_DIR =', 'ECEARTH_DIR =.']
 	if re.search('EXPID =.*', content):
 		content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
@@ -175,6 +175,9 @@ def prepare_conf_files(content, exp_id, hpc, template_name):
 		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
 	if re.search('TEMPLATE_NAME =.*', content):
 		content = content.replace(re.search('TEMPLATE_NAME =.*', content).group(0), "TEMPLATE_NAME = " + template_name)
+	if re.search('AUTOSUBMIT_VERSION =.*', content):
+		content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0), "AUTOSUBMIT_VERSION = " + autosubmit_version)
+
 	if re.search('SAFETYSLEEPTIME =.*', content):
 		if hpc == "bsc":
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
@@ -273,6 +276,11 @@ if __name__ == "__main__":
 		else:
 			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 
+		##obtain version for autosubmit being used in expid.py step
+		##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
+		(status, output) = getstatusoutput("git rev-parse HEAD")
+		autosubmit_version = output
+
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
 		##autosubmit config and architecture copyed from AS.
@@ -282,7 +290,7 @@ if __name__ == "__main__":
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
 				content = file('../conf/' + filename, 'r').read()
-				content = prepare_conf_files(content, exp_id, args.HPC, args.template_name)
+				content = prepare_conf_files(content, exp_id, args.HPC, args.template_name, autosubmit_version)
 				print DB_DIR + exp_id + "/conf/" + new_filename
 				file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
 
@@ -305,7 +313,7 @@ if __name__ == "__main__":
 				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
 					new_filename = filename.replace(args.copy, exp_id)
 					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
-					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name)
+					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name, autosubmit_version)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
 			#shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
 		else:
