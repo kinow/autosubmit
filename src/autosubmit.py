@@ -7,6 +7,7 @@ import platform
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
+from queue.elqueue import ElQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
@@ -93,7 +94,7 @@ if __name__ == "__main__":
 	   remoteQueue.set_host("ht-" + hpcproj)
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
-	   serialQueue = PsQueue(expid)
+	   serialQueue = ElQueue(expid)
 	   serialQueue.set_host("ellen") 
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren") 
