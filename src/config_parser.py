@@ -22,7 +22,7 @@ def config_parser(filename):
 	mandatory_opt = ['expid']
 
 	# default value in case this options does not exist on config file
-	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'JOBTEMPLATE': 'jobtemplate.cmd', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote', 'AUTOFILEDIR': 'AUTOSUB_WORKING_COPY/tmp'})
+	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote'})
 
 	# check file existance
 	if(not os.path.isfile(filename)):

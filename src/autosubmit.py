@@ -58,8 +58,8 @@ if __name__ == "__main__":
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
-	myTemplate = conf_parser.get('config','jobtemplate')
 	expid = conf_parser.get('config','expid')
+	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	retrials = int(conf_parser.get('config','retrials'))
@@ -71,14 +71,6 @@ if __name__ == "__main__":
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
 		rerun = 'false'
-	if (exp_parser.has_option('experiment','SETUP')):
-		setup = exp_parser.get('experiment','SETUP').lower()
-	else: 
-		setup = 'false'
-	if (exp_parser.has_option('experiment','TRANSFER')):
-		transfer = exp_parser.get('experiment','TRANSFER').lower()
-	else: 
-		transfer = 'false'
 	
 	parameters = dict()
 	parameters['RETRIALS'] = retrials 
@@ -105,13 +97,12 @@ if __name__ == "__main__":
 	   remoteQueue = Mn3Queue(expid)
 	   remoteQueue.set_host("mn-" + hpcproj)
 
-	if (setup == 'true' or transfer == 'true'):
-		localQueue = PsQueue(expid)
-		localQueue.set_host(platform.node())
-		localQueue.set_scratch("/cfu/autosubmit")
-		localQueue.set_project(expid)
-		localQueue.set_user("tmp")
-		localQueue.update_cmds()
+	localQueue = PsQueue(expid)
+	localQueue.set_host(platform.node())
+	localQueue.set_scratch("/cfu/autosubmit")
+	localQueue.set_project(expid)
+	localQueue.set_user("tmp")
+	localQueue.update_cmds()
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -144,9 +135,8 @@ if __name__ == "__main__":
 		remoteQueue.set_user(hpcuser)
 		remoteQueue.update_cmds()
 
-	if (setup == 'true' or transfer == 'true'):
-		signal.signal(signal.SIGQUIT, localQueue.smart_stop)
-		signal.signal(signal.SIGINT, localQueue.normal_stop)
+	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
+	signal.signal(signal.SIGINT, localQueue.normal_stop)
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
@@ -163,25 +153,21 @@ if __name__ == "__main__":
 		sys.exit()
 
 	logger.debug("Length of joblist: %s" % len(joblist))
-	#totaljobs = len(joblist)
-	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
-	template_rootname = exp_parser.get('experiment','TEMPLATE') 
 	
-	#check the availability of the Queue
+	#check the availability of the Queues
+	localQueue.check_remote_log_dir()
 	## in lindgren arch must check both serial and parallel queues
 	if(hpcarch == "lindgren"):
 		serialQueue.check_remote_log_dir()
 		parallelQueue.check_remote_log_dir()
-		queue = serialQueue
 	else:
 		remoteQueue.check_remote_log_dir()
-		queue = remoteQueue
-	
-	if (setup == 'true' or transfer == 'true'):
-		localQueue.check_remote_log_dir()
-		queue = localQueue
 
+	#first job go to the local Queue
+	queue = localQueue
+
+	# Main loop. Finishing when all jobs have been submitted
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
@@ -275,7 +261,7 @@ if __name__ == "__main__":
      
 			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:
 				print job.get_name()
-				scriptname = job.create_script(template_rootname) 
+				scriptname = job.create_script(templatename) 
 				print scriptname
 				## in lindgren arch must select serial or parallel queue acording to the job type
 				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):

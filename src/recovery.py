@@ -46,16 +46,6 @@ if __name__ == '__main__':
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	
-	if (exp_parser.has_option('experiment','SETUP')):
-		setup = exp_parser.get('experiment','SETUP').lower()
-	else: 
-		setup = 'false'
-	if (exp_parser.has_option('experiment','TRANSFER')):
-		transfer = exp_parser.get('experiment','TRANSFER').lower()
-	else: 
-		transfer = 'false'
-
-
 	if(args.get):
 		sc = expid[0]
 		if sc == 'b':
@@ -101,13 +91,12 @@ if __name__ == '__main__':
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.update_cmds()
 		
-		if (setup == 'true' or transfer == 'true'):
-			localQueue = PsQueue(expid)
-			localQueue.set_host(platform.node())
-			localQueue.set_scratch("/cfu/autosubmit")
-			localQueue.set_project(expid)
-			localQueue.set_user("tmp")
-			localQueue.update_cmds()
+		localQueue = PsQueue(expid)
+		localQueue.set_host(platform.node())
+		localQueue.set_scratch("/cfu/autosubmit")
+		localQueue.set_project(expid)
+		localQueue.set_user("tmp")
+		localQueue.update_cmds()
 
 
 		for job in l1.get_active():
