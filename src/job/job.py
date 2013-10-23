@@ -230,16 +230,20 @@ class Job:
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		
-		if (self._type == Type.INITIALISATION or self._type == Type.TRANSFER):
+		if (self._type == Type.TRANSFER):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
 			parameters['MEMBER'] = splittedname[2]
-		elif (self._type == Type.SIMULATION or self._type == Type.POSTPROCESSING or self._type == Type.CLEANING):
+		elif (self._type == Type.INITIALISATION or self._type == Type.SIMULATION or self._type == Type.POSTPROCESSING or self._type == Type.CLEANING):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
 			parameters['MEMBER'] = splittedname[2]
-			parameters['CHUNK'] = splittedname[3]
-			chunk = int(splittedname[3])
+			if (self._type == Type.INITIALISATION):
+				parameters['CHUNK'] = '1'
+				chunk = 1
+			else:
+				parameters['CHUNK'] = splittedname[3]
+				chunk = int(splittedname[3])
 			total_chunk = int(parameters['NUMCHUNKS'])
 			chunk_length_in_month = int(parameters['CHUNKSIZE'])
 			chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
