@@ -107,7 +107,6 @@ if __name__ == "__main__":
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
 	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
-	#if (('RERUN','TRUE') in expdef or ('RERUN','FALSE') in expdef):
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else:

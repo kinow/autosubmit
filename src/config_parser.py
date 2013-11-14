@@ -81,7 +81,7 @@ def expdef_parser(filename):
 	
 	check_values(parser.get('experiment', 'HPCARCH'), hpcarch)
 
-	print parser.items('experiment')
+	#print parser.items('experiment')
 	if(invalid_values):
 		print "\nInvalid config file"
 		sys.exit()
@@ -101,7 +101,7 @@ def archdef_parser(filename):
 	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
-	print parser.items('archdef')
+	#print parser.items('archdef')
 	return parser
 
 if __name__ == "__main__":

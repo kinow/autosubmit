@@ -232,7 +232,7 @@ if __name__ == "__main__":
 	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = '{master (default), v3.0.1, v2.3.0, develop-v3.0.1, develop-v2.3.0, ...}', required = True)
 	group2.add_argument('--template_name', '-T', choices = ('ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3'), type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--template_branch', '-t', type = str, default = 'develop-1.1', help = '{develop-1.1 (defualt), develop, develop-SPPT, ...}') ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = '{master (defualt), develop, develop-1.1, ...}') ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = '{master (default), develop, ...}') 
 	group2.add_argument('--description', '-d', type = str, required = True)
 

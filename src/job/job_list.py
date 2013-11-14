@@ -209,6 +209,8 @@ class JobList:
 
 	def update_parameters(self, parameters):
 		self._parameters = parameters
+		for job in self._job_list:
+			job.set_parameters(parameters)
 
 	def update_list(self):
 		# load updated file list
@@ -538,6 +540,9 @@ class RerunJobList:
 
 	def update_parameters(self, parameters):
 		self._parameters = parameters
+		for job in self._job_list:
+			job.set_parameters(parameters)
+			job.print_parameters()
 
 	def update_list(self):
 		# load updated file list

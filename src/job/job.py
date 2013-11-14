@@ -128,6 +128,9 @@ class Job:
 	def	set_parameters(self, newparameters):
 		''' Set the parameters list'''
 		self._parameters = newparameters  
+
+	def print_parameters(self):
+		print self._parameters
 	
 	def set_name(self, newName):
 		self._name = newName
@@ -316,9 +319,9 @@ class Job:
 			print "jobType: %s" % self._type
 			##update parameters
 			mytemplate = self._template_path + 'common/common.remotesetup'
+			parameters['TASKTYPE'] = 'REMOTE SETUP'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
-			parameters['TASKTYPE'] = 'REMOTE SETUP'
 			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
@@ -331,22 +334,18 @@ class Job:
 		 
 		print "My Template: %s" % mytemplate
 		templateContent = file(mytemplate).read()
+
 		parameters['FAIL_COUNT'] = str(self._fail_count)
 		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
-		params = dict()
 		for key,value in parameters.items():
-			if value != 'HEADER':
-				params[key] = value
+			if not key.startswith('HEADER') and key in templateContent:
+				print "%s:\t%s" % (key,parameters[key])
+				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
-		# use params dictionary to do not replace twice the header
-		for key in params.keys():
-			if key in templateContent:
-				print "%s:\t%s" % (key,params[key])
-				templateContent = templateContent.replace("%"+key+"%",params[key])
-		
-		self.parameters = parameters 
+		self._parameters = parameters 
 		file(self._tmp_path + scriptname, 'w').write(templateContent)
 		return scriptname
 

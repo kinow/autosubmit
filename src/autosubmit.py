@@ -72,8 +72,26 @@ if __name__ == "__main__":
 	else: 
 		rerun = 'false'
 	
+	expdef = []
+	incldef = []
+	for section in exp_parser.sections():
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
+
+	arch_parser = archdef_parser(arch_parser_file)
+	expdef += arch_parser.items('archdef')
+
 	parameters = dict()
-	parameters['RETRIALS'] = retrials 
+
+	for item in expdef:
+		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
+
+
 
 	if(hpcarch == "bsc"):
 	   remoteQueue = MnQueue(expid)
@@ -164,7 +182,7 @@ if __name__ == "__main__":
 	else:
 		remoteQueue.check_remote_log_dir()
 
-	#first job go to the local Queue
+	#first job goes to the local Queue
 	queue = localQueue
 
 	# Main loop. Finishing when all jobs have been submitted
@@ -182,6 +200,29 @@ if __name__ == "__main__":
 		retrials = int(conf_parser.get('config','retrials'))
 		parameters['RETRIALS'] = retrials 
 		logger.info("Number of retrials: %s" % retrials)
+		exp_parser = expdef_parser(exp_parser_file)
+		arch_parser = archdef_parser(arch_parser_file)
+		expdef = []
+		incldef = []
+		for section in exp_parser.sections():
+			if (section.startswith('include')):
+				items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+				incldef += items
+			else:
+				expdef += exp_parser.items(section)
+
+		arch_parser = archdef_parser(arch_parser_file)
+		expdef += arch_parser.items('archdef')
+
+		parameters = dict()
+
+		for item in expdef:
+			parameters[item[0]] = item[1]
+		for item in incldef:
+			parameters[item[0]] = file(item[1]).read()
+
+		parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+   		joblist.update_parameters(parameters)
 
 		# read FAIL_RETRIAL number if, blank at creation time put a given number
 		# check availability of machine, if not next iteration after sleep time
@@ -232,6 +273,26 @@ if __name__ == "__main__":
 						job.check_completion()
 					else:
 						job.set_status(status)
+				exp_parser = expdef_parser(exp_parser_file)
+				arch_parser = archdef_parser(arch_parser_file)
+				expdef = []
+				incldef = []
+				for section in exp_parser.sections():
+					if (section.startswith('include')):
+						items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+						incldef += items
+					else:
+						expdef += exp_parser.items(section)
+				arch_parser = archdef_parser(arch_parser_file)
+				expdef += arch_parser.items('archdef')
+				parameters = dict()
+				for item in expdef:
+					parameters[item[0]] = item[1]
+				for item in incldef:
+					parameters[item[0]] = file(item[1]).read()
+				parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+				joblist.update_parameters(parameters)
+
 			#Uri add check if status UNKNOWN and exit if you want 
 	   
 			##after checking the jobs , no job should have the status "submitted"
