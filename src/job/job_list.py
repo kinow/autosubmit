@@ -25,25 +25,24 @@ class JobList:
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		self._parameters = parameters
-		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-			localsetupjob_name = self._expid + "_" 
-			localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
-			localsetup_job.set_parents([])
-			remotesetupjob_name = self._expid + "_" 
-			remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-			remotesetup_job.set_parents([localsetup_job.get_name()])
-			localsetup_job.add_children(remotesetup_job.get_name())
+		localsetupjob_name = self._expid + "_" 
+		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
+		localsetup_job.set_parents([])
+		remotesetupjob_name = self._expid + "_" 
+		remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
+		remotesetup_job.set_parents([localsetup_job.get_name()])
+		localsetup_job.add_children(remotesetup_job.get_name())
 
 		print "Creating job list\n"
 		for date in date_list:
 			print date
 			for member in member_list:
 				print member
-				if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-					transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
-					trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
+				transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
+				trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
 				for	chunk in range(starting_chunk, starting_chunk + num_chunks):
 					rootjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk) + "_"
+					inijob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
 					post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
 					clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
 					if	(starting_chunk	== chunk and chunk != 1):
@@ -67,36 +66,27 @@ class JobList:
 							parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
 							sim_job.add_parent(parentjob_name)
 					if (chunk == 1):
-						if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-							init_job = Job(rootjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
-						else:
-							init_job = Job(rootjob_name + "init", 0, Status.READY, Type.INITIALISATION)
-						init_job.set_children([sim_job.get_name()])
-						if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-							init_job.set_parents([remotesetup_job.get_name()])
-						else: 
-							init_job.set_parents([])
-						if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-							remotesetup_job.add_children(init_job.get_name())
-						sim_job.set_parents([init_job.get_name()])
-						self._job_list += [init_job]
+						ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
+						ini_job.set_children([sim_job.get_name()])
+						ini_job.set_parents([remotesetup_job.get_name()])
+						remotesetup_job.add_children(ini_job.get_name())
+						sim_job.set_parents([ini_job.get_name()])
+						self._job_list += [ini_job]
 					if (chunk < starting_chunk + num_chunks	- 1):
 						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk+1) + "_" + "sim"
 						sim_job.add_children(childjob_name)
 					if (chunk < starting_chunk + num_chunks - 2):
 						childjob_name = self._expid+ "_" + str(date) + "_" + str(member) + "_" + str(chunk+2) + "_" + "sim"
 						clean_job.set_children([childjob_name])
-					if ((chunk == num_chunks or chunk == num_chunks-1) and parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
+					if (chunk == num_chunks or chunk == num_chunks-1):
 						trans_job.set_parents([clean_job.get_name()])
 						clean_job.add_children(trans_job.get_name())
 
 					self._job_list += [sim_job, post_job, clean_job]
 				
-				if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-					self._job_list += [trans_job]
+				self._job_list += [trans_job]
 
-		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-			self._job_list += [localsetup_job,remotesetup_job]
+		self._job_list += [localsetup_job,remotesetup_job]
 
 		self.update_genealogy()
 		for job in self._job_list:
@@ -219,6 +209,8 @@ class JobList:
 
 	def update_parameters(self, parameters):
 		self._parameters = parameters
+		for job in self._job_list:
+			job.set_parameters(parameters)
 
 	def update_list(self):
 		# load updated file list
@@ -301,17 +293,15 @@ class RerunJobList:
 		print "Creating job list\n"
 		data = json.loads(chunk_list)
 		print data
-		print parameters.has_key('SETUP') 
 		self._parameters = parameters
 
-		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-			localsetupjob_name = self._expid + "_" 
-			localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
-			localsetup_job.set_parents([])
-			remotesetupjob_name = self._expid + "_" 
-			remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-			remotesetup_job.set_parents([localsetup_job.get_name()])
-			localsetup_job.add_children(remotesetup_job.get_name())
+		localsetupjob_name = self._expid + "_" 
+		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
+		localsetup_job.set_parents([])
+		remotesetupjob_name = self._expid + "_" 
+		remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
+		remotesetup_job.set_parents([localsetup_job.get_name()])
+		localsetup_job.add_children(remotesetup_job.get_name())
 
 
 
@@ -330,24 +320,17 @@ class RerunJobList:
 				else:
 					last_chunk = first_chunk
 				
-				initjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(starting_chunk) + "_"
-				if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-					init_job = Job(initjob_name + "init", 0, Status.WAITING, Type.INITIALISATION)
-					init_job.set_parents([remotesetup_job.get_name()])
-				else:
-					init_job = Job(initjob_name + "init", 0, Status.READY, Type.INITIALISATION)
-					init_job.set_parents([])
+				inijob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
+				ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
+				ini_job.set_parents([remotesetup_job.get_name()])
 
-				if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-					transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
-					trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
-				#init_job.set_parents([])
+				transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
+				trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
+				#ini_job.set_parents([])
 				
-				if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-					remotesetup_job.add_children(init_job.get_name())
-				self._job_list += [init_job]
-				if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-					self._job_list += [trans_job]
+				remotesetup_job.add_children(ini_job.get_name())
+				self._job_list += [ini_job]
+				self._job_list += [trans_job]
 
 				for	chunk in member['cs']:
 					chunk = int(chunk)
@@ -360,21 +343,20 @@ class RerunJobList:
 					post_job.set_parents([sim_job.get_name()])
 					post_job.set_children([clean_job.get_name()])
 					clean_job.set_parents([post_job.get_name()])
-					if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-						trans_job.set_parents([clean_job.get_name()])
+					trans_job.set_parents([clean_job.get_name()])
 
 					# Link parents:
 					# if chunk is 1 then not needed to add the previous clean job
 					if (chunk == 1):
-						init_job.set_children([sim_job.get_name()])
-						sim_job.set_parents([init_job.get_name()])
+						ini_job.set_children([sim_job.get_name()])
+						sim_job.set_parents([ini_job.get_name()])
 						self._job_list += [sim_job, post_job, clean_job]
 					elif (chunk == first_chunk):
 						prev_new_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk-1) + "_" + "clean"
 						prev_new_clean_job = Job(prev_new_job_name, 0, Status.WAITING, Type.CLEANING)
-						init_job.set_children([prev_new_clean_job.get_name()])
+						ini_job.set_children([prev_new_clean_job.get_name()])
 						sim_job.set_parents([prev_new_clean_job.get_name()])
-						prev_new_clean_job.set_parents([init_job.get_name()])
+						prev_new_clean_job.set_parents([ini_job.get_name()])
 						prev_new_clean_job.set_children([sim_job.get_name()])
 						self._job_list += [prev_new_clean_job, sim_job, post_job, clean_job]
 					else:
@@ -408,8 +390,7 @@ class RerunJobList:
 						if (chunk < second_last_chunk):
 							next_next_chunk = int(member['cs'][member['cs'].index(str(chunk))+2])
 						else:
-							if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-								clean_job.add_children(trans_job.get_name())
+							clean_job.add_children(trans_job.get_name())
 						# in case reruning no consecutive chunks we need to link next_chunk-1 clean job
 						if (next_chunk != chunk+1):
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk-1) + "_" + "clean"
@@ -422,14 +403,13 @@ class RerunJobList:
 								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
 								clean_job.add_children(childjob_name)
 					else:
-						if (parameters.has_key('TRANSFER') and parameters['TRANSFER'] == 'TRUE'):
-							clean_job.add_children(trans_job.get_name())
+						clean_job.add_children(trans_job.get_name())
 
 
 											
 						
 				#if (member['cs'] == []):
-				#	clean_job = init_job
+				#	clean_job = ini_job
 				#if (last_chunk != num_chunks):
 				#	finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(num_chunks) + "_" + "clean"
 				#	final_job = Job(finaljob_name , 0, Status.WAITING, Type.CLEANING)
@@ -437,8 +417,7 @@ class RerunJobList:
 				#	clean_job.add_children(finaljob_name)
 				#	self._job_list += [final_job]
 		
-		if (parameters.has_key('SETUP') and parameters['SETUP'] == 'TRUE'):
-			self._job_list += [localsetup_job,remotesetup_job]
+		self._job_list += [localsetup_job,remotesetup_job]
 
 		self.update_genealogy()
 		for job in self._job_list:
@@ -561,6 +540,9 @@ class RerunJobList:
 
 	def update_parameters(self, parameters):
 		self._parameters = parameters
+		for job in self._job_list:
+			job.set_parameters(parameters)
+			job.print_parameters()
 
 	def update_list(self):
 		# load updated file list

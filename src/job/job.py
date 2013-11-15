@@ -35,7 +35,7 @@ class Job:
 		self._complete = True
 		self._parameters = dict()
 		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/tmp/"
-		self._template_path = LOCAL_ROOT_DIR + "/" + self._expid + "/templates/"
+		self._template_path = LOCAL_ROOT_DIR + "/" + self._expid + "/git/templates/"
 	
 	def delete(self):
 		del self._name
@@ -128,6 +128,9 @@ class Job:
 	def	set_parameters(self, newparameters):
 		''' Set the parameters list'''
 		self._parameters = newparameters  
+
+	def print_parameters(self):
+		print self._parameters
 	
 	def set_name(self, newName):
 		self._name = newName
@@ -226,7 +229,6 @@ class Job:
 	def	create_script(self, templatename):
 		parameters = self._parameters
 
-		templatename = self._template_path + templatename
 		splittedname = self.get_long_name().split('_')
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
@@ -235,12 +237,16 @@ class Job:
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
 			parameters['MEMBER'] = splittedname[2]
-		elif (self._type == Type.SIMULATION or self._type == Type.INITIALISATION or self._type == Type.POSTPROCESSING or self._type == Type.CLEANING):
+		elif (self._type == Type.INITIALISATION or self._type == Type.SIMULATION or self._type == Type.POSTPROCESSING or self._type == Type.CLEANING):
 			parameters['SDATE'] = splittedname[1]
 			string_date = splittedname[1]
 			parameters['MEMBER'] = splittedname[2]
-			parameters['CHUNK'] = splittedname[3]
-			chunk = int(splittedname[3])
+			if (self._type == Type.INITIALISATION):
+				parameters['CHUNK'] = '1'
+				chunk = 1
+			else:
+				parameters['CHUNK'] = splittedname[3]
+				chunk = int(splittedname[3])
 			total_chunk = int(parameters['NUMCHUNKS'])
 			chunk_length_in_month = int(parameters['CHUNKSIZE'])
 			chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
@@ -268,51 +274,78 @@ class Job:
 		  
 		if (self._type == Type.SIMULATION):
 			print "jobType: %s" %str(self._type)
-			mytemplate = templatename + '.sim'
+			mytemplate = self._template_path + templatename + '/' + templatename + '.sim'
 			##update parameters
 			parameters['PREV'] = str(prev_days)
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
+			parameters['TASKTYPE'] = 'SIMULATION'
+			parameters['HEADER'] = parameters['HEADER_SIM']
 		elif (self._type == Type.POSTPROCESSING):
 			print "jobType: %s " % str(self._type)
-			mytemplate = templatename + '.post'
+			mytemplate = self._template_path + templatename + '/' + templatename + '.post'
 			##update parameters
 			starting_date_year = chunk_date_lib.chunk_start_year(string_date)
 			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
 			parameters['Starting_DATE_YEAR'] = str(starting_date_year)
 			parameters['Starting_DATE_MONTH'] = str(starting_date_month)
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_POST']
+			parameters['TASKTYPE'] = 'POSTPROCESSING'
+			parameters['HEADER'] = parameters['HEADER_POST']
 		elif (self._type == Type.CLEANING):
 			print "jobType: %s" % str(self._type)
 			##update parameters
-			mytemplate = templatename + '.clean'
+			mytemplate = self._template_path + templatename + '/' + templatename + '.clean'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
+			parameters['TASKTYPE'] = 'CLEANING'
+			parameters['HEADER'] = parameters['HEADER_CLEAN']
 		elif (self._type == Type.INITIALISATION):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.ini'
+			mytemplate = self._template_path + templatename + '/' + templatename + '.ini'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_INI']
+			parameters['TASKTYPE'] = 'INITIALISATION'
+			parameters['HEADER'] = parameters['HEADER_INI']
 		elif (self._type == Type.LOCALSETUP):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.localsetup'
+			mytemplate = self._template_path + 'common/common.localsetup'
+			parameters['TASKTYPE'] = 'LOCAL SETUP'
+			parameters['HEADER'] = parameters['HEADER_LOCALSETUP']
 		elif (self._type == Type.REMOTESETUP):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.remotesetup'
+			mytemplate = self._template_path + 'common/common.remotesetup'
+			parameters['TASKTYPE'] = 'REMOTE SETUP'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
 			##update parameters
-			mytemplate = templatename + '.localtrans'
+			mytemplate = self._template_path + 'common/common.localtrans'
+			parameters['TASKTYPE'] = 'TRANSFER'
+			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
 		else: 
 			print "Unknown Job Type"
 		 
 		print "My Template: %s" % mytemplate
-		#templateContent = file(hpcarch).read()
 		templateContent = file(mytemplate).read()
-		parameters['INCLUDE_POSTP'] = file(self._template_path + "/common_ocean_post.txt").read()
+
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		for key in parameters.keys():
-			if key in templateContent:
+		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+
+		# first value to be replaced is header as it contains inside other values between %% to be replaced later
+		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+		for key,value in parameters.items():
+			if not key.startswith('HEADER') and key in templateContent:
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
-		
-		self.parameters = parameters 
+
+		self._parameters = parameters 
 		file(self._tmp_path + scriptname, 'w').write(templateContent)
 		return scriptname
 

@@ -9,34 +9,43 @@ The following command, which has an optional parameter to specify the destinatio
 
 	git clone https://dev.cfu.local/autosubmit.git <localdir>
 
-To switch to one branch or tag different from master, it has to be specified. For example:
+To switch to one previous tag from current stable version, it has to be specified. For example:
+``git checkout autosubmit2.1``
+To switch to one branch different from master, it has to be specified. For example:
 ``git checkout develop``
 
 
-Since version AUTOSUBMiT 2.2 several new internal CFU GIT projects contain the climate model sources and setup and the templates.
+Since version AUTOSUBMiT 2.2 several new internal CFU GIT projects contain the climate model sources and setup, the templates and the ocean_diagnostics.
+Since version AUTOSUBMiT 2.3 only templates version 1.1 or above can be used.
 Only in case you want to develop any modification of the templates, the source code or the setup you will download them with the following commands:
 
 ::
 
 	git clone https://dev.cfu.local/<model_name>.git <localdir>
 	git clone https://dev.cfu.local/templates.git <localdir>
+	git clone https://dev.cfu.local/ocean_diagnostics.git <localdir>
 
 All available GIT projects and branches can be found at https://dev.cfu.local portal.
+More information on how to work with CFU GIT projects can be found here: :doc:`dev`
+
 
 Introduction
 ============
 
-After downloading the master branch you will see that there are three directories: ``conf``, ``src`` and ``headers``.  The ``conf`` directory contains two files: ``autosubmit.conf`` and ``expdef.conf``
+After downloading the master branch you will see that there are three directories: ``conf``, ``src`` and ``docs``.  The ``conf`` directory contains two files: ``autosubmit.conf`` and ``expdef.conf``
 
 	* ``autosubmit.conf`` contains the variables needed to run AUTOSUBMiT such as the total number of jobs running at the same time, maximum waiting jobs, time between loop checks, etc.
 	* ``expdef.conf`` has the variables needed to configure the experiment such as number of chunks, chunk size, member, etc and the variables needed to configure the climate model.
 
 The ``conf`` directory has also a subfolder archdef with a file for each supported platform
 
-	* ``<platform>.conf``  specify the remote directories (models, scratch, hsm, ...) used to run the experiment on the specified platform.
+	* ``<platform>.conf``  specify the remote directories (models, scratch, hsm, ...), environtment settings and headers used to run the experiment on the specified platform.
 
-The ``src`` directory contains all the python files used to create an experiment, launch it, recover and monitor. The ``headers`` folder has a set of files named ``<platform>.<type>`` needed for the queue manager, for each job type for the different platforms. 
-Finally, the ``templates`` folder has a set of subfolders for the different models (ecearth, ecearth3, nemo, ifs)  The different subfolders contain the body files, i.e. the shell script to run, for each job type (setup, init, sim, post, clean and trans) that are platform independent.
+The ``src`` directory contains all the python files used to create an experiment, launch it, recover and monitor. 
+
+Finally, the ``docs`` folder has the documentation files a README and this user's guide in PDF version.
+
+
 
 How to use it
 =============
@@ -92,9 +101,11 @@ It can be found in ``/cfu/autosubmit/<expid>/plot/``
 
 * Fourth Step:
 
-After filling the experiment configuration and running “create_exp.py”, user will find ``/cfu/autosubmit/<expid>/moduel/sources``.
+After filling the experiment configuration and running “create_exp.py”, user can go into ``/cfu/autosubmit/<expid>/git`` which has a git clone for the model, the ocean diagnostics and the model. Templates has a set of subfolders for the different models (ecearth -version 2-, ecearth3, nemo, ifs -version 2-, ifs3) and one common subfolder. The different subfolders contain the body files, i.e. the shell script to run, for each job type (setup, init, sim, post, clean and trans) that are platform independent.
 
-Now the user can modify the sources under home infrastructure. If the variable SETUP in ``expdef_<expid>.conf`` is set to TRUE for the experiment (cxxx) then a first setup job will take care of transferring the modified sources at HPC, re-compiling the model and preparing new set of executables. On the other hand, a second setup job will prepare the executables which already exist at HPC.
+Additionally the user can modify the sources under git folder. A first setup job will take care of transferring the modified sources at HPC, re-compiling the model and preparing new set of executables. On the other hand, a second setup job will prepare the executables which already exist at HPC. 
+
+The executable scripts are created at runtime (Fifth step) so the modifications on the sources can be done on the fly.
 
 * Fifth Step:
 
@@ -143,7 +154,7 @@ How to change the job status without stopping autosubmit
 ========================================================
 
 Create a file in ``/cfu/autosubmit/<expid>/pkl/`` named ``updated_list_<expid>.txt``.
-This file should have two columns: the first one has to be the job_name and the second one the status (READY, COMPLETED, FAILED). Keep in mind that autosubmit
+This file should have two columns: the first one has to be the job_name and the second one the status (READY, COMPLETED, FAILED, SUSPENDED). Keep in mind that autosubmit
 reads the file automatically so it is suggested to create the file in another location like ``/tmp`` or ``/var/tmp`` and then copy/move it to the ``pkl`` folder. Alternativelly you can create the file with a different name an rename it when you have finished.
 
 How to stop autosubmit
