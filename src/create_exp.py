@@ -8,8 +8,10 @@ from job.job_list import RerunJobList
 from config_parser import config_parser, expdef_parser, archdef_parser
 from monitor import GenerateOutput
 from os import path
+import sys, os
+import shutil
 import cPickle as pickle
-from dir_config import LOCAL_ROOT_DIR
+from dir_config import DB_DIR
 import json
 from pyparsing import nestedExpr
 
@@ -58,7 +60,6 @@ def create_json(text):
 	result = json.dumps(sds)
 	return result
 
-
 ####################
 # Main Program
 ####################
@@ -68,7 +69,7 @@ if __name__ == "__main__":
 		print "Missing config file or expid."
 		exit(1)
 
-	filename = LOCAL_ROOT_DIR + "/" + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
+	filename = DB_DIR + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
 	if (path.exists(filename)):
 		conf_parser = config_parser(filename)
 		print "Using config file: %s" % filename
@@ -83,9 +84,14 @@ if __name__ == "__main__":
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 
 	expdef = []
+	incldef = []
 	exp_parser = expdef_parser(exp_parser_file)
 	for section in exp_parser.sections():
-		expdef += exp_parser.items(section)
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
 
 	arch_parser = archdef_parser(arch_parser_file)
 	expdef += arch_parser.items('archdef')
@@ -94,12 +100,13 @@ if __name__ == "__main__":
 
 	for item in expdef:
 		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
 
 	date_list = exp_parser.get('experiment','DATELIST').split(' ')
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
 	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
-	#if (('RERUN','TRUE') in expdef or ('RERUN','FALSE') in expdef):
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else:
@@ -113,6 +120,10 @@ if __name__ == "__main__":
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
 
+
+	platform = exp_parser.get('experiment', 'HPCARCH')
+	if (platform == 'hector'):
+		job_list.update_shortened_names()
 
 	job_list.save()
 	GenerateOutput(expid, job_list.get_job_list(), 'pdf')

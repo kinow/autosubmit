@@ -5,6 +5,7 @@ import pickle
 from job.job_list import JobList
 from job.job_list import RerunJobList
 from job.job_common import Status
+from job.job_common import Type
 import argparse
 import platform
 from config_parser import config_parser, expdef_parser, archdef_parser
@@ -12,6 +13,7 @@ from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
 from queue.lgqueue import LgQueue
+from queue.elqueue import ElQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
@@ -44,16 +46,6 @@ if __name__ == '__main__':
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	
-	if (exp_parser.has_option('experiment','SETUP')):
-		setup = exp_parser.get('experiment','SETUP').lower()
-	else: 
-		setup = 'false'
-	if (exp_parser.has_option('experiment','TRANSFER')):
-		transfer = exp_parser.get('experiment','TRANSFER').lower()
-	else: 
-		transfer = 'false'
-
-
 	if(args.get):
 		sc = expid[0]
 		if sc == 'b':
@@ -70,7 +62,7 @@ if __name__ == '__main__':
 			remoteQueue.update_cmds()
 		elif sc == 'l':
 			## in lindgren arch must set-up both serial and parallel queues
-			serialQueue = PsQueue(expid)
+			serialQueue = ElQueue(expid)
 			serialQueue.set_scratch(scratch_dir)
 			serialQueue.set_project(hpcproj)
 			serialQueue.set_user(hpcuser)
@@ -99,13 +91,12 @@ if __name__ == '__main__':
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.update_cmds()
 		
-		if (setup == 'true' or transfer == 'true'):
-			localQueue = PsQueue(expid)
-			localQueue.set_host(platform.node())
-			localQueue.set_scratch("/cfu/autosubmit")
-			localQueue.set_project(expid)
-			localQueue.set_user("tmp")
-			localQueue.update_cmds()
+		localQueue = PsQueue(expid)
+		localQueue.set_host(platform.node())
+		localQueue.set_scratch("/cfu/autosubmit")
+		localQueue.set_project(expid)
+		localQueue.set_user("tmp")
+		localQueue.update_cmds()
 
 
 		for job in l1.get_active():
@@ -121,7 +112,7 @@ if __name__ == '__main__':
 			if queue.get_completed_files(job.get_name()):
 				job.set_status(Status.COMPLETED)
 				print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"
-			else:
+			elif(job.get_status() != Status.SUSPENDED):
 				job.set_status(Status.READY)
 				job.set_fail_count(0)
 				print "CHANGED: job: " + job.get_name() + " status to: READY"

@@ -10,6 +10,7 @@ class Status:
 	COMPLETED = 5
 	FAILED = -1
 	UNKNOWN = -2
+	SUSPENDED = -3
 	def retval(self, value):
 		return getattr(self, value)
 

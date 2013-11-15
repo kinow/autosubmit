@@ -22,7 +22,7 @@ def config_parser(filename):
 	mandatory_opt = ['expid']
 
 	# default value in case this options does not exist on config file
-	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'JOBTEMPLATE': 'jobtemplate.cmd', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote', 'AUTOFILEDIR': 'AUTOSUB_WORKING_COPY/tmp'})
+	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote'})
 
 	# check file existance
 	if(not os.path.isfile(filename)):
@@ -81,7 +81,7 @@ def expdef_parser(filename):
 	
 	check_values(parser.get('experiment', 'HPCARCH'), hpcarch)
 
-	print parser.items('experiment')
+	#print parser.items('experiment')
 	if(invalid_values):
 		print "\nInvalid config file"
 		sys.exit()
@@ -101,7 +101,7 @@ def archdef_parser(filename):
 	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
-	print parser.items('archdef')
+	#print parser.items('archdef')
 	return parser
 
 if __name__ == "__main__":

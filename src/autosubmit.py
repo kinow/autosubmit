@@ -7,6 +7,7 @@ import platform
 from queue.itqueue import ItQueue
 from queue.mnqueue import MnQueue
 from queue.lgqueue import LgQueue
+from queue.elqueue import ElQueue
 from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
@@ -57,8 +58,8 @@ if __name__ == "__main__":
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
-	myTemplate = conf_parser.get('config','jobtemplate')
 	expid = conf_parser.get('config','expid')
+	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	retrials = int(conf_parser.get('config','retrials'))
@@ -70,17 +71,27 @@ if __name__ == "__main__":
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
 		rerun = 'false'
-	if (exp_parser.has_option('experiment','SETUP')):
-		setup = exp_parser.get('experiment','SETUP').lower()
-	else: 
-		setup = 'false'
-	if (exp_parser.has_option('experiment','TRANSFER')):
-		transfer = exp_parser.get('experiment','TRANSFER').lower()
-	else: 
-		transfer = 'false'
 	
+	expdef = []
+	incldef = []
+	for section in exp_parser.sections():
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
+
+	arch_parser = archdef_parser(arch_parser_file)
+	expdef += arch_parser.items('archdef')
+
 	parameters = dict()
-	parameters['RETRIALS'] = retrials 
+
+	for item in expdef:
+		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
+
+
 
 	if(hpcarch == "bsc"):
 	   remoteQueue = MnQueue(expid)
@@ -93,7 +104,7 @@ if __name__ == "__main__":
 	   remoteQueue.set_host("ht-" + hpcproj)
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
-	   serialQueue = PsQueue(expid)
+	   serialQueue = ElQueue(expid)
 	   serialQueue.set_host("ellen") 
 	   parallelQueue = LgQueue(expid)
 	   parallelQueue.set_host("lindgren") 
@@ -104,13 +115,12 @@ if __name__ == "__main__":
 	   remoteQueue = Mn3Queue(expid)
 	   remoteQueue.set_host("mn-" + hpcproj)
 
-	if (setup == 'true' or transfer == 'true'):
-		localQueue = PsQueue(expid)
-		localQueue.set_host(platform.node())
-		localQueue.set_scratch("/cfu/autosubmit")
-		localQueue.set_project(expid)
-		localQueue.set_user("tmp")
-		localQueue.update_cmds()
+	localQueue = PsQueue(expid)
+	localQueue.set_host(platform.node())
+	localQueue.set_scratch("/cfu/autosubmit")
+	localQueue.set_project(expid)
+	localQueue.set_user("tmp")
+	localQueue.update_cmds()
 
 	logger.debug("The Experiment name is: %s" % expid)
 	logger.info("Jobs to submit: %s" % totalJobs)
@@ -143,9 +153,8 @@ if __name__ == "__main__":
 		remoteQueue.set_user(hpcuser)
 		remoteQueue.update_cmds()
 
-	if (setup == 'true' or transfer == 'true'):
-		signal.signal(signal.SIGQUIT, localQueue.smart_stop)
-		signal.signal(signal.SIGINT, localQueue.normal_stop)
+	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
+	signal.signal(signal.SIGINT, localQueue.normal_stop)
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
@@ -162,25 +171,21 @@ if __name__ == "__main__":
 		sys.exit()
 
 	logger.debug("Length of joblist: %s" % len(joblist))
-	#totaljobs = len(joblist)
-	#logger.info("Number of Jobs: "+str(totaljobs))# Main loop. Finishing when all jobs have been submitted
 
-	template_rootname = exp_parser.get('experiment','TEMPLATE') 
 	
-	#check the availability of the Queue
+	#check the availability of the Queues
+	localQueue.check_remote_log_dir()
 	## in lindgren arch must check both serial and parallel queues
 	if(hpcarch == "lindgren"):
 		serialQueue.check_remote_log_dir()
 		parallelQueue.check_remote_log_dir()
-		queue = serialQueue
 	else:
 		remoteQueue.check_remote_log_dir()
-		queue = remoteQueue
-	
-	if (setup == 'true' or transfer == 'true'):
-		localQueue.check_remote_log_dir()
-		queue = localQueue
 
+	#first job goes to the local Queue
+	queue = localQueue
+
+	# Main loop. Finishing when all jobs have been submitted
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
@@ -195,6 +200,29 @@ if __name__ == "__main__":
 		retrials = int(conf_parser.get('config','retrials'))
 		parameters['RETRIALS'] = retrials 
 		logger.info("Number of retrials: %s" % retrials)
+		exp_parser = expdef_parser(exp_parser_file)
+		arch_parser = archdef_parser(arch_parser_file)
+		expdef = []
+		incldef = []
+		for section in exp_parser.sections():
+			if (section.startswith('include')):
+				items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+				incldef += items
+			else:
+				expdef += exp_parser.items(section)
+
+		arch_parser = archdef_parser(arch_parser_file)
+		expdef += arch_parser.items('archdef')
+
+		parameters = dict()
+
+		for item in expdef:
+			parameters[item[0]] = item[1]
+		for item in incldef:
+			parameters[item[0]] = file(item[1]).read()
+
+		parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+   		joblist.update_parameters(parameters)
 
 		# read FAIL_RETRIAL number if, blank at creation time put a given number
 		# check availability of machine, if not next iteration after sleep time
@@ -245,6 +273,26 @@ if __name__ == "__main__":
 						job.check_completion()
 					else:
 						job.set_status(status)
+				exp_parser = expdef_parser(exp_parser_file)
+				arch_parser = archdef_parser(arch_parser_file)
+				expdef = []
+				incldef = []
+				for section in exp_parser.sections():
+					if (section.startswith('include')):
+						items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+						incldef += items
+					else:
+						expdef += exp_parser.items(section)
+				arch_parser = archdef_parser(arch_parser_file)
+				expdef += arch_parser.items('archdef')
+				parameters = dict()
+				for item in expdef:
+					parameters[item[0]] = item[1]
+				for item in incldef:
+					parameters[item[0]] = file(item[1]).read()
+				parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
+				joblist.update_parameters(parameters)
+
 			#Uri add check if status UNKNOWN and exit if you want 
 	   
 			##after checking the jobs , no job should have the status "submitted"
@@ -267,12 +315,14 @@ if __name__ == "__main__":
 		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
 			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
-			s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			#s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			s = sorted(jobsavail, key=lambda k:k.get_long_name().split('_')[1][:6])
+
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
      
 			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:
 				print job.get_name()
-				scriptname = job.create_script(template_rootname) 
+				scriptname = job.create_script(templatename) 
 				print scriptname
 				## in lindgren arch must select serial or parallel queue acording to the job type
 				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):

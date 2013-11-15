@@ -6,22 +6,22 @@ from time import sleep
 
 class HtQueue(HPCQueue):
 	def __init__(self, expid):
-		self._host = "hecktor"
+		self._host = "hector"
 		self._scratch = "/work/pr1u1011"
 		self._project = "pr1u1011"
 		self._user = "pr1e1002"
 		self._expid = expid
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
-		self._checkjob_cmd = "ssh " + self._host + " qstat"
+		self._checkjob_cmd = "ssh " + self._host + " /work/pr1u1011/pr1u1011/pr1e1001/common/autosubmit/qstatjob.sh"
 		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -v PBS_O_WORKDIR=" + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		self._submit_cmd = "ssh " + self._host + " \"cd " + self._remote_log_dir + "; qsub \" "
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
 		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
-		self._job_status['COMPLETED'] = ['F', 'E']
+		self._job_status['COMPLETED'] = ['F', 'E', 'c']
 		self._job_status['RUNNING'] = ['R']
 		self._job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
@@ -30,9 +30,9 @@ class HtQueue(HPCQueue):
 	def update_cmds(self):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
-		self._checkjob_cmd = "ssh " + self._host + " qstat"
+		self._checkjob_cmd = "ssh " + self._host + " /work/pr1u1011/pr1u1011/pr1e1001/common/autosubmit/qstatjob.sh"
 		self._checkhost_cmd = "ssh " + self._host  + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -v PBS_O_WORKDIR=" + self._remote_log_dir + " " + self._remote_log_dir + "/"
+		self._submit_cmd = "ssh " + self._host + " \"cd " + self._remote_log_dir + "; qsub \" "
 		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
 		self._put_cmd = "scp"
 		self._get_cmd = "scp"
@@ -51,8 +51,9 @@ class HtQueue(HPCQueue):
 		return self._mkdir_cmd
 
 	def parse_job_output(self, output):
-		job_state = output.split('\n')[2].split()[4]
-		return job_state
+		#job_state = output.split('\n')[2].split()[4]
+		#return job_state
+		return output
 
 	def get_submitted_job_id(self, output):
 		return output.split('.')[0]
