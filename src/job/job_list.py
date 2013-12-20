@@ -542,7 +542,6 @@ class RerunJobList:
 		self._parameters = parameters
 		for job in self._job_list:
 			job.set_parameters(parameters)
-			job.print_parameters()
 
 	def update_list(self):
 		# load updated file list
