@@ -302,9 +302,15 @@ if __name__ == "__main__":
 		joblist.update_list()
 		activejobs = joblist.get_active()
 		logger.info("There are %s active jobs" % len(activejobs))
+		wrappablejobs = joblist.get_wrappable() 
+		logger.info("There are %s wrappable jobs" % len(wrappablejobs))
 
-		## get the list of jobs READY
-		jobsavail = joblist.get_ready()
+		## get the possible wraps (list of special jobs, containing several scripts each one)
+		wraps = joblist.get_wraps()
+
+		## get the list of jobs READY, excluding the single jobs that are being wrapped and the special jobs wrapping those. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs.
+		## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.
+		jobsavail = joblist.get_ready() - wrappablejobs + wraps
 
 		if not queueavail:
 			logger.info("There is no queue available")
