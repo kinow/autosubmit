@@ -3,6 +3,7 @@
 from job_common import Status
 from job_common import Type
 from job import Job
+from job import Wrap
 import os
 import pickle
 from sys import	exit, setrecursionlimit
@@ -477,6 +478,23 @@ class RerunJobList:
 	def get_active(self):
 		"""Returns a list of active jobs (In queue, Ready)"""
 		return self.get_in_queue() + self.get_ready() + self.get_unknown()
+
+	def get_available(self):
+		## list of wrappable To be developed
+		"""Returns a list of jobs ready and not in the list of wrappable"""
+		return [job for job in self._job_list if ( job.get_status() == Status.READY and job.get_type() != Type.INITIALISATION )] 
+
+	def get_wrappable(self):
+		## To be developed
+		"""Returns a list of wrappable jobs"""
+		return [job for job in self._job_list if job.get_tyoe() == Type.INITIALISATION] 
+
+	def get_wraps(self,numjobs):
+		"""Returns a list of Wrap objects bundling wrappable jobs"""
+		test_wrap = Wrap("testwrap", 0, Status.WAITING, self._expid)
+		test_wrap.set_jobs(self._get_wrappable())
+		return [test_wrap]
+		
 	
 	def get_job_by_name(self, name):
 		"""Returns the job that its name matches name"""

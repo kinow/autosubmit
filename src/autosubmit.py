@@ -195,6 +195,8 @@ if __name__ == "__main__":
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
+		totalWraps = int(conf_parser.get('config','totalwraps'))
+		logger.info("Wraps to submit: %s" % totalWraps)
 		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 		logger.info("Sleep: %s" % safetysleeptime)
 		retrials = int(conf_parser.get('config','retrials'))
@@ -306,11 +308,11 @@ if __name__ == "__main__":
 		logger.info("There are %s wrappable jobs" % len(wrappablejobs))
 
 		## get the possible wraps (list of special jobs, containing several scripts each one)
-		wraps = joblist.get_wraps()
+		wrapsavail = joblist.get_wraps()
 
-		## get the list of jobs READY, excluding the single jobs that are being wrapped and the special jobs wrapping those. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs.
+		## get the list of jobs READY, excluding the single jobs that are being wrapped. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs for those particular wrapped jobs.
 		## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.
-		jobsavail = joblist.get_ready() - wrappablejobs + wraps
+		jobsavail = joblist.get_available()
 
 		if not queueavail:
 			logger.info("There is no queue available")
@@ -356,6 +358,32 @@ if __name__ == "__main__":
 					job_id = queue.submit_job(scriptname)
 					job.set_id(job_id)
 					##set status to "submitted"
+					job.set_status(Status.SUBMITTED)
+		
+		#if (min(wrapsavailable, len(wrapsavail)) == 0):
+			#logger.info("There is no wrap READY or available")
+			#logger.info("Number of wraps ready: %s" % len(wrapsavail))
+			#logger.info("Number of wraps available in queue: %s" % wrapsavailable)
+		#elif (min(wrapsavailable, len(wrapsavail)) > 0 and len(wrapsinqueue) <= totalWraps): 
+			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
+
+			for wrap in wrapsavail:
+				print wrap.get_name()
+				wrappername = wrap.create_script("common")
+				print wrappername
+				queue = parallelQueue
+				logger.info("Submitting wrap to parallel queue...")
+				print("Submitting wrap to parallal queue...")
+				queueavail = queue.check_host()
+				if not queueavail:
+					logger.info("There is no queue available")
+				else:
+					for jobwrapped in wrap.get_jobs():
+						scriptname = jobwrapped.create_script(templatename)
+						queue.send_script(scriptname)
+					queue.send_script(wrappername)
+					job_id = queue.submit_job(wrappername)
+					job.set_id(job_id)
 					job.set_status(Status.SUBMITTED)
 
 		time.sleep(safetysleeptime)
