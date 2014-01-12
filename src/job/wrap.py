@@ -1,10 +1,11 @@
 #!/usr/bin/env python
+
 import os
 from job_common import Status
 from job_common import Type
 from sets import Set
-#from dir_config import LOCAL_ROOT_DIR
-LOCAL_ROOT_DIR = "/tmp"
+from dir_config import LOCAL_ROOT_DIR
+#LOCAL_ROOT_DIR = "/tmp"
 
 class Wrap:
 	"""Class to handle bundled tasks with Jobs at HPC.
@@ -183,8 +184,10 @@ class Wrap:
 		print "jobType: %s" %str(self._type)
 		mytemplate = self._template_path + templatename + '/' + templatename + '.wrapper'
 		##update parameters
-		parameters['WALLCLOCK'] = parameters['WALLCLOCK_WRP'] 
-		parameters['NUMPROC'] = parameters['NUMPROC_WRP']
+		#parameters['WALLCLOCK'] = parameters['WALLCLOCK_WRP'] 
+		#parameters['NUMPROC'] = parameters['NUMPROC_WRP']
+		parameters['WALLCLOCK'] = '00:10'
+		parameters['NUMPROC'] = '3'
 		parameters['TASKTYPE'] = 'WRAPPER'
 		parameters['HEADER'] = parameters['HEADER_WRP']
 		print "My Template: %s" % mytemplate
@@ -196,7 +199,6 @@ class Wrap:
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
 		for key,value in parameters.items():
 			if not key.startswith('HEADER') and key in templateContent:
-				print "%S" % key
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 

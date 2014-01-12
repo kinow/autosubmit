@@ -2,6 +2,7 @@
 import dir_config
 from sys import exit, argv
 from job.job import Job
+from job.wrap import Wrap
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
