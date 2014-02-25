@@ -106,6 +106,11 @@ class Wrap:
 		''' Return the jobs list'''
 		return	self._jobs
 	
+	def	get_jobnames(self):
+		''' Return the list of job names'''
+		jobnames = [job.get_name() for job in self._jobs]
+		return	jobnames
+	
 	def	set_jobs(self, newjobs):
 		''' Set the jobs list'''
 		self._jobs = newjobs  
@@ -187,13 +192,16 @@ class Wrap:
 		#parameters['WALLCLOCK'] = parameters['WALLCLOCK_WRP'] 
 		#parameters['NUMPROC'] = parameters['NUMPROC_WRP']
 		parameters['WALLCLOCK'] = '00:10'
-		parameters['NUMPROC'] = '3'
+		parameters['NUMPROC'] = '10'
 		parameters['TASKTYPE'] = 'WRAPPER'
 		parameters['HEADER'] = parameters['HEADER_WRP']
 		print "My Template: %s" % mytemplate
 		templateContent = file(mytemplate).read()
 		parameters['FAIL_COUNT'] = str(self._fail_count)
 		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+		#parameters['JOBS'] = str(self.has_jobs())
+		parameters['JOBS'] = str(self.get_jobnames())
+		print "Number of Jobs: ", self.has_jobs()
 
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
