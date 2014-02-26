@@ -197,6 +197,9 @@ if __name__ == "__main__":
 		logger.info("Jobs to submit: %s" % totalJobs)
 		#totalWraps = int(conf_parser.get('config','totalwraps'))
 		#logger.info("Wraps to submit: %s" % totalWraps)
+		wrapsize = int(conf_parser.get('config', 'wrapsize'))
+		logger.info("Wrap size: %s" % wrapsize)
+		parameters['WRAPSIZE'] = wrapsize
 		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 		logger.info("Sleep: %s" % safetysleeptime)
 		retrials = int(conf_parser.get('config','retrials'))
@@ -308,7 +311,7 @@ if __name__ == "__main__":
 		logger.info("There are %s wrappable jobs" % len(wrappablejobs))
 
 		## get the possible wraps (list of special jobs, containing several scripts each one)
-		wrapsavail = joblist.get_wraps(1)
+		wrapsavail = joblist.get_wraps(wrapsize)
 
 		## get the list of jobs READY, excluding the single jobs that are being wrapped. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs for those particular wrapped jobs.
 		## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.

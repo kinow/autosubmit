@@ -108,7 +108,9 @@ class Wrap:
 	
 	def	get_jobnames(self):
 		''' Return the list of job names'''
-		jobnames = [job.get_name() for job in self._jobs]
+		jobnames = ""
+		for job in self._jobs:
+			jobnames += job.get_name() + " "
 		return	jobnames
 	
 	def	set_jobs(self, newjobs):
