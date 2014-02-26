@@ -158,13 +158,13 @@ class JobList:
 		"""Returns a list of wrappable jobs"""
 		return [job for job in self._job_list if ( job.get_status() == Status.READY and job.get_type() == Type.INITIALISATION )] 
 
-	def get_wraps(self,numjobs):
+	def get_wraps(self,wrapsize):
 		"""Returns a list of Wrap objects bundling wrappable jobs"""
 		if not self.get_wrappable():
 			return []
 		else:
 			test_wrap = Wrap("testwrap", 0, Status.WAITING, self._expid)
-			test_wrap.set_jobs(self.get_wrappable())
+			test_wrap.set_jobs(self.get_wrappable()[:wrapsize])
 			test_wrap.set_parameters(self._parameters)
 			return [test_wrap]
 
