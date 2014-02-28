@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import datetime
 from job_common import Status
 from job_common import Type
 from sets import Set
@@ -191,10 +192,13 @@ class Wrap:
 		print "jobType: %s" %str(self._type)
 		mytemplate = self._template_path + templatename + '/' + templatename + '.wrapper'
 		##update parameters
-		#parameters['WALLCLOCK'] = parameters['WALLCLOCK_WRP'] 
-		#parameters['NUMPROC'] = parameters['NUMPROC_WRP']
-		parameters['WALLCLOCK'] = '00:10'
-		parameters['NUMPROC'] = '10'
+		r = datetime.datetime.strptime("00:00", "%H:%M")
+		d1 = datetime.datetime.strptime(parameters['WALLCLOCK_SIM'], "%H:%M")
+		dt1 = datetime.timedelta(hours=d1.hour,minutes=d1.minute)
+		parameters['WALLCLOCK'] =  (r + dt1 * self.has_jobs()).strftime("%H:%M")
+		parameters['NUMPROC'] = parameters['NUMPROC_SIM']
+		#parameters['WALLCLOCK'] = '00:10'
+		#parameters['NUMPROC'] = '10'
 		parameters['TASKTYPE'] = 'WRAPPER'
 		parameters['HEADER'] = parameters['HEADER_WRP']
 		print "My Template: %s" % mytemplate
