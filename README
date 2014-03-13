@@ -11,10 +11,13 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * Linux Debian
 
   on the following HPC's/Clusters:
-   * Ithaca (IC3's Cluster)
-   * MareNostrum (Barcelona Supercomputing Center)
-   * HECToR (UK Based supercomputer)
-   * Lindgren (Swedish machine)
+   * Ithaca (IC3 machine)
+   * MareNostrum (BSC machine)
+   * MareNostrum3 (BSC machine)
+   * HECToR (EPCC machine)
+   * Lindgren (PDC machine)
+   * C2A (ECMWF machine)
+   * ARCHER (EPCC machine)
 
 - Pre-requisties: These packages (python2, python-argparse, python-dateutil, 
 python-pydot, python-matplotlib, sqlite3) must be available at local machine.
