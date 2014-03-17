@@ -24,6 +24,7 @@ DEFAULT_EXPID_ITH = "i000"
 DEFAULT_EXPID_LIN = "l000"
 DEFAULT_EXPID_ECM = "e000"
 DEFAULT_EXPID_MN3 = "m000"
+DEFAULT_EXPID_ARC = "a000"
 
 def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
 	"""Convert positive integer to a base36 string."""
@@ -106,6 +107,8 @@ def last_name(HPC):
 		hpc_name = "e___"
 	elif HPC == 'marenostrum3':
 		hpc_name = "m___"
+	elif HPC == 'archer':
+		hpc_name = "a___"
 	cursor.execute('select name from experiment where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
 	row = cursor.fetchone()
 	if row == None:
@@ -128,6 +131,8 @@ def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, 
 			new_name = DEFAULT_EXPID_ECM
 		elif HPC == 'marenostrum3':
 			new_name = DEFAULT_EXPID_MN3
+		elif HPC == 'archer':
+			new_name = DEFAULT_EXPID_ARC
 	else:
 		new_name = next_name(last_exp_name)
 	set_experiment(new_name, exp_type, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
@@ -191,6 +196,8 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 		elif hpc == "marenostrum3": 
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+		elif hpc == "archer": 
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 
 	for string in replace_strings:
 		if content.find(string) == -1:
@@ -214,6 +221,9 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 	elif hpc == "marenostrum3": 
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
+	elif hpc == "archer": 
+		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
+		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 
 	return content
 
@@ -228,7 +238,7 @@ if __name__ == "__main__":
 	group1.add_argument('--new', '-n', action = "store_true")
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
-	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'), required = True)
+	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = '{master (default), v3.0.1, v2.3.0, develop-v3.0.1, develop-v2.3.0, ...}', required = True)
 	group2.add_argument('--template_name', '-T', choices = ('ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3'), type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name

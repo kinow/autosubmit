@@ -123,7 +123,7 @@ if __name__ == "__main__":
 
 
 	platform = exp_parser.get('experiment', 'HPCARCH')
-	if (platform == 'hector'):
+	if (platform == 'hector' or platform == 'archer'):
 		job_list.update_shortened_names()
 
 	job_list.save()
