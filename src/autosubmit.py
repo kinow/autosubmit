@@ -254,7 +254,7 @@ if __name__ == "__main__":
 	  
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
-		logger.info("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize)-1)) 
+		logger.info("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))) 
 		# Check queue aviailability		
 		queueavail = queue.check_host()
 		if not queueavail:
@@ -263,7 +263,7 @@ if __name__ == "__main__":
 			for job in jobinqueue:
 				job.print_job()
 				print ("Active jobs wrap: %s" % str(activejobswrap))
-				print ("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize)-1)) 
+				print ("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))) 
 				## in lindgren arch must select serial or parallel queue acording to the job type
 				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
 					queue = parallelQueue
@@ -374,7 +374,7 @@ if __name__ == "__main__":
 			logger.info("There is no job READY or available")
 			logger.info("Number of jobs ready: %s" % len(jobsavail))
 			logger.info("Number of jobs available in queue: %s" % available)
-		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue)-(activejobswrap*wrapsize)-1 <= totalJobs): 
+		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap) <= totalJobs): 
 			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
 			#s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
@@ -382,7 +382,7 @@ if __name__ == "__main__":
 
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
      
-			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue)-(activejobswrap*wrapsize)-1)]:
+			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))]:
 				print job.get_name()
 				scriptname = job.create_script(templatename) 
 				print scriptname
