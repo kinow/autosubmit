@@ -205,8 +205,13 @@ if __name__ == "__main__":
 		logger.info("Jobs to submit: %s" % totalJobs)
 		#totalWraps = int(conf_parser.get('config','totalwraps'))
 		#logger.info("Wraps to submit: %s" % totalWraps)
+		if (conf_parser.has_option('config','WRAP')):
+			wrapping = conf_parser.get('config','WRAP').lower()
+		else: 
+			wrapping = 'false'
 		if (wrapping == 'true'):
 			wrapsize = int(conf_parser.get('config', 'wrapsize'))
+			logger.info("Wrap size: %s" % wrapsize)
 		else:
 			wrapsize = 1
 		logger.info("Wrap size: %s" % wrapsize)
