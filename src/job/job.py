@@ -201,6 +201,27 @@ class Job:
 	def compare_by_name(self, other):
 		return cmp(self.get_name(), other.get_name())
 
+	def check_queued_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[0]
+		else: 
+			return 0
+
+	def check_run_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[1]
+		else: 
+			return 0
+
+	def check_failed_times(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[2]
+		else: 
+			return 0
+
 	def check_completion(self):
 		''' Check the presence of *COMPLETED file and touch a Checked or failed file '''
 		logname = self._tmp_path + self._name + '_COMPLETED'
