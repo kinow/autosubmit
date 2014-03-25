@@ -2,7 +2,6 @@
 import os
 from job_common import Status
 from job_common import Type
-from sets import Set
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
 
@@ -115,7 +114,7 @@ class Job:
 			job_list.append(job)
 			job_list += job.get_all_children()
 		# convert the list into a Set to remove duplicates and the again to a list
-		return list(Set(job_list))
+		return list(set(job_list))
 
 	def get_fail_count(self):
 		"""Returns the number	of	failures"""
