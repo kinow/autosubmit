@@ -333,58 +333,6 @@ if __name__ == "__main__":
 		wrappablejobs = joblist.get_wrappable(wrapsize) 
 		logger.info("There are %s wrappable jobs" % len(wrappablejobs))
 
-<<<<<<< HEAD
-		## get the possible wraps (list of special jobs, containing several scripts each one)
-		wrapsavail = joblist.get_wraps(wrapsize,wrapid)
-		if not wrapsavail:
-			logger.info("There is no wrap available")
-		
-		for wrap in wrapsavail:
-			wraplist.append(wrap)
-			print wrap.get_name()
-			wrappername = wrap.create_script("common")
-			print wrappername
-			queue = remoteQueue
-			logger.info("Submitting wrap to parallel queue...")
-			print("Submitting wrap to parallal queue...")
-			queueavail = queue.check_host()
-			if not queueavail:
-				logger.info("There is no queue available")
-			else:
-				for jobwrapped in wrap.get_jobs():
-					scriptname = jobwrapped.create_script(templatename)
-					queue.send_script(scriptname)
-				queue.send_script(wrappername)
-				wrap_id = queue.submit_job(wrappername)
-				wrap.set_id(wrap_id)
-				wrap.set_status(Status.SUBMITTED)
-				activejobswrap = 1
-				wrapid += 1
-		
-		for wrap in wraplist:
-			queue = remoteQueue
-			wrap.print_wrap()
-			logger.info("Checking wrap status...")
-			print("Checking wrap status...")
-			time.sleep(safetysleeptime)
-			queueavail = queue.check_host()
-			if not queueavail:
-				logger.info("There is no queue available")
-			else:
-				status = queue.check_job(wrap.get_id(), wrap.get_status())
-				if(status == Status.COMPLETED):
-					logger.debug("This wrap seems to have completed...checking")
-					queue.get_completed_files(job.get_name())
-					wrap.check_completion()
-					wraplist.remove(wrap)
-					activejobswrap = 0
-				else:
-					wrap.set_status(status)
-
-		## get the list of jobs READY, excluding the single jobs that are being wrapped. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs for those particular wrapped jobs.
-		## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.
-		jobsavail = joblist.get_available(wrapsize)
-=======
 		if (wrapping == 'true'):
 			## get the possible wraps (list of special jobs, containing several scripts each one)
 			wrapsavail = joblist.get_wraps(wrapsize,wrapid)
