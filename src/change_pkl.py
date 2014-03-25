@@ -97,7 +97,7 @@ if __name__ == '__main__':
 	group1 = parser.add_mutually_exclusive_group(required = True)
 	group1.add_argument('-l', '--list', type = str, help='Alternative 1: Supply the list of job names to be changed. Default = "Any". LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
 	group1.add_argument('-f', '--filter', action="store_true", help='Alternative 2: Supply a filter for the job list. See help of filter arguments: chunk filter, status filter or type filter')
-	group2 = parser.add_mutually_exclusive_group(required = True)#'filter arguments')
+	group2 = parser.add_mutually_exclusive_group(required = False)
 	group2.add_argument('-fc', '--filter_chunks', type = str, help = 'Supply the list of chunks to change the status. Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
 	group2.add_argument('-fs', '--filter_status', type = str, choices = ('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'), help = 'Select the original status to filter the list of jobs')
 	group2.add_argument('-ft', '--filter_type', type = str, choices = ('Any', 'LOCALSETUP', 'REMOTESETUP', 'INITIALISATION', 'SIMULATION', 'POSTPROCESSING', 'CLEANING', 'LOCALTRANSFER'), help = 'Select the job type to filter the list of jobs')
@@ -132,6 +132,10 @@ if __name__ == '__main__':
 						job.set_status(get_status(final))
 						print "CHANGED: job: " + job.get_name() + " status to: " + final
 						#change also trans
+						jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
+						job = l1.get_job_by_name(jobname_trans)
+						job.set_status(get_status(final))
+						print "CHANGED: job: " + job.get_name() + " status to: " + final
 						#[...]
 						for chunk in member['cs']:
 							jobname_sim = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk) + "_sim"
@@ -189,20 +193,14 @@ if __name__ == '__main__':
 					job.set_status(get_status(final))
 					print "CHANGED: job: " + job.get_name() + " status to: " + final
 
+
+	if(save):
 		setrecursionlimit(50000)
 		l1.update_list()
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
-
-
-
-	if(save):
-		l1.update_from_file()
+		print "Saving JobList: " + LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
 	else:
-		l1.update_from_file(False)
-
-	if(save):
-		setrecursionlimit(50000)
-		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
+		print "Changes NOT saved to the JobList!!!!:  use -s option to save"
 
 	GenerateOutput(expid, l1.get_job_list())
 
