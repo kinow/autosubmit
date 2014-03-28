@@ -221,6 +221,20 @@ class Job:
 			return open(logname).readline().split()[2]
 		else: 
 			return 0
+	
+	def check_fail_queued_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[3]
+		else: 
+			return 0
+
+	def check_fail_run_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[4]
+		else: 
+			return 0
 
 	def check_completion(self):
 		''' Check the presence of *COMPLETED file and touch a Checked or failed file '''
