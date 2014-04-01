@@ -12,6 +12,7 @@ from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
+from queue.arqueue import ArQueue
 import dir_config
 from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
@@ -71,6 +72,10 @@ if __name__ == "__main__":
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
 		rerun = 'false'
+	if (conf_parser.has_option('config','WRAP')):
+		wrapping = conf_parser.get('config','WRAP').lower()
+	else: 
+		wrapping = 'false'
 	
 	expdef = []
 	incldef = []
@@ -102,6 +107,9 @@ if __name__ == "__main__":
 	elif(hpcarch == "hector"):
 	   remoteQueue = HtQueue(expid)
 	   remoteQueue.set_host("ht-" + hpcproj)
+	elif(hpcarch == "archer"):
+	   remoteQueue = ArQueue(expid)
+	   remoteQueue.set_host("ar-" + hpcproj)
 	## in lindgren arch must set-up both serial and parallel queues
 	elif(hpcarch == "lindgren"):
 	   serialQueue = ElQueue(expid)
@@ -185,6 +193,11 @@ if __name__ == "__main__":
 	#first job goes to the local Queue
 	queue = localQueue
 
+	#Minguuuuuu caution
+	wraplist = list()
+	activejobswrap = 0
+	wrapid = 0
+
 	# Main loop. Finishing when all jobs have been submitted
 	while joblist.get_active() :
 		active = len(joblist.get_running())
@@ -195,6 +208,19 @@ if __name__ == "__main__":
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
+		#totalWraps = int(conf_parser.get('config','totalwraps'))
+		#logger.info("Wraps to submit: %s" % totalWraps)
+		if (conf_parser.has_option('config','WRAP')):
+			wrapping = conf_parser.get('config','WRAP').lower()
+		else: 
+			wrapping = 'false'
+		if (wrapping == 'true'):
+			wrapsize = int(conf_parser.get('config', 'wrapsize'))
+			logger.info("Wrap size: %s" % wrapsize)
+		else:
+			wrapsize = 1
+		logger.info("Wrap size: %s" % wrapsize)
+		parameters['WRAPSIZE'] = wrapsize
 		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 		logger.info("Sleep: %s" % safetysleeptime)
 		retrials = int(conf_parser.get('config','retrials'))
@@ -244,7 +270,7 @@ if __name__ == "__main__":
 	  
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
-		logger.info("Number of jobs in queue: %s" % len(jobinqueue)) 
+		logger.info("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))) 
 		# Check queue aviailability		
 		queueavail = queue.check_host()
 		if not queueavail:
@@ -252,6 +278,8 @@ if __name__ == "__main__":
 		else:
 			for job in jobinqueue:
 				job.print_job()
+				print ("Active jobs wrap: %s" % str(activejobswrap))
+				print ("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))) 
 				## in lindgren arch must select serial or parallel queue acording to the job type
 				if(hpcarch == "lindgren" and job.get_type() == Type.SIMULATION):
 					queue = parallelQueue
@@ -302,9 +330,63 @@ if __name__ == "__main__":
 		joblist.update_list()
 		activejobs = joblist.get_active()
 		logger.info("There are %s active jobs" % len(activejobs))
+		wrappablejobs = joblist.get_wrappable(wrapsize) 
+		logger.info("There are %s wrappable jobs" % len(wrappablejobs))
 
-		## get the list of jobs READY
-		jobsavail = joblist.get_ready()
+		if (wrapping == 'true'):
+			## get the possible wraps (list of special jobs, containing several scripts each one)
+			wrapsavail = joblist.get_wraps(wrapsize,wrapid)
+			if not wrapsavail:
+				logger.info("There is no wrap available")
+			
+			for wrap in wrapsavail:
+				wraplist.append(wrap)
+				print wrap.get_name()
+				wrappername = wrap.create_script("common")
+				print wrappername
+				queue = remoteQueue
+				logger.info("Submitting wrap to parallel queue...")
+				print("Submitting wrap to parallal queue...")
+				queueavail = queue.check_host()
+				if not queueavail:
+					logger.info("There is no queue available")
+				else:
+					for jobwrapped in wrap.get_jobs():
+						scriptname = jobwrapped.create_script(templatename)
+						queue.send_script(scriptname)
+					queue.send_script(wrappername)
+					wrap_id = queue.submit_job(wrappername)
+					wrap.set_id(wrap_id)
+					wrap.set_status(Status.SUBMITTED)
+					activejobswrap = 1
+					wrapid += 1
+			
+			for wrap in wraplist:
+				queue = remoteQueue
+				wrap.print_wrap()
+				logger.info("Checking wrap status...")
+				print("Checking wrap status...")
+				time.sleep(safetysleeptime)
+				queueavail = queue.check_host()
+				if not queueavail:
+					logger.info("There is no queue available")
+				else:
+					status = queue.check_job(wrap.get_id(), wrap.get_status())
+					if(status == Status.COMPLETED):
+						logger.debug("This wrap seems to have completed...checking")
+						queue.get_completed_files(job.get_name())
+						wrap.check_completion()
+						wraplist.remove(wrap)
+						activejobswrap = 0
+					else:
+						wrap.set_status(status)
+
+			## get the list of jobs READY, excluding the single jobs that are being wrapped. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs for those particular wrapped jobs.
+			## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.
+			jobsavail = joblist.get_available(wrapsize)
+		else:
+			## get the list of jobs READY
+			jobsavail = joblist.get_ready()
 
 		if not queueavail:
 			logger.info("There is no queue available")
@@ -312,7 +394,7 @@ if __name__ == "__main__":
 			logger.info("There is no job READY or available")
 			logger.info("Number of jobs ready: %s" % len(jobsavail))
 			logger.info("Number of jobs available in queue: %s" % available)
-		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue) <= totalJobs): 
+		elif (min(available, len(jobsavail)) > 0 and len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap) <= totalJobs): 
 			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
 			#s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
@@ -320,7 +402,7 @@ if __name__ == "__main__":
 
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
      
-			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue))]:
+			for job in list_of_jobs_avail[0:min(available, len(jobsavail), totalJobs-len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))]:
 				print job.get_name()
 				scriptname = job.create_script(templatename) 
 				print scriptname
@@ -351,7 +433,15 @@ if __name__ == "__main__":
 					job.set_id(job_id)
 					##set status to "submitted"
 					job.set_status(Status.SUBMITTED)
+		
+		#if (min(wrapsavailable, len(wrapsavail)) == 0):
+			#logger.info("There is no wrap READY or available")
+			#logger.info("Number of wraps ready: %s" % len(wrapsavail))
+			#logger.info("Number of wraps available in queue: %s" % wrapsavailable)
+		#elif (min(wrapsavailable, len(wrapsavail)) > 0 and len(wrapsinqueue) <= totalWraps): 
+			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
 
+		
 		time.sleep(safetysleeptime)
  
 logger.info("Finished job submission")

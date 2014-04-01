@@ -18,6 +18,7 @@ from queue.psqueue import PsQueue
 from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
+from queue.arqueue import ArQueue
 from sys import setrecursionlimit
 
 if __name__ == '__main__':
@@ -86,6 +87,12 @@ if __name__ == '__main__':
 			remoteQueue.update_cmds()
 		elif sc == 'h':
 			remoteQueue = HtQueue(expid)
+			remoteQueue.set_scratch(scratch_dir)
+			remoteQueue.set_project(hpcproj)
+			remoteQueue.set_user(hpcuser)
+			remoteQueue.update_cmds()
+		elif sc == 'a':
+			remoteQueue = ArQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)

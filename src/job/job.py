@@ -2,7 +2,6 @@
 import os
 from job_common import Status
 from job_common import Type
-from sets import Set
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
 
@@ -16,7 +15,7 @@ class Job:
 		self._name = name
 		self._long_name = name
 		n = name.split('_')
-		##workaround limit 15 characters limit for variables in headers (i.e. job name in hector PBS pro header)
+		##workaround limit 15 characters limit for variables in headers (i.e. job name in hector and archer PBS pro header)
 		if (len(n)==5):
 			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
 		elif (len(n)==4):
@@ -115,7 +114,7 @@ class Job:
 			job_list.append(job)
 			job_list += job.get_all_children()
 		# convert the list into a Set to remove duplicates and the again to a list
-		return list(Set(job_list))
+		return list(set(job_list))
 
 	def get_fail_count(self):
 		"""Returns the number	of	failures"""
