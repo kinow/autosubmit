@@ -24,24 +24,24 @@ def CreateBarDiagram(expid, joblist, output_file):
 		for rect in rects:
 			height = rect.get_height()
 			if (height > max_time):
-				ax[plot-1].text(rect.get_x()+rect.get_width()/2., 1.05*max_time, '%d'%int(height),ha='center', va='bottom', rotation='vertical', fontsize=8)
+				ax[plot-1].text(rect.get_x()+rect.get_width()/2., 1.05*max_time, '%d'%int(height),ha='center', va='bottom', rotation='vertical', fontsize=9)
 
 
 	def failabel(rects):
 		for rect in rects:
 			height = rect.get_height()
 			if (height > 0):
-				ax[plot-1].text(rect.get_x()+rect.get_width()/2., 1.05*height, '%d'%int(height),ha='center', va='bottom', fontsize=8)
+				ax[plot-1].text(rect.get_x()+rect.get_width()/2., 1+height, '%d'%int(height),ha='center', va='bottom', fontsize=9)
 			
 	average_run_time=sum([float(job.check_run_time())/3600 for job in joblist])/len(joblist)
 	max_time=max(max([float(job.check_run_time())/3600 for job in joblist]),max([float(job.check_queued_time())/3600 for job in joblist]))
-	min_time=min([float(job.check_run_time())/3600-average_run_time for job in joblist])
+	min_time=min([int(float(job.check_run_time())/3600-average_run_time) for job in joblist])
 	#print average_run_time
 	l1=0
 	l2=len(joblist)
 	#print [int(job.check_queued_time())/3600 for job in joblist[l1:l2]]
 	#print [int(job.check_run_time())/3600 for job in joblist[l1:l2]]
-	#print [int(job.check_run_time())/3600-average_run_time for job in joblist[l1:l2]]
+	#print [int(int(job.check_run_time())/3600-average_run_time) for job in joblist[l1:l2]]
 	#print [int(job.check_failed_times()) for job in joblist[l1:l2]]
 	MAX=12.0
 	N=len(joblist)
@@ -73,8 +73,8 @@ def CreateBarDiagram(expid, joblist, output_file):
 			fail_queued = fail_queued+[0]*int(MAX-len(joblist[l1:l2]))
 			fail_run = fail_run+[0]*int(MAX-len(joblist[l1:l2]))
 		#	ind = np.arange(len([int(job.check_queued_time())/3600 for job in joblist[l1:l2]]))
-		rects1 = ax[plot-1].bar(ind, run , width, color='r')
-		rects2 = ax[plot-1].bar(ind+width, queued, width, color='g')
+		rects1 = ax[plot-1].bar(ind, queued, width, color='r')
+		rects2 = ax[plot-1].bar(ind+width, run, width, color='g')
 		rects3 = ax[plot-1].bar(ind+width*2, excess, width, color='b')
 		rects4 = ax[plot-1].bar(ind+width*3, failed_jobs, width, color='y')
 		rects5 = ax[plot-1].bar(ind+width*4, fail_queued, width, color='m')
@@ -86,6 +86,8 @@ def CreateBarDiagram(expid, joblist, output_file):
 		ax[plot-1].set_position([box.x0, box.y0, box.width * 0.8, box.height*0.8])
 		ax[plot-1].set_title(expid, fontsize=20, fontweight='bold')
 		lgd = ax[plot-1].legend( (rects1[0], rects2[0], rects3[0], rects4[0], rects5[0], rects6[0]), ('Queued (h)', 'Run (h)', 'Excess (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'), loc="upper left", bbox_to_anchor=(1,1) )
+		autolabel(rects1)
+		autolabel(rects2)
 		failabel(rects4)
 		autolabel(rects5)
 		autolabel(rects6)
