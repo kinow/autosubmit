@@ -312,7 +312,8 @@ if __name__ == "__main__":
 
 		## get the list of jobs READY, excluding the single jobs that are being wrapped. The create_script is the python wrapper and the WCT and number of porcessors is a sumatori of all single jobs for those particular wrapped jobs.
 		## submitting a wrap means sending the python script + sending several single scripts + submitting the special job.
-		jobsavail = joblist.get_available()
+		#jobsavail = joblist.get_available()
+		jobsavail = joblist.get_ready()
 
 		if not queueavail:
 			logger.info("There is no queue available")
@@ -367,24 +368,24 @@ if __name__ == "__main__":
 		#elif (min(wrapsavailable, len(wrapsavail)) > 0 and len(wrapsinqueue) <= totalWraps): 
 			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
 
-		for wrap in wrapsavail:
-			print wrap.get_name()
-			wrappername = wrap.create_script("common")
-			print wrappername
-			queue = remoteQueue
-			logger.info("Submitting wrap to parallel queue...")
-			print("Submitting wrap to parallal queue...")
-			queueavail = queue.check_host()
-			if not queueavail:
-				logger.info("There is no queue available")
-			else:
-				for jobwrapped in wrap.get_jobs():
-					scriptname = jobwrapped.create_script(templatename)
-					queue.send_script(scriptname)
-				queue.send_script(wrappername)
-				wrap_id = queue.submit_job(wrappername)
-				wrap.set_id(wrap_id)
-				wrap.set_status(Status.SUBMITTED)
+		#for wrap in wrapsavail:
+			#print wrap.get_name()
+			#wrappername = wrap.create_script("common")
+			#print wrappername
+			#queue = remoteQueue
+			#logger.info("Submitting wrap to parallel queue...")
+			##print("Submitting wrap to parallal queue...")
+			#queueavail = queue.check_host()
+			#if not queueavail:
+				#logger.info("There is no queue available")
+			#else:
+				#for jobwrapped in wrap.get_jobs():
+					##scriptname = jobwrapped.create_script(templatename)
+					#queue.send_script(scriptname)
+				#queue.send_script(wrappername)
+				#wrap_id = queue.submit_job(wrappername)
+				#wrap.set_id(wrap_id)
+				#wrap.set_status(Status.SUBMITTED)
 
 		time.sleep(safetysleeptime)
  

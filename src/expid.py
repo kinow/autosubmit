@@ -228,12 +228,12 @@ if __name__ == "__main__":
 	group1.add_argument('--new', '-n', action = "store_true")
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
-	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3'), required = True)
-	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
-	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = '{master (default), v3.0.1, v2.3.0, develop-v3.0.1, develop-v2.3.0, ...}', required = True)
-	group2.add_argument('--template_name', '-T', choices = ('ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3'), type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = '{master (defualt), develop, develop-1.1, ...}') ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = '{master (default), develop, ...}') 
+	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
+	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
+	group2.add_argument('--model_branch', '-m', type = str, help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
+	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = "{'master' (defualt), 'develop', ...} Check available branches here: https://dev.cfu.local/templates.git") ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = "{'master' (default), 'develop', ...} Check available branches here: https://dev.cfu.local/ocean_diagnostics.git") 
 	group2.add_argument('--description', '-d', type = str, required = True)
 
 	args = parser.parse_args()
@@ -253,28 +253,31 @@ if __name__ == "__main__":
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
 		os.mkdir(DB_DIR + exp_id + '/git')
-		print "Checking out templates and config files..."
-		if args.template_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+		if (args.model_name == 'dummy'):# or args.template_name == 'dummy'):
+			shutil.copytree("../templates", DB_DIR + exp_id + "/git/templates")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
-		
-		##now ocean diagnostics are checked out with a git clone 
-		print "Checking out ocean diagnostics..."
-		if args.ocean_diagnostics_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
-		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics") 
+			print "Checking out templates and config files..."
+			if args.template_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+			
+			##now ocean diagnostics are checked out with a git clone 
+			print "Checking out ocean diagnostics..."
+			if args.ocean_diagnostics_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics") 
 
-		print "Checking out model sources..."
-		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
-		#cloned_repo = repo.clone(DB_DIR + exp_id)
-		#if args.model_branch:
-		#	cloned_repo.checkout('head', b=args.model_branch) 
-		if args.model_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
-		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
+			print "Checking out model sources..."
+			#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
+			#cloned_repo = repo.clone(DB_DIR + exp_id)
+			#if args.model_branch:
+			#	cloned_repo.checkout('head', b=args.model_branch) 
+			if args.model_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 
 		##obtain version for autosubmit being used in expid.py step
 		##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
@@ -320,7 +323,10 @@ if __name__ == "__main__":
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
-	shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
+	#shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
+	content = file("../conf/archdef/" + args.HPC + ".conf").read()
+	content += file("../conf/archdef/common.conf").read()
+	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
 	##get from repository
 	#if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
 	#	shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
