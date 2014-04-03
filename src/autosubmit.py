@@ -441,7 +441,6 @@ if __name__ == "__main__":
 		#elif (min(wrapsavailable, len(wrapsavail)) > 0 and len(wrapsinqueue) <= totalWraps): 
 			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
 
-		
 		time.sleep(safetysleeptime)
  
 logger.info("Finished job submission")
