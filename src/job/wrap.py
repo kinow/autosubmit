@@ -4,7 +4,6 @@ import os
 import datetime
 from job_common import Status
 from job_common import Type
-from sets import Set
 from dir_config import LOCAL_ROOT_DIR
 #LOCAL_ROOT_DIR = "/tmp"
 
