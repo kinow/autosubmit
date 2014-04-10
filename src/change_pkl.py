@@ -97,7 +97,7 @@ if __name__ == '__main__':
 	group1 = parser.add_mutually_exclusive_group(required = True)
 	group1.add_argument('-l', '--list', type = str, help='Alternative 1: Supply the list of job names to be changed. Default = "Any". LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
 	group1.add_argument('-f', '--filter', action="store_true", help='Alternative 2: Supply a filter for the job list. See help of filter arguments: chunk filter, status filter or type filter')
-	group2 = parser.add_mutually_exclusive_group(required = True)#'filter arguments')
+	group2 = parser.add_mutually_exclusive_group()
 	group2.add_argument('-fc', '--filter_chunks', type = str, help = 'Supply the list of chunks to change the status. Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
 	group2.add_argument('-fs', '--filter_status', type = str, choices = ('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'), help = 'Select the original status to filter the list of jobs')
 	group2.add_argument('-ft', '--filter_type', type = str, choices = ('Any', 'LOCALSETUP', 'REMOTESETUP', 'INITIALISATION', 'SIMULATION', 'POSTPROCESSING', 'CLEANING', 'LOCALTRANSFER'), help = 'Select the job type to filter the list of jobs')

@@ -201,6 +201,48 @@ class Job:
 	def compare_by_name(self, other):
 		return cmp(self.get_name(), other.get_name())
 
+	def check_end_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[0]
+		else: 
+			return 0
+
+	def check_queued_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[1]
+		else: 
+			return 0
+
+	def check_run_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[2]
+		else: 
+			return 0
+
+	def check_failed_times(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[3]
+		else: 
+			return 0
+	
+	def check_fail_queued_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[4]
+		else: 
+			return 0
+
+	def check_fail_run_time(self):
+		logname = self._tmp_path + self._name + '_COMPLETED'
+		if(os.path.exists(logname)):
+			return open(logname).readline().split()[5]
+		else: 
+			return 0
+
 	def check_completion(self):
 		''' Check the presence of *COMPLETED file and touch a Checked or failed file '''
 		logname = self._tmp_path + self._name + '_COMPLETED'
@@ -339,8 +381,13 @@ class Job:
 
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+		# following values to be replaced that contain inside other values between %% to be replaced later
+		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
+		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
+		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
+		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
 		for key,value in parameters.items():
-			if not key.startswith('HEADER') and key in templateContent:
+			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 

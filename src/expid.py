@@ -139,9 +139,9 @@ def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, 
 	print 'The new experiment "%s" has been registered.' % new_name
 	return new_name
 
-def copy_experiment(name, HPC, description):
+def copy_experiment(name, HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	new_exp = get_experiment(name)
-	new_name = new_experiment(new_exp[1], HPC, description)
+	new_name = new_experiment(new_exp[1], HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
 	return new_name
 
 def check_db():
@@ -233,17 +233,22 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 #############################
 if __name__ == "__main__":
 
+	##obtain version for autosubmit being used in expid.py step
+	##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
+	(status, output) = getstatusoutput("git rev-parse HEAD")
+	autosubmit_version = output
+
 	parser = argparse.ArgumentParser()
 	group1 = parser.add_mutually_exclusive_group(required = True)
 	group1.add_argument('--new', '-n', action = "store_true")
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
-	group2.add_argument('--model_name', '-M', choices = ('ecearth', 'nemo'), required = True) 
-	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = '{master (default), v3.0.1, v2.3.0, develop-v3.0.1, develop-v2.3.0, ...}', required = True)
-	group2.add_argument('--template_name', '-T', choices = ('ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3'), type = str, default = 'master', required = True) ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = '{master (defualt), develop, develop-1.1, ...}') ##find a way to allow only compatible ones with model_name
-	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = '{master (default), develop, ...}') 
+	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
+	group2.add_argument('--model_branch', '-m', type = str, help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
+	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = "{'master' (defualt), 'develop', ...} Check available branches here: https://dev.cfu.local/templates.git") ##find a way to allow only compatible ones with model_name
+	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = "{'master' (default), 'develop', ...} Check available branches here: https://dev.cfu.local/ocean_diagnostics.git") 
 	group2.add_argument('--description', '-d', type = str, required = True)
 
 	args = parser.parse_args()
@@ -263,33 +268,31 @@ if __name__ == "__main__":
 		##now templates are checked out with a git clone 
 		##destination path must be an existing empty directory
 		os.mkdir(DB_DIR + exp_id + '/git')
-		print "Checking out templates and config files..."
-		if args.template_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+		if (args.model_name == 'dummy'):# or args.template_name == 'dummy'):
+			shutil.copytree("../templates", DB_DIR + exp_id + "/git/templates")
 		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
-		
-		##now ocean diagnostics are checked out with a git clone 
-		print "Checking out ocean diagnostics..."
-		if args.ocean_diagnostics_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
-		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics") 
+			print "Checking out templates and config files..."
+			if args.template_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
+			
+			##now ocean diagnostics are checked out with a git clone 
+			print "Checking out ocean diagnostics..."
+			if args.ocean_diagnostics_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics") 
 
-		print "Checking out model sources..."
-		#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
-		#cloned_repo = repo.clone(DB_DIR + exp_id)
-		#if args.model_branch:
-		#	cloned_repo.checkout('head', b=args.model_branch) 
-		if args.model_branch is not 'master':
-			(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
-		else:
-			(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
-
-		##obtain version for autosubmit being used in expid.py step
-		##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
-		(status, output) = getstatusoutput("git rev-parse HEAD")
-		autosubmit_version = output
+			print "Checking out model sources..."
+			#repo = Repo(GIT_DIR + "/" + args.model_name + ".git")
+			#cloned_repo = repo.clone(DB_DIR + exp_id)
+			#if args.model_branch:
+			#	cloned_repo.checkout('head', b=args.model_branch) 
+			if args.model_branch is not 'master':
+				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
+			else:
+				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
@@ -314,7 +317,7 @@ if __name__ == "__main__":
 
 	elif args.copy:
 		if os.path.exists(DB_DIR + args.copy):
-			exp_id = copy_experiment(args.copy, args.HPC, args.description)
+			exp_id = copy_experiment(args.copy, args.HPC, args.model_branch, args.template_name, args.template_branch, args.ocean_diagnostics_branch, args.description)
 			os.mkdir(DB_DIR + exp_id)
 			os.mkdir(DB_DIR + exp_id + '/conf')
 			print "Copying previous experiment config and templates directories"
@@ -325,15 +328,14 @@ if __name__ == "__main__":
 					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
 					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name, autosubmit_version)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
-			#shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
+			shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
-	shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
-	##get from repository
-	#if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
-	#	shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
+	content = file("../conf/archdef/" + args.HPC + ".conf").read()
+	content += file("../conf/archdef/common.conf").read()
+	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."
