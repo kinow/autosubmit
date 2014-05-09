@@ -224,7 +224,6 @@ if __name__ == "__main__":
 		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 		logger.info("Sleep: %s" % safetysleeptime)
 		retrials = int(conf_parser.get('config','retrials'))
-		parameters['RETRIALS'] = retrials 
 		logger.info("Number of retrials: %s" % retrials)
 		exp_parser = expdef_parser(exp_parser_file)
 		arch_parser = archdef_parser(arch_parser_file)
@@ -247,6 +246,7 @@ if __name__ == "__main__":
 		for item in incldef:
 			parameters[item[0]] = file(item[1]).read()
 
+		parameters['RETRIALS'] = retrials 
 		parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
    		joblist.update_parameters(parameters)
 
