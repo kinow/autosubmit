@@ -139,9 +139,9 @@ def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, 
 	print 'The new experiment "%s" has been registered.' % new_name
 	return new_name
 
-def copy_experiment(name, HPC, description):
+def copy_experiment(name, HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description):
 	new_exp = get_experiment(name)
-	new_name = new_experiment(new_exp[1], HPC, description)
+	new_name = new_experiment(new_exp[1], HPC, model_branch, template_name, template_branch, ocean_diagnostics_branch, description)
 	return new_name
 
 def check_db():
@@ -233,6 +233,11 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 #############################
 if __name__ == "__main__":
 
+	##obtain version for autosubmit being used in expid.py step
+	##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
+	(status, output) = getstatusoutput("git rev-parse HEAD")
+	autosubmit_version = output
+
 	parser = argparse.ArgumentParser()
 	group1 = parser.add_mutually_exclusive_group(required = True)
 	group1.add_argument('--new', '-n', action = "store_true")
@@ -289,11 +294,6 @@ if __name__ == "__main__":
 			else:
 				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
 
-		##obtain version for autosubmit being used in expid.py step
-		##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
-		(status, output) = getstatusoutput("git rev-parse HEAD")
-		autosubmit_version = output
-
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
 		##autosubmit config and architecture copyed from AS.
@@ -317,10 +317,10 @@ if __name__ == "__main__":
 
 	elif args.copy:
 		if os.path.exists(DB_DIR + args.copy):
-			exp_id = copy_experiment(args.copy, args.HPC, args.description)
+			exp_id = copy_experiment(args.copy, args.HPC, args.model_branch, args.template_name, args.template_branch, args.ocean_diagnostics_branch, args.description)
 			os.mkdir(DB_DIR + exp_id)
 			os.mkdir(DB_DIR + exp_id + '/conf')
-			print "Copying previous experiment config and templates directories"
+			print "Copying previous experiment config directories"
 			files = os.listdir(DB_DIR + args.copy + "/conf")
 			for filename in files:
 				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
@@ -328,18 +328,30 @@ if __name__ == "__main__":
 					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
 					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name, autosubmit_version)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
-			#shutil.copytree(DB_DIR+args.copy+"/templates", DB_DIR + exp_id + "/templates")
+			# think in a way to do that for experiments which git directory had been cleaned ( git clone ? )
+			dirs = os.listdir(DB_DIR + args.copy + "/git")
+			if (dirs):
+				print "Cloning previous experiment templates, ocean diagnostics and model sources..."
+				# what to do with configs that are coming from new template ?
+				for dirname in dirs:
+					if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname):
+						(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+			else:
+				print "Checking out templates and config files..."
+				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")		
+				print "Checking out ocean diagnostics..."
+				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
+				print "Checking out model sources..."
+				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
+				
+			#shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
-	#shutil.copy('../conf/archdef/' + args.HPC + ".conf", DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf")
 	content = file("../conf/archdef/" + args.HPC + ".conf").read()
 	content += file("../conf/archdef/common.conf").read()
 	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
-	##get from repository
-	#if args.template_name == "ecearth" or args.template_name == "ecearth3" or args.template_name == "nemo":
-	#	shutil.copy(DB_DIR + exp_id + '/templates/ocean_diagnostics/common_ocean_post.txt', DB_DIR + exp_id + "/templates/")
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."

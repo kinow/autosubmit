@@ -210,8 +210,13 @@ class Wrap:
 
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+		# following values to be replaced that contain inside other values between %% to be replaced later
+		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
+		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
+		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
+		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
 		for key,value in parameters.items():
-			if not key.startswith('HEADER') and key in templateContent:
+			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
