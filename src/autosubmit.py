@@ -220,7 +220,6 @@ if __name__ == "__main__":
 		else:
 			wrapsize = 1
 		logger.info("Wrap size: %s" % wrapsize)
-		parameters['WRAPSIZE'] = wrapsize
 		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 		logger.info("Sleep: %s" % safetysleeptime)
 		retrials = int(conf_parser.get('config','retrials'))
@@ -246,6 +245,7 @@ if __name__ == "__main__":
 		for item in incldef:
 			parameters[item[0]] = file(item[1]).read()
 
+		parameters['WRAPSIZE'] = wrapsize
 		parameters['RETRIALS'] = retrials 
 		parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
    		joblist.update_parameters(parameters)
@@ -318,6 +318,8 @@ if __name__ == "__main__":
 					parameters[item[0]] = item[1]
 				for item in incldef:
 					parameters[item[0]] = file(item[1]).read()
+				parameters['WRAPSIZE'] = wrapsize
+				parameters['RETRIALS'] = retrials 
 				parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
 				joblist.update_parameters(parameters)
 
