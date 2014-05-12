@@ -320,7 +320,7 @@ if __name__ == "__main__":
 			exp_id = copy_experiment(args.copy, args.HPC, args.model_branch, args.template_name, args.template_branch, args.ocean_diagnostics_branch, args.description)
 			os.mkdir(DB_DIR + exp_id)
 			os.mkdir(DB_DIR + exp_id + '/conf')
-			print "Copying previous experiment config and templates directories"
+			print "Copying previous experiment config directories"
 			files = os.listdir(DB_DIR + args.copy + "/conf")
 			for filename in files:
 				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
@@ -328,7 +328,23 @@ if __name__ == "__main__":
 					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
 					content = prepare_conf_files(content, exp_id, args.HPC, args.template_name, autosubmit_version)
 					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
-			shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
+			# think in a way to do that for experiments which git directory had been cleaned ( git clone ? )
+			dirs = os.listdir(DB_DIR + args.copy + "/git")
+			if (dirs):
+				print "Cloning previous experiment templates, ocean diagnostics and model sources..."
+				# what to do with configs that are coming from new template ?
+				for dirname in dirs:
+					if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname):
+						(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+			else:
+				print "Checking out templates and config files..."
+				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")		
+				print "Checking out ocean diagnostics..."
+				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
+				print "Checking out model sources..."
+				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
+				
+			#shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
