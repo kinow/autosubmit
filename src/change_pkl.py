@@ -194,12 +194,14 @@ if __name__ == '__main__':
 					print "CHANGED: job: " + job.get_name() + " status to: " + final
 
 
+	setrecursionlimit(50000)
+	
 	if(save):
-		setrecursionlimit(50000)
 		l1.update_list()
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
 		print "Saving JobList: " + LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
 	else:
+		l1.update_list(False)
 		print "Changes NOT saved to the JobList!!!!:  use -s option to save"
 
 	GenerateOutput(expid, l1.get_job_list())
