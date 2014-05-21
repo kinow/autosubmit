@@ -194,7 +194,9 @@ class Wrap:
 		##caution: H is limited to 24 in strptime
 		d1 = datetime.datetime.strptime(parameters['WALLCLOCK_SIM'], "%H:%M")
 		dt1 = datetime.timedelta(hours=d1.hour,minutes=d1.minute)
-		hours, remainder = divmod((dt1 * self.has_jobs()).total_seconds(), 3600)
+		##cation: total_seconds new in python 2.7
+		#hours, remainder = divmod((dt1 * self.has_jobs()).total_seconds(), 3600)
+		hours, remainder = divmod((dt1.microseconds + (dt1.seconds + dt1.days * 24 * 3600) * 10**6) / 10**6 * self.has_jobs(), 3600)
 		minutes, seconds = divmod(remainder, 60)
 		##caution: hours limited to 99 ?
 		parameters['WALLCLOCK'] = "%02d:%02d" % (hours, minutes)
