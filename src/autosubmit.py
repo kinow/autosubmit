@@ -21,6 +21,7 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
+from check_compatibility import check_compatibility
 
 ####################
 # Global Variables
@@ -49,7 +50,16 @@ if __name__ == "__main__":
 	if(len(sys.argv) != 2):
 		print "Missing expid\n"
 		sys.exit(1)
- 
+
+	autosubmit_version_filename = "../VERSION"
+	template_version_filename = LOCAL_ROOT_DIR + "/" + sys.argv[1] + "/git/templates/VERSION"
+	
+	if not check_compatibility(autosubmit_version_filename, template_version_filename):
+		print "Compatibility check FAILED!"
+		print_compatibility()
+		sys.exit(1)
+	else:
+		print "Compatibility check PASSED!"
 
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
