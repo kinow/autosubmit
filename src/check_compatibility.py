@@ -51,3 +51,4 @@ if __name__ == "__main__":
 	else:
 		print "Compatibility check FAILED!"
 		print_compatibility()
+		print "WARNING: running after FAILED compatibility check is at your own risk!!!"

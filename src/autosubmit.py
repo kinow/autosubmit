@@ -56,8 +56,8 @@ if __name__ == "__main__":
 	
 	if not check_compatibility(autosubmit_version_filename, template_version_filename):
 		print "Compatibility check FAILED!"
-		print "WARNING: running after FAILED compatibility check is at your own risk!!!"
 		print_compatibility()
+		sys.exit(1)
 	else:
 		print "Compatibility check PASSED!"
 
