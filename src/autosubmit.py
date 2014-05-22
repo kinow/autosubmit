@@ -21,7 +21,7 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
-from check_compatibility import check_compatibility
+from check_compatibility import check_compatibility, print_compatibility
 
 ####################
 # Global Variables
@@ -56,8 +56,8 @@ if __name__ == "__main__":
 	
 	if not check_compatibility(autosubmit_version_filename, template_version_filename):
 		print "Compatibility check FAILED!"
+		print "WARNING: running after FAILED compatibility check is at your own risk!!!"
 		print_compatibility()
-		sys.exit(1)
 	else:
 		print "Compatibility check PASSED!"
 

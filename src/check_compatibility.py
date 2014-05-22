@@ -14,24 +14,24 @@ def print_compatibility():
 
 def check_compatibility(autosubmit_version_filename, template_version_filename):
 
+	result = False
+
 	if (path.exists(autosubmit_version_filename)):
 		autosubmit_version = file(autosubmit_version_filename).readline().split('\n')[0]
 		#autosubmit_version_info = tuple([ int(num) for num in autosubmit_version.split('.')])
 		print "Using Autosubmit: %s" % autosubmit_version
+		if (path.exists(template_version_filename)):
+			template_version = file(template_version_filename).readline().split('\n')[0]
+			print "Using template: %s" % template_version
+			result = tuple([autosubmit_version,template_version]) in compatibility_table
+		else:
+			print "The VERSION file %s necessary does not exist." % template_version_filename
+			print "Compatibility check FAILED! while loading template VERSION file..."
 	else:
 		print "The VERSION file %s necessary does not exist." % autosubmit_version_filename
-		print "Compatibility check FAILED!"
-		exit(1)
-		
-	if (path.exists(template_version_filename)):
-		template_version = file(template_version_filename).readline().split('\n')[0]
-		print "Using template: %s" % template_version
-	else:
-		print "The VERSION file %s necessary does not exist." % template_version_filename
-		print "Compatibility check FAILED!"
-		exit(1)
+		print "Compatibility check FAILED! while loading Autosubmit VERSION file..."
 
-	return tuple([autosubmit_version,template_version]) in compatibility_table
+	return result
 
 
 ####################
