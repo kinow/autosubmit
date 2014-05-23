@@ -1,11 +1,13 @@
 #!/usr/bin/env python
-from dir_config import DB_DIR
-from sys import exit, argv
+"""Functions for handling comptaibility check of Autosbumit version and template project version"""
+from dir_config import LOCAL_ROOT_DIR
+import argparse
 from os import path
 
 compatibility_table = [("2.2","1.0"),("2.3","1.1"),("2.4","1.2")]
 
 def print_compatibility():
+	"""Prints the compatibility table in a tabular mode"""
 	print "COMPTAIBILITY TABLE"
 	print "-------------------"
 	print "{0:<{col1}}|{1:<{col2}}".format("Autosubmit","Template",col1=10,col2=10)
@@ -13,6 +15,16 @@ def print_compatibility():
 		print "{0:<{col1}}|{1:<{col2}}".format(i[0],i[1],col1=10,col2=10)
 
 def check_compatibility(autosubmit_version_filename, template_version_filename):
+	"""Function to read version strings from VERSION files of Autosubmit and Templates.
+	Returns True if exists a matching row with both strings in the compatibility table.
+	If the parameters do not exist, the function returns False and the check fails.
+	
+	:param autosubmit_version_filename: path to the Autosubmit VERSION file
+	:type: str
+	:param template_version_filename: path to the Templates VERSION file
+	:type: str
+	:retruns: bool
+	"""
 
 	result = False
 
@@ -39,12 +51,14 @@ def check_compatibility(autosubmit_version_filename, template_version_filename):
 ####################
 if __name__ == "__main__":
 
-	if(len(argv) != 2):
-		print "Missing expid."
-		exit(1)
+	parser = argparse.ArgumentParser(description='Check autosubmit and templates compatibility given a experiment identifier')
+	parser.add_argument('-e', '--expid', required=True, nargs = 1)
+	args = parser.parse_args()
+	if args.expid is None:
+		parser.error("Missing expid.")
 
 	autosubmit_version_filename = "../VERSION"
-	template_version_filename = DB_DIR + argv[1] + "/git/templates/VERSION"
+	template_version_filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/git/templates/VERSION"
 
 	if check_compatibility(autosubmit_version_filename, template_version_filename):
 		print "Compatibility check PASSED!"
