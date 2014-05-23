@@ -348,7 +348,10 @@ if __name__ == "__main__":
 				# what to do with configs that are coming from new template ?
 				for dirname in dirs:
 					if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname):
-						(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname + "/.git"):
+							(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						else:
+							shutil.copytree(DB_DIR + args.copy + "/git/" + dirname, DB_DIR + exp_id + "/git/" + dirname)
 			else:
 				print "Checking out templates and config files..."
 				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")		
