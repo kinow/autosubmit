@@ -7,14 +7,14 @@ import argparse
 import shutil
 import re
 import dir_config
-from dir_config import DB_DIR
+from dir_config import DB_DIR, DB_FILE, DB_NAME
 from dir_config import GIT_DIR
 from commands import getstatusoutput
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit/'
-DB_FILE = 'ecearth.db'
-DB_NAME = 'ecearth'
+#DB_FILE = 'ecearth.db'
+#DB_NAME = 'ecearth'
 
 DB_PATH = DB_DIR + DB_FILE
 
