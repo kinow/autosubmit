@@ -157,6 +157,30 @@ Create a file in ``/cfu/autosubmit/<expid>/pkl/`` named ``updated_list_<expid>.t
 This file should have two columns: the first one has to be the job_name and the second one the status (READY, COMPLETED, FAILED, SUSPENDED). Keep in mind that autosubmit
 reads the file automatically so it is suggested to create the file in another location like ``/tmp`` or ``/var/tmp`` and then copy/move it to the ``pkl`` folder. Alternativelly you can create the file with a different name an rename it when you have finished.
 
+
+How to change the job status stopping autosubmit
+================================================
+
+This procedure allows you to modify the pickle without having any knowledge of python. Beware that Autosubmit must be stopped to use ``change_pkl.py``. 
+You must execute 
+
+::
+	
+	python change_pkl.py -h
+	
+to read help. This script has four mandatory arguments.
+The -e with which we can specify the experiment id, 
+the -j with which we can specify the pickle containing the list of jobs, 
+the -t with which we can specify the target status of the jobs we want to change to {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}.
+The fourth argument has two alternatives, the -l and -f with which we can apply a filter for the jobs we want to change.
+The -l flag recieves a list of jobnames separated by blank spaces (i.e. "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim") same as in the previous ``updated_list_<expid>.txt``.
+If we supply the key word "Any", all jobs will be changed to the target status.
+The -f flag can be used in three modes: the chunk filter, the status filter or the type filter.
+The variable -fc should be a list of individual chunks or ranges of chunks in the following format: "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
+The variable -fs can be one of the following status for job: {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+The variable -ft can be one of the following types of job: {Any,LOCALSETUP,REMOTESETUP,INITIALISATION,SIMULATION,POSTPROCESSING,CLEANING,LOCALTRANSFER} 
+When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.
+
 How to stop autosubmit
 ======================
 
