@@ -141,7 +141,7 @@ def register_sha(expid, save):
 	# register changes
 	if (save):
 		set_experiment(expid, model_name, model_branch_sha, template_name, template_branch_sha, ocean_diagnostics_branch_sha)
-		print "SHA for model and template succesfully registered to the database."
+		print "SHA for model, templates and ocean_diagnostics succesfully registered to the database."
 	else:
 		print "Changes NOT registered to the database..."
 	
