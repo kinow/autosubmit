@@ -21,6 +21,7 @@ class Job:
 		elif (len(n)==4):
 			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
 		elif (len(n)==2): 
+			## this is wrong... if n[1] is larger than 15?
 			self._short_name = n[1]
 		else:
 			self._short_name = n[0][:15]

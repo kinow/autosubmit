@@ -400,6 +400,7 @@ if __name__ == "__main__":
 			logger.info("We are going to submit: %s" % min(available,len(jobsavail)))
 			##should sort the jobsavail by priority Clean->post->sim>ini
 			#s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+			## probably useless to sort by year before sorting by type
 			s = sorted(jobsavail, key=lambda k:k.get_long_name().split('_')[1][:6])
 
 			list_of_jobs_avail = sorted(s, key=lambda k:k.get_type())
