@@ -191,10 +191,13 @@ class Wrap:
 		print "jobType: %s" %str(self._type)
 		mytemplate = self._template_path + templatename + '/' + templatename + '.wrapper'
 		##update parameters
-		r = datetime.datetime.strptime("00:00", "%H:%M")
+		##caution: H is limited to 24 in strptime
 		d1 = datetime.datetime.strptime(parameters['WALLCLOCK_SIM'], "%H:%M")
 		dt1 = datetime.timedelta(hours=d1.hour,minutes=d1.minute)
-		parameters['WALLCLOCK'] =  (r + dt1 * self.has_jobs()).strftime("%H:%M")
+		hours, remainder = divmod((dt1 * self.has_jobs()).total_seconds(), 3600)
+		minutes, seconds = divmod(remainder, 60)
+		##caution: hours limited to 99 ?
+		parameters['WALLCLOCK'] = "%02d:%02d" % (hours, minutes)
 		parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 		#parameters['WALLCLOCK'] = '00:10'
 		#parameters['NUMPROC'] = '10'
