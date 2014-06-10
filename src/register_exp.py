@@ -100,7 +100,7 @@ def register_sha(expid, save):
 
 	# check templates
 	# check expdef_cxxx ?
-	template_name = exp[7]
+	template_name = exp[5]
 	(status1, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/templates/")
 	(status2, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/templates/" + "; " + "git rev-parse --abbrev-ref HEAD")
 	if (status1 == 0 and status2 == 0):

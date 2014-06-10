@@ -30,11 +30,13 @@ def clean_git(expid):
 						if (output):
 							print "Changes not commited detected... SKIPPING!"
 							print "WARNING: commit needed..."
+							exit(1)
 						else:
 							(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname + "; " + "git log --branches --not --remotes")
 							if (output):
 								print "Changes not pushed detected... SKIPPING!"
 								print "WARNING: synchronization needed..."
+								exit(1)
 							else: 
 								print "Ready to clean..."
 								print "Cloning: 'git clone --bare " + dirname + " " + dirname +".git' ..."
@@ -50,7 +52,7 @@ def clean_git(expid):
 					print "Not a git repository... SKIPPING!"
 			else:
 				print "Not a directory... SKIPPING!"
-	
+	return
 
 
 def clean_plot(expid):
@@ -66,6 +68,7 @@ def clean_plot(expid):
 	for f in filelist:
 		remove(f)
 	print "Plot directory clean! last two plots remanining there."
+	return
 
 
 	
