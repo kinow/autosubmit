@@ -446,9 +446,10 @@ if __name__ == "__main__":
 
 		time.sleep(safetysleeptime)
 	## finalise experiment
-	print "Cleaning GIT directory..."
-	clean_git(expid)
-	print "Cleaning plot directory..."
-	clean_plot(expid)
+	if (len(joblist.get_completed()) == len(joblist)):
+		print "Cleaning GIT directory..."
+		clean_git(expid)
+		print "Cleaning plot directory..."
+		clean_plot(expid)
  
 logger.info("Finished job submission")
