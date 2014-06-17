@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 """Functions for handling comptaibility check of Autosbumit version and template project version"""
-from dir_config import LOCAL_ROOT_DIR
+from dir_config import LOCAL_ROOT_DIR, COMPATIBILITY_TABLE 
 import argparse
 from os import path
 
-compatibility_table = [("2.2","1.0"),("2.3","1.1"),("2.4","1.2"),("2.4","2.4"),("2.4.0","2.4")]
+#compatibility_table = [("2.2","1.0"),("2.3","1.1"),("2.4","1.2"),("2.4","2.4"),("2.4.0","2.4")]
 """Compatibility table. Tuples of Autosubmit version, template version."""
 
 def print_compatibility():
 	"""Prints the compatibility table in a tabular mode"""
+	compatibility_table = [tuple(l.split()) for l in file(LOCAL_ROOT_DIR + "/" + COMPATIBILITY_TABLE).readlines()]
 	print "COMPTAIBILITY TABLE"
 	print "-------------------"
 	print "{0:<{col1}}|{1:<{col2}}".format("Autosubmit","Template",col1=10,col2=10)
@@ -27,6 +28,7 @@ def check_compatibility(autosubmit_version_filename, template_version_filename):
 	:retruns: bool
 	"""
 
+	compatibility_table = [tuple(l.split()) for l in file(LOCAL_ROOT_DIR + "/" + COMPATIBILITY_TABLE).readlines()]
 	result = False
 
 	if (path.exists(autosubmit_version_filename)):
