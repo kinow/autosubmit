@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climatic Forecasting Unit, IC3
+# Copyright 2014 Climate Forecasting Unit, IC3
 
 # This file is part of Autosubmit.
 
