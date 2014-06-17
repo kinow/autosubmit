@@ -4,6 +4,8 @@ import datetime, time
 import logging
 from dateutil.relativedelta import *
 
+"""In this python script there are tools to manipulate the dates and make mathematical operations between them """
+
 string_date='19600101'
 job_logger = logging.getLogger("AutoLog.chunk_date_lib")
 

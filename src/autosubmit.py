@@ -22,6 +22,8 @@ from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
 
+"""This is the main code of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
+
 ####################
 # Global Variables
 ####################
