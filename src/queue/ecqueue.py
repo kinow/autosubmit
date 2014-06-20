@@ -70,7 +70,7 @@ class EcQueue(HPCQueue):
 		return self._mkdir_cmd
 
 	def parse_job_output(self, output):
-		job_state = output.split('\n')[6].split()[1]
+		job_state = output.split('\n')[7].split()[1]
 		return job_state
 
 	def get_submitted_job_id(self, output):
