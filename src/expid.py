@@ -8,8 +8,10 @@ import shutil
 import re
 import dir_config
 from dir_config import DB_DIR
+from dir_config import LOCAL_ROOT_DIR
 from dir_config import GIT_DIR
 from commands import getstatusoutput
+from check_compatibility import check_compatibility, print_compatibility
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit/'
@@ -277,6 +279,17 @@ if __name__ == "__main__":
 			else:
 				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
 			
+			autosubmit_version_filename = "../VERSION"
+			template_version_filename = LOCAL_ROOT_DIR + "/" + exp_id + "/git/templates/VERSION"
+			
+			if not check_compatibility(autosubmit_version_filename, template_version_filename):
+				print "Compatibility check FAILED!"
+				print_compatibility()
+				print "WARNING: running after FAILED compatibility check is at your own risk!!!"
+			else:
+				print "Compatibility check PASSED!"
+
+
 			##now ocean diagnostics are checked out with a git clone 
 			print "Checking out ocean diagnostics..."
 			if args.ocean_diagnostics_branch is not 'master':
@@ -335,7 +348,10 @@ if __name__ == "__main__":
 				# what to do with configs that are coming from new template ?
 				for dirname in dirs:
 					if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname):
-						(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname + "/.git"):
+							(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						else:
+							shutil.copytree(DB_DIR + args.copy + "/git/" + dirname, DB_DIR + exp_id + "/git/" + dirname)
 			else:
 				print "Checking out templates and config files..."
 				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")		
@@ -343,7 +359,17 @@ if __name__ == "__main__":
 				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
 				print "Checking out model sources..."
 				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
-				
+			
+			autosubmit_version_filename = "../VERSION"
+			template_version_filename = LOCAL_ROOT_DIR + "/" + exp_id + "/git/templates/VERSION"
+			
+			if not check_compatibility(autosubmit_version_filename, template_version_filename):
+				print "Compatibility check FAILED!"
+				print_compatibility()
+				print "WARNING: running after FAILED compatibility check is at your own risk!!!"
+			else:
+				print "Compatibility check PASSED!"
+
 			#shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
 		else:
 			print "The previous experiment directory does not exist"
