@@ -264,3 +264,35 @@ Recovery for rerun:
 
 	python recovery.py -e cxxx -j rerun_job_list -s
 
+
+How to finalise experiment
+==========================
+
+
+This procedure allows you to save space after finalising an experiment.  
+You must execute 
+
+::
+	
+	python finalise_exp.py -h
+	
+
+to read help. This script has one mandatory argument that is -e with which we can specify the experiment id.
+The -p flag is used to clean our experiment ``plot`` folder to save disk space. Only the two latest plots will be kept. Older plots will be removed.
+The -g flag is used to clean our experiment ``git`` clone locally in order to save space (``model`` is particullary big). 
+A bare copy (which occupies less space on disk) will be automatically made. That bare clone can be always reconverted in a working clone if we want to run again the experiment by using ``git clone bare_clone original_clone``.
+Bear in mind that if we have not synchronized our experiment git folder with the information available on the remote repository (i.e.: commit and push any changes we may have), or in case new files are found, the clean procedure will be failing although we specify the -g option.
+In addition, every time we run this script with -g option, it will check the commit SHA for local working tree of ``model``, ``template`` and ``ocean_diagnostics`` exists on the ``git`` directory. In case that commit SHA exist, finalise_exp will register it to the database along with the branch name. 
+
+The procedure of registering current commit SHA to the database can be run independently.
+You must execute
+
+::
+	
+	python register_sha.py -h
+
+to read help. This script has one mandatory argument that is -e with which we can specify the experiment id.
+When we are satisfied with the results we can use the parameter -s, which will save the change to the database.
+
+How to rerun/extend experiment
+==============================

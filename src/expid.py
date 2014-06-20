@@ -7,16 +7,16 @@ import argparse
 import shutil
 import re
 import dir_config
-from dir_config import DB_DIR
 from dir_config import LOCAL_ROOT_DIR
+from dir_config import DB_DIR, DB_FILE, DB_NAME
 from dir_config import GIT_DIR
 from commands import getstatusoutput
 from check_compatibility import check_compatibility, print_compatibility
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit/'
-DB_FILE = 'ecearth.db'
-DB_NAME = 'ecearth'
+#DB_FILE = 'ecearth.db'
+#DB_NAME = 'ecearth'
 
 DB_PATH = DB_DIR + DB_FILE
 
@@ -247,7 +247,7 @@ if __name__ == "__main__":
 	group2 = parser.add_argument_group('experiment arguments')
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
-	group2.add_argument('--model_branch', '-m', type = str, help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
+	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
 	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = "{'master' (defualt), 'develop', ...} Check available branches here: https://dev.cfu.local/templates.git") ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = "{'master' (default), 'develop', ...} Check available branches here: https://dev.cfu.local/ocean_diagnostics.git") 

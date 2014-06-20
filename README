@@ -20,7 +20,7 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * ARCHER (EPCC machine)
 
 - Pre-requisties: These packages (python2, python-argparse, python-dateutil, 
-python-pydot, python-matplotlib, sqlite3) must be available at local machine.
+python-pydot, python-matplotlib, sqlite3, python-pysqlite2) must be available at local machine.
 And the machine is also able to access HPC's/Clusters via password-less ssh.
 
 - Create a repository for experiments: Say for expample "/cfu/autosubmit" then

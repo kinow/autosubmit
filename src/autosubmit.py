@@ -22,6 +22,7 @@ from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
 from check_compatibility import check_compatibility, print_compatibility
+from finalise_exp import clean_git, clean_plot, register_sha
 
 ####################
 # Global Variables
@@ -455,5 +456,11 @@ if __name__ == "__main__":
 			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
 
 		time.sleep(safetysleeptime)
+	## finalise experiment
+	if (len(joblist.get_completed()) == len(joblist)):
+		print "Cleaning GIT directory..."
+		clean_git(expid)
+		print "Cleaning plot directory..."
+		clean_plot(expid)
  
 logger.info("Finished job submission")
