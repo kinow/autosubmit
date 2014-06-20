@@ -247,9 +247,9 @@ class JobList:
 		for job in self._job_list:
 			job.set_parameters(parameters)
 
-	def update_list(self):
+	def update_list(self, store_change=True):
 		# load updated file list
-		self.update_from_file()
+		self.update_from_file(store_change)
 		
 		# reset jobs that has failed less than 10 times
 		if (self._parameters.has_key('RETRIALS')):
@@ -272,7 +272,8 @@ class JobList:
 				#	break
 			if len(tmp) == len(job.get_parents()):
 				job.set_status(Status.READY)
-		self.save()
+		if(store_change):
+			self.save()
 			
 	def update_shortened_names(self):
 		"""In some cases the scheduler only can operate with names shorter than 15 characters. Update the job list replacing job names by the corresponding shortened job name"""
@@ -457,3 +458,4 @@ class RerunJobList(JobList):
 		self.update_genealogy()
 		for job in self._job_list:
 			job.set_parameters(parameters)
+
