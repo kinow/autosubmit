@@ -4,8 +4,6 @@ from dir_config import LOCAL_ROOT_DIR, COMPATIBILITY_TABLE
 import argparse
 from os import path
 
-#compatibility_table = [("2.2","1.0"),("2.3","1.1"),("2.4","1.2"),("2.4","2.4"),("2.4.0","2.4")]
-"""Compatibility table. Tuples of Autosubmit version, template version."""
 
 def print_compatibility():
 	"""Prints the compatibility table in a tabular mode"""
