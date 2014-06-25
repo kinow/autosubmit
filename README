@@ -45,6 +45,8 @@ And the machine is also able to access HPC's/Clusters via password-less ssh.
 HOW TO USE AUTOSUBMIT
 =====================
 
+To run AUTOSUBMiT experiments at CFU a production environtment is set up at the local virtual machine ``shannon``.
+
 > cd src
 
 > python expid.py -h
@@ -61,6 +63,10 @@ of three characters "xxx" are to represent unique alphanumeric identity for the 
 > vi /cfu/autosubmit/cxxx/conf/autosubmit_cxxx.conf
 
 > python create_exp.py cxxx
+
+> ssh shannon
+
+> cd src
 
 > nohup python autosubmit.py cxxx >& cxxx_01.log &
 
@@ -104,6 +110,8 @@ HOW TO RESTART EXPERIMENT
 
 HOW TO RERUN/EXTEND EXPERIMENT
 ==============================
+
+> ssh shannon
 
 > cd src
 
