@@ -32,7 +32,7 @@ More information on how to work with CFU GIT projects can be found here: :doc:`d
 Introduction
 ============
 
-To run AUTOSUBMiT experiments at CFU a production environment is set up at the local virtual machine ``shannon``.
+To run AUTOSUBMiT experiments at CFU a production environment is set up at the local virtual machine ``enterprise``.
 
 After downloading the master branch you will see that there are four directories: ``conf``, ``src``, ``templates`` and ``docs``.  
 
@@ -134,7 +134,7 @@ Launch AUTOSUBMiT in background and with ``nohup`` (continue running although th
 
 ::
 
-    ssh shannon
+    ssh enterprise
     cd <autosubmit_folder>/src
     nohup python autosubmit.py cxxx >& cxxx_01.log &
 
@@ -288,7 +288,8 @@ Then we are able to start again Autosubmit:
 
 ::
 
-	nohup python autosubmit.py cxxx >& cxxx_02.log &
+    ssh enterprise
+    nohup python autosubmit.py cxxx >& cxxx_02.log &
 
 Monitor for rerun:
 ------------------
