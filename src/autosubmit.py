@@ -1,4 +1,22 @@
 #!/usr/bin/env python
+
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
 import time, os, sys
 import commands
 import signal
@@ -21,6 +39,10 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 import cPickle as pickle
 from dir_config import LOCAL_ROOT_DIR
+from check_compatibility import check_compatibility, print_compatibility
+from finalise_exp import clean_git, clean_plot, register_sha
+
+"""This is the main code of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
 
 ####################
 # Global Variables
@@ -49,7 +71,16 @@ if __name__ == "__main__":
 	if(len(sys.argv) != 2):
 		print "Missing expid\n"
 		sys.exit(1)
- 
+
+	autosubmit_version_filename = "../VERSION"
+	template_version_filename = LOCAL_ROOT_DIR + "/" + sys.argv[1] + "/git/templates/VERSION"
+	
+	if not check_compatibility(autosubmit_version_filename, template_version_filename):
+		print "Compatibility check FAILED!"
+		print_compatibility()
+		sys.exit(1)
+	else:
+		print "Compatibility check PASSED!"
 
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
@@ -445,5 +476,11 @@ if __name__ == "__main__":
 			#logger.info("We are going to submit wraps: %s" % min(wrapsavailable,len(wrapsavail)))
 
 		time.sleep(safetysleeptime)
+	## finalise experiment
+	if (len(joblist.get_completed()) == len(joblist)):
+		print "Cleaning GIT directory..."
+		clean_git(expid)
+		print "Cleaning plot directory..."
+		clean_plot(expid)
  
 logger.info("Finished job submission")

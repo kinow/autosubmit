@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import string
 from pysqlite2 import dbapi2 as sql
 import sys, os
@@ -7,14 +25,16 @@ import argparse
 import shutil
 import re
 import dir_config
-from dir_config import DB_DIR
+from dir_config import LOCAL_ROOT_DIR
+from dir_config import DB_DIR, DB_FILE, DB_NAME
 from dir_config import GIT_DIR
 from commands import getstatusoutput
+from check_compatibility import check_compatibility, print_compatibility
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit/'
-DB_FILE = 'ecearth.db'
-DB_NAME = 'ecearth'
+#DB_FILE = 'ecearth.db'
+#DB_NAME = 'ecearth'
 
 DB_PATH = DB_DIR + DB_FILE
 
@@ -245,7 +265,7 @@ if __name__ == "__main__":
 	group2 = parser.add_argument_group('experiment arguments')
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
-	group2.add_argument('--model_branch', '-m', type = str, help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
+	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
 	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--template_branch', '-t', type = str, default = 'master', help = "{'master' (defualt), 'develop', ...} Check available branches here: https://dev.cfu.local/templates.git") ##find a way to allow only compatible ones with model_name
 	group2.add_argument('--ocean_diagnostics_branch', '-o', type = str, default = 'master', help = "{'master' (default), 'develop', ...} Check available branches here: https://dev.cfu.local/ocean_diagnostics.git") 
@@ -277,6 +297,17 @@ if __name__ == "__main__":
 			else:
 				(status, output) = getstatusoutput("git clone " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")
 			
+			autosubmit_version_filename = "../VERSION"
+			template_version_filename = LOCAL_ROOT_DIR + "/" + exp_id + "/git/templates/VERSION"
+			
+			if not check_compatibility(autosubmit_version_filename, template_version_filename):
+				print "Compatibility check FAILED!"
+				print_compatibility()
+				print "WARNING: running after FAILED compatibility check is at your own risk!!!"
+			else:
+				print "Compatibility check PASSED!"
+
+
 			##now ocean diagnostics are checked out with a git clone 
 			print "Checking out ocean diagnostics..."
 			if args.ocean_diagnostics_branch is not 'master':
@@ -335,7 +366,10 @@ if __name__ == "__main__":
 				# what to do with configs that are coming from new template ?
 				for dirname in dirs:
 					if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname):
-						(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						if os.path.isdir(DB_DIR + args.copy + "/git/" + dirname + "/.git"):
+							(status, output) = getstatusoutput("git clone " + DB_DIR + args.copy + "/git/" + dirname + " " + DB_DIR + exp_id + "/git/" + dirname)
+						else:
+							shutil.copytree(DB_DIR + args.copy + "/git/" + dirname, DB_DIR + exp_id + "/git/" + dirname)
 			else:
 				print "Checking out templates and config files..."
 				(status, output) = getstatusoutput("git clone -b " + args.template_branch + " " + GIT_DIR + "/templates.git " + DB_DIR + exp_id + "/git/templates")		
@@ -343,7 +377,17 @@ if __name__ == "__main__":
 				(status, output) = getstatusoutput("git clone -b " + args.ocean_diagnostics_branch + " " + GIT_DIR + "/ocean_diagnostics.git " + DB_DIR + exp_id + "/git/ocean_diagnostics")
 				print "Checking out model sources..."
 				(status, output) = getstatusoutput("git clone -b " + args.model_branch + " " + GIT_DIR + "/" + args.model_name + ".git " + DB_DIR + exp_id + "/git/model")
-				
+			
+			autosubmit_version_filename = "../VERSION"
+			template_version_filename = LOCAL_ROOT_DIR + "/" + exp_id + "/git/templates/VERSION"
+			
+			if not check_compatibility(autosubmit_version_filename, template_version_filename):
+				print "Compatibility check FAILED!"
+				print_compatibility()
+				print "WARNING: running after FAILED compatibility check is at your own risk!!!"
+			else:
+				print "Compatibility check PASSED!"
+
 			#shutil.copytree(DB_DIR+args.copy+"/git", DB_DIR + exp_id + "/git")
 		else:
 			print "The previous experiment directory does not exist"
