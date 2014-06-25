@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from xml.dom.minidom import parseString
 from hpcqueue import HPCQueue
 from dir_config import LOCAL_ROOT_DIR
@@ -52,7 +70,7 @@ class EcQueue(HPCQueue):
 		return self._mkdir_cmd
 
 	def parse_job_output(self, output):
-		job_state = output.split('\n')[6].split()[1]
+		job_state = output.split('\n')[7].split()[1]
 		return job_state
 
 	def get_submitted_job_id(self, output):
