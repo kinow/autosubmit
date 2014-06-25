@@ -17,6 +17,7 @@ class Status:
 class Type:
 	"""Class to handle the type of a job.
 	At the moment contains 7 types:
+	WRAPPING are for bundle of jobs to execute with python wrapper
 	SIMULATION are for multiprocessor jobs
 	POSTPROCESSING are single processor jobs
 	ClEANING are archiving job---> dealing with large transfer of data on tape
@@ -24,6 +25,7 @@ class Type:
 	LOCALSETUP are for source code preparation local jobs
 	REMOTESETUP are for soruce code compilation jobs
 	TRANSFER are for downloading data jobs"""
+	WRAPPING = 7
 	LOCALSETUP = 6
 	REMOTESETUP = 5
 	INITIALISATION = 4

@@ -2,6 +2,7 @@
 import dir_config
 from sys import exit, argv
 from job.job import Job
+from job.wrap import Wrap
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
@@ -122,7 +123,7 @@ if __name__ == "__main__":
 
 
 	platform = exp_parser.get('experiment', 'HPCARCH')
-	if (platform == 'hector'):
+	if (platform == 'hector' or platform == 'archer'):
 		job_list.update_shortened_names()
 
 	job_list.save()
