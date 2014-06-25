@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Functions for handling comptaibility check of Autosbumit version and template project version"""
+"""Functions for handling compatibility check of Autosbumit version and template project version"""
 from dir_config import LOCAL_ROOT_DIR, COMPATIBILITY_TABLE 
 import argparse
 from os import path
@@ -26,7 +26,7 @@ from os import path
 def print_compatibility():
 	"""Prints the compatibility table in a tabular mode"""
 	compatibility_table = [tuple(l.split()) for l in file(LOCAL_ROOT_DIR + "/" + COMPATIBILITY_TABLE).readlines()]
-	print "COMPTAIBILITY TABLE"
+	print "COMPATIBILITY TABLE"
 	print "-------------------"
 	print "{0:<{col1}}|{1:<{col2}}".format("Autosubmit","Template",col1=10,col2=10)
 	for i in compatibility_table:

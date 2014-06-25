@@ -123,7 +123,7 @@ def CreateBarDiagram(expid, joblist, output_file):
 def GenerateOutput(expid, joblist, output_format="pdf"):
 	now = time.localtime()
 	output_date = time.strftime("%Y%m%d_%H%M", now) 
-	output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/statistics_" + expid + "_" + output_date + "." + output_format
+	output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date + "." + output_format
 
 	CreateBarDiagram(expid, joblist, output_file)
 
