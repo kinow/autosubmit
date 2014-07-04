@@ -186,6 +186,20 @@ or
 
 	/cfu/autosubmit/<expid>/plot/<expid>_<date>_<time>.png
 
+
+The following command could be adopted to generate the plots for visualizing the simulation jobs statistics of the experiment at any instance:
+
+:: 
+
+	python statistics.py -h
+
+The location where user can find the generated plots with date and timestamp can be found below:
+
+::
+
+	/cfu/autosubmit/<expid>/plot/<expid>_statistics_<date>_<time>.pdf
+
+
 How to change the job status without stopping autosubmit
 ========================================================
 
