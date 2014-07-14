@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import commands
 import pydot
 import pickle
@@ -105,7 +123,7 @@ def CreateBarDiagram(expid, joblist, output_file):
 def GenerateOutput(expid, joblist, output_format="pdf"):
 	now = time.localtime()
 	output_date = time.strftime("%Y%m%d_%H%M", now) 
-	output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/statistics_" + expid + "_" + output_date + "." + output_format
+	output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date + "." + output_format
 
 	CreateBarDiagram(expid, joblist, output_file)
 

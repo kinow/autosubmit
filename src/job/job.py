@@ -1,4 +1,23 @@
 #!/usr/bin/env python
+
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import os
 from job_common import Status
 from job_common import Type
@@ -21,6 +40,7 @@ class Job:
 		elif (len(n)==4):
 			self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
 		elif (len(n)==2): 
+			## this is wrong... if n[1] is larger than 15?
 			self._short_name = n[1]
 		else:
 			self._short_name = n[0][:15]

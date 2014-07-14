@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from job_common import Status
 from job_common import Type
 from job import Job
@@ -247,9 +265,9 @@ class JobList:
 		for job in self._job_list:
 			job.set_parameters(parameters)
 
-	def update_list(self):
+	def update_list(self, store_change=True):
 		# load updated file list
-		self.update_from_file()
+		self.update_from_file(store_change)
 		
 		# reset jobs that has failed less than 10 times
 		if (self._parameters.has_key('RETRIALS')):
@@ -272,7 +290,8 @@ class JobList:
 				#	break
 			if len(tmp) == len(job.get_parents()):
 				job.set_status(Status.READY)
-		self.save()
+		if(store_change):
+			self.save()
 			
 	def update_shortened_names(self):
 		"""In some cases the scheduler only can operate with names shorter than 15 characters. Update the job list replacing job names by the corresponding shortened job name"""
@@ -457,3 +476,4 @@ class RerunJobList(JobList):
 		self.update_genealogy()
 		for job in self._job_list:
 			job.set_parameters(parameters)
+

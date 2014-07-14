@@ -1,5 +1,23 @@
 #!/usr/bin/env python
 
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+
 from dir_config import LOCAL_ROOT_DIR
 import pickle
 from job.job_list import JobList
@@ -54,12 +72,14 @@ if __name__ == '__main__':
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("bsc")
 			remoteQueue.update_cmds()
 		elif sc == 'i':
 			remoteQueue = ItQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("ithaca")
 			remoteQueue.update_cmds()
 		elif sc == 'l':
 			## in lindgren arch must set-up both serial and parallel queues
@@ -67,35 +87,41 @@ if __name__ == '__main__':
 			serialQueue.set_scratch(scratch_dir)
 			serialQueue.set_project(hpcproj)
 			serialQueue.set_user(hpcuser)
+			serialQueue.set_host("lindgren")
 			serialQueue.update_cmds()
 			parallelQueue = LgQueue(expid)
 			parallelQueue.set_scratch(scratch_dir)
 			parallelQueue.set_project(hpcproj)
 			parallelQueue.set_user(hpcuser)
+			parallelQueue.set_host("ellen")
 			parallelQueue.update_cmds()
 		elif sc == 'e':
 			remoteQueue = EcQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("c2a")
 			remoteQueue.update_cmds()
 		elif sc == 'm':
 			remoteQueue = Mn3Queue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("mn-" + hpcproj)
 			remoteQueue.update_cmds()
 		elif sc == 'h':
 			remoteQueue = HtQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("ht-" + hpcproj)
 			remoteQueue.update_cmds()
 		elif sc == 'a':
 			remoteQueue = ArQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
+			remoteQueue.set_host("ar-" + hpcproj)
 			remoteQueue.update_cmds()
 		
 		localQueue = PsQueue(expid)
