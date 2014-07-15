@@ -182,13 +182,14 @@ class JobList:
 			return []
 		else:
 			tmp = wrappable[0]
+			spinwrap = [wrappable[0]]
 			for i in range(wrapsize-1):
 				for job in tmp.get_children():
 					if ( job.get_type() == Type.SIMULATION ):
 						tmp = job
-						wrappable.append(job)
-			print wrappable
-			return wrappable
+						spinwrap.append(job)
+			print spinwrap
+			return spinwrap
 
 	def get_wraps(self,wrapsize,wrapid):
 		"""Returns a list of Wrap objects bundling wrappable jobs"""
