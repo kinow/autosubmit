@@ -76,7 +76,7 @@ if __name__ == "__main__":
 	if args.expid is None:
 		parser.error("Missing expid.")
 
-	autosubmit_version_filename = "../VERSION"
+	autosubmit_version_filename = os.path.join(os.path.dirname(__file__), os.pardir, "VERSION")
 	template_version_filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/git/templates/VERSION"
 
 	if check_compatibility(autosubmit_version_filename, template_version_filename):

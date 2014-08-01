@@ -27,9 +27,8 @@ import re
 import dir_config
 from dir_config import LOCAL_ROOT_DIR
 from dir_config import DB_DIR, DB_FILE, DB_NAME
-from dir_config import GIT_DIR
 from commands import getstatusoutput
-from check_compatibility import check_compatibility, print_compatibility
+from distutils.util import strtobool
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit/'
@@ -172,11 +171,19 @@ def delete_experiment(name):
 	row = cursor.fetchone()
 	if row == None:
 		close_conn(conn, cursor)
-		print 'The experiment name %s does not exist yet!!!' % name
+		print 'The experiment %s has been deleted!!!' % name
 		sys.exit(1)
 
 	close_conn(conn, cursor)
 	return
+
+def user_yes_no_query(question):
+	sys.stdout.write('%s [y/n]\n' % question)
+	while True:
+		try:
+			return strtobool(raw_input().lower())
+		except ValueError:
+			sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
 def check_db():
 	if not os.path.exists(DB_PATH):
@@ -239,7 +246,6 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 if __name__ == "__main__":
 
 	##obtain version for autosubmit being used in expid.py step
-	##git describe --tags `git rev-list --tags --max-count=1`; git describe --tags; git rev-parse --abbrev-ref HEAD; 
 	(status, output) = getstatusoutput("git rev-parse HEAD")
 	autosubmit_version = output
 
@@ -249,33 +255,30 @@ if __name__ == "__main__":
 	group1.add_argument('--copy', '-y', type = str)
 	group1.add_argument('--delete', '-D', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
-	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
-	group2.add_argument('--description', '-d', type = str, required = True)
+	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'))
+	group2.add_argument('--description', '-d', type = str)
 
 	args = parser.parse_args()
-	if args.description is None:
-		parser.error("Missing experiment description.")
-	if args.HPC is None:
-		parser.error("Missing HPC.");
-	##complete missing errors for new arguments
-
-	if args.new is None and args.copy is None:
-		parser.error("Missing method either New or Copy.")
+	if args.new is None and args.copy is None and args.delete is None:
+		parser.error("Missing method either New or Copy or Delete.")
 	if args.new:
-		##new parameters to be inserted on database
-		##  --HPC  --description
+		if args.description is None:
+			parser.error("Missing experiment description.")
+		if args.HPC is None:
+			parser.error("Missing HPC.");
+
 		exp_id = new_experiment(args.HPC, args.description)
 		os.mkdir(DB_DIR + exp_id)
 		
 		os.mkdir(DB_DIR + exp_id + '/conf')
 		print "Copying config files..."
 		##autosubmit config and architecture copyed from AS.
-		files = os.listdir('../conf')
+		files = os.listdir(os.path.join(os.path.dirname(__file__), os.pardir, 'conf'))
 		for filename in files:
-			if os.path.isfile('../conf/' + filename):
+			if os.path.isfile(os.path.join(os.path.dirname(__file__), os.pardir, 'conf', filename)):
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
-				content = file('../conf/' + filename, 'r').read()
+				content = file(os.path.join(os.path.dirname(__file__), os.pardir, 'conf', filename), 'r').read()
 				content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
 				print DB_DIR + exp_id + "/conf/" + new_filename
 				file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
@@ -284,6 +287,11 @@ if __name__ == "__main__":
 		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 	elif args.copy:
+		if args.description is None:
+			parser.error("Missing experiment description.")
+		if args.HPC is None:
+			parser.error("Missing HPC.");
+
 		if os.path.exists(DB_DIR + args.copy):
 			exp_id = copy_experiment(args.copy, args.HPC, args.description)
 			os.mkdir(DB_DIR + exp_id)
@@ -302,12 +310,19 @@ if __name__ == "__main__":
 	
 	elif args.delete:
 		if os.path.exists(DB_DIR + args.delete):
-			os.rmdir(DB_DIR + args.delete)
-			print "Removing experiment..."
-		delete_experiment(args.delete)
+			if user_yes_no_query("Do you want to delete " + args.delete + " ?"):
+				print "Removing experiment directory..."
+				shutil.rmtree(DB_DIR + args.delete)
+				print "Deleting experiment from database..."
+				delete_experiment(args.delete)
+			else:
+				print "Quitting..."
+				sys.exit(1)
+		else:
+			print "The experiment does not exist"
+			sys.exit(1)
 	
-	content = file("../conf/platforms/" + args.HPC + ".conf").read()
-	#content += file("../conf/archdef/common.conf").read()
+	content = file(os.path.join(os.path.dirname(__file__), os.pardir, "conf", "platforms", args.HPC + ".conf")).read()
 	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")

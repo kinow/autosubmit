@@ -72,7 +72,7 @@ if __name__ == "__main__":
 		print "Missing expid\n"
 		sys.exit(1)
 
-	autosubmit_version_filename = "../VERSION"
+	autosubmit_version_filename = os.path.join(os.path.dirname(__file__), os.pardir, "VERSION")
 	template_version_filename = LOCAL_ROOT_DIR + "/" + sys.argv[1] + "/git/templates/VERSION"
 	
 	if not check_compatibility(autosubmit_version_filename, template_version_filename):

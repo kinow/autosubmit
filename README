@@ -19,12 +19,13 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * C2A (ECMWF machine)
    * ARCHER (EPCC machine)
 
-- Pre-requisties: These packages (python2, python-argparse, python-dateutil, 
+- Pre-requisties: These packages (bash, python2, python-argparse, python-dateutil, 
 python-pydot, python-matplotlib, sqlite3, python-pysqlite2, git-scm > 1.8.2) must be available at local machine.
 And the machine is also able to access HPC's/Clusters via password-less ssh.
 
-- Create a repository for experiments: Say for expample "/cfu/autosubmit" then
+- Create a repository for experiments: Say for example "/cfu/autosubmit" then
   edit the repository path into src/dir_config.py
+  edit the repository path into conf/autosubmit.conf
 
 - Create a blank database: Say for example "autosubmit.db" at above created repository
   and thereafter:
@@ -33,19 +34,18 @@ And the machine is also able to access HPC's/Clusters via password-less ssh.
    sqlite3>.read ../../src/autosubmit.sql
    > chmod 777 autosubmit.db
 
-- Create repositories for models and templates: A GIT repository containing each model sources and setup,
-  and a GIT repository containing the templates.
+- Create repositories for models and templates: A GIT repository containing each model templates, sources and setup.
 
    > git clone https://autosubmit.ic3.cat/ecearth.git
+   or
    > git clone https://autosubmit.ic3.cat/nemo.git
-   > git clone https://autosubmit.ic3.cat/templates.git
-   then edit the repository paths into src/dir_config.py
+   then edit the repository path into src/dir_config.py
 
 
 HOW TO USE AUTOSUBMIT
 =====================
 
-To run AUTOSUBMiT experiments at CFU a production environtment is set up at the local virtual machine "enterprise".
+To run AUTOSUBMiT experiments at CFU a production environment is set up at the local virtual machine "enterprise".
 
 > cd src
 
