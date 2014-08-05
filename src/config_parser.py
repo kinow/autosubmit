@@ -34,9 +34,6 @@ def config_parser(filename):
 	runmode = ['local', 'remote']
 	loglevel = ['debug', 'info', 'warning', 'error', 'critical']
 		
-	#option that must be in config file and has no default value
-	mandatory_opt = ['expid']
-
 	# check file existance
 	if(not os.path.isfile(filename)):
 		print "File does not exist: " + filename
@@ -46,13 +43,6 @@ def config_parser(filename):
 	parser = SafeConfigParser()
 	parser.read(filename)
 	
-	# check which options of the mandatory one are not in config file
-	missing = list(set(mandatory_opt).difference(parser.options('config')))
-	if(missing):
-		print "Missing options"
-		print missing
-		sys.exit()
-
 	check_values(parser.get('config', 'runmode'), runmode)
 	check_values(parser.get('config', 'loglevel'), loglevel)
 
