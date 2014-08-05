@@ -90,7 +90,7 @@ if __name__ == "__main__":
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
-	expid = conf_parser.get('config','expid')
+	expid = exp_parser.get('experiment','expid')
 	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
