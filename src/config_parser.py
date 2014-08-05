@@ -41,10 +41,11 @@ def config_parser(filename):
 
 	# load values
 	parser = SafeConfigParser()
+	parser.optionxform = str
 	parser.read(filename)
 	
-	check_values(parser.get('config', 'runmode'), runmode)
-	check_values(parser.get('config', 'loglevel'), loglevel)
+	check_values(parser.get('config', 'RUNMODE'), runmode)
+	check_values(parser.get('config', 'LOGLEVEL'), loglevel)
 
 	if(invalid_values):
 		print "\nInvalid config file"
