@@ -34,21 +34,16 @@ def config_parser(filename):
 	runmode = ['local', 'remote']
 	loglevel = ['debug', 'info', 'warning', 'error', 'critical']
 		
-
 	#option that must be in config file and has no default value
 	mandatory_opt = ['expid']
-
-	# default value in case this options does not exist on config file
-	default = ({'MAXWAITINGJOBS' : '50', 'TOTALJOBS': '1000', 'ALREADYSUBMITTED': '0', 'VERBOSE': 'true', 'DEBUG': 'false', 'RUNMODE': 'remote'})
 
 	# check file existance
 	if(not os.path.isfile(filename)):
 		print "File does not exist: " + filename
 		sys.exit()
 
-	# load default values
-	parser = SafeConfigParser(default)
-	#ccpLoadDefaults(parser)
+	# load values
+	parser = SafeConfigParser()
 	parser.read(filename)
 	
 	# check which options of the mandatory one are not in config file
@@ -61,7 +56,6 @@ def config_parser(filename):
 	check_values(parser.get('config', 'runmode'), runmode)
 	check_values(parser.get('config', 'loglevel'), loglevel)
 
-	print parser.items('config')
 	if(invalid_values):
 		print "\nInvalid config file"
 		sys.exit()
@@ -73,19 +67,16 @@ def config_parser(filename):
 def expdef_parser(filename):
 	hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'hector', 'archer']
 	
-	# default value in case this options does not exist on config file
-	default = ({'EXPID' : 'dumi', 'TYPE': '1', 'STATUS': '0', 'LONGNAME': 'Just a test'})
-
 	#option that must be in config file and has no default value
-	mandatory_opt = ['expid']
+	mandatory_opt = ['EXPID']
 
 	# check file existance
 	if(not os.path.isfile(filename)):
 		print "File does not exist"
 		sys.exit()
 
-	# load default values
-	parser = SafeConfigParser(default)
+	# load values
+	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
 
@@ -98,7 +89,6 @@ def expdef_parser(filename):
 	
 	check_values(parser.get('experiment', 'HPCARCH'), hpcarch)
 
-	#print parser.items('experiment')
 	if(invalid_values):
 		print "\nInvalid config file"
 		sys.exit()
@@ -114,11 +104,10 @@ def archdef_parser(filename):
 		print "File does not exist"
 		sys.exit()
 
-	# load default values
+	# load values
 	parser = SafeConfigParser()
 	parser.optionxform = str
 	parser.read(filename)
-	#print parser.items('archdef')
 	return parser
 
 if __name__ == "__main__":

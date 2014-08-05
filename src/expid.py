@@ -246,7 +246,7 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 if __name__ == "__main__":
 
 	##obtain version for autosubmit being used in expid.py step
-	(status, output) = getstatusoutput("git rev-parse HEAD")
+	(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
 	autosubmit_version = output
 
 	parser = argparse.ArgumentParser()
