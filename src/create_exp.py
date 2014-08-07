@@ -18,22 +18,22 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import dir_config
-from sys import exit, argv
+import argparse
+import shutil
+import json
+import cPickle as pickle
+from pyparsing import nestedExpr
+from os import path
 from job.job import Job
 from job.wrap import Wrap
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
-from config_parser import config_parser, expdef_parser, archdef_parser
+from config_parser import config_parser
+from config_parser import expdef_parser
+from config_parser import archdef_parser
 from monitor import GenerateOutput
-from os import path
-import sys, os
-import shutil
-import cPickle as pickle
-from dir_config import DB_DIR
-import json
-from pyparsing import nestedExpr
+from dir_config import LOCAL_ROOT_DIR
 
 def get_members(out):
 		count = 0
@@ -84,12 +84,14 @@ def create_json(text):
 # Main Program
 ####################
 if __name__ == "__main__":
+	
+	parser = argparse.ArgumentParser(description='Create pickle given an experiment identifier')
+	parser.add_argument('-e', '--expid', required=True, nargs = 1)
+	args = parser.parse_args()
+	if args.expid is None:
+		parser.error("Missing expid.")
 
-	if(len(argv) != 2):
-		print "Missing config file or expid."
-		exit(1)
-
-	filename = DB_DIR + argv[1] + "/conf/" + "autosubmit_" + argv[1] + ".conf"
+	filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
 	if (path.exists(filename)):
 		conf_parser = config_parser(filename)
 		print "Using config file: %s" % filename
@@ -98,13 +100,11 @@ if __name__ == "__main__":
 		exit(1)
 
 
-	expid = conf_parser.get('config', 'expid')
-
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	expid = conf_parser.get('config', 'EXPID')
 
 	expdef = []
 	incldef = []
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
 	for section in exp_parser.sections():
 		if (section.startswith('include')):
@@ -113,12 +113,20 @@ if __name__ == "__main__":
 		else:
 			expdef += exp_parser.items(section)
 
+	archdef = []
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	arch_parser = archdef_parser(arch_parser_file)
-	expdef += arch_parser.items('archdef')
+	for section in arch_parser.sections():
+		if (section.startswith('include')):
+			items = [x for x in arch_parser.items(section) if x not in arch_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			archdef += arch_parser.items(section)
 
 	parameters = dict()
-
 	for item in expdef:
+		parameters[item[0]] = item[1]
+	for item in archdef:
 		parameters[item[0]] = item[1]
 	for item in incldef:
 		parameters[item[0]] = file(item[1]).read()
@@ -127,15 +135,12 @@ if __name__ == "__main__":
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
 	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
-	if (exp_parser.has_option('experiment','RERUN')):
-		rerun = exp_parser.get('experiment','RERUN').lower()
-	else:
-		rerun = 'false'
+	rerun = exp_parser.get('experiment','RERUN').lower()
 
-	if (rerun == 'false'):
+	if (not rerun):
 		job_list = JobList(expid)
 		job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
-	elif (rerun == 'true'):
+	else:
 		job_list = RerunJobList(expid)
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)

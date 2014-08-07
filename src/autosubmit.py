@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+import argparse
 import time, os, sys
 import commands
 import signal
@@ -31,7 +32,6 @@ from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
-import dir_config
 from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
 from job.job_common import Status, Type
@@ -44,16 +44,6 @@ from finalise_exp import clean_git, clean_plot, register_sha
 
 """This is the main code of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
 
-####################
-# Global Variables
-####################
-
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
-                    datefmt='%a, %d %b %Y %H:%M:%S',
-                    filename='myauto'+sys.argv[1]+'.log',
-                    filemode='w')
-logger = logging.getLogger("AutoLog")
-
 def log_long(message):
 	print "[%s] %s" % (time.asctime(), message)
  
@@ -65,15 +55,24 @@ def log_short(message):
 ####################
 # Main Program
 ####################
-if __name__ == "__main__":
+def main():
  
 	os.system('clear')
-	if(len(sys.argv) != 2):
-		print "Missing expid\n"
-		sys.exit(1)
+	parser = argparse.ArgumentParser(description='Launch Autosubmit given an experiment identifier')
+	parser.add_argument('-e', '--expid', required=True, nargs = 1)
+	args = parser.parse_args()
+	if args.expid is None:
+		parser.error("Missing expid.")
+
+	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
+    	                datefmt='%a, %d %b %Y %H:%M:%S',
+            	        filename=os.path.join(os.path.dirname(__file__), os.pardir, 'my_autosubmit_' + args.expid[0] + '.log'),
+                	    filemode='w')
+	
+	logger = logging.getLogger("AutoLog")
 
 	autosubmit_version_filename = os.path.join(os.path.dirname(__file__), os.pardir, "VERSION")
-	template_version_filename = LOCAL_ROOT_DIR + "/" + sys.argv[1] + "/git/templates/VERSION"
+	template_version_filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/git/templates/VERSION"
 	
 	if not check_compatibility(autosubmit_version_filename, template_version_filename):
 		print "Compatibility check FAILED!"
@@ -82,7 +81,7 @@ if __name__ == "__main__":
 	else:
 		print "Compatibility check PASSED!"
 
-	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
+	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
@@ -236,7 +235,7 @@ if __name__ == "__main__":
 		available = maxWaitingJobs-waiting
 	
 		# variables to be updated on the fly
-		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
+		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
 		#totalWraps = int(conf_parser.get('config','totalwraps'))
@@ -483,4 +482,7 @@ if __name__ == "__main__":
 		print "Cleaning plot directory..."
 		clean_plot(expid)
  
-logger.info("Finished job submission")
+ 	logger.info("Finished job submission")
+
+if __name__ == "__main__":
+	main()
