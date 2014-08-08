@@ -52,6 +52,33 @@ def log_short(message):
 	date = "%04d-%02d-%02d %02d:%02d:%02d" % (d[0],d[1],d[2],d[3],d[4],d[5])
 	print "[%s] %s" % (date,message)
 
+def check_parameters(conf_parser_file):
+	conf_parser = config_parser(conf_parser_file)
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
+
+	expdef = []
+	incldef = []
+	for section in exp_parser.sections():
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
+
+	expdef += arch_parser.items('archdef')
+	parameters = dict()
+	for item in expdef:
+		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
+
+	return parameters
+
+	
+
 ####################
 # Main Program
 ####################
@@ -81,21 +108,23 @@ def main():
 	else:
 		print "Compatibility check PASSED!"
 
-	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf")
+	conf_parser_file = LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
+	conf_parser = config_parser(conf_parser_file)
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
 	arch_parser = archdef_parser(arch_parser_file)
 
-	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
-	totalJobs = int(conf_parser.get('config','totaljobs'))
-	expid = exp_parser.get('experiment','expid')
+	alreadySubmitted = int(conf_parser.get('config','ALREADYSUBMITTED'))
+	totalJobs = int(conf_parser.get('config','TOTALJOBS'))
+	expid = exp_parser.get('experiment','EXPID')
 	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
-	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
-	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
-	retrials = int(conf_parser.get('config','retrials'))
+	maxWaitingJobs = int(conf_parser.get('config','MAXWAITINGJOBS'))
+	safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
+	retrials = int(conf_parser.get('config','RETRIALS'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
-	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
+	#scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
+	scratch_dir = ""
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
@@ -107,26 +136,8 @@ def main():
 	else: 
 		wrapping = 'false'
 	
-	expdef = []
-	incldef = []
-	for section in exp_parser.sections():
-		if (section.startswith('include')):
-			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-			incldef += items
-		else:
-			expdef += exp_parser.items(section)
-
-	arch_parser = archdef_parser(arch_parser_file)
-	expdef += arch_parser.items('archdef')
-
-	parameters = dict()
-
-	for item in expdef:
-		parameters[item[0]] = item[1]
-	for item in incldef:
-		parameters[item[0]] = file(item[1]).read()
-
-
+	# Check parameters changes	
+	parameters = check_parameters(conf_parser_file)	
 
 	if(hpcarch == "bsc"):
 	   remoteQueue = MnQueue(expid)
@@ -236,7 +247,7 @@ def main():
 	
 		# variables to be updated on the fly
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf")
-		totalJobs = int(conf_parser.get('config','totaljobs'))
+		totalJobs = int(conf_parser.get('config','TOTALJOBS'))
 		logger.info("Jobs to submit: %s" % totalJobs)
 		#totalWraps = int(conf_parser.get('config','totalwraps'))
 		#logger.info("Wraps to submit: %s" % totalWraps)
@@ -245,36 +256,19 @@ def main():
 		else: 
 			wrapping = 'false'
 		if (wrapping == 'true'):
-			wrapsize = int(conf_parser.get('config', 'wrapsize'))
+			wrapsize = int(conf_parser.get('config', 'WRAPSIZE'))
 			logger.info("Wrap size: %s" % wrapsize)
 		else:
 			wrapsize = 1
 		logger.info("Wrap size: %s" % wrapsize)
-		safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
+		safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
 		logger.info("Sleep: %s" % safetysleeptime)
-		retrials = int(conf_parser.get('config','retrials'))
+		retrials = int(conf_parser.get('config','RETRIALS'))
 		logger.info("Number of retrials: %s" % retrials)
-		exp_parser = expdef_parser(exp_parser_file)
-		arch_parser = archdef_parser(arch_parser_file)
-		expdef = []
-		incldef = []
-		for section in exp_parser.sections():
-			if (section.startswith('include')):
-				items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-				incldef += items
-			else:
-				expdef += exp_parser.items(section)
 
-		arch_parser = archdef_parser(arch_parser_file)
-		expdef += arch_parser.items('archdef')
-
-		parameters = dict()
-
-		for item in expdef:
-			parameters[item[0]] = item[1]
-		for item in incldef:
-			parameters[item[0]] = file(item[1]).read()
-
+		# Check parameters changes	
+		parameters = check_parameters(conf_parser_file)	
+	
 		parameters['WRAPSIZE'] = wrapsize
 		parameters['RETRIALS'] = retrials 
 		parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
@@ -287,15 +281,15 @@ def main():
 		logger.info("Saving joblist")
 		joblist.save()
   
-		if conf_parser.get('config','verbose').lower()=='true':
+		if conf_parser.get('config','VERBOSE').lower()=='true':
 			logger.info("Active jobs in queues:\t%s" % active)
 			logger.info("Waiting jobs in queues:\t%s" % waiting)
 
 		if available == 0:
-			if  conf_parser.get('config','verbose').lower()=='true':
+			if  conf_parser.get('config','VERBOSE').lower()=='true':
 				logger.info("There's no room for more jobs...")
 		else:
-			if  conf_parser.get('config','verbose').lower()=='true':
+			if  conf_parser.get('config','VERBOSE').lower()=='true':
 				logger.info("We can safely submit %s jobs..." % available)
 	  
 		#get the list of jobs currently in the Queue
@@ -331,23 +325,10 @@ def main():
 						job.check_completion()
 					else:
 						job.set_status(status)
-				exp_parser = expdef_parser(exp_parser_file)
-				arch_parser = archdef_parser(arch_parser_file)
-				expdef = []
-				incldef = []
-				for section in exp_parser.sections():
-					if (section.startswith('include')):
-						items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-						incldef += items
-					else:
-						expdef += exp_parser.items(section)
-				arch_parser = archdef_parser(arch_parser_file)
-				expdef += arch_parser.items('archdef')
-				parameters = dict()
-				for item in expdef:
-					parameters[item[0]] = item[1]
-				for item in incldef:
-					parameters[item[0]] = file(item[1]).read()
+			
+				# Check parameters changes	
+				parameters = check_parameters(conf_parser_file)	
+				
 				parameters['WRAPSIZE'] = wrapsize
 				parameters['RETRIALS'] = retrials 
 				parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
