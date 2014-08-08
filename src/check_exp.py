@@ -33,6 +33,41 @@ def print_parameters(title, parameters):
 		print "{0:<{col1}}| {1:<{col2}}".format(i[0],i[1],col1=15,col2=15)
 	print ""
 
+def check_templates():
+	"""Procedure to check autogeneration of templates given 
+	Experiment, Platform and Autosubmit configuration files.
+	Returns True if all variables are set.
+	If the parameters are not correctly replaced, the function returns
+	False and the check fails.
+
+	:param autosubmit_def_filename: path to the Autosubmit configuration file
+	:type: str
+	:retruns: bool
+	"""
+	result = True
+	if (path.exists(autosubmit_def_filename)):
+		conf_parser = config_parser(autosubmit_def_filename)
+		print "Using config file: %s" % autosubmit_def_filename
+	else:
+		print "The config file %s necessary does not exist." % autosubmit_def_filename
+		exit(1)
+
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	
+	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
+
+	templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+
+	for key,value in parameters.items():
+		if (not key.startswith('HEADER') and key in templateContent):
+			print "%s:\t%s" % (key,parameters[key])
+		templateContent = templateContent.replace("%"+key+"%",parameters[key])
+
+
+
+
 def check_experiment(autosubmit_def_filename):
 	"""Function to read configuration files of Experiment, Platform and Autosubmit.
 	Returns True if all variables are set.

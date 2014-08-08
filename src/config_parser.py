@@ -67,6 +67,7 @@ def config_parser(filename):
 	
 	check_values('RUNMODE', parser.get('config', 'RUNMODE'), runmode)
 	check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
+	# check autosubmit.py variables
 	check_regex('ALREADYSUBMITTED', parser.get('config', 'ALREADYSUBMITTED'), alreadysubmitted)
 
 	if(invalid_values):
@@ -106,7 +107,9 @@ def expdef_parser(filename):
 		print missing
 		sys.exit()
 	
+	# check autosubmit.py variables
 	check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
+	# check create_exp.py variables
 	check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
 	check_regex('MEMBERS', parser.get('experiment', 'MEMBERS'), members)
 	check_regex('CHUNKINI', parser.get('experiment', 'CHUNKINI'), chunkini)
