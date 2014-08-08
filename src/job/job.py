@@ -21,6 +21,7 @@
 import os
 from job_common import Status
 from job_common import Type
+from job_common import Template
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
 
@@ -335,7 +336,7 @@ class Job:
 		  
 		if (self._type == Type.SIMULATION):
 			print "jobType: %s" %str(self._type)
-			mytemplate = self._template_path + templatename + '/' + templatename + '.sim'
+			templateContent = Template.SIMULATION
 			##update parameters
 			parameters['PREV'] = str(prev_days)
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
@@ -344,7 +345,7 @@ class Job:
 			parameters['HEADER'] = parameters['HEADER_SIM']
 		elif (self._type == Type.POSTPROCESSING):
 			print "jobType: %s " % str(self._type)
-			mytemplate = self._template_path + templatename + '/' + templatename + '.post'
+			templateContent = Template.POSTPROCESSING
 			##update parameters
 			starting_date_year = chunk_date_lib.chunk_start_year(string_date)
 			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
@@ -356,46 +357,45 @@ class Job:
 			parameters['HEADER'] = parameters['HEADER_POST']
 		elif (self._type == Type.CLEANING):
 			print "jobType: %s" % str(self._type)
+			templateContent = Template.CLEANING
 			##update parameters
-			mytemplate = self._template_path + templatename + '/' + templatename + '.clean'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
 			parameters['TASKTYPE'] = 'CLEANING'
 			parameters['HEADER'] = parameters['HEADER_CLEAN']
 		elif (self._type == Type.INITIALISATION):
 			print "jobType: %s" % self._type
+			templateContent = Template.INITIALISATION
 			##update parameters
-			mytemplate = self._template_path + templatename + '/' + templatename + '.ini'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_INI']
 			parameters['TASKTYPE'] = 'INITIALISATION'
 			parameters['HEADER'] = parameters['HEADER_INI']
 		elif (self._type == Type.LOCALSETUP):
 			print "jobType: %s" % self._type
+			templateContent = Template.LOCALSETUP
 			##update parameters
-			mytemplate = self._template_path + 'common/common.localsetup'
 			parameters['TASKTYPE'] = 'LOCAL SETUP'
 			parameters['HEADER'] = parameters['HEADER_LOCALSETUP']
 		elif (self._type == Type.REMOTESETUP):
 			print "jobType: %s" % self._type
+			templateContent = Template.REMOTESETUP
 			##update parameters
-			mytemplate = self._template_path + 'common/common.remotesetup'
 			parameters['TASKTYPE'] = 'REMOTE SETUP'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
 			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
 			print "jobType: %s" % self._type
+			templateContent = Template.TRANSFER
 			##update parameters
-			mytemplate = self._template_path + 'common/common.localtrans'
 			parameters['TASKTYPE'] = 'TRANSFER'
 			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
 		else: 
 			print "Unknown Job Type"
-		 
-		print "My Template: %s" % mytemplate
-		templateContent = file(mytemplate).read()
 
+		print templateContent
+		 
 		parameters['FAIL_COUNT'] = str(self._fail_count)
 		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
 

@@ -34,7 +34,8 @@ from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
 from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
-from job.job_common import Status, Type
+from job.job_common import Status
+from job.job_common import Type
 from job.job_list import JobList
 from job.job_list import RerunJobList
 import cPickle as pickle
