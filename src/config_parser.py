@@ -19,6 +19,7 @@
 
 import sys
 import re
+from pyparsing import nestedExpr
 from os import path
 from ConfigParser import SafeConfigParser
 
@@ -37,6 +38,15 @@ def check_regex(key, value, regex):
 	prog = re.compile(regex)
 
 	if(not prog.match(value.lower())):
+		print "Invalid value %s: %s" %(key,value)
+		invalid_values = True
+
+def check_json(key, value):
+	global invalid_values
+
+	try:
+		out = nestedExpr('[',']').parseString(value).asList()
+	except:
 		print "Invalid value %s: %s" %(key,value)
 		invalid_values = True
 
@@ -102,6 +112,8 @@ def expdef_parser(filename):
 	check_regex('CHUNKINI', parser.get('experiment', 'CHUNKINI'), chunkini)
 	check_regex('NUMCHUNKS', parser.get('experiment', 'NUMCHUNKS'), numchunks)
 	check_regex('RERUN', parser.get('experiment', 'RERUN'), rerun)
+	if (parser.get('experiment', 'RERUN') == "TRUE"):
+		check_json('CHUNKLIST', parser.get('experiment', 'CHUNKLIST'))
 
 	if(invalid_values):
 		print "\nInvalid experiment config file"

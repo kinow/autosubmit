@@ -137,10 +137,10 @@ if __name__ == "__main__":
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
 	rerun = exp_parser.get('experiment','RERUN').lower()
 
-	if (not rerun):
+	if (rerun == "false"):
 		job_list = JobList(expid)
 		job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
-	else:
+	elif (rerun == "true"):
 		job_list = RerunJobList(expid)
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
