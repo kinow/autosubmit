@@ -150,6 +150,9 @@ if __name__ == "__main__":
 	elif(hpcarch == "ecmwf"):
 	   remoteQueue = EcQueue(expid)
 	   remoteQueue.set_host("c2a")
+	elif(hpcarch == "ecmwf-cca"):
+	   remoteQueue = EcQueue(expid)
+	   remoteQueue.set_host("cca")
 	elif(hpcarch == "marenostrum3"):
 	   remoteQueue = Mn3Queue(expid)
 	   remoteQueue.set_host("mn-" + hpcproj)
