@@ -407,7 +407,8 @@ if __name__ == "__main__":
 					status = queue.check_job(wrap.get_id(), wrap.get_status())
 					if(status == Status.COMPLETED):
 						logger.debug("This wrap seems to have completed...checking")
-						queue.get_completed_files(job.get_name())
+						### Minguuu this does not seem to make sense... a retrial will never happen...
+						queue.get_completed_files(wrap.get_name())
 						wrap.check_completion()
 						wraplist.remove(wrap)
 						activejobswrap = 0
@@ -420,6 +421,9 @@ if __name__ == "__main__":
 		else:
 			## get the list of jobs READY
 			jobsavail = joblist.get_ready()
+
+   		joblist.update_parameters(parameters)
+		joblist.update_list()
 
 		if not queueavail:
 			logger.info("There is no queue available")
