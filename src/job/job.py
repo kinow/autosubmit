@@ -288,7 +288,7 @@ class Job:
 			#job_logger.info("The checking in check_completion tell us that job %s has failed" % self.name)
 			self.set_status(Status.FAILED)
 
-	def	create_script(self, templatename):
+	def	create_script(self):
 		parameters = self._parameters
 
 		splittedname = self.get_long_name().split('_')
