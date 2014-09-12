@@ -81,11 +81,16 @@ def config_parser(filename):
 
 def expdef_parser(filename):
 	hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'hector', 'archer']
+	hpcproj = "\s*[\w\-]+\s*$"
+	hpcuser = "\s*[\w\-]+\s*$"
 	startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"
 	chunkini = "\s*\d+\s*$"
 	numchunks = "\s*\d+\s*$"
+	chunksize = "\s*\d+\s*$"
 	members = "(\s*fc\d+\s*)+$"
 	rerun = "\s*(true|false)\s*$"
+	wallclock = "\s*\d\d:\d\d\s*$"
+	numproc = "\s*\d+\s*$"
 	
 	#option that must be in config file and has no default value
 	mandatory_opt = ['EXPID']
@@ -109,11 +114,24 @@ def expdef_parser(filename):
 	
 	# check autosubmit.py variables
 	check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
+	check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
+	check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
+	check_regex('WALLCLOCK_SETUP', parser.get('experiment', 'WALLCLOCK_SETUP'), wallclock)
+	check_regex('WALLCLOCK_INI', parser.get('experiment', 'WALLCLOCK_INI'), wallclock)
+	check_regex('WALLCLOCK_SIM', parser.get('experiment', 'WALLCLOCK_SIM'), wallclock)
+	check_regex('WALLCLOCK_POST', parser.get('experiment', 'WALLCLOCK_POST'), wallclock)
+	check_regex('WALLCLOCK_CLEAN', parser.get('experiment', 'WALLCLOCK_CLEAN'), wallclock)
+	check_regex('NUMPROC_SETUP', parser.get('experiment', 'NUMPROC_SETUP'), numproc)
+	check_regex('NUMPROC_INI', parser.get('experiment', 'NUMPROC_INI'), numproc)
+	check_regex('NUMPROC_SIM', parser.get('experiment', 'NUMPROC_SIM'), numproc)
+	check_regex('NUMPROC_POST', parser.get('experiment', 'NUMPROC_POST'), numproc)
+	check_regex('NUMPROC_CLEAN', parser.get('experiment', 'NUMPROC_CLEAN'), numproc)
 	# check create_exp.py variables
 	check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
 	check_regex('MEMBERS', parser.get('experiment', 'MEMBERS'), members)
 	check_regex('CHUNKINI', parser.get('experiment', 'CHUNKINI'), chunkini)
 	check_regex('NUMCHUNKS', parser.get('experiment', 'NUMCHUNKS'), numchunks)
+	check_regex('CHUNKSIZE', parser.get('experiment', 'CHUNKSIZE'), chunksize)
 	check_regex('RERUN', parser.get('experiment', 'RERUN'), rerun)
 	if (parser.get('experiment', 'RERUN') == "TRUE"):
 		check_json('CHUNKLIST', parser.get('experiment', 'CHUNKLIST'))

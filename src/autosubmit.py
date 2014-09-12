@@ -115,8 +115,7 @@ def main():
 	safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
 	retrials = int(conf_parser.get('config','RETRIALS'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
-	#scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
-	scratch_dir = ""
+	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	if (exp_parser.has_option('experiment','RERUN')):
@@ -125,6 +124,7 @@ def main():
 		rerun = 'false'
 	
 	# Check parameters changes	
+	print "Checking parameters..."
 	parameters = check_parameters(conf_parser_file)	
 
 	if(hpcarch == "bsc"):
@@ -154,7 +154,7 @@ def main():
 
 	localQueue = PsQueue(expid)
 	localQueue.set_host(platform.node())
-	localQueue.set_scratch("/cfu/autosubmit")
+	localQueue.set_scratch(LOCAL_ROOT_DIR)
 	localQueue.set_project(expid)
 	localQueue.set_user("tmp")
 	localQueue.update_cmds()
@@ -209,6 +209,20 @@ def main():
 
 	logger.debug("Length of joblist: %s" % len(joblist))
 
+	# Check parameters changes	
+	print "Checking parameters..."
+	parameters = check_parameters(conf_parser_file)	
+	print "Updating parameters..."
+	joblist.update_parameters(parameters)
+	#check the job list script creation
+	print "Checking experiment templates..."
+	if (joblist.check_scripts()):
+		logger.info("Experiment templates check PASSED!")
+	else:
+		logger.error("Experiment templates check FAILED!")
+		print "Experiment templates check FAILED!"
+		sys.exit()
+
 	
 	#check the availability of the Queues
 	localQueue.check_remote_log_dir()
@@ -241,6 +255,7 @@ def main():
 		logger.info("Number of retrials: %s" % retrials)
 
 		# Check parameters changes	
+		print "Checking parameters..."
 		parameters = check_parameters(conf_parser_file)	
    		joblist.update_parameters(parameters)
 
@@ -301,6 +316,7 @@ def main():
 						job.set_status(status)
 			
 				# Check parameters changes	
+				print "Checking parameters..."
 				parameters = check_parameters(conf_parser_file)	
 				joblist.update_parameters(parameters)
 
@@ -367,14 +383,15 @@ def main():
 					job.set_status(Status.SUBMITTED)
 
 				# Check parameters changes	
+				print "Checking parameters..."
 				parameters = check_parameters(conf_parser_file)	
 				joblist.update_parameters(parameters)
 		
 		time.sleep(safetysleeptime)
 	## finalise experiment
 	if (len(joblist.get_completed()) == len(joblist)):
-		print "Cleaning GIT directory..."
-		clean_git(expid)
+		#print "Cleaning GIT directory..."
+		#clean_git(expid)
 		print "Cleaning plot directory..."
 		clean_plot(expid)
  

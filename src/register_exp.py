@@ -26,7 +26,7 @@ from sys import exit
 from pysqlite2 import dbapi2 as sql
 from commands import getstatusoutput
 
-DB_PATH = DB_DIR + DB_FILE
+DB_PATH = DB_DIR + "/" + DB_FILE
 
 def open_conn():
 	conn = sql.connect(DB_PATH)

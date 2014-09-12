@@ -18,17 +18,17 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
+import pickle
+from time import localtime, strftime
+from sys import	setrecursionlimit
+from shutil import move
+import json
 from job_common import Status
 from job_common import Type
 from job import Job
 from wrap import Wrap
-import os
-import pickle
-from sys import	exit, setrecursionlimit
 from dir_config import LOCAL_ROOT_DIR
-from shutil import move
-from time import localtime, strftime
-import json
 
 class JobList:
 	
@@ -273,7 +273,7 @@ class JobList:
 		if (self._parameters.has_key('RETRIALS')):
 			retrials = int(self._parameters['RETRIALS'])
 		else:
-			retrials = 10
+			retrials = 4
 		print "Retrials: "
 		print retrials
 
@@ -330,6 +330,16 @@ class JobList:
 	def check_genealogy(self):
 		"""When we have updated the joblist, parents and child list must be consistent"""
 		pass
+
+	def check_scripts(self):
+		"""When we have created the scripts, all parameters should have been substituted. %PARAMETER% handlers not allowed"""
+		out = True
+		for job in self._job_list:
+			if not job.check_script():
+				out = False
+				print "WARNING: Invalid parameter substitution in %s!!!" % job.get_name()
+
+		return out
 
 class RerunJobList(JobList):
 	

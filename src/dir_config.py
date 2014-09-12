@@ -19,7 +19,7 @@
 
 
 LOCAL_ROOT_DIR = "/cfu/autosubmit"
-DB_DIR = "/cfu/autosubmit/"
+DB_DIR = "/cfu/autosubmit"
 GIT_DIR = "https://dev.cfu.local/"
 COMPATIBILITY_TABLE = "compatibility_table.txt"
 DB_FILE = 'autosubmit.db'

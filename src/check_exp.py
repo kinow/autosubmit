@@ -18,10 +18,14 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Functions for handling experiment parameters check"""
-from dir_config import LOCAL_ROOT_DIR
-from config_parser import config_parser, expdef_parser, archdef_parser
 import argparse
 from os import path
+from job.job_common import Status
+from job.job_common import Type
+from job.job import Job
+from job.job_list import JobList
+from dir_config import LOCAL_ROOT_DIR
+from config_parser import config_parser, expdef_parser, archdef_parser
 
 
 def print_parameters(title, parameters):
@@ -33,7 +37,33 @@ def print_parameters(title, parameters):
 		print "{0:<{col1}}| {1:<{col2}}".format(i[0],i[1],col1=15,col2=15)
 	print ""
 
-def check_templates():
+def load_parameters(conf_parser_file):
+	conf_parser = config_parser(conf_parser_file)
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	exp_parser = expdef_parser(exp_parser_file)
+	arch_parser = archdef_parser(arch_parser_file)
+
+	expdef = []
+	incldef = []
+	for section in exp_parser.sections():
+		if (section.startswith('include')):
+			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
+			incldef += items
+		else:
+			expdef += exp_parser.items(section)
+
+	expdef += arch_parser.items('archdef')
+	parameters = dict()
+	for item in expdef:
+		parameters[item[0]] = item[1]
+	for item in incldef:
+		parameters[item[0]] = file(item[1]).read()
+
+	return parameters
+
+
+def check_templates(autosubmit_def_filename):
 	"""Procedure to check autogeneration of templates given 
 	Experiment, Platform and Autosubmit configuration files.
 	Returns True if all variables are set.
@@ -44,31 +74,19 @@ def check_templates():
 	:type: str
 	:retruns: bool
 	"""
-	result = True
-	if (path.exists(autosubmit_def_filename)):
-		conf_parser = config_parser(autosubmit_def_filename)
-		print "Using config file: %s" % autosubmit_def_filename
-	else:
-		print "The config file %s necessary does not exist." % autosubmit_def_filename
-		exit(1)
+	out = True
 
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	parameters = load_parameters(autosubmit_def_filename)
+	joblist = JobList(parameters['EXPID'])
+	joblist.create(parameters['DATELIST'].split(' '),parameters['MEMBERS'].split(' '),int(parameters['CHUNKINI']),int(parameters['NUMCHUNKS']),parameters)
+	out = joblist.check_scripts()
 	
-	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
-
-	templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
-
-	for key,value in parameters.items():
-		if (not key.startswith('HEADER') and key in templateContent):
-			print "%s:\t%s" % (key,parameters[key])
-		templateContent = templateContent.replace("%"+key+"%",parameters[key])
+	return out
 
 
 
 
-def check_experiment(autosubmit_def_filename):
+def check_parameters(autosubmit_def_filename):
 	"""Function to read configuration files of Experiment, Platform and Autosubmit.
 	Returns True if all variables are set.
 	If the parameters do not exist, the function returns False and the check fails.
@@ -106,12 +124,6 @@ def check_experiment(autosubmit_def_filename):
 			result = False
 			print_parameters("PLATFORM PARAMETERS - " + section, arch_parser.items(section))
 
-
-	#if result:
-	#	print "Experiment configuration check PASSED!"
-	#else:
-	#	print "Experiment configuration check FAILED! ..."
-
 	return result
 
 
@@ -120,7 +132,7 @@ def check_experiment(autosubmit_def_filename):
 ####################
 if __name__ == "__main__":
 
-	parser = argparse.ArgumentParser(description='Check autosubmit, experiment and platform configurations given a experiment identifier')
+	parser = argparse.ArgumentParser(description='Check autosubmit, experiment and platform configurations given a experiment identifier. Check templates creation with those configurations')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	args = parser.parse_args()
 	if args.expid is None:
@@ -128,8 +140,18 @@ if __name__ == "__main__":
 
 	autosubmit_def_filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
 
-	if check_experiment(autosubmit_def_filename):
+	print "Checking experiment configuration..."
+	if check_parameters(autosubmit_def_filename):
 		print "Experiment configuration check PASSED!"
 	else:
 		print "Experiment configuration check FAILED!"
 		print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
+
+	print "Checking experiment templates..."
+	if check_templates(autosubmit_def_filename):
+		print "Experiment templates check PASSED!"
+	else:	
+		print "Experiment templates check FAILED!"
+		print "WARNING: running after FAILED experiment templates check is at your own risk!!!"
+
+

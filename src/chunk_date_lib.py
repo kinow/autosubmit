@@ -57,12 +57,9 @@ def running_days(start_date,end_date):
  return subs_dates(start_date,end_date)
  
 def previous_days(string_date,start_date):
- print string_date
- print start_date
  return subs_dates(string_date,start_date)
 
 def previous_day(string_date):
- print string_date
  st_date = time.strptime(string_date,'%Y%m%d')
  st_date_datetime = datetime.date(st_date.tm_year,st_date.tm_mon,st_date.tm_mday)
  oneday = datetime.timedelta(days=1)

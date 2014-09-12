@@ -31,11 +31,11 @@ from commands import getstatusoutput
 from distutils.util import strtobool
 
 # Database parameters
-#DB_DIR = '/cfu/autosubmit/'
+#DB_DIR = '/cfu/autosubmit'
 #DB_FILE = 'ecearth.db'
 #DB_NAME = 'ecearth'
 
-DB_PATH = DB_DIR + DB_FILE
+DB_PATH = DB_DIR + "/" + DB_FILE
 
 DEFAULT_EXPID_BSC = "b000"
 DEFAULT_EXPID_HEC = "h000"
@@ -237,6 +237,23 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 		elif hpc == "archer": 
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 
+	if re.search('SCRATCH_DIR =.*', content):
+		if hpc == "bsc":
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch/ecm86")
+		elif hpc == "hector":
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
+		elif hpc == "ithaca":
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch")
+		elif hpc == "lindgren":
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /cfs/scratch")
+		elif hpc == "ecmwf":
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
+		elif hpc == "marenostrum3": 
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch")
+		elif hpc == "archer": 
+			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
+
+
 	return content
 
 
@@ -268,9 +285,9 @@ if __name__ == "__main__":
 			parser.error("Missing HPC.");
 
 		exp_id = new_experiment(args.HPC, args.description)
-		os.mkdir(DB_DIR + exp_id)
+		os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id)
 		
-		os.mkdir(DB_DIR + exp_id + '/conf')
+		os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
 		print "Copying config files..."
 		##autosubmit config and architecture copyed from AS.
 		files = os.listdir(os.path.join(os.path.dirname(__file__), os.pardir, 'conf'))
@@ -280,11 +297,11 @@ if __name__ == "__main__":
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
 				content = file(os.path.join(os.path.dirname(__file__), os.pardir, 'conf', filename), 'r').read()
 				content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
-				print DB_DIR + exp_id + "/conf/" + new_filename
-				file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
+				print LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename
+				file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
 
-		content = file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		file(DB_DIR + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
+		content = file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
+		file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
 
 	elif args.copy:
 		if args.description is None:
@@ -292,27 +309,27 @@ if __name__ == "__main__":
 		if args.HPC is None:
 			parser.error("Missing HPC.");
 
-		if os.path.exists(DB_DIR + args.copy):
+		if os.path.exists(LOCAL_ROOT_DIR + "/" + args.copy):
 			exp_id = copy_experiment(args.copy, args.HPC, args.description)
-			os.mkdir(DB_DIR + exp_id)
-			os.mkdir(DB_DIR + exp_id + '/conf')
+			os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id)
+			os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
 			print "Copying previous experiment config directories"
-			files = os.listdir(DB_DIR + args.copy + "/conf")
+			files = os.listdir(LOCAL_ROOT_DIR + "/" + args.copy + "/conf")
 			for filename in files:
-				if os.path.isfile(DB_DIR + args.copy + "/conf/" + filename):
+				if os.path.isfile(LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename):
 					new_filename = filename.replace(args.copy, exp_id)
-					content = file(DB_DIR + args.copy + "/conf/" + filename, 'r').read()
+					content = file(LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename, 'r').read()
 					content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
-					file(DB_DIR + exp_id + "/conf/" + new_filename, 'w').write(content)
+					file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)
 	
 	elif args.delete:
-		if os.path.exists(DB_DIR + args.delete):
+		if os.path.exists(LOCAL_ROOT_DIR + "/" + args.delete):
 			if user_yes_no_query("Do you want to delete " + args.delete + " ?"):
 				print "Removing experiment directory..."
-				shutil.rmtree(DB_DIR + args.delete)
+				shutil.rmtree(LOCAL_ROOT_DIR + "/" + args.delete)
 				print "Deleting experiment from database..."
 				delete_experiment(args.delete)
 			else:
@@ -323,12 +340,12 @@ if __name__ == "__main__":
 			sys.exit(1)
 	
 	content = file(os.path.join(os.path.dirname(__file__), os.pardir, "conf", "platforms", args.HPC + ".conf")).read()
-	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
+	file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
 	print "Creating temporal directory..."
-	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
+	os.mkdir(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"tmp")
 	print "Creating pkl directory..."
-	os.mkdir(DB_DIR+exp_id+"/"+"pkl")
+	os.mkdir(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"pkl")
 	print "Creating plot directory..."
-	os.mkdir(DB_DIR+exp_id+"/"+"plot")
-	os.chmod(DB_DIR+exp_id+"/"+"plot",0o775)
+	os.mkdir(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"plot")
+	os.chmod(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"plot",0o775)
 	print "Remember to MODIFY the config files!"

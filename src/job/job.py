@@ -19,6 +19,7 @@
 
 
 import os
+import re
 from job_common import Status
 from job_common import Type
 from job_common import Template
@@ -288,11 +289,9 @@ class Job:
 			#job_logger.info("The checking in check_completion tell us that job %s has failed" % self.name)
 			self.set_status(Status.FAILED)
 
-	def	create_script(self):
+	def update_parameters(self):
 		parameters = self._parameters
-
 		splittedname = self.get_long_name().split('_')
-		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		
 		if (self._type == Type.TRANSFER):
@@ -335,18 +334,12 @@ class Job:
 				parameters['Chunk_LAST'] = 'FALSE'
 		  
 		if (self._type == Type.SIMULATION):
-			print "jobType: %s" %str(self._type)
-			templateContent = Template.SIMULATION
-			##update parameters
 			parameters['PREV'] = str(prev_days)
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 			parameters['TASKTYPE'] = 'SIMULATION'
 			parameters['HEADER'] = parameters['HEADER_SIM']
 		elif (self._type == Type.POSTPROCESSING):
-			print "jobType: %s " % str(self._type)
-			templateContent = Template.POSTPROCESSING
-			##update parameters
 			starting_date_year = chunk_date_lib.chunk_start_year(string_date)
 			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
 			parameters['Starting_DATE_YEAR'] = str(starting_date_year)
@@ -356,64 +349,92 @@ class Job:
 			parameters['TASKTYPE'] = 'POSTPROCESSING'
 			parameters['HEADER'] = parameters['HEADER_POST']
 		elif (self._type == Type.CLEANING):
-			print "jobType: %s" % str(self._type)
-			templateContent = Template.CLEANING
-			##update parameters
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
 			parameters['TASKTYPE'] = 'CLEANING'
 			parameters['HEADER'] = parameters['HEADER_CLEAN']
 		elif (self._type == Type.INITIALISATION):
-			print "jobType: %s" % self._type
-			templateContent = Template.INITIALISATION
-			##update parameters
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_INI']
 			parameters['TASKTYPE'] = 'INITIALISATION'
 			parameters['HEADER'] = parameters['HEADER_INI']
 		elif (self._type == Type.LOCALSETUP):
-			print "jobType: %s" % self._type
-			templateContent = Template.LOCALSETUP
-			##update parameters
 			parameters['TASKTYPE'] = 'LOCAL SETUP'
 			parameters['HEADER'] = parameters['HEADER_LOCALSETUP']
 		elif (self._type == Type.REMOTESETUP):
-			print "jobType: %s" % self._type
-			templateContent = Template.REMOTESETUP
-			##update parameters
 			parameters['TASKTYPE'] = 'REMOTE SETUP'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
 			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
-			print "jobType: %s" % self._type
-			templateContent = Template.TRANSFER
-			##update parameters
 			parameters['TASKTYPE'] = 'TRANSFER'
 			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
 		else: 
 			print "Unknown Job Type"
-
-		print templateContent
 		 
 		parameters['FAIL_COUNT'] = str(self._fail_count)
 		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+		
+		self._parameters = parameters 
 
+		return parameters
+
+	def update_content(self):
+		if (self._type == Type.SIMULATION):
+			templateContent = Template.SIMULATION
+		elif (self._type == Type.POSTPROCESSING):
+			templateContent = Template.POSTPROCESSING
+		elif (self._type == Type.CLEANING):
+			templateContent = Template.CLEANING
+		elif (self._type == Type.INITIALISATION):
+			templateContent = Template.INITIALISATION
+		elif (self._type == Type.LOCALSETUP):
+			templateContent = Template.LOCALSETUP
+		elif (self._type == Type.REMOTESETUP):
+			templateContent = Template.REMOTESETUP
+		elif (self._type == Type.TRANSFER):
+			templateContent = Template.TRANSFER
+		else: 
+			print "Unknown Job Type"
+		
+		return templateContent
+
+	def	create_script(self):
+		parameters = self.update_parameters()
+		templateContent = self.update_content()
+		print "jobType: %s" % self._type
+		print templateContent
+		
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
 		# following values to be replaced that contain inside other values between %% to be replaced later
-		#templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
-		#templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
-		#templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
-		#templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
+		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
+		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
+		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
+		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
 		for key,value in parameters.items():
 			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
-		self._parameters = parameters 
+		scriptname = self._name+'.cmd'
 		file(self._tmp_path + scriptname, 'w').write(templateContent)
+
 		return scriptname
+	
+	def	check_script(self):
+		parameters = self.update_parameters()
+		templateContent = self.update_content()
+
+		variables = re.findall('%'+'(.+?)'+'%', templateContent)
+		out = set(parameters).issuperset(set(variables))
+
+		if not out:
+			print "The following set of variables to be substituted in template script is not part of parameters set: "
+			print set(variables)-set(parameters)
+
+		return out
+
 
 if __name__ == "__main__":
 	mainJob = Job('uno','1',Status.READY,0)
