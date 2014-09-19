@@ -93,7 +93,10 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
-	maxTransferJobs = int(conf_parser.get('config','maxtransferjobs'))
+	if (conf_parser.has_option('config','maxtransferjobs')):
+		maxTransferJobs = int(conf_parser.get('config','maxtransferjobs'))
+	else:
+		maxTransferJobs = 2
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	retrials = int(conf_parser.get('config','retrials'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
@@ -243,6 +246,9 @@ if __name__ == "__main__":
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 		totalJobs = int(conf_parser.get('config','totaljobs'))
 		logger.info("Jobs to submit: %s" % totalJobs)
+		if (conf_parser.has_option('config','maxtransferjobs')):
+			maxTransferJobs = int(conf_parser.get('config','maxtransferjobs'))
+		logger.info("Maximum transfer jobs: %s" % maxTransferJobs)
 		#totalWraps = int(conf_parser.get('config','totalwraps'))
 		#logger.info("Wraps to submit: %s" % totalWraps)
 		if (conf_parser.has_option('config','WRAP')):
@@ -426,14 +432,16 @@ if __name__ == "__main__":
 		else:
 			## get the list of jobs READY
 			jobsavail = joblist.get_ready()
-			print "transfering: %s" % transfering
-			if (transfering > 0):
-				jobstransready = [job for job in jobsavial if job.get_type() == Type.TRANSFER]
-				print "jobs trans ready %s" % jobstransready
-				jobsavail = jobsavail - jobstransready
-				print "jobs avaial - jobstransready %s" % jobsavail
-				jobsavail = jobsavail + jobstransready[0:availableTransfers]
-				print "jobs avail %s" %jobsavail
+			print "Transfering: %s" % transfering
+			#print "########################"
+			print "Available transfer slots : %s" % availableTransfers
+			#print "########################"
+			jobstransready = [job for job in jobsavail if job.get_type() == Type.TRANSFER]
+			#print "jobs trans ready %s" % jobstransready
+			jobsavail = [j for j in jobsavail if j not in jobstransready]
+			#print "jobs avaial - jobstransready %s" % jobsavail
+			jobsavail = jobsavail + jobstransready[0:availableTransfers]
+			#print "jobs avail %s" % jobsavail
 
 		if not queueavail:
 			logger.info("There is no queue available")
