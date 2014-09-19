@@ -93,6 +93,7 @@ if __name__ == "__main__":
 	expid = conf_parser.get('config','expid')
 	templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','maxwaitingjobs'))
+	maxTransferJobs = int(conf_parser.get('config','maxtransferjobs'))
 	safetysleeptime = int(conf_parser.get('config','safetysleeptime'))
 	retrials = int(conf_parser.get('config','retrials'))
 	hpcarch = exp_parser.get('experiment', 'HPCARCH')
@@ -165,6 +166,7 @@ if __name__ == "__main__":
 	logger.info("Jobs to submit: %s" % totalJobs)
 	logger.info("Start with job number: %s" % alreadySubmitted)
 	logger.info("Maximum waiting jobs in queues: %s" % maxWaitingJobs)
+	logger.info("Maximum transfer jobs: %s" % maxTransferJobs)
 	logger.info("Sleep: %s" % safetysleeptime)
 	logger.info("Retrials: %s" % retrials)
 	logger.info("Starting job submission...")
@@ -233,7 +235,9 @@ if __name__ == "__main__":
 	while joblist.get_active() :
 		active = len(joblist.get_running())
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
+		transfering = 0
 		available = maxWaitingJobs-waiting
+		availableTransfers = maxTransferJobs-transfering
 	
 		# variables to be updated on the fly
 		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
@@ -301,6 +305,8 @@ if __name__ == "__main__":
 	  
 		#get the list of jobs currently in the Queue
 		jobinqueue = joblist.get_in_queue()
+		transfering = len([job for job in jobinqueue if job.get_type() == Type.TRANSFER])
+		availableTransfers = maxTransferJobs-transfering
 		logger.info("Number of jobs in queue: %s" % str(len(jobinqueue)-(activejobswrap*wrapsize-activejobswrap))) 
 		# Check queue aviailability		
 		queueavail = queue.check_host()
@@ -420,6 +426,14 @@ if __name__ == "__main__":
 		else:
 			## get the list of jobs READY
 			jobsavail = joblist.get_ready()
+			print "transfering: %s" % transfering
+			if (transfering > 0):
+				jobstransready = [job for job in jobsavial if job.get_type() == Type.TRANSFER]
+				print "jobs trans ready %s" % jobstransready
+				jobsavail = jobsavail - jobstransready
+				print "jobs avaial - jobstransready %s" % jobsavail
+				jobsavail = jobsavail + jobstransready[0:availableTransfers]
+				print "jobs avail %s" %jobsavail
 
 		if not queueavail:
 			logger.info("There is no queue available")
