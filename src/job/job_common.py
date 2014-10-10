@@ -65,8 +65,6 @@ class Template:
 	REMOTESETUP are for soruce code compilation jobs
 	TRANSFER are for downloading data jobs"""
 	WRAPPING = textwrap.dedent("""\
-			%HEADER%
-
 			%AS-HEADER-REM%
 
 			#scriptname1 scriptname2 ...
@@ -88,56 +86,51 @@ class Template:
 			%AS-TAILER-REM%""")
 
 	LOCALSETUP = textwrap.dedent("""\
-			%HEADER%"
-			
 			%AS-HEADER-LOC%
 
-			%BODY%
-			
 			%AS-TAILER-LOC%""")
 	
 	REMOTESETUP = textwrap.dedent("""\
-			%HEADER%
-			
 			%AS-HEADER-REM%
 			
 			%AS-TAILER-REM%""")
 
 
 	INITIALISATION = textwrap.dedent("""\
-			%HEADER%
-			
 			%AS-HEADER-REM%
 			
 			%AS-TAILER-REM%""")
 
 	SIMULATION = textwrap.dedent("""\
-			%HEADER%
-			
 			%AS-HEADER-REM%
 			
 			%AS-TAILER-REM%""")
 
 	POSTPROCESSING = textwrap.dedent("""\
-			%HEADER%
-			
 			%AS-HEADER-REM%
 			
 			%AS-TAILER-REM%""")
 
 	CLEANING = textwrap.dedent("""\
-			%HEADER%
-			
 			%AS-HEADER-REM%
 			
 			%AS-TAILER-REM%""")
 
 	TRANSFER = textwrap.dedent("""\
-			%HEADER%"
-			
 			%AS-HEADER-LOC%
 			
 			%AS-TAILER-LOC%""")
+
+
+class StatisticsSnippet:
+	"""Class to handle the statistics snippet of a job"""
+
+	AS_HEADER = textwrap.dedent("""\
+			echo "header"
+			""")
+	AS_TAILER = textwrap.dedent("""\
+			echo "tailer"
+			""")
 
 
 class PsHeader:

@@ -23,6 +23,9 @@ import re
 from job_common import Status
 from job_common import Type
 from job_common import Template
+from job_common import ItHeader
+from job_common import PsHeader
+from job_common import StatisticsSnippet
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
 
@@ -338,7 +341,6 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 			parameters['TASKTYPE'] = 'SIMULATION'
-			parameters['HEADER'] = parameters['HEADER_SIM']
 		elif (self._type == Type.POSTPROCESSING):
 			starting_date_year = chunk_date_lib.chunk_start_year(string_date)
 			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
@@ -347,28 +349,22 @@ class Job:
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_POST']
 			parameters['TASKTYPE'] = 'POSTPROCESSING'
-			parameters['HEADER'] = parameters['HEADER_POST']
 		elif (self._type == Type.CLEANING):
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
 			parameters['TASKTYPE'] = 'CLEANING'
-			parameters['HEADER'] = parameters['HEADER_CLEAN']
 		elif (self._type == Type.INITIALISATION):
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_INI']
 			parameters['TASKTYPE'] = 'INITIALISATION'
-			parameters['HEADER'] = parameters['HEADER_INI']
 		elif (self._type == Type.LOCALSETUP):
 			parameters['TASKTYPE'] = 'LOCAL SETUP'
-			parameters['HEADER'] = parameters['HEADER_LOCALSETUP']
 		elif (self._type == Type.REMOTESETUP):
 			parameters['TASKTYPE'] = 'REMOTE SETUP'
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP'] 
 			parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
-			parameters['HEADER'] = parameters['HEADER_REMOTESETUP']
 		elif (self._type == Type.TRANSFER):
 			parameters['TASKTYPE'] = 'TRANSFER'
-			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
 		else: 
 			print "Unknown Job Type"
 		 
@@ -381,19 +377,40 @@ class Job:
 
 	def update_content(self):
 		if (self._type == Type.SIMULATION):
-			templateContent = Template.SIMULATION
+			templateContent = ItHeader.HEADER_SIM
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.SIMULATION
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.POSTPROCESSING):
-			templateContent = Template.POSTPROCESSING
+			templateContent = ItHeader.HEADER_POST
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.POSTPROCESSING
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.CLEANING):
-			templateContent = Template.CLEANING
+			templateContent = ItHeader.HEADER_CLEAN
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.CLEANING
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.INITIALISATION):
-			templateContent = Template.INITIALISATION
+			templateContent = ItHeader.HEADER_INI
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.INITIALISATION
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.LOCALSETUP):
-			templateContent = Template.LOCALSETUP
+			templateContent = PsHeader.HEADER_LOCALSETUP
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.LOCALSETUP
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.REMOTESETUP):
-			templateContent = Template.REMOTESETUP
+			templateContent = ItHeader.HEADER_REMOTESETUP
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.REMOTESETUP
+			templateContent += StatisticsSnippet.AS_TAILER
 		elif (self._type == Type.TRANSFER):
-			templateContent = Template.TRANSFER
+			templateContent = PsHeader.HEADER_LOCALTRANS
+			templateContent += StatisticsSnippet.AS_HEADER
+			templateContent += Template.TRANSFER
+			templateContent += StatisticsSnippet.AS_TAILER
 		else: 
 			print "Unknown Job Type"
 		
@@ -406,14 +423,14 @@ class Job:
 		print templateContent
 		
 		# first value to be replaced is header as it contains inside other values between %% to be replaced later
-		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
+		#templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
 		# following values to be replaced that contain inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
 		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
 		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
 		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
 		for key,value in parameters.items():
-			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
+			if (not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
