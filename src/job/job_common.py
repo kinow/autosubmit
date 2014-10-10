@@ -140,89 +140,714 @@ class Template:
 			%AS-TAILER-LOC%""")
 
 
+class PsHeader:
+	"""Class to handle the Ps headers of a job"""
+	
+	HEADER_LOCALSETUP = textwrap.dedent("""\
+			#!/bin/bash
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################""")
+
+	HEADER_LOCALTRANS = textwrap.dedent("""\
+			#!/bin/bash
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################""")
+
+	
 class ArHeader:
 	"""Class to handle the Archer headers of a job"""
 
-	HEADER_LOCALSETUP= #!/bin/bash
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-
-	HEADER_REMOTESETUP= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=serial=true:ncpus=1
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
-
-	HEADER_INI= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=serial=true:ncpus=1
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
-
-	HEADER_SIM= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=%%NUMPROC%%
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
-
-	HEADER_POST= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=serial=true:ncpus=1
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
-
-	HEADER_CLEAN= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=serial=true:ncpus=1
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
-
-	HEADER_LOCALTRANS= #!/bin/bash
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-
-	HEADER_WRP= #!/bin/sh
-	 ###############################################################################
-	 #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
-	 ###############################################################################
-	 #
-	 #PBS -N %%JOBNAME%%
-	 #PBS -l select=%%NUMPROC%%
-	 #PBS -l walltime=%%WALLCLOCK%%:00
-	 #PBS -A %%HPCPROJ%%
-	 #
-	 ###############################################################################
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/sh
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=%%NUMPROC%%
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
 
 
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/sh
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=serial=true:ncpus=1
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/sh
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=serial=true:ncpus=1
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=%%NUMPROC%%
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/sh
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=serial=true:ncpus=1
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/sh
+	 		###############################################################################
+	 		#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+	 		###############################################################################
+	 		#
+	 		#PBS -N %%JOBNAME%%
+	 		#PBS -l select=serial=true:ncpus=1
+	 		#PBS -l walltime=%%WALLCLOCK%%:00
+	 		#PBS -A %%HPCPROJ%%
+	 		#
+	 		###############################################################################""")
+
+class BscHeader:
+	"""Class to handle the BSC headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/ksh
+ 			###############################################################################
+			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+ 			#@ job_name         = %%JOBNAME%%
+ 			#@ wall_clock_limit = %%WALLCLOCK%%
+ 			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+ 			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+ 			#@ total_tasks      = %%NUMTASK%%
+ 			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+ 			#@ class            = %%CLASS%%
+ 			#@ partition        = %%PARTITION%%
+ 			#@ features         = %%FEATURES%%
+ 			#
+ 			###############################################################################""")
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/ksh
+ 			###############################################################################
+ 			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+ 			#@ job_name         = %%JOBNAME%%
+ 			#@ wall_clock_limit = %%WALLCLOCK%%
+ 			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+ 			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+ 			#@ total_tasks      = %%NUMTASK%%
+ 			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+ 			#@ class            = %%CLASS%%
+ 			#@ partition        = %%PARTITION%%
+ 			#@ features         = %%FEATURES%%
+ 			#
+ 			###############################################################################""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ job_name         = %%JOBNAME%%
+			#@ wall_clock_limit = %%WALLCLOCK%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+			#@ total_tasks      = %%NUMTASK%%
+			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+			#@ class            = %%CLASS%%
+			#@ partition        = %%PARTITION%%
+			#@ features         = %%FEATURES%%
+			#
+			###############################################################################""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ job_name         = %%JOBNAME%%
+			#@ wall_clock_limit = %%WALLCLOCK%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+			#@ total_tasks      = %%NUMTASK%%
+			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+			#@ tasks_per_node	= %%TASKSNODE%%
+			#@ tracing			= %%TRACING%%
+			#
+			###############################################################################""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ job_name         = %%JOBNAME%%
+			#@ wall_clock_limit = %%WALLCLOCK%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+			#@ total_tasks      = %%NUMTASK%%
+			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+			#@ tracing			 = %%TRACING%%
+			#@ scratch          = %%SCRATCH%%
+			#
+			###############################################################################""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                     %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT        
+			###############################################################################
+			#
+			#@ job_name         = %%JOBNAME%%
+			#@ wall_clock_limit = %%WALLCLOCK%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.out
+			#@ error            = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%j.err
+			#@ total_tasks      = %%NUMTASK%%
+			#@ initialdir       = %%SCRATCH_DIR%%/%%HPCUSER%%/%%EXPID%%/
+			#@ tasks_per_node	= %%TASKSNODE%%
+			#@ tracing			= %%TRACING%%
+			#@ class            = %%CLASS%%
+			#@ partition        = %%PARTITION%%
+			#@ features         = %%FEATURES%%
+			#
+			###############################################################################""")
+
+class EcHeader:
+	"""Class to handle the ECMWF headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = ns
+			#@ job_type         = serial
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = ns
+			#@ job_type         = serial
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = ns
+			#@ job_type         = serial
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = np
+			#@ job_type         = parallel
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ ec_smt           = no
+			#@ total_tasks      = %%NUMPROC%% 
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = np
+			#@ job_type         = parallel
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ ec_smt           = no
+			#@ total_tasks      = %%NUMPROC%% 
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/ksh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#@ shell            = /usr/bin/ksh 
+			#@ class            = ns
+			#@ job_type         = serial
+			#@ job_name         = %%JOBNAME%%
+			#@ output           = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).out 
+			#@ error            = %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/$(job_name).$(jobid).err 
+			#@ notification     = error
+			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+			#@ wall_clock_limit = %%WALLCLOCK%%:00
+			#@ queue
+			#
+			###############################################################################""")
+
+class HtHeader:
+	"""Class to handle the Hector headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=32
+			#PBS -l walltime=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -q serial
+			#PBS -l cput=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -q serial
+			#PBS -l cput=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=32
+			#PBS -l walltime=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -q serial
+			#PBS -l cput=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#PBS -N %%JOBNAME%%
+			#PBS -q serial
+			#PBS -l cput=%%WALLCLOCK%%:00
+			#PBS -A %%HPCPROJ%%
+			#
+			###############################################################################""")
+
+class ItHeader:
+	"""Class to handle the Ithaca headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/usr/bin/env python
+			###############################################################################
+			#                              %%TASKTYPE%%
+			###############################################################################
+			#$ -S /usr/bin/python
+			#$ -N %%JOBNAME%%
+			#$ -V
+			#$ -cwd
+			#$ -pe orte %%NUMPROC%%
+			#
+			###############################################################################
+""")
+
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#   
+			#$ -S /bin/sh
+			#$ -N %%JOBNAME%%
+			#$ -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -V
+			#$ -l h_rt=%%WALLCLOCK%%:00
+			#
+			###############################################################################
+""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#   
+			#$ -S /bin/sh
+			#$ -N %%JOBNAME%%
+			#$ -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -V
+			#$ -l h_rt=%%WALLCLOCK%%:00
+			#
+			###############################################################################
+""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#   
+			#$ -S /bin/sh
+			#$ -N %%JOBNAME%%
+			#$ -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -V
+			#$ -l h_rt=%%WALLCLOCK%%:00
+			#$ -pe orte %%NUMPROC%% 
+			#
+			###############################################################################
+""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#   
+			#$ -S /bin/sh
+			#$ -N %%JOBNAME%%
+			#$ -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -V
+			#$ -l h_rt=%%WALLCLOCK%%:00
+			#
+			###############################################################################
+""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#   
+			#$ -S /bin/sh
+			#$ -N %%JOBNAME%%
+			#$ -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/
+			#$ -V
+			#$ -l h_rt=%%WALLCLOCK%%:00
+			#
+			###############################################################################
+""")
+
+class LgHeader:
+	"""Class to handle the Lindgren headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                         %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#!/bin/sh --login
+			#PBS -N %%JOBNAME%%
+			#PBS -l mppwidth=%%NUMPROC%%
+			#PBS -l mppnppn=%%NUMTASK%%
+			#PBS -l walltime=%%WALLCLOCK%%
+			#PBS -e %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#PBS -o %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%
+			#
+			###############################################################################
+""")
+
+class MnHeader:
+	"""Class to handle the MareNostrum 3 headers of a job"""
+
+	HEADER_WRP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                              %%TASKTYPE%%
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#
+	 		###############################################################################""")
+
+	HEADER_REMOTESETUP = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#
+	 		###############################################################################""")
+
+	HEADER_INI = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#
+	 		###############################################################################""")
+
+	HEADER_SIM = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#
+	 		###############################################################################""")
+
+	HEADER_POST = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#BSUB -x
+			#
+	 		###############################################################################""")
+
+	HEADER_CLEAN = textwrap.dedent("""\
+			#!/bin/sh
+			###############################################################################
+			#                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+			###############################################################################
+			#
+			#BSUB -J %%JOBNAME%%
+			#BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out 
+			#BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+			#BSUB -W %%WALLCLOCK%%
+			#BSUB -n %%NUMPROC%%
+			#BSUB -R "span[ptile=16]"
+			#
+	 		###############################################################################""")

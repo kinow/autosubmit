@@ -97,7 +97,7 @@ def expdef_parser(filename):
 
 	# check file existance
 	if(not path.isfile(filename)):
-		print "File does not exist"
+		print "File does not exist: " + filename 
 		sys.exit()
 
 	# load values
@@ -148,7 +148,7 @@ def archdef_parser(filename):
 
 	# check file existance
 	if(not path.isfile(filename)):
-		print "File does not exist"
+		print "File does not exist: " + filename
 		sys.exit()
 
 	# load values
