@@ -23,7 +23,12 @@ import re
 from job_common import Status
 from job_common import Type
 from job_common import Template
+from job_common import ArHeader
+from job_common import BscHeader
+from job_common import EcHeader
+from job_common import HtHeader
 from job_common import ItHeader
+from job_common import MnHeader
 from job_common import PsHeader
 from job_common import StatisticsSnippet
 import chunk_date_lib
@@ -376,44 +381,62 @@ class Job:
 		return parameters
 
 	def update_content(self):
+		localHeader = PsHeader
+
+		if (self._parameters['HPCARCH'] == "bsc"):
+			remoteHeader = BscHeader
+		elif (self._parameters['HPCARCH'] == "ithaca"):
+			remoteHeader = ItHeader
+		elif (self._parameters['HPCARCH'] == "hector"):
+			remoteHeader = HtHeader
+		elif (self._parameters['HPCARCH'] == "archer"):
+			remoteHeader = ArHeader
+		elif (self._parameters['HPCARCH'] == "lindgren"):
+			remoteHeader = LgHeader
+		elif (self._parameters['HPCARCH'] == "ecmwf"):
+			remoteHeader = EcHeader
+		elif (self._parameters['HPCARCH'] == "marenostrum3"):
+			remoteHeader = MnHeader
+
 		if (self._type == Type.SIMULATION):
-			templateContent = ItHeader.HEADER_SIM
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.SIMULATION
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [remoteHeader.HEADER_SIM]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(Template.SIMULATION)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.POSTPROCESSING):
-			templateContent = ItHeader.HEADER_POST
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.POSTPROCESSING
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [remoteHeader.HEADER_POST]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(Template.POSTPROCESSING)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.CLEANING):
-			templateContent = ItHeader.HEADER_CLEAN
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.CLEANING
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [remoteHeader.HEADER_CLEAN]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(Template.CLEANING)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.INITIALISATION):
-			templateContent = ItHeader.HEADER_INI
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.INITIALISATION
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [remoteHeader.HEADER_INI]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(Template.INITIALISATION)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.LOCALSETUP):
-			templateContent = PsHeader.HEADER_LOCALSETUP
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.LOCALSETUP
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [localHeader.HEADER_LOCALSETUP]
+			items.append(StatisticsSnippet.AS_HEADER_LOC)
+			items.append(Template.LOCALSETUP)
+			items.append(StatisticsSnippet.AS_TAILER_LOC)
 		elif (self._type == Type.REMOTESETUP):
-			templateContent = ItHeader.HEADER_REMOTESETUP
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.REMOTESETUP
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [remoteHeader.HEADER_REMOTESETUP]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(Template.REMOTESETUP)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.TRANSFER):
-			templateContent = PsHeader.HEADER_LOCALTRANS
-			templateContent += StatisticsSnippet.AS_HEADER
-			templateContent += Template.TRANSFER
-			templateContent += StatisticsSnippet.AS_TAILER
+			items = [localHeader.HEADER_LOCALTRANS]
+			items.append(StatisticsSnippet.AS_HEADER_LOC)
+			items.append(Template.TRANSFER)
+			items.append(StatisticsSnippet.AS_TAILER_LOC)
 		else: 
 			print "Unknown Job Type"
-		
+
+		templateContent = ''.join(items)
 		return templateContent
 
 	def	create_script(self):
@@ -422,17 +445,9 @@ class Job:
 		print "jobType: %s" % self._type
 		print templateContent
 		
-		# first value to be replaced is header as it contains inside other values between %% to be replaced later
-		#templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
-		# following values to be replaced that contain inside other values between %% to be replaced later
-		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
-		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
-		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
-		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
 		for key,value in parameters.items():
-			if (not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
-				print "%s:\t%s" % (key,parameters[key])
-				templateContent = templateContent.replace("%"+key+"%",parameters[key])
+			print "%s:\t%s" % (key,parameters[key])
+			templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
 		scriptname = self._name+'.cmd'
 		file(self._tmp_path + scriptname, 'w').write(templateContent)
@@ -443,12 +458,15 @@ class Job:
 		parameters = self.update_parameters()
 		templateContent = self.update_content()
 
-		variables = re.findall('%'+'(.+?)'+'%', templateContent)
+		variables = re.findall('%'+'(\w+)'+'%', templateContent)
+		#variables += re.findall('%%'+'(.+?)'+'%%', templateContent)
 		out = set(parameters).issuperset(set(variables))
 
 		if not out:
 			print "The following set of variables to be substituted in template script is not part of parameters set: "
 			print set(variables)-set(parameters)
+		else:
+			self.create_script()
 
 		return out
 
