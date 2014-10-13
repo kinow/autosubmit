@@ -226,7 +226,7 @@ class Wrap:
 		print "My Template: %s" % mytemplate
 		templateContent = file(mytemplate).read()
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+		parameters['MODEL_NAME'] = parameters['MODEL_NAME'].upper()
 		#parameters['JOBS'] = str(self.has_jobs())
 		parameters['JOBS'] = str(self.get_jobnames())
 		print "Number of Jobs: ", self.has_jobs()

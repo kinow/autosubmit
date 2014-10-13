@@ -374,7 +374,7 @@ class Job:
 			print "Unknown Job Type"
 		 
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['TEMPLATE_NAME'] = parameters['TEMPLATE_NAME'].upper()
+		parameters['MODEL_NAME'] = parameters['MODEL_NAME'].upper()
 		
 		self._parameters = parameters 
 
@@ -398,40 +398,42 @@ class Job:
 		elif (self._parameters['HPCARCH'] == "marenostrum3"):
 			remoteHeader = MnHeader
 
+		template = Template
+
 		if (self._type == Type.SIMULATION):
 			items = [remoteHeader.HEADER_SIM]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(Template.SIMULATION)
+			items.append(template.SIMULATION)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.POSTPROCESSING):
 			items = [remoteHeader.HEADER_POST]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(Template.POSTPROCESSING)
+			items.append(template.POSTPROCESSING)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.CLEANING):
 			items = [remoteHeader.HEADER_CLEAN]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(Template.CLEANING)
+			items.append(template.CLEANING)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.INITIALISATION):
 			items = [remoteHeader.HEADER_INI]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(Template.INITIALISATION)
+			items.append(template.INITIALISATION)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.LOCALSETUP):
 			items = [localHeader.HEADER_LOCALSETUP]
 			items.append(StatisticsSnippet.AS_HEADER_LOC)
-			items.append(Template.LOCALSETUP)
+			items.append(template.LOCALSETUP)
 			items.append(StatisticsSnippet.AS_TAILER_LOC)
 		elif (self._type == Type.REMOTESETUP):
 			items = [remoteHeader.HEADER_REMOTESETUP]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(Template.REMOTESETUP)
+			items.append(template.REMOTESETUP)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.TRANSFER):
 			items = [localHeader.HEADER_LOCALTRANS]
 			items.append(StatisticsSnippet.AS_HEADER_LOC)
-			items.append(Template.TRANSFER)
+			items.append(template.TRANSFER)
 			items.append(StatisticsSnippet.AS_TAILER_LOC)
 		else: 
 			print "Unknown Job Type"
@@ -442,11 +444,11 @@ class Job:
 	def	create_script(self):
 		parameters = self.update_parameters()
 		templateContent = self.update_content()
-		print "jobType: %s" % self._type
-		print templateContent
+		#print "jobType: %s" % self._type
+		#print templateContent
 		
 		for key,value in parameters.items():
-			print "%s:\t%s" % (key,parameters[key])
+			#print "%s:\t%s" % (key,parameters[key])
 			templateContent = templateContent.replace("%"+key+"%",parameters[key])
 
 		scriptname = self._name+'.cmd'
