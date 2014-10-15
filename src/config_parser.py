@@ -71,7 +71,7 @@ def config_parser(filename):
 
 
 def expdef_parser(filename):
-	hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'hector', 'archer']
+	hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'hector', 'archer']
 	
 	# default value in case this options does not exist on config file
 	default = ({'EXPID' : 'dumi', 'TYPE': '1', 'STATUS': '0', 'LONGNAME': 'Just a test'})

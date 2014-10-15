@@ -9,12 +9,23 @@ project=%HPCPROJ%
 user=%HPCUSER%
 expid=%EXPID%
 remote_log_dir=${scratch}/${project}/${user}/${expid}/LOG_${expid}
+case %HPCARCH% in
+	marenostrum3) jobid=${LSB_JOBID} ;;
+	hector) jobid=${PBS_JOBID} ;;
+	archer) jobid=${PBS_JOBID} ;;
+	ithaca) jobid=${JOBID} ;;
+	ecmwf) jobid=${PBS_JOBID} ;;
+	ecmwf-cca) jobid=${PBS_JOBID} ;;
+	lindgren) jobid=${PBS_JOBID} ;;
+esac
+
+
 
 for template in $jobs; 
 do 
 	touch ${remote_log_dir}/${template}.cmd
-	bash ${remote_log_dir}/${template}.cmd > ${remote_log_dir}/${template}_${LSB_JOBID}.out 2> ${remote_log_dir}/${template}_${LSB_JOBID}.err
-	echo "bash "${remote_log_dir}"/"${template}".cmd > "${remote_log_dir}"/"${template}"_"${LSB_JOBID}".out 2> "${remote_log_dir}"/"${template}"_${LSB_JOBID}"".err"
+	bash ${remote_log_dir}/${template}.cmd > ${remote_log_dir}/${template}_${jobid}.out 2> ${remote_log_dir}/${template}_${jobid}.err
+	echo "bash "${remote_log_dir}"/"${template}".cmd > "${remote_log_dir}"/"${template}"_"${jobid}".out 2> "${remote_log_dir}"/"${template}"_${jobid}"".err"
 	echo "Status from "${template}" is "
 done
 

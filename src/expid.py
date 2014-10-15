@@ -125,6 +125,8 @@ def last_name(HPC):
 		hpc_name = "l___"
 	elif HPC == 'ecmwf':
 		hpc_name = "e___"
+	elif HPC == 'ecmwf-cca':
+		hpc_name = "e___"
 	elif HPC == 'marenostrum3':
 		hpc_name = "m___"
 	elif HPC == 'archer':
@@ -148,6 +150,8 @@ def new_experiment(exp_type, HPC, model_branch, template_name, template_branch, 
 		elif HPC == 'lindgren':
 			new_name = DEFAULT_EXPID_LIN
 		elif HPC == 'ecmwf':
+			new_name = DEFAULT_EXPID_ECM
+		elif HPC == 'ecmwf-cca':
 			new_name = DEFAULT_EXPID_ECM
 		elif HPC == 'marenostrum3':
 			new_name = DEFAULT_EXPID_MN3
@@ -214,6 +218,8 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 		elif hpc == "ecmwf":
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+		elif hpc == "ecmwf-cca":
+			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 		elif hpc == "marenostrum3": 
 			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
 		elif hpc == "archer": 
@@ -236,6 +242,9 @@ def prepare_conf_files(content, exp_id, hpc, template_name, autosubmit_version):
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 	elif hpc == "ecmwf":
+		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
+		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
+	elif hpc == "ecmwf-cca":
 		content = content.replace(re.search('REMOTE_DIR =.*', content).group(0), "REMOTE_DIR = /share/scratch/cfu/%(HPCUSER)s")
 		content = content.replace(re.search('ECEARTH_DIR =.*', content).group(0), "ECEARTH_DIR = /share/scratch/cfu/tools/ecearth")
 	elif hpc == "marenostrum3": 
@@ -263,7 +272,7 @@ if __name__ == "__main__":
 	group1.add_argument('--new', '-n', action = "store_true")
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
-	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'), required = True)
+	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'archer'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
 	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
