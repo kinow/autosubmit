@@ -23,7 +23,7 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
 python-pydot, python-matplotlib, sqlite3, python-pysqlite2) must be available at local machine.
 And the machine is also able to access HPC's/Clusters via password-less ssh.
 
-- Create a repository for experiments: Say for expample "/cfu/autosubmit" then
+- Create a repository for experiments: Say for example "/cfu/autosubmit" then
   edit the repository path into src/dir_config.py
 
 - Create a blank database: Say for example "autosubmit.db" at above created repository
