@@ -44,6 +44,10 @@ class JobList:
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		self._parameters = parameters
+		if (parameters.has_key('SPINUP') and parameters['SPINUP'] == "FALSE"):
+			spinup = False
+		else:
+			spinup = True
 		localsetupjob_name = self._expid + "_" 
 		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 		localsetup_job.set_parents([])
@@ -81,9 +85,9 @@ class JobList:
 					if (chunk > 1):
 						parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-1) + "_" + "sim"
 						sim_job.set_parents([parentjob_name])
-						#if (chunk > 2):
-							#parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
-							#sim_job.add_parent(parentjob_name)
+						if (not spinup and chunk > 2):
+							parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
+							sim_job.add_parent(parentjob_name)
 					if (chunk == 1):
 						ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
 						ini_job.set_children([sim_job.get_name()])
@@ -94,9 +98,9 @@ class JobList:
 					if (chunk < starting_chunk + num_chunks	- 1):
 						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk+1) + "_" + "sim"
 						sim_job.add_children(childjob_name)
-					#if (chunk < starting_chunk + num_chunks - 2):
-						#childjob_name = self._expid+ "_" + str(date) + "_" + str(member) + "_" + str(chunk+2) + "_" + "sim"
-						#clean_job.set_children([childjob_name])
+					if (not spinup and chunk < starting_chunk + num_chunks - 2):
+						childjob_name = self._expid+ "_" + str(date) + "_" + str(member) + "_" + str(chunk+2) + "_" + "sim"
+						clean_job.set_children([childjob_name])
 					if (chunk == num_chunks or chunk == num_chunks-1):
 						trans_job.set_parents([clean_job.get_name()])
 						clean_job.add_children(trans_job.get_name())
