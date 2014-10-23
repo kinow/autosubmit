@@ -267,16 +267,13 @@ def main():
 		logger.info("Saving joblist")
 		joblist.save()
   
-		if conf_parser.get('config','VERBOSE').lower()=='true':
-			logger.info("Active jobs in queues:\t%s" % active)
-			logger.info("Waiting jobs in queues:\t%s" % waiting)
+		logger.info("Active jobs in queues:\t%s" % active)
+		logger.info("Waiting jobs in queues:\t%s" % waiting)
 
 		if available == 0:
-			if  conf_parser.get('config','VERBOSE').lower()=='true':
-				logger.info("There's no room for more jobs...")
+			logger.info("There's no room for more jobs...")
 		else:
-			if  conf_parser.get('config','VERBOSE').lower()=='true':
-				logger.info("We can safely submit %s jobs..." % available)
+			logger.info("We can safely submit %s jobs..." % available)
 	  
 		######################################
 		# AUTOSUBMIT - ALREADY SUBMITTED JOBS
