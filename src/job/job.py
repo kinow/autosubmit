@@ -33,6 +33,7 @@ from job_common import PsHeader
 from job_common import StatisticsSnippet
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
+from dir_config import LOCAL_TMP_DIR
 
 class Job:
 	"""Class to handle all the tasks with Jobs at HPC.
@@ -63,8 +64,7 @@ class Job:
 		self._expid = n[0]
 		self._complete = True
 		self._parameters = dict()
-		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/tmp/"
-		self._template_path = LOCAL_ROOT_DIR + "/" + self._expid + "/git/templates/"
+		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_TMP_DIR
 	
 	def delete(self):
 		del self._name

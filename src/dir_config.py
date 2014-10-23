@@ -18,9 +18,11 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-LOCAL_ROOT_DIR = "/cfu/autosubmit"
-DB_DIR = "/cfu/autosubmit"
-GIT_DIR = "https://dev.cfu.local/"
-COMPATIBILITY_TABLE = "compatibility_table.txt"
+DB_DIR = '/cfu/autosubmit'
 DB_FILE = 'autosubmit.db'
 DB_NAME = 'autosubmit'
+GIT_ORIGIN = 'https://dev.cfu.local/'
+LOCAL_ROOT_DIR = '/cfu/autosubmit'
+LOCAL_TMP_DIR = 'tmp'
+LOCAL_GIT_DIR = 'git'
+COMPATIBILITY_TABLE = "compatibility_table.txt"

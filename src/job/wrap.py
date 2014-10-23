@@ -22,8 +22,17 @@ import os
 import datetime
 from job_common import Status
 from job_common import Type
+from job_common import Template
+from job_common import ArHeader
+from job_common import BscHeader
+from job_common import EcHeader
+from job_common import HtHeader
+from job_common import ItHeader
+from job_common import MnHeader
+from job_common import PsHeader
+from job_common import StatisticsSnippet
 from dir_config import LOCAL_ROOT_DIR
-#LOCAL_ROOT_DIR = "/tmp"
+from dir_config import LOCAL_TMP_DIR
 
 class Wrap:
 	"""Class to handle bundled tasks with Jobs at HPC.
@@ -41,8 +50,7 @@ class Wrap:
 		self._jobs = list()
 		self._complete = True
 		self._parameters = dict()
-		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/tmp/"
-		self._template_path = LOCAL_ROOT_DIR + "/" + self._expid + "/git/templates/"
+		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_TMP_DIR
 	
 	def delete(self):
 		del self._name
@@ -201,13 +209,37 @@ class Wrap:
 			#job_logger.info("The checking in check_completion tell us that job %s has failed" % self.name)
 			self.set_status(Status.FAILED)
 
-	def	create_script(self, templatename):
-		parameters = self._parameters
+	def update_content(self):
 
-		scriptname = self._name+'.cmd'
+		if (self._parameters['HPCARCH'] == "bsc"):
+			remoteHeader = BscHeader
+		elif (self._parameters['HPCARCH'] == "ithaca"):
+			remoteHeader = ItHeader
+		elif (self._parameters['HPCARCH'] == "hector"):
+			remoteHeader = HtHeader
+		elif (self._parameters['HPCARCH'] == "archer"):
+			remoteHeader = ArHeader
+		elif (self._parameters['HPCARCH'] == "lindgren"):
+			remoteHeader = LgHeader
+		elif (self._parameters['HPCARCH'] == "ecmwf"):
+			remoteHeader = EcHeader
+		elif (self._parameters['HPCARCH'] == "marenostrum3"):
+			remoteHeader = MnHeader
+
+		template = Template
+
+		items = [remoteHeader.HEADER_WRP]
+		items.append(StatisticsSnippet.AS_HEADER_REM)
+		items.append(template.WRAPPER)
+		items.append(StatisticsSnippet.AS_TAILER_REM)
+
+		templateContent = ''.join(items)
+		return templateContent
+
+	def update_parameters(self):
+		parameters = self._parameters
 		parameters['JOBNAME'] = self._name
-		print "jobType: %s" %str(self._type)
-		mytemplate = self._template_path + templatename + '/' + templatename + '.wrapper'
+		
 		##update parameters
 		##caution: H is limited to 24 in strptime
 		d1 = datetime.datetime.strptime(parameters['WALLCLOCK_SIM'], "%H:%M")
@@ -219,32 +251,26 @@ class Wrap:
 		##caution: hours limited to 99 ?
 		parameters['WALLCLOCK'] = "%02d:%02d" % (hours, minutes)
 		parameters['NUMPROC'] = parameters['NUMPROC_SIM']
-		#parameters['WALLCLOCK'] = '00:10'
-		#parameters['NUMPROC'] = '10'
 		parameters['TASKTYPE'] = 'WRAPPER'
-		parameters['HEADER'] = parameters['HEADER_WRP']
-		print "My Template: %s" % mytemplate
-		templateContent = file(mytemplate).read()
 		parameters['FAIL_COUNT'] = str(self._fail_count)
 		parameters['MODEL_NAME'] = parameters['MODEL_NAME'].upper()
-		#parameters['JOBS'] = str(self.has_jobs())
 		parameters['JOBS'] = str(self.get_jobnames())
 		print "Number of Jobs: ", self.has_jobs()
-
-		# first value to be replaced is header as it contains inside other values between %% to be replaced later
-		templateContent = templateContent.replace("%HEADER%",parameters['HEADER'])
-		# following values to be replaced that contain inside other values between %% to be replaced later
-		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
-		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
-		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
-		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
-		for key,value in parameters.items():
-			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
-				print "%s:\t%s" % (key,parameters[key])
-				templateContent = templateContent.replace("%"+key+"%",parameters[key])
-
+		
 		self._parameters = parameters 
+
+		return parameters
+
+	def	create_script(self):
+		parameters = self.update_parameters()
+		templateContent = self.update_content()
+
+		for key,value in parameters.items():
+			templateContent = templateContent.replace("%"+key+"%",parameters[key])
+
+		scriptname = self._name+'.cmd'
 		file(self._tmp_path + scriptname, 'w').write(templateContent)
+
 		return scriptname
 
 if __name__ == "__main__":
