@@ -220,6 +220,8 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
 	if re.search('AUTOSUBMIT_VERSION =.*', content):
 		content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0), "AUTOSUBMIT_VERSION = " + autosubmit_version)
+	if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
+		content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0), "AUTOSUBMIT_LOCAL_ROOT = " + LOCAL_ROOT_DIR)
 
 	if re.search('SAFETYSLEEPTIME =.*', content):
 		if hpc == "bsc":
@@ -263,8 +265,9 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 if __name__ == "__main__":
 
 	##obtain version for autosubmit being used in expid.py step
-	(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
-	autosubmit_version = output
+	#(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
+	#autosubmit_version = output
+	autosubmit_version = os.path.dirname(__file__) + 'VERSION'
 
 	parser = argparse.ArgumentParser()
 	group1 = parser.add_mutually_exclusive_group(required = True)
