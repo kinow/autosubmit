@@ -34,6 +34,7 @@ from job_common import StatisticsSnippet
 import chunk_date_lib
 from dir_config import LOCAL_ROOT_DIR
 from dir_config import LOCAL_TMP_DIR
+from dir_config import LOCAL_GIT_DIR
 
 class Job:
 	"""Class to handle all the tasks with Jobs at HPC.
@@ -64,7 +65,7 @@ class Job:
 		self._expid = n[0]
 		self._complete = True
 		self._parameters = dict()
-		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_TMP_DIR
+		self._tmp_path = LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_TMP_DIR + "/"
 	
 	def delete(self):
 		del self._name
@@ -398,7 +399,17 @@ class Job:
 		elif (self._parameters['HPCARCH'] == "marenostrum3"):
 			remoteHeader = MnHeader
 
-		template = Template
+		template = Template()
+
+		if (self._parameters['GIT_PROJECT'] == 'TRUE'):
+			template.read_wrapper_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_WRP'])
+			template.read_localsetup_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_LOCALSETUP'])
+			template.read_remotesetup_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_REMOTESETUP'])
+			template.read_initialisation_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_INI'])
+			template.read_simulation_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_SIM'])
+			template.read_postrpocessing_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_POST'])
+			template.read_cleaning_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_CLEAN'])
+			template.read_transfer_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_TRANS'])
 
 		if (self._type == Type.SIMULATION):
 			items = [remoteHeader.HEADER_SIM]
@@ -419,6 +430,11 @@ class Job:
 			items = [remoteHeader.HEADER_INI]
 			items.append(StatisticsSnippet.AS_HEADER_REM)
 			items.append(template.INITIALISATION)
+			items.append(StatisticsSnippet.AS_TAILER_REM)
+		elif (self._type == Type.WRAPPING):
+			items = [remoteHeader.HEADER_WRAPPING]
+			items.append(StatisticsSnippet.AS_HEADER_REM)
+			items.append(template.WRAPPING)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.LOCALSETUP):
 			items = [localHeader.HEADER_LOCALSETUP]

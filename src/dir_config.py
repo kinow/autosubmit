@@ -21,7 +21,6 @@
 DB_DIR = '/cfu/autosubmit'
 DB_FILE = 'autosubmit.db'
 DB_NAME = 'autosubmit'
-GIT_ORIGIN = 'https://dev.cfu.local/'
 LOCAL_ROOT_DIR = '/cfu/autosubmit'
 LOCAL_TMP_DIR = 'tmp'
 LOCAL_GIT_DIR = 'git'
