@@ -113,28 +113,28 @@ class Template:
 			""")
 
 	def read_wrapper_file(self, filename):
-		WRAPPER = file(filename, 'r').read()
+		self.WRAPPER = file(filename, 'r').read()
 
 	def read_localsetup_file(self, filename):
-		LOCALSETUP = file(filename, 'r').read()
+		self.LOCALSETUP = file(filename, 'r').read()
 
 	def read_remotesetup_file(self, filename):
-		REMOTESETUP = file(filename, 'r').read()
+		self.REMOTESETUP = file(filename, 'r').read()
 
 	def read_initialisation_file(self, filename):
-		INITIALISATION = file(filename, 'r').read()
+		self.INITIALISATION = file(filename, 'r').read()
 
 	def read_simulation_file(self, filename):
-		SIMULATION = file(filename, 'r').read()
+		self.SIMULATION = file(filename, 'r').read()
 
 	def read_postprocessing_file(self, filename):
-		POSTPROCESSING = file(filename, 'r').read()
+		self.POSTPROCESSING = file(filename, 'r').read()
 
 	def read_cleaning_file(self, filename):
-		CLEANING = file(filename, 'r').read()
+		self.CLEANING = file(filename, 'r').read()
 
 	def read_transfer_file(self, filename):
-		TRANSFER = file(filename, 'r').read()
+		self.TRANSFER = file(filename, 'r').read()
 
 
 class StatisticsSnippet:

@@ -89,6 +89,8 @@ def expdef_parser(filename):
 	chunksize = "\s*\d+\s*$"
 	members = "(\s*fc\d+\s*)+$"
 	rerun = "\s*(true|false)\s*$"
+	git = "\s*(true|false)\s*$"
+	#gitorigin = "\s*[\w\-]+\s*$"
 	wallclock = "\s*\d\d:\d\d\s*$"
 	numproc = "\s*\d+\s*$"
 	
@@ -135,6 +137,9 @@ def expdef_parser(filename):
 	check_regex('RERUN', parser.get('experiment', 'RERUN'), rerun)
 	if (parser.get('experiment', 'RERUN') == "TRUE"):
 		check_json('CHUNKLIST', parser.get('experiment', 'CHUNKLIST'))
+	check_regex('GIT_PROJECT', parser.get('experiment', 'GIT_PROJECT'), git)
+	#if (parser.get('experiment', 'GIT_PROJECT') == "TRUE"):
+	#	check_regex('GIT_ORIGIN', parser.get('git', 'GIT_ORIGIN'), gitorigin)
 
 	if(invalid_values):
 		print "\nInvalid experiment config file"

@@ -267,7 +267,7 @@ if __name__ == "__main__":
 	##obtain version for autosubmit being used in expid.py step
 	#(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
 	#autosubmit_version = output
-	autosubmit_version = os.path.dirname(__file__) + 'VERSION'
+	autosubmit_version = file(os.path.join(os.path.dirname(__file__), os.pardir, 'VERSION'),'r').read()
 
 	parser = argparse.ArgumentParser()
 	group1 = parser.add_mutually_exclusive_group(required = True)

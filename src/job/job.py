@@ -401,15 +401,15 @@ class Job:
 
 		template = Template()
 
-		if (self._parameters['GIT_PROJECT'] == 'TRUE'):
-			template.read_wrapper_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_WRP'])
-			template.read_localsetup_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_LOCALSETUP'])
-			template.read_remotesetup_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_REMOTESETUP'])
-			template.read_initialisation_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_INI'])
-			template.read_simulation_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_SIM'])
-			template.read_postrpocessing_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_POST'])
-			template.read_cleaning_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_CLEAN'])
-			template.read_transfer_file(LOCAL_ROOT_DIR + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_TRANS'])
+		if (self._parameters['GIT_PROJECT'].lower() == "true"):
+			template.read_wrapper_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_WRP'])
+			template.read_localsetup_file(LOCAL_ROOT_DIR + "/" + self._expid + "/"  + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_LOCALSETUP'])
+			template.read_remotesetup_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_REMOTESETUP'])
+			template.read_initialisation_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_INI'])
+			template.read_simulation_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_SIM'])
+			template.read_postprocessing_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_POST'])
+			template.read_cleaning_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_CLEAN'])
+			template.read_transfer_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_TRANS'])
 
 		if (self._type == Type.SIMULATION):
 			items = [remoteHeader.HEADER_SIM]
