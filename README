@@ -16,7 +16,8 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * MareNostrum3 (BSC machine)
    * HECToR (EPCC machine)
    * Lindgren (PDC machine)
-   * C2A (ECMWF machine)
+   * ECMWF (C2A)
+   * ECMWF-CCA
    * ARCHER (EPCC machine)
 
 - Pre-requisties: These packages (python2, python-argparse, python-dateutil, 
