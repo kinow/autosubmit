@@ -402,7 +402,6 @@ class Job:
 		template = Template()
 
 		if (self._parameters['GIT_PROJECT'].lower() == "true"):
-			template.read_wrapper_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_WRP'])
 			template.read_localsetup_file(LOCAL_ROOT_DIR + "/" + self._expid + "/"  + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_LOCALSETUP'])
 			template.read_remotesetup_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_REMOTESETUP'])
 			template.read_initialisation_file(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR + "/" + self._parameters['GIT_FILE_INI'])

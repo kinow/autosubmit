@@ -36,7 +36,6 @@ class Status:
 class Type:
 	"""Class to handle the type of a job.
 	At the moment contains 7 types:
-	WRAPPING are for bundle of jobs to execute with python wrapper
 	SIMULATION are for multiprocessor jobs
 	POSTPROCESSING are single processor jobs
 	ClEANING are archiving job---> dealing with large transfer of data on tape
@@ -44,7 +43,6 @@ class Type:
 	LOCALSETUP are for source code preparation local jobs
 	REMOTESETUP are for soruce code compilation jobs
 	TRANSFER are for downloading data jobs"""
-	WRAPPING = 7
 	LOCALSETUP = 6
 	REMOTESETUP = 5
 	INITIALISATION = 4
@@ -56,7 +54,6 @@ class Type:
 class Template:
 	"""Class to handle the template code snippet of a job.
 	At the moment contains 7 templates:
-	WRAPPING are for bundle of jobs to execute with python wrapper
 	SIMULATION are for multiprocessor jobs
 	POSTPROCESSING are single processor jobs
 	ClEANING are archiving job---> dealing with large transfer of data on tape
@@ -64,32 +61,6 @@ class Template:
 	LOCALSETUP are for source code preparation local jobs
 	REMOTESETUP are for soruce code compilation jobs
 	TRANSFER are for downloading data jobs"""
-	WRAPPING = textwrap.dedent("""\
-			#scriptname1 scriptname2 ...
-			jobs="%JOBS%"
-			scratch=%SCRATCH_DIR%
-			project=%HPCPROJ%
-			user=%HPCUSER%
-			expid=%EXPID%
-			remote_log_dir=${scratch}/${project}/${user}/${expid}/LOG_${expid}
-			case %HPCARCH% in
-				marenostrum3) jobid=${LSB_JOBID} ;;
-				hector) jobid=${PBS_JOBID} ;;
-				archer) jobid=${PBS_JOBID} ;;
-				ithaca) jobid=${JOBID} ;;
-				ecmwf) jobid=${PBS_JOBID} ;;
-				ecmwf-cca) jobid=${PBS_JOBID} ;;
-				lindgren) jobid=${PBS_JOBID} ;;
-			esac
-
-			for template in $jobs; 
-			do 
-				touch ${remote_log_dir}/${template}.cmd
-				bash ${remote_log_dir}/${template}.cmd > ${remote_log_dir}/${template}_${jobid}.out 2> ${remote_log_dir}/${template}_${jobid}.err
-				echo "bash "${remote_log_dir}"/"${template}".cmd > "${remote_log_dir}"/"${template}"_"${jobid}".out 2> "${remote_log_dir}"/"${template}"_${jobid}"".err"
-				echo "Status from "${template}" is "
-			done
-			""")
 
 	LOCALSETUP = textwrap.dedent("""\
 			""")
@@ -111,9 +82,6 @@ class Template:
 
 	TRANSFER = textwrap.dedent("""\
 			""")
-
-	def read_wrapper_file(self, filename):
-		self.WRAPPER = file(filename, 'r').read()
 
 	def read_localsetup_file(self, filename):
 		self.LOCALSETUP = file(filename, 'r').read()
@@ -253,21 +221,6 @@ class PsHeader:
 class ArHeader:
 	"""Class to handle the Archer headers of a job"""
 
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/sh
-			###############################################################################
-			#                   %TASKTYPE% %EXPID% EXPERIMENT
-			###############################################################################
-			#
-			#PBS -N %JOBNAME%
-			#PBS -l select=%NUMPROC%
-			#PBS -l walltime=%WALLCLOCK%:00
-			#PBS -A %HPCPROJ%
-			#
-			###############################################################################
-			""")
-
-
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
@@ -341,25 +294,6 @@ class ArHeader:
 class BscHeader:
 	"""Class to handle the BSC headers of a job"""
 	
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/ksh
-			###############################################################################
-			#                     %TASKTYPE% %EXPID% EXPERIMENT
-			###############################################################################
-			#
-			#@ job_name         = %JOBNAME%
-			#@ wall_clock_limit = %WALLCLOCK%
-			#@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-			#@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-			#@ total_tasks      = %NUMTASK%
-			#@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-			#@ class            = %CLASS%
-			#@ partition        = %PARTITION%
-			#@ features         = %FEATURES%
-			#
-			###############################################################################
-			""")
-
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
@@ -457,26 +391,6 @@ class BscHeader:
 
 class EcHeader:
 	"""Class to handle the ECMWF headers of a job"""
-
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/ksh
-			###############################################################################
-			#                   %TASKTYPE% %EXPID% EXPERIMENT
-			###############################################################################
-			#
-			#@ shell            = /usr/bin/ksh 
-			#@ class            = ns
-			#@ job_type         = serial
-			#@ job_name         = %JOBNAME%
-			#@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out 
-			#@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err 
-			#@ notification     = error
-			#@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-			#@ wall_clock_limit = %WALLCLOCK%:00
-			#@ queue
-			#
-			###############################################################################
-			""")
 
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/ksh
@@ -586,21 +500,6 @@ class EcHeader:
 class HtHeader:
 	"""Class to handle the Hector headers of a job"""
 
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/sh
-			###############################################################################
-			#                   %TASKTYPE% %EXPID% EXPERIMENT
-			###############################################################################
-			#
-			#PBS -N %JOBNAME%
-			#PBS -l mppwidth=%NUMPROC%
-			#PBS -l mppnppn=32
-			#PBS -l walltime=%WALLCLOCK%:00
-			#PBS -A %HPCPROJ%
-			#
-			###############################################################################
-			""")
-
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
@@ -674,21 +573,6 @@ class HtHeader:
 
 class ItHeader:
 	"""Class to handle the Ithaca headers of a job"""
-
-	HEADER_WRP = textwrap.dedent("""\
-			#!/usr/bin/env python
-			###############################################################################
-			#                              %TASKTYPE%
-			###############################################################################
-			#$ -S /usr/bin/python
-			#$ -N %JOBNAME%
-			#$ -V
-			#$ -cwd
-			#$ -pe orte %NUMPROC%
-			#
-			###############################################################################
-			""")
-
 
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
@@ -773,23 +657,6 @@ class ItHeader:
 
 class LgHeader:
 	"""Class to handle the Lindgren headers of a job"""
-
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/sh
-			###############################################################################
-			#                         %TASKTYPE% %EXPID% EXPERIMENT
-			###############################################################################
-			#
-			#!/bin/sh --login
-			#PBS -N %JOBNAME%
-			#PBS -l mppwidth=%NUMPROC%
-			#PBS -l mppnppn=%NUMTASK%
-			#PBS -l walltime=%WALLCLOCK%
-			#PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-			#PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-			#
-			###############################################################################
-			""")
 
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
@@ -878,22 +745,6 @@ class LgHeader:
 
 class MnHeader:
 	"""Class to handle the MareNostrum 3 headers of a job"""
-
-	HEADER_WRP = textwrap.dedent("""\
-			#!/bin/sh
-			###############################################################################
-			#                              %TASKTYPE%
-			###############################################################################
-			#
-			#BSUB -J %JOBNAME%
-			#BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out 
-			#BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-			#BSUB -W %WALLCLOCK%
-			#BSUB -n %NUMPROC%
-			#BSUB -R "span[ptile=16]"
-			#
-			###############################################################################
-			""")
 
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh

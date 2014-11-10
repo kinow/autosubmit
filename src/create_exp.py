@@ -25,7 +25,6 @@ import cPickle as pickle
 from pyparsing import nestedExpr
 from os import path
 from job.job import Job
-from job.wrap import Wrap
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
