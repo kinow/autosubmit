@@ -18,17 +18,19 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import string
-from pysqlite2 import dbapi2 as sql
-import sys, os
+import sys
+import os
 import argparse
 import shutil
+import string
 import re
-import dir_config
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import DB_DIR, DB_FILE, DB_NAME
-from commands import getstatusoutput
+from pysqlite2 import dbapi2 as sql
 from distutils.util import strtobool
+from commands import getstatusoutput
+from dir_config import LOCAL_ROOT_DIR
+from dir_config import DB_DIR
+from dir_config import DB_FILE
+from dir_config import DB_NAME
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit'
