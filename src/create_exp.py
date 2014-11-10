@@ -22,8 +22,10 @@ import argparse
 import shutil
 import json
 import cPickle as pickle
+from commands import getstatusoutput
 from pyparsing import nestedExpr
 from os import path
+from os import mkdir
 from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
@@ -32,6 +34,7 @@ from config_parser import config_parser
 from config_parser import expdef_parser
 from monitor import GenerateOutput
 from dir_config import LOCAL_ROOT_DIR
+from dir_config import LOCAL_GIT_DIR
 
 def get_members(out):
 		count = 0
@@ -96,8 +99,8 @@ if __name__ == "__main__":
 	else:
 		print "The config file %s necessary does not exist." % filename
 		exit(1)
-
-
+	
+	
 	expid = conf_parser.get('config', 'EXPID')
 
 	expdef = []
@@ -116,12 +119,32 @@ if __name__ == "__main__":
 		parameters[item[0]] = item[1]
 	for item in incldef:
 		parameters[item[0]] = file(item[1]).read()
+	
+	git_project = exp_parser.get('experiment','GIT_PROJECT').lower()
 
+	print ""
+
+	if (git_project == "true"):
+		git_project_origin = exp_parser.get('git','GIT_PROJECT_ORIGIN').lower()
+		git_project_branch = exp_parser.get('git','GIT_PROJECT_BRANCH').lower()
+		filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/git/"
+		if (path.exists(filename)):
+			print "The git folder exists. SKIPPING..."
+			print "Using git folder: %s" % filename
+		else:
+			mkdir(filename)
+			print "The git folder %s has been created." % filename
+			print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR)
+			(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "; git clone -b " + git_project_branch + " " + git_project_origin)
+			print "%s" % output
+			
 	date_list = exp_parser.get('experiment','DATELIST').split(' ')
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
 	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
 	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
 	rerun = exp_parser.get('experiment','RERUN').lower()
+
+	print ""
 
 	if (rerun == "false"):
 		job_list = JobList(expid)
