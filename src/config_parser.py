@@ -93,6 +93,7 @@ def expdef_parser(filename):
 	#gitorigin = "\s*[\w\-]+\s*$"
 	wallclock = "\s*\d\d:\d\d\s*$"
 	numproc = "\s*\d+\s*$"
+	multiproc = "\s*\d+(:\d+)*\s*$"
 	
 	#option that must be in config file and has no default value
 	mandatory_opt = ['EXPID']
@@ -125,7 +126,9 @@ def expdef_parser(filename):
 	check_regex('WALLCLOCK_CLEAN', parser.get('experiment', 'WALLCLOCK_CLEAN'), wallclock)
 	check_regex('NUMPROC_SETUP', parser.get('experiment', 'NUMPROC_SETUP'), numproc)
 	check_regex('NUMPROC_INI', parser.get('experiment', 'NUMPROC_INI'), numproc)
-	check_regex('NUMPROC_SIM', parser.get('experiment', 'NUMPROC_SIM'), numproc)
+	check_regex('NUMPROC_SIM', parser.get('experiment', 'NUMPROC_SIM'), multiproc)
+	check_regex('NUMTASK_SIM', parser.get('experiment', 'NUMTASK_SIM'), multiproc)
+	check_regex('NUMTHREAD_SIM', parser.get('experiment', 'NUMTHREAD_SIM'), multiproc)
 	check_regex('NUMPROC_POST', parser.get('experiment', 'NUMPROC_POST'), numproc)
 	check_regex('NUMPROC_CLEAN', parser.get('experiment', 'NUMPROC_CLEAN'), numproc)
 	# check create_exp.py variables
