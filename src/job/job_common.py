@@ -141,7 +141,11 @@ class StatisticsSnippet:
 	"""Class to handle the statistics snippet of a job"""
 
 	AS_HEADER_LOC = textwrap.dedent("""\
-			# autosubmit header
+
+			###################
+			# Autosubmit header
+			###################
+
 			set -xuve
 			job_name_ptrn=/cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%
 			job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
@@ -149,7 +153,11 @@ class StatisticsSnippet:
 			""")
 
 	AS_TAILER_LOC = textwrap.dedent("""\
-			# autosubmit tailer
+
+			###################
+			# Autosubmit tailer
+			###################
+
 			job_end_time=$(date +%s)
 			job_run_time=$((job_end_time - job_start_time))
 			errfile_ptrn="\.e"
@@ -168,7 +176,11 @@ class StatisticsSnippet:
 			""")
 			
 	AS_HEADER_REM = textwrap.dedent("""\
-			# autosubmit header
+
+			###################
+			# Autosubmit header
+			###################
+
 			set -xuve
 			job_name_ptrn=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
 			job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
@@ -177,7 +189,11 @@ class StatisticsSnippet:
 			""")
 
 	AS_TAILER_REM = textwrap.dedent("""\
-			# autosubmit tailer
+	
+			###################
+			# Autosubmit tailer
+			###################
+			
 			job_end_time=$(date +%s)
 			job_run_time=$((job_end_time - job_start_time))
 			case %HPCARCH% in
@@ -222,14 +238,14 @@ class PsHeader:
 	HEADER_LOCALSETUP = textwrap.dedent("""\
 			#!/bin/bash
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			""")
 
 	HEADER_LOCALTRANS = textwrap.dedent("""\
 			#!/bin/bash
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			""")
 
@@ -240,7 +256,7 @@ class ArHeader:
 	HEADER_WRP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -255,7 +271,7 @@ class ArHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -269,7 +285,7 @@ class ArHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -283,7 +299,7 @@ class ArHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -297,7 +313,7 @@ class ArHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -311,7 +327,7 @@ class ArHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -328,7 +344,7 @@ class BscHeader:
 	HEADER_WRP = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                     %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -347,7 +363,7 @@ class BscHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                     %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -366,7 +382,7 @@ class BscHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                     %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -385,7 +401,7 @@ class BscHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                     %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -403,7 +419,7 @@ class BscHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                     %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -421,7 +437,7 @@ class BscHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                     %TASKTYPE% %MODEL_NAME% EXPERIMENT        
+			#                     %TASKTYPE% %EXPID% EXPERIMENT        
 			###############################################################################
 			#
 			#@ job_name         = %JOBNAME%
@@ -445,7 +461,7 @@ class EcHeader:
 	HEADER_WRP = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -465,7 +481,7 @@ class EcHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -485,7 +501,7 @@ class EcHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -506,7 +522,7 @@ class EcHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -528,7 +544,7 @@ class EcHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -550,7 +566,7 @@ class EcHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/ksh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#@ shell            = /usr/bin/ksh 
@@ -573,7 +589,7 @@ class HtHeader:
 	HEADER_WRP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -588,7 +604,7 @@ class HtHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -602,7 +618,7 @@ class HtHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -616,7 +632,7 @@ class HtHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -631,7 +647,7 @@ class HtHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -645,7 +661,7 @@ class HtHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#PBS -N %JOBNAME%
@@ -677,7 +693,7 @@ class ItHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#   
 			#$ -S /bin/sh
@@ -693,7 +709,7 @@ class ItHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#   
 			#$ -S /bin/sh
@@ -709,7 +725,7 @@ class ItHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#   
 			#$ -S /bin/sh
@@ -726,7 +742,7 @@ class ItHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#   
 			#$ -S /bin/sh
@@ -742,7 +758,7 @@ class ItHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#   
 			#$ -S /bin/sh
@@ -761,7 +777,7 @@ class LgHeader:
 	HEADER_WRP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -778,7 +794,7 @@ class LgHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -795,7 +811,7 @@ class LgHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -812,7 +828,7 @@ class LgHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -829,7 +845,7 @@ class LgHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -846,7 +862,7 @@ class LgHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                         %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                         %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#!/bin/sh --login
@@ -882,7 +898,7 @@ class MnHeader:
 	HEADER_REMOTESETUP = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#BSUB -J %JOBNAME%
@@ -898,7 +914,7 @@ class MnHeader:
 	HEADER_INI = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#BSUB -J %JOBNAME%
@@ -914,7 +930,7 @@ class MnHeader:
 	HEADER_SIM = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#BSUB -J %JOBNAME%
@@ -930,7 +946,7 @@ class MnHeader:
 	HEADER_POST = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#BSUB -J %JOBNAME%
@@ -947,7 +963,7 @@ class MnHeader:
 	HEADER_CLEAN = textwrap.dedent("""\
 			#!/bin/sh
 			###############################################################################
-			#                   %TASKTYPE% %MODEL_NAME% EXPERIMENT
+			#                   %TASKTYPE% %EXPID% EXPERIMENT
 			###############################################################################
 			#
 			#BSUB -J %JOBNAME%

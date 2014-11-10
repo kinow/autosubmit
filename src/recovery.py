@@ -26,7 +26,8 @@ from job.job_common import Status
 from job.job_common import Type
 import argparse
 import platform
-from config_parser import config_parser, expdef_parser, archdef_parser
+from config_parser import config_parser
+from config_parser import expdef_parser
 from monitor import GenerateOutput
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
@@ -57,11 +58,9 @@ if __name__ == '__main__':
 
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  expid + "/conf/" + "autosubmit_" + expid + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
 
-	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
+	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
 	

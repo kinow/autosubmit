@@ -253,7 +253,7 @@ class Wrap:
 		parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 		parameters['TASKTYPE'] = 'WRAPPER'
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['MODEL_NAME'] = parameters['MODEL_NAME'].upper()
+		parameters['EXPID'] = parameters['EXPID'].upper()
 		parameters['JOBS'] = str(self.get_jobnames())
 		print "Number of Jobs: ", self.has_jobs()
 		

@@ -32,7 +32,8 @@ from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
-from config_parser import config_parser, expdef_parser, archdef_parser
+from config_parser import config_parser
+from config_parser import expdef_parser
 from job.job import Job
 from job.job_common import Status
 from job.job_common import Type
@@ -56,9 +57,7 @@ def log_short(message):
 def check_parameters(conf_parser_file):
 	conf_parser = config_parser(conf_parser_file)
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
 
 	expdef = []
 	incldef = []
@@ -69,7 +68,6 @@ def check_parameters(conf_parser_file):
 		else:
 			expdef += exp_parser.items(section)
 
-	expdef += arch_parser.items('archdef')
 	parameters = dict()
 	for item in expdef:
 		parameters[item[0]] = item[1]
@@ -103,9 +101,7 @@ def main():
 	conf_parser_file = LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
 	conf_parser = config_parser(conf_parser_file)
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
 
 	alreadySubmitted = int(conf_parser.get('config','ALREADYSUBMITTED'))
 	totalJobs = int(conf_parser.get('config','TOTALJOBS'))

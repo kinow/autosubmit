@@ -31,7 +31,6 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 from config_parser import config_parser
 from config_parser import expdef_parser
-from config_parser import archdef_parser
 from monitor import GenerateOutput
 from dir_config import LOCAL_ROOT_DIR
 
@@ -113,20 +112,8 @@ if __name__ == "__main__":
 		else:
 			expdef += exp_parser.items(section)
 
-	archdef = []
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
-	arch_parser = archdef_parser(arch_parser_file)
-	for section in arch_parser.sections():
-		if (section.startswith('include')):
-			items = [x for x in arch_parser.items(section) if x not in arch_parser.items('DEFAULT')]
-			incldef += items
-		else:
-			archdef += arch_parser.items(section)
-
 	parameters = dict()
 	for item in expdef:
-		parameters[item[0]] = item[1]
-	for item in archdef:
 		parameters[item[0]] = item[1]
 	for item in incldef:
 		parameters[item[0]] = file(item[1]).read()

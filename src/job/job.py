@@ -375,7 +375,7 @@ class Job:
 			print "Unknown Job Type"
 		 
 		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['MODEL_NAME'] = parameters['MODEL_NAME'].upper()
+		parameters['EXPID'] = parameters['EXPID'].upper()
 		
 		self._parameters = parameters 
 

@@ -25,7 +25,8 @@ from job.job_common import Type
 from job.job import Job
 from job.job_list import JobList
 from dir_config import LOCAL_ROOT_DIR
-from config_parser import config_parser, expdef_parser, archdef_parser
+from config_parser import config_parser
+from config_parser import expdef_parser
 
 
 def print_parameters(title, parameters):
@@ -40,9 +41,7 @@ def print_parameters(title, parameters):
 def load_parameters(conf_parser_file):
 	conf_parser = config_parser(conf_parser_file)
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
 
 	expdef = []
 	incldef = []
@@ -53,7 +52,6 @@ def load_parameters(conf_parser_file):
 		else:
 			expdef += exp_parser.items(section)
 
-	expdef += arch_parser.items('archdef')
 	parameters = dict()
 	for item in expdef:
 		parameters[item[0]] = item[1]
@@ -87,7 +85,7 @@ def check_templates(autosubmit_def_filename):
 
 
 def check_parameters(autosubmit_def_filename):
-	"""Function to read configuration files of Experiment, Platform and Autosubmit.
+	"""Function to read configuration files of Experiment and Autosubmit.
 	Returns True if all variables are set.
 	If the parameters do not exist, the function returns False and the check fails.
 	
@@ -105,11 +103,7 @@ def check_parameters(autosubmit_def_filename):
 		exit(1)
 
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
-	
 	exp_parser = expdef_parser(exp_parser_file)
-	arch_parser = archdef_parser(arch_parser_file)
-
 
 	for section in conf_parser.sections():
 		if ("" in [item[1] for item in conf_parser.items(section)]):
@@ -119,10 +113,6 @@ def check_parameters(autosubmit_def_filename):
 		if ("" in [item[1] for item in exp_parser.items(section)]):
 			result = False
 			print_parameters("EXPERIMENT PARAMETERS - " + section, exp_parser.items(section))
-	for section in arch_parser.sections():
-		if ("" in [item[1] for item in arch_parser.items(section)]):
-			result = False
-			print_parameters("PLATFORM PARAMETERS - " + section, arch_parser.items(section))
 
 	return result
 
@@ -132,7 +122,7 @@ def check_parameters(autosubmit_def_filename):
 ####################
 if __name__ == "__main__":
 
-	parser = argparse.ArgumentParser(description='Check autosubmit, experiment and platform configurations given a experiment identifier. Check templates creation with those configurations')
+	parser = argparse.ArgumentParser(description='Check autosubmit and experiment configurations given a experiment identifier. Check templates creation with those configurations')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	args = parser.parse_args()
 	if args.expid is None:

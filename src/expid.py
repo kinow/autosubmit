@@ -342,8 +342,6 @@ if __name__ == "__main__":
 			print "The experiment does not exist"
 			sys.exit(1)
 	
-	content = file(os.path.join(os.path.dirname(__file__), os.pardir, "conf", "archdef.conf")).read()
-	file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
 	print "Creating temporal directory..."
 	os.mkdir(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"tmp")
 	print "Creating pkl directory..."
