@@ -430,11 +430,6 @@ class Job:
 			items.append(StatisticsSnippet.AS_HEADER_REM)
 			items.append(template.INITIALISATION)
 			items.append(StatisticsSnippet.AS_TAILER_REM)
-		elif (self._type == Type.WRAPPING):
-			items = [remoteHeader.HEADER_WRAPPING]
-			items.append(StatisticsSnippet.AS_HEADER_REM)
-			items.append(template.WRAPPING)
-			items.append(StatisticsSnippet.AS_TAILER_REM)
 		elif (self._type == Type.LOCALSETUP):
 			items = [localHeader.HEADER_LOCALSETUP]
 			items.append(StatisticsSnippet.AS_HEADER_LOC)
