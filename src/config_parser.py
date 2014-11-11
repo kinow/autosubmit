@@ -192,9 +192,14 @@ def moddef_parser(filename):
 
 	return parser
 
-
-if __name__ == "__main__":
+####################
+# Main Program
+####################
+def main():
 	if(len(sys.argv) != 2):
 		print "Error missing config file"
 	else:
 		autosubmit_conf_parser(sys.argv[1])
+
+if __name__ == "__main__":
+	main()

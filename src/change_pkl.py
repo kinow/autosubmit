@@ -104,8 +104,10 @@ def create_json(text):
 	result = json.dumps(sds)
 	return result
 
-
-if __name__ == '__main__':
+####################
+# Main Program
+####################
+def main():
 	parser = argparse.ArgumentParser(description='Autosubmit change pickle')
 	parser.add_argument('-e', '--expid', type=str, nargs=1, required=True, help='Experiment ID')
 	parser.add_argument('-j', '--joblist', type=str, nargs=1, required=True, help='Job list')
@@ -223,4 +225,5 @@ if __name__ == '__main__':
 
 	GenerateOutput(expid, l1.get_job_list())
 
-
+if __name__ == '__main__':
+	main()

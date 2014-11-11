@@ -77,7 +77,10 @@ def chunk_start_year(string_date):
  result=date.tm_year
  return result
 
-if __name__ == "__main__":
+####################
+# Main Program
+####################
+def main():
  start_date = chunk_start_date(string_date,5,12)
  print start_date
  end_date = chunk_end_date(start_date,12)
@@ -88,3 +91,6 @@ if __name__ == "__main__":
  print "year: ", chunk_start_year(string_date)
  print "month: ", chunk_start_month(string_date)
  print "yesterday: %s " % previous_day(string_date)
+
+if __name__ == "__main__":
+ main()

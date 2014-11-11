@@ -40,7 +40,10 @@ from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
 from sys import setrecursionlimit
 
-if __name__ == '__main__':
+####################
+# Main Program
+####################
+def main():
 	parser = argparse.ArgumentParser(description='Autosubmit recovery')
 	parser.add_argument('-e', '--expid', type=str, nargs=1, required=True, help='Experiment ID')
 	parser.add_argument('-j', '--joblist', type=str, nargs=1, required=True, help='Job list')
@@ -165,3 +168,6 @@ if __name__ == '__main__':
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
 
 	GenerateOutput(expid, l1.get_job_list())
+
+if __name__ == '__main__':
+	main()

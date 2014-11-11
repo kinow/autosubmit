@@ -88,8 +88,6 @@ def set_experiment(name, model_name, model_branch, template_name, template_branc
 	close_conn(conn, cursor)
 	return
 
-
-
 def register_sha(expid, save):
 	"""Function to register in the DB the commit SHA of the template, model and ocean diagnostics project versions."""
 	exp = get_experiment(expid)
@@ -166,8 +164,7 @@ def register_sha(expid, save):
 ####################
 # Main Program
 ####################
-if __name__ == "__main__":
-
+def main():
 	parser = argparse.ArgumentParser(description='Register experiment GIT directory changes to database, given an experiment identifier')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1, help='Give an experiment identifier...')
 	parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to database')
@@ -177,3 +174,6 @@ if __name__ == "__main__":
 	
 	print "Looking for model, templates and ocean_diagnostics commit SHA..."
 	register_sha(args.expid[0], args.save)
+
+if __name__ == "__main__":
+	main()

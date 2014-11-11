@@ -94,8 +94,7 @@ def clean_plot(expid):
 ####################
 # Main Program
 ####################
-if __name__ == "__main__":
-
+def main():
 	parser = argparse.ArgumentParser(description='Clean experiment git and plot directories, given an experiment identifier')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-g', '--git', action="store_true", default=False, help='Clean git')
@@ -112,3 +111,5 @@ if __name__ == "__main__":
 		print "Cleaning plot directory..."
 		clean_plot(args.expid[0])
 
+if __name__ == "__main__":
+	main()

@@ -131,7 +131,10 @@ def GenerateOutput(expid, joblist, output_format="pdf"):
 	#elif output_format == "pdf":
 	#elif output_format == "ps":
 
-if __name__ == "__main__":
+####################
+# Main Program
+####################
+def main():
 	parser = argparse.ArgumentParser(description='Plot statistics graph')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
@@ -149,3 +152,7 @@ if __name__ == "__main__":
 		jobs = [job for job in jobs.get_finished() if job.get_type() == Type.SIMULATION]
 
 	GenerateOutput(expid, jobs, output)
+
+
+if __name__ == "__main__":
+	main()

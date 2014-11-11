@@ -96,7 +96,10 @@ def GenerateOutput(expid, joblist, output_format="pdf"):
 	elif output_format == "ps":
 		graph.write_ps(output_file)
 
-if __name__ == "__main__":
+####################
+# Main Program
+####################
+def main()
 	parser = argparse.ArgumentParser(description='Plot autosubmit graph')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
@@ -114,3 +117,6 @@ if __name__ == "__main__":
 		jobs = jobs.get_job_list()
 
 	GenerateOutput(expid, jobs, output)
+
+if __name__ == "__main__":
+	main()

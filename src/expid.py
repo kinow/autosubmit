@@ -260,12 +260,10 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 
 	return content
 
-
-#############################
-# Main function
-#############################
-if __name__ == "__main__":
-
+####################
+# Main Program
+####################
+def main():
 	##obtain version for autosubmit being used in expid.py step
 	#(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
 	#autosubmit_version = output
@@ -352,3 +350,6 @@ if __name__ == "__main__":
 	os.mkdir(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"plot")
 	os.chmod(LOCAL_ROOT_DIR + "/" +exp_id+"/"+"plot",0o775)
 	print "Remember to MODIFY the config files!"
+
+if __name__ == "__main__":
+	main()

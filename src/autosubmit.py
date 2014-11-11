@@ -19,6 +19,7 @@
 
 import argparse
 import time, os, sys
+import cPickle as pickle
 import commands
 import signal
 import logging
@@ -32,15 +33,17 @@ from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
-from config_parser import config_parser
-from config_parser import expdef_parser
 from job.job import Job
 from job.job_common import Status
 from job.job_common import Type
 from job.job_list import JobList
 from job.job_list import RerunJobList
-import cPickle as pickle
+from config_parser import config_parser
+from config_parser import expdef_parser
+from config_parser import pltdef_parser
+from config_parser import moddef_parser
 from dir_config import LOCAL_ROOT_DIR
+from dir_config import LOCAL_GIT_DIR
 from check_compatibility import check_compatibility, print_compatibility
 from finalise_exp import clean_git, clean_plot, register_sha
 
@@ -74,9 +77,39 @@ def check_parameters(conf_parser_file):
 	for item in incldef:
 		parameters[item[0]] = file(item[1]).read()
 
+	git_project = exp_parser.get('experiment','GIT_PROJECT').lower()
+	if (git_project == "true"):
+		# Check additional parameters changes
+		print "Checking additional parameters..."
+		parameters.append(check_additonal_parameters(conf_parser_file))
+
 	return parameters
 
+def check_additional_parameters(conf_parser_file):
+	conf_parser = config_parser(conf_parser_file)
+	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
+	exp_parser = expdef_parser(exp_parser_file)
+
+	pltdef = []
+	moddef = []
+	plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
+	plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
+	mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
+	mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
+
+	for section in plt_parser.sections():
+		pltdef += plt_parser.items(section)
+	for section in mod_parser.sections():
+		moddef += mod_parser.items(section)
 	
+	parameters = dict()
+	for item in pltdef:
+		parameters[item[0]] = item[1]
+	for item in moddef:
+		parameters[item[0]] = item[1]
+
+	return parameters
+
 
 ####################
 # Main Program
@@ -106,7 +139,6 @@ def main():
 	alreadySubmitted = int(conf_parser.get('config','ALREADYSUBMITTED'))
 	totalJobs = int(conf_parser.get('config','TOTALJOBS'))
 	expid = exp_parser.get('experiment','EXPID')
-	#templatename = exp_parser.get('experiment','TEMPLATE_NAME') 
 	maxWaitingJobs = int(conf_parser.get('config','MAXWAITINGJOBS'))
 	safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
 	retrials = int(conf_parser.get('config','RETRIALS'))
@@ -253,7 +285,7 @@ def main():
 		# Check parameters changes	
 		print "Checking parameters..."
 		parameters = check_parameters(conf_parser_file)	
-   		joblist.update_parameters(parameters)
+		joblist.update_parameters(parameters)
 
 		# read FAIL_RETRIAL number if, blank at creation time put a given number
 		# check availability of machine, if not next iteration after sleep time

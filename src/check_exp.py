@@ -135,7 +135,7 @@ def check_parameters(autosubmit_def_filename):
 ####################
 # Main Program
 ####################
-if __name__ == "__main__":
+def main():
 
 	parser = argparse.ArgumentParser(description='Check autosubmit and experiment configurations given a experiment identifier. Check templates creation with those configurations')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
@@ -159,4 +159,5 @@ if __name__ == "__main__":
 		print "Experiment templates check FAILED!"
 		print "WARNING: running after FAILED experiment templates check is at your own risk!!!"
 
-
+if __name__ == "__main__":
+	main()

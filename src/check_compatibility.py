@@ -68,7 +68,7 @@ def check_compatibility(autosubmit_version_filename, template_version_filename):
 ####################
 # Main Program
 ####################
-if __name__ == "__main__":
+def main():
 
 	parser = argparse.ArgumentParser(description='Check autosubmit and templates compatibility given a experiment identifier')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
@@ -85,3 +85,6 @@ if __name__ == "__main__":
 		print "Compatibility check FAILED!"
 		print_compatibility()
 		print "WARNING: running after FAILED compatibility check is at your own risk!!!"
+
+if __name__ == "__main__":
+	main()
