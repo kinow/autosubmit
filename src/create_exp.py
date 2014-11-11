@@ -32,6 +32,8 @@ from job.job_list import JobList
 from job.job_list import RerunJobList
 from config_parser import config_parser
 from config_parser import expdef_parser
+from config_parser import pltdef_parser
+from config_parser import moddef_parser
 from monitor import GenerateOutput
 from dir_config import LOCAL_ROOT_DIR
 from dir_config import LOCAL_GIT_DIR
@@ -127,16 +129,37 @@ if __name__ == "__main__":
 	if (git_project == "true"):
 		git_project_origin = exp_parser.get('git','GIT_PROJECT_ORIGIN').lower()
 		git_project_branch = exp_parser.get('git','GIT_PROJECT_BRANCH').lower()
-		filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/git/"
-		if (path.exists(filename)):
+		git_project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR
+		if (path.exists(git_project_path)):
 			print "The git folder exists. SKIPPING..."
-			print "Using git folder: %s" % filename
+			print "Using git folder: %s" % git_project_path
 		else:
-			mkdir(filename)
-			print "The git folder %s has been created." % filename
-			print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR)
-			(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "; git clone -b " + git_project_branch + " " + git_project_origin)
+			mkdir(git_project_path)
+			print "The git folder %s has been created." % git_project_path
+			print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, git_project_path)
+			(status, output) = getstatusoutput("cd " + git_project_path + "; git clone -b " + git_project_branch + " " + git_project_origin)
 			print "%s" % output
+			git_project_name = output[output.find("'")+1:output.find("...")-1] 
+			(status, output) = getstatusoutput("cd " + git_project_path + "/" + git_project_name + "; git submodule update --remote --init")
+			print "%s" % output
+			(status, output) = getstatusoutput("cd " + git_project_path + "/" + git_project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
+			print "%s" % output
+
+
+		pltdef = []
+		moddef = []
+		plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
+		plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
+		mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
+		mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
+		for section in plt_parser.sections():
+			pltdef += plt_parser.items(section)
+		for section in mod_parser.sections():
+			moddef += mod_parser.items(section)
+		for item in pltdef:
+			parameters[item[0]] = item[1]
+		for item in moddef:
+			parameters[item[0]] = item[1]
 			
 	date_list = exp_parser.get('experiment','DATELIST').split(' ')
 	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))

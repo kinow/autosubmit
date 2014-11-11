@@ -302,6 +302,7 @@ class Job:
 		parameters = self._parameters
 		splittedname = self.get_long_name().split('_')
 		parameters['JOBNAME'] = self._name
+		parameters['FAIL_COUNT'] = str(self._fail_count)
 		
 		if (self._type == Type.TRANSFER):
 			parameters['SDATE'] = splittedname[1]
@@ -373,9 +374,6 @@ class Job:
 			parameters['TASKTYPE'] = 'TRANSFER'
 		else: 
 			print "Unknown Job Type"
-		 
-		parameters['FAIL_COUNT'] = str(self._fail_count)
-		parameters['EXPID'] = parameters['EXPID'].upper()
 		
 		self._parameters = parameters 
 

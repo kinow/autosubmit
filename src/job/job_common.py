@@ -118,6 +118,7 @@ class StatisticsSnippet:
 			job_name_ptrn=/cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%
 			job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
 			job_start_time=$(date +%s)
+
 			""")
 
 	AS_TAILER_LOC = textwrap.dedent("""\
@@ -154,6 +155,7 @@ class StatisticsSnippet:
 			job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
 			job_start_time=$(date +%s)
 			job_queue_time=$((job_start_time - job_cmd_stamp))
+
 			""")
 
 	AS_TAILER_REM = textwrap.dedent("""\

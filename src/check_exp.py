@@ -25,8 +25,11 @@ from job.job_common import Type
 from job.job import Job
 from job.job_list import JobList
 from dir_config import LOCAL_ROOT_DIR
+from dir_config import LOCAL_GIT_DIR
 from config_parser import config_parser
 from config_parser import expdef_parser
+from config_parser import pltdef_parser
+from config_parser import moddef_parser
 
 
 def print_parameters(title, parameters):
@@ -104,6 +107,10 @@ def check_parameters(autosubmit_def_filename):
 
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
+	plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
+	plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
+	mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
+	mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
 
 	for section in conf_parser.sections():
 		if ("" in [item[1] for item in conf_parser.items(section)]):
@@ -113,6 +120,14 @@ def check_parameters(autosubmit_def_filename):
 		if ("" in [item[1] for item in exp_parser.items(section)]):
 			result = False
 			print_parameters("EXPERIMENT PARAMETERS - " + section, exp_parser.items(section))
+	for section in plt_parser.sections():
+		if ("" in [item[1] for item in plt_parser.items(section)]):
+			result = False
+			print_parameters("PLATFORM PARAMETERS - " + section, plt_parser.items(section))
+	for section in mod_parser.sections():
+		if ("" in [item[1] for item in mod_parser.items(section)]):
+			result = False
+			print_parameters("MODEL PARAMETERS - " + section, mod_parser.items(section))
 
 	return result
 

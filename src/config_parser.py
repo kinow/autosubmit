@@ -152,6 +152,46 @@ def expdef_parser(filename):
 
 	return parser
 
+def pltdef_parser(filename):
+
+	# check file existance
+	if(not path.isfile(filename)):
+		print "File does not exist: " + filename
+		sys.exit()
+
+	# load values
+	parser = SafeConfigParser()
+	parser.optionxform = str
+	parser.read(filename)
+
+	if(invalid_values):
+		print "\nInvalid platform config file"
+		sys.exit()
+	else:
+		print "\nPlatform config file OK"
+
+	return parser
+
+def moddef_parser(filename):
+
+	# check file existance
+	if(not path.isfile(filename)):
+		print "File does not exist: " + filename
+		sys.exit()
+
+	# load values
+	parser = SafeConfigParser()
+	parser.optionxform = str
+	parser.read(filename)
+
+	if(invalid_values):
+		print "\nInvalid model config file"
+		sys.exit()
+	else:
+		print "\nModel config file OK"
+
+	return parser
+
 
 if __name__ == "__main__":
 	if(len(sys.argv) != 2):
