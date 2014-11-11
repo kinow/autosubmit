@@ -24,112 +24,28 @@ from job.job_common import Status
 from job.job_common import Type
 from job.job import Job
 from job.job_list import JobList
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import LOCAL_GIT_DIR
-from config_parser import config_parser
-from config_parser import expdef_parser
-from config_parser import pltdef_parser
-from config_parser import moddef_parser
+from config_common import AutosubmitConfig
 
-
-def print_parameters(title, parameters):
-	"""Prints the parameters table in a tabular mode"""
-	print title
-	print "----------------------"
-	print "{0:<{col1}}| {1:<{col2}}".format("-- Parameter --","-- Value --",col1=15,col2=15)
-	for i in parameters:
-		print "{0:<{col1}}| {1:<{col2}}".format(i[0],i[1],col1=15,col2=15)
-	print ""
-
-def load_parameters(conf_parser_file):
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-
-	expdef = []
-	incldef = []
-	for section in exp_parser.sections():
-		if (section.startswith('include')):
-			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-			incldef += items
-		else:
-			expdef += exp_parser.items(section)
-
-	parameters = dict()
-	for item in expdef:
-		parameters[item[0]] = item[1]
-	for item in incldef:
-		parameters[item[0]] = file(item[1]).read()
-
-	return parameters
-
-
-def check_templates(autosubmit_def_filename):
+def check_templates(as_conf):
 	"""Procedure to check autogeneration of templates given 
-	Experiment, Platform and Autosubmit configuration files.
+	Autosubmit configuration.
 	Returns True if all variables are set.
 	If the parameters are not correctly replaced, the function returns
 	False and the check fails.
 
-	:param autosubmit_def_filename: path to the Autosubmit configuration file
-	:type: str
+	:param as_conf: Autosubmit configuration object
+	:type: AutosubmitConf
 	:retruns: bool
 	"""
 	out = True
 
-	parameters = load_parameters(autosubmit_def_filename)
+	parameters = as_conf.load_parameters()
 	joblist = JobList(parameters['EXPID'])
 	joblist.create(parameters['DATELIST'].split(' '),parameters['MEMBERS'].split(' '),int(parameters['CHUNKINI']),int(parameters['NUMCHUNKS']),parameters)
 	out = joblist.check_scripts()
 	
 	return out
 
-
-
-
-def check_parameters(autosubmit_def_filename):
-	"""Function to read configuration files of Experiment and Autosubmit.
-	Returns True if all variables are set.
-	If the parameters do not exist, the function returns False and the check fails.
-	
-	:param autosubmit_def_filename: path to the Autosubmit configuration file
-	:type: str
-	:retruns: bool
-	"""
-
-	result = True
-	if (path.exists(autosubmit_def_filename)):
-		conf_parser = config_parser(autosubmit_def_filename)
-		print "Using config file: %s" % autosubmit_def_filename
-	else:
-		print "The config file %s necessary does not exist." % autosubmit_def_filename
-		exit(1)
-
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-	plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
-	plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
-	mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
-	mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
-
-	for section in conf_parser.sections():
-		if ("" in [item[1] for item in conf_parser.items(section)]):
-			result = False
-			print_parameters("AUTOSUBMIT PARAMETERS - " + section, conf_parser.items(section))
-	for section in exp_parser.sections():
-		if ("" in [item[1] for item in exp_parser.items(section)]):
-			result = False
-			print_parameters("EXPERIMENT PARAMETERS - " + section, exp_parser.items(section))
-	for section in plt_parser.sections():
-		if ("" in [item[1] for item in plt_parser.items(section)]):
-			result = False
-			print_parameters("PLATFORM PARAMETERS - " + section, plt_parser.items(section))
-	for section in mod_parser.sections():
-		if ("" in [item[1] for item in mod_parser.items(section)]):
-			result = False
-			print_parameters("MODEL PARAMETERS - " + section, mod_parser.items(section))
-
-	return result
 
 
 ####################
@@ -143,17 +59,17 @@ def main():
 	if args.expid is None:
 		parser.error("Missing expid.")
 
-	autosubmit_def_filename = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
+	as_conf = AutosubmitConfig(args.expid[0])
 
 	print "Checking experiment configuration..."
-	if check_parameters(autosubmit_def_filename):
+	if as_conf.check_parameters():
 		print "Experiment configuration check PASSED!"
 	else:
 		print "Experiment configuration check FAILED!"
 		print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
 	print "Checking experiment templates..."
-	if check_templates(autosubmit_def_filename):
+	if check_templates(as_conf):
 		print "Experiment templates check PASSED!"
 	else:	
 		print "Experiment templates check FAILED!"

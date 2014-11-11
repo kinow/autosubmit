@@ -18,18 +18,18 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import argparse
+import time
+import sys
 import commands
 import pydot
 import pickle
+import matplotlib
 from job.job_list import JobList
 from job.job_list import RerunJobList
-import matplotlib
-import sys
-from dir_config import LOCAL_ROOT_DIR
-import argparse
-import time
 from job.job_common import Status
 from job.job_common import Type
+from dir_config import LOCAL_ROOT_DIR
 
 import numpy as np
 import matplotlib.pyplot as plt

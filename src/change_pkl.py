@@ -17,17 +17,17 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-from dir_config import LOCAL_ROOT_DIR
 import pickle
+import argparse
+import json
+from pyparsing import nestedExpr
+from sys import setrecursionlimit
 from job.job_list import JobList
 from job.job_list import RerunJobList
 from job.job_common import Status
 from job.job_common import Type
-import argparse
 from monitor import GenerateOutput
-from sys import setrecursionlimit
-import json
-from pyparsing import nestedExpr
+from dir_config import LOCAL_ROOT_DIR
 
 def get_status(s):
 	if s == 'READY':

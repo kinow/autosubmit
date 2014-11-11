@@ -99,7 +99,7 @@ def GenerateOutput(expid, joblist, output_format="pdf"):
 ####################
 # Main Program
 ####################
-def main()
+def main():
 	parser = argparse.ArgumentParser(description='Plot autosubmit graph')
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-j', '--joblist', required=True, nargs = 1)

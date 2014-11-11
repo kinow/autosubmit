@@ -38,10 +38,7 @@ from job.job_common import Status
 from job.job_common import Type
 from job.job_list import JobList
 from job.job_list import RerunJobList
-from config_parser import config_parser
-from config_parser import expdef_parser
-from config_parser import pltdef_parser
-from config_parser import moddef_parser
+from config_common import AutosubmitConfig
 from dir_config import LOCAL_ROOT_DIR
 from dir_config import LOCAL_GIT_DIR
 from check_compatibility import check_compatibility, print_compatibility
@@ -56,60 +53,6 @@ def log_short(message):
 	d = time.localtime()
 	date = "%04d-%02d-%02d %02d:%02d:%02d" % (d[0],d[1],d[2],d[3],d[4],d[5])
 	print "[%s] %s" % (date,message)
-
-def check_parameters(conf_parser_file):
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-
-	expdef = []
-	incldef = []
-	for section in exp_parser.sections():
-		if (section.startswith('include')):
-			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-			incldef += items
-		else:
-			expdef += exp_parser.items(section)
-
-	parameters = dict()
-	for item in expdef:
-		parameters[item[0]] = item[1]
-	for item in incldef:
-		parameters[item[0]] = file(item[1]).read()
-
-	git_project = exp_parser.get('experiment','GIT_PROJECT').lower()
-	if (git_project == "true"):
-		# Check additional parameters changes
-		print "Checking additional parameters..."
-		parameters.append(check_additonal_parameters(conf_parser_file))
-
-	return parameters
-
-def check_additional_parameters(conf_parser_file):
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-
-	pltdef = []
-	moddef = []
-	plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
-	plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
-	mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
-	mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
-
-	for section in plt_parser.sections():
-		pltdef += plt_parser.items(section)
-	for section in mod_parser.sections():
-		moddef += mod_parser.items(section)
-	
-	parameters = dict()
-	for item in pltdef:
-		parameters[item[0]] = item[1]
-	for item in moddef:
-		parameters[item[0]] = item[1]
-
-	return parameters
-
 
 ####################
 # Main Program
@@ -131,30 +74,20 @@ def main():
 	logger = logging.getLogger("AutoLog")
 
 
-	conf_parser_file = LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
+	as_conf = AutosubmitConfig(args.expid[0])
 
-	alreadySubmitted = int(conf_parser.get('config','ALREADYSUBMITTED'))
-	totalJobs = int(conf_parser.get('config','TOTALJOBS'))
-	expid = exp_parser.get('experiment','EXPID')
-	maxWaitingJobs = int(conf_parser.get('config','MAXWAITINGJOBS'))
-	safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
-	retrials = int(conf_parser.get('config','RETRIALS'))
-	hpcarch = exp_parser.get('experiment', 'HPCARCH')
-	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
-	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
-	hpcuser = exp_parser.get('experiment', 'HPCUSER')
-	if (exp_parser.has_option('experiment','RERUN')):
-		rerun = exp_parser.get('experiment','RERUN').lower()
-	else: 
-		rerun = 'false'
+	expid = as_conf.get_expid()
+	hpcarch = as_conf.get_platform()
+	scratch_dir = as_conf.get_scratch_dir()
+	hpcproj = as_conf.get_hpcproj()
+	hpcuser = as_conf.get_hpcuser()
+	alreadySubmitted = as_conf.get_alreadySubmitted()
+	totalJobs = as_conf.get_totalJobs()
+	maxWaitingJobs = as_conf.get_maxWaitingJobs()
+	safetysleeptime = as_conf.get_safetysleeptime()
+	retrials = as_conf.get_retrials()
+	rerun = as_conf.get_rerun()
 	
-	# Check parameters changes	
-	print "Checking parameters..."
-	parameters = check_parameters(conf_parser_file)	
-
 	if(hpcarch == "bsc"):
 	   remoteQueue = MnQueue(expid)
 	   remoteQueue.set_host("bsc")
@@ -237,9 +170,9 @@ def main():
 
 	logger.debug("Length of joblist: %s" % len(joblist))
 
-	# Check parameters changes	
-	print "Checking parameters..."
-	parameters = check_parameters(conf_parser_file)	
+	# Load parameters	
+	print "Loading parameters..."
+	parameters = as_conf.load_parameters()	
 	print "Updating parameters..."
 	joblist.update_parameters(parameters)
 	#check the job list script creation
@@ -273,19 +206,19 @@ def main():
 		waiting = len(joblist.get_submitted() + joblist.get_queuing())
 		available = maxWaitingJobs-waiting
 	
-		# variables to be updated on the fly
-		conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf")
-		totalJobs = int(conf_parser.get('config','TOTALJOBS'))
-		logger.info("Jobs to submit: %s" % totalJobs)
-		safetysleeptime = int(conf_parser.get('config','SAFETYSLEEPTIME'))
-		logger.info("Sleep: %s" % safetysleeptime)
-		retrials = int(conf_parser.get('config','RETRIALS'))
-		logger.info("Number of retrials: %s" % retrials)
-
-		# Check parameters changes	
-		print "Checking parameters..."
-		parameters = check_parameters(conf_parser_file)	
+		# reload parameters changes	
+		print "Reloading parameters..."
+		as_conf.reload()	
+		parameters = as_conf.load_parameters()	
 		joblist.update_parameters(parameters)
+
+		# variables to be updated on the fly
+		totalJobs = as_conf.get_totalJobs()
+		logger.info("Jobs to submit: %s" % totalJobs)
+		safetysleeptime = as_conf.get_safetysleeptime()
+		logger.info("Sleep: %s" % safetysleeptime)
+		retrials = as_conf.get_retrials()
+		logger.info("Number of retrials: %s" % retrials)
 
 		# read FAIL_RETRIAL number if, blank at creation time put a given number
 		# check availability of machine, if not next iteration after sleep time
@@ -340,11 +273,6 @@ def main():
 					else:
 						job.set_status(status)
 			
-				# Check parameters changes	
-				print "Checking parameters..."
-				parameters = check_parameters(conf_parser_file)	
-				joblist.update_parameters(parameters)
-
 			#Uri add check if status UNKNOWN and exit if you want 
 			##after checking the jobs , no job should have the status "submitted"
 			##Uri throw an exception if this happens (warning type no exit)
@@ -406,11 +334,7 @@ def main():
 					job.set_id(job_id)
 					##set status to "submitted"
 					job.set_status(Status.SUBMITTED)
-
-				# Check parameters changes	
-				print "Checking parameters..."
-				parameters = check_parameters(conf_parser_file)	
-				joblist.update_parameters(parameters)
+		
 		
 		time.sleep(safetysleeptime)
 	## finalise experiment

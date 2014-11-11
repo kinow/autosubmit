@@ -17,18 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-
-from dir_config import LOCAL_ROOT_DIR
-import pickle
-from job.job_list import JobList
-from job.job_list import RerunJobList
-from job.job_common import Status
-from job.job_common import Type
 import argparse
 import platform
-from config_parser import config_parser
-from config_parser import expdef_parser
-from monitor import GenerateOutput
+import pickle
+from sys import setrecursionlimit
 from queue.mnqueue import MnQueue
 from queue.itqueue import ItQueue
 from queue.lgqueue import LgQueue
@@ -38,7 +30,13 @@ from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
-from sys import setrecursionlimit
+from job.job_list import JobList
+from job.job_list import RerunJobList
+from job.job_common import Status
+from job.job_common import Type
+from dir_config import LOCAL_ROOT_DIR
+from config_common import AutosubmitConfig
+from monitor import GenerateOutput
 
 ####################
 # Main Program
@@ -59,13 +57,11 @@ def main():
 	print expid
 	l1 = pickle.load(file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
-	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  expid + "/conf/" + "autosubmit_" + expid + ".conf")
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
+	as_conf = AutosubmitConfig(expid)
 
-	scratch_dir = exp_parser.get('experiment', 'SCRATCH_DIR')
-	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
-	hpcuser = exp_parser.get('experiment', 'HPCUSER')
+	scratch_dir = as_conf.get_scratch_dir()
+	hpcproj = as_conf.get_hpcproj()
+	hpcuser = as_conf.get_hpcuser()
 	
 	if(args.get):
 		sc = expid[0]

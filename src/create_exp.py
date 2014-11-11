@@ -30,70 +30,12 @@ from job.job import Job
 from job.job_common import Status
 from job.job_list import JobList
 from job.job_list import RerunJobList
-from config_parser import config_parser
-from config_parser import expdef_parser
-from config_parser import pltdef_parser
-from config_parser import moddef_parser
+from config_common import AutosubmitConfig
 from monitor import GenerateOutput
 from dir_config import LOCAL_ROOT_DIR
 from dir_config import LOCAL_GIT_DIR
 
 """This is the code to create the job list. It reads the experiment configuration files and creates the parameter structure and writes it in a .pkl file"""
-
-def check_parameters(conf_parser_file):
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-
-	expdef = []
-	incldef = []
-	for section in exp_parser.sections():
-		if (section.startswith('include')):
-			items = [x for x in exp_parser.items(section) if x not in exp_parser.items('DEFAULT')]
-			incldef += items
-		else:
-			expdef += exp_parser.items(section)
-
-	parameters = dict()
-	for item in expdef:
-		parameters[item[0]] = item[1]
-	for item in incldef:
-		parameters[item[0]] = file(item[1]).read()
-
-	git_project = exp_parser.get('experiment','GIT_PROJECT').lower()
-	if (git_project == "true"):
-		# Check additional parameters changes
-		print "Checking additional parameters..."
-		parameters.append(check_additonal_parameters(conf_parser_file))
-
-	return parameters
-
-
-def check_additional_parameters(conf_parser_file):
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
-
-	pltdef = []
-	moddef = []
-	plt_parser_file = exp_parser.get('git', 'GIT_FILE_PLATFORM_CONF')
-	plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + plt_parser_file)
-	mod_parser_file = exp_parser.get('git', 'GIT_FILE_MODEL_CONF')
-	mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR + "/" + mod_parser_file)
-
-	for section in plt_parser.sections():
-		pltdef += plt_parser.items(section)
-	for section in mod_parser.sections():
-		moddef += mod_parser.items(section)
-	
-	parameters = dict()
-	for item in pltdef:
-		parameters[item[0]] = item[1]
-	for item in moddef:
-		parameters[item[0]] = item[1]
-
-	return parameters
-
 
 def get_members(out):
 		count = 0
@@ -151,19 +93,16 @@ def main():
 	if args.expid is None:
 		parser.error("Missing expid.")
 
-	conf_parser_file = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/conf/" + "autosubmit_" + args.expid[0] + ".conf"
-	conf_parser = config_parser(conf_parser_file)
-	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
-	exp_parser = expdef_parser(exp_parser_file)
+	as_conf = AutosubmitConfig(args.expid[0])
 	
-	expid = conf_parser.get('config', 'EXPID')
-	git_project = exp_parser.get('experiment','GIT_PROJECT').lower()
+	expid = as_conf.get_expid()
+	git_project = as_conf.get_git_project()
 
 	print ""
 
 	if (git_project == "true"):
-		git_project_origin = exp_parser.get('git','GIT_PROJECT_ORIGIN').lower()
-		git_project_branch = exp_parser.get('git','GIT_PROJECT_BRANCH').lower()
+		git_project_origin = as_conf.get_git_project_origin()
+		git_project_branch = as_conf.get_git_project_branch
 		git_project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR
 		if (path.exists(git_project_path)):
 			print "The git folder exists. SKIPPING..."
@@ -180,15 +119,15 @@ def main():
 			(status, output) = getstatusoutput("cd " + git_project_path + "/" + git_project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
 			print "%s" % output
 
-	# Check parameters changes
-	print "Checking parameters..."
-	parameters = check_parameters(conf_parser_file)
+	# Load parameters
+	print "Loading parameters..."
+	parameters = as_conf.load_parameters()
 			
-	date_list = exp_parser.get('experiment','DATELIST').split(' ')
-	starting_chunk = int(exp_parser.get('experiment','CHUNKINI'))
-	num_chunks = int(exp_parser.get('experiment','NUMCHUNKS'))
-	member_list = exp_parser.get('experiment','MEMBERS').split(' ')
-	rerun = exp_parser.get('experiment','RERUN').lower()
+	date_list = as_conf.get_date_list()
+	starting_chunk = as_conf.get_starting_chunk()
+	num_chunks = as_conf.get_num_chunks()
+	member_list = as_conf.get_member_list()
+	rerun = as_conf.get_rerun()
 
 	print ""
 
@@ -200,7 +139,7 @@ def main():
 		chunk_list = create_json(exp_parser.get('experiment','CHUNKLIST'))
 		job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
 
-	platform = exp_parser.get('experiment', 'HPCARCH')
+	platform = as_conf.get_platform()
 	if (platform == 'hector' or platform == 'archer'):
 		job_list.update_shortened_names()
 

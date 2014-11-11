@@ -239,8 +239,6 @@ class JobList:
 			retrials = int(self._parameters['RETRIALS'])
 		else:
 			retrials = 4
-		print "Retrials: "
-		print retrials
 
 		for job in self.get_failed():
 			job.inc_fail_count()
