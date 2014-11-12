@@ -98,11 +98,9 @@ def main():
 	expid = as_conf.get_expid()
 	git_project = as_conf.get_git_project()
 
-	print ""
-
 	if (git_project == "true"):
 		git_project_origin = as_conf.get_git_project_origin()
-		git_project_branch = as_conf.get_git_project_branch
+		git_project_branch = as_conf.get_git_project_branch()
 		git_project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR
 		if (path.exists(git_project_path)):
 			print "The git folder exists. SKIPPING..."
@@ -118,6 +116,8 @@ def main():
 			print "%s" % output
 			(status, output) = getstatusoutput("cd " + git_project_path + "/" + git_project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
 			print "%s" % output
+		# Initialise git configuration
+		as_conf.init_git()
 
 	# Load parameters
 	print "Loading parameters..."
@@ -128,8 +128,6 @@ def main():
 	num_chunks = as_conf.get_num_chunks()
 	member_list = as_conf.get_member_list()
 	rerun = as_conf.get_rerun()
-
-	print ""
 
 	if (rerun == "false"):
 		job_list = JobList(expid)
@@ -145,7 +143,7 @@ def main():
 
 	job_list.save()
 	GenerateOutput(expid, job_list.get_job_list(), 'pdf')
-
+	print "Remember to MODIFY the config files!"
 
 if __name__ == "__main__":
 	main()

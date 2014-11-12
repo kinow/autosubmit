@@ -32,13 +32,12 @@ class AutosubmitConfig:
 		self._conf_parser = config_parser(self._conf_parser_file)
 		self._exp_parser_file = self._conf_parser.get('config', 'EXPDEFFILE')
 		self._exp_parser = expdef_parser(self._exp_parser_file)
-		git_project = self.get_git_project()
-		if (git_project == "true"):
-			self._plt_parser_file = self.get_git_file_platform()
-			self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file)
-			self._mod_parser_file = self.get_git_file_model()
-			self._mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._mod_parser_file)
-			
+	
+	def init_git(self):
+		self._plt_parser_file = self.get_git_file_platform()
+		self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file)
+		self._mod_parser_file = self.get_git_file_model()
+		self._mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._mod_parser_file)
 
 	def reload(self):
 		self._conf_parser = config_parser(self._conf_parser_file)
@@ -46,9 +45,9 @@ class AutosubmitConfig:
 		self._exp_parser = expdef_parser(self._exp_parser_file)
 		git_project = self.get_git_project()
 		if (git_project == "true"):
-			self._plt_parser_file = self.get_git_file_platform()
-			self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file)
-			self._mod_parser_file = self.get_git_file_model()
+			self._plt_parser_file = self.get_git_file_platform() 
+			self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file) 
+			self._mod_parser_file = self.get_git_file_model() 
 			self._mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._mod_parser_file)
 
 	def load_parameters(self):
@@ -69,16 +68,16 @@ class AutosubmitConfig:
 
 		git_project = self.get_git_project()
 		if (git_project == "true"):
-			# Load additional parameters
-			print "Loading additional parameters..."
+			# Load git parameters
+			print "Loading git parameters..."
 			parameters2 = parameters.copy()
-			parameters2.update(self.load_additional_parameters())
+			parameters2.update(self.load_git_parameters())
 			parameters = parameters2
 
 		return parameters
 
 
-	def load_additional_parameters(self):
+	def load_git_parameters(self):
 		pltdef = []
 		moddef = []
 		for section in self._plt_parser.sections():

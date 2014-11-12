@@ -51,7 +51,7 @@ class JobList:
 		remotesetup_job.set_parents([localsetup_job.get_name()])
 		localsetup_job.add_children(remotesetup_job.get_name())
 
-		print "Creating job list\n"
+		print "Creating job list..."
 		for date in date_list:
 			print date
 			for member in member_list:
@@ -317,7 +317,7 @@ class RerunJobList(JobList):
 		self._parameters = []
 
 	def create(self, chunk_list, starting_chunk, num_chunks, parameters):
-		print "Creating job list\n"
+		print "Creating job list..."
 		data = json.loads(chunk_list)
 		print data
 		self._parameters = parameters

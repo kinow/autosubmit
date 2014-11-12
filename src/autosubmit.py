@@ -76,6 +76,11 @@ def main():
 
 	as_conf = AutosubmitConfig(args.expid[0])
 
+	git_project = as_conf.get_git_project()
+	if (git_project == "true"):
+		# Initialise git configuration
+		as_conf.init_git()
+
 	expid = as_conf.get_expid()
 	hpcarch = as_conf.get_platform()
 	scratch_dir = as_conf.get_scratch_dir()

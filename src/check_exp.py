@@ -60,6 +60,9 @@ def main():
 		parser.error("Missing expid.")
 
 	as_conf = AutosubmitConfig(args.expid[0])
+	git_project = as_conf.get_git_project()
+	if (git_project == "true"):
+		as_conf.init_git()
 
 	print "Checking experiment configuration..."
 	if as_conf.check_parameters():

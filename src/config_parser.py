@@ -71,10 +71,10 @@ def config_parser(filename):
 	check_regex('ALREADYSUBMITTED', parser.get('config', 'ALREADYSUBMITTED'), alreadysubmitted)
 
 	if(invalid_values):
-		print "\nInvalid Autosubmit config file"
+		print "Invalid Autosubmit config file"
 		sys.exit()
 	else:
-		print "\nAutosubmit config file OK"
+		print "Autosubmit config file OK"
 
 	return parser
 
@@ -145,10 +145,10 @@ def expdef_parser(filename):
 	#	check_regex('GIT_ORIGIN', parser.get('git', 'GIT_ORIGIN'), gitorigin)
 
 	if(invalid_values):
-		print "\nInvalid experiment config file"
+		print "Invalid experiment config file"
 		sys.exit()
 	else:
-		print "\nExperiment config file OK"
+		print "Experiment config file OK"
 
 	return parser
 
@@ -165,10 +165,10 @@ def pltdef_parser(filename):
 	parser.read(filename)
 
 	if(invalid_values):
-		print "\nInvalid platform config file"
+		print "Invalid platform config file"
 		sys.exit()
 	else:
-		print "\nPlatform config file OK"
+		print "Platform config file OK"
 
 	return parser
 
@@ -185,10 +185,10 @@ def moddef_parser(filename):
 	parser.read(filename)
 
 	if(invalid_values):
-		print "\nInvalid model config file"
+		print "Invalid model config file"
 		sys.exit()
 	else:
-		print "\nModel config file OK"
+		print "Model config file OK"
 
 	return parser
 
