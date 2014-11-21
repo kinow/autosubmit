@@ -19,12 +19,12 @@
 
 """Functions for registering in the DB the commit SHA of the GIT projects version.
 Use these functions for registering GIT version of templates, model and ocean diagnosics under development."""
-from dir_config import LOCAL_ROOT_DIR, DB_DIR, DB_FILE, DB_NAME
 import argparse
 from os import path
 from sys import exit
 from pysqlite2 import dbapi2 as sql
 from commands import getstatusoutput
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR, DB_DIR, DB_FILE, DB_NAME
 
 DB_PATH = DB_DIR + "/" + DB_FILE
 

@@ -24,10 +24,10 @@ from time import localtime, strftime
 from sys import	setrecursionlimit
 from shutil import move
 import json
-from job_common import Status
-from job_common import Type
-from job import Job
-from dir_config import LOCAL_ROOT_DIR
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.job.job import Job
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 class JobList:
 	

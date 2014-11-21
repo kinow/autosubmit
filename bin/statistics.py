@@ -25,15 +25,13 @@ import commands
 import pydot
 import pickle
 import matplotlib
-from job.job_list import JobList
-from job.job_list import RerunJobList
-from job.job_common import Status
-from job.job_common import Type
-from dir_config import LOCAL_ROOT_DIR
-
 import numpy as np
 import matplotlib.pyplot as plt
-
+from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list import RerunJobList
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 
 def CreateBarDiagram(expid, joblist, output_file):

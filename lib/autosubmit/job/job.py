@@ -20,21 +20,21 @@
 
 import os
 import re
-from job_common import Status
-from job_common import Type
-from job_common import Template
-from job_common import ArHeader
-from job_common import BscHeader
-from job_common import EcHeader
-from job_common import HtHeader
-from job_common import ItHeader
-from job_common import MnHeader
-from job_common import PsHeader
-from job_common import StatisticsSnippet
-import chunk_date_lib
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import LOCAL_TMP_DIR
-from dir_config import LOCAL_GIT_DIR
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.job.job_common import Template
+from autosubmit.job.job_common import ArHeader
+from autosubmit.job.job_common import BscHeader
+from autosubmit.job.job_common import EcHeader
+from autosubmit.job.job_common import HtHeader
+from autosubmit.job.job_common import ItHeader
+from autosubmit.job.job_common import MnHeader
+from autosubmit.job.job_common import PsHeader
+from autosubmit.job.job_common import StatisticsSnippet
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_TMP_DIR
+from autosubmit.config.dir_config import LOCAL_GIT_DIR
+from autosubmit.date.chunk_date_lib import *
 
 class Job:
 	"""Class to handle all the tasks with Jobs at HPC.
@@ -320,24 +320,24 @@ class Job:
 				chunk = int(splittedname[3])
 			total_chunk = int(parameters['NUMCHUNKS'])
 			chunk_length_in_month = int(parameters['CHUNKSIZE'])
-			chunk_start_date = chunk_date_lib.chunk_start_date(string_date,chunk,chunk_length_in_month)
-			chunk_end_date = chunk_date_lib.chunk_end_date(chunk_start_date,chunk_length_in_month)
-			run_days = chunk_date_lib.running_days(chunk_start_date,chunk_end_date)
-			prev_days = chunk_date_lib.previous_days(string_date,chunk_start_date)
-			chunk_end_days = chunk_date_lib.previous_days(string_date,chunk_end_date)
-			day_before = chunk_date_lib.previous_day(string_date)
-			chunk_end_date_1 = chunk_date_lib.previous_day(chunk_end_date)
+			chunk_start = chunk_start_date(string_date,chunk,chunk_length_in_month)
+			chunk_end = chunk_end_date(chunk_start,chunk_length_in_month)
+			run_days = running_days(chunk_start,chunk_end)
+			prev_days = previous_days(string_date,chunk_start)
+			chunk_end_days = previous_days(string_date,chunk_end)
+			day_before = previous_day(string_date)
+			chunk_end_1 = previous_day(chunk_end)
 			parameters['DAY_BEFORE'] = day_before
-			parameters['Chunk_START_DATE'] = chunk_start_date
-			parameters['Chunk_END_DATE'] = chunk_end_date_1
+			parameters['Chunk_START_DATE'] = chunk_start
+			parameters['Chunk_END_DATE'] = chunk_end_1
 			parameters['RUN_DAYS'] = str(run_days)
 			parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
 			
-			chunk_start_month = chunk_date_lib.chunk_start_month(chunk_start_date)
-			chunk_start_year = chunk_date_lib.chunk_start_year(chunk_start_date)
+			chunk_start_m = chunk_start_month(chunk_start)
+			chunk_start_y = chunk_start_year(chunk_start)
 			  
-			parameters['Chunk_START_YEAR'] = str(chunk_start_year)
-			parameters['Chunk_START_MONTH'] = str(chunk_start_month)
+			parameters['Chunk_START_YEAR'] = str(chunk_start_y)
+			parameters['Chunk_START_MONTH'] = str(chunk_start_m)
 			if total_chunk == chunk:
 				parameters['Chunk_LAST'] = 'TRUE'
 			else:
@@ -349,8 +349,8 @@ class Job:
 			parameters['NUMPROC'] = parameters['NUMPROC_SIM']
 			parameters['TASKTYPE'] = 'SIMULATION'
 		elif (self._type == Type.POSTPROCESSING):
-			starting_date_year = chunk_date_lib.chunk_start_year(string_date)
-			starting_date_month = chunk_date_lib.chunk_start_month(string_date)
+			starting_date_year = chunk_start_year(string_date)
+			starting_date_month = chunk_start_month(string_date)
 			parameters['Starting_DATE_YEAR'] = str(starting_date_year)
 			parameters['Starting_DATE_MONTH'] = str(starting_date_month)
 			parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST'] 

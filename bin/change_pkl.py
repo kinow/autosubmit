@@ -22,12 +22,12 @@ import argparse
 import json
 from pyparsing import nestedExpr
 from sys import setrecursionlimit
-from job.job_list import JobList
-from job.job_list import RerunJobList
-from job.job_common import Status
-from job.job_common import Type
+from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list import RerunJobList
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from monitor import GenerateOutput
-from dir_config import LOCAL_ROOT_DIR
 
 def get_status(s):
 	if s == 'READY':

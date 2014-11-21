@@ -20,9 +20,9 @@
 
 from commands import getstatusoutput
 from time import sleep
-from job.job_common import Status
 from sys import exit
-from dir_config import LOCAL_ROOT_DIR
+from autosubmit.job.job_common import Status
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 SLEEPING_TIME = 30
 

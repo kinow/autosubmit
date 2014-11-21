@@ -21,12 +21,12 @@
 Cleaning space on LOCAL_ROOT_DIR/git directory.
 Cleaning space on LOCAL_ROOT_DIR/plot directory.
 Use these functions for finalised experiments."""
-from dir_config import LOCAL_ROOT_DIR
 import argparse
 from os import path, listdir, chdir, remove
 import shutil
 from sys import exit
 from commands import getstatusoutput
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from register_exp import register_sha
 
 

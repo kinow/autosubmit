@@ -19,8 +19,8 @@
 
 
 from xml.dom.minidom import parseString
-from hpcqueue import HPCQueue
 from time import sleep
+from autosubmit.queue.hpcqueue import HPCQueue
 
 class LgQueue(HPCQueue):
 	def __init__(self, expid):

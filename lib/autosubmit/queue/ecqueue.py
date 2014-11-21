@@ -19,9 +19,9 @@
 
 
 from xml.dom.minidom import parseString
-from hpcqueue import HPCQueue
-from dir_config import LOCAL_ROOT_DIR
 from time import sleep
+from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 class EcQueue(HPCQueue):
 	def __init__(self, expid):

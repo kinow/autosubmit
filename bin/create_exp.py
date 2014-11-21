@@ -26,14 +26,14 @@ from commands import getstatusoutput
 from pyparsing import nestedExpr
 from os import path
 from os import mkdir
-from job.job import Job
-from job.job_common import Status
-from job.job_list import JobList
-from job.job_list import RerunJobList
-from config_common import AutosubmitConfig
+from autosubmit.job.job import Job
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list import RerunJobList
+from autosubmit.config.config_common import AutosubmitConfig
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_GIT_DIR
 from monitor import GenerateOutput
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import LOCAL_GIT_DIR
 
 """This is the code to create the job list. It reads the experiment configuration files and creates the parameter structure and writes it in a .pkl file"""
 

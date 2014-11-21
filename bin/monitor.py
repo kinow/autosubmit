@@ -21,14 +21,14 @@
 import commands
 import pydot
 import pickle
-from job.job_list import JobList
-from job.job_list import RerunJobList
 import matplotlib
 import sys
-from dir_config import LOCAL_ROOT_DIR
 import argparse
 import time
-from job.job_common import Status
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list import RerunJobList
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'), (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
 

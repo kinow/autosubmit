@@ -17,12 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-from config_parser import config_parser
-from config_parser import expdef_parser
-from config_parser import pltdef_parser
-from config_parser import moddef_parser
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import LOCAL_GIT_DIR
+from autosubmit.config.config_parser import config_parser
+from autosubmit.config.config_parser import expdef_parser
+from autosubmit.config.config_parser import pltdef_parser
+from autosubmit.config.config_parser import moddef_parser
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_GIT_DIR
 
 class AutosubmitConfig:
 	"""Class to handle experiment configuration coming from file or database"""

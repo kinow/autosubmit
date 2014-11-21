@@ -27,10 +27,10 @@ import re
 from pysqlite2 import dbapi2 as sql
 from distutils.util import strtobool
 from commands import getstatusoutput
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import DB_DIR
-from dir_config import DB_FILE
-from dir_config import DB_NAME
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import DB_DIR
+from autosubmit.config.dir_config import DB_FILE
+from autosubmit.config.dir_config import DB_NAME
 
 # Database parameters
 #DB_DIR = '/cfu/autosubmit'

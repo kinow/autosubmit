@@ -20,11 +20,11 @@
 """Functions for handling experiment parameters check"""
 import argparse
 from os import path
-from job.job_common import Status
-from job.job_common import Type
-from job.job import Job
-from job.job_list import JobList
-from config_common import AutosubmitConfig
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.job.job import Job
+from autosubmit.job.job_list import JobList
+from autosubmit.config.config_common import AutosubmitConfig
 
 def check_templates(as_conf):
 	"""Procedure to check autogeneration of templates given 

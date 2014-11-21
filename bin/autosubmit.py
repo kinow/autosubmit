@@ -24,24 +24,23 @@ import commands
 import signal
 import logging
 import platform
-from queue.itqueue import ItQueue
-from queue.mnqueue import MnQueue
-from queue.lgqueue import LgQueue
-from queue.elqueue import ElQueue
-from queue.psqueue import PsQueue
-from queue.ecqueue import EcQueue
-from queue.mn3queue import Mn3Queue
-from queue.htqueue import HtQueue
-from queue.arqueue import ArQueue
-from job.job import Job
-from job.job_common import Status
-from job.job_common import Type
-from job.job_list import JobList
-from job.job_list import RerunJobList
-from config_common import AutosubmitConfig
-from dir_config import LOCAL_ROOT_DIR
-from dir_config import LOCAL_GIT_DIR
-from check_compatibility import check_compatibility, print_compatibility
+from autosubmit.queue.itqueue import ItQueue
+from autosubmit.queue.mnqueue import MnQueue
+from autosubmit.queue.lgqueue import LgQueue
+from autosubmit.queue.elqueue import ElQueue
+from autosubmit.queue.psqueue import PsQueue
+from autosubmit.queue.ecqueue import EcQueue
+from autosubmit.queue.mn3queue import Mn3Queue
+from autosubmit.queue.htqueue import HtQueue
+from autosubmit.queue.arqueue import ArQueue
+from autosubmit.job.job import Job
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
+from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list import RerunJobList
+from autosubmit.config.config_common import AutosubmitConfig
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_GIT_DIR
 from finalise_exp import clean_git, clean_plot, register_sha
 
 """This is the main code of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
