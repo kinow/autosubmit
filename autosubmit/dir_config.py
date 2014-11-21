@@ -24,4 +24,3 @@ DB_NAME = 'autosubmit'
 LOCAL_ROOT_DIR = '/cfu/autosubmit'
 LOCAL_TMP_DIR = 'tmp'
 LOCAL_GIT_DIR = 'git'
-COMPATIBILITY_TABLE = "compatibility_table.txt"
