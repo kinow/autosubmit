@@ -1,19 +1,28 @@
 from setuptools import setup, find_packages
+from os import path
 
-with open('VERSION') as file:
-	version = file.readline().split('\n')[0]
+here = path.abspath(path.dirname(__file__))
 
-config = {
-	'name' : 'autosubmit',
-	'packages' : find_packages(),
-	'version' : version,
-	'description' : 'Autosubmit: a versatile tool for managing Global Climate Coupled Models in Supercomputing Environments',
-	'author' : 'Domingo Manubens-Gil',
-	'author_email' : 'domingo.manubens@ic3.cat',
-	'url' : 'https://gitlab.cfu.local/cfu/autosubmit.git', # use the URL to the github repo
-	'download_url' : 'https://gitlab.cfu.local/cfu/autosubmit/tarball/autosubmit3.0.0', # I'll explain this in a second
-	'keywords' : ['climate', 'workflow', 'HPC'], # arbitrary keywords
-	'classifiers' : []
-}
+# Get the version number from the relevant file
+with open(path.join(here, 'VERSION')) as f:
+	version = f.read().strip()
 
-setup(**config)
+setup (
+	name = 'autosubmit',
+	version = version,
+	description = 'Autosubmit: a versatile tool for managing Global Climate Coupled Models in Supercomputing Environments',
+	author = 'Domingo Manubens-Gil',
+	author_email = 'domingo.manubens@ic3.cat',
+	url = 'https://gitlab.cfu.local/cfu/autosubmit.git',
+	download_url = 'https://gitlab.cfu.local/cfu/autosubmit/tarball/autosubmit3.0.0',
+	keywords = ['climate', 'workflow', 'HPC'],
+	classifiers = [],
+	install_requires = ['argparse>=1.2', 'python-dateutil>=1,<2', 'pydot>=1.0.2', 'pysqlite>=2.6.3'],#'matplotlib>=1.1.1', 
+	package_dir = {'':'lib'},
+	packages = find_packages("lib"),
+	scripts = ['bin/expid.py', 'bin/check_exp.py'],
+	#entry_points = {
+	#	'console_scripts' : ['check_exp = bin/check_exp.py']
+	#	'gui_scripts' : ['monitor = monitor.py']
+	#	}
+)
