@@ -17,7 +17,7 @@ setup (
 	download_url = 'https://gitlab.cfu.local/cfu/autosubmit/tarball/autosubmit3.0.0',
 	keywords = ['climate', 'workflow', 'HPC'],
 	classifiers = [],
-	install_requires = ['argparse>=1.2', 'python-dateutil>=1,<2', 'pydot>=1.0.2', 'pysqlite>=2.6.3'],#'matplotlib>=1.1.1', 
+	install_requires = ['argparse>=1.2', 'python-dateutil>=1,<2', 'pydot>=1.0.2'],#'matplotlib>=1.1.1', 
 	package_dir = {'':'lib'},
 	packages = find_packages("lib"),
 	scripts = ['bin/expid.py', 'bin/check_exp.py'],

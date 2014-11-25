@@ -24,7 +24,7 @@ import argparse
 import shutil
 import string
 import re
-from pysqlite2 import dbapi2 as sql
+import sqlite3
 from distutils.util import strtobool
 from commands import getstatusoutput
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
@@ -84,7 +84,7 @@ def set_experiment(name, description):
 	(conn, cursor) = open_conn()
 	try:
 		cursor.execute('insert into experiment (name, description) values (:name, :description)', {'name':name, 'description':description})
-	except sql.IntegrityError:
+	except sqlite3.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s already exists!!!' % (name)
 		sys.exit(1)
@@ -202,7 +202,7 @@ def check_name(name):
 	return name
 
 def open_conn():
-	conn = sql.connect(DB_PATH)
+	conn = sqlite3.connect(DB_PATH)
 	cursor = conn.cursor()
 	return (conn, cursor)
 
