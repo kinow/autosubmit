@@ -21,6 +21,11 @@ setup (
 	package_dir = {'':'lib'},
 	packages = find_packages("lib"),
 	scripts = ['bin/expid.py', 'bin/check_exp.py'],
+	data_files = [
+		('', ['VERSION']),
+		('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),
+		('data', ['lib/autosubmit/database/data/autosubmit.sql'])
+		]
 	#entry_points = {
 	#	'console_scripts' : ['check_exp = bin/check_exp.py']
 	#	'gui_scripts' : ['monitor = monitor.py']
