@@ -99,6 +99,7 @@ def main():
 	autosubmit_version = require("autosubmit")[0].version
 
 	parser = argparse.ArgumentParser()
+	parser.add_argument('--version', '-v', action='version', version=autosubmit_version)
 	group1 = parser.add_mutually_exclusive_group(required = True)
 	group1.add_argument('--new', '-n', action = "store_true")
 	group1.add_argument('--copy', '-y', type = str)
