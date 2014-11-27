@@ -24,6 +24,9 @@ import re
 import argparse
 from distutils.util import strtobool
 from commands import getstatusoutput
+from pkg_resources import require
+from pkg_resources import resource_string
+from pkg_resources import resource_listdir
 from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
@@ -90,9 +93,9 @@ def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
 ####################
 def main():
 	##obtain version for autosubmit being used in expid.py step
-	#(status, output) = getstatusoutput("cd " + os.path.dirname(__file__) + "; git rev-parse HEAD")
-	#autosubmit_version = output
-	autosubmit_version = file(os.path.join(os.path.dirname(__file__), os.pardir, 'VERSION'),'r').read()
+	#autosubmit_version = file(os.path.join(package_dir, 'VERSION'),'r').read()
+	#autosubmit_version = resource_string('autosubmit', 'VERSION')
+	autosubmit_version = require("autosubmit")[0].version
 
 	parser = argparse.ArgumentParser()
 	group1 = parser.add_mutually_exclusive_group(required = True)
@@ -118,12 +121,12 @@ def main():
 		os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
 		print "Copying config files..."
 		##autosubmit config and architecture copyed from AS.
-		files = os.listdir(os.path.join(os.path.dirname(__file__), os.pardir, 'conf'))
+		files = resource_listdir('autosubmit.config.files', '')
 		for filename in files:
-			if os.path.isfile(os.path.join(os.path.dirname(__file__), os.pardir, 'conf', filename)):
+			if resource_exists('autosubmit.config.files', filename):
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
-				content = file(os.path.join(os.path.dirname(__file__), os.pardir, 'conf', filename), 'r').read()
+				content = resource_string('autosubmit.config.files', filename)
 				content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
 				print LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename
 				file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
