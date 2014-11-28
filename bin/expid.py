@@ -17,10 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Script for handling experiment creation, deletion or copy"""
 import os
 import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import shutil
-import re
 import argparse
 from distutils.util import strtobool
 from commands import getstatusoutput
@@ -31,6 +34,7 @@ from pkg_resources import resource_listdir
 from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
+from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 def user_yes_no_query(question):
@@ -41,53 +45,14 @@ def user_yes_no_query(question):
 		except ValueError:
 			sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
-#############################
-# Conf files
-#############################
-def prepare_conf_files(content, exp_id, hpc, autosubmit_version):
-	if re.search('EXPID =.*', content):
-		content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-	if re.search('HPCARCH =.*', content):
-		content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-	if re.search('AUTOSUBMIT_VERSION =.*', content):
-		content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0), "AUTOSUBMIT_VERSION = " + autosubmit_version)
-	if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
-		content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0), "AUTOSUBMIT_LOCAL_ROOT = " + LOCAL_ROOT_DIR)
-
-	if re.search('SAFETYSLEEPTIME =.*', content):
-		if hpc == "bsc":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
-		elif hpc == "hector":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
-		elif hpc == "ithaca":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
-		elif hpc == "lindgren":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
-		elif hpc == "ecmwf":
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
-		elif hpc == "marenostrum3": 
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
-		elif hpc == "archer": 
-			content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
-
-	if re.search('SCRATCH_DIR =.*', content):
-		if hpc == "bsc":
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch/ecm86")
-		elif hpc == "hector":
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
-		elif hpc == "ithaca":
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch")
-		elif hpc == "lindgren":
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /cfs/scratch")
-		elif hpc == "ecmwf":
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
-		elif hpc == "marenostrum3": 
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch")
-		elif hpc == "archer": 
-			content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
-
-
-	return content
+def prepare_conf_files(exp_id, hpc, autosubmit_version):
+	as_conf = AutosubmitConfig(exp_id)
+	as_conf.set_version(autosubmit_version)
+	as_conf.set_expid(exp_id)
+	as_conf.set_local_root()
+	as_conf.set_platform(hpc)
+	as_conf.set_scratch_dir(hpc)
+	as_conf.set_safetysleeptime(hpc)
 
 ####################
 # Main Program
@@ -98,15 +63,15 @@ def main():
 	#autosubmit_version = resource_string('autosubmit', 'VERSION')
 	autosubmit_version = require("autosubmit")[0].version
 
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--version', '-v', action='version', version=autosubmit_version)
+	parser = argparse.ArgumentParser(description='Get an experiment identifier and create experiment folder')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	group1 = parser.add_mutually_exclusive_group(required = True)
-	group1.add_argument('--new', '-n', action = "store_true")
-	group1.add_argument('--copy', '-y', type = str)
-	group1.add_argument('--delete', '-D', type = str)
+	group1.add_argument('-n', '--new', action = "store_true")
+	group1.add_argument('-y', '--copy', type = str)
+	group1.add_argument('-D', '--delete', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
-	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'))
-	group2.add_argument('--description', '-d', type = str)
+	group2.add_argument('-H', '--HPC', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'))
+	group2.add_argument('-d', '--description', type = str)
 
 	args = parser.parse_args()
 	if args.new is None and args.copy is None and args.delete is None:
@@ -122,19 +87,16 @@ def main():
 		
 		os.mkdir(LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
 		print "Copying config files..."
-		##autosubmit config and architecture copyed from AS.
+		## autosubmit config and experiment copyed from AS.
 		files = resource_listdir('autosubmit.config', 'files')
 		for filename in files:
 			if resource_exists('autosubmit.config', 'files/' + filename):
 				index = filename.index('.')
 				new_filename = filename[:index] + "_" + exp_id + filename[index:]
 				content = resource_string('autosubmit.config', 'files/' + filename)
-				content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
 				print LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename
 				file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
-
-		content = file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/expdef_" + exp_id + ".conf").read()
-		file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/expdef_" + exp_id + ".conf", 'w').write(content)
+		prepare_conf_files(exp_id, args.HPC, autosubmit_version)
 
 	elif args.copy:
 		if args.description is None:
@@ -152,8 +114,8 @@ def main():
 				if os.path.isfile(LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename):
 					new_filename = filename.replace(args.copy, exp_id)
 					content = file(LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename, 'r').read()
-					content = prepare_conf_files(content, exp_id, args.HPC, autosubmit_version)
 					file(LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
+			prepare_conf_files(exp_id, args.HPC, autosubmit_version)
 		else:
 			print "The previous experiment directory does not exist"
 			sys.exit(1)

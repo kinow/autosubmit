@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+import re
 from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
 from autosubmit.config.config_parser import pltdef_parser
@@ -29,11 +30,13 @@ class AutosubmitConfig:
 
 	def __init__(self, expid):
 		self._conf_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
+		self._exp_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
+		
+	def check_conf(self):
 		self._conf_parser = config_parser(self._conf_parser_file)
-		self._exp_parser_file = self._conf_parser.get('config', 'EXPDEFFILE')
 		self._exp_parser = expdef_parser(self._exp_parser_file)
 	
-	def init_git(self):
+	def check_git(self):
 		self._plt_parser_file = self.get_git_file_platform()
 		self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file)
 		self._mod_parser_file = self.get_git_file_model()
@@ -138,6 +141,18 @@ class AutosubmitConfig:
 	def get_expid(self):
 		return self._conf_parser.get('config','EXPID')
 
+	def set_expid(self, exp_id):
+		# Autosubmit conf
+		content = file(self._conf_parser_file).read()
+		if re.search('EXPID =.*', content):
+			content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id) 
+		file(self._conf_parser_file,'w').write(content)
+		# Experiment conf
+		content = file(self._exp_parser_file).read()
+		if re.search('EXPID =.*', content):
+			content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id) 
+		file(self._exp_parser_file,'w').write(content)
+
 	def get_git_project(self):
 		return self._exp_parser.get('experiment','GIT_PROJECT').lower()
 	
@@ -170,9 +185,46 @@ class AutosubmitConfig:
 
 	def get_platform(self):
 		return self._exp_parser.get('experiment', 'HPCARCH')
+	
+	def set_platform(self, hpc):
+		content = file(self._exp_parser_file).read()
+		if re.search('HPCARCH =.*', content):
+			content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
+		file(self._exp_parser_file,'w').write(content)
+
+	def set_version(self, autosubmit_version):
+		content = file(self._conf_parser_file).read()
+		if re.search('AUTOSUBMIT_VERSION =.*', content):
+			content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0), "AUTOSUBMIT_VERSION = " + autosubmit_version)
+		file(self._conf_parser_file,'w').write(content)
+
+	def set_local_root(self):
+		content = file(self._conf_parser_file).read()
+		if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
+			content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0), "AUTOSUBMIT_LOCAL_ROOT = " + LOCAL_ROOT_DIR)
+		file(self._conf_parser_file,'w').write(content)
 
 	def get_scratch_dir(self):
 		return self._exp_parser.get('experiment', 'SCRATCH_DIR')
+
+	def set_scratch_dir(self, hpc):
+		content = file(self._exp_parser_file).read()
+		if re.search('SCRATCH_DIR =.*', content):
+			if hpc == "bsc":
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch/ecm86")
+			elif hpc == "hector":
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
+			elif hpc == "ithaca":
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch")
+			elif hpc == "lindgren":
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /cfs/scratch")
+			elif hpc == "ecmwf":
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
+			elif hpc == "marenostrum3": 
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch")
+			elif hpc == "archer": 
+				content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /work/pr1u1011")
+		file(self._exp_parser_file,'w').write(content)
 	
 	def get_hpcproj(self):
 		return self._exp_parser.get('experiment', 'HPCPROJ')
@@ -191,6 +243,25 @@ class AutosubmitConfig:
 	
 	def get_safetysleeptime(self):
 		return int(self._conf_parser.get('config','SAFETYSLEEPTIME'))
+
+	def set_safetysleeptime(self, hpc):
+		content = file(self._conf_parser_file).read()
+		if re.search('SAFETYSLEEPTIME =.*', content):
+			if hpc == "bsc":
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+			elif hpc == "hector":
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+			elif hpc == "ithaca":
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+			elif hpc == "lindgren":
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+			elif hpc == "ecmwf":
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+			elif hpc == "marenostrum3": 
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+			elif hpc == "archer": 
+				content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+		file(self._conf_parser_file,'w').write(content)
 	
 	def get_retrials(self):
 		return int(self._conf_parser.get('config','RETRIALS'))

@@ -17,13 +17,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+"""This is the main script of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
+import os
+import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
-import time, os, sys
+import time
 import cPickle as pickle
 import commands
 import signal
 import logging
 import platform
+from pkg_resources import require
 from autosubmit.queue.itqueue import ItQueue
 from autosubmit.queue.mnqueue import MnQueue
 from autosubmit.queue.lgqueue import LgQueue
@@ -41,9 +48,7 @@ from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
-from finalise_exp import clean_git, clean_plot, register_sha
-
-"""This is the main code of autosubmit. All the stream of execution is handled here (submitting all the jobs properly and repeating its execution in case of failure)."""
+#from finalise_exp import clean_git, clean_plot, register_sha
 
 def log_long(message):
 	print "[%s] %s" % (time.asctime(), message)
@@ -57,13 +62,16 @@ def log_short(message):
 # Main Program
 ####################
 def main():
- 
-	os.system('clear')
+	autosubmit_version = require("autosubmit")[0].version
+
 	parser = argparse.ArgumentParser(description='Launch Autosubmit given an experiment identifier')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	args = parser.parse_args()
 	if args.expid is None:
 		parser.error("Missing expid.")
+
+	os.system('clear')
 
 	logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
     	                datefmt='%a, %d %b %Y %H:%M:%S',
@@ -74,11 +82,12 @@ def main():
 
 
 	as_conf = AutosubmitConfig(args.expid[0])
+	as_conf.check_conf()
 
 	git_project = as_conf.get_git_project()
 	if (git_project == "true"):
-		# Initialise git configuration
-		as_conf.init_git()
+		# Check git configuration
+		as_conf.check_git()
 
 	expid = as_conf.get_expid()
 	hpcarch = as_conf.get_platform()
@@ -342,11 +351,11 @@ def main():
 		
 		time.sleep(safetysleeptime)
 	## finalise experiment
-	if (len(joblist.get_completed()) == len(joblist)):
+	#if (len(joblist.get_completed()) == len(joblist)):
 		#print "Cleaning GIT directory..."
 		#clean_git(expid)
-		print "Cleaning plot directory..."
-		clean_plot(expid)
+		#print "Cleaning plot directory..."
+		#clean_plot(expid)
  
  	logger.info("Finished job submission")
 

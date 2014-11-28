@@ -18,8 +18,13 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Functions for handling experiment parameters check"""
+import os
+import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
-from os import path
+from pkg_resources import require
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job import Job
@@ -46,23 +51,24 @@ def check_templates(as_conf):
 	
 	return out
 
-
-
 ####################
 # Main Program
 ####################
 def main():
+	autosubmit_version = require("autosubmit")[0].version
 
 	parser = argparse.ArgumentParser(description='Check autosubmit and experiment configurations given a experiment identifier. Check templates creation with those configurations')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	args = parser.parse_args()
 	if args.expid is None:
 		parser.error("Missing expid.")
 
 	as_conf = AutosubmitConfig(args.expid[0])
+	as_conf.check_conf()
 	git_project = as_conf.get_git_project()
 	if (git_project == "true"):
-		as_conf.init_git()
+		as_conf.check_git()
 
 	print "Checking experiment configuration..."
 	if as_conf.check_parameters():

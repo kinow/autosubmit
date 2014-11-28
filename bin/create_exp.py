@@ -18,14 +18,19 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
+"""This is the code to create the job list. It reads the experiment configuration files and creates the parameter structure and writes it in a .pkl file"""
+import os
+import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
 import shutil
 import json
 import cPickle as pickle
 from commands import getstatusoutput
 from pyparsing import nestedExpr
-from os import path
-from os import mkdir
+from pkg_resources import require
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
@@ -33,9 +38,7 @@ from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
-from monitor import GenerateOutput
-
-"""This is the code to create the job list. It reads the experiment configuration files and creates the parameter structure and writes it in a .pkl file"""
+#from monitor import GenerateOutput
 
 def get_members(out):
 		count = 0
@@ -86,14 +89,17 @@ def create_json(text):
 # Main Program
 ####################
 def main():
+	autosubmit_version = require("autosubmit")[0].version
 	
 	parser = argparse.ArgumentParser(description='Create pickle given an experiment identifier')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	args = parser.parse_args()
 	if args.expid is None:
 		parser.error("Missing expid.")
 
 	as_conf = AutosubmitConfig(args.expid[0])
+	as_conf.check_conf()
 	
 	expid = as_conf.get_expid()
 	git_project = as_conf.get_git_project()
@@ -116,8 +122,8 @@ def main():
 			print "%s" % output
 			(status, output) = getstatusoutput("cd " + git_project_path + "/" + git_project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
 			print "%s" % output
-		# Initialise git configuration
-		as_conf.init_git()
+		# Check git configuration
+		as_conf.check_git()
 
 	# Load parameters
 	print "Loading parameters..."
@@ -142,7 +148,7 @@ def main():
 		job_list.update_shortened_names()
 
 	job_list.save()
-	GenerateOutput(expid, job_list.get_job_list(), 'pdf')
+	#GenerateOutput(expid, job_list.get_job_list(), 'pdf')
 	print "Remember to MODIFY the config files!"
 
 if __name__ == "__main__":
