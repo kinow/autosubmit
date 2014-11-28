@@ -1,3 +1,22 @@
+#!/usr/bin/env python
+
+# Copyright 2014 Climate Forecasting Unit, IC3
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
 from os import path
 from setuptools import setup
 from setuptools import find_packages
@@ -29,7 +48,7 @@ setup (
 			'lib/autosubmit/database/data/autosubmit.sql'
 		]
 		},
-	scripts = ['bin/expid.py', 'bin/check_exp.py'],
+	scripts = ['bin/autosubmit.py', 'bin/expid.py', 'bin/check_exp.py', 'bin/create_exp.py', 'bin/monitor.py'],
 	#data_files = [
 	#	('', ['VERSION']),
 	#	('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),

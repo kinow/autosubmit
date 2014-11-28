@@ -38,7 +38,7 @@ from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
-#from monitor import GenerateOutput
+from autosubmit.monitor.monitor import Monitor
 
 def get_members(out):
 		count = 0
@@ -148,7 +148,9 @@ def main():
 		job_list.update_shortened_names()
 
 	job_list.save()
-	#GenerateOutput(expid, job_list.get_job_list(), 'pdf')
+
+	monitor_exp = Monitor()
+	monitor_exp.GenerateOutput(expid, job_list.get_job_list(), 'pdf')
 	print "Remember to MODIFY the config files!"
 
 if __name__ == "__main__":
