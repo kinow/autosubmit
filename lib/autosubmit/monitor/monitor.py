@@ -23,6 +23,7 @@ import matplotlib
 from os import path
 from os import chdir
 from os import listdir
+from os import remove
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
@@ -98,7 +99,7 @@ class Monitor:
 		elif output_format == "ps":
 			graph.write_ps(output_file)
 
-	def clean_plot(expid):
+	def clean_plot(self, expid):
 		"""Function to clean space on LOCAL_ROOT_DIR/plot directory."""
 		search_dir = LOCAL_ROOT_DIR + "/" + expid + "/plot/"
 		chdir(search_dir)

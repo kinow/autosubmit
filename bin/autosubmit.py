@@ -46,9 +46,10 @@ from autosubmit.job.job_common import Type
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
+from autosubmit.git.git_common import AutosubmitGit
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
-#from finalise_exp import clean_git, clean_plot, register_sha
+from autosubmit.monitor.monitor import Monitor
 
 def log_long(message):
 	print "[%s] %s" % (time.asctime(), message)
@@ -351,11 +352,14 @@ def main():
 		
 		time.sleep(safetysleeptime)
 	## finalise experiment
-	#if (len(joblist.get_completed()) == len(joblist)):
-		#print "Cleaning GIT directory..."
-		#clean_git(expid)
-		#print "Cleaning plot directory..."
-		#clean_plot(expid)
+	if (len(joblist.get_completed()) == len(joblist)):
+		if (git_project == "true"):
+			print "Cleaning GIT directory..."
+			git_conf = AutosubmitGit(expid)
+			git_conf.clean_git()
+		print "Cleaning plot directory..."
+		as_monitor = Monitor()
+		as_monitor.clean_plot(expid)
  
  	logger.info("Finished job submission")
 

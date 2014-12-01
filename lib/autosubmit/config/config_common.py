@@ -200,7 +200,6 @@ class AutosubmitConfig:
 			print "Project commit SHA succesfully registered to the configuration file."
 		else:
 			print "Changes NOT registered to the configuration file..."
-		
 	
 	def get_git_file_platform(self):
 		return self._exp_parser.get('git','GIT_FILE_PLATFORM_CONF')

@@ -108,11 +108,11 @@ def main():
 		git_project_origin = as_conf.get_git_project_origin()
 		git_project_branch = as_conf.get_git_project_branch()
 		git_project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR
-		if (path.exists(git_project_path)):
+		if (os.path.exists(git_project_path)):
 			print "The git folder exists. SKIPPING..."
 			print "Using git folder: %s" % git_project_path
 		else:
-			mkdir(git_project_path)
+			os.mkdir(git_project_path)
 			print "The git folder %s has been created." % git_project_path
 			print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, git_project_path)
 			(status, output) = getstatusoutput("cd " + git_project_path + "; git clone -b " + git_project_branch + " " + git_project_origin)

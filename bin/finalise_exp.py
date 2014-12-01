@@ -29,6 +29,7 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
 from pkg_resources import require
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.git.git_common import AutosubmitGit
 from autosubmit.monitor.monitor import Monitor
 	
@@ -49,9 +50,18 @@ def main():
 		parser.error("Missing expid.")
 	
 	if args.git:
-		print "Cleaning GIT directory..."
-		git_autosubmit = AutosubmitGit(args.expid[0])
-		git_autosubmit.clean_git()
+		autosubmit_config = AutosubmitConfig(args.expid[0])
+		autosubmit_config.check_conf()
+		git_project = autosubmit_config.get_git_project()
+		if (git_project == "true"):
+			autosubmit_config.check_git() 
+			print "Registering commit SHA..."
+			autosubmit_config.set_git_project_commit()
+			autosubmit_git = AutosubmitGit(args.expid[0])
+			print "Cleaning GIT directory..." 
+			autosubmit_git.clean_git()
+		else:
+			print "Nothing to clean..."
 	
 	if args.plot:
 		print "Cleaning plot directory..."

@@ -23,7 +23,6 @@ from shutil import rmtree
 from commands import getstatusoutput
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
-from autosubmit.config.config_common import AutosubmitConfig
 
 class AutosubmitGit:
 	"""Class to handle experiment git repository"""
@@ -33,13 +32,8 @@ class AutosubmitGit:
 	
 	def clean_git(self):
 		"""Function to clean space on LOCAL_ROOT_DIR/git directory."""
-		autosubmit_config = AutosubmitConfig(self._expid)
-
 		dirs = listdir(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_GIT_DIR)
 		if (dirs):
-			print "Registering commit SHA..."
-			autosubmit_config.set_git_project_commit()
-
 			print "Checking git directories status..."
 			for dirname in dirs:
 				print dirname
