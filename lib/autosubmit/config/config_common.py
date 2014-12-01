@@ -18,6 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import re
+from os import listdir
+from commands import getstatusoutput
 from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
 from autosubmit.config.config_parser import pltdef_parser
@@ -161,6 +163,44 @@ class AutosubmitConfig:
 
 	def get_git_project_branch(self):
 		return self._exp_parser.get('git','GIT_PROJECT_BRANCH').lower()
+	
+	def get_git_project_commit(self):
+		return self._exp_parser.get('git','GIT_PROJECT_BRANCH').lower()
+
+	def set_git_project_commit(self):
+		"""Function to register in the configuration the commit SHA of the git project version."""
+		save = False
+		project_name = listdir(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR)[0]
+		(status1, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + project_name)
+		(status2, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + project_name + "; " + "git rev-parse --abbrev-ref HEAD")
+		if (status1 == 0 and status2 == 0):
+			project_branch = output
+			save = True
+			print "Project branch is: " + project_branch
+		else:
+			print "Failed to retrieve project branch..." 
+			save = False
+		(status1, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + project_name)
+		(status2, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + project_name + "; " + "git rev-parse HEAD")
+		if (status1 == 0 and status2 == 0):
+			project_sha = output
+			save = True
+			print "Project commit SHA is: " + project_sha
+		else: 
+			save = False
+			print "Failed to retrieve project commit SHA..."
+		project_branch_sha = project_branch + " " + project_sha
+
+		# register changes
+		if (save):
+			content = file(self._exp_parser_file).read()
+			if re.search('GIT_PROJECT_COMMIT =.*', content):
+				content = content.replace(re.search('GIT_PROJECT_COMMIT =.*', content).group(0), "GIT_PROJECT_COMMIT = " + project_branch_sha) 
+			file(self._exp_parser_file,'w').write(content)
+			print "Project commit SHA succesfully registered to the configuration file."
+		else:
+			print "Changes NOT registered to the configuration file..."
+		
 	
 	def get_git_file_platform(self):
 		return self._exp_parser.get('git','GIT_FILE_PLATFORM_CONF')

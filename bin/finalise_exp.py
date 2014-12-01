@@ -21,81 +21,26 @@
 Cleaning space on LOCAL_ROOT_DIR/git directory.
 Cleaning space on LOCAL_ROOT_DIR/plot directory.
 Use these functions for finalised experiments."""
+import os
+import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
-from os import path, listdir, chdir, remove
-import shutil
-from sys import exit
-from commands import getstatusoutput
+from pkg_resources import require
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from register_exp import register_sha
-
-
-def clean_git(expid):
-	"""Function to clean space on LOCAL_ROOT_DIR/git directory."""
-
-	dirs = listdir(LOCAL_ROOT_DIR + "/" + expid + "/git/")
-	if (dirs):
-		print "Registering SHA..."
-		register_sha(expid,True)
-
-		print "Checking git directories status..."
-		for dirname in dirs:
-			print dirname
-			if path.isdir(LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname):
-				if path.isdir(LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname + "/.git"):
-					(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname + "; " + "git diff-index HEAD --")
-					if (status == 0):
-						if (output):
-							print "Changes not commited detected... SKIPPING!"
-							print "WARNING: commit needed..."
-							exit(1)
-						else:
-							(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname + "; " + "git log --branches --not --remotes")
-							if (output):
-								print "Changes not pushed detected... SKIPPING!"
-								print "WARNING: synchronization needed..."
-								exit(1)
-							else: 
-								print "Ready to clean..."
-								print "Cloning: 'git clone --bare " + dirname + " " + dirname +".git' ..."
-								(status, output) = getstatusoutput("cd " + LOCAL_ROOT_DIR + "/" + expid + "/git/" + "; " + "git clone --bare " + dirname + " " + dirname + ".git")
-								print "Removing: " + dirname
-								shutil.rmtree(LOCAL_ROOT_DIR + "/" + expid + "/git/" + dirname);
-								print dirname + " directory clean!"
-								print "WARNING: further runs will require 'git clone " + dirname + ".git " + dirname +"' ..."
-					else:
-						print "Failed to retrieve git info..." 
-						exit(1)
-				else:
-					print "Not a git repository... SKIPPING!"
-			else:
-				print "Not a directory... SKIPPING!"
-	return
-
-
-def clean_plot(expid):
-	"""Function to clean space on LOCAL_ROOT_DIR/plot directory."""
-	
-	search_dir = LOCAL_ROOT_DIR + "/" + expid + "/plot/"
-	chdir(search_dir)
-	files = filter(path.isfile, listdir(search_dir))
-	files = [path.join(search_dir, f) for f in files]
-	files.sort(key=lambda x: path.getmtime(x))
-	remain = files[-2:]
-	filelist = [ f for f in files if f not in remain ]
-	for f in filelist:
-		remove(f)
-	print "Plot directory clean! last two plots remanining there."
-	return
-
-
+from autosubmit.git.git_common import AutosubmitGit
+from autosubmit.monitor.monitor import Monitor
 	
 
 ####################
 # Main Program
 ####################
 def main():
+	autosubmit_version = require("autosubmit")[0].version
+
 	parser = argparse.ArgumentParser(description='Clean experiment git and plot directories, given an experiment identifier')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', required=True, nargs = 1)
 	parser.add_argument('-g', '--git', action="store_true", default=False, help='Clean git')
 	parser.add_argument('-p', '--plot', action="store_true", default=False, help='Clean plot, only 2 last will remain')
@@ -105,11 +50,13 @@ def main():
 	
 	if args.git:
 		print "Cleaning GIT directory..."
-		clean_git(args.expid[0])
+		git_autosubmit = AutosubmitGit(args.expid[0])
+		git_autosubmit.clean_git()
 	
 	if args.plot:
 		print "Cleaning plot directory..."
-		clean_plot(args.expid[0])
+		monitor_autosubmit = Monitor()
+		monitor_autosubmit.clean_plot(args.expid[0])
 
 if __name__ == "__main__":
 	main()

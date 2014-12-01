@@ -20,6 +20,9 @@
 import time
 import pydot
 import matplotlib
+from os import path
+from os import chdir
+from os import listdir
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
@@ -94,3 +97,17 @@ class Monitor:
 			graph.write_pdf(output_file)
 		elif output_format == "ps":
 			graph.write_ps(output_file)
+
+	def clean_plot(expid):
+		"""Function to clean space on LOCAL_ROOT_DIR/plot directory."""
+		search_dir = LOCAL_ROOT_DIR + "/" + expid + "/plot/"
+		chdir(search_dir)
+		files = filter(path.isfile, listdir(search_dir))
+		files = [path.join(search_dir, f) for f in files]
+		files.sort(key=lambda x: path.getmtime(x))
+		remain = files[-2:]
+		filelist = [ f for f in files if f not in remain ]
+		for f in filelist:
+			remove(f)
+		print "Plot directory clean! last two plots remanining there."
+		return

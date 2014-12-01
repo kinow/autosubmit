@@ -48,7 +48,7 @@ setup (
 			'lib/autosubmit/database/data/autosubmit.sql'
 		]
 		},
-	scripts = ['bin/autosubmit.py', 'bin/expid.py', 'bin/check_exp.py', 'bin/create_exp.py', 'bin/monitor.py'],
+	scripts = ['bin/autosubmit.py', 'bin/expid.py', 'bin/check_exp.py', 'bin/create_exp.py', 'bin/monitor.py', 'bin/finalise_exp.py', 'bin/change_pkl.py'],
 	#data_files = [
 	#	('', ['VERSION']),
 	#	('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),

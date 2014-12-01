@@ -17,17 +17,23 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Script for handling job status changes"""
+import sys
+import os
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import pickle
 import argparse
 import json
 from pyparsing import nestedExpr
-from sys import setrecursionlimit
+from pkg_resources import require
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from monitor import GenerateOutput
+from autosubmit.monitor.monitor import Monitor
 
 def get_status(s):
 	if s == 'READY':
@@ -108,7 +114,10 @@ def create_json(text):
 # Main Program
 ####################
 def main():
+	autosubmit_version = require("autosubmit")[0].version
+
 	parser = argparse.ArgumentParser(description='Autosubmit change pickle')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', type=str, nargs=1, required=True, help='Experiment ID')
 	parser.add_argument('-j', '--joblist', type=str, nargs=1, required=True, help='Job list')
 	parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
@@ -213,7 +222,7 @@ def main():
 					print "CHANGED: job: " + job.get_name() + " status to: " + final
 
 
-	setrecursionlimit(50000)
+	sys.setrecursionlimit(50000)
 	
 	if(save):
 		l1.update_list()
@@ -223,7 +232,9 @@ def main():
 		l1.update_list(False)
 		print "Changes NOT saved to the JobList!!!!:  use -s option to save"
 
-	GenerateOutput(expid, l1.get_job_list())
+	monitor_exp = Monitor()
+
+	monitor_exp.GenerateOutput(expid, l1.get_job_list())
 
 if __name__ == '__main__':
 	main()
