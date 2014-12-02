@@ -17,10 +17,16 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+"""Script for handling experiment recovery after crash or job failure"""
+import os
+import sys
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
 import platform
 import pickle
-from sys import setrecursionlimit
+from pkg_resources import require
 from autosubmit.queue.mnqueue import MnQueue
 from autosubmit.queue.itqueue import ItQueue
 from autosubmit.queue.lgqueue import LgQueue
@@ -35,14 +41,18 @@ from autosubmit.job.job_list import RerunJobList
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_TMP_DIR
 from autosubmit.config.config_common import AutosubmitConfig
-from monitor import GenerateOutput
+from autosubmit.monitor.monitor import Monitor
 
 ####################
 # Main Program
 ####################
 def main():
+	autosubmit_version = require("autosubmit")[0].version
+
 	parser = argparse.ArgumentParser(description='Autosubmit recovery')
+	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
 	parser.add_argument('-e', '--expid', type=str, nargs=1, required=True, help='Experiment ID')
 	parser.add_argument('-j', '--joblist', type=str, nargs=1, required=True, help='Job list')
 	parser.add_argument('-g', '--get', action="store_true", default=False, help='Get completed files to synchronize pkl')
@@ -58,28 +68,29 @@ def main():
 	l1 = pickle.load(file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
 	as_conf = AutosubmitConfig(expid)
-
+	as_conf.check_conf()
+	
+	hpcarch = as_conf.get_platform()
 	scratch_dir = as_conf.get_scratch_dir()
 	hpcproj = as_conf.get_hpcproj()
 	hpcuser = as_conf.get_hpcuser()
 	
 	if(args.get):
-		sc = expid[0]
-		if sc == 'b':
+		if hpcarch == 'bsc':
 			remoteQueue = MnQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.set_host("bsc")
 			remoteQueue.update_cmds()
-		elif sc == 'i':
+		elif hpcarch == 'ithaca':
 			remoteQueue = ItQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.set_host("ithaca")
 			remoteQueue.update_cmds()
-		elif sc == 'l':
+		elif hpcarch == 'lindgren':
 			## in lindgren arch must set-up both serial and parallel queues
 			serialQueue = ElQueue(expid)
 			serialQueue.set_scratch(scratch_dir)
@@ -93,28 +104,28 @@ def main():
 			parallelQueue.set_user(hpcuser)
 			parallelQueue.set_host("ellen")
 			parallelQueue.update_cmds()
-		elif sc == 'e':
+		elif hpcarch == 'ecmwf':
 			remoteQueue = EcQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.set_host("c2a")
 			remoteQueue.update_cmds()
-		elif sc == 'm':
+		elif hpcarch == 'marenostrum3':
 			remoteQueue = Mn3Queue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.set_host("mn-" + hpcproj)
 			remoteQueue.update_cmds()
-		elif sc == 'h':
+		elif hpcarch == 'hector':
 			remoteQueue = HtQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
 			remoteQueue.set_user(hpcuser)
 			remoteQueue.set_host("ht-" + hpcproj)
 			remoteQueue.update_cmds()
-		elif sc == 'a':
+		elif hpcarch == 'archer':
 			remoteQueue = ArQueue(expid)
 			remoteQueue.set_scratch(scratch_dir)
 			remoteQueue.set_project(hpcproj)
@@ -124,17 +135,17 @@ def main():
 		
 		localQueue = PsQueue(expid)
 		localQueue.set_host(platform.node())
-		localQueue.set_scratch("/cfu/autosubmit")
+		localQueue.set_scratch(LOCAL_ROOT_DIR)
 		localQueue.set_project(expid)
-		localQueue.set_user("tmp")
+		localQueue.set_user(LOCAL_TMP_DIR)
 		localQueue.update_cmds()
 
 
 		for job in l1.get_active():
 			## in lindgren arch must select serial or parallel queue acording to the job type
-			if (sc == 'l' and job.get_type() == Type.SIMULATION):
+			if (hpcarch == 'lindgren' and job.get_type() == Type.SIMULATION):
 				queue = parallelQueue
-			elif(sc == 'l' and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
+			elif(hpcarch == 'lindgren' and (job.get_type() == Type.INITIALISATION or job.get_type() == Type.CLEANING or job.get_type() == Type.POSTPROCESSING)):
 				queue = serialQueue
 			elif(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
 				queue = localQueue
@@ -148,7 +159,7 @@ def main():
 				job.set_fail_count(0)
 				print "CHANGED: job: " + job.get_name() + " status to: READY"
 
-		setrecursionlimit(50000)
+		sys.setrecursionlimit(50000)
 		l1.update_list()
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
 
@@ -160,10 +171,11 @@ def main():
 		l1.update_from_file(False)
 
 	if(save):
-		setrecursionlimit(50000)
+		sys.setrecursionlimit(50000)
 		pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
 
-	GenerateOutput(expid, l1.get_job_list())
+	monitor_exp = Monitor()
+	monitor_exp.GenerateOutput(expid, l1.get_job_list())
 
 if __name__ == '__main__':
 	main()

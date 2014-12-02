@@ -48,6 +48,7 @@ from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.git.git_common import AutosubmitGit
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.dir_config import LOCAL_TMP_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
 from autosubmit.monitor.monitor import Monitor
 
@@ -131,7 +132,7 @@ def main():
 	localQueue.set_host(platform.node())
 	localQueue.set_scratch(LOCAL_ROOT_DIR)
 	localQueue.set_project(expid)
-	localQueue.set_user("tmp")
+	localQueue.set_user(LOCAL_TMP_DIR)
 	localQueue.update_cmds()
 
 	logger.debug("The Experiment name is: %s" % expid)
