@@ -39,13 +39,12 @@ setup (
 	download_url = 'http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
 	keywords = ['climate', 'workflow', 'HPC'],
 	install_requires = ['argparse>=1.2', 'python-dateutil>=1,<2', 'pydot>=1.0.2'],#'matplotlib>=1.1.1', 
-	packages = find_packages("lib"),
-	package_dir = {'':'lib'},
+	packages = find_packages(),
 	include_package_data=True,
 	package_data = {'autosubmit': [
-			'lib/autosubmit/config/files/autosubmit.conf',
-			'lib/autosubmit/config/files/expdef.conf',
-			'lib/autosubmit/database/data/autosubmit.sql'
+			'autosubmit/config/files/autosubmit.conf',
+			'autosubmit/config/files/expdef.conf',
+			'autosubmit/database/data/autosubmit.sql'
 		]
 		},
 	scripts = ['bin/autosubmit.py', 'bin/expid.py', 'bin/check_exp.py', 'bin/create_exp.py', 'bin/monitor.py', 'bin/finalise_exp.py', 'bin/change_pkl.py', 'bin/recovery.py', 'bin/statistics.py'],
