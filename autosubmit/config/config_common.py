@@ -22,7 +22,6 @@ from os import listdir
 from commands import getstatusoutput
 from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
-from autosubmit.config.config_parser import pltdef_parser
 from autosubmit.config.config_parser import moddef_parser
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_GIT_DIR
@@ -39,8 +38,6 @@ class AutosubmitConfig:
 		self._exp_parser = expdef_parser(self._exp_parser_file)
 	
 	def check_git(self):
-		self._plt_parser_file = self.get_git_file_platform()
-		self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file)
 		self._mod_parser_file = self.get_git_file_model()
 		self._mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._mod_parser_file)
 
@@ -50,8 +47,6 @@ class AutosubmitConfig:
 		self._exp_parser = expdef_parser(self._exp_parser_file)
 		git_project = self.get_git_project()
 		if (git_project == "true"):
-			self._plt_parser_file = self.get_git_file_platform() 
-			self._plt_parser = pltdef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._plt_parser_file) 
 			self._mod_parser_file = self.get_git_file_model() 
 			self._mod_parser = moddef_parser(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_GIT_DIR + "/" + self._mod_parser_file)
 
@@ -83,16 +78,11 @@ class AutosubmitConfig:
 
 
 	def load_git_parameters(self):
-		pltdef = []
 		moddef = []
-		for section in self._plt_parser.sections():
-			pltdef += self._plt_parser.items(section)
 		for section in self._mod_parser.sections():
 			moddef += self._mod_parser.items(section)
 		
 		parameters = dict()
-		for item in pltdef:
-			parameters[item[0]] = item[1]
 		for item in moddef:
 			parameters[item[0]] = item[1]
 
@@ -128,10 +118,6 @@ class AutosubmitConfig:
 
 		git_project = self.get_git_project()
 		if (git_project == "true"):
-			for section in self._plt_parser.sections():
-				self.print_parameters("PLATFORM PARAMETERS - " + section, self._plt_parser.items(section))
-				if ("" in [item[1] for item in self._plt_parser.items(section)]):
-					result = False
 			for section in self._mod_parser.sections():
 				self.print_parameters("MODEL PARAMETERS - " + section, self._mod_parser.items(section))
 				if ("" in [item[1] for item in self._mod_parser.items(section)]):
@@ -200,9 +186,6 @@ class AutosubmitConfig:
 			print "Project commit SHA succesfully registered to the configuration file."
 		else:
 			print "Changes NOT registered to the configuration file..."
-	
-	def get_git_file_platform(self):
-		return self._exp_parser.get('git','GIT_FILE_PLATFORM_CONF')
 	
 	def get_git_file_model(self):
 		return self._exp_parser.get('git','GIT_FILE_MODEL_CONF')
