@@ -29,21 +29,14 @@ class HtQueue(HPCQueue):
 		self._project = "pr1u1011"
 		self._user = "pr1e1002"
 		self._expid = expid
-		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
-		self._cancel_cmd = "ssh " + self._host + " qdel"
-		self._checkjob_cmd = "ssh " + self._host + " /work/pr1u1011/pr1u1011/pr1e1001/common/autosubmit/qstatjob.sh"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " \"cd " + self._remote_log_dir + "; qsub \" "
-		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['F', 'E', 'c']
 		self._job_status['RUNNING'] = ['R']
 		self._job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
 		self._pathdir = "\$HOME/LOG_" + self._expid
+
+		self.update_cmds()
 	
 	def update_cmds(self):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
