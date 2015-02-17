@@ -29,20 +29,13 @@ class Mn3Queue(HPCQueue):
 		self._project = "ecm86"
 		self._user = "ecm86603"
 		self._expid = expid
-		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
-		self._cancel_cmd = "ssh " + self._host + " bkill"
-		self._checkjob_cmd = "ssh " + self._host + " bjobs"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " bsub \< " + self._remote_log_dir + "/" 
-		self._status_cmd = "ssh " + self._host + " bjobs -w -X"
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['DONE']
 		self._job_status['RUNNING'] = ['RUN']
 		self._job_status['QUEUING'] = ['PEND', 'FW_PEND']
 		self._job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
+		
+		self.update_cmds()
 
 	def update_cmds(self):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid

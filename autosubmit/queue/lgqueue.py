@@ -29,21 +29,14 @@ class LgQueue(HPCQueue):
 		self._project = "a"
 		self._user = "asifsami"
 		self._expid = expid
-		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
-		self._cancel_cmd = "ssh " + self._host + " qdel"
-		self._checkjob_cmd = "ssh " + self._host + " qstat"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
-		self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['C', 'E']
 		self._job_status['RUNNING'] = ['R']
 		self._job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W']
 		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
 		self._pathdir = "\$HOME/LOG_" + self._expid
+
+		self.update_cmds()
 	
 	def update_cmds(self):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid

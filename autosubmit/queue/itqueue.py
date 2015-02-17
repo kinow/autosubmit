@@ -29,21 +29,15 @@ class ItQueue(HPCQueue):
 		self._project = "cfu"
 		self._user = "masif"
 		self._expid = expid
-		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
-		self._cancel_cmd = "ssh " + self._host + " qdel"
-		self._checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['c']
 		self._job_status['RUNNING'] = ['r', 't', 'Rr', 'Rt']
 		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq', 'Rs', 'Rts', 'RS', 'RtS', 'RT', 'RtT']
 		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw', 's', 'ts', 'S', 'tS', 'T', 'tT', 'dr', 'dt', 'dRr', 'dRt', 'ds', 'dS', 'dT', 'dRs', 'dRS', 'dRT']
 		self._pathdir = "\$HOME/LOG_" + self._expid
-	
+		
+		self.update_cmds()
+
 	def update_cmds(self):
 		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
 		self._cancel_cmd = "ssh " + self._host + " qdel"
@@ -79,9 +73,9 @@ class ItQueue(HPCQueue):
 
 		
 if __name__ == "__main__":
-	q = ItQueue()
-	q.check_job(1688)
-	j = q.submit_job("/home/cfu/omula/test/run_t159l62_orca1.ksh")
-	sleep(10)
-	print q.check_job(j)
-	q.cancel_job(j)
+	q = ItQueue("i000")
+	#q.check_job(1688)
+	#j = q.submit_job("/home/cfu/omula/test/run_t159l62_orca1.ksh")
+	#sleep(10)
+	#print q.check_job(j)
+	#q.cancel_job(j)

@@ -30,23 +30,14 @@ class ElQueue(HPCQueue):
 		self._project = "a"
 		self._user = "asifsami"
 		self._expid = expid
-		#Ps-->self._remote_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/tmp/LOG_" + self._expid
-		self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" + self._expid + "/LOG_" + self._expid
-		#Ps-->self._remote_common_dir = "/cfu/autosubmit/common"
-		self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
-		self._cancel_cmd = "ssh " + self._host + " kill -SIGINT"
-		self._checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " + self._remote_log_dir + " "
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
 		self._job_status = dict()
 		self._job_status['COMPLETED'] = ['1']
 		self._job_status['RUNNING'] = ['0']
 		self._job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
 		self._job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
 		self._pathdir = "\$HOME/LOG_" + self._expid
+
+		self.update_cmds()
 	
 	def update_cmds(self):
 		#self._remote_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/tmp/LOG_" + self._expid
