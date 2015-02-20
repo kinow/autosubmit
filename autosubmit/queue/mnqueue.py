@@ -19,59 +19,60 @@
 
 
 from xml.dom.minidom import parseString
-from time import sleep
+
 from autosubmit.queue.hpcqueue import HPCQueue
 
+
 class MnQueue(HPCQueue):
-	def __init__(self, expid):
-		self._host = "mn-ecm86"
-		self._scratch = "/gpfs/scratch"
-		self._project = "ecm86"
-		self._user = "ecm86603"
-		self._expid = expid
-		self._job_status = dict()
-		self._job_status['COMPLETED'] = ['Completed']
-		self._job_status['RUNNING'] = ['Running']
-		self._job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
-		self._job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
-		
-		self.update_cmds()
+    def __init__(self, expid):
+        HPCQueue.__init__(self)
+        self._host = "mn-ecm86"
+        self._scratch = "/gpfs/scratch"
+        self._project = "ecm86"
+        self._user = "ecm86603"
+        self.expid = expid
+        self.job_status = dict()
+        self.job_status['COMPLETED'] = ['Completed']
+        self.job_status['RUNNING'] = ['Running']
+        self.job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
+        self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
+        self.update_cmds()
 
-	def update_cmds(self):
-		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
-		self._cancel_cmd = "ssh " + self._host + " mncancel"
-		self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
-		self._checkhost_cmd = "ssh " + self._host + " echo 1"
-		self._submit_cmd = "ssh " + self._host + " mnsubmit -initialdir " + self._remote_log_dir + " " + self._remote_log_dir + "/" 
-		self._status_cmd = "ssh " + self._host + " mnq --xml"
-		self._put_cmd = "scp"
-		self._get_cmd = "scp"
-		self._mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
-	
-	def get_checkhost_cmd(self):
-		return self._checkhost_cmd
+    def update_cmds(self):
+        self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
+        self.cancel_cmd = "ssh " + self._host + " mncancel"
+        self.checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+        self._checkhost_cmd = "ssh " + self._host + " echo 1"
+        self.submit_cmd = ("ssh " + self._host + " mnsubmit -initialdir " + self.remote_log_dir + " " +
+                           self.remote_log_dir + "/")
+        self._status_cmd = "ssh " + self._host + " mnq --xml"
+        self.put_cmd = "scp"
+        self.get_cmd = "scp"
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
+    def get_checkhost_cmd(self):
+        return self._checkhost_cmd
 
-	def get_submit_cmd(self):
-		return self._submit_cmd
+    def get_submit_cmd(self):
+        return self.submit_cmd
 
-	def get_remote_log_dir(self):
-		self._remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self._expid + "/LOG_" + self._expid
-		return slef._remote_log_dir
+    def get_remote_log_dir(self):
+        self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
+        return self.remote_log_dir
 
-	def get_mkdir_cmd(self):
-		return self._mkdir_cmd
-	
-	def parse_job_output(self, output):
-		dom = parseString(output)
-		job_xml = dom.getElementsByTagName("job")
-		job_state = job_xml[0].getAttribute('State')
-		return job_state
+    def get_mkdir_cmd(self):
+        return self.mkdir_cmd
 
-	def get_submitted_job_id(self, output):
-		return output.split(' ')[3]
-	
-	def jobs_in_queue(self,	output):
-		dom = parseString(output)
-		job_list = dom.getElementsByTagName("job")
-		return [ int(job.getAttribute('JobID')) for job in job_list ]
+    def parse_job_output(self, output):
+        dom = parseString(output)
+        job_xml = dom.getElementsByTagName("job")
+        job_state = job_xml[0].getAttribute('State')
+        return job_state
+
+    def get_submitted_job_id(self, output):
+        return output.split(' ')[3]
+
+    def jobs_in_queue(self, output):
+        dom = parseString(output)
+        job_list = dom.getElementsByTagName("job")
+        return [int(job.getAttribute('JobID')) for job in job_list]
