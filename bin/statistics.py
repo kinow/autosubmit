@@ -20,15 +20,13 @@
 """Script for handling experiment statistics plots"""
 import os
 import sys
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
 import pickle
 from pkg_resources import require
-from autosubmit.job.job_list import JobList
-from autosubmit.job.job_list import RerunJobList
-from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.monitor.monitor import Monitor
@@ -36,32 +34,34 @@ from autosubmit.monitor.monitor import Monitor
 ####################
 # Main Program
 ####################
+
+
 def main():
-	autosubmit_version = require("autosubmit")[0].version
+    autosubmit_version = require("autosubmit")[0].version
 
-	parser = argparse.ArgumentParser(description='Plot statistics graph')
-	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
-	parser.add_argument('-e', '--expid', required=True, nargs = 1)
-	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
-	parser.add_argument('-o', '--output', required=True, nargs = 1, choices = ('pdf', 'png', 'ps'), default = 'pdf')
+    parser = argparse.ArgumentParser(description='Plot statistics graph')
+    parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
+    parser.add_argument('-e', '--expid', required=True, nargs=1)
+    parser.add_argument('-j', '--joblist', required=True, nargs=1)
+    parser.add_argument('-o', '--output', required=True, nargs=1, choices=('pdf', 'png', 'ps'), default='pdf')
 
-	args = parser.parse_args()
+    args = parser.parse_args()
 
-	expid = args.expid[0]
-	root_name = args.joblist[0]
-	output = args.output[0]
+    expid = args.expid[0]
+    root_name = args.joblist[0]
+    output = args.output[0]
 
-	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' +root_name + '_' + expid + '.pkl'
-	jobs = pickle.load(file(filename,'r'))
-	if not type(jobs) == type([]):
-		jobs = [job for job in jobs.get_finished() if job.get_type() == Type.SIMULATION]
+    filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+    jobs = pickle.load(file(filename, 'r'))
+    if not isinstance(jobs, type([])):
+        jobs = [job for job in jobs.get_finished() if job.get_type() == Type.SIMULATION]
 
-	if len(jobs)>0:
-		monitor_exp = Monitor()
-		monitor_exp.GenerateOutputStats(expid, jobs, output)
-	else:
-		print "There are no COMPLETED jobs..."
+    if len(jobs) > 0:
+        monitor_exp = Monitor()
+        monitor_exp.generate_output_stats(expid, jobs, output)
+    else:
+        print "There are no COMPLETED jobs..."
 
 
 if __name__ == "__main__":
-	main()
+    main()
