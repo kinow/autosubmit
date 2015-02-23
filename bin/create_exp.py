@@ -35,7 +35,7 @@ from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_GIT_DIR
+from autosubmit.config.dir_config import LOCAL_PROJ_DIR
 from autosubmit.monitor.monitor import Monitor
 
 
@@ -103,37 +103,60 @@ def main():
 
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
-
+    
     expid = as_conf.get_expid()
-    git_project = as_conf.get_git_project()
+    project_type = as_conf.get_project_type()
+    project_name = as_conf.get_project_name()
 
-    if git_project == "true":
+    if (project_type == "git"):
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
-        git_project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_GIT_DIR
-        if os.path.exists(git_project_path):
-            print "The git folder exists. SKIPPING..."
-            print "Using git folder: %s" % git_project_path
+        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        if (os.path.exists(project_path)):
+            print "The project folder exists. SKIPPING..."
+            print "Using project folder: %s" % project_path
         else:
-            os.mkdir(git_project_path)
-            print "The git folder %s has been created." % git_project_path
-            print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, git_project_path)
-            (status, output) = getstatusoutput(
-                "cd " + git_project_path + "; git clone -b " + git_project_branch + " " + git_project_origin)
+            os.mkdir(project_path)
+            print "The project folder %s has been created." % project_path
+            print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+            (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch + " " + git_project_origin)
             print "%s" % output
-            git_project_name = output[output.find("'") + 1:output.find("...") - 1]
-            (status, output) = getstatusoutput(
-                "cd " + git_project_path + "/" + git_project_name + "; git submodule update --remote --init")
+            #git_project_name = output[output.find("'")+1:output.find("...")-1] 
+            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name + "; git submodule update --remote --init")
             print "%s" % output
-            (status, output) = getstatusoutput(
-                "cd " + git_project_path + "/" + git_project_name + "; git submodule foreach "
-                                                                    "-q 'branch=\"$(git config i"
-                                                                    "-f $toplevel/.gitmodules "
-                                                                    "submodule.$name.branch)\"; "
-                                                                    "git checkout $branch'")
+            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
             print "%s" % output
-        # Check git configuration
-        as_conf.check_git()
+
+    elif (project_type == "svn"):
+        svn_project_url = as_conf.get_svn_project_url()
+        svn_project_revision = as_conf.get_svn_project_revision()
+        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        if (os.path.exists(project_path)):
+            print "The project folder exists. SKIPPING..."
+            print "Using project folder: %s" % project_path
+        else:
+            os.mkdir(project_path)
+            print "The project folder %s has been created." % project_path
+            print "Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url, project_path)
+            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision + " " + svn_project_url)
+            print "%s" % output
+    
+    elif (project_type == "local"):
+        local_project_path = as_conf.get_local_project_path()
+        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        if (os.path.exists(project_path)):
+            print "The project folder exists. SKIPPING..."
+            print "Using project folder: %s" % project_path
+        else:
+            os.mkdir(project_path)
+            print "The project folder %s has been created." % project_path
+            print "Copying %s into %s" % (local_project_path, project_path)
+            (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
+            print "%s" % output
+    
+    if (project_type != "none"):
+        # Check project configuration
+        as_conf.check_proj()
 
     # Load parameters
     print "Loading parameters..."

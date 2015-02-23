@@ -56,9 +56,7 @@ def check_json(key, value):
 
 
 def config_parser(filename):
-    runmode = ['local', 'remote']
     loglevel = ['debug', 'info', 'warning', 'error', 'critical']
-    alreadysubmitted = "\s*\d+\s*$"
 
     # check file existance
     if not path.isfile(filename):
@@ -70,10 +68,7 @@ def config_parser(filename):
     parser.optionxform = str
     parser.read(filename)
 
-    check_values('RUNMODE', parser.get('config', 'RUNMODE'), runmode)
     check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
-    # check autosubmit.py variables
-    check_regex('ALREADYSUBMITTED', parser.get('config', 'ALREADYSUBMITTED'), alreadysubmitted)
 
     if invalid_values:
         print "Invalid Autosubmit config file"
@@ -94,18 +89,18 @@ def expdef_parser(filename):
     chunksize = "\s*\d+\s*$"
     members = "(\s*fc\d+\s*)+$"
     rerun = "\s*(true|false)\s*$"
-    git = "\s*(true|false)\s*$"
-    # gitorigin = "\s*[\w\-]+\s*$"
+    projecttype = ['git', 'svn', 'local', 'none']
+    projectname = "\s*[\w\-]+\s*$"
     wallclock = "\s*\d\d:\d\d\s*$"
     numproc = "\s*\d+\s*$"
     multiproc = "\s*\d+(:\d+)*\s*$"
-
-    # option that must be in config file and has no default value
+    
+    #option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename
+        print "File does not exist: " + filename 
         sys.exit()
 
     # load values
@@ -124,30 +119,32 @@ def expdef_parser(filename):
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
-    check_regex('WALLCLOCK_SETUP', parser.get('experiment', 'WALLCLOCK_SETUP'), wallclock)
-    check_regex('WALLCLOCK_INI', parser.get('experiment', 'WALLCLOCK_INI'), wallclock)
-    check_regex('WALLCLOCK_SIM', parser.get('experiment', 'WALLCLOCK_SIM'), wallclock)
-    check_regex('WALLCLOCK_POST', parser.get('experiment', 'WALLCLOCK_POST'), wallclock)
-    check_regex('WALLCLOCK_CLEAN', parser.get('experiment', 'WALLCLOCK_CLEAN'), wallclock)
-    check_regex('NUMPROC_SETUP', parser.get('experiment', 'NUMPROC_SETUP'), numproc)
-    check_regex('NUMPROC_INI', parser.get('experiment', 'NUMPROC_INI'), numproc)
-    check_regex('NUMPROC_SIM', parser.get('experiment', 'NUMPROC_SIM'), multiproc)
-    check_regex('NUMTASK_SIM', parser.get('experiment', 'NUMTASK_SIM'), multiproc)
-    check_regex('NUMTHREAD_SIM', parser.get('experiment', 'NUMTHREAD_SIM'), multiproc)
-    check_regex('NUMPROC_POST', parser.get('experiment', 'NUMPROC_POST'), numproc)
-    check_regex('NUMPROC_CLEAN', parser.get('experiment', 'NUMPROC_CLEAN'), numproc)
+    check_regex('WALLCLOCK_SETUP', parser.get('wallclocks', 'WALLCLOCK_SETUP'), wallclock)
+    check_regex('WALLCLOCK_INI', parser.get('wallclocks', 'WALLCLOCK_INI'), wallclock)
+    check_regex('WALLCLOCK_SIM', parser.get('wallclocks', 'WALLCLOCK_SIM'), wallclock)
+    check_regex('WALLCLOCK_POST', parser.get('wallclocks', 'WALLCLOCK_POST'), wallclock)
+    check_regex('WALLCLOCK_CLEAN', parser.get('wallclocks', 'WALLCLOCK_CLEAN'), wallclock)
+    check_regex('NUMPROC_SETUP', parser.get('numprocs', 'NUMPROC_SETUP'), numproc)
+    check_regex('NUMPROC_INI', parser.get('numprocs', 'NUMPROC_INI'), numproc)
+    check_regex('NUMPROC_SIM', parser.get('numprocs', 'NUMPROC_SIM'), multiproc)
+    check_regex('NUMTASK_SIM', parser.get('numprocs', 'NUMTASK_SIM'), multiproc)
+    check_regex('NUMTHREAD_SIM', parser.get('numprocs', 'NUMTHREAD_SIM'), multiproc)
+    check_regex('NUMPROC_POST', parser.get('numprocs', 'NUMPROC_POST'), numproc)
+    check_regex('NUMPROC_CLEAN', parser.get('numprocs', 'NUMPROC_CLEAN'), numproc)
+
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
     check_regex('MEMBERS', parser.get('experiment', 'MEMBERS'), members)
     check_regex('CHUNKINI', parser.get('experiment', 'CHUNKINI'), chunkini)
     check_regex('NUMCHUNKS', parser.get('experiment', 'NUMCHUNKS'), numchunks)
     check_regex('CHUNKSIZE', parser.get('experiment', 'CHUNKSIZE'), chunksize)
-    check_regex('RERUN', parser.get('experiment', 'RERUN'), rerun)
-    if parser.get('experiment', 'RERUN') == "TRUE":
-        check_json('CHUNKLIST', parser.get('experiment', 'CHUNKLIST'))
-    check_regex('GIT_PROJECT', parser.get('experiment', 'GIT_PROJECT'), git)
-    # if (parser.get('experiment', 'GIT_PROJECT') == "TRUE"):
-    # check_regex('GIT_ORIGIN', parser.get('git', 'GIT_ORIGIN'), gitorigin)
+    check_regex('RERUN', parser.get('rerun', 'RERUN'), rerun)
+    if parser.get('rerun', 'RERUN') == "TRUE":
+        check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
+    check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
+    check_regex('PROJECT_NAME', parser.get('project', 'PROJECT_NAME'), projectname)
+    #if (parser.get('project', 'PROJECT_TYPE') == "git"):
+    #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
     if invalid_values:
         print "Invalid experiment config file"
@@ -157,28 +154,8 @@ def expdef_parser(filename):
 
     return parser
 
+def projdef_parser(filename):
 
-def pltdef_parser(filename):
-    # check file existance
-    if not path.isfile(filename):
-        print "File does not exist: " + filename
-        sys.exit()
-
-    # load values
-    parser = SafeConfigParser()
-    parser.optionxform = str
-    parser.read(filename)
-
-    if invalid_values:
-        print "Invalid platform config file"
-        sys.exit()
-    else:
-        print "Platform config file OK"
-
-    return parser
-
-
-def moddef_parser(filename):
     # check file existance
     if not path.isfile(filename):
         print "File does not exist: " + filename

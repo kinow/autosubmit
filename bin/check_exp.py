@@ -67,9 +67,9 @@ def main():
 
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
-    git_project = as_conf.get_git_project()
-    if git_project == "true":
-        as_conf.check_git()
+    project_type = as_conf.get_project_type()
+    if project_type != "none":
+        as_conf.check_proj()
 
     print "Checking experiment configuration..."
     if as_conf.check_parameters():

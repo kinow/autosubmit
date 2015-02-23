@@ -36,7 +36,7 @@ from autosubmit.job.job_common import LgHeader
 from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.config.dir_config import LOCAL_TMP_DIR
-from autosubmit.config.dir_config import LOCAL_GIT_DIR
+from autosubmit.config.dir_config import LOCAL_PROJ_DIR
 from autosubmit.date.chunk_date_lib import *
 
 
@@ -352,23 +352,23 @@ class Job:
         remote_header = self._get_remote_header()
 
         template = Template()
-        if self.parameters['GIT_PROJECT'].lower() == "true":
+        if self.parameters['PROJECT_TYPE'].lower() != "none":
             template.read_localsetup_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters[
-                    'GIT_FILE_LOCALSETUP'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters[
+                    'FILE_LOCALSETUP'])
             template.read_remotesetup_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters[
-                    'GIT_FILE_REMOTESETUP'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters[
+                    'FILE_REMOTESETUP'])
             template.read_initialisation_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters['GIT_FILE_INI'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_INI'])
             template.read_simulation_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters['GIT_FILE_SIM'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_SIM'])
             template.read_postprocessing_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters['GIT_FILE_POST'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_POST'])
             template.read_cleaning_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters['GIT_FILE_CLEAN'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_CLEAN'])
             template.read_transfer_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_GIT_DIR + "/" + self.parameters['GIT_FILE_TRANS'])
+                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_TRANS'])
 
         if self.type == Type.SIMULATION:
             items = [remote_header.HEADER_SIM,
@@ -463,4 +463,4 @@ if __name__ == "__main__":
     print "number of children : ", mainJob.has_children()
     mainJob.print_job()
     mainJob.delete()
-# mainJob.print_job()
+#

@@ -87,17 +87,16 @@ def main():
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
 
-    git_project = as_conf.get_git_project()
-    if git_project == "true":
-        # Check git configuration
-        as_conf.check_git()
+    project_type = as_conf.get_project_type()
+    if project_type != "none":
+        # Check proj configuration
+        as_conf.check_proj()
 
     expid = as_conf.get_expid()
     hpcarch = as_conf.get_platform()
     scratch_dir = as_conf.get_scratch_dir()
     hpcproj = as_conf.get_hpcproj()
     hpcuser = as_conf.get_hpcuser()
-    already_submitted = as_conf.get_already_submitted()
     total_jobs = as_conf.get_total_jobs()
     max_waiting_jobs = as_conf.get_max_waiting_jobs()
     safetysleeptime = as_conf.get_safetysleeptime()
@@ -142,7 +141,6 @@ def main():
 
     logger.debug("The Experiment name is: %s" % expid)
     logger.info("Jobs to submit: %s" % total_jobs)
-    logger.info("Start with job number: %s" % already_submitted)
     logger.info("Maximum waiting jobs in queues: %s" % max_waiting_jobs)
     logger.info("Sleep: %s" % safetysleeptime)
     logger.info("Retrials: %s" % retrials)
@@ -206,7 +204,7 @@ def main():
     # check the availability of the Queues
     local_queue.check_remote_log_dir()
     # in lindgren arch must check both serial and parallel queues
-    if hpcarch == "lindgren":
+    if remote_queue is None:
         serial_queue.check_remote_log_dir()
         parallel_queue.check_remote_log_dir()
     else:
@@ -261,7 +259,7 @@ def main():
         jobinqueue = joblist.get_in_queue()
         logger.info("Number of jobs in queue: %s" % str(len(jobinqueue)))
 
-        # Check queue aviailability
+        # Check queue availability
         queueavail = queue.check_host()
         if not queueavail:
             logger.info("There is no queue available")
@@ -270,9 +268,9 @@ def main():
                 job.print_job()
                 print ("Number of jobs in queue: %s" % str(len(jobinqueue)))
                 # in lindgren arch must select serial or parallel queue acording to the job type
-                if hpcarch == "lindgren" and job.get_type() == Type.SIMULATION:
+                if remote_queue is None and job.get_type() == Type.SIMULATION:
                     queue = parallel_queue
-                elif (hpcarch == "lindgren" and (job.get_type() == Type.INITIALISATION or
+                elif (remote_queue is None and (job.get_type() == Type.INITIALISATION or
                                                  job.get_type() == Type.CLEANING or
                                                  job.get_type() == Type.POSTPROCESSING)):
                     queue = serial_queue
@@ -280,7 +278,7 @@ def main():
                     queue = local_queue
                 else:
                     queue = remote_queue
-                # Check queue aviailability
+                # Check queue availability
                 queueavail = queue.check_host()
                 if not queueavail:
                     logger.info("There is no queue available")
@@ -306,7 +304,7 @@ def main():
         #  get the list of jobs READY
         jobsavail = joblist.get_ready()
 
-        # Check queue aviailability
+        # Check queue availability
         queueavail = queue.check_host()
         if not queueavail:
             logger.info("There is no queue available")
@@ -328,14 +326,14 @@ def main():
                 scriptname = job.create_script()
                 print scriptname
                 # in lindgren arch must select serial or parallel queue acording to the job type
-                if hpcarch == "lindgren" and job.get_type() == Type.SIMULATION:
+                if remote_queue is None and job.get_type() == Type.SIMULATION:
                     queue = parallel_queue
                     logger.info("Submitting to parallel queue...")
                     print("Submitting to parallel queue...")
-                elif (hpcarch == "lindgren" and (job.get_type() == Type.REMOTESETUP or
-                                                 job.get_type() == Type.INITIALISATION or
-                                                 job.get_type() == Type.CLEANING or
-                                                 job.get_type() == Type.POSTPROCESSING)):
+                elif (remote_queue is None and (job.get_type() == Type.REMOTESETUP or
+                                                job.get_type() == Type.INITIALISATION or
+                                                job.get_type() == Type.CLEANING or
+                                                job.get_type() == Type.POSTPROCESSING)):
                     queue = serial_queue
                     logger.info("Submitting to serial queue...")
                     print("Submitting to serial queue...")
@@ -347,7 +345,7 @@ def main():
                     queue = remote_queue
                     logger.info("Submitting to remote queue...")
                     print("Submitting to remote queue...")
-                # Check queue aviailability
+                # Check queue availability
                 queueavail = queue.check_host()
                 if not queueavail:
                     logger.info("There is no queue available")
@@ -359,17 +357,8 @@ def main():
                     job.set_status(Status.SUBMITTED)
 
         time.sleep(safetysleeptime)
-    # finalise experiment
-    if len(joblist.get_completed()) == len(joblist):
-        if git_project == "true":
-            print "Cleaning GIT directory..."
-            git_conf = AutosubmitGit(expid)
-            git_conf.clean_git()
-        print "Cleaning plot directory..."
-        as_monitor = Monitor()
-        as_monitor.clean_plot(expid)
 
-    logger.info("Finished job submission")
+        logger.info("Finished job submission")
 
 
 if __name__ == "__main__":
