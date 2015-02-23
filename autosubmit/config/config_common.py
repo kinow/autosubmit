@@ -288,19 +288,21 @@ class AutosubmitConfig:
         content = file(self._conf_parser_file).read()
         if re.search('SAFETYSLEEPTIME =.*', content):
             if hpc == "bsc":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+                sleep_time = 10
             elif hpc == "hector":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+                sleep_time = 300
             elif hpc == "ithaca":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 10")
+                sleep_time = 10
             elif hpc == "lindgren":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+                sleep_time = 300
             elif hpc == "ecmwf":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+                sleep_time = 300
             elif hpc == "marenostrum3":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+                sleep_time = 300
             elif hpc == "archer":
-                content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = 300")
+                sleep_time = 300
+            content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = %d"
+                                      & sleep_time)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):

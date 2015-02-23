@@ -33,31 +33,29 @@ from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
-
-    def __init__(self):
-        self._table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),
+    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),
                             (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'),
                             (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
-
-    def color_status(self, status):
-        color = self._table[Status.UNKNOWN]
+    @staticmethod
+    def color_status(status):
         if status == Status.WAITING:
-            color = self._table[Status.WAITING]
+            return Monitor._table[Status.WAITING]
         elif status == Status.READY:
-            color = self._table[Status.READY]
+            return Monitor._table[Status.READY]
         elif status == Status.SUBMITTED:
-            color = self._table[Status.SUBMITTED]
+            return Monitor._table[Status.SUBMITTED]
         elif status == Status.QUEUING:
-            color = self._table[Status.QUEUING]
+            return Monitor._table[Status.QUEUING]
         elif status == Status.RUNNING:
-            color = self._table[Status.RUNNING]
+            return Monitor._table[Status.RUNNING]
         elif status == Status.COMPLETED:
-            color = self._table[Status.COMPLETED]
+            return Monitor._table[Status.COMPLETED]
         elif status == Status.FAILED:
-            color = self._table[Status.FAILED]
+            return Monitor._table[Status.FAILED]
         elif status == Status.SUSPENDED:
-            color = self._table[Status.SUSPENDED]
-        return color
+            return Monitor._table[Status.SUSPENDED]
+        else:
+            return Monitor._table[Status.UNKNOWN]
 
     def create_tree_list(self, expid, joblist):
         graph = pydot.Dot(graph_type='digraph')
