@@ -25,7 +25,6 @@ from dateutil.relativedelta import *
 
 """In this python script there are tools to manipulate the dates and make mathematical operations between them """
 
-string_date = '19600101'
 job_logger = logging.getLogger("AutoLog.chunk_date_lib")
 
 
@@ -93,6 +92,7 @@ def chunk_start_year(string_date):
 # Main Program
 ####################
 def main():
+    string_date = '19600101'
     start_date = chunk_start_date(string_date, 5, 12)
     print start_date
     end_date = chunk_end_date(start_date, 12)

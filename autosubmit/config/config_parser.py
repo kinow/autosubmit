@@ -25,36 +25,41 @@ from ConfigParser import SafeConfigParser
 
 invalid_values = False
 
+
 def check_values(key, value, valid_values):
     global invalid_values
 
-    if(value.lower() not in valid_values): 
-        print "Invalid value %s: %s" %(key, value)
+    if value.lower() not in valid_values:
+        print "Invalid value %s: %s" % (key, value)
         invalid_values = True
+
 
 def check_regex(key, value, regex):
     global invalid_values
 
     prog = re.compile(regex)
 
-    if(not prog.match(value.lower())):
-        print "Invalid value %s: %s" %(key,value)
+    if not prog.match(value.lower()):
+        print "Invalid value %s: %s" % (key, value)
         invalid_values = True
+
 
 def check_json(key, value):
     global invalid_values
 
+    # noinspection PyBroadException
     try:
-        out = nestedExpr('[',']').parseString(value).asList()
+        nestedExpr('[', ']').parseString(value).asList()
     except:
-        print "Invalid value %s: %s" %(key,value)
+        print "Invalid value %s: %s" % (key, value)
         invalid_values = True
+
 
 def config_parser(filename):
     loglevel = ['debug', 'info', 'warning', 'error', 'critical']
-        
+
     # check file existance
-    if(not path.isfile(filename)):
+    if not path.isfile(filename):
         print "File does not exist: " + filename
         sys.exit()
 
@@ -62,10 +67,10 @@ def config_parser(filename):
     parser = SafeConfigParser()
     parser.optionxform = str
     parser.read(filename)
-    
+
     check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
 
-    if(invalid_values):
+    if invalid_values:
         print "Invalid Autosubmit config file"
         sys.exit()
     else:
@@ -94,7 +99,7 @@ def expdef_parser(filename):
     mandatory_opt = ['EXPID']
 
     # check file existance
-    if(not path.isfile(filename)):
+    if not path.isfile(filename):
         print "File does not exist: " + filename 
         sys.exit()
 
@@ -105,11 +110,11 @@ def expdef_parser(filename):
 
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
-    if(missing):
+    if missing:
         print "Missing options"
         print missing
         sys.exit()
-    
+
     # check autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
@@ -126,6 +131,7 @@ def expdef_parser(filename):
     check_regex('NUMTHREAD_SIM', parser.get('numprocs', 'NUMTHREAD_SIM'), multiproc)
     check_regex('NUMPROC_POST', parser.get('numprocs', 'NUMPROC_POST'), numproc)
     check_regex('NUMPROC_CLEAN', parser.get('numprocs', 'NUMPROC_CLEAN'), numproc)
+
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
     check_regex('MEMBERS', parser.get('experiment', 'MEMBERS'), members)
@@ -133,14 +139,14 @@ def expdef_parser(filename):
     check_regex('NUMCHUNKS', parser.get('experiment', 'NUMCHUNKS'), numchunks)
     check_regex('CHUNKSIZE', parser.get('experiment', 'CHUNKSIZE'), chunksize)
     check_regex('RERUN', parser.get('rerun', 'RERUN'), rerun)
-    if (parser.get('rerun', 'RERUN') == "TRUE"):
+    if parser.get('rerun', 'RERUN') == "TRUE":
         check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
     check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
     check_regex('PROJECT_NAME', parser.get('project', 'PROJECT_NAME'), projectname)
     #if (parser.get('project', 'PROJECT_TYPE') == "git"):
     #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
-    if(invalid_values):
+    if invalid_values:
         print "Invalid experiment config file"
         sys.exit()
     else:
@@ -151,7 +157,7 @@ def expdef_parser(filename):
 def projdef_parser(filename):
 
     # check file existance
-    if(not path.isfile(filename)):
+    if not path.isfile(filename):
         print "File does not exist: " + filename
         sys.exit()
 
@@ -160,22 +166,24 @@ def projdef_parser(filename):
     parser.optionxform = str
     parser.read(filename)
 
-    if(invalid_values):
-        print "Invalid project config file"
+    if invalid_values:
+        print "Invalid model config file"
         sys.exit()
     else:
         print "Model config file OK"
 
     return parser
 
+
 ####################
 # Main Program
 ####################
 def main():
-    if(len(sys.argv) != 2):
+    if len(sys.argv) != 2:
         print "Error missing config file"
     else:
         autosubmit_conf_parser(sys.argv[1])
+
 
 if __name__ == "__main__":
     main()

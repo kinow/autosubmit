@@ -20,19 +20,18 @@
 """Functions for handling experiment parameters check"""
 import os
 import sys
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import argparse
 from pkg_resources import require
-from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import Type
-from autosubmit.job.job import Job
 from autosubmit.job.job_list import JobList
 from autosubmit.config.config_common import AutosubmitConfig
 
+
 def check_templates(as_conf):
-    """Procedure to check autogeneration of templates given 
+    """Procedure to check autogeneration of templates given
     Autosubmit configuration.
     Returns True if all variables are set.
     If the parameters are not correctly replaced, the function returns
@@ -42,14 +41,14 @@ def check_templates(as_conf):
     :type: AutosubmitConf
     :retruns: bool
     """
-    out = True
-
     parameters = as_conf.load_parameters()
     joblist = JobList(parameters['EXPID'])
-    joblist.create(parameters['DATELIST'].split(' '),parameters['MEMBERS'].split(' '),int(parameters['CHUNKINI']),int(parameters['NUMCHUNKS']),parameters)
+    joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '), int(parameters['CHUNKINI']),
+                   int(parameters['NUMCHUNKS']), parameters)
     out = joblist.check_scripts()
-    
+
     return out
+
 
 ####################
 # Main Program
@@ -57,9 +56,11 @@ def check_templates(as_conf):
 def main():
     autosubmit_version = require("autosubmit")[0].version
 
-    parser = argparse.ArgumentParser(description='Check autosubmit and experiment configurations given a experiment identifier. Check templates creation with those configurations')
+    parser = argparse.ArgumentParser(
+        description='Check autosubmit and experiment configurations given a experiment identifier. '
+                    'Check templates creation with those configurations')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
-    parser.add_argument('-e', '--expid', required=True, nargs = 1)
+    parser.add_argument('-e', '--expid', required=True, nargs=1)
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
@@ -67,7 +68,7 @@ def main():
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
     project_type = as_conf.get_project_type()
-    if (project_type != "none"):
+    if project_type != "none":
         as_conf.check_proj()
 
     print "Checking experiment configuration..."
@@ -80,9 +81,10 @@ def main():
     print "Checking experiment templates..."
     if check_templates(as_conf):
         print "Experiment templates check PASSED!"
-    else:   
+    else:
         print "Experiment templates check FAILED!"
         print "WARNING: running after FAILED experiment templates check is at your own risk!!!"
+
 
 if __name__ == "__main__":
     main()

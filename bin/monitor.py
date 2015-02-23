@@ -20,44 +20,44 @@
 """Script for handling experiment monitoring"""
 import sys
 import os
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
-import commands
 import pickle
 import argparse
 from pkg_resources import require
-from autosubmit.job.job_list import JobList
-from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 from autosubmit.monitor.monitor import Monitor
+
 
 ####################
 # Main Program
 ####################
 def main():
-	autosubmit_version = require("autosubmit")[0].version
+    autosubmit_version = require("autosubmit")[0].version
 
-	parser = argparse.ArgumentParser(description='Plot autosubmit graph')
-	parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
-	parser.add_argument('-e', '--expid', required=True, nargs = 1)
-	parser.add_argument('-j', '--joblist', required=True, nargs = 1)
-	parser.add_argument('-o', '--output', required=True, nargs = 1, choices = ('pdf', 'png', 'ps'), default = 'pdf')
+    parser = argparse.ArgumentParser(description='Plot autosubmit graph')
+    parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
+    parser.add_argument('-e', '--expid', required=True, nargs=1)
+    parser.add_argument('-j', '--joblist', required=True, nargs=1)
+    parser.add_argument('-o', '--output', required=True, nargs=1, choices=('pdf', 'png', 'ps'), default='pdf')
 
-	args = parser.parse_args()
+    args = parser.parse_args()
 
-	expid = args.expid[0]
-	root_name = args.joblist[0]
-	output = args.output[0]
+    expid = args.expid[0]
+    root_name = args.joblist[0]
+    output = args.output[0]
 
-	filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
-	jobs = pickle.load(file(filename,'r'))
-	if not type(jobs) == type([]):
-		jobs = jobs.get_job_list()
+    filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+    jobs = pickle.load(file(filename, 'r'))
+    if not isinstance(jobs, type([])):
+        jobs = jobs.get_job_list()
 
-	monitor_exp = Monitor()
+    monitor_exp = Monitor()
 
-	monitor_exp.GenerateOutput(expid, jobs, output)
+    monitor_exp.generate_output(expid, jobs, output)
+
 
 if __name__ == "__main__":
-	main()
+    main()
