@@ -108,43 +108,49 @@ def main():
     project_type = as_conf.get_project_type()
     project_name = as_conf.get_project_name()
 
-    if (project_type == "git"):
+    if project_type == "git":
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
-        if (os.path.exists(project_path)):
+        if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path
         else:
             os.mkdir(project_path)
             print "The project folder %s has been created." % project_path
             print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch + " " + git_project_origin)
+            (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
+                                               " " + git_project_origin)
             print "%s" % output
-            #git_project_name = output[output.find("'")+1:output.find("...")-1] 
-            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name + "; git submodule update --remote --init")
+            # git_project_name = output[output.find("'")+1:output.find("...")-1]
+            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name +
+                                               "; git submodule update --remote --init")
             print "%s" % output
-            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name + "; git submodule foreach -q 'branch=\"$(git config -f $toplevel/.gitmodules submodule.$name.branch)\"; git checkout $branch'")
+            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name +
+                                               "; git submodule foreach -q 'branch=\"$(git config "
+                                               "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
+                                               "git checkout $branch'")
             print "%s" % output
 
-    elif (project_type == "svn"):
+    elif project_type == "svn":
         svn_project_url = as_conf.get_svn_project_url()
         svn_project_revision = as_conf.get_svn_project_revision()
         project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
-        if (os.path.exists(project_path)):
+        if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path
         else:
             os.mkdir(project_path)
             print "The project folder %s has been created." % project_path
             print "Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision + " " + svn_project_url)
+            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
+                                               " " + svn_project_url)
             print "%s" % output
     
-    elif (project_type == "local"):
+    elif project_type == "local":
         local_project_path = as_conf.get_local_project_path()
         project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
-        if (os.path.exists(project_path)):
+        if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path
         else:
@@ -154,7 +160,7 @@ def main():
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
             print "%s" % output
     
-    if (project_type != "none"):
+    if project_type != "none":
         # Check project configuration
         as_conf.check_proj()
 
@@ -173,7 +179,7 @@ def main():
         job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
     else:
         job_list = RerunJobList(expid)
-        chunk_list = create_json(exp_parser.get('experiment', 'CHUNKLIST'))
+        chunk_list = create_json(as_conf.get_chunk_list())
         job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
 
     platform = as_conf.get_platform()

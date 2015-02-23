@@ -34,8 +34,9 @@ from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
     _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),
-                            (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'),
-                            (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
+                   (Status.SUBMITTED, 'cyan'), (Status.QUEUING, 'lightpink'), (Status.RUNNING, 'green'),
+                   (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
+
     @staticmethod
     def color_status(status):
         if status == Status.WAITING:

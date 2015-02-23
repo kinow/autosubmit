@@ -53,9 +53,9 @@ def main():
     if args.git:
         autosubmit_config = AutosubmitConfig(args.expid[0])
         autosubmit_config.check_conf()
-        git_project = autosubmit_config.get_git_project()
-        if git_project == "true":
-            autosubmit_config.check_git()
+        project_type = autosubmit_config.get_project_type()
+        if project_type == "git":
+            autosubmit_config.check_proj()
             print "Registering commit SHA..."
             autosubmit_config.set_git_project_commit()
             autosubmit_git = AutosubmitGit(args.expid[0])

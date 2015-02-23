@@ -95,7 +95,7 @@ def expdef_parser(filename):
     numproc = "\s*\d+\s*$"
     multiproc = "\s*\d+(:\d+)*\s*$"
     
-    #option that must be in config file and has no default value
+    # option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
 
     # check file existance
@@ -143,7 +143,7 @@ def expdef_parser(filename):
         check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
     check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
     check_regex('PROJECT_NAME', parser.get('project', 'PROJECT_NAME'), projectname)
-    #if (parser.get('project', 'PROJECT_TYPE') == "git"):
+    # if (parser.get('project', 'PROJECT_TYPE') == "git"):
     #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
     if invalid_values:
@@ -153,6 +153,7 @@ def expdef_parser(filename):
         print "Experiment config file OK"
 
     return parser
+
 
 def projdef_parser(filename):
 
@@ -174,16 +175,16 @@ def projdef_parser(filename):
 
     return parser
 
-
-####################
-# Main Program
-####################
-def main():
-    if len(sys.argv) != 2:
-        print "Error missing config file"
-    else:
-        autosubmit_conf_parser(sys.argv[1])
-
-
-if __name__ == "__main__":
-    main()
+#
+# ####################
+# # Main Program
+# ####################
+# def main():
+#     if len(sys.argv) != 2:
+#         print "Error missing config file"
+#     else:
+#         autosubmit_conf_parser(sys.argv[1])
+#
+#
+# if __name__ == "__main__":
+#     main()

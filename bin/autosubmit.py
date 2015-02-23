@@ -45,10 +45,8 @@ from queue.arqueue import ArQueue
 from job.job_common import Status
 from job.job_common import Type
 from config.config_common import AutosubmitConfig
-from git.git_common import AutosubmitGit
 from config.dir_config import LOCAL_ROOT_DIR
 from config.dir_config import LOCAL_TMP_DIR
-from monitor.monitor import Monitor
 
 
 def log_long(message):
@@ -271,8 +269,8 @@ def main():
                 if remote_queue is None and job.get_type() == Type.SIMULATION:
                     queue = parallel_queue
                 elif (remote_queue is None and (job.get_type() == Type.INITIALISATION or
-                                                 job.get_type() == Type.CLEANING or
-                                                 job.get_type() == Type.POSTPROCESSING)):
+                                                job.get_type() == Type.CLEANING or
+                                                job.get_type() == Type.POSTPROCESSING)):
                     queue = serial_queue
                 elif job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER:
                     queue = local_queue
