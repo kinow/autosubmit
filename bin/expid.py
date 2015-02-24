@@ -70,7 +70,6 @@ def main():
     else:
         autosubmit_version = require("autosubmit")[0].version
 
-
     parser = argparse.ArgumentParser(description='Get an experiment identifier and create experiment folder')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
     group1 = parser.add_mutually_exclusive_group(required=True)

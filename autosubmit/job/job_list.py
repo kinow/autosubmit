@@ -179,13 +179,13 @@ class JobList:
         print "We could not find that job %s in the list!!!!" % name
 
     def sort_by_name(self):
-        return sorted(self._job_list, key=lambda k: k.get_name())
+        return sorted(self._job_list, key=lambda k: k.name)
 
     def sort_by_id(self):
-        return sorted(self._job_list, key=lambda k: k.get_id())
+        return sorted(self._job_list, key=lambda k: k.id)
 
     def sort_by_type(self):
-        return sorted(self._job_list, key=lambda k: k.get_type())
+        return sorted(self._job_list, key=lambda k: k.type)
 
     def sort_by_status(self):
         return sorted(self._job_list, key=lambda k: k.status)
@@ -466,7 +466,7 @@ class RerunJobList(JobList):
                     #     finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                     #         num_chunks) + "_" + "clean"
                     #     final_job = Job(finaljob_name, 0, Status.WAITING, Type.CLEANING)
-                    #     final_job.set_parents([clean_job.get_name()])
+                    #     final_job.set_parents([clean_job.name()])
                     #     clean_job.add_children(finaljob_name)
                     #     self._job_list += [final_job]
 

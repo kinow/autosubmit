@@ -215,7 +215,7 @@ def main():
                     print "CHANGED: job: " + job.name + " status to: " + final
             else:
                 for job in l1.get_job_list():
-                    if job.get_status() == get_status(fs):
+                    if job.status == get_status(fs):
                         job.status = get_status(final)
                         print "CHANGED: job: " + job.name + " status to: " + final
 

@@ -25,6 +25,7 @@ from autosubmit.queue.hpcqueue import HPCQueue
 
 from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
+
 class PsQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
@@ -42,10 +43,9 @@ class PsQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-
         self.remote_log_dir = os.path.join(LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
         # Ellen-->self.remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" +
-        #  self._expid + "/LOG_" + self._expid
+        # self._expid + "/LOG_" + self._expid
         # Local-->self._local_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/LOG_" + self._expid
         self._remote_common_dir = os.path.join(LOCAL_ROOT_DIR, "common")
         # Ellen -->self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
@@ -85,7 +85,7 @@ class PsQueue(HPCQueue):
 
 
 # def main():
-#     q = PsQueue()
+# q = PsQueue()
 #     q.check_job(1688)
 #     j = q.submit_job("/cfu/autosubmit/l002/templates/l002.sim")
 #     sleep(10)

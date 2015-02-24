@@ -42,7 +42,7 @@ class ItQueue(HPCQueue):
 
     def update_cmds(self):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
-                                self.expid)
+                               self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self.checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"

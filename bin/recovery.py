@@ -167,7 +167,7 @@ def main():
             if queue.get_completed_files(job.name):
                 job.status = Status.COMPLETED
                 print "CHANGED: job: " + job.name + " status to: COMPLETED"
-            elif job.get_status() != Status.SUSPENDED:
+            elif job.status != Status.SUSPENDED:
                 job.status = Status.READY
                 job.set_fail_count(0)
                 print "CHANGED: job: " + job.name + " status to: READY"

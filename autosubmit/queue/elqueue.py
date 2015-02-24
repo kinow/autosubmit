@@ -42,7 +42,7 @@ class ElQueue(HPCQueue):
     def update_cmds(self):
         # self.remote_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/tmp/LOG_" + self._expid
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
-                                self.expid)
+                               self.expid)
         # self._remote_common_dir = "/cfu/autosubmit/common"
         self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"

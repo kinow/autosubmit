@@ -162,13 +162,13 @@ class Job:
         return self.parents.__len__()
 
     def compare_by_status(self, other):
-        return cmp(self.status(), other.get_status())
+        return cmp(self.status(), other.status)
 
     def compare_by_type(self, other):
-        return cmp(self.type(), other.get_type())
+        return cmp(self.type(), other.type)
 
     def compare_by_id(self, other):
-        return cmp(self.id(), other.get_id())
+        return cmp(self.id(), other.id)
 
     def compare_by_name(self, other):
         return cmp(self.name, other.name)

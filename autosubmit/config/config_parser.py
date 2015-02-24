@@ -94,7 +94,7 @@ def expdef_parser(filename):
     wallclock = "\s*\d\d:\d\d\s*$"
     numproc = "\s*\d+\s*$"
     multiproc = "\s*\d+(:\d+)*\s*$"
-    
+
     # option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
 
@@ -111,7 +111,7 @@ def expdef_parser(filename):
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
-        logging.critical( "Missing options: " + missing)
+        logging.critical("Missing options: " + missing)
         sys.exit()
 
     # check autosubmit.py variables
@@ -142,7 +142,7 @@ def expdef_parser(filename):
         check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
     check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
     # if (parser.get('project', 'PROJECT_TYPE') == "git"):
-    #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
+    # check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
     if invalid_values:
         logging.error("Invalid experiment config file")
@@ -154,7 +154,6 @@ def expdef_parser(filename):
 
 
 def projdef_parser(filename):
-
     # check file existance
     if not path.isfile(filename):
         logging.critical("File does not exist: " + filename)
@@ -178,7 +177,7 @@ def projdef_parser(filename):
 # # Main Program
 # ####################
 # def main():
-#     if len(sys.argv) != 2:
+# if len(sys.argv) != 2:
 #         print "Error missing config file"
 #     else:
 #         autosubmit_conf_parser(sys.argv[1])
