@@ -35,7 +35,12 @@ from autosubmit.monitor.monitor import Monitor
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
 
     parser = argparse.ArgumentParser(description='Plot autosubmit graph')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)

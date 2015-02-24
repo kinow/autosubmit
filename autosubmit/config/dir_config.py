@@ -18,9 +18,9 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-DB_DIR = '/cfu/autosubmit'
+DB_DIR = '/home/jvegas/debug/autosubmit'
 DB_FILE = 'autosubmit.db'
 DB_NAME = 'autosubmit'
-LOCAL_ROOT_DIR = '/cfu/autosubmit'
+LOCAL_ROOT_DIR = '/home/jvegas/debug/autosubmit'
 LOCAL_TMP_DIR = 'tmp'
 LOCAL_PROJ_DIR = 'proj'

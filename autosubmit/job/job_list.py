@@ -46,11 +46,11 @@ class JobList:
         self._parameters = parameters
         localsetupjob_name = self._expid + "_"
         localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
-        localsetup_job.parents([])
+        localsetup_job.parents = []
         remotesetupjob_name = self._expid + "_"
         remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-        remotesetup_job.parents([localsetup_job.name()])
-        localsetup_job.add_children(remotesetup_job.name())
+        remotesetup_job.parents = [localsetup_job.name]
+        localsetup_job.add_children(remotesetup_job.name)
 
         print "Creating job list..."
         for date in date_list:
@@ -70,12 +70,12 @@ class JobList:
                         sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
 
                     # set dependency of postprocessing jobs
-                    post_job.parents = ([sim_job.name()])
-                    post_job.parents = ([clean_job.name()])
+                    post_job.parents = ([sim_job.name])
+                    post_job.parents = ([clean_job.name])
                     # set parents of clean job
-                    clean_job.parents = ([post_job.name()])
+                    clean_job.parents = ([post_job.name])
                     # set first child of simulation job
-                    sim_job.children = ([post_job.name()])
+                    sim_job.children = ([post_job.name])
 
                     # set status of first chunk to READY
                     if chunk > 1:
@@ -88,10 +88,10 @@ class JobList:
                             sim_job.add_parent(parentjob_name)
                     if chunk == 1:
                         ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-                        ini_job.children = ([sim_job.name()])
-                        ini_job.parents = ([remotesetup_job.name()])
-                        remotesetup_job.add_children(ini_job.name())
-                        sim_job.parents = ([ini_job.name()])
+                        ini_job.children = ([sim_job.name])
+                        ini_job.parents = ([remotesetup_job.name])
+                        remotesetup_job.add_children(ini_job.name)
+                        sim_job.parents = ([ini_job.name])
                         self._job_list += [ini_job]
                     if chunk < starting_chunk + num_chunks - 1:
                         childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
@@ -102,8 +102,8 @@ class JobList:
                             chunk + 2) + "_" + "sim"
                         clean_job.children = ([childjob_name])
                     if chunk == num_chunks or chunk == num_chunks - 1:
-                        trans_job.parents = ([clean_job.name()])
-                        clean_job.add_children(trans_job.name())
+                        trans_job.parents = ([clean_job.name])
+                        clean_job.add_children(trans_job.name)
 
                     self._job_list += [sim_job, post_job, clean_job]
 
@@ -113,7 +113,7 @@ class JobList:
 
         self.update_genealogy()
         for job in self._job_list:
-            job.set_parameters(parameters)
+            job.parameters = parameters
 
     def __len__(self):
         return self._job_list.__len__()
@@ -172,7 +172,7 @@ class JobList:
     def get_job_by_name(self, name):
         """Returns the job that its name matches name"""
         for job in self._job_list:
-            if job.get_name() == name:
+            if job.name == name:
                 return job
         print "We could not find that job %s in the list!!!!" % name
 
@@ -273,9 +273,9 @@ class JobList:
         for job in self._job_list:
             if job.has_children():
                 # get the list of childrens (names)
-                child_list = job.get_children()
+                child_list = job.children
                 # remove the list of names
-                job.set_children([])
+                job.children = []
                 # for each child find the corresponding job
                 for child in child_list:
                     if isinstance(child, str):
@@ -286,9 +286,9 @@ class JobList:
 
             if job.has_parents():
                 # get the list of childrens (names)
-                parent_list = job.get_parents()
+                parent_list = job.parents
                 # remove the list of names
-                job.set_parents([])
+                job.parents = []
                 # for each child find the corresponding job
                 for parent in parent_list:
                     if isinstance(parent, str):
@@ -301,14 +301,14 @@ class JobList:
     #     """When we have updated the joblist, parents and child list must be consistent"""
     #     pass
 
-    def check_scripts(self):
+    def check_scripts(self, as_conf):
         """When we have created the scripts, all parameters should have been substituted.
         %PARAMETER% handlers not allowed"""
         out = True
         for job in self._job_list:
-            if not job.check_script():
+            if not job.check_script(as_conf):
                 out = False
-                print "WARNING: Invalid parameter substitution in %s!!!" % job.get_name()
+                print "WARNING: Invalid parameter substitution in %s!!!" % job.name
 
         return out
 
@@ -366,7 +366,7 @@ class RerunJobList(JobList):
 
                 inijob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
                 ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-                ini_job.parents = [remotesetup_job.name()]
+                ini_job.parents = [remotesetup_job.name]
 
                 transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
                 trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)

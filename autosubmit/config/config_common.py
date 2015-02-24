@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import os
 
 import re
 from os import listdir
@@ -35,14 +36,26 @@ class AutosubmitConfig:
         self._conf_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
         self._exp_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
 
+    def get_project_dir(self):
+        dir_templates = os.path.join(LOCAL_ROOT_DIR, self.get_expid(), LOCAL_PROJ_DIR)
+        # Getting project name for each type of project
+        if self.get_project_type().lower() == "local":
+            dir_templates = os.path.join(dir_templates, os.path.split(self.get_local_project_path())[1])
+        elif self.get_project_type().lower() == "git":
+            dir_templates = self.get_git_project_origin().split('.')[-2]
+        return dir_templates
+
     def check_conf(self):
         self._conf_parser = config_parser(self._conf_parser_file)
         self._exp_parser = expdef_parser(self._exp_parser_file)
 
     def check_proj(self):
         self._proj_parser_file = self.get_file_project_conf()
-        self._proj_parser = projdef_parser(
-            LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + self._proj_parser_file)
+        if self._proj_parser_file == '':
+            self._proj_parser = None
+        else:
+            self._proj_parser_file = os.path.join(self.get_project_dir(), self._proj_parser_file)
+            self._proj_parser = projdef_parser(self._proj_parser_file)
 
     def reload(self):
         self._conf_parser = config_parser(self._conf_parser_file)
@@ -54,22 +67,15 @@ class AutosubmitConfig:
 
     def load_parameters(self):
         expdef = []
-        incldef = []
         for section in self._exp_parser.sections():
-            if section.startswith('include'):
-                items = [x for x in self._exp_parser.items(section) if x not in self._exp_parser.items('DEFAULT')]
-                incldef += items
-            else:
-                expdef += self._exp_parser.items(section)
+            expdef += self._exp_parser.items(section)
 
         parameters = dict()
         for item in expdef:
             parameters[item[0]] = item[1]
-        for item in incldef:
-            parameters[item[0]] = file(item[1]).read()
 
         project_type = self.get_project_type()
-        if project_type != "none":
+        if project_type != "none" and self._proj_parser is not None:
             # Load project parameters
             print "Loading project parameters..."
             parameters2 = parameters.copy()
@@ -118,7 +124,7 @@ class AutosubmitConfig:
                 result = False
 
         project_type = self.get_project_type()
-        if project_type != "none":
+        if project_type != "none" and self._proj_parser is not None:
             for section in self._proj_parser.sections():
                 self.print_parameters("PROJECT PARAMETERS - " + section, self._proj_parser.items(section))
                 if "" in [item[1] for item in self._proj_parser.items(section)]:
@@ -143,9 +149,6 @@ class AutosubmitConfig:
 
     def get_project_type(self):
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
-
-    def get_project_name(self):
-        return self._exp_parser.get('project', 'PROJECT_NAME').lower()
 
     def get_file_project_conf(self):
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF').lower()
@@ -309,8 +312,8 @@ class AutosubmitConfig:
                 sleep_time = 300
             else:
                 sleep_time = 300
-            content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0), "SAFETYSLEEPTIME = %d"
-                                      & sleep_time)
+            content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
+                                      "SAFETYSLEEPTIME = %d" % sleep_time)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):

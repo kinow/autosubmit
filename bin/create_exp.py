@@ -92,7 +92,12 @@ def create_json(text):
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
 
     parser = argparse.ArgumentParser(description='Create pickle given an experiment identifier')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
@@ -106,7 +111,6 @@ def main():
     
     expid = as_conf.get_expid()
     project_type = as_conf.get_project_type()
-    project_name = as_conf.get_project_name()
 
     if project_type == "git":
         git_project_origin = as_conf.get_git_project_origin()
@@ -121,15 +125,29 @@ def main():
             print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
                                                " " + git_project_origin)
+            if status:
+                os.rmdir(project_path)
+                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                exit(1)
+
             print "%s" % output
-            # git_project_name = output[output.find("'")+1:output.find("...")-1]
-            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name +
+            git_project_name = output[output.find("'")+1:output.find("...")-1]
+            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule update --remote --init")
+            if status:
+                os.rmdir(project_path)
+                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                exit(1)
             print "%s" % output
-            (status, output) = getstatusoutput("cd " + project_path + "/" + project_name +
+
+            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule foreach -q 'branch=\"$(git config "
                                                "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
                                                "git checkout $branch'")
+            if status:
+                os.rmdir(project_path)
+                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                exit(1)
             print "%s" % output
 
     elif project_type == "svn":
@@ -145,6 +163,11 @@ def main():
             print "Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
                                                " " + svn_project_url)
+            if status:
+                os.rmdir(project_path)
+                print "Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
+                                                                 project_path)
+                exit(1)
             print "%s" % output
     
     elif project_type == "local":
@@ -158,6 +181,10 @@ def main():
             print "The project folder %s has been created." % project_path
             print "Copying %s into %s" % (local_project_path, project_path)
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
+            if status:
+                os.rmdir(project_path)
+                print "Can not copy %s into %s. Exiting..." % (local_project_path, project_path)
+                exit(1)
             print "%s" % output
     
     if project_type != "none":

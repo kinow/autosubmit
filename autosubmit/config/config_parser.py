@@ -90,7 +90,6 @@ def expdef_parser(filename):
     members = "(\s*fc\d+\s*)+$"
     rerun = "\s*(true|false)\s*$"
     projecttype = ['git', 'svn', 'local', 'none']
-    projectname = "\s*[\w\-]+\s*$"
     wallclock = "\s*\d\d:\d\d\s*$"
     numproc = "\s*\d+\s*$"
     multiproc = "\s*\d+(:\d+)*\s*$"
@@ -119,18 +118,18 @@ def expdef_parser(filename):
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
-    check_regex('WALLCLOCK_SETUP', parser.get('wallclocks', 'WALLCLOCK_SETUP'), wallclock)
-    check_regex('WALLCLOCK_INI', parser.get('wallclocks', 'WALLCLOCK_INI'), wallclock)
-    check_regex('WALLCLOCK_SIM', parser.get('wallclocks', 'WALLCLOCK_SIM'), wallclock)
-    check_regex('WALLCLOCK_POST', parser.get('wallclocks', 'WALLCLOCK_POST'), wallclock)
-    check_regex('WALLCLOCK_CLEAN', parser.get('wallclocks', 'WALLCLOCK_CLEAN'), wallclock)
-    check_regex('NUMPROC_SETUP', parser.get('numprocs', 'NUMPROC_SETUP'), numproc)
-    check_regex('NUMPROC_INI', parser.get('numprocs', 'NUMPROC_INI'), numproc)
-    check_regex('NUMPROC_SIM', parser.get('numprocs', 'NUMPROC_SIM'), multiproc)
-    check_regex('NUMTASK_SIM', parser.get('numprocs', 'NUMTASK_SIM'), multiproc)
-    check_regex('NUMTHREAD_SIM', parser.get('numprocs', 'NUMTHREAD_SIM'), multiproc)
-    check_regex('NUMPROC_POST', parser.get('numprocs', 'NUMPROC_POST'), numproc)
-    check_regex('NUMPROC_CLEAN', parser.get('numprocs', 'NUMPROC_CLEAN'), numproc)
+    check_regex('WALLCLOCK_SETUP', parser.get('wallclock', 'WALLCLOCK_SETUP'), wallclock)
+    check_regex('WALLCLOCK_INI', parser.get('wallclock', 'WALLCLOCK_INI'), wallclock)
+    check_regex('WALLCLOCK_SIM', parser.get('wallclock', 'WALLCLOCK_SIM'), wallclock)
+    check_regex('WALLCLOCK_POST', parser.get('wallclock', 'WALLCLOCK_POST'), wallclock)
+    check_regex('WALLCLOCK_CLEAN', parser.get('wallclock', 'WALLCLOCK_CLEAN'), wallclock)
+    check_regex('NUMPROC_SETUP', parser.get('numproc', 'NUMPROC_SETUP'), numproc)
+    check_regex('NUMPROC_INI', parser.get('numproc', 'NUMPROC_INI'), numproc)
+    check_regex('NUMPROC_SIM', parser.get('numproc', 'NUMPROC_SIM'), multiproc)
+    check_regex('NUMTASK_SIM', parser.get('numproc', 'NUMTASK_SIM'), multiproc)
+    check_regex('NUMTHREAD_SIM', parser.get('numproc', 'NUMTHREAD_SIM'), multiproc)
+    check_regex('NUMPROC_POST', parser.get('numproc', 'NUMPROC_POST'), numproc)
+    check_regex('NUMPROC_CLEAN', parser.get('numproc', 'NUMPROC_CLEAN'), numproc)
 
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
@@ -142,7 +141,6 @@ def expdef_parser(filename):
     if parser.get('rerun', 'RERUN') == "TRUE":
         check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
     check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
-    check_regex('PROJECT_NAME', parser.get('project', 'PROJECT_NAME'), projectname)
     # if (parser.get('project', 'PROJECT_TYPE') == "git"):
     #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
@@ -168,10 +166,10 @@ def projdef_parser(filename):
     parser.read(filename)
 
     if invalid_values:
-        print "Invalid model config file"
+        print "Invalid project config file"
         sys.exit()
     else:
-        print "Model config file OK"
+        print "Project config file OK"
 
     return parser
 

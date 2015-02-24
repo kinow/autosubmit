@@ -61,10 +61,13 @@ def prepare_conf_files(exp_id, hpc, autosubmit_version):
 # Main Program
 ####################
 def main():
-    # obtain version for autosubmit being used in expid.py step
-    # autosubmit_version = file(os.path.join(package_dir, 'VERSION'),'r').read()
-    # autosubmit_version = resource_string('autosubmit', 'VERSION')
-    autosubmit_version = require("autosubmit")[0].version
+    # Get the version number from the relevant file. If not, from autosubmit package
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
 
     parser = argparse.ArgumentParser(description='Get an experiment identifier and create experiment folder')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)

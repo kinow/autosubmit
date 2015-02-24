@@ -63,12 +63,25 @@ def log_short(message):
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    # Get the version number from the relevant file. If not, from autosubmit package
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
 
     parser = argparse.ArgumentParser(description='Launch Autosubmit given an experiment identifier')
+    # parser.add_argument('action')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
-    parser.add_argument('-e', '--expid', required=True, nargs=1)
+    parser.add_argument('-e', '--expid',  nargs=1)
     args = parser.parse_args()
+
+    # if args.action is None or args.action.lower() == 'run':
+    #     pass
+    # elif args.action.lower() == 'expid':
+    #     os.system("expid -H ithaca -n")
+
     if args.expid is None:
         parser.error("Missing expid.")
 
@@ -321,7 +334,7 @@ def main():
 
             for job in list_of_jobs_avail[0:min(available, len(jobsavail), total_jobs - len(jobinqueue))]:
                 print job.get_name()
-                scriptname = job.create_script()
+                scriptname = job.create_script(as_conf)
                 print scriptname
                 # in lindgren arch must select serial or parallel queue acording to the job type
                 if remote_queue is None and job.get_type() == Type.SIMULATION:

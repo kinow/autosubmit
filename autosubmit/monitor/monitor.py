@@ -77,17 +77,17 @@ class Monitor:
 
         exp = pydot.Subgraph(graph_name='Experiment', label=expid)
         for job in joblist:
-            node_job = pydot.Node(job.get_name(), shape='box', style="filled",
-                                  fillcolor=self.color_status(job.get_status()))
+            node_job = pydot.Node(job.name, shape='box', style="filled",
+                                  fillcolor=self.color_status(job.status))
             exp.add_node(node_job)
-            # exp.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.get_status()))
+            # exp.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.status))
             if job.has_children() != 0:
-                for child in job.get_children():
-                    node_child = pydot.Node(child.get_name(), shape='box', style="filled",
-                                            fillcolor=self.color_status(child.get_status()))
+                for child in job.children:
+                    node_child = pydot.Node(child.name, shape='box', style="filled",
+                                            fillcolor=self.color_status(child.status))
                     exp.add_node(node_child)
                     # exp.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(
-                    # job.get_status()))
+                    # job.status))
                     exp.add_edge(pydot.Edge(node_job, node_child))
 
         graph.add_subgraph(exp)

@@ -167,7 +167,7 @@ def last_name(hpc):
     elif hpc == 'archer':
         hpc_name = "a___"
     else:
-        raise ValueError('%c is not a valid HPC name' & hpc)
+        raise ValueError('%c is not a valid HPC name' % hpc)
     cursor.execute('select name '
                    'from experiment '
                    'where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
