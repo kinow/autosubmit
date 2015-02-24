@@ -170,8 +170,8 @@ def main():
 
             if fc == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    print "CHANGED: job: " + job.name + " status to: " + final
             else:
                 data = json.loads(create_json(fc))
                 # change localsetup and remotesetup
@@ -180,13 +180,13 @@ def main():
                     for member in date['ms']:
                         jobname_ini = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_ini"
                         job = l1.get_job_by_name(jobname_ini)
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                        job.status = get_status(final)
+                        print "CHANGED: job: " + job.name + " status to: " + final
                         # change also trans
                         jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
                         job = l1.get_job_by_name(jobname_trans)
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                        job.status = get_status(final)
+                        print "CHANGED: job: " + job.name + " status to: " + final
                         # [...]
                         for chunk in member['cs']:
                             jobname_sim = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
@@ -196,14 +196,14 @@ def main():
                             jobname_clean = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                                 chunk) + "_clean"
                             job = l1.get_job_by_name(jobname_sim)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            print "CHANGED: job: " + job.name + " status to: " + final
                             job = l1.get_job_by_name(jobname_post)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            print "CHANGED: job: " + job.name + " status to: " + final
                             job = l1.get_job_by_name(jobname_clean)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            print "CHANGED: job: " + job.name + " status to: " + final
 
         if args.filter_status:
             fs = args.filter_status
@@ -211,13 +211,13 @@ def main():
 
             if fs == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    print "CHANGED: job: " + job.name + " status to: " + final
             else:
                 for job in l1.get_job_list():
                     if job.get_status() == get_status(fs):
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                        job.status = get_status(final)
+                        print "CHANGED: job: " + job.name + " status to: " + final
 
         if args.filter_type:
             ft = args.filter_type
@@ -225,26 +225,26 @@ def main():
 
             if ft == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    print "CHANGED: job: " + job.name + " status to: " + final
             else:
                 for job in l1.get_job_list():
-                    if job.get_type() == get_type(ft):
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    if job.type == get_type(ft):
+                        job.status = get_status(final)
+                        print "CHANGED: job: " + job.name + " status to: " + final
 
     if args.list:
         jobs = args.list.split()
 
         if jobs == 'Any':
             for job in l1.get_job_list():
-                job.set_status(get_status(final))
-                print "CHANGED: job: " + job.get_name() + " status to: " + final
+                job.status = get_status(final)
+                print "CHANGED: job: " + job.name + " status to: " + final
         else:
             for job in l1.get_job_list():
-                if job.get_name() in jobs:
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                if job.name in jobs:
+                    job.status = get_status(final)
+                    print "CHANGED: job: " + job.name + " status to: " + final
 
     sys.setrecursionlimit(50000)
 

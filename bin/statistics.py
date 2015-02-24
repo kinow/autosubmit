@@ -59,7 +59,7 @@ def main():
     filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
     jobs = pickle.load(file(filename, 'r'))
     if not isinstance(jobs, type([])):
-        jobs = [job for job in jobs.get_finished() if job.get_type() == Type.SIMULATION]
+        jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
     if len(jobs) > 0:
         monitor_exp = Monitor()

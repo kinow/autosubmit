@@ -154,23 +154,23 @@ def main():
         for job in l1.get_active():
             # If remote queue is none (now only in lindgren) arch must select serial or parallel queue
             # acording to the job type
-            if remote_queue is None and job.get_type() == Type.SIMULATION:
+            if remote_queue is None and job.type == Type.SIMULATION:
                 queue = parallel_queue
-            elif (remote_queue is None and (job.get_type() == Type.INITIALISATION or
-                                            job.get_type() == Type.CLEANING or
-                                            job.get_type() == Type.POSTPROCESSING)):
+            elif (remote_queue is None and (job.type == Type.INITIALISATION or
+                                            job.type == Type.CLEANING or
+                                            job.type == Type.POSTPROCESSING)):
                 queue = serial_queue
-            elif job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER:
+            elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                 queue = local_queue
             else:
                 queue = remote_queue
-            if queue.get_completed_files(job.get_name()):
-                job.set_status(Status.COMPLETED)
-                print "CHANGED: job: " + job.get_name() + " status to: COMPLETED"
+            if queue.get_completed_files(job.name):
+                job.status = Status.COMPLETED
+                print "CHANGED: job: " + job.name + " status to: COMPLETED"
             elif job.get_status() != Status.SUSPENDED:
-                job.set_status(Status.READY)
+                job.status = Status.READY
                 job.set_fail_count(0)
-                print "CHANGED: job: " + job.get_name() + " status to: READY"
+                print "CHANGED: job: " + job.name + " status to: READY"
 
         sys.setrecursionlimit(50000)
         l1.update_list()

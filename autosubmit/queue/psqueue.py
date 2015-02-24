@@ -16,13 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import os
 
 from xml.dom.minidom import parseString
 import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
 
+from autosubmit.config.dir_config import LOCAL_ROOT_DIR
 
 class PsQueue(HPCQueue):
     def __init__(self, expid):
@@ -41,11 +42,12 @@ class PsQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self._remote_log_dir = "/cfu/autosubmit" + "/" + self.expid + "/tmp/LOG_" + self.expid
-        # Ellen-->self._remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" +
+
+        self.remote_log_dir = os.path.join(LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
+        # Ellen-->self.remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" +
         #  self._expid + "/LOG_" + self._expid
         # Local-->self._local_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/LOG_" + self._expid
-        self._remote_common_dir = "/cfu/autosubmit/common"
+        self._remote_common_dir = os.path.join(LOCAL_ROOT_DIR, "common")
         # Ellen -->self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
         # Local-->self._local_common_dir = "/cfu/autosubmit/common"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
@@ -53,10 +55,10 @@ class PsQueue(HPCQueue):
         self.checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = ("ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " +
-                           self._remote_log_dir + " ")
+                           self.remote_log_dir + " ")
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -65,7 +67,7 @@ class PsQueue(HPCQueue):
         return self.submit_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd

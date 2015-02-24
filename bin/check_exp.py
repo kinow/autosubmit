@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Functions for handling experiment parameters check"""
+import logging
 import os
 import sys
 
@@ -60,7 +61,6 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
-
     parser = argparse.ArgumentParser(
         description='Check autosubmit and experiment configurations given a experiment identifier. '
                     'Check templates creation with those configurations')
@@ -83,12 +83,12 @@ def main():
     #     print "Experiment configuration check FAILED!"
     #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
-    print "Checking experiment templates..."
+    logging.info("Checking experiment templates...")
     if check_templates(as_conf):
-        print "Experiment templates check PASSED!"
+        logging.info("Experiment templates check PASSED!")
     else:
-        print "Experiment templates check FAILED!"
-        print "WARNING: running after FAILED experiment templates check is at your own risk!!!"
+        logging.critical("Experiment templates check FAILED!")
+        logging.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
 
 if __name__ == "__main__":

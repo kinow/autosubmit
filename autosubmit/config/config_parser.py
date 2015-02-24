@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 import sys
 import re
@@ -30,7 +31,7 @@ def check_values(key, value, valid_values):
     global invalid_values
 
     if value.lower() not in valid_values:
-        print "Invalid value %s: %s" % (key, value)
+        logging.error("Invalid value %s: %s", key, value)
         invalid_values = True
 
 
@@ -40,7 +41,7 @@ def check_regex(key, value, regex):
     prog = re.compile(regex)
 
     if not prog.match(value.lower()):
-        print "Invalid value %s: %s" % (key, value)
+        logging.error("Invalid value %s: %s" % (key, value))
         invalid_values = True
 
 
@@ -51,7 +52,7 @@ def check_json(key, value):
     try:
         nestedExpr('[', ']').parseString(value).asList()
     except:
-        print "Invalid value %s: %s" % (key, value)
+        logging.error("Invalid value %s: %s" % (key, value))
         invalid_values = True
 
 
@@ -60,8 +61,8 @@ def config_parser(filename):
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename
-        sys.exit()
+        logging.error("File does not exist: " + filename)
+        sys.exit(1)
 
     # load values
     parser = SafeConfigParser()
@@ -71,10 +72,10 @@ def config_parser(filename):
     check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
 
     if invalid_values:
-        print "Invalid Autosubmit config file"
-        sys.exit()
+        logging.error("Invalid Autosubmit config file")
+        sys.exit(1)
     else:
-        print "Autosubmit config file OK"
+        logging.info("Autosubmit config file OK")
 
     return parser
 
@@ -99,7 +100,7 @@ def expdef_parser(filename):
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename 
+        logging.critical("File does not exist: " + filename)
         sys.exit()
 
     # load values
@@ -110,8 +111,7 @@ def expdef_parser(filename):
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
-        print "Missing options"
-        print missing
+        logging.critical( "Missing options: " + missing)
         sys.exit()
 
     # check autosubmit.py variables
@@ -145,10 +145,10 @@ def expdef_parser(filename):
     #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
     if invalid_values:
-        print "Invalid experiment config file"
+        logging.error("Invalid experiment config file")
         sys.exit()
     else:
-        print "Experiment config file OK"
+        logging.info("Experiment config file OK")
 
     return parser
 
@@ -157,7 +157,7 @@ def projdef_parser(filename):
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename
+        logging.critical("File does not exist: " + filename)
         sys.exit()
 
     # load values
@@ -166,10 +166,10 @@ def projdef_parser(filename):
     parser.read(filename)
 
     if invalid_values:
-        print "Invalid project config file"
+        logging.error("Invalid project config file")
         sys.exit()
     else:
-        print "Project config file OK"
+        logging.info("Project config file OK")
 
     return parser
 

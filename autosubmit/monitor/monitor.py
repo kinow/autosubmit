@@ -187,7 +187,7 @@ class Monitor:
             rects6 = ax[plot - 1].bar(ind + width * 5, fail_run, width, color='c')
             ax[plot - 1].set_ylabel('hours')
             ax[plot - 1].set_xticks(ind + width)
-            ax[plot - 1].set_xticklabels([job.get_short_name() for job in joblist[l1:l2]], rotation='vertical')
+            ax[plot - 1].set_xticklabels([job.short_name for job in joblist[l1:l2]], rotation='vertical')
             box = ax[plot - 1].get_position()
             ax[plot - 1].set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
             ax[plot - 1].set_title(expid, fontsize=20, fontweight='bold')

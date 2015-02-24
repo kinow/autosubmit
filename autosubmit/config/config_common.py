@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 import os
 
 import re
@@ -70,6 +71,9 @@ class AutosubmitConfig:
         for section in self._exp_parser.sections():
             expdef += self._exp_parser.items(section)
 
+        for section in self._conf_parser.sections():
+            expdef += self._conf_parser.items(section)
+
         parameters = dict()
         for item in expdef:
             parameters[item[0]] = item[1]
@@ -77,7 +81,7 @@ class AutosubmitConfig:
         project_type = self.get_project_type()
         if project_type != "none" and self._proj_parser is not None:
             # Load project parameters
-            print "Loading project parameters..."
+            logging.debug("Loading project parameters...")
             parameters2 = parameters.copy()
             parameters2.update(self.load_project_parameters())
             parameters = parameters2
@@ -174,7 +178,7 @@ class AutosubmitConfig:
             "git rev-parse --abbrev-ref HEAD")
         if status1 == 0 and status2 == 0:
             project_branch = output
-            print "Project branch is: " + project_branch
+            logging.debug("Project branch is: " + project_branch)
 
             (status1, output) = getstatusoutput(
                 "cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + project_name)
@@ -184,13 +188,13 @@ class AutosubmitConfig:
             if status1 == 0 and status2 == 0:
                 project_sha = output
                 save = True
-                print "Project commit SHA is: " + project_sha
+                logging.debug("Project commit SHA is: " + project_sha)
                 project_branch_sha = project_branch + " " + project_sha
             else:
-                print "Failed to retrieve project commit SHA..."
+                logging.critical("Failed to retrieve project commit SHA...")
 
         else:
-            print "Failed to retrieve project branch..."
+            logging.critical("Failed to retrieve project branch...")
 
             # register changes
         if save:
@@ -199,9 +203,9 @@ class AutosubmitConfig:
                 content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                           "PROJECT_COMMIT = " + project_branch_sha)
             file(self._exp_parser_file, 'w').write(content)
-            print "Project commit SHA succesfully registered to the configuration file."
+            logging.debug("Project commit SHA succesfully registered to the configuration file.")
         else:
-            print "Changes NOT registered to the configuration file..."
+            logging.critical("Changes NOT registered to the configuration file...")
 
     def get_svn_project_url(self):
         return self._exp_parser.get('svn', 'PROJECT_URL').lower()
@@ -228,7 +232,7 @@ class AutosubmitConfig:
         return self._exp_parser.get('rerun', 'RERUN').lower()
 
     def get_chunk_list(self):
-        return int(self._exp_parser.get('rerun', 'CHUNKLIST'))
+        return self._exp_parser.get('rerun', 'CHUNKLIST')
 
     def get_platform(self):
         return self._exp_parser.get('experiment', 'HPCARCH').lower()

@@ -205,7 +205,7 @@ def main():
     joblist.update_parameters(parameters)
     # check the job list script creation
     print "Checking experiment templates..."
-    if joblist.check_scripts():
+    if joblist.check_scripts(as_conf):
         logger.info("Experiment templates check PASSED!")
     else:
         logger.error("Experiment templates check FAILED!")
@@ -279,13 +279,13 @@ def main():
                 job.print_job()
                 print ("Number of jobs in queue: %s" % str(len(jobinqueue)))
                 # in lindgren arch must select serial or parallel queue acording to the job type
-                if remote_queue is None and job.get_type() == Type.SIMULATION:
+                if remote_queue is None and job.type == Type.SIMULATION:
                     queue = parallel_queue
-                elif (remote_queue is None and (job.get_type() == Type.INITIALISATION or
-                                                job.get_type() == Type.CLEANING or
-                                                job.get_type() == Type.POSTPROCESSING)):
+                elif (remote_queue is None and (job.type == Type.INITIALISATION or
+                                                job.type == Type.CLEANING or
+                                                job.type == Type.POSTPROCESSING)):
                     queue = serial_queue
-                elif job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER:
+                elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                     queue = local_queue
                 else:
                     queue = remote_queue
@@ -294,13 +294,13 @@ def main():
                 if not queueavail:
                     logger.info("There is no queue available")
                 else:
-                    status = queue.check_job(job.get_id(), job.get_status())
+                    status = queue.check_job(job.id)
                     if status == Status.COMPLETED:
                         logger.debug("This job seems to have completed...checking")
-                        queue.get_completed_files(job.get_name())
+                        queue.get_completed_files(job.name)
                         job.check_completion()
                     else:
-                        job.set_status(status)
+                        job.status = status
 
                     # Uri add check if status UNKNOWN and exit if you want
                     # after checking the jobs , no job should have the status "submitted"
@@ -326,29 +326,29 @@ def main():
         elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= total_jobs:
             logger.info("We are going to submit: %s" % min(available, len(jobsavail)))
             # should sort the jobsavail by priority Clean->post->sim>ini
-            # s = sorted(jobsavail, key=lambda k:k.get_name().split('_')[1][:6])
+            # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
             # probably useless to sort by year before sorting by type
-            s = sorted(jobsavail, key=lambda k: k.get_long_name().split('_')[1][:6])
+            s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
 
-            list_of_jobs_avail = sorted(s, key=lambda k: k.get_type())
+            list_of_jobs_avail = sorted(s, key=lambda k: k.type)
 
             for job in list_of_jobs_avail[0:min(available, len(jobsavail), total_jobs - len(jobinqueue))]:
-                print job.get_name()
+                print job.name
                 scriptname = job.create_script(as_conf)
                 print scriptname
                 # in lindgren arch must select serial or parallel queue acording to the job type
-                if remote_queue is None and job.get_type() == Type.SIMULATION:
+                if remote_queue is None and job.type == Type.SIMULATION:
                     queue = parallel_queue
                     logger.info("Submitting to parallel queue...")
                     print("Submitting to parallel queue...")
-                elif (remote_queue is None and (job.get_type() == Type.REMOTESETUP or
-                                                job.get_type() == Type.INITIALISATION or
-                                                job.get_type() == Type.CLEANING or
-                                                job.get_type() == Type.POSTPROCESSING)):
+                elif (remote_queue is None and (job.type == Type.REMOTESETUP or
+                                                job.type == Type.INITIALISATION or
+                                                job.type == Type.CLEANING or
+                                                job.type == Type.POSTPROCESSING)):
                     queue = serial_queue
                     logger.info("Submitting to serial queue...")
                     print("Submitting to serial queue...")
-                elif job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER:
+                elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                     queue = local_queue
                     logger.info("Submitting to local queue...")
                     print("Submitting to local queue...")
@@ -362,10 +362,9 @@ def main():
                     logger.info("There is no queue available")
                 else:
                     queue.send_script(scriptname)
-                    job_id = queue.submit_job(scriptname)
-                    job.set_id(job_id)
+                    job.id = queue.submit_job(scriptname)
                     # set status to "submitted"
-                    job.set_status(Status.SUBMITTED)
+                    job.status = Status.SUBMITTED
 
         time.sleep(safetysleeptime)
 

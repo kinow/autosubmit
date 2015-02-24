@@ -119,7 +119,7 @@ class StatisticsSnippet:
             ###################
 
             set -xuve
-            job_name_ptrn=/cfu/autosubmit/%EXPID%/tmp/LOG_%EXPID%/%JOBNAME%
+            job_name_ptrn=%ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
 
@@ -134,18 +134,17 @@ class StatisticsSnippet:
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
             errfile_ptrn="\.e"
-            failed_jobs=0
-            set +e; ls -1 ${job_name_ptrn}* | grep $errfile_ptrn
-            if [[ $? -eq 0 ]]; then
-             failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
-             failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
-            fi; set -e
+
+            failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
+            failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
             failed_jobs_rt=0
+
             for failed_errfile in $failed_errfiles; do
-             failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-             failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
+                failed_errfile_stamp=$(stat -c %Z $failed_errfile)
+                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
-            echo "$job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            echo "
+            $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             """)
 
     AS_HEADER_REM = textwrap.dedent("""

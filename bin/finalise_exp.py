@@ -49,13 +49,13 @@ def main():
         description='Clean experiment git and plot directories, given an experiment identifier')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
     parser.add_argument('-e', '--expid', required=True, nargs=1)
-    parser.add_argument('-g', '--git', action="store_true", default=False, help='Clean git')
+    parser.add_argument('-pr', '--project', action="store_true", default=False, help='Clean project')
     parser.add_argument('-p', '--plot', action="store_true", default=False, help='Clean plot, only 2 last will remain')
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
 
-    if args.git:
+    if args.project:
         autosubmit_config = AutosubmitConfig(args.expid[0])
         autosubmit_config.check_conf()
         project_type = autosubmit_config.get_project_type()
@@ -67,7 +67,7 @@ def main():
             print "Cleaning GIT directory..."
             autosubmit_git.clean_git()
         else:
-            print "Nothing to clean..."
+            print "No project to clean..."
 
     if args.plot:
         print "Cleaning plot directory..."

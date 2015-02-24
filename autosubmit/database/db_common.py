@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import logging
 
 import os
 import sys
@@ -51,7 +52,7 @@ def set_experiment(name, description):
                        {'name': name, 'description': description})
     except sqlite3.IntegrityError:
         close_conn(conn, cursor)
-        print 'The experiment name %s already exists!!!' % name
+        logging.error('The experiment name %s already exists!!!' % name)
         sys.exit(1)
 
     conn.commit()
@@ -77,7 +78,7 @@ def check_experiment_exists(name):
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:
-        print 'The experiment name %s does not exist yet!!!' % name
+        logging.error('The experiment name %s does not exist yet!!!' % name)
         return False
     return True
 
@@ -104,7 +105,7 @@ def new_experiment(hpc, description):
     else:
         new_name = next_name(last_exp_name)
     set_experiment(new_name, description)
-    print 'The new experiment "%s" has been registered.' % new_name
+    logging.info('The new experiment "%s" has been registered.' % new_name)
     return new_name
 
 
@@ -187,7 +188,7 @@ def delete_experiment(name):
     row = cursor.fetchone()
     if row is None:
         close_conn(conn, cursor)
-        print 'The experiment %s has been deleted!!!' % name
+        logging.error('The experiment %s has been deleted!!!' % name)
         sys.exit(1)
 
     close_conn(conn, cursor)
@@ -197,15 +198,14 @@ def delete_experiment(name):
 def check_name(name):
     name = name.lower()
     if len(name) != 4 and not name.isalnum():
-        print "So sorry, but the name must have 4 alphanumeric chars!!!"
+        logging.error("So sorry, but the name must have 4 alphanumeric chars!!!")
         sys.exit(1)
     return name
 
 
 def check_db():
     if not os.path.exists(DB_PATH):
-        print 'Some problem has happened...check the database file!!!'
-        print 'DB file:', DB_PATH
+        logging.error('Some problem has happened...check the database file.' + 'DB file:' + DB_PATH)
         sys.exit(1)
     return
 

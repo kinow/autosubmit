@@ -37,16 +37,16 @@ class Mn3Queue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self._remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_"
+        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_"
                                 + self.expid)
         self.cancel_cmd = "ssh " + self._host + " bkill"
         self.checkjob_cmd = "ssh " + self._host + " bjobs"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " bsub \< " + self._remote_log_dir + "/"
+        self.submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -58,7 +58,7 @@ class Mn3Queue(HPCQueue):
         return self.mkdir_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def parse_job_output(self, output):
         job_state = output.split('\n')[1].split()[2]

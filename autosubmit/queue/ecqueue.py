@@ -39,8 +39,8 @@ class EcQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self._remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
-                                self.expid)
+        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+                               self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
         self.checkjob_cmd = "ecaccess-job-list"
         self._checkhost_cmd = "ecaccess-certificate-list"
@@ -51,7 +51,7 @@ class EcQueue(HPCQueue):
         self.get_cmd = "ecaccess-file-get"
         self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self._scratch + "/" + self._project + "/" +
                           self._user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self._host + ":" +
-                          self._remote_log_dir)
+                          self.remote_log_dir)
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -60,7 +60,7 @@ class EcQueue(HPCQueue):
         return self.submit_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd

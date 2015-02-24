@@ -40,8 +40,8 @@ class ElQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        # self._remote_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/tmp/LOG_" + self._expid
-        self._remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+        # self.remote_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/tmp/LOG_" + self._expid
+        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                 self.expid)
         # self._remote_common_dir = "/cfu/autosubmit/common"
         self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
@@ -50,10 +50,10 @@ class ElQueue(HPCQueue):
         self.checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = ("ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " +
-                           self._remote_log_dir + " ")
+                           self.remote_log_dir + " ")
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -62,7 +62,7 @@ class ElQueue(HPCQueue):
         return self.submit_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
