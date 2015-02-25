@@ -22,6 +22,7 @@
 structure and writes it in a .pkl file"""
 import os
 import sys
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -104,7 +105,8 @@ def main():
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'create_exp.log'))
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
     
@@ -116,28 +118,28 @@ def main():
         git_project_branch = as_conf.get_git_project_branch()
         project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
-            print "The project folder exists. SKIPPING..."
-            print "Using project folder: %s" % project_path
+            Log.debug("The project folder exists. SKIPPING...")
+            Log.info("Using project folder: %s" % project_path)
         else:
             os.mkdir(project_path)
-            print "The project folder %s has been created." % project_path
-            print "Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+            Log.debug("The project folder %s has been created." % project_path)
+            Log.info("Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
             (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
                                                " " + git_project_origin)
             if status:
                 os.rmdir(project_path)
-                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
                 exit(1)
 
-            print "%s" % output
+            Log.debug("%s" % output)
             git_project_name = output[output.find("'")+1:output.find("...")-1]
             (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule update --remote --init")
             if status:
                 os.rmdir(project_path)
-                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
                 exit(1)
-            print "%s" % output
+            Log.debug("%s" % output)
 
             (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule foreach -q 'branch=\"$(git config "
@@ -145,53 +147,53 @@ def main():
                                                "git checkout $branch'")
             if status:
                 os.rmdir(project_path)
-                print "Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
                 exit(1)
-            print "%s" % output
+            Log.debug("%s" % output)
 
     elif project_type == "svn":
         svn_project_url = as_conf.get_svn_project_url()
         svn_project_revision = as_conf.get_svn_project_revision()
         project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
-            print "The project folder exists. SKIPPING..."
-            print "Using project folder: %s" % project_path
+            Log.debug("The project folder exists. SKIPPING...")
+            Log.info("Using project folder: %s" % project_path)
         else:
             os.mkdir(project_path)
-            print "The project folder %s has been created." % project_path
-            print "Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url, project_path)
+            Log.debug("The project folder %s has been created." % project_path)
+            Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url, project_path))
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
                                                " " + svn_project_url)
             if status:
                 os.rmdir(project_path)
-                print "Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
-                                                                 project_path)
+                Log.error("Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
+                                                                     project_path))
                 exit(1)
-            print "%s" % output
+            Log.debug("%s" % output)
     
     elif project_type == "local":
         local_project_path = as_conf.get_local_project_path()
         project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
-            print "The project folder exists. SKIPPING..."
-            print "Using project folder: %s" % project_path
+            Log.debug("The project folder exists. SKIPPING...")
+            Log.info("Using project folder: %s" % project_path)
         else:
             os.mkdir(project_path)
-            print "The project folder %s has been created." % project_path
-            print "Copying %s into %s" % (local_project_path, project_path)
+            Log.debug("The project folder %s has been created." % project_path)
+            Log.info("Copying %s into %s" % (local_project_path, project_path))
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
             if status:
                 os.rmdir(project_path)
-                print "Can not copy %s into %s. Exiting..." % (local_project_path, project_path)
+                Log.error("Can not copy %s into %s. Exiting..." % (local_project_path, project_path))
                 exit(1)
-            print "%s" % output
+            Log.debug("%s" % output)
     
     if project_type != "none":
         # Check project configuration
         as_conf.check_proj()
 
     # Load parameters
-    print "Loading parameters..."
+    Log.info("Loading parameters...")
     parameters = as_conf.load_parameters()
 
     date_list = as_conf.get_date_list()
@@ -216,7 +218,7 @@ def main():
 
     monitor_exp = Monitor()
     monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
-    print "Remember to MODIFY the config files!"
+    Log.warning("Remember to MODIFY the config files!")
 
 
 if __name__ == "__main__":

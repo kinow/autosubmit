@@ -20,6 +20,7 @@
 """Script for handling experiment recovery after crash or job failure"""
 import os
 import sys
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -65,13 +66,14 @@ def main():
                         help='Get completed files to synchronize pkl')
     parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
     args = parser.parse_args()
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'recovery.log'))
     expid = args.expid[0]
     root_name = args.joblist[0]
     save = args.save
     get = args.get
 
-    print expid
+    Log.debug(expid)
     l1 = pickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
     as_conf = AutosubmitConfig(expid)
@@ -166,11 +168,11 @@ def main():
                 queue = remote_queue
             if queue.get_completed_files(job.name):
                 job.status = Status.COMPLETED
-                print "CHANGED: job: " + job.name + " status to: COMPLETED"
+                Log.info("CHANGED: job: " + job.name + " status to: COMPLETED")
             elif job.status != Status.SUSPENDED:
                 job.status = Status.READY
                 job.set_fail_count(0)
-                print "CHANGED: job: " + job.name + " status to: READY"
+                Log.info("CHANGED: job: " + job.name + " status to: READY")
 
         sys.setrecursionlimit(50000)
         l1.update_list()

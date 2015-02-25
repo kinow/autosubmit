@@ -33,6 +33,7 @@ import matplotlib.pyplot as plt
 
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 class Monitor:
@@ -234,5 +235,5 @@ class Monitor:
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        print "Plot directory clean! last two plots remanining there."
+        Log.result("Plot directory clean! last two plots remanining there.")
         return

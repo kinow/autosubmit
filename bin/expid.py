@@ -18,7 +18,6 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Script for handling experiment creation, deletion or copy"""
-import logging
 import os
 import sys
 
@@ -37,6 +36,7 @@ from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 def user_yes_no_query(question):
@@ -83,10 +83,7 @@ def main():
     group2.add_argument('-d', '--description', type=str)
 
     args = parser.parse_args()
-
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s %(message)s',
-                        datefmt='%a, %d %b %Y %H:%M:%S')
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid.log'))
     exp_id = None
     if args.new is None and args.copy is None and args.delete is None:
         parser.error("Missing method either New or Copy or Delete.")
@@ -100,7 +97,7 @@ def main():
         os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
 
         os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
-        logging.info("Copying config files...")
+        Log.info("Copying config files...")
         # autosubmit config and experiment copyed from AS.
         files = resource_listdir('autosubmit.config', 'files')
         for filename in files:
@@ -108,7 +105,7 @@ def main():
                 index = filename.index('.')
                 new_filename = filename[:index] + "_" + exp_id + filename[index:]
                 content = resource_string('autosubmit.config', 'files/' + filename)
-                logging.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
+                Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
                 file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
         prepare_conf_files(exp_id, args.HPC, autosubmit_version)
 
@@ -122,7 +119,7 @@ def main():
             exp_id = copy_experiment(args.copy, args.HPC, args.description)
             os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
             os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
-            logging.info("Copying previous experiment config directories")
+            Log.info("Copying previous experiment config directories")
             files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf")
             for filename in files:
                 if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename):
@@ -131,34 +128,34 @@ def main():
                     file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
             prepare_conf_files(exp_id, args.HPC, autosubmit_version)
         else:
-            logging.critical("The previous experiment directory does not exist")
+            Log.critical("The previous experiment directory does not exist")
             sys.exit(1)
 
     elif args.delete:
         if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + args.delete):
             if user_yes_no_query("Do you want to delete " + args.delete + " ?"):
-                logging.info("Removing experiment directory...")
+                Log.info("Removing experiment directory...")
                 shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + args.delete)
-                logging.info("Deleting experiment from database...")
+                Log.info("Deleting experiment from database...")
                 delete_experiment(args.delete)
             else:
-                logging.info("Quitting...")
+                Log.info("Quitting...")
                 sys.exit(1)
         else:
-            logging.error("The experiment does not exist")
+            Log.error("The experiment does not exist")
             sys.exit(1)
 
-    logging.debug("Creating temporal directory...")
+    Log.debug("Creating temporal directory...")
     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "tmp")
 
-    logging.debug("Creating pkl directory...")
+    Log.debug("Creating pkl directory...")
     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "pkl")
 
-    logging.debug("Creating plot directory...")
+    Log.debug("Creating plot directory...")
     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot")
     os.chmod(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot", 0o775)
 
-    logging.info("Remember to MODIFY the config files!")
+    Log.user_warning("Remember to MODIFY the config files!")
 
 
 if __name__ == "__main__":

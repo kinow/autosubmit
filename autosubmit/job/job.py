@@ -79,14 +79,14 @@ class Job:
         del self
 
     def print_job(self):
-        print 'NAME: %s' % self.name
-        print 'JOBID: %s' % self.id
-        print 'STATUS: %s' % self.status
-        print 'TYPE: %s' % self.type
-        print 'PARENTS: %s' % [p.name for p in self.parents]
-        print 'CHILDREN: %s' % [c.name for c in self.children]
-        print 'FAIL_COUNT: %s' % self.fail_count
-        print 'EXPID: %s' % self.expid
+        Log.info('NAME: %s' % self.name)
+        Log.info('JOBID: %s' % self.id)
+        Log.info('STATUS: %s' % self.status)
+        Log.info('TYPE: %s' % self.type)
+        Log.info('PARENTS: %s' % [p.name for p in self.parents])
+        Log.info('CHILDREN: %s' % [c.name for c in self.children])
+        Log.info('FAIL_COUNT: %s' % self.fail_count)
+        Log.info('EXPID: %s' % self.expid)
 
     # Properties
 
@@ -122,8 +122,8 @@ class Job:
             self._short_name = n[0][:15]
 
     def log_job(self):
-        job_logger.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
-        job_logger.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
+        Log.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
+        Log.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
 
     def get_all_children(self):
         """Returns a list with job's childrens and all it's descendents"""
@@ -135,7 +135,7 @@ class Job:
         return list(set(job_list))
 
     def print_parameters(self):
-        print self.parameters
+        Log.info(self.parameters)
 
     def inc_fail_count(self):
         self.fail_count += 1
@@ -320,7 +320,7 @@ class Job:
         elif self.type == Type.TRANSFER:
             parameters['TASKTYPE'] = 'TRANSFER'
         else:
-            print "Unknown Job Type"
+            Log.warning("Unknown Job Type")
 
         self.parameters = parameters
 
@@ -418,7 +418,7 @@ class Job:
                      StatisticsSnippet.AS_TAILER_LOC]
         else:
             items = None
-            print "Unknown Job Type"
+            Log.warning("Unknown Job Type: %s" % self.type)
 
         template_content = ''.join(items)
         return template_content
@@ -447,8 +447,9 @@ class Job:
         out = set(parameters).issuperset(set(variables))
 
         if not out:
-            print "The following set of variables to be substituted in template script is not part of parameters set: "
-            print set(variables) - set(parameters)
+            Log.warning("The following set of variables to be substituted in template script is not part of "
+                        "parameters set: ")
+            Log.warning(set(variables) - set(parameters))
         else:
             self.create_script(as_conf)
 
@@ -462,16 +463,16 @@ if __name__ == "__main__":
     job3 = Job('tres', '3', Status.READY, 0)
     jobs = [job1, job2, job3]
     mainJob.parents = jobs
-    print mainJob.parents
+    Log.info(mainJob.parents)
     # mainJob.set_children(jobs)
     job1.add_children(mainJob)
     job2.add_children(mainJob)
     job3.add_children(mainJob)
-    print mainJob.get_all_children()
-    print mainJob.children
+    Log.info(mainJob.get_all_children())
+    Log.info(mainJob.children)
     job3.check_completion()
-    print "Number of Parents: ", mainJob.has_parents()
-    print "number of children : ", mainJob.has_children()
+    Log.info("Number of Parents: ", mainJob.has_parents())
+    Log.info("number of children : ", mainJob.has_children())
     mainJob.print_job()
     mainJob.delete()
 #

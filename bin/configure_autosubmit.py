@@ -20,6 +20,7 @@
 """Script for handling experiment statistics plots"""
 import os
 import sys
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -51,19 +52,18 @@ def main():
 
     args = parser.parse_args()
     home_path = os.path.expanduser('~')
-
     while args.databasepath is None:
         args.databasepath = raw_input("Introduce Database path: ")
     args.databasepath = args.databasepath.replace('~', home_path)
     if not os.path.exists(args.databasepath):
-        print "Database path does not exist."
+        Log.error("Database path does not exist.")
         exit(1)
 
     while args.localrootpath is None:
         args.localrootpath = raw_input("Introduce Local Root path: ")
     args.localrootpath = args.localrootpath.replace('~', home_path)
     if not os.path.exists(args.localrootpath):
-        print "Local Root path does not exist."
+        Log.error("Local Root path does not exist.")
         exit(1)
 
     if args.user:
@@ -76,14 +76,15 @@ def main():
 
     config_file = open(path, 'w')
 
+    Log.info("Writing configuration file...")
     parser = SafeConfigParser()
     parser.add_section('database')
     parser.set('database', 'path', args.databasepath)
     parser.add_section('local')
     parser.set('local', 'path', args.localrootpath)
-
     parser.write(config_file)
     config_file.close()
+    Log.info("Configuration file written successfully")
 
 if __name__ == "__main__":
     main()

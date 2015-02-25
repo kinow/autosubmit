@@ -20,6 +20,7 @@
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 class EcQueue(HPCQueue):
@@ -73,7 +74,7 @@ class EcQueue(HPCQueue):
         return output
 
     def jobs_in_queue(self, output):
-        print output
+        Log.debug(output)
         return output.split()
 
 #

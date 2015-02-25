@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import logging
+from log import Log
 import os
 
 import re
@@ -80,7 +80,7 @@ class AutosubmitConfig:
         project_type = self.get_project_type()
         if project_type != "none" and self._proj_parser is not None:
             # Load project parameters
-            logging.debug("Loading project parameters...")
+            Log.debug("Loading project parameters...")
             parameters2 = parameters.copy()
             parameters2.update(self.load_project_parameters())
             parameters = parameters2
@@ -101,12 +101,12 @@ class AutosubmitConfig:
     @staticmethod
     def print_parameters(title, parameters):
         """Prints the parameters table in a tabular mode"""
-        print title
-        print "----------------------"
-        print "{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15)
+        Log.info(title)
+        Log.info("----------------------")
+        Log.info("{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15))
         for i in parameters:
-            print "{0:<{col1}}| {1:<{col2}}".format(i[0], i[1], col1=15, col2=15)
-        print ""
+            Log.info("{0:<{col1}}| {1:<{col2}}".format(i[0], i[1], col1=15, col2=15))
+        Log.info("")
 
     def check_parameters(self):
         """Function to check configuration of Autosubmit.
@@ -178,7 +178,7 @@ class AutosubmitConfig:
                                             "git rev-parse --abbrev-ref HEAD")
         if status1 == 0 and status2 == 0:
             project_branch = output
-            logging.debug("Project branch is: " + project_branch)
+            Log.debug("Project branch is: " + project_branch)
 
             (status1, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
                                                 BasicConfig.LOCAL_PROJ_DIR + "/" + project_name)
@@ -188,13 +188,13 @@ class AutosubmitConfig:
             if status1 == 0 and status2 == 0:
                 project_sha = output
                 save = True
-                logging.debug("Project commit SHA is: " + project_sha)
+                Log.debug("Project commit SHA is: " + project_sha)
                 project_branch_sha = project_branch + " " + project_sha
             else:
-                logging.critical("Failed to retrieve project commit SHA...")
+                Log.critical("Failed to retrieve project commit SHA...")
 
         else:
-            logging.critical("Failed to retrieve project branch...")
+            Log.critical("Failed to retrieve project branch...")
 
             # register changes
         if save:
@@ -203,9 +203,9 @@ class AutosubmitConfig:
                 content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                           "PROJECT_COMMIT = " + project_branch_sha)
             file(self._exp_parser_file, 'w').write(content)
-            logging.debug("Project commit SHA succesfully registered to the configuration file.")
+            Log.debug("Project commit SHA succesfully registered to the configuration file.")
         else:
-            logging.critical("Changes NOT registered to the configuration file...")
+            Log.critical("Changes NOT registered to the configuration file...")
 
     def get_svn_project_url(self):
         return self._exp_parser.get('svn', 'PROJECT_URL').lower()

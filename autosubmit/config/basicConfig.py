@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import SafeConfigParser
 import os
+from log import Log
 
 
 class BasicConfig:
@@ -39,6 +40,7 @@ class BasicConfig:
     def __read_file_config(file_path):
         if not os.path.isfile(file_path):
             return
+        Log.debug('Reading config from ' + file_path)
         parser = SafeConfigParser()
         parser.optionxform = str
         parser.read(file_path)

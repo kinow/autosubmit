@@ -20,6 +20,7 @@
 """Script for handling experiment monitoring"""
 import sys
 import os
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -50,7 +51,8 @@ def main():
     parser.add_argument('-o', '--output', required=True, nargs=1, choices=('pdf', 'png', 'ps'), default='pdf')
 
     args = parser.parse_args()
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'monitor.log'))
     expid = args.expid[0]
     root_name = args.joblist[0]
     output = args.output[0]

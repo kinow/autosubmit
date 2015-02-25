@@ -19,6 +19,7 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from log import Log
 
 
 class HtQueue(HPCQueue):
@@ -70,7 +71,7 @@ class HtQueue(HPCQueue):
         return output.split('.')[0]
 
     def jobs_in_queue(self, output):
-        print output
+        Log.debug(output)
         return output.split()
 
 #

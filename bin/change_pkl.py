@@ -20,6 +20,7 @@
 """Script for handling job status changes"""
 import sys
 import os
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -160,19 +161,20 @@ def main():
     root_name = args.joblist[0]
     save = args.save
     final = args.status_final
-
-    print expid
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'change_pkl.log'))
+    Log.debug('Exp ID: %d', expid)
     l1 = pickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
     if args.filter:
         if args.filter_chunks:
             fc = args.filter_chunks
-            print fc
+            Log.debug(fc)
 
             if fc == 'Any':
                 for job in l1.get_job_list():
                     job.status = get_status(final)
-                    print "CHANGED: job: " + job.name + " status to: " + final
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 data = json.loads(create_json(fc))
                 # change localsetup and remotesetup
@@ -182,12 +184,12 @@ def main():
                         jobname_ini = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_ini"
                         job = l1.get_job_by_name(jobname_ini)
                         job.status = get_status(final)
-                        print "CHANGED: job: " + job.name + " status to: " + final
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
                         # change also trans
                         jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
                         job = l1.get_job_by_name(jobname_trans)
                         job.status = get_status(final)
-                        print "CHANGED: job: " + job.name + " status to: " + final
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
                         # [...]
                         for chunk in member['cs']:
                             jobname_sim = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
@@ -198,41 +200,41 @@ def main():
                                 chunk) + "_clean"
                             job = l1.get_job_by_name(jobname_sim)
                             job.status = get_status(final)
-                            print "CHANGED: job: " + job.name + " status to: " + final
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             job = l1.get_job_by_name(jobname_post)
                             job.status = get_status(final)
-                            print "CHANGED: job: " + job.name + " status to: " + final
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             job = l1.get_job_by_name(jobname_clean)
                             job.status = get_status(final)
-                            print "CHANGED: job: " + job.name + " status to: " + final
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         if args.filter_status:
             fs = args.filter_status
-            print fs
+            Log.debug(fs)
 
             if fs == 'Any':
                 for job in l1.get_job_list():
                     job.status = get_status(final)
-                    print "CHANGED: job: " + job.name + " status to: " + final
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 for job in l1.get_job_list():
                     if job.status == get_status(fs):
                         job.status = get_status(final)
-                        print "CHANGED: job: " + job.name + " status to: " + final
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         if args.filter_type:
             ft = args.filter_type
-            print ft
+            Log.debug(ft)
 
             if ft == 'Any':
                 for job in l1.get_job_list():
                     job.status = get_status(final)
-                    print "CHANGED: job: " + job.name + " status to: " + final
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 for job in l1.get_job_list():
                     if job.type == get_type(ft):
                         job.status = get_status(final)
-                        print "CHANGED: job: " + job.name + " status to: " + final
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     if args.list:
         jobs = args.list.split()
@@ -240,12 +242,12 @@ def main():
         if jobs == 'Any':
             for job in l1.get_job_list():
                 job.status = get_status(final)
-                print "CHANGED: job: " + job.name + " status to: " + final
+                Log.info("CHANGED: job: " + job.name + " status to: " + final)
         else:
             for job in l1.get_job_list():
                 if job.name in jobs:
                     job.status = get_status(final)
-                    print "CHANGED: job: " + job.name + " status to: " + final
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     sys.setrecursionlimit(50000)
 
@@ -253,10 +255,11 @@ def main():
         l1.update_list()
         pickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl",
                              'w'))
-        print "Saving JobList: " + BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
+        Log.info("Saving JobList: " + BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
+                 ".pkl")
     else:
         l1.update_list(False)
-        print "Changes NOT saved to the JobList!!!!:  use -s option to save"
+        Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
     monitor_exp = Monitor()
 

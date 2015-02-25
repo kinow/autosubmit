@@ -18,10 +18,12 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Functions for handling experiment parameters check"""
-import logging
 import os
 import sys
+
 from config.basicConfig import BasicConfig
+from log import Log
+
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -72,7 +74,7 @@ def main():
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
     project_type = as_conf.get_project_type()
@@ -86,12 +88,12 @@ def main():
     #     print "Experiment configuration check FAILED!"
     #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
-    logging.info("Checking experiment templates...")
+    Log.info("Checking experiment templates...")
     if check_templates(as_conf):
-        logging.info("Experiment templates check PASSED!")
+        Log.result("Experiment templates check PASSED!")
     else:
-        logging.critical("Experiment templates check FAILED!")
-        logging.warning("Running after FAILED experiment templates check is at your own risk!!!")
+        Log.critical("Experiment templates check FAILED!")
+        Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
 
 if __name__ == "__main__":

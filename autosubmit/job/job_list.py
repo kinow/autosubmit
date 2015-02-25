@@ -29,6 +29,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 class JobList:
@@ -52,11 +53,11 @@ class JobList:
         remotesetup_job.parents = [localsetup_job.name]
         localsetup_job.add_children(remotesetup_job.name)
 
-        print "Creating job list..."
+        Log.info("Creating job list...")
         for date in date_list:
-            print date
+            Log.debug("Date: {0}".format(date))
             for member in member_list:
-                print member
+                Log.debug("Member: " + member)
                 transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
                 trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
                 for chunk in range(starting_chunk, starting_chunk + num_chunks):
@@ -176,7 +177,7 @@ class JobList:
         for job in self._job_list:
             if job.name == name:
                 return job
-        print "We could not find that job %s in the list!!!!" % name
+        Log.warning("We could not find that job %s in the list!!!!", name)
 
     def sort_by_name(self):
         return sorted(self._job_list, key=lambda k: k.name)
@@ -199,26 +200,26 @@ class JobList:
             return list()
 
     def load(self):
-        print "Loading JobList: " + self._pkl_path + self._job_list_file
+        Log.info("Loading JobList: " + self._pkl_path + self._job_list_file)
         return JobList.load_file(self._pkl_path + self._job_list_file)
 
     def load_updated(self):
-        print "Loading updated list: " + self._pkl_path + self._update_file
+        Log.info("Loading updated list: " + self._pkl_path + self._update_file)
         return JobList.load_file(self._pkl_path + self._update_file)
 
     def load_failed(self):
-        print "Loading failed list: " + self._pkl_path + self._failed_file
+        Log.info("Loading failed list: " + self._pkl_path + self._failed_file)
         return JobList.load_file(self._pkl_path + self._failed_file)
 
     def save_failed(self, failed_list):
         # URi: should we check that the path exists?
-        print "Saving failed list: " + self._pkl_path + self._failed_file
+        Log.info("Saving failed list: " + self._pkl_path + self._failed_file)
         pickle.dump(failed_list, file(self._pkl_path + self._failed_file, 'w'))
 
     def save(self):
         # URi: should we check that the path exists?
         setrecursionlimit(50000)
-        print "Saving JobList: " + self._pkl_path + self._job_list_file
+        Log.info("Saving JobList: " + self._pkl_path + self._job_list_file)
         pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
 
     def update_from_file(self, store_change=True):
@@ -310,7 +311,7 @@ class JobList:
         for job in self._job_list:
             if not job.check_script(as_conf):
                 out = False
-                print "WARNING: Invalid parameter substitution in %s!!!" % job.name
+                Log.warning("Invalid parameter substitution in %s!!!" % job.name)
 
         return out
 
@@ -337,9 +338,9 @@ class RerunJobList(JobList):
     # Not intended to override
     # noinspection PyMethodOverriding,PyRedeclaration
     def create(self, chunk_list, starting_chunk, num_chunks, parameters):
-        print "Creating job list..."
+        Log.info("Creating job list...")
         data = json.loads(chunk_list)
-        print data
+        Log.debug("Data: %s", data)
         self._parameters = parameters
 
         localsetupjob_name = self._expid + "_"
@@ -351,10 +352,10 @@ class RerunJobList(JobList):
         localsetup_job.add_children(remotesetup_job.name)
 
         for date in data['sds']:
-            print date['sd']
+            Log.debug("Date: " + date['sd'])
             for member in date['ms']:
-                print member['m']
-                print member['cs']
+                Log.debug(member['m'])
+                Log.debug(member['cs'])
 
                 first_chunk = int(member['cs'][0])
 
