@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+from log import Log
 
 import sys
 import re
@@ -30,7 +31,7 @@ def check_values(key, value, valid_values):
     global invalid_values
 
     if value.lower() not in valid_values:
-        print "Invalid value %s: %s" % (key, value)
+        Log.error("Invalid value %s: %s", key, value)
         invalid_values = True
 
 
@@ -40,7 +41,7 @@ def check_regex(key, value, regex):
     prog = re.compile(regex)
 
     if not prog.match(value.lower()):
-        print "Invalid value %s: %s" % (key, value)
+        Log.error("Invalid value %s: %s" % (key, value))
         invalid_values = True
 
 
@@ -51,7 +52,7 @@ def check_json(key, value):
     try:
         nestedExpr('[', ']').parseString(value).asList()
     except:
-        print "Invalid value %s: %s" % (key, value)
+        Log.error("Invalid value %s: %s" % (key, value))
         invalid_values = True
 
 
@@ -60,8 +61,8 @@ def config_parser(filename):
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename
-        sys.exit()
+        Log.error("File does not exist: " + filename)
+        sys.exit(1)
 
     # load values
     parser = SafeConfigParser()
@@ -71,10 +72,10 @@ def config_parser(filename):
     check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
 
     if invalid_values:
-        print "Invalid Autosubmit config file"
-        sys.exit()
+        Log.error("Invalid Autosubmit config file")
+        sys.exit(1)
     else:
-        print "Autosubmit config file OK"
+        Log.info("Autosubmit config file OK")
 
     return parser
 
@@ -90,18 +91,17 @@ def expdef_parser(filename):
     members = "(\s*fc\d+\s*)+$"
     rerun = "\s*(true|false)\s*$"
     projecttype = ['git', 'svn', 'local', 'none']
-    projectname = "\s*[\w\-]+\s*$"
     wallclock = "\s*\d\d:\d\d\s*$"
     numproc = "\s*\d+\s*$"
     multiproc = "\s*\d+(:\d+)*\s*$"
-    
-    #option that must be in config file and has no default value
+
+    # option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
 
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename 
-        sys.exit()
+        Log.critical("File does not exist: " + filename)
+        sys.exit(1)
 
     # load values
     parser = SafeConfigParser()
@@ -111,26 +111,25 @@ def expdef_parser(filename):
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
-        print "Missing options"
-        print missing
-        sys.exit()
+        Log.critical("Missing options: " + missing)
+        sys.exit(1)
 
     # check autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
-    check_regex('WALLCLOCK_SETUP', parser.get('wallclocks', 'WALLCLOCK_SETUP'), wallclock)
-    check_regex('WALLCLOCK_INI', parser.get('wallclocks', 'WALLCLOCK_INI'), wallclock)
-    check_regex('WALLCLOCK_SIM', parser.get('wallclocks', 'WALLCLOCK_SIM'), wallclock)
-    check_regex('WALLCLOCK_POST', parser.get('wallclocks', 'WALLCLOCK_POST'), wallclock)
-    check_regex('WALLCLOCK_CLEAN', parser.get('wallclocks', 'WALLCLOCK_CLEAN'), wallclock)
-    check_regex('NUMPROC_SETUP', parser.get('numprocs', 'NUMPROC_SETUP'), numproc)
-    check_regex('NUMPROC_INI', parser.get('numprocs', 'NUMPROC_INI'), numproc)
-    check_regex('NUMPROC_SIM', parser.get('numprocs', 'NUMPROC_SIM'), multiproc)
-    check_regex('NUMTASK_SIM', parser.get('numprocs', 'NUMTASK_SIM'), multiproc)
-    check_regex('NUMTHREAD_SIM', parser.get('numprocs', 'NUMTHREAD_SIM'), multiproc)
-    check_regex('NUMPROC_POST', parser.get('numprocs', 'NUMPROC_POST'), numproc)
-    check_regex('NUMPROC_CLEAN', parser.get('numprocs', 'NUMPROC_CLEAN'), numproc)
+    check_regex('WALLCLOCK_SETUP', parser.get('wallclock', 'WALLCLOCK_SETUP'), wallclock)
+    check_regex('WALLCLOCK_INI', parser.get('wallclock', 'WALLCLOCK_INI'), wallclock)
+    check_regex('WALLCLOCK_SIM', parser.get('wallclock', 'WALLCLOCK_SIM'), wallclock)
+    check_regex('WALLCLOCK_POST', parser.get('wallclock', 'WALLCLOCK_POST'), wallclock)
+    check_regex('WALLCLOCK_CLEAN', parser.get('wallclock', 'WALLCLOCK_CLEAN'), wallclock)
+    check_regex('NUMPROC_SETUP', parser.get('numproc', 'NUMPROC_SETUP'), numproc)
+    check_regex('NUMPROC_INI', parser.get('numproc', 'NUMPROC_INI'), numproc)
+    check_regex('NUMPROC_SIM', parser.get('numproc', 'NUMPROC_SIM'), multiproc)
+    check_regex('NUMTASK_SIM', parser.get('numproc', 'NUMTASK_SIM'), multiproc)
+    check_regex('NUMTHREAD_SIM', parser.get('numproc', 'NUMTHREAD_SIM'), multiproc)
+    check_regex('NUMPROC_POST', parser.get('numproc', 'NUMPROC_POST'), numproc)
+    check_regex('NUMPROC_CLEAN', parser.get('numproc', 'NUMPROC_CLEAN'), numproc)
 
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
@@ -142,23 +141,22 @@ def expdef_parser(filename):
     if parser.get('rerun', 'RERUN') == "TRUE":
         check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
     check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
-    check_regex('PROJECT_NAME', parser.get('project', 'PROJECT_NAME'), projectname)
-    #if (parser.get('project', 'PROJECT_TYPE') == "git"):
-    #   check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
+    # if (parser.get('project', 'PROJECT_TYPE') == "git"):
+    # check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
 
     if invalid_values:
-        print "Invalid experiment config file"
-        sys.exit()
+        Log.error("Invalid experiment config file")
+        sys.exit(1)
     else:
-        print "Experiment config file OK"
+        Log.info("Experiment config file OK")
 
     return parser
 
-def projdef_parser(filename):
 
+def projdef_parser(filename):
     # check file existance
     if not path.isfile(filename):
-        print "File does not exist: " + filename
+        Log.critical("File does not exist: " + filename)
         sys.exit()
 
     # load values
@@ -167,23 +165,24 @@ def projdef_parser(filename):
     parser.read(filename)
 
     if invalid_values:
-        print "Invalid model config file"
+        Log.error("Invalid project config file")
         sys.exit()
     else:
-        print "Model config file OK"
+        Log.info("Project config file OK")
 
     return parser
 
 
-####################
-# Main Program
-####################
-def main():
-    if len(sys.argv) != 2:
-        print "Error missing config file"
-    else:
-        autosubmit_conf_parser(sys.argv[1])
-
-
-if __name__ == "__main__":
-    main()
+#
+# ####################
+# # Main Program
+# ####################
+# def main():
+# if len(sys.argv) != 2:
+#         print "Error missing config file"
+#     else:
+#         autosubmit_conf_parser(sys.argv[1])
+#
+#
+# if __name__ == "__main__":
+#     main()

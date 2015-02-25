@@ -23,7 +23,8 @@ from time import sleep
 from sys import exit
 
 from autosubmit.job.job_common import Status
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 SLEEPING_TIME = 30
@@ -41,7 +42,7 @@ class HPCQueue:
         self.cancel_cmd = None
 
     def cancel_job(self, job_id):
-        print self.cancel_cmd + ' ' + str(job_id)
+        Log.debug(self.cancel_cmd + ' ' + str(job_id))
         # noinspection PyUnusedLocal
         (status, output) = getstatusoutput(self.cancel_cmd + ' ' + str(job_id))
 
@@ -50,24 +51,24 @@ class HPCQueue:
 
         if type(job_id) is not int:
             # URi: logger
-            print('check_job() The argument %s is not an integer.' % job_id)
+            Log.error('check_job() The job id (%s) is not an integer.' % job_id)
             # URi: value ?
             return job_status
 
         retry = 10
         (status, output) = getstatusoutput(self.checkjob_cmd + ' %s' % str(job_id))
-        print self.checkjob_cmd + ' %s' % str(job_id)
-        print status
-        print output
+        Log.debug(self.checkjob_cmd + ' %s' % str(job_id))
+        Log.debug(status)
+        Log.debug(output)
         # retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a
         # COMPLETE status from queue due to the 5 min lifetime
         while status != 0 and retry > 0:
             # if(current_state == Status.RUNNING):
             retry -= 1
-            print('Can not get job status, retrying in 10 sec\n')
+            Log.info('Can not get job status, retrying in 10 sec')
             (status, output) = getstatusoutput(self.checkjob_cmd + ' %s' % str(job_id))
-            print status
-            print output
+            Log.debug(status)
+            Log.debug(output)
             # URi: logger
             sleep(10)
 
@@ -93,53 +94,54 @@ class HPCQueue:
     def check_host(self):
         (status, output) = getstatusoutput(self.get_checkhost_cmd())
         if status == 0:
-            print 'The host ' + self._host + ' is up'
+            Log.debug('The host ' + self._host + ' is up')
             return True
         else:
-            print 'The host ' + self._host + ' is down'
+            Log.debug('The host ' + self._host + ' is down')
             return False
 
     def check_remote_log_dir(self):
         (status, output) = getstatusoutput(self.get_mkdir_cmd())
-        print self.mkdir_cmd
-        print output
+        Log.debug(self.mkdir_cmd)
+        Log.debug(output)
         if status == 0:
-            print '%s has been created on %s .' % (self.remote_log_dir, self._host)
+            Log.debug('%s has been created on %s .' % (self.remote_log_dir, self._host))
         else:
-            print 'Could not create the DIR on HPC'
+            Log.error('Could not create the DIR on HPC')
 
     def send_script(self, job_script):
-        (status, output) = getstatusoutput(self.put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
+        (status, output) = getstatusoutput(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
+                                           '/tmp/' + str(job_script) + ' ' + self._host + ':' + self.remote_log_dir +
+                                           "/" + str(job_script))
+        Log.debug(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
             job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script))
-        print self.put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
-            job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script)
         if status == 0:
-            print 'The script has been sent'
+            Log.debug('The script has been sent')
         else:
-            print 'The script has not been sent'
+            Log.error('The script has not been sent')
 
     def get_completed_files(self, jobname):
         # wait five secons to check get file
         sleep(5)
         filename = jobname + '_COMPLETED'
-        (status, output) = getstatusoutput(
-            self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" +
-            self.expid + '/tmp/' + filename)
-        print (self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR +
-               "/" + self.expid + '/tmp/' + filename)
+        (status, output) = getstatusoutput(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' +
+                                           filename + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
+                                           '/tmp/' + filename)
+        Log.debug(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' +
+                  BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + filename)
         if status == 0:
-            print 'The COMPLETED files have been transfered'
+            Log.debug('The COMPLETED files have been transfered')
             return True
         else:
-            print 'Something did not work well when transferring the COMPLETED files'
+            Log.error('Something did not work well when transferring the COMPLETED files')
             return False
 
     def submit_job(self, job_script):
         (status, output) = getstatusoutput(self.submit_cmd + str(job_script))
-        print self.submit_cmd + str(job_script)
+        Log.debug(self.submit_cmd + str(job_script))
         if status == 0:
             job_id = self.get_submitted_job_id(output)
-            print job_id
+            Log.debug(job_id)
             return int(job_id)
 
     def normal_stop(self):
@@ -153,9 +155,9 @@ class HPCQueue:
     def smart_stop(self):
         sleep(SLEEPING_TIME)
         (status, output) = getstatusoutput(self.checkjob_cmd + ' ')
-        print self.jobs_in_queue(output)
+        Log.debug(self.jobs_in_queue(output))
         while self.jobs_in_queue(output):
-            print self.jobs_in_queue(output)
+            Log.debug(self.jobs_in_queue(output))
             sleep(SLEEPING_TIME)
             (status, output) = getstatusoutput(self.checkjob_cmd + ' ')
         exit(0)

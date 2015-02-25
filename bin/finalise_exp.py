@@ -23,6 +23,8 @@ Cleaning space on LOCAL_ROOT_DIR/plot directory.
 Use these functions for finalised experiments."""
 import os
 import sys
+from config.basicConfig import BasicConfig
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -38,34 +40,41 @@ from autosubmit.monitor.monitor import Monitor
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(
         description='Clean experiment git and plot directories, given an experiment identifier')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
     parser.add_argument('-e', '--expid', required=True, nargs=1)
-    parser.add_argument('-g', '--git', action="store_true", default=False, help='Clean git')
+    parser.add_argument('-pr', '--project', action="store_true", default=False, help='Clean project')
     parser.add_argument('-p', '--plot', action="store_true", default=False, help='Clean plot, only 2 last will remain')
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-
-    if args.git:
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'finalise_exp.log'))
+    if args.project:
         autosubmit_config = AutosubmitConfig(args.expid[0])
         autosubmit_config.check_conf()
-        git_project = autosubmit_config.get_git_project()
-        if git_project == "true":
-            autosubmit_config.check_git()
-            print "Registering commit SHA..."
+        project_type = autosubmit_config.get_project_type()
+        if project_type == "git":
+            autosubmit_config.check_proj()
+            Log.info("Registering commit SHA...")
             autosubmit_config.set_git_project_commit()
             autosubmit_git = AutosubmitGit(args.expid[0])
-            print "Cleaning GIT directory..."
+            Log.info("Cleaning GIT directory...")
             autosubmit_git.clean_git()
         else:
-            print "Nothing to clean..."
+            Log.info("No project to clean...")
 
     if args.plot:
-        print "Cleaning plot directory..."
+        Log.info("Cleaning plot directory...")
         monitor_autosubmit = Monitor()
         monitor_autosubmit.clean_plot(args.expid[0])
 

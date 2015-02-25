@@ -21,6 +21,10 @@
 import os
 import sys
 
+from config.basicConfig import BasicConfig
+from log import Log
+
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
@@ -45,7 +49,7 @@ def check_templates(as_conf):
     joblist = JobList(parameters['EXPID'])
     joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '), int(parameters['CHUNKINI']),
                    int(parameters['NUMCHUNKS']), parameters)
-    out = joblist.check_scripts()
+    out = joblist.check_scripts(as_conf)
 
     return out
 
@@ -54,7 +58,13 @@ def check_templates(as_conf):
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(
         description='Check autosubmit and experiment configurations given a experiment identifier. '
@@ -64,26 +74,26 @@ def main():
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
     project_type = as_conf.get_project_type()
     if project_type != "none":
         as_conf.check_proj()
 
-    print "Checking experiment configuration..."
-    if as_conf.check_parameters():
-        print "Experiment configuration check PASSED!"
-    else:
-        print "Experiment configuration check FAILED!"
-        print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
+    # print "Checking experiment configuration..."
+    # if as_conf.check_parameters():
+    #     print "Experiment configuration check PASSED!"
+    # else:
+    #     print "Experiment configuration check FAILED!"
+    #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
-    print "Checking experiment templates..."
+    Log.info("Checking experiment templates...")
     if check_templates(as_conf):
-        print "Experiment templates check PASSED!"
+        Log.result("Experiment templates check PASSED!")
     else:
-        print "Experiment templates check FAILED!"
-        print "WARNING: running after FAILED experiment templates check is at your own risk!!!"
+        Log.critical("Experiment templates check FAILED!")
+        Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
 
 if __name__ == "__main__":

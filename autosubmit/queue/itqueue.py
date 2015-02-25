@@ -41,15 +41,15 @@ class ItQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self._remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
-                                self.expid)
+        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+                               self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self.checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " qsub -wd " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+        self.submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -61,7 +61,7 @@ class ItQueue(HPCQueue):
         return self.submit_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def parse_job_output(self, output):
         return output

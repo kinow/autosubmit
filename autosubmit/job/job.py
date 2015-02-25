@@ -34,9 +34,7 @@ from autosubmit.job.job_common import PsHeader
 from autosubmit.job.job_common import LgHeader
 
 from autosubmit.job.job_common import StatisticsSnippet
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_TMP_DIR
-from autosubmit.config.dir_config import LOCAL_PROJ_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 
 
@@ -59,10 +57,10 @@ class Job:
         self.parents = list()
         self.children = list()
         self.fail_count = 0
-        self.expid = name.value.split('_')[0]
+        self.expid = name.split('_')[0]
         self._complete = True
         self.parameters = dict()
-        self._tmp_path = LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_TMP_DIR + "/"
+        self._tmp_path = BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + "/" + BasicConfig.LOCAL_TMP_DIR + "/"
 
     def delete(self):
         del self.name
@@ -81,14 +79,14 @@ class Job:
         del self
 
     def print_job(self):
-        print 'NAME: %s' % self.name
-        print 'JOBID: %s' % self.id
-        print 'STATUS: %s' % self.status
-        print 'TYPE: %s' % self.type
-        print 'PARENTS: %s' % [p.name for p in self.parents]
-        print 'CHILDREN: %s' % [c.name for c in self.children]
-        print 'FAIL_COUNT: %s' % self.fail_count
-        print 'EXPID: %s' % self.expid
+        Log.info('NAME: %s' % self.name)
+        Log.info('JOBID: %s' % self.id)
+        Log.info('STATUS: %s' % self.status)
+        Log.info('TYPE: %s' % self.type)
+        Log.info('PARENTS: %s' % [p.name for p in self.parents])
+        Log.info('CHILDREN: %s' % [c.name for c in self.children])
+        Log.info('FAIL_COUNT: %s' % self.fail_count)
+        Log.info('EXPID: %s' % self.expid)
 
     # Properties
 
@@ -124,8 +122,8 @@ class Job:
             self._short_name = n[0][:15]
 
     def log_job(self):
-        job_logger.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
-        job_logger.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
+        Log.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
+        Log.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
 
     def get_all_children(self):
         """Returns a list with job's childrens and all it's descendents"""
@@ -137,7 +135,7 @@ class Job:
         return list(set(job_list))
 
     def print_parameters(self):
-        print self.parameters
+        Log.info(self.parameters)
 
     def inc_fail_count(self):
         self.fail_count += 1
@@ -163,16 +161,16 @@ class Job:
         return self.parents.__len__()
 
     def compare_by_status(self, other):
-        return cmp(self.status(), other.get_status())
+        return cmp(self.status(), other.status)
 
     def compare_by_type(self, other):
-        return cmp(self.type(), other.get_type())
+        return cmp(self.type(), other.type)
 
     def compare_by_id(self, other):
-        return cmp(self.id(), other.get_id())
+        return cmp(self.id(), other.id)
 
     def compare_by_name(self, other):
-        return cmp(self.name(), other.name())
+        return cmp(self.name, other.name)
 
     def check_end_time(self):
         logname = self._tmp_path + self.name + '_COMPLETED'
@@ -232,7 +230,7 @@ class Job:
         if self._complete:
             self.status = Status.COMPLETED
             # job_logger.info("Job is completed, we are now removing the dependency in"
-            #                 " his %s child/children:" % self.has_children())
+            # " his %s child/children:" % self.has_children())
             for child in self.children:
                 # job_logger.debug("number of Parents:",child.has_parents())
                 if child.get_parents().__contains__(self):
@@ -243,7 +241,7 @@ class Job:
 
     def update_parameters(self):
         parameters = self.parameters
-        splittedname = self.long_name().split('_')
+        splittedname = self.long_name.split('_')
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
 
@@ -322,7 +320,7 @@ class Job:
         elif self.type == Type.TRANSFER:
             parameters['TASKTYPE'] = 'TRANSFER'
         else:
-            print "Unknown Job Type"
+            Log.warning("Unknown Job Type")
 
         self.parameters = parameters
 
@@ -347,28 +345,41 @@ class Job:
             remote_header = None
         return remote_header
 
-    def update_content(self):
+    def update_content(self, project_dir):
         local_header = PsHeader
         remote_header = self._get_remote_header()
 
         template = Template()
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            template.read_localsetup_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters[
-                    'FILE_LOCALSETUP'])
-            template.read_remotesetup_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters[
-                    'FILE_REMOTESETUP'])
-            template.read_initialisation_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_INI'])
-            template.read_simulation_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_SIM'])
-            template.read_postprocessing_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_POST'])
-            template.read_cleaning_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_CLEAN'])
-            template.read_transfer_file(
-                LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_PROJ_DIR + "/" + self.parameters['FILE_TRANS'])
+            dir_templates = project_dir
+
+            local_setup = self.parameters['FILE_LOCALSETUP']
+
+            if local_setup != '':
+                template.read_localsetup_file(os.path.join(dir_templates, local_setup))
+
+            remote_setup = self.parameters['FILE_REMOTESETUP']
+            if remote_setup != '':
+                template.read_localsetup_file(os.path.join(dir_templates, remote_setup))
+
+            ini = self.parameters['FILE_INI']
+            if ini != '':
+                template.read_localsetup_file(os.path.join(dir_templates, ini))
+            sim = self.parameters['FILE_SIM']
+            if sim != '':
+                template.read_localsetup_file(os.path.join(dir_templates, sim))
+
+            post = self.parameters['FILE_POST']
+            if post != '':
+                template.read_localsetup_file(os.path.join(dir_templates, post))
+
+            clean = self.parameters['FILE_CLEAN']
+            if clean != '':
+                template.read_localsetup_file(os.path.join(dir_templates, clean))
+
+            trans = self.parameters['FILE_TRANS']
+            if trans != '':
+                template.read_localsetup_file(os.path.join(dir_templates, trans))
 
         if self.type == Type.SIMULATION:
             items = [remote_header.HEADER_SIM,
@@ -407,14 +418,14 @@ class Job:
                      StatisticsSnippet.AS_TAILER_LOC]
         else:
             items = None
-            print "Unknown Job Type"
+            Log.warning("Unknown Job Type: %s" % self.type)
 
         template_content = ''.join(items)
         return template_content
 
-    def create_script(self):
+    def create_script(self, as_conf):
         parameters = self.update_parameters()
-        template_content = self.update_content()
+        template_content = self.update_content(as_conf.get_project_dir())
         # print "jobType: %s" % self._type
         # print template_content
 
@@ -427,19 +438,20 @@ class Job:
 
         return scriptname
 
-    def check_script(self):
+    def check_script(self, as_conf):
         parameters = self.update_parameters()
-        template_content = self.update_content()
+        template_content = self.update_content(as_conf.get_project_dir())
 
         variables = re.findall('%' + '(\w+)' + '%', template_content)
         # variables += re.findall('%%'+'(.+?)'+'%%', template_content)
         out = set(parameters).issuperset(set(variables))
 
         if not out:
-            print "The following set of variables to be substituted in template script is not part of parameters set: "
-            print set(variables) - set(parameters)
+            Log.warning("The following set of variables to be substituted in template script is not part of "
+                        "parameters set: ")
+            Log.warning(set(variables) - set(parameters))
         else:
-            self.create_script()
+            self.create_script(as_conf)
 
         return out
 
@@ -451,16 +463,16 @@ if __name__ == "__main__":
     job3 = Job('tres', '3', Status.READY, 0)
     jobs = [job1, job2, job3]
     mainJob.parents = jobs
-    print mainJob.parents
+    Log.info(mainJob.parents)
     # mainJob.set_children(jobs)
     job1.add_children(mainJob)
     job2.add_children(mainJob)
     job3.add_children(mainJob)
-    print mainJob.get_all_children()
-    print mainJob.children
+    Log.info(mainJob.get_all_children())
+    Log.info(mainJob.children)
     job3.check_completion()
-    print "Number of Parents: ", mainJob.has_parents()
-    print "number of children : ", mainJob.has_children()
+    Log.info("Number of Parents: ", mainJob.has_parents())
+    Log.info("number of children : ", mainJob.has_children())
     mainJob.print_job()
     mainJob.delete()
 #

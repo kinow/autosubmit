@@ -20,6 +20,7 @@
 """Script for handling job status changes"""
 import sys
 import os
+from log import Log
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -31,7 +32,7 @@ from pyparsing import nestedExpr
 from pkg_resources import require
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.monitor.monitor import Monitor
 
 
@@ -120,7 +121,13 @@ def create_json(text):
 # Main Program
 ####################
 def main():
-    autosubmit_version = require("autosubmit")[0].version
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    if os.path.isfile(version_path):
+        with open(version_path) as f:
+            autosubmit_version = f.read().strip()
+    else:
+        autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(description='Autosubmit change pickle')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
@@ -154,19 +161,20 @@ def main():
     root_name = args.joblist[0]
     save = args.save
     final = args.status_final
-
-    print expid
-    l1 = pickle.load(file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+                              'change_pkl.log'))
+    Log.debug('Exp ID: %d', expid)
+    l1 = pickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
     if args.filter:
         if args.filter_chunks:
             fc = args.filter_chunks
-            print fc
+            Log.debug(fc)
 
             if fc == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 data = json.loads(create_json(fc))
                 # change localsetup and remotesetup
@@ -175,13 +183,13 @@ def main():
                     for member in date['ms']:
                         jobname_ini = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_ini"
                         job = l1.get_job_by_name(jobname_ini)
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                        job.status = get_status(final)
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
                         # change also trans
                         jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
                         job = l1.get_job_by_name(jobname_trans)
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                        job.status = get_status(final)
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
                         # [...]
                         for chunk in member['cs']:
                             jobname_sim = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
@@ -191,65 +199,67 @@ def main():
                             jobname_clean = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                                 chunk) + "_clean"
                             job = l1.get_job_by_name(jobname_sim)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             job = l1.get_job_by_name(jobname_post)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             job = l1.get_job_by_name(jobname_clean)
-                            job.set_status(get_status(final))
-                            print "CHANGED: job: " + job.get_name() + " status to: " + final
+                            job.status = get_status(final)
+                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         if args.filter_status:
             fs = args.filter_status
-            print fs
+            Log.debug(fs)
 
             if fs == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 for job in l1.get_job_list():
-                    if job.get_status() == get_status(fs):
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    if job.status == get_status(fs):
+                        job.status = get_status(final)
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         if args.filter_type:
             ft = args.filter_type
-            print ft
+            Log.debug(ft)
 
             if ft == 'Any':
                 for job in l1.get_job_list():
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    job.status = get_status(final)
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
                 for job in l1.get_job_list():
-                    if job.get_type() == get_type(ft):
-                        job.set_status(get_status(final))
-                        print "CHANGED: job: " + job.get_name() + " status to: " + final
+                    if job.type == get_type(ft):
+                        job.status = get_status(final)
+                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     if args.list:
         jobs = args.list.split()
 
         if jobs == 'Any':
             for job in l1.get_job_list():
-                job.set_status(get_status(final))
-                print "CHANGED: job: " + job.get_name() + " status to: " + final
+                job.status = get_status(final)
+                Log.info("CHANGED: job: " + job.name + " status to: " + final)
         else:
             for job in l1.get_job_list():
-                if job.get_name() in jobs:
-                    job.set_status(get_status(final))
-                    print "CHANGED: job: " + job.get_name() + " status to: " + final
+                if job.name in jobs:
+                    job.status = get_status(final)
+                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     sys.setrecursionlimit(50000)
 
     if save:
         l1.update_list()
-        pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
-        print "Saving JobList: " + LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
+        pickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl",
+                             'w'))
+        Log.info("Saving JobList: " + BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
+                 ".pkl")
     else:
         l1.update_list(False)
-        print "Changes NOT saved to the JobList!!!!:  use -s option to save"
+        Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
     monitor_exp = Monitor()
 

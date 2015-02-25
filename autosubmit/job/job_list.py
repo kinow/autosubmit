@@ -28,12 +28,13 @@ import json
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job import Job
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 class JobList:
     def __init__(self, expid):
-        self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
+        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
         self._update_file = "updated_list_" + expid + ".txt"
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._job_list_file = "job_list_" + expid + ".pkl"
@@ -46,17 +47,17 @@ class JobList:
         self._parameters = parameters
         localsetupjob_name = self._expid + "_"
         localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
-        localsetup_job.parents([])
+        localsetup_job.parents = []
         remotesetupjob_name = self._expid + "_"
         remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-        remotesetup_job.parents([localsetup_job.name()])
-        localsetup_job.add_children(remotesetup_job.name())
+        remotesetup_job.parents = [localsetup_job.name]
+        localsetup_job.add_children(remotesetup_job.name)
 
-        print "Creating job list..."
+        Log.info("Creating job list...")
         for date in date_list:
-            print date
+            Log.debug("Date: {0}".format(date))
             for member in member_list:
-                print member
+                Log.debug("Member: " + member)
                 transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
                 trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
                 for chunk in range(starting_chunk, starting_chunk + num_chunks):
@@ -70,28 +71,30 @@ class JobList:
                         sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
 
                     # set dependency of postprocessing jobs
-                    post_job.parents = ([sim_job.name()])
-                    post_job.parents = ([clean_job.name()])
+                    post_job.parents = [sim_job.name, clean_job.name]
+                    post_job.children = [clean_job.name]
+
                     # set parents of clean job
-                    clean_job.parents = ([post_job.name()])
+                    clean_job.parents = [post_job.name]
+
                     # set first child of simulation job
-                    sim_job.children = ([post_job.name()])
+                    sim_job.children = [post_job.name]
 
                     # set status of first chunk to READY
                     if chunk > 1:
                         parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
                             chunk - 1) + "_" + "sim"
-                        sim_job.parents([parentjob_name])
+                        sim_job.add_parent(parentjob_name)
                         if chunk > 2:
                             parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
                                 chunk - 2) + "_" + "clean"
                             sim_job.add_parent(parentjob_name)
                     if chunk == 1:
                         ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-                        ini_job.children = ([sim_job.name()])
-                        ini_job.parents = ([remotesetup_job.name()])
-                        remotesetup_job.add_children(ini_job.name())
-                        sim_job.parents = ([ini_job.name()])
+                        ini_job.children = [sim_job.name]
+                        ini_job.parents = [remotesetup_job.name]
+                        remotesetup_job.add_children(ini_job.name)
+                        sim_job.parents = [ini_job.name]
                         self._job_list += [ini_job]
                     if chunk < starting_chunk + num_chunks - 1:
                         childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
@@ -100,10 +103,10 @@ class JobList:
                     if chunk < starting_chunk + num_chunks - 2:
                         childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
                             chunk + 2) + "_" + "sim"
-                        clean_job.children = ([childjob_name])
+                        clean_job.children = [childjob_name]
                     if chunk == num_chunks or chunk == num_chunks - 1:
-                        trans_job.parents = ([clean_job.name()])
-                        clean_job.add_children(trans_job.name())
+                        trans_job.parents = [clean_job.name]
+                        clean_job.add_children(trans_job.name)
 
                     self._job_list += [sim_job, post_job, clean_job]
 
@@ -113,7 +116,7 @@ class JobList:
 
         self.update_genealogy()
         for job in self._job_list:
-            job.set_parameters(parameters)
+            job.parameters = parameters
 
     def __len__(self):
         return self._job_list.__len__()
@@ -123,35 +126,35 @@ class JobList:
 
     def get_completed(self):
         """Returns a list of completed jobs"""
-        return [job for job in self._job_list if job.get_status() == Status.COMPLETED]
+        return [job for job in self._job_list if job.status == Status.COMPLETED]
 
     def get_submitted(self):
         """Returns a list of submitted jobs"""
-        return [job for job in self._job_list if job.get_status() == Status.SUBMITTED]
+        return [job for job in self._job_list if job.status == Status.SUBMITTED]
 
     def get_running(self):
         """Returns a list of jobs running"""
-        return [job for job in self._job_list if job.get_status() == Status.RUNNING]
+        return [job for job in self._job_list if job.status == Status.RUNNING]
 
     def get_queuing(self):
         """Returns a list of jobs queuing"""
-        return [job for job in self._job_list if job.get_status() == Status.QUEUING]
+        return [job for job in self._job_list if job.status == Status.QUEUING]
 
     def get_failed(self):
         """Returns a list of failed jobs"""
-        return [job for job in self._job_list if job.get_status() == Status.FAILED]
+        return [job for job in self._job_list if job.status == Status.FAILED]
 
     def get_ready(self):
         """Returns a list of jobs ready"""
-        return [job for job in self._job_list if job.get_status() == Status.READY]
+        return [job for job in self._job_list if job.status == Status.READY]
 
     def get_waiting(self):
         """Returns a list of jobs waiting"""
-        return [job for job in self._job_list if job.get_status() == Status.WAITING]
+        return [job for job in self._job_list if job.status == Status.WAITING]
 
     def get_unknown(self):
         """Returns a list of jobs unknown"""
-        return [job for job in self._job_list if job.get_status() == Status.UNKNOWN]
+        return [job for job in self._job_list if job.status == Status.UNKNOWN]
 
     def get_in_queue(self):
         """Returns a list of jobs in the queue (Submitted, Running, Queuing)"""
@@ -172,21 +175,21 @@ class JobList:
     def get_job_by_name(self, name):
         """Returns the job that its name matches name"""
         for job in self._job_list:
-            if job.get_name() == name:
+            if job.name == name:
                 return job
-        print "We could not find that job %s in the list!!!!" % name
+        Log.warning("We could not find that job %s in the list!!!!", name)
 
     def sort_by_name(self):
-        return sorted(self._job_list, key=lambda k: k.get_name())
+        return sorted(self._job_list, key=lambda k: k.name)
 
     def sort_by_id(self):
-        return sorted(self._job_list, key=lambda k: k.get_id())
+        return sorted(self._job_list, key=lambda k: k.id)
 
     def sort_by_type(self):
-        return sorted(self._job_list, key=lambda k: k.get_type())
+        return sorted(self._job_list, key=lambda k: k.type)
 
     def sort_by_status(self):
-        return sorted(self._job_list, key=lambda k: k.get_status())
+        return sorted(self._job_list, key=lambda k: k.status)
 
     @staticmethod
     def load_file(filename):
@@ -197,33 +200,33 @@ class JobList:
             return list()
 
     def load(self):
-        print "Loading JobList: " + self._pkl_path + self._job_list_file
+        Log.info("Loading JobList: " + self._pkl_path + self._job_list_file)
         return JobList.load_file(self._pkl_path + self._job_list_file)
 
     def load_updated(self):
-        print "Loading updated list: " + self._pkl_path + self._update_file
+        Log.info("Loading updated list: " + self._pkl_path + self._update_file)
         return JobList.load_file(self._pkl_path + self._update_file)
 
     def load_failed(self):
-        print "Loading failed list: " + self._pkl_path + self._failed_file
+        Log.info("Loading failed list: " + self._pkl_path + self._failed_file)
         return JobList.load_file(self._pkl_path + self._failed_file)
 
     def save_failed(self, failed_list):
         # URi: should we check that the path exists?
-        print "Saving failed list: " + self._pkl_path + self._failed_file
+        Log.info("Saving failed list: " + self._pkl_path + self._failed_file)
         pickle.dump(failed_list, file(self._pkl_path + self._failed_file, 'w'))
 
     def save(self):
         # URi: should we check that the path exists?
         setrecursionlimit(50000)
-        print "Saving JobList: " + self._pkl_path + self._job_list_file
+        Log.info("Saving JobList: " + self._pkl_path + self._job_list_file)
         pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
 
     def update_from_file(self, store_change=True):
         if os.path.exists(self._pkl_path + self._update_file):
             for line in open(self._pkl_path + self._update_file):
                 if self.get_job_by_name(line.split()[0]):
-                    self.get_job_by_name(line.split()[0]).set_status(self._stat_val.retval(line.split()[1]))
+                    self.get_job_by_name(line.split()[0]).status = self._stat_val.retval(line.split()[1])
                     self.get_job_by_name(line.split()[0]).set_fail_count(0)
             now = localtime()
             output_date = strftime("%Y%m%d_%H%M", now)
@@ -233,13 +236,13 @@ class JobList:
     def update_parameters(self, parameters):
         self._parameters = parameters
         for job in self._job_list:
-            job.set_parameters(parameters)
+            job.parameters = parameters
 
     def update_list(self, store_change=True):
         # load updated file list
         self.update_from_file(store_change)
 
-        # reset jobs that has failed less than 10 times
+        # reset jobs that has failed less ethan 10 times
         if 'RETRIALS' in self._parameters:
             retrials = int(self._parameters['RETRIALS'])
         else:
@@ -247,17 +250,17 @@ class JobList:
 
         for job in self.get_failed():
             job.inc_fail_count()
-            if job.get_fail_count() < retrials:
-                job.set_status(Status.READY)
+            if job.fail_count < retrials:
+                job.status = Status.READY
 
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_waiting():
-            tmp = [parent for parent in job.get_parents() if parent.get_status() == Status.COMPLETED]
-            # for parent in job.get_parents():
-            # if parent.get_status() != Status.COMPLETED:
+            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+            # for parent in job.parents:
+            # if parent.status != Status.COMPLETED:
             # break
-            if len(tmp) == len(job.get_parents()):
-                job.set_status(Status.READY)
+            if len(tmp) == len(job.parents):
+                job.status = Status.READY
         if store_change:
             self.save()
 
@@ -265,7 +268,7 @@ class JobList:
         """In some cases the scheduler only can operate with names shorter than 15 characters.
         Update the job list replacing job names by the corresponding shortened job name"""
         for job in self._job_list:
-            job.set_name(job.get_short_name())
+            job.name = job.short_name
 
     def update_genealogy(self):
         """When we have created the joblist, parents and child list just contain the names.
@@ -273,9 +276,9 @@ class JobList:
         for job in self._job_list:
             if job.has_children():
                 # get the list of childrens (names)
-                child_list = job.get_children()
+                child_list = job.children
                 # remove the list of names
-                job.set_children([])
+                job.children = []
                 # for each child find the corresponding job
                 for child in child_list:
                     if isinstance(child, str):
@@ -286,9 +289,9 @@ class JobList:
 
             if job.has_parents():
                 # get the list of childrens (names)
-                parent_list = job.get_parents()
+                parent_list = job.parents
                 # remove the list of names
-                job.set_parents([])
+                job.parents = []
                 # for each child find the corresponding job
                 for parent in parent_list:
                     if isinstance(parent, str):
@@ -301,14 +304,14 @@ class JobList:
     #     """When we have updated the joblist, parents and child list must be consistent"""
     #     pass
 
-    def check_scripts(self):
+    def check_scripts(self, as_conf):
         """When we have created the scripts, all parameters should have been substituted.
         %PARAMETER% handlers not allowed"""
         out = True
         for job in self._job_list:
-            if not job.check_script():
+            if not job.check_script(as_conf):
                 out = False
-                print "WARNING: Invalid parameter substitution in %s!!!" % job.get_name()
+                Log.warning("Invalid parameter substitution in %s!!!" % job.name)
 
         return out
 
@@ -316,7 +319,7 @@ class JobList:
 class RerunJobList(JobList):
     def __init__(self, expid):
         JobList.__init__(self, expid)
-        self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
+        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
         self._update_file = "updated_list_" + expid + ".txt"
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._job_list_file = "rerun_job_list_" + expid + ".pkl"
@@ -335,9 +338,9 @@ class RerunJobList(JobList):
     # Not intended to override
     # noinspection PyMethodOverriding,PyRedeclaration
     def create(self, chunk_list, starting_chunk, num_chunks, parameters):
-        print "Creating job list..."
+        Log.info("Creating job list...")
         data = json.loads(chunk_list)
-        print data
+        Log.debug("Data: %s", data)
         self._parameters = parameters
 
         localsetupjob_name = self._expid + "_"
@@ -349,10 +352,10 @@ class RerunJobList(JobList):
         localsetup_job.add_children(remotesetup_job.name)
 
         for date in data['sds']:
-            print date['sd']
+            Log.debug("Date: " + date['sd'])
             for member in date['ms']:
-                print member['m']
-                print member['cs']
+                Log.debug(member['m'])
+                Log.debug(member['cs'])
 
                 first_chunk = int(member['cs'][0])
 
@@ -366,7 +369,7 @@ class RerunJobList(JobList):
 
                 inijob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
                 ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-                ini_job.parents = [remotesetup_job.name()]
+                ini_job.parents = [remotesetup_job.name]
 
                 transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
                 trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
@@ -464,7 +467,7 @@ class RerunJobList(JobList):
                     #     finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                     #         num_chunks) + "_" + "clean"
                     #     final_job = Job(finaljob_name, 0, Status.WAITING, Type.CLEANING)
-                    #     final_job.set_parents([clean_job.get_name()])
+                    #     final_job.set_parents([clean_job.name()])
                     #     clean_job.add_children(finaljob_name)
                     #     self._job_list += [final_job]
 
@@ -472,5 +475,5 @@ class RerunJobList(JobList):
 
         self.update_genealogy()
         for job in self._job_list:
-            job.set_parameters(parameters)
+            job.parameters = parameters
 

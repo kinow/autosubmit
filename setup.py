@@ -39,8 +39,8 @@ setup(
     url='https://autosubmit.ic3.cat',
     download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
     keywords=['climate', 'workflow', 'HPC'],
-    install_requires=['argparse>=1.2', 'python-dateutil>=1,<2', 'pydot>=1.0.2', 'pyparsing',
-                      'numpy'],  # 'matplotlib>=1.1.1',
+    install_requires=['argparse>=1.2', 'python-dateutil>=1,<2', 'pydotplus', 'pyparsing'],
+    # 'numpy','matplotlib>=1.1.1',
     packages=find_packages(),
     include_package_data=True,
     package_data={'autosubmit': [

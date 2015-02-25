@@ -22,8 +22,8 @@ from os import listdir
 from shutil import rmtree
 from commands import getstatusoutput
 
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_PROJ_DIR
+from autosubmit.config.basicConfig import BasicConfig
+from log import Log
 
 
 class AutosubmitGit:
@@ -33,47 +33,52 @@ class AutosubmitGit:
         self._expid = expid
 
     def clean_git(self):
-        """Function to clean space on LOCAL_ROOT_DIR/git directory."""
-        dirs = listdir(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR)
+        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory."""
+        dirs = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR)
         if dirs:
-            print "Checking git directories status..."
+            Log.debug("Checking git directories status...")
             for dirname in dirs:
-                print dirname
-                if path.isdir(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + dirname):
-                    if path.isdir(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + dirname + "/.git"):
-                        (status, output) = getstatusoutput(
-                            "cd " + LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + dirname + "; " +
-                            "git diff-index HEAD --")
+                Log.debug("Directory: " + dirname)
+                if path.isdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
+                              "/" + dirname):
+                    if path.isdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
+                                  "/" + dirname + "/.git"):
+                        (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid +
+                                                           "/" + BasicConfig.LOCAL_PROJ_DIR + "/" + dirname + "; " +
+                                                           "git diff-index HEAD --")
                         if status == 0:
                             if output:
-                                print "Changes not commited detected... SKIPPING!"
-                                print "WARNING: commit needed..."
+                                Log.warning("Changes not commited detected... SKIPPING!")
+                                Log.warning("WARNING: commit needed...")
                                 exit(1)
                             else:
-                                (status, output) = getstatusoutput(
-                                    "cd " + LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + dirname +
-                                    "; " + "git log --branches --not --remotes")
+                                (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
+                                                                   self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
+                                                                   "/" + dirname + "; " +
+                                                                   "git log --branches --not --remotes")
                                 if output:
-                                    print "Changes not pushed detected... SKIPPING!"
-                                    print "WARNING: synchronization needed..."
+                                    Log.warning("Changes not pushed detected... SKIPPING!")
+                                    Log.warning("WARNING: synchronization needed...")
                                     exit(1)
                                 else:
-                                    print "Ready to clean..."
-                                    print "Cloning: 'git clone --bare " + dirname + " " + dirname + ".git' ..."
+                                    Log.debug("Ready to clean...")
+                                    Log.debug("Cloning: 'git clone --bare " + dirname + " " + dirname + ".git' ...")
                                     # noinspection PyUnusedLocal
-                                    (status, output) = getstatusoutput(
-                                        "cd " + LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + "; " +
-                                        "git clone --bare " + dirname + " " + dirname + ".git")
-                                    print "Removing: " + dirname
-                                    rmtree(LOCAL_ROOT_DIR + "/" + self._expid + "/" + LOCAL_PROJ_DIR + "/" + dirname)
-                                    print dirname + " directory clean!"
-                                    print ("WARNING: further runs will require 'git clone " + dirname + ".git " +
-                                           dirname + "' ...")
+                                    (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
+                                                                       self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
+                                                                       "/" + "; " + "git clone --bare " + dirname +
+                                                                       " " + dirname + ".git")
+                                    Log.debug("Removing: " + dirname)
+                                    rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" +
+                                           BasicConfig.LOCAL_PROJ_DIR + "/" + dirname)
+                                    Log.debug(dirname + " directory clean!")
+                                    Log.warning("Further runs will require 'git clone " + dirname + ".git " +
+                                                dirname + "' ...")
                         else:
-                            print "Failed to retrieve git info..."
+                            Log.error("Failed to retrieve git info...")
                             exit(1)
                     else:
-                        print "Not a git repository... SKIPPING!"
+                        Log.debug("Not a git repository... SKIPPING!")
                 else:
-                    print "Not a directory... SKIPPING!"
+                    Log.debug("Not a directory... SKIPPING!")
         return

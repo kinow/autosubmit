@@ -19,13 +19,11 @@
 
 import datetime
 import time
-import logging
+from log import Log
 from dateutil.relativedelta import *
 
 
 """In this python script there are tools to manipulate the dates and make mathematical operations between them """
-
-job_logger = logging.getLogger("AutoLog.chunk_date_lib")
 
 
 def add_months(string_date, number_of_months):
@@ -94,15 +92,15 @@ def chunk_start_year(string_date):
 def main():
     string_date = '19600101'
     start_date = chunk_start_date(string_date, 5, 12)
-    print start_date
+    Log.info(start_date)
     end_date = chunk_end_date(start_date, 12)
-    print end_date
-    print running_days(start_date, end_date)
-    print running_days(string_date, end_date)
-    print previous_days(string_date, start_date)
-    print "year: ", chunk_start_year(string_date)
-    print "month: ", chunk_start_month(string_date)
-    print "yesterday: %s " % previous_day(string_date)
+    Log.info(end_date)
+    Log.info(running_days(start_date, end_date))
+    Log.info(running_days(string_date, end_date))
+    Log.info(previous_days(string_date, start_date))
+    Log.info("year: " + chunk_start_year(string_date))
+    Log.info("month: " + chunk_start_month(string_date))
+    Log.info("yesterday: %s " % previous_day(string_date))
 
 
 if __name__ == "__main__":

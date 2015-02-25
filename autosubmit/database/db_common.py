@@ -16,21 +16,19 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+from log import Log
 
 import os
 import sys
 import sqlite3
 import string
 
-from autosubmit.config.dir_config import DB_DIR
-from autosubmit.config.dir_config import DB_FILE
+from autosubmit.config.basicConfig import BasicConfig
 
 # Database parameters
 # DB_DIR = '/cfu/autosubmit'
 # DB_FILE = 'ecearth.db'
 # DB_NAME = 'ecearth'
-
-DB_PATH = DB_DIR + "/" + DB_FILE
 
 DEFAULT_EXPID_BSC = "b000"
 DEFAULT_EXPID_HEC = "h000"
@@ -51,7 +49,7 @@ def set_experiment(name, description):
                        {'name': name, 'description': description})
     except sqlite3.IntegrityError:
         close_conn(conn, cursor)
-        print 'The experiment name %s already exists!!!' % name
+        Log.error('The experiment name %s already exists!!!' % name)
         sys.exit(1)
 
     conn.commit()
@@ -77,7 +75,7 @@ def check_experiment_exists(name):
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:
-        print 'The experiment name %s does not exist yet!!!' % name
+        Log.error('The experiment name %s does not exist yet!!!' % name)
         return False
     return True
 
@@ -104,7 +102,7 @@ def new_experiment(hpc, description):
     else:
         new_name = next_name(last_exp_name)
     set_experiment(new_name, description)
-    print 'The new experiment "%s" has been registered.' % new_name
+    Log.info('The new experiment "%s" has been registered.' % new_name)
     return new_name
 
 
@@ -167,7 +165,7 @@ def last_name(hpc):
     elif hpc == 'archer':
         hpc_name = "a___"
     else:
-        raise ValueError('%c is not a valid HPC name' & hpc)
+        raise ValueError('%c is not a valid HPC name' % hpc)
     cursor.execute('select name '
                    'from experiment '
                    'where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
@@ -187,7 +185,7 @@ def delete_experiment(name):
     row = cursor.fetchone()
     if row is None:
         close_conn(conn, cursor)
-        print 'The experiment %s has been deleted!!!' % name
+        Log.error('The experiment %s has been deleted!!!' % name)
         sys.exit(1)
 
     close_conn(conn, cursor)
@@ -197,21 +195,20 @@ def delete_experiment(name):
 def check_name(name):
     name = name.lower()
     if len(name) != 4 and not name.isalnum():
-        print "So sorry, but the name must have 4 alphanumeric chars!!!"
+        Log.error("So sorry, but the name must have 4 alphanumeric chars!!!")
         sys.exit(1)
     return name
 
 
 def check_db():
-    if not os.path.exists(DB_PATH):
-        print 'Some problem has happened...check the database file!!!'
-        print 'DB file:', DB_PATH
+    if not os.path.exists(BasicConfig.DB_PATH):
+        Log.error('Some problem has happened...check the database file.' + 'DB file:' + BasicConfig.DB_PATH)
         sys.exit(1)
     return
 
 
 def open_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
     return conn, cursor
 

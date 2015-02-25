@@ -19,6 +19,7 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from log import Log
 
 
 class LgQueue(HPCQueue):
@@ -38,16 +39,16 @@ class LgQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self._remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" +
-                                self.expid + "/LOG_" + self.expid)
+        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" +
+                               self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self.checkjob_cmd = "ssh " + self._host + " qstat"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " qsub -d " + self._remote_log_dir + " " + self._remote_log_dir + "/"
+        self.submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self._remote_log_dir
+        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -56,7 +57,7 @@ class LgQueue(HPCQueue):
         return self.submit_cmd
 
     def get_remote_log_dir(self):
-        return self._remote_log_dir
+        return self.remote_log_dir
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
@@ -69,12 +70,12 @@ class LgQueue(HPCQueue):
         return output.split('.')[0]
 
     def jobs_in_queue(self, output):
-        print output
+        Log.debug(output)
         return output.split()
 
 
 # def main():
-#     q = LgQueue()
+# q = LgQueue()
 #     q.check_job(1688)
 #     j = q.submit_job("/cfu/autosubmit/l002/templates/l002.sim")
 #     sleep(10)
