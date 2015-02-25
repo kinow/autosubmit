@@ -33,7 +33,7 @@ class BasicConfig:
 
     @staticmethod
     def update_config():
-        # De momento solo hace uno. Ya veremos si son necesarios mas
+        # Just one needed for the moment.
         BasicConfig.DB_PATH = os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE)
 
     @staticmethod
