@@ -23,7 +23,7 @@ from time import sleep
 from sys import exit
 
 from autosubmit.job.job_common import Status
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 SLEEPING_TIME = 30
@@ -109,9 +109,10 @@ class HPCQueue:
             print 'Could not create the DIR on HPC'
 
     def send_script(self, job_script):
-        (status, output) = getstatusoutput(self.put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
-            job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script))
-        print self.put_cmd + ' ' + LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
+        (status, output) = getstatusoutput(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
+                                           '/tmp/' + str(job_script) + ' ' + self._host + ':' + self.remote_log_dir +
+                                           "/" + str(job_script))
+        print self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
             job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script)
         if status == 0:
             print 'The script has been sent'
@@ -122,11 +123,11 @@ class HPCQueue:
         # wait five secons to check get file
         sleep(5)
         filename = jobname + '_COMPLETED'
-        (status, output) = getstatusoutput(
-            self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR + "/" +
-            self.expid + '/tmp/' + filename)
-        print (self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' + LOCAL_ROOT_DIR +
-               "/" + self.expid + '/tmp/' + filename)
+        (status, output) = getstatusoutput(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' +
+                                           filename + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
+                                           '/tmp/' + filename)
+        print (self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' +
+               BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + filename)
         if status == 0:
             print 'The COMPLETED files have been transfered'
             return True

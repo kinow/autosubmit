@@ -28,12 +28,12 @@ import json
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job import Job
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 class JobList:
     def __init__(self, expid):
-        self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
+        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
         self._update_file = "updated_list_" + expid + ".txt"
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._job_list_file = "job_list_" + expid + ".pkl"
@@ -318,7 +318,7 @@ class JobList:
 class RerunJobList(JobList):
     def __init__(self, expid):
         JobList.__init__(self, expid)
-        self._pkl_path = LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
+        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
         self._update_file = "updated_list_" + expid + ".txt"
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._job_list_file = "rerun_job_list_" + expid + ".pkl"

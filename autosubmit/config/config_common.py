@@ -26,19 +26,18 @@ from commands import getstatusoutput
 from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
 from autosubmit.config.config_parser import projdef_parser
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_PROJ_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 class AutosubmitConfig:
     """Class to handle experiment configuration coming from file or database"""
 
     def __init__(self, expid):
-        self._conf_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
-        self._exp_parser_file = LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
+        self._conf_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
+        self._exp_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
 
     def get_project_dir(self):
-        dir_templates = os.path.join(LOCAL_ROOT_DIR, self.get_expid(), LOCAL_PROJ_DIR)
+        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
         # Getting project name for each type of project
         if self.get_project_type().lower() == "local":
             dir_templates = os.path.join(dir_templates, os.path.split(self.get_local_project_path())[1])
@@ -170,21 +169,22 @@ class AutosubmitConfig:
         """Function to register in the configuration the commit SHA of the git project version."""
         save = False
         project_branch_sha = None
-        project_name = listdir(LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR)[0]
-        (status1, output) = getstatusoutput(
-            "cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + project_name)
-        (status2, output) = getstatusoutput(
-            "cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + project_name + "; " +
-            "git rev-parse --abbrev-ref HEAD")
+        project_name = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
+                               BasicConfig.LOCAL_PROJ_DIR)[0]
+        (status1, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
+                                            BasicConfig.LOCAL_PROJ_DIR + "/" + project_name)
+        (status2, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
+                                            BasicConfig.LOCAL_PROJ_DIR + "/" + project_name + "; " +
+                                            "git rev-parse --abbrev-ref HEAD")
         if status1 == 0 and status2 == 0:
             project_branch = output
             logging.debug("Project branch is: " + project_branch)
 
-            (status1, output) = getstatusoutput(
-                "cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + project_name)
-            (status2, output) = getstatusoutput(
-                "cd " + LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" + LOCAL_PROJ_DIR + "/" + project_name + "; " +
-                "git rev-parse HEAD")
+            (status1, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
+                                                BasicConfig.LOCAL_PROJ_DIR + "/" + project_name)
+            (status2, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
+                                                BasicConfig.LOCAL_PROJ_DIR + "/" + project_name + "; " +
+                                                "git rev-parse HEAD")
             if status1 == 0 and status2 == 0:
                 project_sha = output
                 save = True
@@ -254,7 +254,7 @@ class AutosubmitConfig:
         content = file(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0),
-                                      "AUTOSUBMIT_LOCAL_ROOT = " + LOCAL_ROOT_DIR)
+                                      "AUTOSUBMIT_LOCAL_ROOT = " + BasicConfig.LOCAL_ROOT_DIR)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_scratch_dir(self):

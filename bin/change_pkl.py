@@ -31,7 +31,7 @@ from pyparsing import nestedExpr
 from pkg_resources import require
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.monitor.monitor import Monitor
 
 
@@ -126,6 +126,7 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(description='Autosubmit change pickle')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
@@ -161,7 +162,7 @@ def main():
     final = args.status_final
 
     print expid
-    l1 = pickle.load(file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
+    l1 = pickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'r'))
 
     if args.filter:
         if args.filter_chunks:
@@ -250,8 +251,9 @@ def main():
 
     if save:
         l1.update_list()
-        pickle.dump(l1, file(LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl", 'w'))
-        print "Saving JobList: " + LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
+        pickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl",
+                             'w'))
+        print "Saving JobList: " + BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl"
     else:
         l1.update_list(False)
         print "Changes NOT saved to the JobList!!!!:  use -s option to save"

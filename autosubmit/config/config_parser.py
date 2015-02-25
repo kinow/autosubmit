@@ -101,7 +101,7 @@ def expdef_parser(filename):
     # check file existance
     if not path.isfile(filename):
         logging.critical("File does not exist: " + filename)
-        sys.exit()
+        sys.exit(1)
 
     # load values
     parser = SafeConfigParser()
@@ -112,7 +112,7 @@ def expdef_parser(filename):
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
         logging.critical("Missing options: " + missing)
-        sys.exit()
+        sys.exit(1)
 
     # check autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
@@ -146,7 +146,7 @@ def expdef_parser(filename):
 
     if invalid_values:
         logging.error("Invalid experiment config file")
-        sys.exit()
+        sys.exit(1)
     else:
         logging.info("Experiment config file OK")
 
@@ -171,6 +171,7 @@ def projdef_parser(filename):
         logging.info("Project config file OK")
 
     return parser
+
 
 #
 # ####################

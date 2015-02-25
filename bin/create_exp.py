@@ -34,8 +34,7 @@ from pkg_resources import require
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list import RerunJobList
 from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_PROJ_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.monitor.monitor import Monitor
 
 
@@ -98,7 +97,7 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
-
+    BasicConfig.read()
     parser = argparse.ArgumentParser(description='Create pickle given an experiment identifier')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
     parser.add_argument('-e', '--expid', required=True, nargs=1)
@@ -115,7 +114,7 @@ def main():
     if project_type == "git":
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
-        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path
@@ -153,7 +152,7 @@ def main():
     elif project_type == "svn":
         svn_project_url = as_conf.get_svn_project_url()
         svn_project_revision = as_conf.get_svn_project_revision()
-        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path
@@ -172,7 +171,7 @@ def main():
     
     elif project_type == "local":
         local_project_path = as_conf.get_local_project_path()
-        project_path = LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + LOCAL_PROJ_DIR
+        project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + args.expid[0] + "/" + BasicConfig.LOCAL_PROJ_DIR
         if os.path.exists(project_path):
             print "The project folder exists. SKIPPING..."
             print "Using project folder: %s" % project_path

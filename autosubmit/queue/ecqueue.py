@@ -19,7 +19,7 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 class EcQueue(HPCQueue):
@@ -44,8 +44,8 @@ class EcQueue(HPCQueue):
         self.cancel_cmd = "eceaccess-job-delete"
         self.checkjob_cmd = "ecaccess-job-list"
         self._checkhost_cmd = "ecaccess-certificate-list"
-        self.submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + LOCAL_ROOT_DIR + "/" + self.expid
-                           + "/tmp/")
+        self.submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
+                           self.expid + "/tmp/")
         self._status_cmd = "ecaccess-job-get"
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"

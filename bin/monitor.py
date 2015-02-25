@@ -27,7 +27,7 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 import pickle
 import argparse
 from pkg_resources import require
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.monitor.monitor import Monitor
 
 
@@ -41,6 +41,7 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(description='Plot autosubmit graph')
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
@@ -54,7 +55,7 @@ def main():
     root_name = args.joblist[0]
     output = args.output[0]
 
-    filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+    filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
     jobs = pickle.load(file(filename, 'r'))
     if not isinstance(jobs, type([])):
         jobs = jobs.get_job_list()

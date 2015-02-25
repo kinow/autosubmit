@@ -23,15 +23,12 @@ import sys
 import sqlite3
 import string
 
-from autosubmit.config.dir_config import DB_DIR
-from autosubmit.config.dir_config import DB_FILE
+from autosubmit.config.basicConfig import BasicConfig
 
 # Database parameters
 # DB_DIR = '/cfu/autosubmit'
 # DB_FILE = 'ecearth.db'
 # DB_NAME = 'ecearth'
-
-DB_PATH = DB_DIR + "/" + DB_FILE
 
 DEFAULT_EXPID_BSC = "b000"
 DEFAULT_EXPID_HEC = "h000"
@@ -204,14 +201,14 @@ def check_name(name):
 
 
 def check_db():
-    if not os.path.exists(DB_PATH):
-        logging.error('Some problem has happened...check the database file.' + 'DB file:' + DB_PATH)
+    if not os.path.exists(BasicConfig.DB_PATH):
+        logging.error('Some problem has happened...check the database file.' + 'DB file:' + BasicConfig.DB_PATH)
         sys.exit(1)
     return
 
 
 def open_conn():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
     return conn, cursor
 

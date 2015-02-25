@@ -34,8 +34,7 @@ from autosubmit.job.job_common import PsHeader
 from autosubmit.job.job_common import LgHeader
 
 from autosubmit.job.job_common import StatisticsSnippet
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
-from autosubmit.config.dir_config import LOCAL_TMP_DIR
+from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 
 
@@ -61,7 +60,7 @@ class Job:
         self.expid = name.split('_')[0]
         self._complete = True
         self.parameters = dict()
-        self._tmp_path = LOCAL_ROOT_DIR + "/" + self.expid + "/" + LOCAL_TMP_DIR + "/"
+        self._tmp_path = BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + "/" + BasicConfig.LOCAL_TMP_DIR + "/"
 
     def delete(self):
         del self.name

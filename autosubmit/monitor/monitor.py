@@ -23,12 +23,16 @@ from os import chdir
 from os import listdir
 from os import remove
 
-import pydot
+import pydotplus
+
+# These packages produce errors when added to setup.
+# noinspection PyPackageRequirements
 import numpy as np
+# noinspection PyPackageRequirements
 import matplotlib.pyplot as plt
 
 from autosubmit.job.job_common import Status
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 class Monitor:
@@ -59,36 +63,41 @@ class Monitor:
             return Monitor._table[Status.UNKNOWN]
 
     def create_tree_list(self, expid, joblist):
-        graph = pydot.Dot(graph_type='digraph')
+        graph = pydotplus.Dot(graph_type='digraph')
 
-        legend = pydot.Subgraph(graph_name='Legend', label='Legend', rank="source")
-        legend.add_node(pydot.Node(name='WAITING', shape='box', style="filled", fillcolor=self._table[Status.WAITING]))
-        legend.add_node(pydot.Node(name='READY', shape='box', style="filled", fillcolor=self._table[Status.READY]))
+        legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
+        legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
+                                       fillcolor=self._table[Status.WAITING]))
+        legend.add_node(pydotplus.Node(name='READY', shape='box', style="filled",
+                                       fillcolor=self._table[Status.READY]))
         legend.add_node(
-            pydot.Node(name='SUBMITTED', shape='box', style="filled", fillcolor=self._table[Status.SUBMITTED]))
-        legend.add_node(pydot.Node(name='QUEUING', shape='box', style="filled", fillcolor=self._table[Status.QUEUING]))
-        legend.add_node(pydot.Node(name='RUNNING', shape='box', style="filled", fillcolor=self._table[Status.RUNNING]))
+            pydotplus.Node(name='SUBMITTED', shape='box', style="filled", fillcolor=self._table[Status.SUBMITTED]))
+        legend.add_node(pydotplus.Node(name='QUEUING', shape='box', style="filled",
+                                       fillcolor=self._table[Status.QUEUING]))
+        legend.add_node(pydotplus.Node(name='RUNNING', shape='box', style="filled",
+                                       fillcolor=self._table[Status.RUNNING]))
         legend.add_node(
-            pydot.Node(name='COMPLETED', shape='box', style="filled", fillcolor=self._table[Status.COMPLETED]))
-        legend.add_node(pydot.Node(name='FAILED', shape='box', style="filled", fillcolor=self._table[Status.FAILED]))
+            pydotplus.Node(name='COMPLETED', shape='box', style="filled", fillcolor=self._table[Status.COMPLETED]))
+        legend.add_node(pydotplus.Node(name='FAILED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.FAILED]))
         legend.add_node(
-            pydot.Node(name='SUSPENDED', shape='box', style="filled", fillcolor=self._table[Status.SUSPENDED]))
+            pydotplus.Node(name='SUSPENDED', shape='box', style="filled", fillcolor=self._table[Status.SUSPENDED]))
         graph.add_subgraph(legend)
 
-        exp = pydot.Subgraph(graph_name='Experiment', label=expid)
+        exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         for job in joblist:
-            node_job = pydot.Node(job.name, shape='box', style="filled",
-                                  fillcolor=self.color_status(job.status))
+            node_job = pydotplus.Node(job.name, shape='box', style="filled",
+                                      fillcolor=self.color_status(job.status))
             exp.add_node(node_job)
             # exp.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.status))
             if job.has_children() != 0:
                 for child in job.children:
-                    node_child = pydot.Node(child.name, shape='box', style="filled",
-                                            fillcolor=self.color_status(child.status))
+                    node_child = pydotplus.Node(child.name, shape='box', style="filled",
+                                                fillcolor=self.color_status(child.status))
                     exp.add_node(node_child)
                     # exp.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(
                     # job.status))
-                    exp.add_edge(pydot.Edge(node_job, node_child))
+                    exp.add_edge(pydotplus.Edge(node_job, node_child))
 
         graph.add_subgraph(exp)
 
@@ -97,22 +106,26 @@ class Monitor:
     def generate_output(self, expid, joblist, output_format="pdf"):
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_" + output_date + "." + output_format
+        output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_" + output_date + "." +
+                       output_format)
 
         graph = self.create_tree_list(expid, joblist)
 
         if output_format == "png":
+            # noinspection PyUnresolvedReferences
             graph.write_png(output_file)
         elif output_format == "pdf":
+            # noinspection PyUnresolvedReferences
             graph.write_pdf(output_file)
         elif output_format == "ps":
+            # noinspection PyUnresolvedReferences
             graph.write_ps(output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = (LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date + "." +
-                       output_format)
+        output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date +
+                       "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
 
     @staticmethod
@@ -211,8 +224,8 @@ class Monitor:
 
     @staticmethod
     def clean_plot(expid):
-        """Function to clean space on LOCAL_ROOT_DIR/plot directory."""
-        search_dir = LOCAL_ROOT_DIR + "/" + expid + "/plot/"
+        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory."""
+        search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
         files = [path.join(search_dir, f) for f in files]

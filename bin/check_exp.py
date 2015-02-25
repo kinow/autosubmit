@@ -21,6 +21,7 @@
 import logging
 import os
 import sys
+from config.basicConfig import BasicConfig
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -61,6 +62,8 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
+
     parser = argparse.ArgumentParser(
         description='Check autosubmit and experiment configurations given a experiment identifier. '
                     'Check templates creation with those configurations')

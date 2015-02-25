@@ -23,7 +23,7 @@ import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
 
-from autosubmit.config.dir_config import LOCAL_ROOT_DIR
+from autosubmit.config.basicConfig import BasicConfig
 
 
 class PsQueue(HPCQueue):
@@ -43,11 +43,11 @@ class PsQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = os.path.join(LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
+        self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
         # Ellen-->self.remote_log_dir = self._scratch + "/" + self._project + "/" + self._user + "/" +
         # self._expid + "/LOG_" + self._expid
         # Local-->self._local_log_dir = "/cfu/autosubmit" + "/" + self._expid + "/LOG_" + self._expid
-        self._remote_common_dir = os.path.join(LOCAL_ROOT_DIR, "common")
+        self._remote_common_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "common")
         # Ellen -->self._remote_common_dir = "/cfs/klemming/nobackup/a/asifsami/common/autosubmit"
         # Local-->self._local_common_dir = "/cfu/autosubmit/common"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"

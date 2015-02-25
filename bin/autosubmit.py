@@ -45,8 +45,7 @@ from queue.arqueue import ArQueue
 from job.job_common import Status
 from job.job_common import Type
 from config.config_common import AutosubmitConfig
-from config.dir_config import LOCAL_ROOT_DIR
-from config.dir_config import LOCAL_TMP_DIR
+from config.basicConfig import BasicConfig
 
 
 def log_long(message):
@@ -70,6 +69,7 @@ def main():
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+    BasicConfig.read()
 
     parser = argparse.ArgumentParser(description='Launch Autosubmit given an experiment identifier')
     # parser.add_argument('action')
@@ -145,9 +145,9 @@ def main():
 
     local_queue = PsQueue(expid)
     local_queue.set_host(platform.node())
-    local_queue.set_scratch(LOCAL_ROOT_DIR)
+    local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
     local_queue.set_project(expid)
-    local_queue.set_user(LOCAL_TMP_DIR)
+    local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
     local_queue.update_cmds()
 
     logger.debug("The Experiment name is: %s" % expid)
@@ -183,9 +183,9 @@ def main():
     signal.signal(signal.SIGINT, local_queue.normal_stop)
 
     if rerun == 'false':
-        filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
+        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
     else:
-        filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_' + expid + '.pkl'
+        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_' + expid + '.pkl'
     print filename
 
     # the experiment should be loaded as well
