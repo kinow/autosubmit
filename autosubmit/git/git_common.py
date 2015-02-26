@@ -48,8 +48,8 @@ class AutosubmitGit:
                                                            "git diff-index HEAD --")
                         if status == 0:
                             if output:
-                                Log.warning("Changes not commited detected... SKIPPING!")
-                                Log.warning("WARNING: commit needed...")
+                                Log.info("Changes not commited detected... SKIPPING!")
+                                Log.user_warning("Commit needed!")
                                 exit(1)
                             else:
                                 (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
@@ -57,8 +57,8 @@ class AutosubmitGit:
                                                                    "/" + dirname + "; " +
                                                                    "git log --branches --not --remotes")
                                 if output:
-                                    Log.warning("Changes not pushed detected... SKIPPING!")
-                                    Log.warning("WARNING: synchronization needed...")
+                                    Log.info("Changes not pushed detected... SKIPPING!")
+                                    Log.user_warning("Synchronization needed!")
                                     exit(1)
                                 else:
                                     Log.debug("Ready to clean...")
@@ -72,8 +72,8 @@ class AutosubmitGit:
                                     rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" +
                                            BasicConfig.LOCAL_PROJ_DIR + "/" + dirname)
                                     Log.debug(dirname + " directory clean!")
-                                    Log.warning("Further runs will require 'git clone " + dirname + ".git " +
-                                                dirname + "' ...")
+                                    Log.user_warning("Further runs will require 'git clone " + dirname + ".git " +
+                                                     dirname + "' ...")
                         else:
                             Log.error("Failed to retrieve git info...")
                             exit(1)

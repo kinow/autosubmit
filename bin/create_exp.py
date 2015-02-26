@@ -105,7 +105,7 @@ def main():
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR,
                               'create_exp.log'))
     as_conf = AutosubmitConfig(args.expid[0])
     as_conf.check_conf()
@@ -218,7 +218,7 @@ def main():
 
     monitor_exp = Monitor()
     monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
-    Log.warning("Remember to MODIFY the config files!")
+    Log.user_warning("Remember to MODIFY the config files!")
 
 
 if __name__ == "__main__":

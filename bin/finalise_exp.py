@@ -57,7 +57,7 @@ def main():
     args = parser.parse_args()
     if args.expid is None:
         parser.error("Missing expid.")
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR,
                               'finalise_exp.log'))
     if args.project:
         autosubmit_config = AutosubmitConfig(args.expid[0])
@@ -71,8 +71,7 @@ def main():
             Log.info("Cleaning GIT directory...")
             autosubmit_git.clean_git()
         else:
-            Log.info("No project to clean...")
-
+            Log.info("No project to clean...\n")
     if args.plot:
         Log.info("Cleaning plot directory...")
         monitor_autosubmit = Monitor()

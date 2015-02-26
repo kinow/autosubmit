@@ -71,8 +71,7 @@ class Log:
 
     logging.basicConfig()
 
-    log = logging.Logger('Autosubmit', DEBUG)
-    log.setLevel(DEBUG)
+    log = logging.Logger('Autosubmit', EVERYTHING)
 
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(INFO)

@@ -75,7 +75,7 @@ def main():
         parser.error("Missing expid.")
 
     os.system('clear')
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR,
                               'autosubmit.log'))
 
     as_conf = AutosubmitConfig(args.expid[0])

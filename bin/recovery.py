@@ -66,7 +66,7 @@ def main():
                         help='Get completed files to synchronize pkl')
     parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
     args = parser.parse_args()
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'log',
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR,
                               'recovery.log'))
     expid = args.expid[0]
     root_name = args.joblist[0]

@@ -235,5 +235,5 @@ class Monitor:
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        Log.result("Plot directory clean! last two plots remanining there.")
+        Log.result("Plot directory clean!\nLast two plots remanining there.")
         return
