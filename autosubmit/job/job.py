@@ -24,15 +24,14 @@ import re
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job_common import Template
-from autosubmit.job.job_common import ArHeader
-from autosubmit.job.job_common import BscHeader
-from autosubmit.job.job_common import EcHeader
-from autosubmit.job.job_common import HtHeader
-from autosubmit.job.job_common import ItHeader
-from autosubmit.job.job_common import MnHeader
-from autosubmit.job.job_common import PsHeader
-from autosubmit.job.job_common import LgHeader
-
+from autosubmit.job.job_headers import ArHeader
+from autosubmit.job.job_headers import BscHeader
+from autosubmit.job.job_headers import EcHeader
+from autosubmit.job.job_headers import HtHeader
+from autosubmit.job.job_headers import ItHeader
+from autosubmit.job.job_headers import MnHeader
+from autosubmit.job.job_headers import PsHeader
+from autosubmit.job.job_headers import LgHeader
 from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
@@ -54,8 +53,8 @@ class Job:
         self.id = jobid
         self.status = status
         self.type = jobtype
-        self.parents = list()
-        self.children = list()
+        self._parents = set()
+        self._children = set()
         self.fail_count = 0
         self.expid = name.split('_')[0]
         self._complete = True
@@ -69,8 +68,8 @@ class Job:
         del self.id
         del self.status
         del self.type
-        del self.parents
-        del self.children
+        del self._parents
+        del self._children
         del self.fail_count
         del self.expid
         del self._complete
@@ -89,6 +88,21 @@ class Job:
         Log.info('EXPID: %s' % self.expid)
 
     # Properties
+    @property
+    def parents(self):
+        return self._parents
+    @property
+    def ancestors(self):
+        ancestors = set()
+        for parent in self.parents:
+            ancestors.add(parent)
+            for ancestor in parent.ancestors:
+                ancestors.add(ancestor)
+        return ancestors
+
+    @property
+    def children(self):
+        return self._children
 
     @property
     def long_name(self):
@@ -140,11 +154,13 @@ class Job:
     def inc_fail_count(self):
         self.fail_count += 1
 
-    def add_parent(self, new_parent):
-        self.parents += [new_parent]
+    def add_parent(self, *new_parent):
+        for parent in new_parent:
+            self._parents.add(parent)
+            parent.__add_child(self)
 
-    def add_children(self, new_children):
-        self.children += [new_children]
+    def __add_child(self, new_children):
+        self.children.add(new_children)
 
     def delete_parent(self, parent):
         # careful, it is only possible to remove one parent at a time
@@ -462,12 +478,12 @@ if __name__ == "__main__":
     job2 = Job('dos', '2', Status.READY, 0)
     job3 = Job('tres', '3', Status.READY, 0)
     jobs = [job1, job2, job3]
-    mainJob.parents = jobs
+    mainJob.add_parent(*jobs)
     Log.info(mainJob.parents)
     # mainJob.set_children(jobs)
-    job1.add_children(mainJob)
-    job2.add_children(mainJob)
-    job3.add_children(mainJob)
+    # job1.__add_child(mainJob)
+    # job2.__add_child(mainJob)
+    # job3.__add_child(mainJob)
     Log.info(mainJob.get_all_children())
     Log.info(mainJob.children)
     job3.check_completion()
