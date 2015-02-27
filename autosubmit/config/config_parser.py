@@ -75,7 +75,7 @@ def config_parser(filename):
         Log.error("Invalid Autosubmit config file")
         sys.exit(1)
     else:
-        Log.info("Autosubmit config file OK")
+        Log.debug("Autosubmit config file OK")
 
     return parser
 
@@ -148,7 +148,7 @@ def expdef_parser(filename):
         Log.error("Invalid experiment config file")
         sys.exit(1)
     else:
-        Log.info("Experiment config file OK")
+        Log.debug("Experiment config file OK")
 
     return parser
 
@@ -168,7 +168,7 @@ def projdef_parser(filename):
         Log.error("Invalid project config file")
         sys.exit()
     else:
-        Log.info("Project config file OK")
+        Log.debug("Project config file OK")
 
     return parser
 

@@ -46,6 +46,7 @@ from job.job_common import Type
 from config.config_common import AutosubmitConfig
 from config.basicConfig import BasicConfig
 from log import Log
+from time import strftime
 
 
 ####################
@@ -91,7 +92,7 @@ def main():
     scratch_dir = as_conf.get_scratch_dir()
     hpcproj = as_conf.get_hpcproj()
     hpcuser = as_conf.get_hpcuser()
-    total_jobs = as_conf.get_total_jobs()
+    max_jobs = as_conf.get_total_jobs()
     max_waiting_jobs = as_conf.get_max_waiting_jobs()
     safetysleeptime = as_conf.get_safetysleeptime()
     retrials = as_conf.get_retrials()
@@ -137,10 +138,10 @@ def main():
     local_queue.update_cmds()
 
     Log.debug("The Experiment name is: %s" % expid)
-    Log.info("Jobs to submit: %s" % total_jobs)
-    Log.info("Maximum waiting jobs in queues: %s" % max_waiting_jobs)
-    Log.info("Sleep: %s" % safetysleeptime)
-    Log.info("Retrials: %s" % retrials)
+    Log.debug("Total jobs to submit: %s" % max_jobs)
+    Log.debug("Maximum waiting jobs in queues: %s" % max_waiting_jobs)
+    Log.debug("Sleep: %s" % safetysleeptime)
+    Log.debug("Retrials: %s" % retrials)
     Log.info("Starting job submission...")
 
     # If remoto_queue is None (now only in lindgren) arch must signal both serial and parallel queues
@@ -177,7 +178,7 @@ def main():
     # the experiment should be loaded as well
     if os.path.exists(filename):
         joblist = cPickle.load(file(filename, 'rw'))
-        Log.info("Starting from joblist pickled in %s " % filename)
+        Log.debug("Starting from joblist pickled in %s " % filename)
     else:
         Log.error("The pickle file %s necessary does not exist." % filename)
         sys.exit()
@@ -190,9 +191,9 @@ def main():
     Log.debug("Updating parameters...")
     joblist.update_parameters(parameters)
     # check the job list script creation
-    Log.info("Checking experiment templates...")
+    Log.debug("Checking experiment templates...")
     if joblist.check_scripts(as_conf):
-        Log.info("Experiment templates check PASSED!")
+        Log.result("Experiment templates check PASSED!")
     else:
         Log.error("Experiment templates check FAILED!")
         sys.exit()
@@ -225,28 +226,30 @@ def main():
         joblist.update_parameters(parameters)
 
         # variables to be updated on the fly
-        total_jobs = as_conf.get_total_jobs()
-        Log.info("Jobs to submit: %s" % total_jobs)
+        max_jobs = as_conf.get_total_jobs()
+        Log.debug("Total jobs: {0}".format(max_jobs))
+        total_jobs = len(joblist.get_job_list())
+        Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+                                                             strftime("%H:%M")))
         safetysleeptime = as_conf.get_safetysleeptime()
-        Log.info("Sleep: %s" % safetysleeptime)
+        Log.debug("Sleep: %s" % safetysleeptime)
         retrials = as_conf.get_retrials()
-        Log.info("Number of retrials: %s" % retrials)
+        Log.debug("Number of retrials: %s" % retrials)
 
         # read FAIL_RETRIAL number if, blank at creation time put a given number
         # check availability of machine, if not next iteration after sleep time
         # check availability of jobs, if no new jobs submited and no jobs available, then stop
 
         # ??? why
-        Log.info("Saving joblist")
         joblist.save()
 
         Log.info("Active jobs in queues:\t%s" % active)
         Log.info("Waiting jobs in queues:\t%s" % waiting)
 
         if available == 0:
-            Log.info("There's no room for more jobs...")
+            Log.debug("There's no room for more jobs...")
         else:
-            Log.info("We can safely submit %s jobs..." % available)
+            Log.debug("We can safely submit %s jobs..." % available)
 
         ######################################
         # AUTOSUBMIT - ALREADY SUBMITTED JOBS
@@ -261,8 +264,9 @@ def main():
             Log.info("There is no queue available")
         else:
             for job in jobinqueue:
+
                 job.print_job()
-                Log.info("Number of jobs in queue: %s" % str(len(jobinqueue)))
+                Log.debug("Number of jobs in queue: %s" % str(len(jobinqueue)))
                 # in lindgren arch must select serial or parallel queue acording to the job type
                 if remote_queue is None and job.type == Type.SIMULATION:
                     queue = parallel_queue
@@ -277,7 +281,7 @@ def main():
                 # Check queue availability
                 queueavail = queue.check_host()
                 if not queueavail:
-                    Log.info("There is no queue available")
+                    Log.debug("There is no queue available")
                 else:
                     status = queue.check_job(job.id)
                     if status == Status.COMPLETED:
@@ -286,7 +290,14 @@ def main():
                         job.check_completion()
                     else:
                         job.status = status
-
+                    if job.status is Status.QUEUING:
+                        Log.info("Job %s is QUEUING", job.name)
+                    elif job.status is Status.RUNNING:
+                        Log.info("Job %s is RUNNING", job.name)
+                    elif job.status is Status.COMPLETED:
+                        Log.result("Job %s is COMPLETED", job.name)
+                    elif job.status is Status.FAILED:
+                        Log.user_warning("Job %s is FAILED", job.name)
                         # Uri add check if status UNKNOWN and exit if you want
                         # after checking the jobs , no job should have the status "submitted"
                         # Uri throw an exception if this happens (warning type no exit)
@@ -303,13 +314,13 @@ def main():
         # Check queue availability
         queueavail = queue.check_host()
         if not queueavail:
-            Log.info("There is no queue available")
+            Log.debug("There is no queue available")
         elif min(available, len(jobsavail)) == 0:
-            Log.info("There is no job READY or available")
-            Log.info("Number of jobs ready: %s" % len(jobsavail))
-            Log.info("Number of jobs available in queue: %s" % available)
-        elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= total_jobs:
-            Log.info("We are going to submit: %s" % min(available, len(jobsavail)))
+            Log.debug("There is no job READY or available")
+            Log.debug("Number of jobs ready: %s" % len(jobsavail))
+            Log.debug("Number of jobs available in queue: %s" % available)
+        elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
+            Log.info("\nStarting to submit %s job(s)" % min(available, len(jobsavail)))
             # should sort the jobsavail by priority Clean->post->sim>ini
             # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
             # probably useless to sort by year before sorting by type
@@ -317,39 +328,38 @@ def main():
 
             list_of_jobs_avail = sorted(s, key=lambda k: k.type)
 
-            for job in list_of_jobs_avail[0:min(available, len(jobsavail), total_jobs - len(jobinqueue))]:
+            for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
                 Log.debug(job.name)
                 scriptname = job.create_script(as_conf)
                 Log.debug(scriptname)
                 # in lindgren arch must select serial or parallel queue acording to the job type
                 if remote_queue is None and job.type == Type.SIMULATION:
                     queue = parallel_queue
-                    Log.info("Submitting to parallel queue...")
+                    Log.info("Submitting %s to parallel queue...", job.name)
                 elif (remote_queue is None and (job.type == Type.REMOTESETUP or
                                                 job.type == Type.INITIALISATION or
                                                 job.type == Type.CLEANING or
                                                 job.type == Type.POSTPROCESSING)):
                     queue = serial_queue
-                    Log.info("Submitting to serial queue...")
+                    Log.info("Submitting %s to serial queue...", job.name)
                 elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                     queue = local_queue
-                    Log.info("Submitting to local queue...")
+                    Log.info("Submitting %s to local queue...", job.name)
                 else:
                     queue = remote_queue
-                    Log.info("Submitting to remote queue...")
+                    Log.info("Submitting %s to remote queue...", job.name)
                 # Check queue availability
                 queueavail = queue.check_host()
                 if not queueavail:
-                    Log.info("There is no queue available")
+                    Log.debug("There is no queue available")
                 else:
                     queue.send_script(scriptname)
                     job.id = queue.submit_job(scriptname)
                     # set status to "submitted"
                     job.status = Status.SUBMITTED
+                Log.info("%s submited\n", job.name)
 
         time.sleep(safetysleeptime)
-
-        Log.info("Finished job submission")
 
 
 if __name__ == "__main__":

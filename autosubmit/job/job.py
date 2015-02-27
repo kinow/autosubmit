@@ -79,14 +79,14 @@ class Job:
         del self
 
     def print_job(self):
-        Log.info('NAME: %s' % self.name)
-        Log.info('JOBID: %s' % self.id)
-        Log.info('STATUS: %s' % self.status)
-        Log.info('TYPE: %s' % self.type)
-        Log.info('PARENTS: %s' % [p.name for p in self.parents])
-        Log.info('CHILDREN: %s' % [c.name for c in self.children])
-        Log.info('FAIL_COUNT: %s' % self.fail_count)
-        Log.info('EXPID: %s' % self.expid)
+        Log.debug('NAME: %s' % self.name)
+        Log.debug('JOBID: %s' % self.id)
+        Log.debug('STATUS: %s' % self.status)
+        Log.debug('TYPE: %s' % self.type)
+        Log.debug('PARENTS: %s' % [p.name for p in self.parents])
+        Log.debug('CHILDREN: %s' % [c.name for c in self.children])
+        Log.debug('FAIL_COUNT: %s' % self.fail_count)
+        Log.debug('EXPID: %s' % self.expid)
 
     # Properties
     @property
