@@ -218,7 +218,7 @@ def main():
 
     monitor_exp = Monitor()
     monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
-    Log.user_warning("Remember to MODIFY the config files!")
+    Log.user_warning("Remember to MODIFY the MODEL config files!")
 
 
 if __name__ == "__main__":

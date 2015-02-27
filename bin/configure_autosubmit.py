@@ -46,6 +46,7 @@ def main():
     parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
     parser.add_argument('-db', '--databasepath', nargs=1, default=None)
     parser.add_argument('-lr', '--localrootpath', nargs=1, default=None)
+    parser.add_argument('-c', '--createdatabase', nargs=1, default=None)
     group = parser.add_mutually_exclusive_group()
     group.add_argument('-u', '--user', action="store_true")
     group.add_argument('-l', '--local', action="store_true")

@@ -83,7 +83,7 @@ def main():
     group2.add_argument('-d', '--description', type=str)
 
     args = parser.parse_args()
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid.log'))
+    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid{0}.log'.format(os.getuid())))
     exp_id = None
     if args.new is None and args.copy is None and args.delete is None:
         parser.error("Missing method either New or Copy or Delete.")
