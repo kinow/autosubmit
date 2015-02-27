@@ -79,7 +79,7 @@ def main():
     group1.add_argument('-D', '--delete', type=str)
     group2 = parser.add_argument_group('experiment arguments')
     group2.add_argument('-H', '--HPC',
-                        choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'archer'))
+                        choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'archer'))
     group2.add_argument('-d', '--description', type=str)
 
     args = parser.parse_args()

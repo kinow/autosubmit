@@ -319,6 +319,83 @@ class EcHeader:
             """)
 
 
+class EcCcaHeader:
+    """Class to handle the ECMWF headers of a job"""
+
+    HEADER_REMOTESETUP = textwrap.dedent("""
+             #!/bin/bash
+             ###############################################################################
+             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %%JOBNAME%%
+             #PBS -q ns
+             #PBS -l walltime=%%WALLCLOCK%%:00
+             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #
+             ###############################################################################
+
+            """)
+
+    HEADER_INI = textwrap.dedent("""
+             #!/bin/bash
+             ###############################################################################
+             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %%JOBNAME%%
+             #PBS -q ns
+             #PBS -l walltime=%%WALLCLOCK%%:00
+             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #
+             ###############################################################################
+            """)
+
+    HEADER_SIM = textwrap.dedent("""\
+             #!/bin/bash
+             ###############################################################################
+             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %%JOBNAME%%
+             #PBS -q np
+             #PBS -l EC_total_tasks=%%OASIS_nproc%%:%%IFS_nproc%%:%%NEMO_nproc%%
+             #PBS -l EC_threads_per_task=1:1:1
+             #PBS -l EC_tasks_per_node=24:24:24
+             #PBS -l walltime=%%WALLCLOCK%%:00
+             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #
+             ###############################################################################
+            """)
+
+    HEADER_POST = textwrap.dedent("""\
+             #!/bin/bash
+             ###############################################################################
+             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %%JOBNAME%%
+             #PBS -q ns
+             #PBS -l walltime=%%WALLCLOCK%%:00
+             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #
+             ###############################################################################
+            """)
+
+    HEADER_CLEAN = textwrap.dedent("""
+             #!/bin/bash
+             ###############################################################################
+             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %%JOBNAME%%
+             #PBS -q ns
+             #PBS -l walltime=%%WALLCLOCK%%:00
+             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #
+             ###############################################################################
+            """)
+
 class HtHeader:
     """Class to handle the Hector headers of a job"""
 

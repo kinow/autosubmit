@@ -27,6 +27,7 @@ from autosubmit.job.job_common import Template
 from autosubmit.job.job_headers import ArHeader
 from autosubmit.job.job_headers import BscHeader
 from autosubmit.job.job_headers import EcHeader
+from autosubmit.job.job_headers import EcCcaHeader
 from autosubmit.job.job_headers import HtHeader
 from autosubmit.job.job_headers import ItHeader
 from autosubmit.job.job_headers import MnHeader
@@ -355,6 +356,8 @@ class Job:
             remote_header = LgHeader
         elif self.parameters['HPCARCH'] == "ecmwf":
             remote_header = EcHeader
+        elif self.parameters['HPCARCH'] == "ecmwf-cca":
+            remote_header = EcCcaHeader
         elif self.parameters['HPCARCH'] == "marenostrum3":
             remote_header = MnHeader
         else:

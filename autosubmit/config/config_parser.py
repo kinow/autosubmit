@@ -81,7 +81,7 @@ def config_parser(filename):
 
 
 def expdef_parser(filename):
-    hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'marenostrum3', 'hector', 'archer']
+    hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'hector', 'archer']
     hpcproj = "\s*[\w\-]+\s*$"
     hpcuser = "\s*[\w\-]+\s*$"
     startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"

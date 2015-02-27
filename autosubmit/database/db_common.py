@@ -93,6 +93,8 @@ def new_experiment(hpc, description):
             new_name = DEFAULT_EXPID_LIN
         elif hpc == 'ecmwf':
             new_name = DEFAULT_EXPID_ECM
+        elif hpc == 'ecmwf-cca':
+            new_name = DEFAULT_EXPID_ECM
         elif hpc == 'marenostrum3':
             new_name = DEFAULT_EXPID_MN3
         elif hpc == 'archer':
@@ -159,6 +161,8 @@ def last_name(hpc):
     elif hpc == 'lindgren':
         hpc_name = "l___"
     elif hpc == 'ecmwf':
+        hpc_name = "e___"
+    elif hpc == 'ecmwf-cca':
         hpc_name = "e___"
     elif hpc == 'marenostrum3':
         hpc_name = "m___"

@@ -122,6 +122,9 @@ def main():
     elif hpcarch == "ecmwf":
         remote_queue = EcQueue(expid)
         remote_queue.set_host("c2a")
+    elif hpcarch == "ecmwf-cca":
+        remote_queue = EcQueue(expid)
+        remote_queue.set_host("cca")
     elif hpcarch == "marenostrum3":
         remote_queue = Mn3Queue(expid)
         remote_queue.set_host("mn-" + hpcproj)
