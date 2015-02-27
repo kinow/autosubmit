@@ -19,6 +19,7 @@
 
 
 from commands import getstatusoutput
+import os
 from time import sleep
 from sys import exit
 
@@ -88,7 +89,7 @@ class HPCQueue:
                 job_status = Status.UNKNOWN
         else:
             # BOUOUOUOU	NOT	GOOD!
-            job_status = Status.COMPLETED
+            job_status = Status.UNKNOWN
         return job_status
 
     def check_host(self):
@@ -121,19 +122,21 @@ class HPCQueue:
             Log.error('The script has not been sent')
 
     def get_completed_files(self, jobname):
-        # wait five secons to check get file
+        # wait five seconds to check get file
         sleep(5)
         filename = jobname + '_COMPLETED'
+        completed_local_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR, filename)
+        if os.path.exists(completed_local_path):
+            os.remove(completed_local_path)
         (status, output) = getstatusoutput(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' +
-                                           filename + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
-                                           '/tmp/' + filename)
+                                           filename + ' ' + completed_local_path)
         Log.debug(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' +
-                  BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + filename)
+                  completed_local_path)
         if status == 0:
             Log.debug('The COMPLETED files have been transfered')
             return True
         else:
-            Log.error('Something did not work well when transferring the COMPLETED files')
+            Log.debug('Something did not work well when transferring the COMPLETED files')
             return False
 
     def submit_job(self, job_script):

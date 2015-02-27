@@ -376,26 +376,26 @@ class Job:
 
             remote_setup = self.parameters['FILE_REMOTESETUP']
             if remote_setup != '':
-                template.read_localsetup_file(os.path.join(dir_templates, remote_setup))
+                template.read_remotesetup_file(os.path.join(dir_templates, remote_setup))
 
             ini = self.parameters['FILE_INI']
             if ini != '':
-                template.read_localsetup_file(os.path.join(dir_templates, ini))
+                template.read_initialisation_file(os.path.join(dir_templates, ini))
             sim = self.parameters['FILE_SIM']
             if sim != '':
-                template.read_localsetup_file(os.path.join(dir_templates, sim))
+                template.read_simulation_file(os.path.join(dir_templates, sim))
 
             post = self.parameters['FILE_POST']
             if post != '':
-                template.read_localsetup_file(os.path.join(dir_templates, post))
+                template.read_postprocessing_file(os.path.join(dir_templates, post))
 
             clean = self.parameters['FILE_CLEAN']
             if clean != '':
-                template.read_localsetup_file(os.path.join(dir_templates, clean))
+                template.read_cleaning_file(os.path.join(dir_templates, clean))
 
             trans = self.parameters['FILE_TRANS']
             if trans != '':
-                template.read_localsetup_file(os.path.join(dir_templates, trans))
+                template.read_transfer_file(os.path.join(dir_templates, trans))
 
         if self.type == Type.SIMULATION:
             items = [remote_header.HEADER_SIM,

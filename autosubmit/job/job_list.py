@@ -211,9 +211,12 @@ class JobList:
     def update_from_file(self, store_change=True):
         if os.path.exists(self._pkl_path + self._update_file):
             for line in open(self._pkl_path + self._update_file):
-                if self.get_job_by_name(line.split()[0]):
-                    self.get_job_by_name(line.split()[0]).status = self._stat_val.retval(line.split()[1])
-                    self.get_job_by_name(line.split()[0]).set_fail_count(0)
+                if line.strip() == '':
+                    continue
+                job = self.get_job_by_name(line.split()[0])
+                if job:
+                    job.status = self._stat_val.retval(line.split()[1])
+                    job.fail_count = 0
             now = localtime()
             output_date = strftime("%Y%m%d_%H%M", now)
             if store_change:

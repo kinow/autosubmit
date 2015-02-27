@@ -123,6 +123,12 @@ class StatisticsSnippet:
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
 
+            rm -f ${job_name_ptrn}_COMPLETED
+
+            ###################
+            # Autosubmit job
+            ###################
+
             """)
 
     # noinspection PyPep8
@@ -158,6 +164,12 @@ class StatisticsSnippet:
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
             job_queue_time=$((job_start_time - job_cmd_stamp))
+
+            rm -f ${job_name_ptrn}_COMPLETED
+
+            ###################
+            # Autosubmit job
+            ###################
 
             """)
 
