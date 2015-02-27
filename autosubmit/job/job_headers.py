@@ -325,13 +325,13 @@ class EcCcaHeader:
     HEADER_REMOTESETUP = textwrap.dedent("""
              #!/bin/bash
              ###############################################################################
-             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
-             #PBS -N %%JOBNAME%%
+             #PBS -N %JOBNAME%
              #PBS -q ns
-             #PBS -l walltime=%%WALLCLOCK%%:00
-             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #PBS -l walltime=%WALLCLOCK_SETUP%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
              #
              ###############################################################################
 
@@ -340,13 +340,13 @@ class EcCcaHeader:
     HEADER_INI = textwrap.dedent("""
              #!/bin/bash
              ###############################################################################
-             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
-             #PBS -N %%JOBNAME%%
+             #PBS -N %JOBNAME%
              #PBS -q ns
-             #PBS -l walltime=%%WALLCLOCK%%:00
-             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #PBS -l walltime=%WALLCLOCK_INI%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
              #
              ###############################################################################
             """)
@@ -354,16 +354,16 @@ class EcCcaHeader:
     HEADER_SIM = textwrap.dedent("""\
              #!/bin/bash
              ###############################################################################
-             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
-             #PBS -N %%JOBNAME%%
+             #PBS -N %JOBNAME%
              #PBS -q np
-             #PBS -l EC_total_tasks=%%OASIS_nproc%%:%%IFS_nproc%%:%%NEMO_nproc%%
-             #PBS -l EC_threads_per_task=1:1:1
-             #PBS -l EC_tasks_per_node=24:24:24
-             #PBS -l walltime=%%WALLCLOCK%%:00
-             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #PBS -l EC_total_tasks=%NUMPROC_SIM%
+             #PBS -l EC_threads_per_task=%NUMTHREAD_SIM%
+             #PBS -l EC_tasks_per_node=%NUMTASK_SIM%
+             #PBS -l walltime=%WALLCLOCK_SIM%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
              #
              ###############################################################################
             """)
@@ -371,13 +371,13 @@ class EcCcaHeader:
     HEADER_POST = textwrap.dedent("""\
              #!/bin/bash
              ###############################################################################
-             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
-             #PBS -N %%JOBNAME%%
+             #PBS -N %JOBNAME%
              #PBS -q ns
-             #PBS -l walltime=%%WALLCLOCK%%:00
-             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #PBS -l walltime=%WALLCLOCK_POST%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
              #
              ###############################################################################
             """)
@@ -385,13 +385,13 @@ class EcCcaHeader:
     HEADER_CLEAN = textwrap.dedent("""
              #!/bin/bash
              ###############################################################################
-             #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
-             #PBS -N %%JOBNAME%%
+             #PBS -N %JOBNAME%
              #PBS -q ns
-             #PBS -l walltime=%%WALLCLOCK%%:00
-             #PBS -l EC_billing_account=%%HPCBUDG%%
+             #PBS -l walltime=%WALLCLOCK_CLEAN%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
              #
              ###############################################################################
             """)
