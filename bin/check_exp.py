@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Script for handling experiment monitoring"""
-import Autosubmit
+from autosubmit.Autosubmit import Autosubmit
 
 
 def main():

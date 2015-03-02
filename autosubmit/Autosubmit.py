@@ -29,6 +29,7 @@ import platform
 import os
 import sys
 import shutil
+import re
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from time import strftime
 from distutils.util import strtobool
@@ -53,6 +54,7 @@ from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
 from autosubmit.monitor.monitor import Monitor
+from config.config_parser import config_parser
 
 
 class Autosubmit:
@@ -79,9 +81,10 @@ class Autosubmit:
 
         parser = argparse.ArgumentParser(description='Main entrance to autosubmit. By default launch Autosubmit given '
                                                      'an experiment identifier')
-        parser.add_argument('action', nargs='?', default=action, choices=('run', 'expid', 'delete', 'monitor',
-                                                                          'statistics', 'finalize', 'recovery',
-                                                                          'check', 'create', 'configure', 'change_pkl'))
+        parser.add_argument('action', nargs='?', default=action, choices=('expid', 'create', 'check', 'run',
+                                                                          'delete', 'monitor', 'statistics',
+                                                                          'finalize', 'recovery',
+                                                                          'configure', 'change_pkl'))
         parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version)
 
         args = parser.parse_known_args(arguments)
@@ -92,14 +95,17 @@ class Autosubmit:
             args = parser.parse_args()
             Autosubmit.run_experiment(args.expid)
         elif action == 'expid':
-            parser.add_argument('-y', '--copy', type=str, default=None)
+            group = parser.add_mutually_exclusive_group()
+            group.add_argument('-y', '--copy', action='store_true')
+            group.add_argument('-dm', '--dummy', action='store_true')
+
             parser.add_argument('-H', '--HPC', required=True,
                                 choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca',
                                          'marenostrum3', 'archer'))
             parser.add_argument('-d', '--description', type=str, required=True)
 
             args = parser.parse_args()
-            Autosubmit.expid(args.HPC, args.description, args.copy)
+            Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy)
         elif action == 'delete':
             parser.add_argument('-e', '--expid', required=True)
             args = parser.parse_args()
@@ -191,7 +197,7 @@ class Autosubmit:
         Log.result("Experiment {0} deleted".format(expid_delete))
 
     @staticmethod
-    def expid(hpc, description, copy):
+    def expid(hpc, description, copy, dummy):
         BasicConfig.read()
 
         log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid{0}.log'.format(os.getuid()))
@@ -206,7 +212,7 @@ class Autosubmit:
         if hpc is None:
             Log.error("Missing HPC.")
             exit(1)
-        if copy is None:
+        if not copy:
             exp_id = new_experiment(hpc, description)
             try:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
@@ -222,7 +228,7 @@ class Autosubmit:
                         content = resource_string('autosubmit.config', 'files/' + filename)
                         Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
                         file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
-                Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version)
+                Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
                 Autosubmit.delete_expid(exp_id)
@@ -1059,7 +1065,7 @@ class Autosubmit:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
     @staticmethod
-    def _prepare_conf_files(exp_id, hpc, autosubmit_version):
+    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):
         as_conf = AutosubmitConfig(exp_id)
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
@@ -1067,6 +1073,52 @@ class Autosubmit:
         as_conf.set_platform(hpc)
         as_conf.set_scratch_dir(hpc)
         as_conf.set_safetysleeptime(hpc)
+
+        if dummy:
+            content = file(as_conf.experiment_file).read()
+
+            # Experiment
+            content = content.replace(re.search('DATELIST =.*', content).group(0),
+                                      "DATELIST = 20000101")
+            content = content.replace(re.search('MEMBERS =.*', content).group(0),
+                                      "MEMBERS = fc0")
+            content = content.replace(re.search('CHUNKSIZE =.*', content).group(0),
+                                      "CHUNKSIZE = 4")
+            content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
+                                      "NUMCHUNKS = 1")
+
+            # Wallclocks
+            content = content.replace(re.search('WALLCLOCK_SETUP =.*', content).group(0),
+                                      "WALLCLOCK_SETUP = 00:01")
+            content = content.replace(re.search('WALLCLOCK_INI =.*', content).group(0),
+                                      "WALLCLOCK_INI = 00:01")
+            content = content.replace(re.search('WALLCLOCK_SIM =.*', content).group(0),
+                                      "WALLCLOCK_SIM = 00:01")
+            content = content.replace(re.search('WALLCLOCK_POST =.*', content).group(0),
+                                      "WALLCLOCK_POST = 00:01")
+            content = content.replace(re.search('WALLCLOCK_CLEAN =.*', content).group(0),
+                                      "WALLCLOCK_CLEAN = 00:01")
+
+            # Processors
+            content = content.replace(re.search('NUMPROC_SETUP =.*', content).group(0),
+                                      "NUMPROC_SETUP = 1")
+            content = content.replace(re.search('NUMPROC_INI =.*', content).group(0),
+                                      "NUMPROC_INI = 1")
+            content = content.replace(re.search('NUMPROC_SIM =.*', content).group(0),
+                                      "NUMPROC_SIM = 1")
+            content = content.replace(re.search('NUMTHREAD_SIM =.*', content).group(0),
+                                      "NUMTHREAD_SIM = 1")
+            content = content.replace(re.search('NUMTASK_SIM =.*', content).group(0),
+                                      "NUMTASK_SIM = 1")
+            content = content.replace(re.search('NUMPROC_POST =.*', content).group(0),
+                                      "NUMPROC_POST = 1")
+            content = content.replace(re.search('NUMPROC_CLEAN =.*', content).group(0),
+                                      "NUMPROC_CLEAN = 1")
+
+            content = content.replace(re.search('PROJECT_TYPE =.*', content).group(0),
+                                      "PROJECT_TYPE = none")
+
+            file(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def _check_templates(as_conf):

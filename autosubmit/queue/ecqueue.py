@@ -27,9 +27,9 @@ class EcQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "c2a"
-        self._scratch = "/scratch/ms"
-        self._project = "spesiccf"
-        self._user = "c3m"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']

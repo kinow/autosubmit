@@ -36,6 +36,10 @@ class AutosubmitConfig:
         self._conf_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
         self._exp_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
 
+    @property
+    def experiment_file(self):
+        return self._exp_parser_file
+
     def get_project_dir(self):
         dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
         # Getting project name for each type of project

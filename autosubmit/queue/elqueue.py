@@ -28,8 +28,8 @@ class ElQueue(HPCQueue):
         HPCQueue.__init__(self)
         self._host = "ellen"
         self._scratch = "/cfu/scratch"
-        self._project = "a"
-        self._user = "asifsami"
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']

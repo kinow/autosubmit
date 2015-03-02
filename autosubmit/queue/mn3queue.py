@@ -25,9 +25,9 @@ class Mn3Queue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "mn-ecm86"
-        self._scratch = "/gpfs/scratch"
-        self._project = "ecm86"
-        self._user = "ecm86603"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
