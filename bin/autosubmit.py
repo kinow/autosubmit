@@ -230,7 +230,7 @@ def main():
         Log.debug("Total jobs: {0}".format(max_jobs))
         total_jobs = len(joblist.get_job_list())
         Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
-                                                             strftime("%H:%M")))
+                                                            strftime("%H:%M")))
         safetysleeptime = as_conf.get_safetysleeptime()
         Log.debug("Sleep: %s" % safetysleeptime)
         retrials = as_conf.get_retrials()

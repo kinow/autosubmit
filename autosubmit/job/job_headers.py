@@ -396,6 +396,7 @@ class EcCcaHeader:
              ###############################################################################
             """)
 
+
 class HtHeader:
     """Class to handle the Hector headers of a job"""
 

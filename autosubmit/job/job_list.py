@@ -370,6 +370,7 @@ class RerunJobList(JobList):
                     second_last_chunk = int(member['cs'][len(member['cs']) - 2])
                 else:
                     last_chunk = first_chunk
+                    second_last_chunk = None
                     second_chunk = None
 
                 inijob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
@@ -441,7 +442,7 @@ class RerunJobList(JobList):
                         finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                             num_chunks) + "_" + "clean"
                         final_job = Job(finaljob_name, 0, Status.WAITING, Type.CLEANING)
-                        final_job.set_parents(clean_job)
+                        final_job.add_parent(clean_job)
                         self._job_list += [final_job]
 
         self._job_list += [localsetup_job, remotesetup_job]

@@ -61,6 +61,16 @@ def prepare_conf_files(exp_id, hpc, autosubmit_version):
 ####################
 # Main Program
 ####################
+def delete_expid(expid_delete):
+    Log.info("Removing experiment directory...")
+    try:
+        shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete)
+    except OSError:
+        pass
+    Log.info("Deleting experiment from database...")
+    delete_experiment(expid_delete)
+
+
 def main():
     # Get the version number from the relevant file. If not, from autosubmit package
     version_path = os.path.join(scriptdir, '..', 'VERSION')
@@ -83,9 +93,14 @@ def main():
     group2.add_argument('-d', '--description', type=str)
 
     args = parser.parse_args()
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid{0}.log'.format(os.getuid())))
+    log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid{0}.log'.format(os.getuid()))
+    try:
+        Log.set_file(log_path)
+    except IOError as e:
+        Log.error("Can not create log file in path {0}: {1}".format(log_path, e.message))
     exp_id = None
-    if args.new is None and args.copy is None and args.delete is None:
+    expid_delete = args.delete
+    if args.new is None and args.copy is None and expid_delete is None:
         parser.error("Missing method either New or Copy or Delete.")
     if args.new:
         if args.description is None:
@@ -94,50 +109,55 @@ def main():
             parser.error("Missing HPC.")
 
         exp_id = new_experiment(args.HPC, args.description)
-        os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
+        try:
+            os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
 
-        os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
-        Log.info("Copying config files...")
-        # autosubmit config and experiment copyed from AS.
-        files = resource_listdir('autosubmit.config', 'files')
-        for filename in files:
-            if resource_exists('autosubmit.config', 'files/' + filename):
-                index = filename.index('.')
-                new_filename = filename[:index] + "_" + exp_id + filename[index:]
-                content = resource_string('autosubmit.config', 'files/' + filename)
-                Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
-                file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
-        prepare_conf_files(exp_id, args.HPC, autosubmit_version)
+            os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
+            Log.info("Copying config files...")
+            # autosubmit config and experiment copyed from AS.
+            files = resource_listdir('autosubmit.config', 'files')
+            for filename in files:
+                if resource_exists('autosubmit.config', 'files/' + filename):
+                    index = filename.index('.')
+                    new_filename = filename[:index] + "_" + exp_id + filename[index:]
+                    content = resource_string('autosubmit.config', 'files/' + filename)
+                    Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
+                    file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
+            prepare_conf_files(exp_id, args.HPC, autosubmit_version)
+        except (OSError, IOError) as e:
+            Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
+            delete_expid(exp_id)
+            exit(1)
 
     elif args.copy:
         if args.description is None:
             parser.error("Missing experiment description.")
         if args.HPC is None:
             parser.error("Missing HPC.")
-
-        if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy):
-            exp_id = copy_experiment(args.copy, args.HPC, args.description)
-            os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
-            os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
-            Log.info("Copying previous experiment config directories")
-            files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf")
-            for filename in files:
-                if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename):
-                    new_filename = filename.replace(args.copy, exp_id)
-                    content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename, 'r').read()
-                    file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
-            prepare_conf_files(exp_id, args.HPC, autosubmit_version)
-        else:
-            Log.critical("The previous experiment directory does not exist")
-            sys.exit(1)
-
-    elif args.delete:
-        if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + args.delete):
-            if user_yes_no_query("Do you want to delete " + args.delete + " ?"):
-                Log.info("Removing experiment directory...")
-                shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + args.delete)
-                Log.info("Deleting experiment from database...")
-                delete_experiment(args.delete)
+        try:
+            if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy):
+                exp_id = copy_experiment(args.copy, args.HPC, args.description)
+                os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
+                os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
+                Log.info("Copying previous experiment config directories")
+                files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf")
+                for filename in files:
+                    if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename):
+                        new_filename = filename.replace(args.copy, exp_id)
+                        content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + args.copy + "/conf/" + filename, 'r').read()
+                        file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
+                prepare_conf_files(exp_id, args.HPC, autosubmit_version)
+            else:
+                Log.critical("The previous experiment directory does not exist")
+                sys.exit(1)
+        except (OSError, IOError) as e:
+            Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
+            delete_expid(exp_id)
+            exit(1)
+    elif expid_delete:
+        if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete):
+            if user_yes_no_query("Do you want to delete " + expid_delete + " ?"):
+                delete_expid(expid_delete)
             else:
                 Log.info("Quitting...")
                 sys.exit(1)

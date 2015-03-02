@@ -92,6 +92,7 @@ class Job:
     @property
     def parents(self):
         return self._parents
+
     @property
     def ancestors(self):
         ancestors = set()
