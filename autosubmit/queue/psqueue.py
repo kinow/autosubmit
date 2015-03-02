@@ -21,7 +21,7 @@ import os
 from xml.dom.minidom import parseString
 import platform
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from queue.hpcqueue import HPCQueue
 
 from autosubmit.config.basicConfig import BasicConfig
 

@@ -188,10 +188,7 @@ def delete_experiment(name):
                    'where name=:name', {'name': name})
     row = cursor.fetchone()
     if row is None:
-        close_conn(conn, cursor)
         Log.debug('The experiment %s has been deleted!!!' % name)
-        sys.exit(1)
-
     close_conn(conn, cursor)
     return
 

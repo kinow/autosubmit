@@ -17,84 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Functions for handling experiment parameters check"""
-import os
-import sys
-
-from config.basicConfig import BasicConfig
-from log import Log
+"""Script for handling experiment monitoring"""
+import Autosubmit
 
 
-scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-assert sys.path[0] == scriptdir
-sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
-import argparse
-from pkg_resources import require
-from autosubmit.job.job_list import JobList
-from autosubmit.config.config_common import AutosubmitConfig
-
-
-def check_templates(as_conf):
-    """Procedure to check autogeneration of templates given
-    Autosubmit configuration.
-    Returns True if all variables are set.
-    If the parameters are not correctly replaced, the function returns
-    False and the check fails.
-
-    :param as_conf: Autosubmit configuration object
-    :type: AutosubmitConf
-    :retruns: bool
-    """
-    parameters = as_conf.load_parameters()
-    joblist = JobList(parameters['EXPID'])
-    joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '), int(parameters['CHUNKINI']),
-                   int(parameters['NUMCHUNKS']), parameters)
-    out = joblist.check_scripts(as_conf)
-
-    return out
-
-
-####################
-# Main Program
-####################
 def main():
-    version_path = os.path.join(scriptdir, '..', 'VERSION')
-    if os.path.isfile(version_path):
-        with open(version_path) as f:
-            autosubmit_version = f.read().strip()
-    else:
-        autosubmit_version = require("autosubmit")[0].version
-    BasicConfig.read()
-
-    parser = argparse.ArgumentParser(
-        description='Check autosubmit and experiment configurations given a experiment identifier. '
-                    'Check templates creation with those configurations')
-    parser.add_argument('-v', '--version', action='version', version=autosubmit_version)
-    parser.add_argument('-e', '--expid', required=True, nargs=1)
-    args = parser.parse_args()
-    if args.expid is None:
-        parser.error("Missing expid.")
-    Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, args.expid[0], BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
-    as_conf = AutosubmitConfig(args.expid[0])
-    as_conf.check_conf()
-    project_type = as_conf.get_project_type()
-    if project_type != "none":
-        as_conf.check_proj()
-
-    # print "Checking experiment configuration..."
-    # if as_conf.check_parameters():
-    #     print "Experiment configuration check PASSED!"
-    # else:
-    #     print "Experiment configuration check FAILED!"
-    #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
-
-    Log.info("Checking experiment templates...")
-    if check_templates(as_conf):
-        Log.result("Experiment templates check PASSED!")
-    else:
-        Log.critical("Experiment templates check FAILED!")
-        Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
-
+    Autosubmit.parse_args('check')
 
 if __name__ == "__main__":
     main()

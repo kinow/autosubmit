@@ -111,10 +111,10 @@ def expdef_parser(filename):
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
-        Log.critical("Missing options: " + missing)
+        Log.critical("Missing options: " + ','.join(missing))
         sys.exit(1)
 
-    # check autosubmit.py variables
+    # check Autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
