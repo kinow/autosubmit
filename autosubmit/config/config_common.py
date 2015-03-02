@@ -275,6 +275,8 @@ class AutosubmitConfig:
                 content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /cfs/scratch")
             elif hpc == "ecmwf":
                 content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
+            elif hpc == "ecmwf-cca":
+                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
             elif hpc == "marenostrum3":
                 content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch")
             elif hpc == "archer":
@@ -307,6 +309,8 @@ class AutosubmitConfig:
             elif hpc == "ithaca":
                 sleep_time = 10
             elif hpc == "lindgren":
+                sleep_time = 300
+            elif hpc == "ecmwf":
                 sleep_time = 300
             elif hpc == "ecmwf":
                 sleep_time = 300

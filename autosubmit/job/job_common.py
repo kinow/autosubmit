@@ -186,6 +186,7 @@ class StatisticsSnippet:
              marenostrum)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              marenostrum3) errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              ecmwf)        errfile_created="TRUE"; errfile_ptrn="\.err" ;;
+             ecmwf-cca)    errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              hector)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
              lindgren)     errfile_created="FALSE"; errfile_ptrn="\.e" ;;
              jaguar)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;

@@ -77,15 +77,3 @@ class EcQueue(HPCQueue):
         Log.debug(output)
         return output.split()
 
-#
-# def main():
-#     q = EcQueue()
-#     q.check_job(3431854)
-#     j = q.submit_job("/cfu/autosubmit/e000/templates/e000.sim")
-#     sleep(10)
-#     print q.check_job(j)
-#     q.cancel_job(j)
-#
-#
-# if __name__ == "__main__":
-#     main()

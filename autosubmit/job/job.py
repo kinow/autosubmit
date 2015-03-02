@@ -27,6 +27,7 @@ from autosubmit.job.job_common import Template
 from autosubmit.job.job_headers import ArHeader
 from autosubmit.job.job_headers import BscHeader
 from autosubmit.job.job_headers import EcHeader
+from autosubmit.job.job_headers import EcCcaHeader
 from autosubmit.job.job_headers import HtHeader
 from autosubmit.job.job_headers import ItHeader
 from autosubmit.job.job_headers import MnHeader
@@ -78,14 +79,14 @@ class Job:
         del self
 
     def print_job(self):
-        Log.info('NAME: %s' % self.name)
-        Log.info('JOBID: %s' % self.id)
-        Log.info('STATUS: %s' % self.status)
-        Log.info('TYPE: %s' % self.type)
-        Log.info('PARENTS: %s' % [p.name for p in self.parents])
-        Log.info('CHILDREN: %s' % [c.name for c in self.children])
-        Log.info('FAIL_COUNT: %s' % self.fail_count)
-        Log.info('EXPID: %s' % self.expid)
+        Log.debug('NAME: %s' % self.name)
+        Log.debug('JOBID: %s' % self.id)
+        Log.debug('STATUS: %s' % self.status)
+        Log.debug('TYPE: %s' % self.type)
+        Log.debug('PARENTS: %s' % [p.name for p in self.parents])
+        Log.debug('CHILDREN: %s' % [c.name for c in self.children])
+        Log.debug('FAIL_COUNT: %s' % self.fail_count)
+        Log.debug('EXPID: %s' % self.expid)
 
     # Properties
     @property
@@ -355,6 +356,8 @@ class Job:
             remote_header = LgHeader
         elif self.parameters['HPCARCH'] == "ecmwf":
             remote_header = EcHeader
+        elif self.parameters['HPCARCH'] == "ecmwf-cca":
+            remote_header = EcCcaHeader
         elif self.parameters['HPCARCH'] == "marenostrum3":
             remote_header = MnHeader
         else:

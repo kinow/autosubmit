@@ -124,6 +124,13 @@ def main():
             remote_queue.set_user(hpcuser)
             remote_queue.set_host("c2a")
             remote_queue.update_cmds()
+        elif hpcarch == 'ecmwf-cca':
+            remote_queue = EcQueue(expid)
+            remote_queue.set_scratch(scratch_dir)
+            remote_queue.set_project(hpcproj)
+            remote_queue.set_user(hpcuser)
+            remote_queue.set_host("cca")
+            remote_queue.update_cmds()
         elif hpcarch == 'marenostrum3':
             remote_queue = Mn3Queue(expid)
             remote_queue.set_scratch(scratch_dir)
