@@ -199,7 +199,7 @@ class Autosubmit:
         elif args.command == 'create':
             Autosubmit.create(args.expid)
         elif args.command == 'configure':
-            Autosubmit.configure(args.databasepath, args.localrootpath, args.createdatabase, args.user, args.local)
+            Autosubmit.configure(args.databasepath, args.localrootpath, args.user, args.local)
         elif args.command == 'change_pkl':
             Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
                                   args.filter_chunks, args.filter_status, args.filter_type)
@@ -266,7 +266,7 @@ class Autosubmit:
                             content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + copy + "/conf/" + filename, 'r').read()
                             file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename,
                                  'w').write(content)
-                    Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version)
+                    Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                 else:
                     Log.critical("The previous experiment directory does not exist")
                     sys.exit(1)
@@ -778,7 +778,6 @@ class Autosubmit:
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, l1.get_job_list())
 
-
     @staticmethod
     def check(expid):
         BasicConfig.read()
@@ -804,7 +803,7 @@ class Autosubmit:
             Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
-    def configure(database_path, local_root_path, create_db, user, local):
+    def configure(database_path, local_root_path,  user, local):
         home_path = os.path.expanduser('~')
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
@@ -963,8 +962,6 @@ class Autosubmit:
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
         Log.user_warning("Remember to MODIFY the MODEL config files!")
-
-
 
     @staticmethod
     def change_pkl(expid, root_name, save, final, lst, flt,

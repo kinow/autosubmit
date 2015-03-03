@@ -26,7 +26,6 @@ from os import remove
 import pydotplus
 
 
-
 # These packages produce errors when added to setup.
 # noinspection PyPackageRequirements
 import numpy as np

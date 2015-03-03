@@ -27,6 +27,7 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 
 from autosubmit.Autosubmit import Autosubmit
 
+
 def main():
     Autosubmit.parse_args()
 
