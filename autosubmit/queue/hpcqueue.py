@@ -25,7 +25,7 @@ from sys import exit
 
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
-from log import Log
+from autosubmit.config.log import Log
 
 
 SLEEPING_TIME = 30
@@ -62,7 +62,7 @@ class HPCQueue:
         Log.debug(status)
         Log.debug(output)
         # retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a
-        # COMPLETE status from queue due to the 5 min lifetime
+        # COMPLETE status from autosubmit.queue due to the 5 min lifetime
         while status != 0 and retry > 0:
             # if(current_state == Status.RUNNING):
             retry -= 1

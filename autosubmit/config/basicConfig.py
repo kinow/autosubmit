@@ -18,7 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import SafeConfigParser
 import os
-from log import Log
+
+from autosubmit.config.log import Log
 
 
 class BasicConfig:

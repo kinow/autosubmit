@@ -19,16 +19,16 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from log import Log
+from autosubmit.config.log import Log
 
 
 class LgQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "lindgren"
-        self._scratch = "/cfs/scratch"
-        self._project = "a"
-        self._user = "asifsami"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['C', 'E']

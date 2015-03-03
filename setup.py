@@ -49,8 +49,7 @@ setup(
         'autosubmit/database/data/autosubmit.sql'
     ]
     },
-    scripts=['bin/autosubmit.py', 'bin/expid.py', 'bin/check_exp.py', 'bin/create_exp.py', 'bin/monitor.py',
-             'bin/finalise_exp.py', 'bin/change_pkl.py', 'bin/recovery.py', 'bin/statistics.py'],  # data_files = [
+    scripts=['bin/autosubmit.py'],  # data_files = [
     # ('', ['VERSION']),
     # ('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),
     # ('data', ['lib/autosubmit/database/data/autosubmit.sql'])  #	]		  #entry_points = {

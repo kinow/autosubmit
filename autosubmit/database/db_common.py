@@ -16,14 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from log import Log
-
 import os
 import sys
 import sqlite3
 import string
 
+from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
+
 
 # Database parameters
 # DB_DIR = '/cfu/autosubmit'
@@ -188,10 +188,7 @@ def delete_experiment(name):
                    'where name=:name', {'name': name})
     row = cursor.fetchone()
     if row is None:
-        close_conn(conn, cursor)
         Log.debug('The experiment %s has been deleted!!!' % name)
-        sys.exit(1)
-
     close_conn(conn, cursor)
     return
 

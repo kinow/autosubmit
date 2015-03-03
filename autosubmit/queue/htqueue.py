@@ -19,16 +19,16 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from log import Log
+from autosubmit.config.log import Log
 
 
 class HtQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "hector"
-        self._scratch = "/work/pr1u1011"
-        self._project = "pr1u1011"
-        self._user = "pr1e1002"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['F', 'E', 'c']

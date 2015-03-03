@@ -17,12 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import os
-
 from xml.dom.minidom import parseString
 import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
-
 from autosubmit.config.basicConfig import BasicConfig
 
 
@@ -30,7 +28,7 @@ class PsQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = platform.node()
-        self._scratch = "/cfu/autosubmit"
+        self._scratch = ""
         self._project = ""
         self._user = ""
         self.expid = expid

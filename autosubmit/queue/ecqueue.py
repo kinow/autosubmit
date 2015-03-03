@@ -20,16 +20,16 @@
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
-from log import Log
+from autosubmit.config.log import Log
 
 
 class EcQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "c2a"
-        self._scratch = "/scratch/ms"
-        self._project = "spesiccf"
-        self._user = "c3m"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']

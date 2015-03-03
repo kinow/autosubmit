@@ -21,19 +21,19 @@
 import os
 import re
 
-from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import Type
-from autosubmit.job.job_common import Template
-from autosubmit.job.job_headers import ArHeader
-from autosubmit.job.job_headers import BscHeader
-from autosubmit.job.job_headers import EcHeader
-from autosubmit.job.job_headers import EcCcaHeader
-from autosubmit.job.job_headers import HtHeader
-from autosubmit.job.job_headers import ItHeader
-from autosubmit.job.job_headers import MnHeader
-from autosubmit.job.job_headers import PsHeader
-from autosubmit.job.job_headers import LgHeader
-from autosubmit.job.job_common import StatisticsSnippet
+from job_common import Status
+from job_common import Type
+from job_common import Template
+from job_headers import ArHeader
+from job_headers import BscHeader
+from job_headers import EcHeader
+from job_headers import EcCcaHeader
+from job_headers import HtHeader
+from job_headers import ItHeader
+from job_headers import MnHeader
+from job_headers import PsHeader
+from job_headers import LgHeader
+from job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 

@@ -23,7 +23,7 @@ from shutil import rmtree
 from commands import getstatusoutput
 
 from autosubmit.config.basicConfig import BasicConfig
-from log import Log
+from autosubmit.config.log import Log
 
 
 class AutosubmitGit:

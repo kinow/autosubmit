@@ -16,13 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from log import Log
-
 import sys
 import re
-from pyparsing import nestedExpr
 from os import path
 from ConfigParser import SafeConfigParser
+
+from pyparsing import nestedExpr
+
+from autosubmit.config.log import Log
 
 invalid_values = False
 
@@ -111,7 +112,7 @@ def expdef_parser(filename):
     # check which options of the mandatory one are not in config file
     missing = list(set(mandatory_opt).difference(parser.options('experiment')))
     if missing:
-        Log.critical("Missing options: " + missing)
+        Log.critical("Missing options: " + ','.join(missing))
         sys.exit(1)
 
     # check autosubmit.py variables

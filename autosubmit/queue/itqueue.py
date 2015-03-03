@@ -27,9 +27,9 @@ class ItQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "ithaca"
-        self._scratch = "/scratch"
-        self._project = "cfu"
-        self._user = "masif"
+        self._scratch = ""
+        self._project = ""
+        self._user = ""
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
