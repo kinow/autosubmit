@@ -16,14 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from log import Log
-
 import os
 import sys
 import sqlite3
 import string
 
+from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
+
 
 # Database parameters
 # DB_DIR = '/cfu/autosubmit'

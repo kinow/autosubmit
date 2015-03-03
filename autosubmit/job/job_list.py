@@ -29,7 +29,7 @@ from job_common import Status
 from job_common import Type
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
-from log import Log
+from autosubmit.config.log import Log
 
 
 class JobList:

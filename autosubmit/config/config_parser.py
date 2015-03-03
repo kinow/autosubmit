@@ -16,13 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from log import Log
-
 import sys
 import re
-from pyparsing import nestedExpr
 from os import path
 from ConfigParser import SafeConfigParser
+
+from pyparsing import nestedExpr
+
+from autosubmit.config.log import Log
 
 invalid_values = False
 
@@ -114,7 +115,7 @@ def expdef_parser(filename):
         Log.critical("Missing options: " + ','.join(missing))
         sys.exit(1)
 
-    # check Autosubmit.py variables
+    # check autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)

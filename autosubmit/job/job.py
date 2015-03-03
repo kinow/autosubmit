@@ -35,7 +35,7 @@ from job_headers import PsHeader
 from job_headers import LgHeader
 from job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
-from date.chunk_date_lib import *
+from autosubmit.date.chunk_date_lib import *
 
 
 class Job:

@@ -18,8 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from queue.hpcqueue import HPCQueue
-from log import Log
+from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.config.log import Log
 
 
 class ArQueue(HPCQueue):

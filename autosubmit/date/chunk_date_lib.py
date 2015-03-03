@@ -19,8 +19,9 @@
 
 import datetime
 import time
-from log import Log
 from dateutil.relativedelta import *
+
+from autosubmit.config.log import Log
 
 
 """In this python script there are tools to manipulate the dates and make mathematical operations between them """

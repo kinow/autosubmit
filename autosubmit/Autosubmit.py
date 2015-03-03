@@ -17,11 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import SafeConfigParser
-
 import argparse
 from commands import getstatusoutput
 import json
-from pyparsing import nestedExpr
 import time
 import cPickle
 import signal
@@ -34,13 +32,15 @@ from pkg_resources import require, resource_listdir, resource_exists, resource_s
 from time import strftime
 from distutils.util import strtobool
 
+from pyparsing import nestedExpr
+
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.git.git_common import AutosubmitGit
 from autosubmit.job.job_list import JobList, RerunJobList
-from autosubmit.log import Log
+from autosubmit.config.log import Log
 from autosubmit.queue.psqueue import PsQueue
 from autosubmit.queue.mn3queue import Mn3Queue
 from autosubmit.queue.lgqueue import LgQueue
@@ -54,15 +54,12 @@ from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
 from autosubmit.monitor.monitor import Monitor
-from config.config_parser import config_parser
 
 
 class Autosubmit:
-    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    assert sys.path[0] == scriptdir
-    sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 
     # Get the version number from the relevant file. If not, from autosubmit package
+    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
     version_path = os.path.join(scriptdir, '..', 'VERSION')
     if os.path.isfile(version_path):
         with open(version_path) as f:
@@ -71,117 +68,139 @@ class Autosubmit:
         autosubmit_version = require("autosubmit")[0].version
 
     @staticmethod
-    def parse_args(action=None):
+    def parse_args():
         BasicConfig.read()
-        if action is None:
-            arguments = None
-            action = 'run'
-        else:
-            arguments = [action, sys.argv[1:]]
 
-        parser = argparse.ArgumentParser(description='Main entrance to autosubmit. By default launch Autosubmit given '
-                                                     'an experiment identifier')
-        parser.add_argument('action', nargs='?', default=action, choices=('expid', 'create', 'check', 'run',
-                                                                          'delete', 'monitor', 'statistics',
-                                                                          'finalize', 'recovery',
-                                                                          'configure', 'change_pkl'))
-        parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version)
+        parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
+        parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
+                            help="return Autosubmit's version number and exit")
 
-        args = parser.parse_known_args(arguments)
+        subparsers = parser.add_subparsers(dest='command')
 
-        action = args[0].action.lower()
-        if action == 'run':
-            parser.add_argument('-e', '--expid', required=True)
-            args = parser.parse_args()
+        # Run
+        subparser = subparsers.add_parser('run', description="run specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+
+        # Expid
+        subparser = subparsers.add_parser('expid', description="Creates a new experiment")
+        group = subparser.add_mutually_exclusive_group()
+        group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
+        group.add_argument('-dm', '--dummy', action='store_true', help='creates a new experiment with default '
+                                                                       'values, usually for testing')
+
+        subparser.add_argument('-H', '--HPC', required=True,
+                               choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca',
+                                        'marenostrum3', 'archer'),
+                               help='Specifies the HPC to use for the experiment')
+        subparser.add_argument('-d', '--description', type=str, required=True,
+                               help='A description for the experiment to store in the database.')
+
+        # Delete
+        subparser = subparsers.add_parser('delete', description="delete specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+
+        # Monitor
+        subparser = subparsers.add_parser('monitor', description="plots specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
+        subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
+                               help='type of output for generated plot')
+
+        # Stats
+        subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
+        subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
+                               help='type of output for generated plot')
+
+        # Clean
+        subparser = subparsers.add_parser('clean', description="clean specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-pr', '--project', action="store_true", default=False, help='clean project')
+        subparser.add_argument('-p', '--plot', action="store_true", default=False,
+                               help='clean plot, only 2 last will remain')
+
+        # Recovery
+        subparser = subparsers.add_parser('recovery', description="recover specified experiment")
+        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
+        subparser.add_argument('-g', '--get', action="store_true", default=False,
+                               help='Get completed files to synchronize pkl')
+        subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
+
+        # Check
+        subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+
+        # Create
+        subparser = subparsers.add_parser('create', description="create specified experiment joblist")
+        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+
+        # Configure
+        subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
+                                                                   "can be done at machine, user or local level (by "
+                                                                   "default at machine level)")
+        subparser.add_argument('-db', '--databasepath',  default=None, help='path to database. If not supplied, '
+                                                                            'it will be prompt for it')
+        subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
+                                                                            'supplied, it will be prompt for it')
+        group = subparser.add_mutually_exclusive_group()
+        group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
+        group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from this '
+                                                                      'path')
+
+        # Change_pkl
+        subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
+        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
+        subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
+        subparser.add_argument('-t', '--status_final',
+                               choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               required=True,
+                               help='Supply the target status')
+        group1 = subparser.add_mutually_exclusive_group(required=True)
+        group1.add_argument('-l', '--list', type=str,
+                            help='Alternative 1: Supply the list of job names to be changed. Default = "Any". '
+                                 'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+        group1.add_argument('-f', '--filter', action="store_true",
+                            help='Alternative 2: Supply a filter for the job list. See help of filter arguments: '
+                                 'chunk filter, status filter or type filter')
+        group2 = subparser.add_mutually_exclusive_group(required=False)
+        group2.add_argument('-fc', '--filter_chunks', type=str,
+                            help='Supply the list of chunks to change the status. Default = "Any". '
+                                 'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+        group2.add_argument('-fs', '--filter_status', type=str,
+                            choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                            help='Select the original status to filter the list of jobs')
+        group2.add_argument('-ft', '--filter_type', type=str, choices=('Any', 'LOCALSETUP', 'REMOTESETUP',
+                                                                       'INITIALISATION', 'SIMULATION',
+                                                                       'POSTPROCESSING', 'CLEANING',
+                                                                       'LOCALTRANSFER'),
+                            help='Select the job type to filter the list of jobs')
+
+        args = parser.parse_args()
+
+        if args.command == 'run':
             Autosubmit.run_experiment(args.expid)
-        elif action == 'expid':
-            group = parser.add_mutually_exclusive_group()
-            group.add_argument('-y', '--copy', action='store_true')
-            group.add_argument('-dm', '--dummy', action='store_true')
-
-            parser.add_argument('-H', '--HPC', required=True,
-                                choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca',
-                                         'marenostrum3', 'archer'))
-            parser.add_argument('-d', '--description', type=str, required=True)
-
-            args = parser.parse_args()
+        elif args.command == 'expid':
             Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy)
-        elif action == 'delete':
-            parser.add_argument('-e', '--expid', required=True)
-            args = parser.parse_args()
+        elif args.command == 'delete':
             Autosubmit.delete(args.expid)
-        elif action == 'monitor':
-            parser.add_argument('-e', '--expid', required=True)
-            parser.add_argument('-j', '--joblist', required=True)
-            parser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf')
-            args = parser.parse_args()
+        elif args.command == 'monitor':
             Autosubmit.monitor(args.expid, args.joblist, args.output)
-        elif action == 'statistics':
-            parser.add_argument('-e', '--expid', required=True)
-            parser.add_argument('-j', '--joblist', required=True)
-            parser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf')
-            args = parser.parse_args()
+        elif args.command == 'stats':
             Autosubmit.statistics(args.expid, args.joblist, args.output)
-        elif action == 'finalize':
-            parser.add_argument('-e', '--expid', required=True)
-            parser.add_argument('-pr', '--project', action="store_true", default=False, help='Clean project')
-            parser.add_argument('-p', '--plot', action="store_true", default=False,
-                                help='Clean plot, only 2 last will remain')
-            args = parser.parse_args()
-            Autosubmit.finalize(args.expid, args.project, args.plot)
-        elif action == 'recovery':
-            parser.add_argument('-e', '--expid', type=str, required=True, help='Experiment ID')
-            parser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
-            parser.add_argument('-g', '--get', action="store_true", default=False,
-                                help='Get completed files to synchronize pkl')
-            parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
-            args = parser.parse_args()
+        elif args.command == 'clean':
+            Autosubmit.clean(args.expid, args.project, args.plot)
+        elif args.command == 'recovery':
             Autosubmit.recovery(args.expid, args.joblist, args.save, args.get)
-        elif action == 'check':
-            parser.add_argument('-e', '--expid', required=True)
-            args = parser.parse_args()
+        elif args.command == 'check':
             Autosubmit.check(args.expid)
-        elif action == 'create':
-            parser.add_argument('-e', '--expid', required=True)
-            args = parser.parse_args()
+        elif args.command == 'create':
             Autosubmit.create(args.expid)
-        elif action == 'configure':
-            parser.add_argument('-db', '--databasepath',  default=None)
-            parser.add_argument('-lr', '--localrootpath', default=None)
-            parser.add_argument('-c', '--createdatabase', action="store_true", default=False)
-            group = parser.add_mutually_exclusive_group()
-            group.add_argument('-u', '--user', action="store_true")
-            group.add_argument('-l', '--local', action="store_true")
-            args = parser.parse_args()
+        elif args.command == 'configure':
             Autosubmit.configure(args.databasepath, args.localrootpath, args.createdatabase, args.user, args.local)
-        elif action == 'change_pkl':
-            parser.add_argument('-e', '--expid', type=str, required=True, help='Experiment ID')
-            parser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
-            parser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
-            parser.add_argument('-t', '--status_final',
-                                choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                                required=True,
-                                help='Supply the target status')
-            group1 = parser.add_mutually_exclusive_group(required=True)
-            group1.add_argument('-l', '--list', type=str,
-                                help='Alternative 1: Supply the list of job names to be changed. Default = "Any". '
-                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
-            group1.add_argument('-f', '--filter', action="store_true",
-                                help='Alternative 2: Supply a filter for the job list. See help of filter arguments: '
-                                     'chunk filter, status filter or type filter')
-            group2 = parser.add_mutually_exclusive_group(required=False)
-            group2.add_argument('-fc', '--filter_chunks', type=str,
-                                help='Supply the list of chunks to change the status. Default = "Any". '
-                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
-            group2.add_argument('-fs', '--filter_status', type=str,
-                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                                help='Select the original status to filter the list of jobs')
-            group2.add_argument('-ft', '--filter_type', type=str, choices=('Any', 'LOCALSETUP', 'REMOTESETUP',
-                                                                           'INITIALISATION', 'SIMULATION',
-                                                                           'POSTPROCESSING', 'CLEANING',
-                                                                           'LOCALTRANSFER'),
-                                help='Select the job type to filter the list of jobs')
-            args = parser.parse_args()
+        elif args.command == 'change_pkl':
             Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
                                   args.filter_chunks, args.filter_status, args.filter_type)
 
@@ -603,7 +622,7 @@ class Autosubmit:
             Log.info("There are no COMPLETED jobs...")
 
     @staticmethod
-    def finalize(expid, project, plot):
+    def clean(expid, project, plot):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'finalise_exp.log'))
@@ -810,16 +829,18 @@ class Autosubmit:
         path = os.path.join(path, '.autosubmitrc')
 
         config_file = open(path, 'w')
-
         Log.info("Writing configuration file...")
-        parser = SafeConfigParser()
-        parser.add_section('database')
-        parser.set('database', 'path', database_path)
-        parser.add_section('local')
-        parser.set('local', 'path', local_root_path)
-        parser.write(config_file)
-        config_file.close()
-        Log.info("Configuration file written successfully")
+        try:
+            parser = SafeConfigParser()
+            parser.add_section('database')
+            parser.set('database', 'path', database_path)
+            parser.add_section('local')
+            parser.set('local', 'path', local_root_path)
+            parser.write(config_file)
+            config_file.close()
+            Log.result("Configuration file written successfully")
+        except (IOError, OSError) as e:
+            Log.critical("Can not write config file: {0}".format(e.message))
 
     @staticmethod
     def create(expid):
@@ -1220,8 +1241,3 @@ class Autosubmit:
         result = json.dumps(sds)
         return result
 
-def main():
-        Autosubmit.parse_args()
-
-if __name__ == "__main__":
-    main()

@@ -18,11 +18,17 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """Script for handling experiment monitoring"""
+import os
+import sys
+
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
+
 from autosubmit.Autosubmit import Autosubmit
 
-
 def main():
-    Autosubmit.parse_args('create')
+    Autosubmit.parse_args()
 
 if __name__ == "__main__":
     main()

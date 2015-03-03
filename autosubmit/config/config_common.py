@@ -16,13 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from log import Log
 import os
-
 import re
 from os import listdir
 from commands import getstatusoutput
 
+from autosubmit.config.log import Log
 from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
 from autosubmit.config.config_parser import projdef_parser
