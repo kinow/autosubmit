@@ -390,6 +390,22 @@ class Job:
 			mytemplate = self._template_path + 'common/common.localtrans'
 			parameters['TASKTYPE'] = 'TRANSFER'
 			parameters['HEADER'] = parameters['HEADER_LOCALTRANS']
+		elif (self._type == Type.LOCALPOST):
+			print "jobType: %s" % self._type
+			##update parameters
+			mytemplate = self._template_path + 'common/common.localpost'
+			parameters['TASKTYPE'] = 'LOCALPOST'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_LOCALPOST'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_LOCALPOST']
+			parameters['HEADER'] = parameters['HEADER_LOCALPOST']
+		elif (self._type == Type.PLOT):
+			print "jobType: %s" % self._type
+			##update parameters
+			mytemplate = self._template_path + 'common/common.plot'
+			parameters['TASKTYPE'] = 'PLOT'
+			parameters['WALLCLOCK'] = parameters['WALLCLOCK_PLOT'] 
+			parameters['NUMPROC'] = parameters['NUMPROC_PLOT']
+			parameters['HEADER'] = parameters['HEADER_PLOT']
 		else: 
 			print "Unknown Job Type"
 		 
@@ -404,10 +420,12 @@ class Job:
 		# following values to be replaced that contain inside other values between %% to be replaced later
 		templateContent = templateContent.replace("%AS-HEADER-LOC%",parameters['AS-HEADER-LOC'])
 		templateContent = templateContent.replace("%AS-HEADER-REM%",parameters['AS-HEADER-REM'])
+		templateContent = templateContent.replace("%AS-HEADER-FAT%",parameters['AS-HEADER-FAT'])
 		templateContent = templateContent.replace("%AS-TAILER-LOC%",parameters['AS-TAILER-LOC'])
 		templateContent = templateContent.replace("%AS-TAILER-REM%",parameters['AS-TAILER-REM'])
+		templateContent = templateContent.replace("%AS-TAILER-FAT%",parameters['AS-TAILER-FAT'])
 		for key,value in parameters.items():
-			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-REM') and key in templateContent):
+			if (not key.startswith('HEADER') and not key.startswith('AS-HEADER-LOC') and not key.startswith('AS-HEADER-REM') and not key.startswith('AS-HEADER-FAT') and not key.startswith('AS-TAILER-REM') and not key.startswith('AS-TAILER-LOC') and not key.startswith('AS-TAILER-FAT') and key in templateContent):
 				print "%s:\t%s" % (key,parameters[key])
 				templateContent = templateContent.replace("%"+key+"%",parameters[key])
 

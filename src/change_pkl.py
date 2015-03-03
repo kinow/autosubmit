@@ -41,7 +41,7 @@ def get_status(s):
 	elif s == 'FAILED':
 		return Status.FAILED
 	elif s == 'UNKNOWN':
-		return Status.UNKNWON
+		return Status.UNKNOWN
 
 def get_type(t):
 	if t == 'LOCALSETUP':

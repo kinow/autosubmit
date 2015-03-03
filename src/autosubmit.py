@@ -31,6 +31,7 @@ from queue.ecqueue import EcQueue
 from queue.mn3queue import Mn3Queue
 from queue.htqueue import HtQueue
 from queue.arqueue import ArQueue
+from queue.sgqueue import SgQueue
 import dir_config
 from config_parser import config_parser, expdef_parser, archdef_parser
 from job.job import Job
@@ -85,8 +86,10 @@ if __name__ == "__main__":
 	conf_parser = config_parser(LOCAL_ROOT_DIR + "/" +  sys.argv[1] + "/conf/" + "autosubmit_" + sys.argv[1] + ".conf")
 	exp_parser_file = conf_parser.get('config', 'EXPDEFFILE')
 	arch_parser_file = conf_parser.get('config', 'ARCHDEFFILE')
+	fat_parser_file = conf_parser.get('config', 'FATDEFFILE')
 	exp_parser = expdef_parser(exp_parser_file)
 	arch_parser = archdef_parser(arch_parser_file)
+	fat_parser = archdef_parser(fat_parser_file)
 
 	alreadySubmitted = int(conf_parser.get('config','alreadysubmitted'))
 	totalJobs = int(conf_parser.get('config','totaljobs'))
@@ -99,6 +102,11 @@ if __name__ == "__main__":
 	scratch_dir = arch_parser.get('archdef', 'SCRATCH_DIR')
 	hpcproj = exp_parser.get('experiment', 'HPCPROJ')
 	hpcuser = exp_parser.get('experiment', 'HPCUSER')
+	fatarch = exp_parser.get('experiment', 'HPCARCH')
+	fat_scratch_dir = fat_parser.get('archdef', 'FAT_SCRATCH_DIR')
+	fatproj = exp_parser.get('experiment', 'FATPROJ')
+	fatuser = exp_parser.get('experiment', 'FATUSER')
+
 	if (exp_parser.has_option('experiment','RERUN')):
 		rerun = exp_parser.get('experiment','RERUN').lower()
 	else: 
@@ -169,6 +177,10 @@ if __name__ == "__main__":
 	localQueue.set_user("tmp")
 	localQueue.update_cmds()
 
+	fatQueue = SgQueue(expid)
+	if(fatarch == "stargate"):
+		fatQueue.set_host("stargate")
+
 	logger.debug("The Experiment name is: %s" % expid)
 	#logger.info("Jobs to submit: %s" % totalJobs)
 	#logger.info("Start with job number: %s" % alreadySubmitted)
@@ -202,6 +214,15 @@ if __name__ == "__main__":
 
 	signal.signal(signal.SIGQUIT, localQueue.smart_stop)
 	signal.signal(signal.SIGINT, localQueue.normal_stop)
+	signal.signal(signal.SIGQUIT, fatQueue.smart_stop)
+	signal.signal(signal.SIGINT, fatQueue.normal_stop)
+    
+	fatQueue.set_scratch(fat_scratch_dir)
+	fatQueue.set_project(fatproj)
+	fatQueue.set_user(fatuser)
+	fatQueue.update_cmds()
+
+
  
 	if(rerun == 'false'):
 		filename = LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_'+ expid +'.pkl'
@@ -222,13 +243,14 @@ if __name__ == "__main__":
 	
 	#check the availability of the Queues
 	localQueue.check_remote_log_dir()
+	fatQueue.check_remote_log_dir()
 	## in lindgren arch must check both serial and parallel queues
 	if(hpcarch == "lindgren"):
 		serialQueue.check_remote_log_dir()
 		parallelQueue.check_remote_log_dir()
 	else:
 		remoteQueue.check_remote_log_dir()
-
+	
 	#first job goes to the local Queue
 	queue = localQueue
 
@@ -273,6 +295,7 @@ if __name__ == "__main__":
 		##logger.info("Number of retrials: %s" % retrials)
 		exp_parser = expdef_parser(exp_parser_file)
 		arch_parser = archdef_parser(arch_parser_file)
+		fat_parser = archdef_parser(fat_parser_file)
 		expdef = []
 		incldef = []
 		for section in exp_parser.sections():
@@ -283,7 +306,9 @@ if __name__ == "__main__":
 				expdef += exp_parser.items(section)
 
 		arch_parser = archdef_parser(arch_parser_file)
+		fat_parser = archdef_parser(fat_parser_file)
 		expdef += arch_parser.items('archdef')
+		expdef += fat_parser.items('archdef')
 
 		parameters = dict()
 
@@ -341,6 +366,8 @@ if __name__ == "__main__":
 					queue = serialQueue
 				elif(job.get_type() == Type.LOCALSETUP or job.get_type() == Type.TRANSFER):
 					queue = localQueue
+				elif(job.get_type() == Type.LOCALPOST or job.get_type() == Type.PLOT):
+					queue = fatQueue
 				else:
 					queue = remoteQueue
 				# Check queue aviailability		
@@ -357,6 +384,7 @@ if __name__ == "__main__":
 						job.set_status(status)
 				exp_parser = expdef_parser(exp_parser_file)
 				arch_parser = archdef_parser(arch_parser_file)
+				fat_parser = archdef_parser(fat_parser_file)
 				expdef = []
 				incldef = []
 				for section in exp_parser.sections():
@@ -367,6 +395,8 @@ if __name__ == "__main__":
 						expdef += exp_parser.items(section)
 				arch_parser = archdef_parser(arch_parser_file)
 				expdef += arch_parser.items('archdef')
+				fat_parser = archdef_parser(fat_parser_file)
+				expdef += fat_parser.items('archdef')
 				parameters = dict()
 				for item in expdef:
 					parameters[item[0]] = item[1]
@@ -504,6 +534,10 @@ if __name__ == "__main__":
 					queue = localQueue
 					logger.info("Submitting to local queue...")
 					print("Submitting to local queue...")
+				elif(job.get_type() == Type.LOCALPOST or job.get_type() == Type.PLOT):
+					queue = fatQueue
+					logger.info("Submitting to fat queue...")
+					print("Submitting to fat queue...")
 				else:
 					queue = remoteQueue
 					logger.info("Submitting to remote queue...")
