@@ -52,6 +52,7 @@ class Job:
         self.short_name = name
 
         self.id = jobid
+        self.file = None
         self.status = status
         self.type = jobtype
         self._parents = set()
@@ -96,10 +97,11 @@ class Job:
     @property
     def ancestors(self):
         ancestors = set()
-        for parent in self.parents:
-            ancestors.add(parent)
-            for ancestor in parent.ancestors:
-                ancestors.add(ancestor)
+        if self.has_parents():
+            for parent in self.parents:
+                ancestors.add(parent)
+                for ancestor in parent.ancestors:
+                    ancestors.add(ancestor)
         return ancestors
 
     @property

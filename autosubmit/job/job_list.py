@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+from ConfigParser import SafeConfigParser
 
 import os
 import pickle
@@ -45,64 +45,96 @@ class JobList:
 
     def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
         self._parameters = parameters
-        localsetupjob_name = self._expid + "_"
-        localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 
-        remotesetupjob_name = self._expid + "_"
-        remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
+        parser = SafeConfigParser()
+        parser.optionxform = str
+        parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-        remotesetup_job.add_parent(localsetup_job)
+        dic_jobs = DicJobs(self, parser, date_list, member_list, starting_chunk, num_chunks)
 
-        Log.info("Creating job list...")
-        for date in date_list:
-            Log.debug("Date: {0}".format(date))
-            for member in member_list:
-                Log.debug("Member: " + member)
-                transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
-                trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
-                for chunk in range(starting_chunk, starting_chunk + num_chunks):
-                    rootjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk) + "_"
-                    inijob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
-                    post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
-                    clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
-                    if starting_chunk == chunk and chunk != 1:
-                        sim_job = Job(rootjob_name + "sim", 0, Status.READY, Type.SIMULATION)
+        for section in parser.sections():
+            dic_jobs.read_section(section)
+
+        for section in parser.sections():
+            if not parser.has_option(section, "DEPENDENCIES"):
+                continue
+            dependencies = parser.get(section, "DEPENDENCIES").split()
+            for job in dic_jobs.get_jobs(section):
+                for dependency in dependencies:
+                    chunk = job.chunk
+                    member = job.member
+                    date = job.date
+                    if '-' in dependency:
+                        dep_section = dependency.split('-')[0]
+                        distance = int(dependency.split('-')[1])
+                        if chunk is not None:
+                            chunk -= distance
+                        elif member is not None:
+                            if member_list.index(member) >= distance:
+                                member = member_list[member_list.index(member)-distance]
+                            else:
+                                continue
+                        elif date is not None:
+                            if date_list.index(date) >= distance:
+                                date = date_list[date_list.index(date)-distance]
+                            else:
+                                continue
                     else:
-                        sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
+                        dep_section = dependency
+                    for parent in dic_jobs.get_jobs(dep_section, date, member, chunk):
+                        job.add_parent(parent)
 
-                    # set dependency of postprocessing jobs
-                    post_job.add_parent(sim_job, clean_job)
-
-                    # set parents of clean job
-                    clean_job.add_parent(post_job)
-
-                    # set status of first chunk to READY
-                    if chunk > 1:
-                        parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
-                            chunk - 1) + "_" + "sim"
-                        sim_job.add_parent(self.get_job_by_name(parentjob_name))
-                        if chunk > 2:
-                            parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
-                                chunk - 2) + "_" + "clean"
-                            sim_job.add_parent(self.get_job_by_name(parentjob_name))
-                    if chunk == 1:
-                        ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-                        ini_job.add_parent(remotesetup_job)
-                        sim_job.add_parent(ini_job)
-                        self._job_list += [ini_job]
-
-                    if chunk == num_chunks or chunk == num_chunks - 1:
-                        trans_job.add_parent(clean_job)
-
-                    self._job_list += [sim_job, post_job, clean_job]
-
-                self._job_list += [trans_job]
-
-        self._job_list += [localsetup_job, remotesetup_job]
-
-        self.update_genealogy()
+        # self.update_genealogy()
         for job in self._job_list:
             job.parameters = parameters
+        # for date in date_list:
+        #     for member in member_list:
+        #         Log.debug("Member: " + member)
+        #         transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
+        #         trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
+        #         for chunk in range(starting_chunk, starting_chunk + num_chunks):
+        #             rootjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk) + "_"
+        #             inijob_name = self._expid + "_" + str(date) + "_" + str(member) + "_"
+        #             post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
+        #             clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
+        #             if starting_chunk == chunk and chunk != 1:
+        #                 sim_job = Job(rootjob_name + "sim", 0, Status.READY, Type.SIMULATION)
+        #             else:
+        #                 sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
+        #
+        #             # set dependency of postprocessing jobs
+        #             post_job.add_parent(sim_job, clean_job)
+        #
+        #             # set parents of clean job
+        #             clean_job.add_parent(post_job)
+        #
+        #             # set status of first chunk to READY
+        #             if chunk > 1:
+        #                 parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
+        #                     chunk - 1) + "_" + "sim"
+        #                 sim_job.add_parent(self.get_job_by_name(parentjob_name))
+        #                 if chunk > 2:
+        #                     parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(
+        #                         chunk - 2) + "_" + "clean"
+        #                     sim_job.add_parent(self.get_job_by_name(parentjob_name))
+        #             if chunk == 1:
+        #                 ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
+        #                 ini_job.add_parent(remotesetup_job)
+        #                 sim_job.add_parent(ini_job)
+        #                 self._job_list += [ini_job]
+        #
+        #             if chunk == num_chunks or chunk == num_chunks - 1:
+        #                 trans_job.add_parent(clean_job)
+        #
+        #             self._job_list += [sim_job, post_job, clean_job]
+        #
+        #         self._job_list += [trans_job]
+        #
+        # self._job_list += [localsetup_job, remotesetup_job]
+        #
+
+
+
 
     def __len__(self):
         return self._job_list.__len__()
@@ -265,27 +297,8 @@ class JobList:
 
         # Use a copy of job_list because original is modified along iterations
         for job in self._job_list[:]:
-            if job.type == Type.LOCALSETUP:
-                if self._parameters["FILE_LOCALSETUP"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.REMOTESETUP:
-                if self._parameters["FILE_REMOTESETUP"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.INITIALISATION:
-                if self._parameters["FILE_INI"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.SIMULATION:
-                if self._parameters["FILE_SIM"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.POSTPROCESSING:
-                if self._parameters["FILE_POST"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.CLEANING:
-                if self._parameters["FILE_CLEAN"] == '':
-                    self._remove_job(job)
-            elif job.type == Type.TRANSFER:
-                if self._parameters["FILE_TRANS"] == '':
-                    self._remove_job(job)
+            if job.file is None:
+                self._remove_job(job)
 
         # Simplifing dependencies: if a parent is alreaday an ancestor of another parent,
         # we remove parent dependency
@@ -451,3 +464,94 @@ class RerunJobList(JobList):
         for job in self._job_list:
             job.parameters = parameters
 
+
+class DicJobs:
+
+    def __init__(self, joblist, parser, date_list, member_list, starting_chunk, num_chunks):
+        self._date_list = date_list
+        self._joblist = joblist
+        self._member_list = member_list
+        self._starting_chunk = starting_chunk
+        self._num_chunks = num_chunks
+        self._parser = parser
+        self._dic = dict()
+
+    def read_section(self, section):
+        running = 'once'
+        if self._parser.has_option(section, 'RUNNING'):
+            running = self._parser.get(section, 'RUNNING').lower()
+
+        if running == 'once':
+            self._create_jobs_once(section)
+        elif running == 'startdate':
+            self._create_jobs_startdate(section)
+        elif running == 'member':
+            self._create_jobs_member(section)
+        elif running == 'chunk':
+            self._create_jobs_chunk(section)
+
+    def _create_jobs_once(self, section):
+        self._dic[section] = self._create_job(section, None, None, None)
+
+    def _create_jobs_startdate(self, section):
+        self._dic[section] = dict()
+        for date in self._date_list:
+            self._dic[section][date] = self._create_job(section, date, None, None)
+
+    def _create_jobs_member(self, section):
+        self._dic[section] = dict()
+        for date in self._date_list:
+            self._dic[section][date] = dict()
+            for member in self._member_list:
+                self._dic[section][date][member] = self._create_job(section, date, member, None)
+
+    def _create_jobs_chunk(self, section):
+        self._dic[section] = dict()
+        for date in self._date_list:
+            self._dic[section][date] = dict()
+            for member in self._member_list:
+                self._dic[section][date][member] = dict()
+                for chunk in range(self._starting_chunk, self._starting_chunk + self._num_chunks):
+                    self._dic[section][date][member][chunk] = self._create_job(section, date, member, chunk)
+
+    def get_jobs(self, section, date=None, member=None, chunk=None):
+        jobs = list()
+        dic = self._dic[section]
+        if type(dic) is not dict:
+            jobs.append(dic)
+        else:
+            for d in self._date_list:
+                if date is not None and date != d:
+                    continue
+                if type(dic[d]) is not dict:
+                    jobs.append(dic[d])
+                else:
+                    for m in self._member_list:
+                        if member is not None and member != m:
+                            continue
+                        if type(dic[d][m]) is not dict:
+                            jobs.append(dic[d][m])
+                        else:
+                            for c in range(self._starting_chunk, self._starting_chunk + self._num_chunks):
+                                if chunk is not None and chunk != c:
+                                    continue
+                                jobs.append(dic[d][m][c])
+        return jobs
+
+    def _create_job(self, section, date, member, chunk):
+        name = self._joblist._expid
+        if date is not None:
+            name += "_" + date
+        if member is not None:
+            name += "_" + member
+        if chunk is not None:
+            name += "_{0}".format(chunk)
+        name += "_" + section
+        job = Job(name, 0, Status.WAITING, Type.TRANSFER)
+        job.date = date
+        job.member = member
+        job.chunk = chunk
+        if self._parser.has_option(section, "FILE"):
+            job.file = self._parser.get(section, "FILE")
+        self._joblist._job_list.append(job)
+        return job
