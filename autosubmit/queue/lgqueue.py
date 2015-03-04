@@ -20,6 +20,7 @@
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
+from job.job_headers import LgHeader
 
 
 class LgQueue(HPCQueue):
@@ -29,6 +30,7 @@ class LgQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = LgHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['C', 'E']

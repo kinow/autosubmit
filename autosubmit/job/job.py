@@ -22,17 +22,6 @@ import os
 import re
 
 from job_common import Status
-from job_common import Type
-from job_common import Template
-from job_headers import ArHeader
-from job_headers import BscHeader
-from job_headers import EcHeader
-from job_headers import EcCcaHeader
-from job_headers import HtHeader
-from job_headers import ItHeader
-from job_headers import MnHeader
-from job_headers import PsHeader
-from job_headers import LgHeader
 from job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
@@ -44,7 +33,17 @@ class Job:
        It can have children and parents. The inheritance reflects the dependency between jobs.
        If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2 """
 
-    def __init__(self, name, jobid, status, jobtype):
+    def __init__(self, name, jobid, status, priority):
+        self.queue = None
+        self.queue_name = None
+        self.section = None
+        self.wallclock = None
+        self.tasks = None
+        self.threads = None
+        self.processors = None
+        self.chunk = None
+        self.member = None
+        self.date = None
         self.name = name
         self._long_name = None
         self.long_name = name
@@ -54,7 +53,7 @@ class Job:
         self.id = jobid
         self.file = None
         self.status = status
-        self.type = jobtype
+        self.priority = priority
         self._parents = set()
         self._children = set()
         self.fail_count = 0
@@ -69,7 +68,7 @@ class Job:
         del self._short_name
         del self.id
         del self.status
-        del self.type
+        del self.priority
         del self._parents
         del self._children
         del self.fail_count
@@ -83,7 +82,7 @@ class Job:
         Log.debug('NAME: %s' % self.name)
         Log.debug('JOBID: %s' % self.id)
         Log.debug('STATUS: %s' % self.status)
-        Log.debug('TYPE: %s' % self.type)
+        Log.debug('TYPE: %s' % self.priority)
         Log.debug('PARENTS: %s' % [p.name for p in self.parents])
         Log.debug('CHILDREN: %s' % [c.name for c in self.children])
         Log.debug('FAIL_COUNT: %s' % self.fail_count)
@@ -184,7 +183,7 @@ class Job:
         return cmp(self.status(), other.status)
 
     def compare_by_type(self, other):
-        return cmp(self.type(), other.type)
+        return cmp(self.priority(), other.type)
 
     def compare_by_id(self, other):
         return cmp(self.id(), other.id)
@@ -261,38 +260,23 @@ class Job:
 
     def update_parameters(self):
         parameters = self.parameters
-        splittedname = self.long_name.split('_')
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
 
-        string_date = None
-        prev_days = None
-
-        if self.type == Type.TRANSFER:
-            parameters['SDATE'] = splittedname[1]
-            string_date = splittedname[1]
-            parameters['MEMBER'] = splittedname[2]
-        elif (self.type == Type.INITIALISATION or
-              self.type == Type.SIMULATION or
-              self.type == Type.POSTPROCESSING or
-              self.type == Type.CLEANING):
-            parameters['SDATE'] = splittedname[1]
-            string_date = splittedname[1]
-            parameters['MEMBER'] = splittedname[2]
-            if self.type == Type.INITIALISATION:
-                parameters['CHUNK'] = '1'
-                chunk = 1
-            else:
-                parameters['CHUNK'] = splittedname[3]
-                chunk = int(splittedname[3])
+        parameters['SDATE'] = self.date
+        parameters['MEMBER'] = self.member
+        if self.chunk is None:
+            parameters['CHUNK'] = '1'
+        else:
+            parameters['CHUNK'] = self.chunk
+            chunk = self.chunk
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length_in_month = int(parameters['CHUNKSIZE'])
-            chunk_start = chunk_start_date(string_date, chunk, chunk_length_in_month)
+            chunk_start = chunk_start_date(self.date, chunk, chunk_length_in_month)
             chunk_end = chunk_end_date(chunk_start, chunk_length_in_month)
             run_days = running_days(chunk_start, chunk_end)
-            prev_days = previous_days(string_date, chunk_start)
-            chunk_end_days = previous_days(string_date, chunk_end)
-            day_before = previous_day(string_date)
+            chunk_end_days = previous_days(self.date, chunk_end)
+            day_before = previous_day(self.date)
             chunk_end_1 = previous_day(chunk_end)
             parameters['DAY_BEFORE'] = day_before
             parameters['Chunk_START_DATE'] = chunk_start
@@ -310,139 +294,34 @@ class Job:
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
-        if self.type == Type.SIMULATION:
-            parameters['PREV'] = str(prev_days)
-            parameters['WALLCLOCK'] = parameters['WALLCLOCK_SIM']
-            parameters['NUMPROC'] = parameters['NUMPROC_SIM']
-            parameters['TASKTYPE'] = 'SIMULATION'
-        elif self.type == Type.POSTPROCESSING:
-            starting_date_year = chunk_start_year(string_date)
-            starting_date_month = chunk_start_month(string_date)
-            parameters['Starting_DATE_YEAR'] = str(starting_date_year)
-            parameters['Starting_DATE_MONTH'] = str(starting_date_month)
-            parameters['WALLCLOCK'] = parameters['WALLCLOCK_POST']
-            parameters['NUMPROC'] = parameters['NUMPROC_POST']
-            parameters['TASKTYPE'] = 'POSTPROCESSING'
-        elif self.type == Type.CLEANING:
-            parameters['WALLCLOCK'] = parameters['WALLCLOCK_CLEAN']
-            parameters['NUMPROC'] = parameters['NUMPROC_CLEAN']
-            parameters['TASKTYPE'] = 'CLEANING'
-        elif self.type == Type.INITIALISATION:
-            parameters['WALLCLOCK'] = parameters['WALLCLOCK_INI']
-            parameters['NUMPROC'] = parameters['NUMPROC_INI']
-            parameters['TASKTYPE'] = 'INITIALISATION'
-        elif self.type == Type.LOCALSETUP:
-            parameters['TASKTYPE'] = 'LOCAL SETUP'
-        elif self.type == Type.REMOTESETUP:
-            parameters['TASKTYPE'] = 'REMOTE SETUP'
-            parameters['WALLCLOCK'] = parameters['WALLCLOCK_SETUP']
-            parameters['NUMPROC'] = parameters['NUMPROC_SETUP']
-        elif self.type == Type.TRANSFER:
-            parameters['TASKTYPE'] = 'TRANSFER'
-        else:
-            Log.warning("Unknown Job Type")
+        parameters['NUMPROC'] = self.processors
+        parameters['NUMTHREADS'] = self.threads
+        parameters['NUMTASK'] = self.tasks
+        parameters['WALLCLOCK'] = self.wallclock
+        parameters['TASKTYPE'] = self.section
 
         self.parameters = parameters
 
         return parameters
 
-    def _get_remote_header(self):
-        if self.parameters['HPCARCH'] == "bsc":
-            remote_header = BscHeader
-        elif self.parameters['HPCARCH'] == "ithaca":
-            remote_header = ItHeader
-        elif self.parameters['HPCARCH'] == "hector":
-            remote_header = HtHeader
-        elif self.parameters['HPCARCH'] == "archer":
-            remote_header = ArHeader
-        elif self.parameters['HPCARCH'] == "lindgren":
-            remote_header = LgHeader
-        elif self.parameters['HPCARCH'] == "ecmwf":
-            remote_header = EcHeader
-        elif self.parameters['HPCARCH'] == "ecmwf-cca":
-            remote_header = EcCcaHeader
-        elif self.parameters['HPCARCH'] == "marenostrum3":
-            remote_header = MnHeader
-        else:
-            remote_header = None
-        return remote_header
-
     def update_content(self, project_dir):
-        local_header = PsHeader
-        remote_header = self._get_remote_header()
-
-        template = Template()
         if self.parameters['PROJECT_TYPE'].lower() != "none":
             dir_templates = project_dir
-
-            local_setup = self.parameters['FILE_LOCALSETUP']
-
-            if local_setup != '':
-                template.read_localsetup_file(os.path.join(dir_templates, local_setup))
-
-            remote_setup = self.parameters['FILE_REMOTESETUP']
-            if remote_setup != '':
-                template.read_remotesetup_file(os.path.join(dir_templates, remote_setup))
-
-            ini = self.parameters['FILE_INI']
-            if ini != '':
-                template.read_initialisation_file(os.path.join(dir_templates, ini))
-            sim = self.parameters['FILE_SIM']
-            if sim != '':
-                template.read_simulation_file(os.path.join(dir_templates, sim))
-
-            post = self.parameters['FILE_POST']
-            if post != '':
-                template.read_postprocessing_file(os.path.join(dir_templates, post))
-
-            clean = self.parameters['FILE_CLEAN']
-            if clean != '':
-                template.read_cleaning_file(os.path.join(dir_templates, clean))
-
-            trans = self.parameters['FILE_TRANS']
-            if trans != '':
-                template.read_transfer_file(os.path.join(dir_templates, trans))
-
-        if self.type == Type.SIMULATION:
-            items = [remote_header.HEADER_SIM,
-                     StatisticsSnippet.AS_HEADER_REM,
-                     template.SIMULATION,
-                     StatisticsSnippet.AS_TAILER_REM]
-        elif self.type == Type.POSTPROCESSING:
-            items = [remote_header.HEADER_POST,
-                     StatisticsSnippet.AS_HEADER_REM,
-                     template.POSTPROCESSING,
-                     StatisticsSnippet.AS_TAILER_REM]
-        elif self.type == Type.CLEANING:
-            items = [remote_header.HEADER_CLEAN,
-                     StatisticsSnippet.AS_HEADER_REM,
-                     template.CLEANING,
-                     StatisticsSnippet.AS_TAILER_REM]
-        elif self.type == Type.INITIALISATION:
-            items = [remote_header.HEADER_INI,
-                     StatisticsSnippet.AS_HEADER_REM,
-                     template.INITIALISATION,
-                     StatisticsSnippet.AS_TAILER_REM]
-        elif self.type == Type.LOCALSETUP:
-            items = [local_header.HEADER_LOCALSETUP,
-                     StatisticsSnippet.AS_HEADER_LOC,
-                     template.LOCALSETUP,
-                     StatisticsSnippet.AS_TAILER_LOC]
-        elif self.type == Type.REMOTESETUP:
-            items = [remote_header.HEADER_REMOTESETUP,
-                     StatisticsSnippet.AS_HEADER_REM,
-                     template.REMOTESETUP,
-                     StatisticsSnippet.AS_TAILER_REM]
-        elif self.type == Type.TRANSFER:
-            items = [local_header.HEADER_LOCALTRANS,
-                     StatisticsSnippet.AS_HEADER_LOC,
-                     template.TRANSFER,
-                     StatisticsSnippet.AS_TAILER_LOC]
+            template = file(os.path.join(dir_templates, self.file), 'r').read()
         else:
-            items = None
-            Log.warning("Unknown Job Type: %s" % self.type)
+            template = ''
+        if self.queue_name == 'LOCAL':
+            stats_header = StatisticsSnippet.AS_HEADER_LOC
+            stats_tailer = StatisticsSnippet.AS_TAILER_LOC
+        else:
+            stats_header = StatisticsSnippet.AS_HEADER_REM
+            stats_tailer = StatisticsSnippet.AS_TAILER_REM
 
-        template_content = ''.join(items)
+        template_content = ''.join([self.queue.get_header(self),
+                                   stats_header,
+                                   template,
+                                   stats_tailer])
+
         return template_content
 
     def create_script(self, as_conf):
@@ -453,7 +332,7 @@ class Job:
 
         for key, value in parameters.items():
             # print "%s:\t%s" % (key,parameters[key])
-            template_content = template_content.replace("%" + key + "%", parameters[key])
+            template_content = template_content.replace("%" + key + "%", str(parameters[key]))
 
         scriptname = self.name + '.cmd'
         file(self._tmp_path + scriptname, 'w').write(template_content)

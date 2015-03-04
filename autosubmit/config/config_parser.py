@@ -92,9 +92,6 @@ def expdef_parser(filename):
     members = "(\s*fc\d+\s*)+$"
     rerun = "\s*(true|false)\s*$"
     projecttype = ['git', 'svn', 'local', 'none']
-    wallclock = "\s*\d\d:\d\d\s*$"
-    numproc = "\s*\d+\s*$"
-    multiproc = "\s*\d+(:\d+)*\s*$"
 
     # option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
