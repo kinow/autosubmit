@@ -19,7 +19,7 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from job.job_headers import BscHeader
+from autosubmit.job.job_headers import BscHeader
 
 
 class Mn3Queue(HPCQueue):

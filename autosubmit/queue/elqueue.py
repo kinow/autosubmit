@@ -21,7 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from job.job_headers import LgHeader
+from autosubmit.job.job_headers import LgHeader
 
 
 class ElQueue(HPCQueue):

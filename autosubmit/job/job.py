@@ -61,6 +61,7 @@ class Job:
         self._complete = True
         self.parameters = dict()
         self._tmp_path = BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + "/" + BasicConfig.LOCAL_TMP_DIR + "/"
+        self._ancestors = None
 
     def delete(self):
         del self.name
@@ -95,13 +96,14 @@ class Job:
 
     @property
     def ancestors(self):
-        ancestors = set()
-        if self.has_parents():
-            for parent in self.parents:
-                ancestors.add(parent)
-                for ancestor in parent.ancestors:
-                    ancestors.add(ancestor)
-        return ancestors
+        if self._ancestors is None:
+            self._ancestors = set()
+            if self.has_parents():
+                for parent in self.parents:
+                    self._ancestors.add(parent)
+                    for ancestor in parent.ancestors:
+                        self._ancestors.add(ancestor)
+        return self._ancestors
 
     @property
     def children(self):
@@ -158,6 +160,7 @@ class Job:
         self.fail_count += 1
 
     def add_parent(self, *new_parent):
+        self._ancestors = None
         for parent in new_parent:
             self._parents.add(parent)
             parent.__add_child(self)
@@ -166,6 +169,7 @@ class Job:
         self.children.add(new_children)
 
     def delete_parent(self, parent):
+        self._ancestors = None
         # careful, it is only possible to remove one parent at a time
         self.parents.remove(parent)
 

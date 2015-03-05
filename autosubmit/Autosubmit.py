@@ -73,6 +73,8 @@ class Autosubmit:
         parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
         parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
                             help="return Autosubmit's version number and exit")
+        # parser.add_argument('-lf', '--logfile', choices=(),
+        #                      help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
 
@@ -134,6 +136,7 @@ class Autosubmit:
         # Create
         subparser = subparsers.add_parser('create', description="create specified experiment joblist")
         subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
         # Configure
         subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -193,7 +196,7 @@ class Autosubmit:
         elif args.command == 'check':
             Autosubmit.check(args.expid)
         elif args.command == 'create':
-            Autosubmit.create(args.expid)
+            Autosubmit.create(args.expid, args.noplot)
         elif args.command == 'configure':
             Autosubmit.configure(args.databasepath, args.localrootpath, args.user, args.local)
         elif args.command == 'change_pkl':
@@ -803,7 +806,7 @@ class Autosubmit:
             Log.critical("Can not write config file: {0}".format(e.message))
 
     @staticmethod
-    def create(expid):
+    def create(expid, noplot):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
@@ -907,6 +910,7 @@ class Autosubmit:
         rerun = as_conf.get_rerun()
 
         if rerun == "false":
+            Log.info("\nCreating joblist...")
             job_list = JobList(expid)
             job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
         else:
@@ -918,10 +922,14 @@ class Autosubmit:
         if pltfrm == 'hector' or pltfrm == 'archer':
             job_list.update_shortened_names()
 
+        Log.info("\nSaving joblist...")
         job_list.save()
+        if not noplot:
+            Log.info("\nPloting joblist...")
+            monitor_exp = Monitor()
+            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
 
-        monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
+        Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
 
     @staticmethod

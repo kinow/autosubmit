@@ -20,7 +20,7 @@
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
-from job.job_headers import LgHeader
+from autosubmit.job.job_headers import LgHeader
 
 
 class LgQueue(HPCQueue):

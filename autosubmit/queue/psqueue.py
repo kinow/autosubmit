@@ -22,7 +22,7 @@ import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
-from job.job_headers import PsHeader
+from autosubmit.job.job_headers import PsHeader
 
 
 class PsQueue(HPCQueue):

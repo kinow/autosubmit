@@ -56,64 +56,84 @@ class JobList:
         dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list)
 
         priority = 0
+
+        Log.info("Creating jobs...")
         for section in parser.sections():
+            Log.debug("Creating {0} jobs".format(section))
             dic_jobs.read_section(section, priority)
             priority += 1
 
+        Log.info("Adding dependencies...")
         for section in parser.sections():
+            Log.debug("Adding dependencies for {0} jobs".format(section))
             if not parser.has_option(section, "DEPENDENCIES"):
                 continue
             dependencies = parser.get(section, "DEPENDENCIES").split()
+            dep_section = dict()
+            dep_distance = dict()
+            for dependency in dependencies:
+                if '-' in dependency:
+                    dependency_split = dependency.split('-')
+                    dep_section[dependency] = dependency_split[0]
+                    dep_distance[dependency] = int(dependency_split[1])
+                else:
+                    dep_section[dependency] = dependency
+
             for job in dic_jobs.get_jobs(section):
                 for dependency in dependencies:
                     chunk = job.chunk
                     member = job.member
                     date = job.date
                     if '-' in dependency:
-                        dep_section = dependency.split('-')[0]
-                        distance = int(dependency.split('-')[1])
+                        distance = dep_distance[dependency]
                         if chunk is not None:
-                            if chunk_list.index(chunk) >= distance:
-                                chunk = chunk_list[chunk_list.index(chunk)-distance]
+                            chunk_index = chunk_list.index(chunk)
+                            if chunk_index >= distance:
+                                chunk = chunk_list[chunk_index - distance]
                             else:
                                 continue
                         elif member is not None:
-                            if member_list.index(member) >= distance:
-                                member = member_list[member_list.index(member)-distance]
+                            member_index = member_list.index(member)
+                            if member_index >= distance:
+                                member = member_list[member_index - distance]
                             else:
                                 continue
                         elif date is not None:
-                            if date_list.index(date) >= distance:
-                                date = date_list[date_list.index(date)-distance]
+                            date_index = date_list.index(date)
+                            if date_index >= distance:
+                                date = date_list[date_index - distance]
                             else:
                                 continue
-                    else:
-                        dep_section = dependency
-                    for parent in dic_jobs.get_jobs(dep_section, date, member, chunk):
+
+                    section_name = dep_section[dependency]
+
+                    for parent in dic_jobs.get_jobs(section_name, date, member, chunk):
                         job.add_parent(parent)
-                    if job.wait:
+
+                    if job.wait and job.frequency > 1:
                         if job.chunk is not None:
-                            max_distance = (chunk_list.index(job.chunk)+1) % job.frequency
+                            max_distance = (chunk_index+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
-                                for parent in dic_jobs.get_jobs(dep_section, date, member, chunk - distance):
+                                for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                                     job.add_parent(parent)
                         elif job.member is not None:
-                            max_distance = (member_list.index(job.member)+1) % job.frequency
+                            max_distance = (member_index+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
-                                for parent in dic_jobs.get_jobs(dep_section, date, member - distance, chunk):
+                                for parent in dic_jobs.get_jobs(section_name, date, member - distance, chunk):
                                     job.add_parent(parent)
                         elif job.date is not None:
-                            max_distance = (date_list.index(job.date)+1) % job.frequency
+                            max_distance = (date_index+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
-                                for parent in dic_jobs.get_jobs(dep_section, date - distance, member, chunk):
+                                for parent in dic_jobs.get_jobs(section_name, date - distance, member, chunk):
                                     job.add_parent(parent)
 
+        Log.info("Removing redundant dependencies...")
         self.update_genealogy()
         for job in self._job_list:
             job.parameters = parameters
@@ -310,7 +330,7 @@ class JobList:
         for child in job.children:
             for parent in job.parents:
                 child.add_parent(parent)
-            child.parents.remove(job)
+            child.delete_parent(job)
 
         for parent in job.parents:
             parent.children.remove(job)
@@ -512,28 +532,42 @@ class DicJobs:
         if type(dic) is not dict:
             jobs.append(dic)
         else:
-            for d in self._date_list:
-                if date is not None and date != d:
-                    continue
-                if d not in dic:
-                    continue
-                if type(dic[d]) is not dict:
-                    jobs.append(dic[d])
-                else:
-                    for m in self._member_list:
-                        if member is not None and member != m:
-                            continue
-                        if m not in dic[d]:
-                            continue
-                        if type(dic[d][m]) is not dict:
-                            jobs.append(dic[d][m])
-                        else:
-                            for c in self._chunk_list:
-                                if chunk is not None and chunk != c:
-                                    continue
-                                if c not in dic[d][m]:
-                                    continue
-                                jobs.append(dic[d][m][c])
+            if date is not None:
+                self._get_date(jobs, dic, date, member, chunk)
+            else:
+                for d in self._date_list:
+                    self._get_date(jobs, dic, d, member, chunk)
+        return jobs
+
+    def _get_date(self, jobs, dic, date, member, chunk):
+        if date not in dic:
+            return jobs
+        dic = dic[date]
+        if type(dic) is not dict:
+            jobs.append(dic)
+        else:
+            if member is not None:
+                self._get_member(jobs, dic, member, chunk)
+            else:
+                for m in self._member_list:
+                    self._get_member(jobs, dic, m, chunk)
+
+        return jobs
+
+    def _get_member(self, jobs, dic, member, chunk):
+        if member not in dic:
+            return jobs
+        dic = dic[member]
+        if type(dic) is not dict:
+            jobs.append(dic)
+        else:
+            if chunk is not None and chunk in dic:
+                jobs.append(dic[chunk])
+            else:
+                for c in self._chunk_list:
+                    if c not in dic:
+                        continue
+                    jobs.append(dic[c])
         return jobs
 
     def _create_job(self, section, priority, date, member, chunk):
@@ -570,3 +604,4 @@ class DicJobs:
             return self._parser.get(section, option)
         else:
             return default
+

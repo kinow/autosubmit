@@ -21,7 +21,7 @@
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
-from job.job_headers import EcHeader
+from autosubmit.job.job_headers import EcHeader
 
 
 class EcQueue(HPCQueue):
