@@ -109,6 +109,26 @@ class Template:
         self.TRANSFER = file(filename, 'r').read()
 
 
+class QstatSnippet:
+    """Class to check the completion of jobs when they are already gone from the scheduler scope"""
+
+    QSTATJOB = textwrap.dedent("""\
+            if [[ -n $(qstat | grep "$1") ]]; then qstat | grep "$1" | awk '{print $5}' | head -n 1; else echo "c"; fi
+            """)
+
+
+class PsSnippet:
+    """Class to check the completion of jobs when they are already gone from the scheduler scope"""
+
+    PSCALL = textwrap.dedent("""\
+            if [[ "$#" -eq 1 ]]; then $(kill -0 "$@" > "$@".stat.stdout 2> "$@".stat.stderr); echo "$?"; else $(ps -u "$USER" u); fi; exit
+            """)
+
+    SHCALL = textwrap.dedent("""\
+            nohup /bin/sh $@ > $@.stdout 2> $@.stderr &; echo $!; exit
+            """)
+
+
 class StatisticsSnippet:
     """Class to handle the statistics snippet of a job"""
 

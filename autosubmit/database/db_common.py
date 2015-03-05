@@ -39,6 +39,20 @@ DEFAULT_EXPID_MN3 = "m000"
 DEFAULT_EXPID_ARC = "a000"
 
 
+def create_db(qry):
+    (conn, cursor) = open_conn()
+    try:
+        cursor.execute(qry)
+    except sqlite3.Error:
+        close_conn(conn, cursor)
+        Log.error('The database can not be created.' + 'DB file:' + BasicConfig.DB_PATH)
+        sys.exit(1)
+
+    conn.commit()
+    close_conn(conn, cursor)
+    return
+
+
 def set_experiment(name, description):
     check_db()
     name = check_name(name)

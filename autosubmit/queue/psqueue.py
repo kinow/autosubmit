@@ -22,6 +22,7 @@ import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.job.job_common import PsSnippet
 
 
 class PsQueue(HPCQueue):
@@ -50,9 +51,9 @@ class PsQueue(HPCQueue):
         # Local-->self._local_common_dir = "/cfu/autosubmit/common"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
-        self.checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
+        self.checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + PsSnippet.PSCALL
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = ("ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " +
+        self.submit_cmd = ("ssh " + self._host + " " + self._remote_common_dir + "/" + PsSnippet.SHCALL + " " +
                            self.remote_log_dir + " ")
         self.put_cmd = "scp"
         self.get_cmd = "scp"

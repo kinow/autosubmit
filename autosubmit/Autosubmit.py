@@ -50,6 +50,7 @@ from autosubmit.queue.htqueue import HtQueue
 from autosubmit.queue.itqueue import ItQueue
 from autosubmit.queue.ecqueue import EcQueue
 from autosubmit.queue.mnqueue import MnQueue
+from autosubmit.database.db_common import create_db
 from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
 from autosubmit.database.db_common import delete_experiment
@@ -57,7 +58,6 @@ from autosubmit.monitor.monitor import Monitor
 
 
 class Autosubmit:
-
     # Get the version number from the relevant file. If not, from autosubmit package
     scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
     version_path = os.path.join(scriptdir, '..', 'VERSION')
@@ -140,14 +140,20 @@ class Autosubmit:
         subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
                                                                    "can be done at machine, user or local level (by "
                                                                    "default at machine level)")
-        subparser.add_argument('-db', '--databasepath',  default=None, help='path to database. If not supplied, '
-                                                                            'it will be prompt for it')
+        subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
+                                                                           'it will be prompt for it')
         subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                             'supplied, it will be prompt for it')
         group = subparser.add_mutually_exclusive_group()
         group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
         group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from this '
                                                                       'path')
+
+        # Install
+        subparser = subparsers.add_parser('install', description='install database and scripts needed for autosubmit')
+        subparser.add_argument('-db', '--database', action="store_true", help='install the database in the '
+                                                                              'previously configured path')
+        
 
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
@@ -200,6 +206,8 @@ class Autosubmit:
             Autosubmit.create(args.expid)
         elif args.command == 'configure':
             Autosubmit.configure(args.databasepath, args.localrootpath, args.user, args.local)
+        elif args.command == 'install':
+            Autosubmit.install(args.database, args.scripts)
         elif args.command == 'change_pkl':
             Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
                                   args.filter_chunks, args.filter_status, args.filter_type)
@@ -460,7 +468,7 @@ class Autosubmit:
             max_jobs = as_conf.get_total_jobs()
             Log.debug("Total jobs: {0}".format(max_jobs))
             total_jobs = len(joblist.get_job_list())
-            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
                                                                 strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: %s" % safetysleeptime)
@@ -502,8 +510,8 @@ class Autosubmit:
                     if remote_queue is None and job.type == Type.SIMULATION:
                         queue = parallel_queue
                     elif (remote_queue is None and (job.type == Type.INITIALISATION or
-                                                    job.type == Type.CLEANING or
-                                                    job.type == Type.POSTPROCESSING)):
+                                                            job.type == Type.CLEANING or
+                                                            job.type == Type.POSTPROCESSING)):
                         queue = serial_queue
                     elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                         queue = local_queue
@@ -568,9 +576,9 @@ class Autosubmit:
                         queue = parallel_queue
                         Log.info("Submitting %s to parallel queue...", job.name)
                     elif (remote_queue is None and (job.type == Type.REMOTESETUP or
-                                                    job.type == Type.INITIALISATION or
-                                                    job.type == Type.CLEANING or
-                                                    job.type == Type.POSTPROCESSING)):
+                                                            job.type == Type.INITIALISATION or
+                                                            job.type == Type.CLEANING or
+                                                            job.type == Type.POSTPROCESSING)):
                         queue = serial_queue
                         Log.info("Submitting %s to serial queue...", job.name)
                     elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
@@ -745,8 +753,8 @@ class Autosubmit:
                 if remote_queue is None and job.type == Type.SIMULATION:
                     queue = parallel_queue
                 elif (remote_queue is None and (job.type == Type.INITIALISATION or
-                                                job.type == Type.CLEANING or
-                                                job.type == Type.POSTPROCESSING)):
+                                                        job.type == Type.CLEANING or
+                                                        job.type == Type.POSTPROCESSING)):
                     queue = serial_queue
                 elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
                     queue = local_queue
@@ -790,7 +798,7 @@ class Autosubmit:
 
         # print "Checking experiment configuration..."
         # if as_conf.check_parameters():
-        #     print "Experiment configuration check PASSED!"
+        # print "Experiment configuration check PASSED!"
         # else:
         #     print "Experiment configuration check FAILED!"
         #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
@@ -803,7 +811,7 @@ class Autosubmit:
             Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
-    def configure(database_path, local_root_path,  user, local):
+    def configure(database_path, local_root_path, user, local):
         home_path = os.path.expanduser('~')
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
@@ -842,6 +850,24 @@ class Autosubmit:
             Log.critical("Can not write config file: {0}".format(e.message))
 
     @staticmethod
+    def install(database, scripts):
+        BasicConfig.read()
+
+        if database:
+            if not os.path.exists(BasicConfig.DB_PATH):
+                Log.info("Creating autosubmit database...")
+                try:
+                    qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
+                    create_db(qry)
+                    Log.result("Autosubmit database creatd successfully")
+                except Exception as e:
+                    Log.critical("Can not write database file: {0}".format(e.message))
+            else:
+                Log.error("Database already exists.")
+                exit(1)
+
+
+    @staticmethod
     def create(expid):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -872,7 +898,7 @@ class Autosubmit:
                     exit(1)
 
                 Log.debug("%s" % output)
-                git_project_name = output[output.find("'")+1:output.find("...")-1]
+                git_project_name = output[output.find("'") + 1:output.find("...") - 1]
                 (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                    "; git submodule update --remote --init")
                 if status:
