@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import SafeConfigParser
+import json
 
 import os
 import pickle
@@ -53,8 +54,13 @@ class JobList:
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
         chunk_list = range(starting_chunk, starting_chunk + num_chunks)
-        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list)
 
+        self._date_list = date_list
+        self._member_list = member_list
+        self._chunk_list = chunk_list
+
+        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list)
+        self._dic_jobs = dic_jobs
         priority = 0
 
         Log.info("Creating jobs...")
@@ -84,6 +90,10 @@ class JobList:
                     chunk = job.chunk
                     member = job.member
                     date = job.date
+                    chunk_index = None
+                    member_index = None
+                    date_index = None
+
                     if '-' in dependency:
                         distance = dep_distance[dependency]
                         if chunk is not None:
@@ -337,135 +347,84 @@ class JobList:
 
         self._job_list.remove(job)
 
+    def rerun(self, chunk_list):
+        parser = SafeConfigParser()
+        parser.optionxform = str
+        parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-class RerunJobList(JobList):
-    def __init__(self, expid):
-        JobList.__init__(self, expid)
-        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
-        self._update_file = "updated_list_" + expid + ".txt"
-        self._failed_file = "failed_job_list_" + expid + ".pkl"
-        self._job_list_file = "rerun_job_list_" + expid + ".pkl"
-        self._job_list = list()
-        self._expid = expid
-        self._stat_val = Status()
-        self._parameters = []
+        Log.info("Adding dependencies...")
+        dep_section = dict()
+        dep_distance = dict()
+        dependencies = dict()
+        for section in parser.sections():
+            Log.debug("Reading rerun dependencies for {0} jobs".format(section))
+            if not parser.has_option(section, "RERUN_DEPENDENCIES"):
+                continue
+            dependencies[section] = parser.get(section, "RERUN_DEPENDENCIES").split()
+            dep_section[section] = dict()
+            dep_distance[section] = dict()
+            for dependency in dependencies[section]:
+                if '-' in dependency:
+                    dependency_split = dependency.split('-')
+                    dep_section[section][dependency] = dependency_split[0]
+                    dep_distance[section][dependency] = int(dependency_split[1])
+                else:
+                    dep_section[section][dependency] = dependency
 
-    def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
-        """
-        DO NOT USE THIS METHOD. It's inherited from base class but has no meaning here.
-        """
-        # Create method on base class is not valid. Just preventing calling it by error
-        raise NotImplementedError
+        for job in self._job_list:
+            job.status = Status.COMPLETED
 
-    # Not intended to override
-    # noinspection PyMethodOverriding,PyRedeclaration
-    def create(self, chunk_list, starting_chunk, num_chunks, parameters):
-        pass
-        # Log.info("Creating job list...")
-        # data = json.loads(chunk_list)
-        # Log.debug("Data: %s", data)
-        # self._parameters = parameters
-        #
-        # localsetupjob_name = self._expid + "_"
-        # localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
-        # remotesetupjob_name = self._expid + "_"
-        # remotesetup_job = Job(remotesetupjob_name + "remotesetup", 0, Status.WAITING, Type.REMOTESETUP)
-        # remotesetup_job.add_parent(localsetup_job)
-        #
-        # for date in data['sds']:
-        #     Log.debug("Date: " + date['sd'])
-        #     for member in date['ms']:
-        #         Log.debug(member['m'])
-        #         Log.debug(member['cs'])
-        #
-        #         first_chunk = int(member['cs'][0])
-        #
-        #         if len(member['cs']) > 1:
-        #             second_chunk = int(member['cs'][1])
-        #             last_chunk = int(member['cs'][len(member['cs']) - 1])
-        #             second_last_chunk = int(member['cs'][len(member['cs']) - 2])
-        #         else:
-        #             last_chunk = first_chunk
-        #             second_last_chunk = None
-        #             second_chunk = None
-        #
-        #         inijob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
-        #         ini_job = Job(inijob_name + "ini", 0, Status.WAITING, Type.INITIALISATION)
-        #         ini_job.add_parent(remotesetup_job)
-        #
-        #         transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_"
-        #         trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
-        #
-        #         self._job_list += [ini_job]
-        #         self._job_list += [trans_job]
-        #
-        #         for chunk in member['cs']:
-        #             chunk = int(chunk)
-        #             rootjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(chunk) + "_"
-        #             post_job = Job(rootjob_name + "post", 0, Status.WAITING, Type.POSTPROCESSING)
-        #             clean_job = Job(rootjob_name + "clean", 0, Status.WAITING, Type.CLEANING)
-        #             sim_job = Job(rootjob_name + "sim", 0, Status.WAITING, Type.SIMULATION)
-        #             # set dependency of postprocessing jobs
-        #             post_job.add_parent(sim_job)
-        #             clean_job.add_parent(post_job)
-        #             if chunk == last_chunk or chunk == second_last_chunk:
-        #                 trans_job.add_parent(clean_job)
-        #
-        #             # Link parents:
-        #             # if chunk is 1 then not needed to add the previous clean job
-        #             if chunk == 1:
-        #                 sim_job.add_parent(ini_job)
-        #                 self._job_list += [sim_job, post_job, clean_job]
-        #             elif chunk == first_chunk:
-        #                 prev_new_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
-        #                     chunk - 1) + "_" + "clean"
-        #                 prev_new_clean_job = Job(prev_new_job_name, 0, Status.WAITING, Type.CLEANING)
-        #                 sim_job.add_parent(prev_new_clean_job)
-        #                 prev_new_clean_job.add_parent(ini_job)
-        #                 self._job_list += [prev_new_clean_job, sim_job, post_job, clean_job]
-        #             else:
-        #                 if chunk > first_chunk:
-        #                     prev_chunk = int(member['cs'][member['cs'].index(str(chunk)) - 1])
-        #                     # in case reruning no consecutive chunk we need to create the previous
-        #                     # clean job in the basis of chunk-1
-        #                     if prev_chunk != chunk - 1:
-        #                         prev_new_job_name = self._expid + "_" + str(date['sd']) + "_" + str(
-        #                             member['m']) + "_" + str(chunk - 1) + "_" + "clean"
-        #                         prev_new_clean_job = Job(prev_new_job_name, 0, Status.WAITING, Type.CLEANING)
-        #                         sim_job.add_parent(prev_new_clean_job)
-        #                         # Link parent and child for new clean job:
-        #                         prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(
-        #                             member['m']) + "_" + str(prev_chunk) + "_" + "clean"
-        #                         prev_new_clean_job.add_parent(self.get_job_by_name(prev_clean_job_name))
-        #                         # Add those to the list
-        #                         self._job_list += [prev_new_clean_job, sim_job, post_job, clean_job]
-        #                     # otherwise we should link backwards to the immediate before clean job
-        #                     else:
-        #                         prev_sim_job_name = self._expid + "_" + str(date['sd']) + "_" + str(
-        #                             member['m']) + "_" + str(prev_chunk) + "_" + "sim"
-        #                         sim_job.add_parent(self.get_job_by_name(prev_sim_job_name))
-        #                         if chunk > second_chunk:cra
-        #                             prev_prev_chunk = int(member['cs'][member['cs'].index(str(chunk)) - 2])
-        #                             prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(
-        #                                 member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
-        #                             sim_job.add_parent(self.get_job_by_name(prev_clean_job_name))
-        #                         # Add those to the list
-        #                         self._job_list += [sim_job, post_job, clean_job]
-        #
-        #             if not member['cs']:
-        #                 clean_job = ini_job
-        #             if last_chunk != num_chunks:
-        #                 finaljob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
-        #                     num_chunks) + "_" + "clean"
-        #                 final_job = Job(finaljob_name, 0, Status.WAITING, Type.CLEANING)
-        #                 final_job.add_parent(clean_job)
-        #                 self._job_list += [final_job]
-        #
-        # self._job_list += [localsetup_job, remotesetup_job]
-        #
-        # self.update_genealogy()
-        # for job in self._job_list:
-        #     job.parameters = parameters
+        data = json.loads(chunk_list)
+        for d in data['sds']:
+            date = d['sd']
+            Log.debug("Date: " + date)
+            for m in d['ms']:
+                member = m['m']
+                Log.debug("Member: " + member)
+                for c in m['cs']:
+                    Log.debug("Chunk: " + c)
+                    chunk = int(c)
+                    for job in [i for i in self._job_list if i.date == date and i.member == member
+                                and i.chunk == chunk]:
+                        job.status = Status.WAITING
+                        Log.debug("Job: " + job.name)
+                        section = job.section
+                        if section not in dependencies:
+                            continue
+                        for dependency in dependencies[section]:
+                            current_chunk = chunk
+                            current_member = member
+                            current_date = date
+                            if '-' in dependency:
+                                distance = dep_distance[section][dependency]
+                                if current_chunk is not None:
+                                    chunk_index = self._chunk_list.index(current_chunk)
+                                    if chunk_index >= distance:
+                                        current_chunk = self._chunk_list[chunk_index - distance]
+                                    else:
+                                        continue
+                                elif current_member is not None:
+                                    member_index = self._member_list.index(current_member)
+                                    if member_index >= distance:
+                                        current_member = self._member_list[member_index - distance]
+                                    else:
+                                        continue
+                                elif current_date is not None:
+                                    date_index = self._date_list.index(current_date)
+                                    if date_index >= distance:
+                                        current_date = self._date_list[date_index - distance]
+                                    else:
+                                        continue
+                            section_name = dep_section[section][dependency]
+                            for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
+                                                                  current_chunk):
+                                parent.status = Status.WAITING
+                                Log.debug("Parent: " + parent.name)
+
+        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
+            self._remove_job(job)
+
+        self.update_genealogy()
 
 
 class DicJobs:

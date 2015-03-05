@@ -38,7 +38,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status
 from autosubmit.git.git_common import AutosubmitGit
-from autosubmit.job.job_list import JobList, RerunJobList
+from autosubmit.job.job_list import JobList
 from autosubmit.config.log import Log
 from autosubmit.queue.psqueue import PsQueue
 from autosubmit.queue.mn3queue import Mn3Queue
@@ -73,8 +73,14 @@ class Autosubmit:
         parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
         parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
                             help="return Autosubmit's version number and exit")
-        # parser.add_argument('-lf', '--logfile', choices=(),
-        #                      help="set log file level")
+        parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                         'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                            default='INFO', type=str,
+                            help="set log to file level.")
+        parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                            'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                            default='INFO', type=str,
+                            help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
 
@@ -178,6 +184,9 @@ class Autosubmit:
                             help='Select the job type to filter the list of jobs')
 
         args = parser.parse_args()
+
+        Log.set_console_level(args.logconsole)
+        Log.set_file_level(args.logfile)
 
         if args.command == 'run':
             Autosubmit.run_experiment(args.expid)
@@ -904,19 +913,23 @@ class Autosubmit:
         parameters = as_conf.load_parameters()
 
         date_list = as_conf.get_date_list()
+        if len(date_list) != len(set(date_list)):
+            Log.error('There are repeated start dates!')
+            exit(1)
         starting_chunk = as_conf.get_starting_chunk()
         num_chunks = as_conf.get_num_chunks()
         member_list = as_conf.get_member_list()
+        if len(date_list) != len(set(date_list)):
+            Log.error('There are repeated member names!')
+            exit(1)
         rerun = as_conf.get_rerun()
 
-        if rerun == "false":
-            Log.info("\nCreating joblist...")
-            job_list = JobList(expid)
-            job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
-        else:
-            job_list = RerunJobList(expid)
+        Log.info("\nCreating joblist...")
+        job_list = JobList(expid)
+        job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
+        if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-            job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
+            job_list.rerun(chunk_list)
 
         pltfrm = as_conf.get_platform()
         if pltfrm == 'hector' or pltfrm == 'archer':
