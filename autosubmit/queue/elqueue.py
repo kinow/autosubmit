@@ -21,6 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import LgHeader
 
 
 class ElQueue(HPCQueue):
@@ -30,6 +31,7 @@ class ElQueue(HPCQueue):
         self._scratch = "/cfu/scratch"
         self._project = ""
         self._user = ""
+        self._header = LgHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']

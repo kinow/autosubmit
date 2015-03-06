@@ -19,6 +19,7 @@
 
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import BscHeader
 
 
 class Mn3Queue(HPCQueue):
@@ -28,6 +29,7 @@ class Mn3Queue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = BscHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']

@@ -20,6 +20,7 @@
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
+from autosubmit.job.job_headers import ArHeader
 
 
 class ArQueue(HPCQueue):
@@ -30,6 +31,7 @@ class ArQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = ArHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['F', 'E', 'c']

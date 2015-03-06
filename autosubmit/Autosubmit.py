@@ -37,9 +37,8 @@ from pyparsing import nestedExpr
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import Type
 from autosubmit.git.git_common import AutosubmitGit
-from autosubmit.job.job_list import JobList, RerunJobList
+from autosubmit.job.job_list import JobList
 from autosubmit.config.log import Log
 from autosubmit.queue.psqueue import PsQueue
 from autosubmit.queue.mn3queue import Mn3Queue
@@ -74,6 +73,14 @@ class Autosubmit:
         parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
         parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
                             help="return Autosubmit's version number and exit")
+        parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                         'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                            default='INFO', type=str,
+                            help="set log to file level.")
+        parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                            'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                            default='INFO', type=str,
+                            help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
 
@@ -135,6 +142,7 @@ class Autosubmit:
         # Create
         subparser = subparsers.add_parser('create', description="create specified experiment joblist")
         subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
         # Configure
         subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -178,13 +186,13 @@ class Autosubmit:
         group2.add_argument('-fs', '--filter_status', type=str,
                             choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                             help='Select the original status to filter the list of jobs')
-        group2.add_argument('-ft', '--filter_type', type=str, choices=('Any', 'LOCALSETUP', 'REMOTESETUP',
-                                                                       'INITIALISATION', 'SIMULATION',
-                                                                       'POSTPROCESSING', 'CLEANING',
-                                                                       'LOCALTRANSFER'),
+        group2.add_argument('-ft', '--filter_type', type=str,
                             help='Select the job type to filter the list of jobs')
 
         args = parser.parse_args()
+
+        Log.set_console_level(args.logconsole)
+        Log.set_file_level(args.logfile)
 
         if args.command == 'run':
             Autosubmit.run_experiment(args.expid)
@@ -203,14 +211,14 @@ class Autosubmit:
         elif args.command == 'check':
             Autosubmit.check(args.expid)
         elif args.command == 'create':
-            Autosubmit.create(args.expid)
+            Autosubmit.create(args.expid, args.noplot)
         elif args.command == 'configure':
             Autosubmit.configure(args.databasepath, args.localrootpath, args.user, args.local)
         elif args.command == 'install':
             Autosubmit.install(args.database, args.scripts)
         elif args.command == 'change_pkl':
             Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
-                                  args.filter_chunks, args.filter_status, args.filter_type)
+                                  args.filter_chunks, args.filter_status, args.filter_section)
 
     @staticmethod
     def delete_expid(expid_delete):
@@ -431,6 +439,12 @@ class Autosubmit:
         joblist.update_parameters(parameters)
         # check the job list script creation
         Log.debug("Checking experiment templates...")
+
+        for job in joblist.get_job_list():
+            if job.queue_name == 'LOCAL':
+                job.queue = local_queue
+            else:
+                job.queue = remote_queue
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
         else:
@@ -445,9 +459,6 @@ class Autosubmit:
             parallel_queue.check_remote_log_dir()
         else:
             remote_queue.check_remote_log_dir()
-
-        # first job goes to the local Queue
-        queue = local_queue
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
@@ -468,7 +479,7 @@ class Autosubmit:
             max_jobs = as_conf.get_total_jobs()
             Log.debug("Total jobs: {0}".format(max_jobs))
             total_jobs = len(joblist.get_job_list())
-            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
+            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
                                                                 strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: %s" % safetysleeptime)
@@ -497,49 +508,33 @@ class Autosubmit:
             jobinqueue = joblist.get_in_queue()
             Log.info("Number of jobs in queue: %s" % str(len(jobinqueue)))
 
-            # Check queue availability
-            queueavail = queue.check_host()
-            if not queueavail:
-                Log.info("There is no queue available")
-            else:
-                for job in jobinqueue:
+            for job in jobinqueue:
 
-                    job.print_job()
-                    Log.debug("Number of jobs in queue: %s" % str(len(jobinqueue)))
-                    # in lindgren arch must select serial or parallel queue acording to the job type
-                    if remote_queue is None and job.type == Type.SIMULATION:
-                        queue = parallel_queue
-                    elif (remote_queue is None and (job.type == Type.INITIALISATION or
-                                                            job.type == Type.CLEANING or
-                                                            job.type == Type.POSTPROCESSING)):
-                        queue = serial_queue
-                    elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
-                        queue = local_queue
+                job.print_job()
+                Log.debug("Number of jobs in queue: %s" % str(len(jobinqueue)))
+                # Check queue availability
+                queueavail = job.queue.check_host()
+                if not queueavail:
+                    Log.debug("There is no queue available")
+                else:
+                    status = job.queue.check_job(job.id)
+                    if status == Status.COMPLETED:
+                        Log.debug("This job seems to have completed...checking")
+                        job.queue.get_completed_files(job.name)
+                        job.check_completion()
                     else:
-                        queue = remote_queue
-                    # Check queue availability
-                    queueavail = queue.check_host()
-                    if not queueavail:
-                        Log.debug("There is no queue available")
-                    else:
-                        status = queue.check_job(job.id)
-                        if status == Status.COMPLETED:
-                            Log.debug("This job seems to have completed...checking")
-                            queue.get_completed_files(job.name)
-                            job.check_completion()
-                        else:
-                            job.status = status
-                        if job.status is Status.QUEUING:
-                            Log.info("Job %s is QUEUING", job.name)
-                        elif job.status is Status.RUNNING:
-                            Log.info("Job %s is RUNNING", job.name)
-                        elif job.status is Status.COMPLETED:
-                            Log.result("Job %s is COMPLETED", job.name)
-                        elif job.status is Status.FAILED:
-                            Log.user_warning("Job %s is FAILED", job.name)
-                            # Uri add check if status UNKNOWN and exit if you want
-                            # after checking the jobs , no job should have the status "submitted"
-                            # Uri throw an exception if this happens (warning type no exit)
+                        job.status = status
+                    if job.status is Status.QUEUING:
+                        Log.info("Job %s is QUEUING", job.name)
+                    elif job.status is Status.RUNNING:
+                        Log.info("Job %s is RUNNING", job.name)
+                    elif job.status is Status.COMPLETED:
+                        Log.result("Job %s is COMPLETED", job.name)
+                    elif job.status is Status.FAILED:
+                        Log.user_warning("Job %s is FAILED", job.name)
+                        # Uri add check if status UNKNOWN and exit if you want
+                        # after checking the jobs , no job should have the status "submitted"
+                        # Uri throw an exception if this happens (warning type no exit)
 
             # explain it !!
             joblist.update_list()
@@ -550,11 +545,7 @@ class Autosubmit:
             # get the list of jobs READY
             jobsavail = joblist.get_ready()
 
-            # Check queue availability
-            queueavail = queue.check_host()
-            if not queueavail:
-                Log.debug("There is no queue available")
-            elif min(available, len(jobsavail)) == 0:
+            if min(available, len(jobsavail)) == 0:
                 Log.debug("There is no job READY or available")
                 Log.debug("Number of jobs ready: %s" % len(jobsavail))
                 Log.debug("Number of jobs available in queue: %s" % available)
@@ -565,35 +556,27 @@ class Autosubmit:
                 # probably useless to sort by year before sorting by type
                 s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
 
-                list_of_jobs_avail = sorted(s, key=lambda k: k.type)
+                list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
 
                 for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
                     Log.debug(job.name)
                     scriptname = job.create_script(as_conf)
                     Log.debug(scriptname)
                     # in lindgren arch must select serial or parallel queue acording to the job type
-                    if remote_queue is None and job.type == Type.SIMULATION:
-                        queue = parallel_queue
-                        Log.info("Submitting %s to parallel queue...", job.name)
-                    elif (remote_queue is None and (job.type == Type.REMOTESETUP or
-                                                            job.type == Type.INITIALISATION or
-                                                            job.type == Type.CLEANING or
-                                                            job.type == Type.POSTPROCESSING)):
-                        queue = serial_queue
-                        Log.info("Submitting %s to serial queue...", job.name)
-                    elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
-                        queue = local_queue
+                    if job.queue_name == 'LOCAL':
                         Log.info("Submitting %s to local queue...", job.name)
+                        job.queue = local_queue
                     else:
-                        queue = remote_queue
                         Log.info("Submitting %s to remote queue...", job.name)
+                        job.queue = remote_queue
+
                     # Check queue availability
-                    queueavail = queue.check_host()
+                    queueavail = job.queue.check_host()
                     if not queueavail:
                         Log.debug("There is no queue available")
                     else:
-                        queue.send_script(scriptname)
-                        job.id = queue.submit_job(scriptname)
+                        job.queue.send_script(scriptname)
+                        job.id = job.queue.submit_job(scriptname)
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
                     Log.info("%s submited\n", job.name)
@@ -620,12 +603,12 @@ class Autosubmit:
 
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
         jobs = cPickle.load(file(filename, 'r'))
-        if not isinstance(jobs, type([])):
-            jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
+        # if not isinstance(jobs, type([])):
+        #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
-        if len(jobs) > 0:
+        if len(jobs.get_job_list()) > 0:
             monitor_exp = Monitor()
-            monitor_exp.generate_output_stats(expid, jobs, output)
+            monitor_exp.generate_output_stats(expid, jobs.get_job_list(), output)
         else:
             Log.info("There are no COMPLETED jobs...")
 
@@ -673,8 +656,6 @@ class Autosubmit:
 
         if get:
             remote_queue = None
-            serial_queue = None
-            parallel_queue = None
 
             if hpcarch == 'bsc':
                 remote_queue = MnQueue(expid)
@@ -748,19 +729,11 @@ class Autosubmit:
             local_queue.update_cmds()
 
             for job in l1.get_active():
-                # If remote queue is none (now only in lindgren) arch must select serial or parallel queue
-                # acording to the job type
-                if remote_queue is None and job.type == Type.SIMULATION:
-                    queue = parallel_queue
-                elif (remote_queue is None and (job.type == Type.INITIALISATION or
-                                                        job.type == Type.CLEANING or
-                                                        job.type == Type.POSTPROCESSING)):
-                    queue = serial_queue
-                elif job.type == Type.LOCALSETUP or job.type == Type.TRANSFER:
-                    queue = local_queue
+                if job.queue_name == 'LOCAL':
+                    job.queue = local_queue
                 else:
-                    queue = remote_queue
-                if queue.get_completed_files(job.name):
+                    job.queue = remote_queue
+                if job.queue.get_completed_files(job.name):
                     job.status = Status.COMPLETED
                     Log.info("CHANGED: job: " + job.name + " status to: COMPLETED")
                 elif job.status != Status.SUSPENDED:
@@ -798,7 +771,7 @@ class Autosubmit:
 
         # print "Checking experiment configuration..."
         # if as_conf.check_parameters():
-        # print "Experiment configuration check PASSED!"
+        #     print "Experiment configuration check PASSED!"
         # else:
         #     print "Experiment configuration check FAILED!"
         #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
@@ -811,7 +784,7 @@ class Autosubmit:
             Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
-    def configure(database_path, local_root_path, user, local):
+    def configure(database_path, local_root_path,  user, local):
         home_path = os.path.expanduser('~')
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
@@ -866,9 +839,8 @@ class Autosubmit:
                 Log.error("Database already exists.")
                 exit(1)
 
-
     @staticmethod
-    def create(expid):
+    def create(expid, noplot):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
@@ -898,7 +870,7 @@ class Autosubmit:
                     exit(1)
 
                 Log.debug("%s" % output)
-                git_project_name = output[output.find("'") + 1:output.find("...") - 1]
+                git_project_name = output[output.find("'")+1:output.find("...")-1]
                 (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                    "; git submodule update --remote --init")
                 if status:
@@ -966,32 +938,41 @@ class Autosubmit:
         parameters = as_conf.load_parameters()
 
         date_list = as_conf.get_date_list()
+        if len(date_list) != len(set(date_list)):
+            Log.error('There are repeated start dates!')
+            exit(1)
         starting_chunk = as_conf.get_starting_chunk()
         num_chunks = as_conf.get_num_chunks()
         member_list = as_conf.get_member_list()
+        if len(date_list) != len(set(date_list)):
+            Log.error('There are repeated member names!')
+            exit(1)
         rerun = as_conf.get_rerun()
 
-        if rerun == "false":
-            job_list = JobList(expid)
-            job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
-        else:
-            job_list = RerunJobList(expid)
+        Log.info("\nCreating joblist...")
+        job_list = JobList(expid)
+        job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
+        if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-            job_list.create(chunk_list, starting_chunk, num_chunks, parameters)
+            job_list.rerun(chunk_list)
 
         pltfrm = as_conf.get_platform()
         if pltfrm == 'hector' or pltfrm == 'archer':
             job_list.update_shortened_names()
 
+        Log.info("\nSaving joblist...")
         job_list.save()
+        if not noplot:
+            Log.info("\nPloting joblist...")
+            monitor_exp = Monitor()
+            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
 
-        monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
+        Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
 
     @staticmethod
     def change_pkl(expid, root_name, save, final, lst, flt,
-                   filter_chunks, filter_status, filter_type):
+                   filter_chunks, filter_status, filter_section):
         BasicConfig.read()
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -1056,8 +1037,8 @@ class Autosubmit:
                             job.status = Autosubmit._get_status(final)
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
-            if filter_type:
-                ft = filter_type
+            if filter_section:
+                ft = filter_section
                 Log.debug(ft)
 
                 if ft == 'Any':
@@ -1066,7 +1047,7 @@ class Autosubmit:
                         Log.info("CHANGED: job: " + job.name + " status to: " + final)
                 else:
                     for job in l1.get_job_list():
-                        if job.type == Autosubmit._get_type(ft):
+                        if job.section == ft:
                             job.status = Autosubmit._get_status(final)
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
@@ -1197,23 +1178,6 @@ class Autosubmit:
             return Status.FAILED
         elif s == 'UNKNOWN':
             return Status.UNKNOWN
-
-    @staticmethod
-    def _get_type(t):
-        if t == 'LOCALSETUP':
-            return Type.LOCALSETUP
-        elif t == 'REMOTESETUP':
-            return Type.REMOTESETUP
-        elif t == 'INITIALISATION':
-            return Type.INITIALISATION
-        elif t == 'SIMULATION':
-            return Type.SIMULATION
-        elif t == 'POSTPROCESSING':
-            return Type.POSTPROCESSING
-        elif t == 'CLEANING':
-            return Type.CLEANING
-        elif t == 'LOCALTRANSFER':
-            return Type.TRANSFER
 
     @staticmethod
     def _get_members(out):

@@ -21,6 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import MnHeader
 
 
 class MnQueue(HPCQueue):
@@ -30,6 +31,7 @@ class MnQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = MnHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['Completed']

@@ -41,6 +41,11 @@ class HPCQueue:
         self.put_cmd = None
         self.mkdir_cmd = None
         self.cancel_cmd = None
+        self._header = None
+
+    @property
+    def header(self):
+        return self._header
 
     def cancel_job(self, job_id):
         Log.debug(self.cancel_cmd + ' ' + str(job_id))
@@ -194,4 +199,10 @@ class HPCQueue:
 
     def get_submitted_job_id(self, output):
         raise NotImplementedError
+
+    def get_header(self, job):
+        if job.processors > 1:
+            return self.header.PARALLEL
+        else:
+            return self.header.SERIAL
 

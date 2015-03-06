@@ -23,6 +23,7 @@ import platform
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import PsSnippet
+from autosubmit.job.job_headers import PsHeader
 
 
 class PsQueue(HPCQueue):
@@ -32,6 +33,7 @@ class PsQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = PsHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']

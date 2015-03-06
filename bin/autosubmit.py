@@ -25,6 +25,7 @@ scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 
+# noinspection PyUnresolvedReferences
 from autosubmit.Autosubmit import Autosubmit
 
 

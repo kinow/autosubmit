@@ -21,6 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import ItHeader
 from autosubmit.job.job_common import QstatSnippet
 
 
@@ -31,6 +32,7 @@ class ItQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = ItHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
