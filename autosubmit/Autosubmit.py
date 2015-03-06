@@ -161,7 +161,6 @@ class Autosubmit:
         subparser = subparsers.add_parser('install', description='install database and scripts needed for autosubmit')
         subparser.add_argument('-db', '--database', action="store_true", help='install the database in the '
                                                                               'previously configured path')
-        
 
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
@@ -215,7 +214,7 @@ class Autosubmit:
         elif args.command == 'configure':
             Autosubmit.configure(args.databasepath, args.localrootpath, args.user, args.local)
         elif args.command == 'install':
-            Autosubmit.install(args.database, args.scripts)
+            Autosubmit.install(args.database)
         elif args.command == 'change_pkl':
             Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
                                   args.filter_chunks, args.filter_status, args.filter_section)
@@ -823,7 +822,7 @@ class Autosubmit:
             Log.critical("Can not write config file: {0}".format(e.message))
 
     @staticmethod
-    def install(database, scripts):
+    def install(database):
         BasicConfig.read()
 
         if database:
