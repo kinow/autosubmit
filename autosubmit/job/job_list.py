@@ -77,11 +77,13 @@ class JobList:
             dependencies = parser.get(section, "DEPENDENCIES").split()
             dep_section = dict()
             dep_distance = dict()
+            dep_running = dict()
             for dependency in dependencies:
                 if '-' in dependency:
                     dependency_split = dependency.split('-')
                     dep_section[dependency] = dependency_split[0]
                     dep_distance[dependency] = int(dependency_split[1])
+                    dep_running[dependency] = dic_jobs.get_option(dependency_split[0], 'RUNNING', 'once').lower()
                 else:
                     dep_section[dependency] = dependency
 
@@ -90,53 +92,52 @@ class JobList:
                     chunk = job.chunk
                     member = job.member
                     date = job.date
-                    chunk_index = None
-                    member_index = None
-                    date_index = None
+
+                    section_name = dep_section[dependency]
 
                     if '-' in dependency:
                         distance = dep_distance[dependency]
-                        if chunk is not None:
+                        if chunk is not None and dep_running[dependency] == 'chunk':
                             chunk_index = chunk_list.index(chunk)
                             if chunk_index >= distance:
                                 chunk = chunk_list[chunk_index - distance]
                             else:
                                 continue
-                        elif member is not None:
+                        elif member is not None and dep_running[dependency] in ['chunk', 'member']:
                             member_index = member_list.index(member)
                             if member_index >= distance:
                                 member = member_list[member_index - distance]
                             else:
                                 continue
-                        elif date is not None:
+                        elif date is not None and dep_running[dependency] in ['chunk', 'member', 'startdate']:
                             date_index = date_list.index(date)
                             if date_index >= distance:
                                 date = date_list[date_index - distance]
                             else:
                                 continue
 
-                    section_name = dep_section[dependency]
+
 
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk):
                         job.add_parent(parent)
 
                     if job.wait and job.frequency > 1:
                         if job.chunk is not None:
-                            max_distance = (chunk_index+1) % job.frequency
+                            max_distance = (chunk_list.index(chunk)+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
                                 for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                                     job.add_parent(parent)
                         elif job.member is not None:
-                            max_distance = (member_index+1) % job.frequency
+                            max_distance = (member_list.index(chunk)+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
                                 for parent in dic_jobs.get_jobs(section_name, date, member - distance, chunk):
                                     job.add_parent(parent)
                         elif job.date is not None:
-                            max_distance = (date_index+1) % job.frequency
+                            max_distance = (date_list.index(chunk)+1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
@@ -356,6 +357,7 @@ class JobList:
         dep_section = dict()
         dep_distance = dict()
         dependencies = dict()
+        dep_running = dict()
         for section in parser.sections():
             Log.debug("Reading rerun dependencies for {0} jobs".format(section))
             if not parser.has_option(section, "RERUN_DEPENDENCIES"):
@@ -363,11 +365,14 @@ class JobList:
             dependencies[section] = parser.get(section, "RERUN_DEPENDENCIES").split()
             dep_section[section] = dict()
             dep_distance[section] = dict()
+            dep_running[section] = dict()
             for dependency in dependencies[section]:
                 if '-' in dependency:
                     dependency_split = dependency.split('-')
                     dep_section[section][dependency] = dependency_split[0]
                     dep_distance[section][dependency] = int(dependency_split[1])
+                    dep_running[section][dependency] = self._dic_jobs.get_option(dependency_split[0], 'RUNNING',
+                                                                                 'once').lower()
                 else:
                     dep_section[section][dependency] = dependency
 
@@ -397,19 +402,20 @@ class JobList:
                             current_date = date
                             if '-' in dependency:
                                 distance = dep_distance[section][dependency]
-                                if current_chunk is not None:
+                                running = dep_running[section][dependency]
+                                if current_chunk is not None and running == 'chunk':
                                     chunk_index = self._chunk_list.index(current_chunk)
                                     if chunk_index >= distance:
                                         current_chunk = self._chunk_list[chunk_index - distance]
                                     else:
                                         continue
-                                elif current_member is not None:
+                                elif current_member is not None and running in ['chunk', 'member']:
                                     member_index = self._member_list.index(current_member)
                                     if member_index >= distance:
                                         current_member = self._member_list[member_index - distance]
                                     else:
                                         continue
-                                elif current_date is not None:
+                                elif current_date is not None and running in ['chunk', 'member', 'startdate']:
                                     date_index = self._date_list.index(current_date)
                                     if date_index >= distance:
                                         current_date = self._date_list[date_index - distance]
