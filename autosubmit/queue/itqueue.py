@@ -21,6 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import ItHeader
 
 
 class ItQueue(HPCQueue):
@@ -30,6 +31,7 @@ class ItQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = ItHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
@@ -44,7 +46,6 @@ class ItQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
-        self.checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
@@ -56,9 +57,6 @@ class ItQueue(HPCQueue):
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_remote_log_dir(self):
         return self.remote_log_dir
@@ -73,6 +71,12 @@ class ItQueue(HPCQueue):
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
 if __name__ == "__main__":

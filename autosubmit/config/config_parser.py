@@ -92,9 +92,6 @@ def expdef_parser(filename):
     members = "(\s*fc\d+\s*)+$"
     rerun = "\s*(true|false)\s*$"
     projecttype = ['git', 'svn', 'local', 'none']
-    wallclock = "\s*\d\d:\d\d\s*$"
-    numproc = "\s*\d+\s*$"
-    multiproc = "\s*\d+(:\d+)*\s*$"
 
     # option that must be in config file and has no default value
     mandatory_opt = ['EXPID']
@@ -119,18 +116,18 @@ def expdef_parser(filename):
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
     check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
     check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
-    check_regex('WALLCLOCK_SETUP', parser.get('wallclock', 'WALLCLOCK_SETUP'), wallclock)
-    check_regex('WALLCLOCK_INI', parser.get('wallclock', 'WALLCLOCK_INI'), wallclock)
-    check_regex('WALLCLOCK_SIM', parser.get('wallclock', 'WALLCLOCK_SIM'), wallclock)
-    check_regex('WALLCLOCK_POST', parser.get('wallclock', 'WALLCLOCK_POST'), wallclock)
-    check_regex('WALLCLOCK_CLEAN', parser.get('wallclock', 'WALLCLOCK_CLEAN'), wallclock)
-    check_regex('NUMPROC_SETUP', parser.get('numproc', 'NUMPROC_SETUP'), numproc)
-    check_regex('NUMPROC_INI', parser.get('numproc', 'NUMPROC_INI'), numproc)
-    check_regex('NUMPROC_SIM', parser.get('numproc', 'NUMPROC_SIM'), multiproc)
-    check_regex('NUMTASK_SIM', parser.get('numproc', 'NUMTASK_SIM'), multiproc)
-    check_regex('NUMTHREAD_SIM', parser.get('numproc', 'NUMTHREAD_SIM'), multiproc)
-    check_regex('NUMPROC_POST', parser.get('numproc', 'NUMPROC_POST'), numproc)
-    check_regex('NUMPROC_CLEAN', parser.get('numproc', 'NUMPROC_CLEAN'), numproc)
+    # check_regex('WALLCLOCK_SETUP', parser.get('wallclock', 'WALLCLOCK_SETUP'), wallclock)
+    # check_regex('WALLCLOCK_INI', parser.get('wallclock', 'WALLCLOCK_INI'), wallclock)
+    # check_regex('WALLCLOCK_SIM', parser.get('wallclock', 'WALLCLOCK_SIM'), wallclock)
+    # check_regex('WALLCLOCK_POST', parser.get('wallclock', 'WALLCLOCK_POST'), wallclock)
+    # check_regex('WALLCLOCK_CLEAN', parser.get('wallclock', 'WALLCLOCK_CLEAN'), wallclock)
+    # check_regex('NUMPROC_SETUP', parser.get('numproc', 'NUMPROC_SETUP'), numproc)
+    # check_regex('NUMPROC_INI', parser.get('numproc', 'NUMPROC_INI'), numproc)
+    # check_regex('NUMPROC_SIM', parser.get('numproc', 'NUMPROC_SIM'), multiproc)
+    # check_regex('NUMTASK_SIM', parser.get('numproc', 'NUMTASK_SIM'), multiproc)
+    # check_regex('NUMTHREAD_SIM', parser.get('numproc', 'NUMTHREAD_SIM'), multiproc)
+    # check_regex('NUMPROC_POST', parser.get('numproc', 'NUMPROC_POST'), numproc)
+    # check_regex('NUMPROC_CLEAN', parser.get('numproc', 'NUMPROC_CLEAN'), numproc)
 
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)

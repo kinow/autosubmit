@@ -23,14 +23,14 @@ import textwrap
 class PsHeader:
     """Class to handle the Ps headers of a job"""
 
-    HEADER_LOCALSETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             """)
 
-    HEADER_LOCALTRANS = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -41,7 +41,7 @@ class PsHeader:
 class ArHeader:
     """Class to handle the Archer headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -55,21 +55,7 @@ class ArHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l select=serial=true:ncpus=1
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -81,41 +67,13 @@ class ArHeader:
             #PBS -A %HPCPROJ%
             #
             ###############################################################################
-            """)
-
-    HEADER_POST = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l select=serial=true:ncpus=1
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l select=serial=true:ncpus=1
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
+            """)   
 
 
 class BscHeader:
     """Class to handle the BSC headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/ksh
             ###############################################################################
             #                     %TASKTYPE% %EXPID% EXPERIMENT
@@ -134,26 +92,7 @@ class BscHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""\
-            #!/bin/ksh
-            ###############################################################################
-            #                     %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ job_name         = %JOBNAME%
-            #@ wall_clock_limit = %WALLCLOCK%
-            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-            #@ total_tasks      = %NUMTASK%
-            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-            #@ class            = %CLASS%
-            #@ partition        = %PARTITION%
-            #@ features         = %FEATURES%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""
             #!/bin/ksh
             ###############################################################################
             #                     %TASKTYPE% %EXPID% EXPERIMENT
@@ -171,50 +110,11 @@ class BscHeader:
             ###############################################################################
             """)
 
-    HEADER_POST = textwrap.dedent("""
-            #!/bin/ksh
-            ###############################################################################
-            #                     %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ job_name         = %JOBNAME%
-            #@ wall_clock_limit = %WALLCLOCK%
-            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-            #@ total_tasks      = %NUMTASK%
-            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-            #@ tracing          = %TRACING%
-            #@ scratch          = %SCRATCH%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""
-            #!/bin/ksh
-            ###############################################################################
-            #                     %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ job_name         = %JOBNAME%
-            #@ wall_clock_limit = %WALLCLOCK%
-            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-            #@ total_tasks      = %NUMTASK%
-            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-            #@ tasks_per_node   = %TASKSNODE%
-            #@ tracing          = %TRACING%
-            #@ class            = %CLASS%
-            #@ partition        = %PARTITION%
-            #@ features         = %FEATURES%
-            #
-            ###############################################################################
-            """)
-
-
+   
 class EcHeader:
     """Class to handle the ECMWF headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/ksh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -234,27 +134,7 @@ class EcHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""
-            #!/bin/ksh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = ns
-            #@ job_type         = serial
-            #@ job_name         = %JOBNAME%
-            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ queue
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""\
+    PARALLEL = textwrap.dedent("""\
             #!/bin/ksh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -270,48 +150,6 @@ class EcHeader:
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ ec_smt           = no
             #@ total_tasks      = %NUMPROC%
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ queue
-            #
-            ###############################################################################
-            """)
-
-    HEADER_POST = textwrap.dedent("""\
-            #!/bin/ksh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = np
-            #@ job_type         = parallel
-            #@ job_name         = %JOBNAME%
-            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ ec_smt           = no
-            #@ total_tasks      = %NUMPROC%
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ queue
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""
-            #!/bin/ksh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = ns
-            #@ job_type         = serial
-            #@ job_name         = %JOBNAME%
-            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ wall_clock_limit = %WALLCLOCK%:00
             #@ queue
             #
@@ -322,7 +160,7 @@ class EcHeader:
 class EcCcaHeader:
     """Class to handle the ECMWF headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
              #!/bin/bash
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -337,21 +175,7 @@ class EcCcaHeader:
 
             """)
 
-    HEADER_INI = textwrap.dedent("""
-             #!/bin/bash
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK_INI%:00
-             #PBS -l EC_billing_account=%HPCPROJ%
-             #
-             ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""\
+    PARALLEL = textwrap.dedent("""\
              #!/bin/bash
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -368,39 +192,11 @@ class EcCcaHeader:
              ###############################################################################
             """)
 
-    HEADER_POST = textwrap.dedent("""\
-             #!/bin/bash
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK_POST%:00
-             #PBS -l EC_billing_account=%HPCPROJ%
-             #
-             ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""
-             #!/bin/bash
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK_CLEAN%:00
-             #PBS -l EC_billing_account=%HPCPROJ%
-             #
-             ###############################################################################
-            """)
-
 
 class HtHeader:
     """Class to handle the Hector headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -414,21 +210,7 @@ class HtHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -q serial
-            #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -443,39 +225,11 @@ class HtHeader:
             ###############################################################################
             """)
 
-    HEADER_POST = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -q serial
-            #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -q serial
-            #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
-            #
-            ###############################################################################
-            """)
-
 
 class ItHeader:
     """Class to handle the Ithaca headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -491,23 +245,7 @@ class ItHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #$ -S /bin/sh
-            #$ -N %JOBNAME%
-            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -V
-            #$ -l h_rt=%WALLCLOCK%:00
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -524,43 +262,11 @@ class ItHeader:
             ###############################################################################
             """)
 
-    HEADER_POST = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #$ -S /bin/sh
-            #$ -N %JOBNAME%
-            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -V
-            #$ -l h_rt=%WALLCLOCK%:00
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #$ -S /bin/sh
-            #$ -N %JOBNAME%
-            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -V
-            #$ -l h_rt=%WALLCLOCK%:00
-            #
-            ###############################################################################
-            """)
-
 
 class LgHeader:
     """Class to handle the Lindgren headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""\
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                         %TASKTYPE% %EXPID% EXPERIMENT
@@ -577,58 +283,7 @@ class LgHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #!/bin/sh --login
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
-            #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #!/bin/sh --login
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
-            #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_POST = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #!/bin/sh --login
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
-            #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""\
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                         %TASKTYPE% %EXPID% EXPERIMENT
@@ -649,7 +304,7 @@ class LgHeader:
 class MnHeader:
     """Class to handle the MareNostrum 3 headers of a job"""
 
-    HEADER_REMOTESETUP = textwrap.dedent("""\
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -665,56 +320,7 @@ class MnHeader:
             ###############################################################################
             """)
 
-    HEADER_INI = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
-            #
-            ###############################################################################
-            """)
-
-    HEADER_SIM = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
-            #
-            ###############################################################################
-            """)
-
-    HEADER_POST = textwrap.dedent("""\
-            #!/bin/sh
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
-            #BSUB -x
-            #
-            ###############################################################################
-            """)
-
-    HEADER_CLEAN = textwrap.dedent("""\
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

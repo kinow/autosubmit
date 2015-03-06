@@ -22,6 +22,7 @@ import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.job.job_headers import PsHeader
 
 
 class PsQueue(HPCQueue):
@@ -31,6 +32,7 @@ class PsQueue(HPCQueue):
         self._scratch = ""
         self._project = ""
         self._user = ""
+        self._header = PsHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']
@@ -50,19 +52,13 @@ class PsQueue(HPCQueue):
         # Local-->self._local_common_dir = "/cfu/autosubmit/common"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
-        self.checkjob_cmd = "ssh " + self._host + " " + self._remote_common_dir + "/" + "pscall.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = ("ssh " + self._host + " " + self._remote_common_dir + "/" + "shcall.sh " +
-                           self.remote_log_dir + " ")
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_remote_log_dir(self):
         return self.remote_log_dir
@@ -80,6 +76,12 @@ class PsQueue(HPCQueue):
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
+
+    def get_submit_cmd(self, job_script):
+        return "ssh " + self._host + " " + self.get_shcall(job_script)
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + self.get_pscall(job_id)
 
 
 # def main():

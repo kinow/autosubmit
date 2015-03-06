@@ -21,6 +21,7 @@
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.job.job_headers import LgHeader
 
 
 class ElQueue(HPCQueue):
@@ -30,6 +31,7 @@ class ElQueue(HPCQueue):
         self._scratch = "/cfu/scratch"
         self._project = ""
         self._user = ""
+        self._header = LgHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']
@@ -58,9 +60,6 @@ class ElQueue(HPCQueue):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
-    def get_submit_cmd(self):
-        return self.submit_cmd
-
     def get_remote_log_dir(self):
         return self.remote_log_dir
 
@@ -77,6 +76,12 @@ class ElQueue(HPCQueue):
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
+
+    def get_submit_cmd(self, job_script):
+        return "ssh " + self._host + " " + self.get_shcall(job_script)
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + HPCQueue.get_pscall(job_id)
 
 # def main():
 #     q = ElQueue()

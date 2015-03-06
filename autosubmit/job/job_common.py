@@ -16,7 +16,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
 import textwrap
 
 
@@ -34,79 +33,6 @@ class Status:
 
     def retval(self, value):
         return getattr(self, value)
-
-
-class Type:
-    """Class to handle the type of a job.
-    At the moment contains 7 types:
-    SIMULATION are for multiprocessor jobs
-    POSTPROCESSING are single processor jobs
-    ClEANING are archiving job---> dealing with large transfer of data on tape
-    INITIALISATION are jobs which transfer data from tape to disk
-    LOCALSETUP are for source code preparation local jobs
-    REMOTESETUP are for soruce code compilation jobs
-    TRANSFER are for downloading data jobs"""
-    LOCALSETUP = 6
-    REMOTESETUP = 5
-    INITIALISATION = 4
-    SIMULATION = 3
-    POSTPROCESSING = 2
-    CLEANING = 1
-    TRANSFER = 0
-
-
-class Template:
-    """Class to handle the template code snippet of a job.
-    At the moment contains 7 templates:
-    SIMULATION are for multiprocessor jobs
-    POSTPROCESSING are single processor jobs
-    ClEANING are archiving job---> dealing with large transfer of data on tape
-    INITIALISATION are jobs which transfer data from tape to disk
-    LOCALSETUP are for source code preparation local jobs
-    REMOTESETUP are for soruce code compilation jobs
-    TRANSFER are for downloading data jobs"""
-
-    LOCALSETUP = textwrap.dedent("""\
-            """)
-
-    REMOTESETUP = textwrap.dedent("""\
-            """)
-
-    INITIALISATION = textwrap.dedent("""\
-            """)
-
-    SIMULATION = textwrap.dedent("""\
-            """)
-
-    POSTPROCESSING = textwrap.dedent("""\
-            """)
-
-    CLEANING = textwrap.dedent("""\
-            """)
-
-    TRANSFER = textwrap.dedent("""\
-            """)
-
-    def read_localsetup_file(self, filename):
-        self.LOCALSETUP = file(filename, 'r').read()
-
-    def read_remotesetup_file(self, filename):
-        self.REMOTESETUP = file(filename, 'r').read()
-
-    def read_initialisation_file(self, filename):
-        self.INITIALISATION = file(filename, 'r').read()
-
-    def read_simulation_file(self, filename):
-        self.SIMULATION = file(filename, 'r').read()
-
-    def read_postprocessing_file(self, filename):
-        self.POSTPROCESSING = file(filename, 'r').read()
-
-    def read_cleaning_file(self, filename):
-        self.CLEANING = file(filename, 'r').read()
-
-    def read_transfer_file(self, filename):
-        self.TRANSFER = file(filename, 'r').read()
 
 
 class StatisticsSnippet:

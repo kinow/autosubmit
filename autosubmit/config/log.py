@@ -97,6 +97,7 @@ class Log:
     log.addHandler(console_handler)
 
     file_handler = None
+    file_level = INFO
 
     @staticmethod
     def set_file(file_path):
@@ -108,17 +109,23 @@ class Log:
         if Log.file_handler is not None:
             Log.log.removeHandler(Log.file_handler)
         Log.file_handler = logging.FileHandler(file_path, 'w')
-        Log.file_handler.setLevel(Log.DEBUG)
+        Log.file_handler.setLevel(Log.file_level)
         Log.file_handler.setFormatter(LogFormatter(True))
         Log.log.addHandler(Log.file_handler)
 
     @staticmethod
     def set_console_level(level):
+        if type(level) is str:
+            level = getattr(Log, level)
         Log.console_handler.level = level
 
     @staticmethod
     def set_file_level(level):
-        Log.file_handler.level = level
+        if type(level) is str:
+            level = getattr(Log, level)
+        Log.file_level = level
+        if Log.file_handler is not None:
+            Log.file_handler.level = level
 
     @staticmethod
     def debug(msg, *args, **kwargs):
