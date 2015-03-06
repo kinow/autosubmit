@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import os
 
 import textwrap
 
@@ -34,6 +35,14 @@ class Status:
 
     def retval(self, value):
         return getattr(self, value)
+
+
+class QstatSnippet:
+    """Class to check the completion of jobs when they are already gone from the scheduler scope"""
+
+    QSTATJOB = textwrap.dedent("""\
+            if [[ -n $(qstat | grep "$1") ]]; then qstat | grep "$1" | awk '{print $5}' | head -n 1; else echo "c"; fi
+            """)
 
 
 class StatisticsSnippet:

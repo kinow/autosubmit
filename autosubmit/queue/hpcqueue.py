@@ -62,8 +62,7 @@ class HPCQueue:
             return job_status
 
         retry = 10
-        (status, output) = getstatusoutput(self.checkjob_cmd + ' %s' % str(job_id))
-        Log.debug(self.checkjob_cmd + ' %s' % str(job_id))
+        (status, output) = getstatusoutput(self.get_checkjob_cmd(job_id))
         Log.debug(status)
         Log.debug(output)
         # retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a
@@ -72,7 +71,7 @@ class HPCQueue:
             # if(current_state == Status.RUNNING):
             retry -= 1
             Log.info('Can not get job status, retrying in 10 sec')
-            (status, output) = getstatusoutput(self.checkjob_cmd + ' %s' % str(job_id))
+            (status, output) = getstatusoutput(self.get_checkjob_cmd(job_id))
             Log.debug(status)
             Log.debug(output)
             # URi: logger
@@ -145,8 +144,7 @@ class HPCQueue:
             return False
 
     def submit_job(self, job_script):
-        (status, output) = getstatusoutput(self.submit_cmd + str(job_script))
-        Log.debug(self.submit_cmd + str(job_script))
+        (status, output) = getstatusoutput(self.get_submit_cmd(job_script))
         if status == 0:
             job_id = self.get_submitted_job_id(output)
             Log.debug(job_id)
@@ -154,7 +152,7 @@ class HPCQueue:
 
     def normal_stop(self):
         sleep(SLEEPING_TIME)
-        (status, output) = getstatusoutput(self.checkjob_cmd + ' ')
+        (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
         for job_id in self.jobs_in_queue(output):
             self.cancel_job(job_id)
 
@@ -162,12 +160,12 @@ class HPCQueue:
 
     def smart_stop(self):
         sleep(SLEEPING_TIME)
-        (status, output) = getstatusoutput(self.checkjob_cmd + ' ')
+        (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
         Log.debug(self.jobs_in_queue(output))
         while self.jobs_in_queue(output):
             Log.debug(self.jobs_in_queue(output))
             sleep(SLEEPING_TIME)
-            (status, output) = getstatusoutput(self.checkjob_cmd + ' ')
+            (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
         exit(0)
 
     def set_host(self, new_host):

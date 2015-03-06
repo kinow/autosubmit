@@ -46,7 +46,6 @@ class ItQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
-        self.checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
@@ -59,8 +58,16 @@ class ItQueue(HPCQueue):
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
 
-    def get_submit_cmd(self):
-        return self.submit_cmd
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
+
+    @staticmethod
+    def get_qstatjob(job_id):
+        return '''"if [[ \$(qstat | grep {0}) != '' ]];
+        then echo \$(qstat | grep {0} | awk '{{print \$5}}' | head -n 1); else echo 'c'; fi"'''.format(job_id)
 
     def get_remote_log_dir(self):
         return self.remote_log_dir
