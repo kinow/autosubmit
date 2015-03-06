@@ -22,6 +22,7 @@ from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.job.job_headers import ItHeader
+from autosubmit.job.job_common import QstatSnippet
 
 
 class ItQueue(HPCQueue):
@@ -46,7 +47,7 @@ class ItQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
-        self.checkjob_cmd = "ssh " + self._host + " qstatjob.sh"
+        self.checkjob_cmd = "ssh " + self._host + " " + QstatSnippet.QSTATJOB
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"

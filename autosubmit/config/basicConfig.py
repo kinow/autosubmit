@@ -24,11 +24,10 @@ from autosubmit.config.log import Log
 
 class BasicConfig:
 
-    DB_DIR = '/home/jvegas/debug/autosubmit'
+    DB_DIR = '~/autosubmit'
     DB_FILE = 'autosubmit.db'
-    DB_NAME = 'autosubmit'
     DB_PATH = DB_DIR + "/" + DB_FILE
-    LOCAL_ROOT_DIR = '/home/jvegas/debug/autosubmit'
+    LOCAL_ROOT_DIR = '~/autosubmit'
     LOCAL_TMP_DIR = 'tmp'
     LOCAL_PROJ_DIR = 'proj'
 
