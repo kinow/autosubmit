@@ -578,7 +578,7 @@ class Autosubmit:
                         job.id = job.queue.submit_job(scriptname)
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                    Log.info("%s submited\n", job.name)
+                    Log.info("%s submitted\n", job.name)
 
             time.sleep(safetysleeptime)
 

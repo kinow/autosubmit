@@ -46,7 +46,7 @@ class LgQueue(HPCQueue):
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self.checkjob_cmd = "ssh " + self._host + " qstat"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/"
+        self.submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/ "
         self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -54,9 +54,6 @@ class LgQueue(HPCQueue):
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_remote_log_dir(self):
         return self.remote_log_dir
@@ -74,6 +71,12 @@ class LgQueue(HPCQueue):
     def jobs_in_queue(self, output):
         Log.debug(output)
         return output.split()
+
+    def get_checkjob_cmd(self, job_id):
+        return self.checkjob_cmd + str(job_id)
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script
 
 
 # def main():

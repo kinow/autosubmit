@@ -42,7 +42,7 @@ class Mn3Queue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_"
                                + self.expid)
         self.cancel_cmd = "ssh " + self._host + " bkill"
-        self.checkjob_cmd = "ssh " + self._host + " bjobs"
+        self.checkjob_cmd = "ssh " + self._host + " bjobs "
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
@@ -52,9 +52,6 @@ class Mn3Queue(HPCQueue):
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
@@ -71,3 +68,9 @@ class Mn3Queue(HPCQueue):
 
     def jobs_in_queue(self, output):
         return zip(*[line.split() for line in output.split('\n')])[0][1:]
+
+    def get_checkjob_cmd(self, job_id):
+        return self.checkjob_cmd + str(job_id)
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script

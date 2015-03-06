@@ -46,7 +46,7 @@ class MnQueue(HPCQueue):
         self.checkjob_cmd = "ssh " + self._host + " checkjob --xml"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.submit_cmd = ("ssh " + self._host + " mnsubmit -initialdir " + self.remote_log_dir + " " +
-                           self.remote_log_dir + "/")
+                           self.remote_log_dir + "/ ")
         self._status_cmd = "ssh " + self._host + " mnq --xml"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -54,9 +54,6 @@ class MnQueue(HPCQueue):
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_remote_log_dir(self):
         self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
@@ -78,3 +75,9 @@ class MnQueue(HPCQueue):
         dom = parseString(output)
         job_list = dom.getElementsByTagName("job")
         return [int(job.getAttribute('JobID')) for job in job_list]
+
+    def get_checkjob_cmd(self, job_id):
+        return self.checkjob_cmd + str(job_id)
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script

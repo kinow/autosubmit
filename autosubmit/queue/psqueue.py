@@ -60,20 +60,6 @@ class PsQueue(HPCQueue):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
-    def get_submit_cmd(self, job_script):
-        return "ssh " + self._host + " " + self.get_shcall(job_script)
-
-    def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_pscall(job_id)
-
-    def get_shcall(self, job_script):
-        return '"nohup /bin/sh {0} > {0}.stdout 2> {0}.stderr & echo \$!"'.format(os.path.join(self.remote_log_dir,
-                                                                                               job_script))
-
-    @staticmethod
-    def get_pscall(job_id):
-        return '"kill -0 {0} > {0}.stat.stdout 2> {0}.stat.stderr; echo \$?"'.format(job_id)
-
     def get_remote_log_dir(self):
         return self.remote_log_dir
 
@@ -90,6 +76,12 @@ class PsQueue(HPCQueue):
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
+
+    def get_submit_cmd(self, job_script):
+        return "ssh " + self._host + " " + self.get_shcall(job_script)
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + self.get_pscall(job_id)
 
 
 # def main():
