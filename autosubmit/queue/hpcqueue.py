@@ -204,3 +204,21 @@ class HPCQueue:
         else:
             return self.header.SERIAL
 
+    def get_checkjob_cmd(self, job_id):
+        raise NotImplementedError
+
+    def get_submit_cmd(self, job_script):
+        raise NotImplementedError
+
+    def get_shcall(self, job_script):
+        return '"nohup /bin/sh {0} > {0}.stdout 2> {0}.stderr & echo \$!"'.format(os.path.join(self.remote_log_dir,
+                                                                                               job_script))
+
+    @staticmethod
+    def get_pscall(job_id):
+        return '"kill -0 {0} > {0}.stat.stdout 2> {0}.stat.stderr; echo \$?"'.format(job_id)
+
+    @staticmethod
+    def get_qstatjob(job_id):
+        return '''"if [[ \$(qstat | grep {0}) != '' ]];
+        then echo \$(qstat | grep {0} | awk '{{print \$5}}' | head -n 1); else echo 'c'; fi"'''.format(job_id)

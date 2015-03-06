@@ -25,6 +25,7 @@ from autosubmit.job.job_headers import EcHeader
 
 
 class EcQueue(HPCQueue):
+
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "c2a"
@@ -45,7 +46,7 @@ class EcQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
-        self.checkjob_cmd = "ecaccess-job-list"
+        self.checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
         self.submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
                            self.expid + "/tmp/")
@@ -58,9 +59,6 @@ class EcQueue(HPCQueue):
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
-
-    def get_submit_cmd(self):
-        return self.submit_cmd
 
     def get_remote_log_dir(self):
         return self.remote_log_dir
@@ -78,4 +76,10 @@ class EcQueue(HPCQueue):
     def jobs_in_queue(self, output):
         Log.debug(output)
         return output.split()
+
+    def get_checkjob_cmd(self, job_id):
+        return self.checkjob_cmd + job_id
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script
 

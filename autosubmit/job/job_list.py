@@ -116,8 +116,6 @@ class JobList:
                             else:
                                 continue
 
-
-
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk):
                         job.add_parent(parent)
 

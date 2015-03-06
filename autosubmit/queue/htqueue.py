@@ -54,17 +54,6 @@ class HtQueue(HPCQueue):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
-    def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
-
-    def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
-
-    @staticmethod
-    def get_qstatjob(job_id):
-        return '''"if [[ \$(qstat | grep {0}) != '' ]];
-        then echo \$(qstat | grep {0} | awk '{{print \$5}}' | head -n 1); else echo 'c'; fi"'''.format(job_id)
-
     def get_remote_log_dir(self):
         return self.remote_log_dir
 
@@ -82,6 +71,12 @@ class HtQueue(HPCQueue):
     def jobs_in_queue(self, output):
         Log.debug(output)
         return output.split()
+
+    def get_submit_cmd(self, job_script):
+        return self.submit_cmd + job_script
+
+    def get_checkjob_cmd(self, job_id):
+        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 #
 # def main():
