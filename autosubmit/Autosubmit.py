@@ -127,6 +127,8 @@ class Autosubmit:
         subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
         subparser.add_argument('-p', '--plot', action="store_true",
                                help='clean plot, only 2 last will remain')
+        subparser.add_argument('-s', '--stats', action="store_true",
+                               help='clean stats, only last will remain')
 
         # Recovery
         subparser = subparsers.add_parser('recovery', description="recover specified experiment")
@@ -205,7 +207,7 @@ class Autosubmit:
         elif args.command == 'stats':
             Autosubmit.statistics(args.expid, args.joblist, args.output)
         elif args.command == 'clean':
-            Autosubmit.clean(args.expid, args.project, args.plot)
+            Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
         elif args.command == 'recovery':
             Autosubmit.recovery(args.expid, args.joblist, args.save, args.get)
         elif args.command == 'check':
@@ -618,7 +620,7 @@ class Autosubmit:
             Log.info("There are no COMPLETED jobs...")
 
     @staticmethod
-    def clean(expid, project, plot):
+    def clean(expid, project, plot, stats):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'finalise_exp.log'))
@@ -636,9 +638,13 @@ class Autosubmit:
             else:
                 Log.info("No project to clean...\n")
         if plot:
-            Log.info("Cleaning plot directory...")
+            Log.info("Cleaning plots...")
             monitor_autosubmit = Monitor()
             monitor_autosubmit.clean_plot(expid)
+        if stats:
+            Log.info("Cleaning stats directory...")
+            monitor_autosubmit = Monitor()
+            monitor_autosubmit.clean_stats(expid)
 
     @staticmethod
     def recovery(expid, root_name, save, get):
