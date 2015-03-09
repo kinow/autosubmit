@@ -16,12 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
-from autosubmit.job.job_headers import EcHeader
 
 
 class EcQueue(HPCQueue):
@@ -46,10 +45,10 @@ class EcQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
-        self.checkjob_cmd = "ecaccess-job-list "
+        self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
-        self.submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
-                           self.expid + "/tmp/")
+        self._submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
+                            self.expid + "/tmp/")
         self._status_cmd = "ecaccess-job-get"
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
@@ -78,8 +77,89 @@ class EcQueue(HPCQueue):
         return output.split()
 
     def get_checkjob_cmd(self, job_id):
-        return self.checkjob_cmd + str(job_id)
+        return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
 
+
+class EcHeader:
+    """Class to handle the ECMWF headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/ksh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #@ shell            = /usr/bin/ksh
+            #@ class            = ns
+            #@ job_type         = serial
+            #@ job_name         = %JOBNAME%
+            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
+            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ notification     = error
+            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+            #@ wall_clock_limit = %WALLCLOCK%:00
+            #@ queue
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""\
+            #!/bin/ksh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #@ shell            = /usr/bin/ksh
+            #@ class            = np
+            #@ job_type         = parallel
+            #@ job_name         = %JOBNAME%
+            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
+            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ notification     = error
+            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
+            #@ ec_smt           = no
+            #@ total_tasks      = %NUMPROC%
+            #@ wall_clock_limit = %WALLCLOCK%:00
+            #@ queue
+            #
+            ###############################################################################
+            """)
+
+
+class EcCcaHeader:
+    """Class to handle the ECMWF headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+             #!/bin/bash
+             ###############################################################################
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %JOBNAME%
+             #PBS -q ns
+             #PBS -l walltime=%WALLCLOCK_SETUP%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
+             #
+             ###############################################################################
+
+            """)
+
+    PARALLEL = textwrap.dedent("""\
+             #!/bin/bash
+             ###############################################################################
+             #                   %TASKTYPE% %EXPID% EXPERIMENT
+             ###############################################################################
+             #
+             #PBS -N %JOBNAME%
+             #PBS -q np
+             #PBS -l EC_total_tasks=%NUMPROC_SIM%
+             #PBS -l EC_threads_per_task=%NUMTHREAD_SIM%
+             #PBS -l EC_tasks_per_node=%NUMTASK_SIM%
+             #PBS -l walltime=%WALLCLOCK_SIM%:00
+             #PBS -l EC_billing_account=%HPCPROJ%
+             #
+             ###############################################################################
+            """)

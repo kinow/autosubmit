@@ -92,8 +92,8 @@ class Autosubmit:
         subparser = subparsers.add_parser('expid', description="Creates a new experiment")
         group = subparser.add_mutually_exclusive_group()
         group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
-        group.add_argument('-dm', '--dummy', action='store_true', help='creates a new experiment with default '
-                                                                       'values, usually for testing')
+        group.add_argument('-dm', '--dummy', action='store_true',
+                           help='creates a new experiment with default values, usually for testing')
 
         subparser.add_argument('-H', '--HPC', required=True,
                                choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca',
@@ -105,6 +105,7 @@ class Autosubmit:
         # Delete
         subparser = subparsers.add_parser('delete', description="delete specified experiment")
         subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('-f', '--force', action='store_true', help='delete experiment without confirmation')
 
         # Monitor
         subparser = subparsers.add_parser('monitor', description="plots specified experiment")
@@ -123,8 +124,8 @@ class Autosubmit:
         # Clean
         subparser = subparsers.add_parser('clean', description="clean specified experiment")
         subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
-        subparser.add_argument('-pr', '--project', action="store_true", default=False, help='clean project')
-        subparser.add_argument('-p', '--plot', action="store_true", default=False,
+        subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
+        subparser.add_argument('-p', '--plot', action="store_true",
                                help='clean plot, only 2 last will remain')
 
         # Recovery
@@ -198,7 +199,7 @@ class Autosubmit:
         elif args.command == 'expid':
             Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy)
         elif args.command == 'delete':
-            Autosubmit.delete(args.expid)
+            Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
             Autosubmit.monitor(args.expid, args.joblist, args.output)
         elif args.command == 'stats':
@@ -299,13 +300,13 @@ class Autosubmit:
         Log.debug("Creating plot directory...")
         os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot")
         os.chmod(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot", 0o775)
-
+        Log.result("Experiment registered successfully")
         Log.user_warning("Remember to MODIFY the config files!")
 
     @staticmethod
-    def delete(expid):
+    def delete(expid, force):
         if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + expid):
-            if Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
+            if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
                 Autosubmit.delete_expid(expid)
             else:
                 Log.info("Quitting...")
@@ -587,27 +588,32 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+        Log.info("Getting job list...")
         jobs = cPickle.load(file(filename, 'r'))
         if not isinstance(jobs, type([])):
             jobs = jobs.get_job_list()
 
+        Log.info("Plotting...")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, output)
+        Log.result("Plot ready")
 
     @staticmethod
     def statistics(expid, root_name, output):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'statistics.log'))
-
+        Log.info("Loading jobs...")
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
         jobs = cPickle.load(file(filename, 'r'))
         # if not isinstance(jobs, type([])):
         #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
         if len(jobs.get_job_list()) > 0:
+            Log.info("Plotting stats...")
             monitor_exp = Monitor()
             monitor_exp.generate_output_stats(expid, jobs.get_job_list(), output)
+            Log.result("Stats plot ready")
         else:
             Log.info("There are no COMPLETED jobs...")
 
@@ -734,11 +740,11 @@ class Autosubmit:
                     job.queue = remote_queue
                 if job.queue.get_completed_files(job.name):
                     job.status = Status.COMPLETED
-                    Log.info("CHANGED: job: " + job.name + " status to: COMPLETED")
+                    Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
                 elif job.status != Status.SUSPENDED:
                     job.status = Status.READY
                     job.set_fail_count(0)
-                    Log.info("CHANGED: job: " + job.name + " status to: READY")
+                    Log.info("CHANGED job '{0}' status to READY".format(job.name))
 
             sys.setrecursionlimit(50000)
             l1.update_list()
@@ -1110,37 +1116,39 @@ class Autosubmit:
                                       "CHUNKSIZE = 4")
             content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
                                       "NUMCHUNKS = 1")
-
-            # Wallclocks
-            content = content.replace(re.search('WALLCLOCK_SETUP =.*', content).group(0),
-                                      "WALLCLOCK_SETUP = 00:01")
-            content = content.replace(re.search('WALLCLOCK_INI =.*', content).group(0),
-                                      "WALLCLOCK_INI = 00:01")
-            content = content.replace(re.search('WALLCLOCK_SIM =.*', content).group(0),
-                                      "WALLCLOCK_SIM = 00:01")
-            content = content.replace(re.search('WALLCLOCK_POST =.*', content).group(0),
-                                      "WALLCLOCK_POST = 00:01")
-            content = content.replace(re.search('WALLCLOCK_CLEAN =.*', content).group(0),
-                                      "WALLCLOCK_CLEAN = 00:01")
-
-            # Processors
-            content = content.replace(re.search('NUMPROC_SETUP =.*', content).group(0),
-                                      "NUMPROC_SETUP = 1")
-            content = content.replace(re.search('NUMPROC_INI =.*', content).group(0),
-                                      "NUMPROC_INI = 1")
-            content = content.replace(re.search('NUMPROC_SIM =.*', content).group(0),
-                                      "NUMPROC_SIM = 1")
-            content = content.replace(re.search('NUMTHREAD_SIM =.*', content).group(0),
-                                      "NUMTHREAD_SIM = 1")
-            content = content.replace(re.search('NUMTASK_SIM =.*', content).group(0),
-                                      "NUMTASK_SIM = 1")
-            content = content.replace(re.search('NUMPROC_POST =.*', content).group(0),
-                                      "NUMPROC_POST = 1")
-            content = content.replace(re.search('NUMPROC_CLEAN =.*', content).group(0),
-                                      "NUMPROC_CLEAN = 1")
-
             content = content.replace(re.search('PROJECT_TYPE =.*', content).group(0),
                                       "PROJECT_TYPE = none")
+
+            # # Wallclocks
+            # content = content.replace(re.search('WALLCLOCK_SETUP =.*', content).group(0),
+            #                           "WALLCLOCK_SETUP = 00:01")
+            # content = content.replace(re.search('WALLCLOCK_INI =.*', content).group(0),
+            #                           "WALLCLOCK_INI = 00:01")
+            # content = content.replace(re.search('WALLCLOCK_SIM =.*', content).group(0),
+            #                           "WALLCLOCK_SIM = 00:01")
+            # content = content.replace(re.search('WALLCLOCK_POST =.*', content).group(0),
+            #                           "WALLCLOCK_POST = 00:01")
+            # content = content.replace(re.search('WALLCLOCK_CLEAN =.*', content).group(0),
+            #                           "WALLCLOCK_CLEAN = 00:01")
+            #
+            # # Processors
+            # content = content.replace(re.search('NUMPROC_SETUP =.*', content).group(0),
+            #                           "NUMPROC_SETUP = 1")
+            # content = content.replace(re.search('NUMPROC_INI =.*', content).group(0),
+            #                           "NUMPROC_INI = 1")
+            # content = content.replace(re.search('NUMPROC_SIM =.*', content).group(0),
+            #                           "NUMPROC_SIM = 1")
+            # content = content.replace(re.search('NUMTHREAD_SIM =.*', content).group(0),
+            #                           "NUMTHREAD_SIM = 1")
+            # content = content.replace(re.search('NUMTASK_SIM =.*', content).group(0),
+            #                           "NUMTASK_SIM = 1")
+            # content = content.replace(re.search('NUMPROC_POST =.*', content).group(0),
+            #                           "NUMPROC_POST = 1")
+            # content = content.replace(re.search('NUMPROC_CLEAN =.*', content).group(0),
+            #                           "NUMPROC_CLEAN = 1")
+            #
+            # content = content.replace(re.search('PROJECT_TYPE =.*', content).group(0),
+            #                           "PROJECT_TYPE = none")
 
             file(as_conf.experiment_file, 'w').write(content)
 

@@ -16,10 +16,9 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.job.job_headers import BscHeader
 
 
 class Mn3Queue(HPCQueue):
@@ -42,9 +41,9 @@ class Mn3Queue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_"
                                + self.expid)
         self.cancel_cmd = "ssh " + self._host + " bkill"
-        self.checkjob_cmd = "ssh " + self._host + " bjobs "
+        self._checkjob_cmd = "ssh " + self._host + " bjobs "
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
+        self._submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -70,7 +69,48 @@ class Mn3Queue(HPCQueue):
         return zip(*[line.split() for line in output.split('\n')])[0][1:]
 
     def get_checkjob_cmd(self, job_id):
-        return self.checkjob_cmd + str(job_id)
+        return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
+
+
+class BscHeader:
+    """Class to handle the BSC headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/ksh
+            ###############################################################################
+            #                     %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #@ job_name         = %JOBNAME%
+            #@ wall_clock_limit = %WALLCLOCK%
+            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
+            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
+            #@ total_tasks      = %NUMTASK%
+            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
+            #@ class            = %CLASS%
+            #@ partition        = %PARTITION%
+            #@ features         = %FEATURES%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""
+            #!/bin/ksh
+            ###############################################################################
+            #                     %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #@ job_name         = %JOBNAME%
+            #@ wall_clock_limit = %WALLCLOCK%
+            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
+            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
+            #@ total_tasks      = %NUMTASK%
+            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
+            #@ tasks_per_node   = %TASKSNODE%
+            #@ tracing          = %TRACING%
+            #
+            ###############################################################################
+            """)

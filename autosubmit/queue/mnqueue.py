@@ -16,12 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.job.job_headers import MnHeader
 
 
 class MnQueue(HPCQueue):
@@ -43,10 +42,10 @@ class MnQueue(HPCQueue):
     def update_cmds(self):
         self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
         self.cancel_cmd = "ssh " + self._host + " mncancel"
-        self.checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+        self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = ("ssh " + self._host + " mnsubmit -initialdir " + self.remote_log_dir + " " +
-                           self.remote_log_dir + "/ ")
+        self._submit_cmd = ("ssh " + self._host + " mnsubmit -initialdir " + self.remote_log_dir + " " +
+                            self.remote_log_dir + "/ ")
         self._status_cmd = "ssh " + self._host + " mnq --xml"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -77,7 +76,44 @@ class MnQueue(HPCQueue):
         return [int(job.getAttribute('JobID')) for job in job_list]
 
     def get_checkjob_cmd(self, job_id):
-        return self.checkjob_cmd + str(job_id)
+        return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
+
+
+class MnHeader:
+    """Class to handle the MareNostrum 3 headers of a job"""
+
+    SERIAL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #BSUB -J %JOBNAME%
+            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -W %WALLCLOCK%
+            #BSUB -n %NUMPROC%
+            #BSUB -R "span[ptile=16]"
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #BSUB -J %JOBNAME%
+            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -W %WALLCLOCK%
+            #BSUB -n %NUMPROC%
+            #BSUB -R "span[ptile=16]"
+            #
+            ###############################################################################
+            """)
+

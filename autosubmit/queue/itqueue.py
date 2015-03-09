@@ -16,12 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.job.job_headers import ItHeader
 
 
 class ItQueue(HPCQueue):
@@ -47,7 +46,7 @@ class ItQueue(HPCQueue):
                                self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
+        self._submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
@@ -73,16 +72,45 @@ class ItQueue(HPCQueue):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
         return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
-if __name__ == "__main__":
-    q = ItQueue("i000")
-# q.check_job(1688)
-# j = q.submit_job("/home/cfu/omula/test/run_t159l62_orca1.ksh")
-# sleep(10)
-# print q.check_job(j)
-# q.cancel_job(j)
+class ItHeader:
+    """Class to handle the Ithaca headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #$ -S /bin/sh
+            #$ -N %JOBNAME%
+            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -V
+            #$ -l h_rt=%WALLCLOCK%:00
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #$ -S /bin/sh
+            #$ -N %JOBNAME%
+            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -V
+            #$ -l h_rt=%WALLCLOCK%:00
+            #$ -pe orte %NUMPROC%
+            #
+            ###############################################################################
+            """)
+

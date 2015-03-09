@@ -16,11 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
-from autosubmit.job.job_headers import ArHeader
 
 
 class ArQueue(HPCQueue):
@@ -74,12 +73,42 @@ class ArQueue(HPCQueue):
         return output.split()
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
         return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
+class ArHeader:
+    """Class to handle the Archer headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -l select=serial=true:ncpus=1
+            #PBS -l walltime=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -l select=%NUMPROC%
+            #PBS -l walltime=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
 # def main():
 #     q = ArQueue()
 #     q.check_job(1688)
