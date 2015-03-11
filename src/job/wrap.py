@@ -207,7 +207,7 @@ class Wrap:
 		scriptname = self._name+'.cmd'
 		parameters['JOBNAME'] = self._name
 		print "jobType: %s" %str(self._type)
-		mytemplate = self._template_path + templatename + '/' + templatename + '.wrapper'
+		mytemplate = self._template_path + templatename + '/' + templatename + '.spinwrapper'
 		##update parameters
 		##caution: H is limited to 24 in strptime
 		d1 = datetime.datetime.strptime(parameters['WALLCLOCK_SIM'], "%H:%M")
