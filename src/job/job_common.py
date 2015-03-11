@@ -51,5 +51,3 @@ class Type:
 	POSTPROCESSING = 2
 	CLEANING = 1
 	TRANSFER = 0
-	LOCALPOST = -1
-	PLOT = -2

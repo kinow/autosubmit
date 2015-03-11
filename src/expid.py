@@ -273,7 +273,6 @@ if __name__ == "__main__":
 	group1.add_argument('--copy', '-y', type = str)
 	group2 = parser.add_argument_group('experiment arguments')
 	group2.add_argument('--HPC', '-H', choices = ('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'archer'), required = True)
-	group2.add_argument('--FAT', '-F', choices = ('stargate'), required = True)
 	group2.add_argument('--model_name', '-M', choices = ('dummy', 'ecearth', 'nemo'), required = True) 
 	group2.add_argument('--model_branch', '-m', type = str, default = 'master', help = "{'develop-v2.3.0', 'develop-v3.0.1', ...} Check available branches here: https://dev.cfu.local/ecearth.git https://dev.cfu.local/nemo.git")
 	group2.add_argument('--template_name', '-T',  type = str, help = "{'dummy', 'ecearth', 'ifs', 'nemo', 'ecearth3', 'ifs3', 'nemo3' ...}",required = True) ##find a way to allow only compatible ones with model_name
@@ -406,8 +405,6 @@ if __name__ == "__main__":
 	content = file("../conf/archdef/" + args.HPC + ".conf").read()
 	content += file("../conf/archdef/common.conf").read()
 	file(DB_DIR + exp_id + "/conf/archdef_" + exp_id + ".conf", 'w').write(content)
-	content = file("../conf/archdef/" + args.FAT + ".conf").read()
-	file(DB_DIR + exp_id + "/conf/fatdef_" + exp_id + ".conf", 'w').write(content)
 	print "Creating temporal directory..."
 	os.mkdir(DB_DIR+exp_id+"/"+"tmp")
 	print "Creating pkl directory..."

@@ -44,10 +44,10 @@ class JobList:
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		self._parameters = parameters
-		if (parameters.has_key('POSTDEP') and parameters['POSTDEP'] == "FALSE"):
-			postdep = False
+		if (parameters.has_key('SPINUP') and parameters['SPINUP'] == "FALSE"):
+			spinup = False
 		else:
-			postdep = True
+			spinup = True
 		localsetupjob_name = self._expid + "_" 
 		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 		localsetup_job.set_parents([])
@@ -63,10 +63,6 @@ class JobList:
 				print member
 				transjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
 				trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
-				localpostjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
-				localpost_job = Job(localpostjob_name + "localpost", 0, Status.WAITING, Type.LOCALPOST)
-				plotjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
-				plot_job = Job(plotjob_name + "plot", 0, Status.WAITING, Type.PLOT)
 				for	chunk in range(starting_chunk, starting_chunk + num_chunks):
 					rootjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk) + "_"
 					inijob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" 
@@ -89,7 +85,7 @@ class JobList:
 					if (chunk > 1):
 						parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-1) + "_" + "sim"
 						sim_job.set_parents([parentjob_name])
-						if (postdep and chunk > 2):
+						if (not spinup and chunk > 2):
 							parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
 							sim_job.add_parent(parentjob_name)
 					if (chunk == 1):
@@ -102,7 +98,7 @@ class JobList:
 					if (chunk < starting_chunk + num_chunks	- 1):
 						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk+1) + "_" + "sim"
 						sim_job.add_children(childjob_name)
-					if (postdep and chunk < starting_chunk + num_chunks - 2):
+					if (not spinup and chunk < starting_chunk + num_chunks - 2):
 						childjob_name = self._expid+ "_" + str(date) + "_" + str(member) + "_" + str(chunk+2) + "_" + "sim"
 						clean_job.set_children([childjob_name])
 					if (chunk == num_chunks or chunk == num_chunks-1):
@@ -110,11 +106,8 @@ class JobList:
 						clean_job.add_children(trans_job.get_name())
 
 					self._job_list += [sim_job, post_job, clean_job]
-				trans_job.add_children(localpost_job.get_name())
-				localpost_job.add_parent(trans_job.get_name())
-				localpost_job.add_children(plot_job.get_name())
-				plot_job.add_parent(localpost_job.get_name())
-				self._job_list += [localpost_job, plot_job, trans_job]
+				
+				self._job_list += [trans_job]
 
 		self._job_list += [localsetup_job,remotesetup_job]
 
@@ -361,10 +354,6 @@ class RerunJobList(JobList):
 		print data
 		self._parameters = parameters
 
-		if (parameters.has_key('POSTDEP') and parameters['POSTDEP'] == "FALSE"):
-			postdep = False
-		else:
-			postdep = True
 		localsetupjob_name = self._expid + "_" 
 		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 		localsetup_job.set_parents([])
@@ -396,17 +385,11 @@ class RerunJobList(JobList):
 
 				transjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
 				trans_job = Job(transjob_name + "trans", 0, Status.WAITING, Type.TRANSFER)
-				localpostjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
-				localpost_job = Job(localpostjob_name + "localpost", 0, Status.WAITING, Type.LOCALPOST)
-				plotjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" 
-				plot_job = Job(plotjob_name + "plot", 0, Status.WAITING, Type.PLOT)
 				#ini_job.set_parents([])
 				
 				remotesetup_job.add_children(ini_job.get_name())
 				self._job_list += [ini_job]
 				self._job_list += [trans_job]
-				self._job_list += [localpost_job]
-				self._job_list += [plot_job]
 
 				for	chunk in member['cs']:
 					chunk = int(chunk)
@@ -420,8 +403,6 @@ class RerunJobList(JobList):
 					post_job.set_children([clean_job.get_name()])
 					clean_job.set_parents([post_job.get_name()])
 					trans_job.set_parents([clean_job.get_name()])
-					localpost_job.set_parents([trans_job.get_name()])
-					plot_job.set_parents([localpost_job.get_name()])
 
 					# Link parents:
 					# if chunk is 1 then not needed to add the previous clean job
@@ -457,9 +438,9 @@ class RerunJobList(JobList):
 							else:
 								prev_sim_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "sim"
 								sim_job.set_parents([prev_sim_job_name])
-								if (postdep and chunk > second_chunk):
-									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
-									sim_job.add_parent(prev_clean_job_name)
+								#if (chunk > second_chunk):
+								#	prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
+								#	sim_job.add_parent(prev_clean_job_name)
 								# Add those to the list
 								self._job_list += [sim_job, post_job, clean_job]
 					#Link child:								
@@ -477,13 +458,11 @@ class RerunJobList(JobList):
 						else:
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
 							sim_job.add_children(childjob_name)
-							if (postdep and chunk < second_last_chunk):
-								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
-								clean_job.add_children(childjob_name)
+							#if (chunk < second_last_chunk):
+							#	childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
+							#	clean_job.add_children(childjob_name)
 					else:
 						clean_job.add_children(trans_job.get_name())
-						trans_job.add_children(localpost_job.get_name())
-						localpost_job.add_children(plot_job.get_name())
 
 
 											
