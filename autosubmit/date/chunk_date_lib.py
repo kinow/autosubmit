@@ -19,6 +19,7 @@
 
 import datetime
 import time
+import calendar
 from dateutil.relativedelta import *
 
 from autosubmit.config.log import Log
@@ -27,50 +28,119 @@ from autosubmit.config.log import Log
 """In this python script there are tools to manipulate the dates and make mathematical operations between them """
 
 
-def add_months(string_date, number_of_months):
+def add_time(string_date, total_size, chunk_unit, cal):
+    if chunk_unit == 'year':
+        return add_years(string_date, total_size)
+    elif chunk_unit == 'month':
+        return add_months(string_date, total_size, cal)
+    elif chunk_unit == 'day':
+        return add_days(string_date, total_size, cal)
+    elif chunk_unit == 'hour':
+        return add_hours(string_date, total_size, cal)
+    else:
+        Log.critical('Chunk unit not valid: {0}'.format(chunk_unit))
+
+
+def add_years(string_date, number_of_years):
     date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(months=+number_of_months)
-    processed_date = datetime.date(date.tm_year, date.tm_mon, date.tm_mday)
-    result = processed_date + delta
+    delta = relativedelta(years=number_of_years)
+    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
     return result
 
 
-def subs_dates(start_date, end_date):
+def add_months(string_date, number_of_months, cal):
+    date = time.strptime(string_date, '%Y%m%d')
+    delta = relativedelta(months=number_of_months)
+    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    if cal == 'noleap':
+        if result.month == 2 and result.day == 29:
+            result = datetime.date(result.year, 2, 28)
+    return result
+
+
+def add_days(string_date, number_of_days, cal):
+    date = time.strptime(string_date, '%Y%m%d')
+    delta = relativedelta(days=number_of_days)
+    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    if cal == 'noleap':
+        year = date.tm_year
+        if date.tm_mon > 2:
+            year += 1
+
+        while year <= result.year:
+            if calendar.isleap(year):
+                if result.year == year and result < datetime.date(year, 2, 29):
+                    year += 1
+                    continue
+                result += relativedelta(days=1)
+            year += 1
+    return result
+
+
+def add_hours(string_date, number_of_months, cal):
+    date = time.strptime(string_date, '%Y%m%d')
+    delta = relativedelta(hours=number_of_months)
+    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    if cal == 'noleap':
+        year = date.tm_year
+        if date.tm_mon > 2:
+            year += 1
+
+        while year <= result.year:
+            if calendar.isleap(year):
+                if result.year == year and result < datetime.date(year, 2, 29):
+                    year += 1
+                    continue
+                result += relativedelta(days=1)
+            year += 1
+    return result
+
+
+def subs_dates(start_date, end_date, cal):
     start = time.strptime(start_date, '%Y%m%d')
     end = time.strptime(end_date, '%Y%m%d')
     start_datetime = datetime.date(start.tm_year, start.tm_mon, start.tm_mday)
     end_datetime = datetime.date(end.tm_year, end.tm_mon, end.tm_mday)
     result = end_datetime - start_datetime
+    if cal == 'noleap':
+        year = start_datetime.year
+        if start_datetime.month > 2:
+            year += 1
+
+        while year <= end_datetime.year:
+            if calendar.isleap(year):
+                if end_datetime.year == year and end_datetime < datetime.date(year, 2, 29):
+                    year += 1
+                    continue
+                result -= datetime.timedelta(days=1)
+            year += 1
     return result.days
 
 
-def chunk_start_date(string_date, chunk, chunk_length):
+def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
     chunk_1 = chunk - 1
     total_months = chunk_1 * chunk_length
-    result = add_months(string_date, total_months)
+    result = add_time(string_date, total_months, chunk_unit, cal)
     start_date = "%s%02d%02d" % (result.year, result.month, result.day)
     return start_date
 
 
-def chunk_end_date(start_date, chunk_length):
-    result = add_months(start_date, chunk_length)
+def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
+    result = add_time(start_date, chunk_length, chunk_unit, cal)
     end_date = "%s%02d%02d" % (result.year, result.month, result.day)
     return end_date
 
 
-def running_days(start_date, end_date):
-    return subs_dates(start_date, end_date)
+def running_days(start_date, end_date, cal):
+    return subs_dates(start_date, end_date, cal)
 
 
-def previous_days(string_date, start_date):
-    return subs_dates(string_date, start_date)
+def previous_days(string_date, start_date, cal):
+    return subs_dates(string_date, start_date, cal)
 
 
-def previous_day(string_date):
-    st_date = time.strptime(string_date, '%Y%m%d')
-    st_date_datetime = datetime.date(st_date.tm_year, st_date.tm_mon, st_date.tm_mday)
-    oneday = datetime.timedelta(days=1)
-    date_1 = st_date_datetime - oneday
+def previous_day(string_date, cal):
+    date_1 = add_days(string_date, -1, cal)
     string_date_1 = "%s%02d%02d" % (date_1.year, date_1.month, date_1.day)
     return string_date_1
 
@@ -91,17 +161,18 @@ def chunk_start_year(string_date):
 # Main Program
 ####################
 def main():
-    string_date = '19600101'
-    start_date = chunk_start_date(string_date, 5, 12)
+    string_date = '19600201'
+    cal = 'noleap'
+    start_date = chunk_start_date(string_date, 1, 28, 'day', cal)
     Log.info(start_date)
-    end_date = chunk_end_date(start_date, 12)
+    end_date = chunk_end_date(start_date, 28, 'day', cal)
     Log.info(end_date)
-    Log.info(running_days(start_date, end_date))
-    Log.info(running_days(string_date, end_date))
-    Log.info(previous_days(string_date, start_date))
-    Log.info("year: " + chunk_start_year(string_date))
-    Log.info("month: " + chunk_start_month(string_date))
-    Log.info("yesterday: %s " % previous_day(string_date))
+    Log.info(running_days(start_date, end_date, cal))
+    Log.info(running_days(string_date, end_date, cal))
+    Log.info(previous_days(string_date, start_date, cal))
+    Log.info("year: {0}".format(chunk_start_year(string_date)))
+    Log.info("month: {0}".format(chunk_start_month(string_date)))
+    Log.info("yesterday: %s " % previous_day(string_date, cal))
 
 
 if __name__ == "__main__":

@@ -16,11 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
-from autosubmit.job.job_headers import LgHeader
 
 
 class LgQueue(HPCQueue):
@@ -44,9 +43,9 @@ class LgQueue(HPCQueue):
         self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" +
                                self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
-        self.checkjob_cmd = "ssh " + self._host + " qstat"
+        self._checkjob_cmd = "ssh " + self._host + " qstat"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/ "
+        self._submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/ "
         self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f1"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -73,11 +72,48 @@ class LgQueue(HPCQueue):
         return output.split()
 
     def get_checkjob_cmd(self, job_id):
-        return self.checkjob_cmd + str(job_id)
+        return self._checkjob_cmd + str(job_id)
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
 
+
+class LgHeader:
+    """Class to handle the Lindgren headers of a job"""
+
+    SERIAL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #!/bin/sh --login
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l walltime=%WALLCLOCK%
+            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #!/bin/sh --login
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l walltime=%WALLCLOCK%
+            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #
+            ###############################################################################
+            """)
 
 # def main():
 # q = LgQueue()

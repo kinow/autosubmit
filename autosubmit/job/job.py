@@ -195,47 +195,34 @@ class Job:
     def compare_by_name(self, other):
         return cmp(self.name, other.name)
 
-    def check_end_time(self):
+    def _get_from_completed(self, index):
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):
-            return open(logname).readline().split()[0]
+            split_line = open(logname).readline().split()
+            if len(split_line) >= index + 1:
+                return split_line[index]
+            else:
+                return 0
         else:
             return 0
+
+    def check_end_time(self):
+        return self._get_from_completed(0)
 
     def check_queued_time(self):
-        logname = self._tmp_path + self.name + '_COMPLETED'
-        if os.path.exists(logname):
-            return open(logname).readline().split()[1]
-        else:
-            return 0
+        return self._get_from_completed(1)
 
     def check_run_time(self):
-        logname = self._tmp_path + self.name + '_COMPLETED'
-        if os.path.exists(logname):
-            return open(logname).readline().split()[2]
-        else:
-            return 0
+        return self._get_from_completed(2)
 
     def check_failed_times(self):
-        logname = self._tmp_path + self.name + '_COMPLETED'
-        if os.path.exists(logname):
-            return open(logname).readline().split()[3]
-        else:
-            return 0
+        return self._get_from_completed(3)
 
     def check_fail_queued_time(self):
-        logname = self._tmp_path + self.name + '_COMPLETED'
-        if os.path.exists(logname):
-            return open(logname).readline().split()[4]
-        else:
-            return 0
+        return self._get_from_completed(4)
 
     def check_fail_run_time(self):
-        logname = self._tmp_path + self.name + '_COMPLETED'
-        if os.path.exists(logname):
-            return open(logname).readline().split()[5]
-        else:
-            return 0
+        return self._get_from_completed(5)
 
     def check_completion(self):
         """ Check the presence of *COMPLETED file and touch a Checked or failed file """
@@ -275,13 +262,15 @@ class Job:
             parameters['CHUNK'] = self.chunk
             chunk = self.chunk
             total_chunk = int(parameters['NUMCHUNKS'])
-            chunk_length_in_month = int(parameters['CHUNKSIZE'])
-            chunk_start = chunk_start_date(self.date, chunk, chunk_length_in_month)
-            chunk_end = chunk_end_date(chunk_start, chunk_length_in_month)
-            run_days = running_days(chunk_start, chunk_end)
-            chunk_end_days = previous_days(self.date, chunk_end)
-            day_before = previous_day(self.date)
-            chunk_end_1 = previous_day(chunk_end)
+            chunk_length = int(parameters['CHUNKSIZE'])
+            chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
+            cal = parameters['CALENDAR'].lower()
+            chunk_start = chunk_start_date(self.date, chunk, chunk_length, chunk_unit, cal)
+            chunk_end = chunk_end_date(chunk_start, chunk_length, chunk_unit, cal)
+            run_days = running_days(chunk_start, chunk_end, cal)
+            chunk_end_days = previous_days(self.date, chunk_end, cal)
+            day_before = previous_day(self.date, cal)
+            chunk_end_1 = previous_day(chunk_end, cal)
             parameters['DAY_BEFORE'] = day_before
             parameters['Chunk_START_DATE'] = chunk_start
             parameters['Chunk_END_DATE'] = chunk_end_1

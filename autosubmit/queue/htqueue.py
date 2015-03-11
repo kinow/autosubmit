@@ -16,11 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-
+import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
-from autosubmit.job.job_headers import HtHeader
 
 
 class HtQueue(HPCQueue):
@@ -45,7 +44,7 @@ class HtQueue(HPCQueue):
                                self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self.submit_cmd = "ssh " + self._host + " \"cd " + self.remote_log_dir + "; qsub \" "
+        self._submit_cmd = "ssh " + self._host + " \"cd " + self.remote_log_dir + "; qsub \" "
         self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
@@ -73,11 +72,43 @@ class HtQueue(HPCQueue):
         return output.split()
 
     def get_submit_cmd(self, job_script):
-        return self.submit_cmd + job_script
+        return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
         return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
+
+class HtHeader:
+    """Class to handle the Hector headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -q serial
+            #PBS -l cput=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=32
+            #PBS -l walltime=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
 #
 # def main():
 #     q = HtQueue()

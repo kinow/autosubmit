@@ -33,9 +33,9 @@ SLEEPING_TIME = 30
 
 class HPCQueue:
     def __init__(self):
-        self.submit_cmd = None
+        self._submit_cmd = None
         self.get_cmd = None
-        self.checkjob_cmd = None
+        self._checkjob_cmd = None
         self.job_status = None
         self.expid = None
         self.put_cmd = None

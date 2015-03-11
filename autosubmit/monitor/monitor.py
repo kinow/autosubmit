@@ -230,11 +230,26 @@ class Monitor:
         search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
-        files = [path.join(search_dir, f) for f in files]
+        files = [path.join(search_dir, f) for f in files if 'statistics' not in f]
         files.sort(key=lambda x: path.getmtime(x))
         remain = files[-2:]
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        Log.result("Plot directory clean!\nLast two plots remanining there.")
+        Log.result("Plots cleaned!\nLast two plots remanining there.\n")
+        return
+
+    @staticmethod
+    def clean_stats(expid):
+        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory."""
+        search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
+        chdir(search_dir)
+        files = filter(path.isfile, listdir(search_dir))
+        files = [path.join(search_dir, f) for f in files if 'statistics' in f]
+        files.sort(key=lambda x: path.getmtime(x))
+        remain = files[-1:]
+        filelist = [f for f in files if f not in remain]
+        for f in filelist:
+            remove(f)
+        Log.result("Stats cleaned!\nLast plot remanining there.\n")
         return
