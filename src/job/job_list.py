@@ -44,6 +44,10 @@ class JobList:
 
 	def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
 		self._parameters = parameters
+		if (parameters.has_key('SPINUP') and parameters['SPINUP'] == "FALSE"):
+			spinup = False
+		else:
+			spinup = True
 		localsetupjob_name = self._expid + "_" 
 		localsetup_job = Job(localsetupjob_name + "localsetup", 0, Status.READY, Type.LOCALSETUP)
 		localsetup_job.set_parents([])
@@ -81,7 +85,7 @@ class JobList:
 					if (chunk > 1):
 						parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-1) + "_" + "sim"
 						sim_job.set_parents([parentjob_name])
-						if (chunk > 2):
+						if (not spinup and chunk > 2):
 							parentjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk-2) + "_" + "clean"
 							sim_job.add_parent(parentjob_name)
 					if (chunk == 1):
@@ -94,7 +98,7 @@ class JobList:
 					if (chunk < starting_chunk + num_chunks	- 1):
 						childjob_name = self._expid + "_" + str(date) + "_" + str(member) + "_" + str(chunk+1) + "_" + "sim"
 						sim_job.add_children(childjob_name)
-					if (chunk < starting_chunk + num_chunks - 2):
+					if (not spinup and chunk < starting_chunk + num_chunks - 2):
 						childjob_name = self._expid+ "_" + str(date) + "_" + str(member) + "_" + str(chunk+2) + "_" + "sim"
 						clean_job.set_children([childjob_name])
 					if (chunk == num_chunks or chunk == num_chunks-1):
@@ -182,13 +186,14 @@ class JobList:
 			return []
 		else:
 			tmp = wrappable[0]
+			spinwrap = [wrappable[0]]
 			for i in range(wrapsize-1):
 				for job in tmp.get_children():
 					if ( job.get_type() == Type.SIMULATION ):
 						tmp = job
-						wrappable.append(job)
-			print wrappable
-			return wrappable
+						spinwrap.append(job)
+			print spinwrap
+			return spinwrap
 
 	def get_wraps(self,wrapsize,wrapid):
 		"""Returns a list of Wrap objects bundling wrappable jobs"""
@@ -433,9 +438,9 @@ class RerunJobList(JobList):
 							else:
 								prev_sim_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_chunk) + "_" + "sim"
 								sim_job.set_parents([prev_sim_job_name])
-								if (chunk > second_chunk):
-									prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
-									sim_job.add_parent(prev_clean_job_name)
+								#if (chunk > second_chunk):
+								#	prev_clean_job_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(prev_prev_chunk) + "_" + "clean"
+								#	sim_job.add_parent(prev_clean_job_name)
 								# Add those to the list
 								self._job_list += [sim_job, post_job, clean_job]
 					#Link child:								
@@ -453,9 +458,9 @@ class RerunJobList(JobList):
 						else:
 							childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_chunk) + "_" + "sim"
 							sim_job.add_children(childjob_name)
-							if (chunk < second_last_chunk):
-								childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
-								clean_job.add_children(childjob_name)
+							#if (chunk < second_last_chunk):
+							#	childjob_name = self._expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(next_next_chunk) + "_" + "sim"
+							#	clean_job.add_children(childjob_name)
 					else:
 						clean_job.add_children(trans_job.get_name())
 

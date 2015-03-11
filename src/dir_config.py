@@ -20,7 +20,7 @@
 
 LOCAL_ROOT_DIR = "/cfu/autosubmit"
 DB_DIR = "/cfu/autosubmit/"
-GIT_DIR = "https://dev.cfu.local/"
+GIT_DIR = "https://gitlab.cfu.local/cfu/"
 COMPATIBILITY_TABLE = "compatibility_table.txt"
 DB_FILE = 'ecearth.db'
 DB_NAME = 'ecearth'
