@@ -107,17 +107,12 @@ class StatisticsSnippet:
             
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
-            case %HPCARCH% in
-             ithaca)       errfile_created="TRUE"; errfile_ptrn="\.e" ;;
-             marenostrum)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             marenostrum3) errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             ecmwf)        errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             ecmwf-cca)    errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             hector)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
-             lindgren)     errfile_created="FALSE"; errfile_ptrn="\.e" ;;
-             jaguar)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
-             archer)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
-             *) echo "!!! %HPCARCH% is not valid platform !!!"; exit 1 ;;
+            case %HPCTYPE% in
+             sge)       errfile_created="TRUE"; errfile_ptrn="\.e" ;;
+             lsf)       errfile_created="TRUE"; errfile_ptrn="\.err" ;;
+             ecaccess)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
+             pbs)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
+             *) echo "!!! %HPCTYPE% is not valid scheduler !!!"; exit 1 ;;
             esac
             failed_jobs=0; failed_errfiles=""
             set +e; ls -1 ${job_name_ptrn}* | grep $errfile_ptrn

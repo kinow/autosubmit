@@ -18,35 +18,32 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 
-from xml.dom.minidom import parseString
-
 from autosubmit.queue.hpcqueue import HPCQueue
 
 
-class MnQueue(HPCQueue):
+class LsfQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "mn-ecm86"
         self.scratch = ""
         self.project = ""
         self.user = ""
-        self._header = MnHeader()
+        self._header = LsfHeader()
         self.expid = expid
         self.job_status = dict()
-        self.job_status['COMPLETED'] = ['Completed']
-        self.job_status['RUNNING'] = ['Running']
-        self.job_status['QUEUING'] = ['Pending', 'Idle', 'Blocked']
-        self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout', 'Removed']
+        self.job_status['COMPLETED'] = ['DONE']
+        self.job_status['RUNNING'] = ['RUN']
+        self.job_status['QUEUING'] = ['PEND', 'FW_PEND']
+        self.job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
-        self.cancel_cmd = "ssh " + self._host + " mncancel"
-        self._checkjob_cmd = "ssh " + self._host + " checkjob --xml"
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_"
+                               + self.expid)
+        self.cancel_cmd = "ssh " + self._host + " bkill"
+        self._checkjob_cmd = "ssh " + self._host + " bjobs "
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self._submit_cmd = ("ssh " + self._host + " mnsubmit -initialdir " + self.remote_log_dir + " " +
-                            self.remote_log_dir + "/ ")
-        self._status_cmd = "ssh " + self._host + " mnq --xml"
+        self._submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
@@ -54,26 +51,21 @@ class MnQueue(HPCQueue):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
-    def get_remote_log_dir(self):
-        self.remote_log_dir = "/gpfs/scratch/ecm86/\$USER/" + self.expid + "/LOG_" + self.expid
-        return self.remote_log_dir
-
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
 
+    def get_remote_log_dir(self):
+        return self.remote_log_dir
+
     def parse_job_output(self, output):
-        dom = parseString(output)
-        job_xml = dom.getElementsByTagName("job")
-        job_state = job_xml[0].getAttribute('State')
+        job_state = output.split('\n')[1].split()[2]
         return job_state
 
     def get_submitted_job_id(self, output):
-        return output.split(' ')[3]
+        return output.split('<')[1].split('>')[0]
 
     def jobs_in_queue(self, output):
-        dom = parseString(output)
-        job_list = dom.getElementsByTagName("job")
-        return [int(job.getAttribute('JobID')) for job in job_list]
+        return zip(*[line.split() for line in output.split('\n')])[0][1:]
 
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
@@ -82,38 +74,42 @@ class MnQueue(HPCQueue):
         return self._submit_cmd + job_script
 
 
-class MnHeader:
-    """Class to handle the MareNostrum 3 headers of a job"""
+class LsfHeader:
+    """Class to handle the BSC headers of a job"""
 
-    SERIAL = textwrap.dedent("""\
-            #!/bin/sh
+    SERIAL = textwrap.dedent("""
+            #!/bin/ksh
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                     %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
+            #@ job_name         = %JOBNAME%
+            #@ wall_clock_limit = %WALLCLOCK%
+            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
+            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
+            #@ total_tasks      = %NUMTASK%
+            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
+            #@ class            = %CLASS%
+            #@ partition        = %PARTITION%
+            #@ features         = %FEATURES%
             #
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""\
-            #!/bin/sh
+    PARALLEL = textwrap.dedent("""
+            #!/bin/ksh
             ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            #                     %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
+            #@ job_name         = %JOBNAME%
+            #@ wall_clock_limit = %WALLCLOCK%
+            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
+            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
+            #@ total_tasks      = %NUMTASK%
+            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
+            #@ tasks_per_node   = %TASKSNODE%
+            #@ tracing          = %TRACING%
             #
             ###############################################################################
             """)
-

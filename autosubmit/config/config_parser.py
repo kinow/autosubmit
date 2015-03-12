@@ -82,7 +82,6 @@ def config_parser(filename):
 
 
 def expdef_parser(filename):
-    hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'hector', 'archer', 'test']
     startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"
     chunkini = "\s*\d+\s*$"
     numchunks = "\s*\d+\s*$"
@@ -109,9 +108,6 @@ def expdef_parser(filename):
     if missing:
         Log.critical("Missing options: " + ','.join(missing))
         sys.exit(1)
-
-    # check autosubmit.py variables
-    check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
 
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)

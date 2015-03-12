@@ -23,14 +23,14 @@ from xml.dom.minidom import parseString
 from autosubmit.queue.hpcqueue import HPCQueue
 
 
-class ItQueue(HPCQueue):
+class SgeQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
-        self._host = "ithaca"
+        self._host = ""
         self.scratch = ""
         self.project = ""
         self.user = ""
-        self._header = ItHeader()
+        self._header = SgeHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
@@ -78,7 +78,7 @@ class ItQueue(HPCQueue):
         return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
-class ItHeader:
+class SgeHeader:
     """Class to handle the Ithaca headers of a job"""
 
     SERIAL = textwrap.dedent("""

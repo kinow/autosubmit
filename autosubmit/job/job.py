@@ -305,6 +305,7 @@ class Job:
         queue = self.get_queue()
         parameters['HPCUSER'] = queue.user
         parameters['HPCPROJ'] = queue.project
+        parameters['HPCTYPE'] = queue.type
         parameters['SCRATCH_DIR'] = queue.scratch
 
         self.parameters = parameters
@@ -318,7 +319,7 @@ class Job:
         else:
             template = ''
         queue = self.get_queue()
-        if queue.name == 'LOCAL':
+        if queue.name == 'local':
             stats_header = StatisticsSnippet.AS_HEADER_LOC
             stats_tailer = StatisticsSnippet.AS_TAILER_LOC
         else:

@@ -88,8 +88,6 @@ class Autosubmit:
                            help='creates a new experiment with default values, usually for testing')
 
         subparser.add_argument('-H', '--HPC', required=True,
-                               choices=('bsc', 'hector', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca',
-                                        'marenostrum3', 'archer'),
                                help='Specifies the HPC to use for the experiment')
         subparser.add_argument('-d', '--description', type=str, required=True,
                                help='A description for the experiment to store in the database.')
@@ -969,8 +967,7 @@ class Autosubmit:
         as_conf.set_expid(exp_id)
         as_conf.set_local_root()
         as_conf.set_platform(hpc)
-        as_conf.set_scratch_dir(hpc)
-        as_conf.set_safetysleeptime(hpc)
+        as_conf.set_safetysleeptime(10)
 
         if dummy:
             content = file(as_conf.experiment_file).read()
