@@ -329,7 +329,7 @@ class Autosubmit:
         os.system('clear')
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        as_conf.check_conf_files()
 
         project_type = as_conf.get_project_type()
         if project_type != "none":
@@ -562,7 +562,7 @@ class Autosubmit:
                                   'finalise_exp.log'))
         if project:
             autosubmit_config = AutosubmitConfig(expid)
-            autosubmit_config.check_conf()
+            autosubmit_config.check_conf_files()
             project_type = autosubmit_config.get_project_type()
             if project_type == "git":
                 autosubmit_config.check_proj()
@@ -594,7 +594,7 @@ class Autosubmit:
                                'r'))
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        as_conf.check_conf_files()
 
         hpcarch = as_conf.get_platform()
 
@@ -637,7 +637,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        as_conf.check_conf_files()
         project_type = as_conf.get_project_type()
         if project_type != "none":
             as_conf.check_proj()
@@ -649,12 +649,12 @@ class Autosubmit:
         #     print "Experiment configuration check FAILED!"
         #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
-        Log.info("Checking experiment templates...")
-        if Autosubmit._check_templates(as_conf):
-            Log.result("Experiment templates check PASSED!")
-        else:
-            Log.critical("Experiment templates check FAILED!")
-            Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
+        # Log.info("Checking experiment templates...")
+        # if Autosubmit._check_templates(as_conf):
+        #     Log.result("Experiment templates check PASSED!")
+        # else:
+        #     Log.critical("Experiment templates check FAILED!")
+        #     Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
     def configure(database_path, local_root_path,  user, local):
@@ -716,7 +716,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        as_conf.check_conf_files()
 
         expid = as_conf.get_expid()
         project_type = as_conf.get_project_type()

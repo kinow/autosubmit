@@ -74,6 +74,29 @@ def add_days(string_date, number_of_days, cal):
                     continue
                 result += relativedelta(days=1)
             year += 1
+        if result.month == 2 and result.day == 29:
+            result += relativedelta(days=1)
+    return result
+
+
+def sub_days(string_date, number_of_days, cal):
+    date = time.strptime(string_date, '%Y%m%d')
+    delta = relativedelta(days=number_of_days)
+    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) - delta
+    if cal == 'noleap':
+        year = date.tm_year
+        if date.tm_mon <= 2:
+            year -= 1
+
+        while year >= result.year:
+            if calendar.isleap(year):
+                if result.year == year and result > datetime.date(year, 2, 29):
+                    year -= 1
+                    continue
+                result -= relativedelta(days=1)
+            year -= 1
+        if result.month == 2 and result.day == 29:
+            result -= relativedelta(days=1)
     return result
 
 
@@ -93,6 +116,8 @@ def add_hours(string_date, number_of_months, cal):
                     continue
                 result += relativedelta(days=1)
             year += 1
+        if result.month == 2 and result.day == 29:
+            result += relativedelta(days=1)
     return result
 
 
@@ -128,6 +153,7 @@ def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
 def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
     result = add_time(start_date, chunk_length, chunk_unit, cal)
     end_date = "%s%02d%02d" % (result.year, result.month, result.day)
+    end_date = previous_day(end_date, cal)
     return end_date
 
 
@@ -140,7 +166,7 @@ def previous_days(string_date, start_date, cal):
 
 
 def previous_day(string_date, cal):
-    date_1 = add_days(string_date, -1, cal)
+    date_1 = sub_days(string_date, 1, cal)
     string_date_1 = "%s%02d%02d" % (date_1.year, date_1.month, date_1.day)
     return string_date_1
 
@@ -163,9 +189,9 @@ def chunk_start_year(string_date):
 def main():
     string_date = '19600201'
     cal = 'noleap'
-    start_date = chunk_start_date(string_date, 1, 28, 'day', cal)
+    start_date = chunk_start_date(string_date, 1, 1, 'month', cal)
     Log.info(start_date)
-    end_date = chunk_end_date(start_date, 28, 'day', cal)
+    end_date = chunk_end_date(start_date, 1, 'month', cal)
     Log.info(end_date)
     Log.info(running_days(start_date, end_date, cal))
     Log.info(running_days(string_date, end_date, cal))

@@ -57,30 +57,6 @@ def check_json(key, value):
         invalid_values = True
 
 
-def config_parser(filename):
-    loglevel = ['debug', 'info', 'warning', 'error', 'critical']
-
-    # check file existance
-    if not path.isfile(filename):
-        Log.error("File does not exist: " + filename)
-        sys.exit(1)
-
-    # load values
-    parser = SafeConfigParser()
-    parser.optionxform = str
-    parser.read(filename)
-
-    check_values('LOGLEVEL', parser.get('config', 'LOGLEVEL'), loglevel)
-
-    if invalid_values:
-        Log.error("Invalid Autosubmit config file")
-        sys.exit(1)
-    else:
-        Log.debug("Autosubmit config file OK")
-
-    return parser
-
-
 def expdef_parser(filename):
     startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"
     chunkini = "\s*\d+\s*$"
@@ -127,26 +103,6 @@ def expdef_parser(filename):
         sys.exit(1)
     else:
         Log.debug("Experiment config file OK")
-
-    return parser
-
-
-def projdef_parser(filename):
-    # check file existance
-    if not path.isfile(filename):
-        Log.critical("File does not exist: " + filename)
-        sys.exit()
-
-    # load values
-    parser = SafeConfigParser()
-    parser.optionxform = str
-    parser.read(filename)
-
-    if invalid_values:
-        Log.error("Invalid project config file")
-        sys.exit()
-    else:
-        Log.debug("Project config file OK")
 
     return parser
 
