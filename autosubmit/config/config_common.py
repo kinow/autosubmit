@@ -30,14 +30,10 @@ from autosubmit.config.config_parser import projdef_parser
 from autosubmit.config.basicConfig import BasicConfig
 
 from autosubmit.queue.psqueue import PsQueue
-from autosubmit.queue.mn3queue import Mn3Queue
-from autosubmit.queue.lgqueue import LgQueue
-from autosubmit.queue.elqueue import ElQueue
+from autosubmit.queue.lsfqueue import LsfQueue
 from autosubmit.queue.pbsqueue import PBSQueue
-from autosubmit.queue.htqueue import HtQueue
-from autosubmit.queue.itqueue import ItQueue
+from autosubmit.queue.sgequeue import SgeQueue
 from autosubmit.queue.ecqueue import EcQueue
-from autosubmit.queue.mnqueue import MnQueue
 
 
 class AutosubmitConfig:
@@ -272,39 +268,6 @@ class AutosubmitConfig:
                                       "AUTOSUBMIT_LOCAL_ROOT = " + BasicConfig.LOCAL_ROOT_DIR)
         file(self._conf_parser_file, 'w').write(content)
 
-    def get_scratch_dir(self):
-        return self._exp_parser.get('experiment', 'SCRATCH_DIR').lower()
-
-    def set_scratch_dir(self, hpc):
-        content = file(self._exp_parser_file).read()
-        if re.search('SCRATCH_DIR =.*', content):
-            if hpc == "bsc":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0),
-                                          "SCRATCH_DIR = /gpfs/scratch/ecm86")
-            elif hpc == "hector":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0),
-                                          "SCRATCH_DIR = /work/pr1u1011")
-            elif hpc == "ithaca":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch")
-            elif hpc == "lindgren":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /cfs/scratch")
-            elif hpc == "ecmwf":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
-            elif hpc == "ecmwf-cca":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /scratch/ms")
-            elif hpc == "marenostrum3":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0), "SCRATCH_DIR = /gpfs/scratch")
-            elif hpc == "archer":
-                content = content.replace(re.search('SCRATCH_DIR =.*', content).group(0),
-                                          "SCRATCH_DIR = /work/pr1u1011")
-        file(self._exp_parser_file, 'w').write(content)
-
-    def get_hpcproj(self):
-        return self._exp_parser.get('experiment', 'HPCPROJ')
-
-    def get_hpcuser(self):
-        return self._exp_parser.get('experiment', 'HPCUSER')
-
     def get_total_jobs(self):
         return int(self._conf_parser.get('config', 'TOTALJOBS'))
 
@@ -314,29 +277,10 @@ class AutosubmitConfig:
     def get_safetysleeptime(self):
         return int(self._conf_parser.get('config', 'SAFETYSLEEPTIME'))
 
-    def set_safetysleeptime(self, hpc):
+    def set_safetysleeptime(self, sleep_time):
         content = file(self._conf_parser_file).read()
-        if re.search('SAFETYSLEEPTIME =.*', content):
-            if hpc == "bsc":
-                sleep_time = 10
-            elif hpc == "hector":
-                sleep_time = 300
-            elif hpc == "ithaca":
-                sleep_time = 10
-            elif hpc == "lindgren":
-                sleep_time = 300
-            elif hpc == "ecmwf":
-                sleep_time = 300
-            elif hpc == "ecmwf":
-                sleep_time = 300
-            elif hpc == "marenostrum3":
-                sleep_time = 300
-            elif hpc == "archer":
-                sleep_time = 300
-            else:
-                sleep_time = 300
-            content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
-                                      "SAFETYSLEEPTIME = %d" % sleep_time)
+        content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
+                                  "SAFETYSLEEPTIME = %d" % sleep_time)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
@@ -350,38 +294,37 @@ class AutosubmitConfig:
 
         queues = dict()
         local_queue = PsQueue(expid)
-        local_queue.name = 'LOCAL'
+        local_queue.name = 'local'
+        local_queue.type = 'ps'
         local_queue.set_host(platform.node())
         local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
         local_queue.set_project(expid)
         local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
         local_queue.update_cmds()
 
-        queues["LOCAL"] = local_queue
+        queues['local'] = local_queue
         for section in parser.sections():
-            queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', None)
+            queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
+            queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', None)
             queue = None
             if queue_type == 'pbs':
-                queue = PBSQueue(expid)
-            elif queue_type == 'ithaca':
-                queue = ItQueue(expid)
+                queue = PBSQueue(expid, queue_version)
+            elif queue_type == 'sge':
+                queue = SgeQueue(expid)
             elif queue_type == 'ps':
                 queue = PsQueue(expid)
-            elif queue_type == 'mn3':
-                queue = Mn3Queue(expid)
-            elif queue_type == 'ecmwf':
-                queue = EcQueue(expid)
-            elif queue_type == 'lindgren':
-                queue = LgQueue(expid)
-            elif queue_type == 'ellen':
-                queue = ElQueue(expid)
-            elif queue_type == 'hector':
-                queue = HtQueue(expid)
-            elif queue_type == 'bsc':
-                queue = MnQueue(expid)
+            elif queue_type == 'lsf':
+                queue = LsfQueue(expid)
+            elif queue_type == 'ecaccess':
+                queue = EcQueue(expid, queue_version)
+            elif queue_type == '':
+                Log.error("Queue type not specified".format(queue_type))
+                exit(1)
             else:
                 Log.error("Queue type {0} not defined".format(queue_type))
                 exit(1)
+
+            queue.type = queue_type
             if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
                 host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
                                         AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
@@ -391,14 +334,15 @@ class AutosubmitConfig:
             queue.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             queue.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
             queue.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
-            queue.name = section
+            queue.name = section.lower()
             queue.update_cmds()
-            queues[section] = queue
+            queues[section.lower()] = queue
 
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_QUEUE'):
-                queues[section].set_serial_queue(queues[AutosubmitConfig.get_option(parser, section,
-                                                                                    'SERIAL_QUEUE', None)])
+                queues[section.lower()].set_serial_queue(queues[AutosubmitConfig.get_option(parser, section,
+                                                                                            'SERIAL_QUEUE',
+                                                                                            None).lower()])
 
         return queues
 

@@ -39,12 +39,10 @@ class PsQueue(HPCQueue):
         self.job_status['RUNNING'] = ['0']
         self.job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
         self.job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
-        self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
 
     def update_cmds(self):
         self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
-        self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.put_cmd = "scp"

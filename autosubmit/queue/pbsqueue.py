@@ -24,31 +24,44 @@ from autosubmit.config.log import Log
 
 class PBSQueue(HPCQueue):
 
-    def __init__(self, expid):
+    def __init__(self, expid, version):
         HPCQueue.__init__(self)
         self._host = ""
+        self._version = version
         self.scratch = ""
         self.project = ""
         self.user = ""
-        self._header = PBSHeader()
+
+        if str.startswith(version, '10'):
+            self._header = Pbs10Header()
+        elif str.startswith(version, '11'):
+            self._header = Pbs11Header()
+        elif str.startswith(version, '12'):
+            self._header = Pbs12Header()
+        else:
+            Log.error('PBS version {0} not supported'.format(version))
+            exit(1)
+
         self.expid = expid
         self.job_status = dict()
-        self.job_status['COMPLETED'] = ['F', 'E', 'c']
+        self.job_status['COMPLETED'] = ['F', 'E', 'c', 'C']
         self.job_status['RUNNING'] = ['R']
         self.job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
         self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
-                               self.expid)
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" +
+                               self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self._submit_cmd = "ssh " + self._host + " \"cd " + self.remote_log_dir + "; qsub \" "
-        self._status_cmd = "ssh " + self._host + " qsub -u \$USER | tail -n +6|cut -d' ' -f10"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
+        self._submit_cmd = "ssh " + self._host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/ "
+
+        if str.startswith(self._version, '11'):
+            self._checkjob_cmd = "ssh " + self._host + " qstat"
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -75,10 +88,13 @@ class PBSQueue(HPCQueue):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
+        if str.startswith(self._version, '11'):
+            return self._checkjob_cmd + str(job_id)
+        else:
+            return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
-class PBSHeader:
+class Pbs12Header:
     """Class to handle the Archer headers of a job"""
 
     SERIAL = textwrap.dedent("""
@@ -105,6 +121,77 @@ class PBSHeader:
             #PBS -l select=%NUMPROC%
             #PBS -l walltime=%WALLCLOCK%:00
             #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
+
+
+class Pbs10Header:
+    """Class to handle the Hector headers of a job"""
+
+    SERIAL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -q serial
+            #PBS -l cput=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""
+            #!/bin/sh
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=32
+            #PBS -l walltime=%WALLCLOCK%:00
+            #PBS -A %HPCPROJ%
+            #
+            ###############################################################################
+            """)
+
+
+class Pbs11Header:
+    """Class to handle the Lindgren headers of a job"""
+
+    SERIAL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #!/bin/sh --login
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l walltime=%WALLCLOCK%
+            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #
+            ###############################################################################
+            """)
+
+    PARALLEL = textwrap.dedent("""\
+            #!/bin/sh
+            ###############################################################################
+            #                         %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #!/bin/sh --login
+            #PBS -N %JOBNAME%
+            #PBS -l mppwidth=%NUMPROC%
+            #PBS -l mppnppn=%NUMTASK%
+            #PBS -l walltime=%WALLCLOCK%
+            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
             #
             ###############################################################################
             """)

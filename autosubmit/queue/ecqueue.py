@@ -25,13 +25,19 @@ from autosubmit.config.log import Log
 
 class EcQueue(HPCQueue):
 
-    def __init__(self, expid):
+    def __init__(self, expid, scheduler):
         HPCQueue.__init__(self)
         self._host = ""
         self.scratch = ""
         self.project = ""
         self.user = ""
-        self._header = EcHeader()
+        if scheduler == 'pbs':
+            self._header = EcCcaHeader()
+        elif scheduler == 'loadleveler':
+            self._header = EcHeader()
+        else:
+            Log.error('ecaccess scheduler {0} not supported'.format(scheduler))
+            exit(1)
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
@@ -49,7 +55,6 @@ class EcQueue(HPCQueue):
         self._checkhost_cmd = "ecaccess-certificate-list"
         self._submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
                             self.expid + "/tmp/")
-        self._status_cmd = "ecaccess-job-get"
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
         self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self.scratch + "/" + self.project + "/" +

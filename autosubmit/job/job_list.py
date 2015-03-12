@@ -552,6 +552,8 @@ class DicJobs:
         job.wait = bool(self.get_option(section, "WAIT", False))
 
         job.queue_name = self.get_option(section, "QUEUE", None)
+        if job.queue_name is not None:
+            job.queue_name = job.queue_name.lower()
         job.file = self.get_option(section, "FILE", None)
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
