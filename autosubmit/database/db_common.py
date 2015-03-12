@@ -25,20 +25,6 @@ from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 
-# Database parameters
-# DB_DIR = '/cfu/autosubmit'
-# DB_FILE = 'ecearth.db'
-# DB_NAME = 'ecearth'
-
-DEFAULT_EXPID_BSC = "b000"
-DEFAULT_EXPID_HEC = "h000"
-DEFAULT_EXPID_ITH = "i000"
-DEFAULT_EXPID_LIN = "l000"
-DEFAULT_EXPID_ECM = "e000"
-DEFAULT_EXPID_MN3 = "m000"
-DEFAULT_EXPID_ARC = "a000"
-
-
 def create_db(qry):
     (conn, cursor) = open_conn()
     try:
@@ -61,9 +47,9 @@ def set_experiment(name, description):
     try:
         cursor.execute('insert into experiment (name, description) values (:name, :description)',
                        {'name': name, 'description': description})
-    except sqlite3.IntegrityError:
+    except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
-        Log.error('The experiment name %s already exists!!!' % name)
+        Log.error('Could not register experiment: {0}'.format(e))
         sys.exit(1)
 
     conn.commit()
@@ -97,24 +83,10 @@ def check_experiment_exists(name):
 def new_experiment(hpc, description):
     last_exp_name = last_name(hpc)
     if last_exp_name == 'empty':
-        if hpc == 'bsc':
-            new_name = DEFAULT_EXPID_BSC
-        elif hpc == 'hector':
-            new_name = DEFAULT_EXPID_HEC
-        elif hpc == 'ithaca':
-            new_name = DEFAULT_EXPID_ITH
-        elif hpc == 'lindgren':
-            new_name = DEFAULT_EXPID_LIN
-        elif hpc == 'ecmwf':
-            new_name = DEFAULT_EXPID_ECM
-        elif hpc == 'ecmwf-cca':
-            new_name = DEFAULT_EXPID_ECM
-        elif hpc == 'marenostrum3':
-            new_name = DEFAULT_EXPID_MN3
-        elif hpc == 'archer':
-            new_name = DEFAULT_EXPID_ARC
+        if hpc == 'test':
+            new_name = 'test000'
         else:
-            raise ValueError('%c is not a valid HPC name' % hpc)
+            new_name = hpc[0]+'000'
     else:
         new_name = next_name(last_exp_name)
     set_experiment(new_name, description)
@@ -145,7 +117,7 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
         sign = '-'
         number = - number
 
-    while len(base36) < 4:
+    while number > 0:
         number, i = divmod(number, len(alphabet))
         base36 = alphabet[i] + base36
 
@@ -166,24 +138,11 @@ def last_name(hpc):
     check_db()
     (conn, cursor) = open_conn()
     conn.text_factory = str
-    if hpc == 'bsc':
-        hpc_name = "b___"
-    elif hpc == "hector":
-        hpc_name = "h___"
-    elif hpc == 'ithaca':
-        hpc_name = "i___"
-    elif hpc == 'lindgren':
-        hpc_name = "l___"
-    elif hpc == 'ecmwf':
-        hpc_name = "e___"
-    elif hpc == 'ecmwf-cca':
-        hpc_name = "e___"
-    elif hpc == 'marenostrum3':
-        hpc_name = "m___"
-    elif hpc == 'archer':
-        hpc_name = "a___"
+    if hpc == 'test':
+        hpc_name = 'test'
     else:
-        raise ValueError('%c is not a valid HPC name' % hpc)
+        hpc_name = hpc[0]
+    hpc_name += '___'
     cursor.execute('select name '
                    'from experiment '
                    'where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
@@ -209,8 +168,8 @@ def delete_experiment(name):
 
 def check_name(name):
     name = name.lower()
-    if len(name) != 4 and not name.isalnum():
-        Log.error("So sorry, but the name must have 4 alphanumeric chars!!!")
+    if len(name) < 4 or not name.isalnum():
+        Log.error("So sorry, but the name must have at least 4 alphanumeric chars!!!")
         sys.exit(1)
     return name
 

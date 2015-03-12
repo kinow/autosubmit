@@ -16,7 +16,9 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+from ConfigParser import SafeConfigParser
 import os
+import platform
 import re
 from os import listdir
 from commands import getstatusoutput
@@ -26,6 +28,16 @@ from autosubmit.config.config_parser import config_parser
 from autosubmit.config.config_parser import expdef_parser
 from autosubmit.config.config_parser import projdef_parser
 from autosubmit.config.basicConfig import BasicConfig
+
+from autosubmit.queue.psqueue import PsQueue
+from autosubmit.queue.mn3queue import Mn3Queue
+from autosubmit.queue.lgqueue import LgQueue
+from autosubmit.queue.elqueue import ElQueue
+from autosubmit.queue.pbsqueue import PBSQueue
+from autosubmit.queue.htqueue import HtQueue
+from autosubmit.queue.itqueue import ItQueue
+from autosubmit.queue.ecqueue import EcQueue
+from autosubmit.queue.mnqueue import MnQueue
 
 
 class AutosubmitConfig:
@@ -329,3 +341,72 @@ class AutosubmitConfig:
 
     def get_retrials(self):
         return int(self._conf_parser.get('config', 'RETRIALS'))
+
+    @staticmethod
+    def read_queues_conf(expid):
+        parser = SafeConfigParser()
+        parser.optionxform = str
+        parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'conf', "queues_" + expid + ".conf"))
+
+        queues = dict()
+        local_queue = PsQueue(expid)
+        local_queue.name = 'LOCAL'
+        local_queue.set_host(platform.node())
+        local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
+        local_queue.set_project(expid)
+        local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
+        local_queue.update_cmds()
+
+        queues["LOCAL"] = local_queue
+        for section in parser.sections():
+            queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', None)
+            queue = None
+            if queue_type == 'pbs':
+                queue = PBSQueue(expid)
+            elif queue_type == 'ithaca':
+                queue = ItQueue(expid)
+            elif queue_type == 'ps':
+                queue = PsQueue(expid)
+            elif queue_type == 'mn3':
+                queue = Mn3Queue(expid)
+            elif queue_type == 'ecmwf':
+                queue = EcQueue(expid)
+            elif queue_type == 'lindgren':
+                queue = LgQueue(expid)
+            elif queue_type == 'ellen':
+                queue = ElQueue(expid)
+            elif queue_type == 'hector':
+                queue = HtQueue(expid)
+            elif queue_type == 'bsc':
+                queue = MnQueue(expid)
+            else:
+                Log.error("Queue type {0} not defined".format(queue_type))
+                exit(1)
+            if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
+                host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
+                                        AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            else:
+                host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
+            queue.set_host(host)
+            queue.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            queue.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
+            queue.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
+            queue.name = section
+            queue.update_cmds()
+            queues[section] = queue
+
+        for section in parser.sections():
+            if parser.has_option(section, 'SERIAL_QUEUE'):
+                queues[section].set_serial_queue(queues[AutosubmitConfig.get_option(parser, section,
+                                                                                    'SERIAL_QUEUE', None)])
+
+        return queues
+
+    @staticmethod
+    def get_option(parser, section, option, default):
+        if parser.has_option(section, option):
+            return parser.get(section, option)
+        else:
+            return default
+
+

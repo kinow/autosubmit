@@ -82,9 +82,7 @@ def config_parser(filename):
 
 
 def expdef_parser(filename):
-    hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'hector', 'archer']
-    hpcproj = "\s*[\w\-]+\s*$"
-    hpcuser = "\s*[\w\-]+\s*$"
+    hpcarch = ['bsc', 'ithaca', 'lindgren', 'ecmwf', 'ecmwf-cca', 'marenostrum3', 'hector', 'archer', 'test']
     startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"
     chunkini = "\s*\d+\s*$"
     numchunks = "\s*\d+\s*$"
@@ -114,20 +112,6 @@ def expdef_parser(filename):
 
     # check autosubmit.py variables
     check_values('HPCARCH', parser.get('experiment', 'HPCARCH'), hpcarch)
-    check_regex('HPCPROJ', parser.get('experiment', 'HPCPROJ'), hpcproj)
-    check_regex('HPCUSER', parser.get('experiment', 'HPCUSER'), hpcuser)
-    # check_regex('WALLCLOCK_SETUP', parser.get('wallclock', 'WALLCLOCK_SETUP'), wallclock)
-    # check_regex('WALLCLOCK_INI', parser.get('wallclock', 'WALLCLOCK_INI'), wallclock)
-    # check_regex('WALLCLOCK_SIM', parser.get('wallclock', 'WALLCLOCK_SIM'), wallclock)
-    # check_regex('WALLCLOCK_POST', parser.get('wallclock', 'WALLCLOCK_POST'), wallclock)
-    # check_regex('WALLCLOCK_CLEAN', parser.get('wallclock', 'WALLCLOCK_CLEAN'), wallclock)
-    # check_regex('NUMPROC_SETUP', parser.get('numproc', 'NUMPROC_SETUP'), numproc)
-    # check_regex('NUMPROC_INI', parser.get('numproc', 'NUMPROC_INI'), numproc)
-    # check_regex('NUMPROC_SIM', parser.get('numproc', 'NUMPROC_SIM'), multiproc)
-    # check_regex('NUMTASK_SIM', parser.get('numproc', 'NUMTASK_SIM'), multiproc)
-    # check_regex('NUMTHREAD_SIM', parser.get('numproc', 'NUMTHREAD_SIM'), multiproc)
-    # check_regex('NUMPROC_POST', parser.get('numproc', 'NUMPROC_POST'), numproc)
-    # check_regex('NUMPROC_CLEAN', parser.get('numproc', 'NUMPROC_CLEAN'), numproc)
 
     # check create_exp.py variables
     check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)

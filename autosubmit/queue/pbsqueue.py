@@ -22,26 +22,25 @@ from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.log import Log
 
 
-class ArQueue(HPCQueue):
+class PBSQueue(HPCQueue):
 
     def __init__(self, expid):
         HPCQueue.__init__(self)
-        self._host = "archer"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
-        self._header = ArHeader()
+        self._host = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
+        self._header = PBSHeader()
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['F', 'E', 'c']
         self.job_status['RUNNING'] = ['R']
         self.job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
         self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
-        self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
@@ -79,7 +78,7 @@ class ArQueue(HPCQueue):
         return "ssh " + self._host + " " + self.get_qstatjob(job_id)
 
 
-class ArHeader:
+class PBSHeader:
     """Class to handle the Archer headers of a job"""
 
     SERIAL = textwrap.dedent("""
@@ -109,14 +108,3 @@ class ArHeader:
             #
             ###############################################################################
             """)
-# def main():
-#     q = ArQueue()
-#     q.check_job(1688)
-#     j = q.submit_job("/cfu/autosubmit/a002/templates/a002.sim")
-#     sleep(10)
-#     print q.check_job(j)
-#     q.cancel_job(j)
-#
-#
-# if __name__ == "__main__":
-#     main()

@@ -34,7 +34,7 @@ class Job:
        If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2 """
 
     def __init__(self, name, jobid, status, priority):
-        self.queue = None
+        self._queue = None
         self.queue_name = None
         self.section = None
         self.wallclock = None
@@ -93,6 +93,15 @@ class Job:
     @property
     def parents(self):
         return self._parents
+
+    def get_queue(self):
+        if self.processors > 1:
+            return self._queue
+        else:
+            return self._queue.get_serial_queue()
+
+    def set_queue(self, value):
+        self._queue = value
 
     @property
     def ancestors(self):
@@ -293,6 +302,11 @@ class Job:
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
 
+        queue = self.get_queue()
+        parameters['HPCUSER'] = queue.user
+        parameters['HPCPROJ'] = queue.project
+        parameters['SCRATCH_DIR'] = queue.scratch
+
         self.parameters = parameters
 
         return parameters
@@ -303,14 +317,15 @@ class Job:
             template = file(os.path.join(dir_templates, self.file), 'r').read()
         else:
             template = ''
-        if self.queue_name == 'LOCAL':
+        queue = self.get_queue()
+        if queue.name == 'LOCAL':
             stats_header = StatisticsSnippet.AS_HEADER_LOC
             stats_tailer = StatisticsSnippet.AS_TAILER_LOC
         else:
             stats_header = StatisticsSnippet.AS_HEADER_REM
             stats_tailer = StatisticsSnippet.AS_TAILER_REM
 
-        template_content = ''.join([self.queue.get_header(self),
+        template_content = ''.join([queue.get_header(self),
                                    stats_header,
                                    template,
                                    stats_tailer])

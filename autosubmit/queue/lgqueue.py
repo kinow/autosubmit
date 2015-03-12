@@ -25,10 +25,10 @@ from autosubmit.config.log import Log
 class LgQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
-        self._host = "lindgren"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self._host = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = LgHeader()
         self.expid = expid
         self.job_status = dict()
@@ -40,7 +40,7 @@ class LgQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" +
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" +
                                self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkjob_cmd = "ssh " + self._host + " qstat"

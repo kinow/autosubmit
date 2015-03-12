@@ -26,9 +26,9 @@ class HtQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "hector"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = HtHeader()
         self.expid = expid
         self.job_status = dict()
@@ -40,7 +40,7 @@ class HtQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" +
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" +
                                self.expid + "/LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
