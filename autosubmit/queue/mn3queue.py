@@ -25,9 +25,9 @@ class Mn3Queue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "mn-ecm86"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = BscHeader()
         self.expid = expid
         self.job_status = dict()
@@ -38,7 +38,7 @@ class Mn3Queue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_"
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_"
                                + self.expid)
         self.cancel_cmd = "ssh " + self._host + " bkill"
         self._checkjob_cmd = "ssh " + self._host + " bjobs "

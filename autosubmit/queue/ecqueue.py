@@ -27,10 +27,10 @@ class EcQueue(HPCQueue):
 
     def __init__(self, expid):
         HPCQueue.__init__(self)
-        self._host = "c2a"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self._host = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = EcHeader()
         self.expid = expid
         self.job_status = dict()
@@ -42,7 +42,7 @@ class EcQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
@@ -52,8 +52,8 @@ class EcQueue(HPCQueue):
         self._status_cmd = "ecaccess-job-get"
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
-        self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self._scratch + "/" + self._project + "/" +
-                          self._user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self._host + ":" +
+        self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self.scratch + "/" + self.project + "/" +
+                          self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self._host + ":" +
                           self.remote_log_dir)
 
     def get_checkhost_cmd(self):

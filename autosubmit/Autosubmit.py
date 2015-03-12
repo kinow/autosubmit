@@ -23,7 +23,6 @@ import json
 import time
 import cPickle
 import signal
-import platform
 import os
 import sys
 import shutil
@@ -41,15 +40,6 @@ from autosubmit.job.job_common import Status
 from autosubmit.git.git_common import AutosubmitGit
 from autosubmit.job.job_list import JobList
 from autosubmit.config.log import Log
-from autosubmit.queue.psqueue import PsQueue
-from autosubmit.queue.mn3queue import Mn3Queue
-from autosubmit.queue.lgqueue import LgQueue
-from autosubmit.queue.elqueue import ElQueue
-from autosubmit.queue.arqueue import ArQueue
-from autosubmit.queue.htqueue import HtQueue
-from autosubmit.queue.itqueue import ItQueue
-from autosubmit.queue.ecqueue import EcQueue
-from autosubmit.queue.mnqueue import MnQueue
 from autosubmit.database.db_common import create_db
 from autosubmit.database.db_common import new_experiment
 from autosubmit.database.db_common import copy_experiment
@@ -163,7 +153,7 @@ class Autosubmit:
                                                                       'path')
 
         # Install
-        subparser = subparsers.add_parser('install', description='install database and scripts needed for autosubmit')
+        subparsers.add_parser('install', description='install database and scripts needed for autosubmit')
 
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
@@ -350,53 +340,13 @@ class Autosubmit:
 
         expid = as_conf.get_expid()
         hpcarch = as_conf.get_platform()
-        scratch_dir = as_conf.get_scratch_dir()
-        hpcproj = as_conf.get_hpcproj()
-        hpcuser = as_conf.get_hpcuser()
         max_jobs = as_conf.get_total_jobs()
         max_waiting_jobs = as_conf.get_max_waiting_jobs()
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
         rerun = as_conf.get_rerun()
 
-        remote_queue = None
-        serial_queue = None
-        parallel_queue = None
-
-        if hpcarch == "bsc":
-            remote_queue = MnQueue(expid)
-            remote_queue.set_host("bsc")
-        elif hpcarch == "ithaca":
-            remote_queue = ItQueue(expid)
-            remote_queue.set_host("ithaca")
-        elif hpcarch == "hector":
-            remote_queue = HtQueue(expid)
-            remote_queue.set_host("ht-" + hpcproj)
-        elif hpcarch == "archer":
-            remote_queue = ArQueue(expid)
-            remote_queue.set_host("ar-" + hpcproj)
-        # in lindgren arch must set-up both serial and parallel queues
-        elif hpcarch == "lindgren":
-            serial_queue = ElQueue(expid)
-            serial_queue.set_host("ellen")
-            parallel_queue = LgQueue(expid)
-            parallel_queue.set_host("lindgren")
-        elif hpcarch == "ecmwf":
-            remote_queue = EcQueue(expid)
-            remote_queue.set_host("c2a")
-        elif hpcarch == "ecmwf-cca":
-            remote_queue = EcQueue(expid)
-            remote_queue.set_host("cca")
-        elif hpcarch == "marenostrum3":
-            remote_queue = Mn3Queue(expid)
-            remote_queue.set_host("mn-" + hpcproj)
-
-        local_queue = PsQueue(expid)
-        local_queue.set_host(platform.node())
-        local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
-        local_queue.set_project(expid)
-        local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
-        local_queue.update_cmds()
+        queues = AutosubmitConfig.read_queues_conf(expid)
 
         Log.debug("The Experiment name is: %s" % expid)
         Log.debug("Total jobs to submit: %s" % max_jobs)
@@ -405,30 +355,9 @@ class Autosubmit:
         Log.debug("Retrials: %s" % retrials)
         Log.info("Starting job submission...")
 
-        # If remoto_queue is None (now only in lindgren) arch must signal both serial and parallel queues
-        if remote_queue is None:
-            signal.signal(signal.SIGQUIT, serial_queue.smart_stop)
-            signal.signal(signal.SIGINT, serial_queue.normal_stop)
-            signal.signal(signal.SIGQUIT, parallel_queue.smart_stop)
-            signal.signal(signal.SIGINT, parallel_queue.normal_stop)
-            serial_queue.set_scratch(scratch_dir)
-            serial_queue.set_project(hpcproj)
-            serial_queue.set_user(hpcuser)
-            serial_queue.update_cmds()
-            parallel_queue.set_scratch(scratch_dir)
-            parallel_queue.set_project(hpcproj)
-            parallel_queue.set_user(hpcuser)
-            parallel_queue.update_cmds()
-        else:
-            signal.signal(signal.SIGQUIT, remote_queue.smart_stop)
-            signal.signal(signal.SIGINT, remote_queue.normal_stop)
-            remote_queue.set_scratch(scratch_dir)
-            remote_queue.set_project(hpcproj)
-            remote_queue.set_user(hpcuser)
-            remote_queue.update_cmds()
-
-        signal.signal(signal.SIGQUIT, local_queue.smart_stop)
-        signal.signal(signal.SIGINT, local_queue.normal_stop)
+        for queue in queues:
+            signal.signal(signal.SIGQUIT, queues[queue].smart_stop)
+            signal.signal(signal.SIGINT, queues[queue].normal_stop)
 
         if rerun == 'false':
             filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
@@ -455,10 +384,10 @@ class Autosubmit:
         Log.debug("Checking experiment templates...")
 
         for job in joblist.get_job_list():
-            if job.queue_name == 'LOCAL':
-                job.queue = local_queue
-            else:
-                job.queue = remote_queue
+            if job.queue_name is None:
+                job.queue_name = hpcarch
+            job.set_queue(queues[job.queue_name])
+
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
         else:
@@ -466,13 +395,8 @@ class Autosubmit:
             sys.exit()
 
         # check the availability of the Queues
-        local_queue.check_remote_log_dir()
-        # in lindgren arch must check both serial and parallel queues
-        if remote_queue is None:
-            serial_queue.check_remote_log_dir()
-            parallel_queue.check_remote_log_dir()
-        else:
-            remote_queue.check_remote_log_dir()
+        for queue in queues:
+            queues[queue].check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
@@ -527,14 +451,15 @@ class Autosubmit:
                 job.print_job()
                 Log.debug("Number of jobs in queue: %s" % str(len(jobinqueue)))
                 # Check queue availability
-                queueavail = job.queue.check_host()
+                job_queue = job.get_queue()
+                queueavail = job_queue.check_host()
                 if not queueavail:
                     Log.debug("There is no queue available")
                 else:
-                    status = job.queue.check_job(job.id)
+                    status = job_queue.check_job(job.id)
                     if status == Status.COMPLETED:
                         Log.debug("This job seems to have completed...checking")
-                        job.queue.get_completed_files(job.name)
+                        job_queue.get_completed_files(job.name)
                         job.check_completion()
                     else:
                         job.status = status
@@ -576,32 +501,28 @@ class Autosubmit:
                     Log.debug(job.name)
                     scriptname = job.create_script(as_conf)
                     Log.debug(scriptname)
-                    # in lindgren arch must select serial or parallel queue acording to the job type
-                    if job.queue_name == 'LOCAL':
-                        Log.info("Submitting %s to local queue...", job.name)
-                        job.queue = local_queue
-                    else:
-                        Log.info("Submitting %s to remote queue...", job.name)
-                        job.queue = remote_queue
 
-                    # Check queue availability
-                    queueavail = job.queue.check_host()
+                    job_queue = job.get_queue()
+                    queueavail = job_queue.check_host()
                     if not queueavail:
-                        Log.debug("There is no queue available")
+                        Log.warning("Queue {0} is not available".format(job_queue.name))
                     else:
-                        job.queue.send_script(scriptname)
-                        job.id = job.queue.submit_job(scriptname)
+                        job_queue.send_script(scriptname)
+                        job.id = job_queue.submit_job(scriptname)
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                    Log.info("%s submitted\n", job.name)
+                        Log.info("%s submitted\n", job.name)
 
             time.sleep(safetysleeptime)
-        if joblist.get_failed() > 0:
-            Log.info("Finishing run: some jobs have failed and reached maximun retrials")
+
+        Log.info("No more jobs to run.")
+        if len(joblist.get_failed()) > 0:
+            Log.info("Some jobs have failed and reached maximun retrials")
             return False
         else:
-            Log.info("Finished OK.")
+            Log.result("Run successful")
             return True
+
     @staticmethod
     def monitor(expid, root_name, output):
         BasicConfig.read()
@@ -678,90 +599,16 @@ class Autosubmit:
         as_conf.check_conf()
 
         hpcarch = as_conf.get_platform()
-        scratch_dir = as_conf.get_scratch_dir()
-        hpcproj = as_conf.get_hpcproj()
-        hpcuser = as_conf.get_hpcuser()
 
         if get:
-            remote_queue = None
-
-            if hpcarch == 'bsc':
-                remote_queue = MnQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("bsc")
-                remote_queue.update_cmds()
-            elif hpcarch == 'ithaca':
-                remote_queue = ItQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("ithaca")
-                remote_queue.update_cmds()
-            elif hpcarch == 'lindgren':
-                # in lindgren arch must set-up both serial and parallel queues
-                serial_queue = ElQueue(expid)
-                serial_queue.set_scratch(scratch_dir)
-                serial_queue.set_project(hpcproj)
-                serial_queue.set_user(hpcuser)
-                serial_queue.set_host("lindgren")
-                serial_queue.update_cmds()
-                parallel_queue = LgQueue(expid)
-                parallel_queue.set_scratch(scratch_dir)
-                parallel_queue.set_project(hpcproj)
-                parallel_queue.set_user(hpcuser)
-                parallel_queue.set_host("ellen")
-                parallel_queue.update_cmds()
-            elif hpcarch == 'ecmwf':
-                remote_queue = EcQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("c2a")
-                remote_queue.update_cmds()
-            elif hpcarch == 'ecmwf-cca':
-                remote_queue = EcQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("cca")
-                remote_queue.update_cmds()
-            elif hpcarch == 'marenostrum3':
-                remote_queue = Mn3Queue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("mn-" + hpcproj)
-                remote_queue.update_cmds()
-            elif hpcarch == 'hector':
-                remote_queue = HtQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("ht-" + hpcproj)
-                remote_queue.update_cmds()
-            elif hpcarch == 'archer':
-                remote_queue = ArQueue(expid)
-                remote_queue.set_scratch(scratch_dir)
-                remote_queue.set_project(hpcproj)
-                remote_queue.set_user(hpcuser)
-                remote_queue.set_host("ar-" + hpcproj)
-                remote_queue.update_cmds()
-
-            local_queue = PsQueue(expid)
-            local_queue.set_host(platform.node())
-            local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
-            local_queue.set_project(expid)
-            local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
-            local_queue.update_cmds()
+            queues = AutosubmitConfig.read_queues_conf(expid)
 
             for job in l1.get_active():
-                if job.queue_name == 'LOCAL':
-                    job.queue = local_queue
-                else:
-                    job.queue = remote_queue
-                if job.queue.get_completed_files(job.name):
+                if job.queue_name is None:
+                    job.queue_name = hpcarch
+                job.set_queue(queues[job.queue_name])
+
+                if job.get_queue().get_completed_files(job.name):
                     job.status = Status.COMPLETED
                     Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
                 elif job.status != Status.SUSPENDED:

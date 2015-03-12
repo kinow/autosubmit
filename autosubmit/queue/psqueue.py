@@ -29,9 +29,9 @@ class PsQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = platform.node()
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = PsHeader()
         self.expid = expid
         self.job_status = dict()

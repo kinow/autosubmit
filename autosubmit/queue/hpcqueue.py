@@ -42,10 +42,20 @@ class HPCQueue:
         self.mkdir_cmd = None
         self.cancel_cmd = None
         self._header = None
+        self._serial_queue = None
 
     @property
     def header(self):
         return self._header
+
+    def get_serial_queue(self):
+        if self._serial_queue is None:
+            return self
+        else:
+            return self._serial_queue
+
+    def set_serial_queue(self, value):
+        self._serial_queue = value
 
     def cancel_job(self, job_id):
         Log.debug(self.cancel_cmd + ' ' + str(job_id))
@@ -172,13 +182,13 @@ class HPCQueue:
         self._host = new_host
 
     def set_scratch(self, new_scratch):
-        self._scratch = new_scratch
+        self.scratch = new_scratch
 
     def set_project(self, new_project):
-        self._project = new_project
+        self.project = new_project
 
     def set_user(self, new_user):
-        self._user = new_user
+        self.user = new_user
 
     def set_remote_log_dir(self, new_remote_log_dir):
         self.remote_log_dir = new_remote_log_dir

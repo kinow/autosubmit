@@ -28,9 +28,9 @@ class ElQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "ellen"
-        self._scratch = "/cfu/scratch"
-        self._project = ""
-        self._user = ""
+        self.scratch = "/cfu/scratch"
+        self.project = ""
+        self.user = ""
         self._header = LgHeader()
         self.expid = expid
         self.job_status = dict()
@@ -42,7 +42,7 @@ class ElQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self._scratch + "/" + self._project + "/" + self._user + "/" + self.expid + "/LOG_" +
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self._status_cmd = "ssh " + self._host + " bjobs -w -X"
         self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
@@ -77,14 +77,3 @@ class ElQueue(HPCQueue):
     def get_checkjob_cmd(self, job_id):
         return "ssh " + self._host + " " + HPCQueue.get_pscall(job_id)
 
-# def main():
-#     q = ElQueue()
-#     q.check_job(1688)
-#     j = q.submit_job("/cfu/autosubmit/l002/templates/l002.sim")
-#     sleep(10)
-#     print q.check_job(j)
-#     q.cancel_job(j)
-#
-#
-# if __name__ == "__main__":
-#     main()

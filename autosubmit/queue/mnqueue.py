@@ -27,9 +27,9 @@ class MnQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "mn-ecm86"
-        self._scratch = ""
-        self._project = ""
-        self._user = ""
+        self.scratch = ""
+        self.project = ""
+        self.user = ""
         self._header = MnHeader()
         self.expid = expid
         self.job_status = dict()
