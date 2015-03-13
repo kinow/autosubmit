@@ -131,9 +131,9 @@ class HPCQueue:
         Log.debug(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
             job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script))
         if status == 0:
-            Log.debug('The script has been sent')
+            Log.debug('The script {0} has been sent').format(job_script)
         else:
-            Log.error('The script has not been sent')
+            Log.error('The script {0} has not been sent').format(job_script)
 
     def get_completed_files(self, jobname):
 

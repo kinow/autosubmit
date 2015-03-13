@@ -382,19 +382,21 @@ class Autosubmit:
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
+        queues_to_test = set()
         for job in joblist.get_job_list():
             if job.queue_name is None:
                 job.queue_name = hpcarch
             job.set_queue(queues[job.queue_name])
+            queues_to_test(job.queue_name)
 
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
         else:
             Log.warning("Experiment templates check FAILED!")
 
-        # # check the availability of the Queues
-        # for queue in queues:
-        #     queues[queue].check_remote_log_dir()
+        # check the availability of the Queues
+        for queue in queues_to_test:
+            queue.check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
