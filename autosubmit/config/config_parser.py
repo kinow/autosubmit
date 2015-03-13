@@ -17,7 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import sys
-import re
 from os import path
 from ConfigParser import SafeConfigParser
 
@@ -36,87 +35,4 @@ def check_values(key, value, valid_values):
         invalid_values = True
 
 
-def check_regex(key, value, regex):
-    global invalid_values
 
-    prog = re.compile(regex)
-
-    if not prog.match(value.lower()):
-        Log.error("Invalid value %s: %s" % (key, value))
-        invalid_values = True
-
-
-def check_json(key, value):
-    global invalid_values
-
-    # noinspection PyBroadException
-    try:
-        nestedExpr('[', ']').parseString(value).asList()
-    except:
-        Log.error("Invalid value %s: %s" % (key, value))
-        invalid_values = True
-
-
-def expdef_parser(filename):
-    startdate = "(\s*[0-9]{4}[0-9]{2}[0-9]{2}\s*)+$"
-    chunkini = "\s*\d+\s*$"
-    numchunks = "\s*\d+\s*$"
-    chunksize = "\s*\d+\s*$"
-    members = "(\s*fc\d+\s*)+$"
-    rerun = "\s*(true|false)\s*$"
-    projecttype = ['git', 'svn', 'local', 'none']
-
-    # option that must be in config file and has no default value
-    mandatory_opt = ['EXPID']
-
-    # check file existance
-    if not path.isfile(filename):
-        Log.critical("File does not exist: " + filename)
-        sys.exit(1)
-
-    # load values
-    parser = SafeConfigParser()
-    parser.optionxform = str
-    parser.read(filename)
-
-    # check which options of the mandatory one are not in config file
-    missing = list(set(mandatory_opt).difference(parser.options('experiment')))
-    if missing:
-        Log.critical("Missing options: " + ','.join(missing))
-        sys.exit(1)
-
-    # check create_exp.py variables
-    check_regex('DATELIST', parser.get('experiment', 'DATELIST'), startdate)
-    check_regex('MEMBERS', parser.get('experiment', 'MEMBERS'), members)
-    check_regex('CHUNKINI', parser.get('experiment', 'CHUNKINI'), chunkini)
-    check_regex('NUMCHUNKS', parser.get('experiment', 'NUMCHUNKS'), numchunks)
-    check_regex('CHUNKSIZE', parser.get('experiment', 'CHUNKSIZE'), chunksize)
-    check_regex('RERUN', parser.get('rerun', 'RERUN'), rerun)
-    if parser.get('rerun', 'RERUN') == "TRUE":
-        check_json('CHUNKLIST', parser.get('rerun', 'CHUNKLIST'))
-    check_values('PROJECT_TYPE', parser.get('project', 'PROJECT_TYPE'), projecttype)
-    # if (parser.get('project', 'PROJECT_TYPE') == "git"):
-    # check_regex('PROJECT_ORIGIN', parser.get('git', 'PROJECT_ORIGIN'), gitorigin)
-
-    if invalid_values:
-        Log.error("Invalid experiment config file")
-        sys.exit(1)
-    else:
-        Log.debug("Experiment config file OK")
-
-    return parser
-
-
-#
-# ####################
-# # Main Program
-# ####################
-# def main():
-# if len(sys.argv) != 2:
-#         print "Error missing config file"
-#     else:
-#         autosubmit_conf_parser(sys.argv[1])
-#
-#
-# if __name__ == "__main__":
-#     main()

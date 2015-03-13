@@ -34,18 +34,17 @@ from distutils.util import strtobool
 
 from pyparsing import nestedExpr
 
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.job.job_common import Status
-from autosubmit.git.git_common import AutosubmitGit
-from autosubmit.job.job_list import JobList
-from autosubmit.config.log import Log
-from autosubmit.database.db_common import create_db
-from autosubmit.database.db_common import new_experiment
-from autosubmit.database.db_common import copy_experiment
-from autosubmit.database.db_common import delete_experiment
-from autosubmit.monitor.monitor import Monitor
-from autosubmit.config.config_parser import expdef_parser
+from config.basicConfig import BasicConfig
+from config.config_common import AutosubmitConfig
+from job.job_common import Status
+from git.git_common import AutosubmitGit
+from job.job_list import JobList
+from config.log import Log
+from database.db_common import create_db
+from database.db_common import new_experiment
+from database.db_common import copy_experiment
+from database.db_common import delete_experiment
+from monitor.monitor import Monitor
 
 
 class Autosubmit:
@@ -329,7 +328,9 @@ class Autosubmit:
         os.system('clear')
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf_files()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
 
         project_type = as_conf.get_project_type()
         if project_type != "none":
@@ -344,7 +345,7 @@ class Autosubmit:
         retrials = as_conf.get_retrials()
         rerun = as_conf.get_rerun()
 
-        queues = AutosubmitConfig.read_queues_conf(expid)
+        queues = as_conf.read_queues_conf()
 
         Log.debug("The Experiment name is: %s" % expid)
         Log.debug("Total jobs to submit: %s" % max_jobs)
@@ -562,7 +563,10 @@ class Autosubmit:
                                   'finalise_exp.log'))
         if project:
             autosubmit_config = AutosubmitConfig(expid)
-            autosubmit_config.check_conf_files()
+            if not autosubmit_config.check_conf_files():
+                Log.critical('Can not clean project with invalid configuration')
+                return False
+
             project_type = autosubmit_config.get_project_type()
             if project_type == "git":
                 autosubmit_config.check_proj()
@@ -594,7 +598,9 @@ class Autosubmit:
                                'r'))
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf_files()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not recover with invalid configuration')
+            return False
 
         hpcarch = as_conf.get_platform()
 
@@ -716,7 +722,9 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf_files()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not create with invalid configuration')
+            return False
 
         expid = as_conf.get_expid()
         project_type = as_conf.get_project_type()
@@ -826,6 +834,8 @@ class Autosubmit:
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
+        else:
+            job_list.remove_rerun_only_jobs()
 
         pltfrm = as_conf.get_platform()
         if pltfrm == 'hector' or pltfrm == 'archer':

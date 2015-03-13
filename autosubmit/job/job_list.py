@@ -430,6 +430,16 @@ class JobList:
 
         self.update_genealogy()
 
+    def remove_rerun_only_jobs(self):
+        flag = False
+        for job in self._job_list:
+            if job.rerun_only:
+                self._remove_job(job)
+                flag = True
+
+        if flag:
+            self.update_genealogy()
+
 
 class DicJobs:
 
@@ -550,6 +560,7 @@ class DicJobs:
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
         job.wait = bool(self.get_option(section, "WAIT", False))
+        job.rerun_only = bool(self.get_option(section, "RERUN_ONLY", False))
 
         job.queue_name = self.get_option(section, "QUEUE", None)
         if job.queue_name is not None:

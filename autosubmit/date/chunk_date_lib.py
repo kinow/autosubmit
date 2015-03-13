@@ -153,7 +153,6 @@ def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
 def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
     result = add_time(start_date, chunk_length, chunk_unit, cal)
     end_date = "%s%02d%02d" % (result.year, result.month, result.day)
-    end_date = previous_day(end_date, cal)
     return end_date
 
 
