@@ -70,14 +70,14 @@ class Autosubmit:
                             help="set log to file level.")
         parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='INFO', type=str,
+                            default='DEBUG', type=str,
                             help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
 
         # Run
         subparser = subparsers.add_parser('run', description="run specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
 
         # Expid
         subparser = subparsers.add_parser('expid', description="Creates a new experiment")
@@ -93,26 +93,26 @@ class Autosubmit:
 
         # Delete
         subparser = subparsers.add_parser('delete', description="delete specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-f', '--force', action='store_true', help='delete experiment without confirmation')
 
         # Monitor
         subparser = subparsers.add_parser('monitor', description="plots specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
         subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Stats
         subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
         subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Clean
         subparser = subparsers.add_parser('clean', description="clean specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
         subparser.add_argument('-p', '--plot', action="store_true",
                                help='clean plot, only 2 last will remain')
@@ -121,7 +121,7 @@ class Autosubmit:
 
         # Recovery
         subparser = subparsers.add_parser('recovery', description="recover specified experiment")
-        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('expid', type=str, help='experiment identifier')
         subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
         subparser.add_argument('-g', '--get', action="store_true", default=False,
                                help='Get completed files to synchronize pkl')
@@ -129,11 +129,11 @@ class Autosubmit:
 
         # Check
         subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
 
         # Create
         subparser = subparsers.add_parser('create', description="create specified experiment joblist")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
         # Configure
@@ -390,8 +390,7 @@ class Autosubmit:
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
         else:
-            Log.error("Experiment templates check FAILED!")
-            sys.exit()
+            Log.warning("Experiment templates check FAILED!")
 
         # check the availability of the Queues
         for queue in queues:
