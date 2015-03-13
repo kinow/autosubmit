@@ -392,9 +392,9 @@ class Autosubmit:
         else:
             Log.warning("Experiment templates check FAILED!")
 
-        # check the availability of the Queues
-        for queue in queues:
-            queues[queue].check_remote_log_dir()
+        # # check the availability of the Queues
+        # for queue in queues:
+        #     queues[queue].check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP

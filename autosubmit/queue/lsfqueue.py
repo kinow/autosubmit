@@ -80,14 +80,14 @@ class LsfHeader:
     SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
-            #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
-            #BSUB -J %%JOBNAME%%
-            #BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out
-            #BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
-            #BSUB -W %%WALLCLOCK%%
-            #BSUB -n %%NUMPROC%%
+            #BSUB -J %JOBNAME%
+            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -W %WALLCLOCK%
+            #BSUB -n %NUMPROC%
             #BSUB -R "span[ptile=16]"
             #
             ###############################################################################
@@ -96,14 +96,14 @@ class LsfHeader:
     PARALLEL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
-            #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
-            #BSUB -J %%JOBNAME%%
-            #BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out
-            #BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
-            #BSUB -W %%WALLCLOCK%%
-            #BSUB -n %%NUMPROC%%
+            #BSUB -J %JOBNAME%
+            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -W %WALLCLOCK%
+            #BSUB -n %NUMPROC%
             #BSUB -R "span[ptile=16]"
             #
             ###############################################################################
