@@ -49,7 +49,7 @@ setup(
         'autosubmit/database/data/autosubmit.sql'
     ]
     },
-    scripts=['bin/autosubmit.py'],  # data_files = [
+    scripts=['bin/autosubmit'],  # data_files = [
     # ('', ['VERSION']),
     # ('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),
     # ('data', ['lib/autosubmit/database/data/autosubmit.sql'])  #	]		  #entry_points = {

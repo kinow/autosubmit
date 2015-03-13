@@ -34,18 +34,17 @@ from distutils.util import strtobool
 
 from pyparsing import nestedExpr
 
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.job.job_common import Status
-from autosubmit.git.git_common import AutosubmitGit
-from autosubmit.job.job_list import JobList
-from autosubmit.config.log import Log
-from autosubmit.database.db_common import create_db
-from autosubmit.database.db_common import new_experiment
-from autosubmit.database.db_common import copy_experiment
-from autosubmit.database.db_common import delete_experiment
-from autosubmit.monitor.monitor import Monitor
-from autosubmit.config.config_parser import expdef_parser
+from config.basicConfig import BasicConfig
+from config.config_common import AutosubmitConfig
+from job.job_common import Status
+from git.git_common import AutosubmitGit
+from job.job_list import JobList
+from config.log import Log
+from database.db_common import create_db
+from database.db_common import new_experiment
+from database.db_common import copy_experiment
+from database.db_common import delete_experiment
+from monitor.monitor import Monitor
 
 
 class Autosubmit:
@@ -71,14 +70,14 @@ class Autosubmit:
                             help="set log to file level.")
         parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='INFO', type=str,
+                            default='DEBUG', type=str,
                             help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
 
         # Run
         subparser = subparsers.add_parser('run', description="run specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
 
         # Expid
         subparser = subparsers.add_parser('expid', description="Creates a new experiment")
@@ -94,26 +93,26 @@ class Autosubmit:
 
         # Delete
         subparser = subparsers.add_parser('delete', description="delete specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-f', '--force', action='store_true', help='delete experiment without confirmation')
 
         # Monitor
         subparser = subparsers.add_parser('monitor', description="plots specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
         subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Stats
         subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
         subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Clean
         subparser = subparsers.add_parser('clean', description="clean specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
         subparser.add_argument('-p', '--plot', action="store_true",
                                help='clean plot, only 2 last will remain')
@@ -122,7 +121,7 @@ class Autosubmit:
 
         # Recovery
         subparser = subparsers.add_parser('recovery', description="recover specified experiment")
-        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('expid', type=str, help='experiment identifier')
         subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
         subparser.add_argument('-g', '--get', action="store_true", default=False,
                                help='Get completed files to synchronize pkl')
@@ -130,11 +129,11 @@ class Autosubmit:
 
         # Check
         subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
 
         # Create
         subparser = subparsers.add_parser('create', description="create specified experiment joblist")
-        subparser.add_argument('-e', '--expid', required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
         # Configure
@@ -329,7 +328,9 @@ class Autosubmit:
         os.system('clear')
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
 
         project_type = as_conf.get_project_type()
         if project_type != "none":
@@ -344,7 +345,7 @@ class Autosubmit:
         retrials = as_conf.get_retrials()
         rerun = as_conf.get_rerun()
 
-        queues = AutosubmitConfig.read_queues_conf(expid)
+        queues = as_conf.read_queues_conf()
 
         Log.debug("The Experiment name is: %s" % expid)
         Log.debug("Total jobs to submit: %s" % max_jobs)
@@ -389,8 +390,7 @@ class Autosubmit:
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
         else:
-            Log.error("Experiment templates check FAILED!")
-            sys.exit()
+            Log.warning("Experiment templates check FAILED!")
 
         # check the availability of the Queues
         for queue in queues:
@@ -562,7 +562,10 @@ class Autosubmit:
                                   'finalise_exp.log'))
         if project:
             autosubmit_config = AutosubmitConfig(expid)
-            autosubmit_config.check_conf()
+            if not autosubmit_config.check_conf_files():
+                Log.critical('Can not clean project with invalid configuration')
+                return False
+
             project_type = autosubmit_config.get_project_type()
             if project_type == "git":
                 autosubmit_config.check_proj()
@@ -594,7 +597,9 @@ class Autosubmit:
                                'r'))
 
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not recover with invalid configuration')
+            return False
 
         hpcarch = as_conf.get_platform()
 
@@ -637,7 +642,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        as_conf.check_conf_files()
         project_type = as_conf.get_project_type()
         if project_type != "none":
             as_conf.check_proj()
@@ -649,12 +654,12 @@ class Autosubmit:
         #     print "Experiment configuration check FAILED!"
         #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
 
-        Log.info("Checking experiment templates...")
-        if Autosubmit._check_templates(as_conf):
-            Log.result("Experiment templates check PASSED!")
-        else:
-            Log.critical("Experiment templates check FAILED!")
-            Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
+        # Log.info("Checking experiment templates...")
+        # if Autosubmit._check_templates(as_conf):
+        #     Log.result("Experiment templates check PASSED!")
+        # else:
+        #     Log.critical("Experiment templates check FAILED!")
+        #     Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
     def configure(database_path, local_root_path,  user, local):
@@ -716,7 +721,9 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not create with invalid configuration')
+            return False
 
         expid = as_conf.get_expid()
         project_type = as_conf.get_project_type()
@@ -826,6 +833,8 @@ class Autosubmit:
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
+        else:
+            job_list.remove_rerun_only_jobs()
 
         pltfrm = as_conf.get_platform()
         if pltfrm == 'hector' or pltfrm == 'archer':

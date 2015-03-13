@@ -75,41 +75,36 @@ class LsfQueue(HPCQueue):
 
 
 class LsfHeader:
-    """Class to handle the BSC headers of a job"""
+    """Class to handle the MareNostrum3 headers of a job"""
 
     SERIAL = textwrap.dedent("""
-            #!/bin/ksh
+            #!/bin/sh
             ###############################################################################
-            #                     %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
             ###############################################################################
             #
-            #@ job_name         = %JOBNAME%
-            #@ wall_clock_limit = %WALLCLOCK%
-            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-            #@ total_tasks      = %NUMTASK%
-            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-            #@ class            = %CLASS%
-            #@ partition        = %PARTITION%
-            #@ features         = %FEATURES%
+            #BSUB -J %%JOBNAME%%
+            #BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out
+            #BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+            #BSUB -W %%WALLCLOCK%%
+            #BSUB -n %%NUMPROC%%
+            #BSUB -R "span[ptile=16]"
             #
             ###############################################################################
             """)
 
     PARALLEL = textwrap.dedent("""
-            #!/bin/ksh
+            #!/bin/sh
             ###############################################################################
-            #                     %TASKTYPE% %EXPID% EXPERIMENT
+            #                   %%TASKTYPE%% %%TEMPLATE_NAME%% EXPERIMENT
             ###############################################################################
             #
-            #@ job_name         = %JOBNAME%
-            #@ wall_clock_limit = %WALLCLOCK%
-            #@ output           = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.out
-            #@ error            = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%j.err
-            #@ total_tasks      = %NUMTASK%
-            #@ initialdir       = %SCRATCH_DIR%/%HPCUSER%/%EXPID%/
-            #@ tasks_per_node   = %TASKSNODE%
-            #@ tracing          = %TRACING%
+            #BSUB -J %%JOBNAME%%
+            #BSUB -oo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.out
+            #BSUB -eo %%SCRATCH_DIR%%/%%HPCPROJ%%/%%HPCUSER%%/%%EXPID%%/LOG_%%EXPID%%/%%JOBNAME%%_%%J.err
+            #BSUB -W %%WALLCLOCK%%
+            #BSUB -n %%NUMPROC%%
+            #BSUB -R "span[ptile=16]"
             #
             ###############################################################################
             """)

@@ -19,14 +19,12 @@
 from ConfigParser import SafeConfigParser
 import os
 import platform
+from pyparsing import nestedExpr
 import re
 from os import listdir
 from commands import getstatusoutput
 
 from autosubmit.config.log import Log
-from autosubmit.config.config_parser import config_parser
-from autosubmit.config.config_parser import expdef_parser
-from autosubmit.config.config_parser import projdef_parser
 from autosubmit.config.basicConfig import BasicConfig
 
 from autosubmit.queue.psqueue import PsQueue
@@ -40,8 +38,15 @@ class AutosubmitConfig:
     """Class to handle experiment configuration coming from file or database"""
 
     def __init__(self, expid):
-        self._conf_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "autosubmit_" + expid + ".conf"
-        self._exp_parser_file = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/conf/" + "expdef_" + expid + ".conf"
+        self.expid = expid
+        self._conf_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                              "autosubmit_" + expid + ".conf")
+        self._exp_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                             "expdef_" + expid + ".conf")
+        self._queues_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                                "queues_" + expid + ".conf")
+        self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                              "jobs_" + expid + ".conf")
 
     @property
     def experiment_file(self):
@@ -56,9 +61,134 @@ class AutosubmitConfig:
             dir_templates = self.get_git_project_origin().split('.')[-2]
         return dir_templates
 
-    def check_conf(self):
-        self._conf_parser = config_parser(self._conf_parser_file)
-        self._exp_parser = expdef_parser(self._exp_parser_file)
+    def check_conf_files(self):
+        Log.info('\nChecking configuration files...')
+        self.reload()
+        result = self._check_autosubmit_conf()
+        result = result and self._check_queues_conf()
+        result = result and self._check_jobs_conf()
+        result = result and self._check_expdef_conf()
+        if result:
+            Log.result("Configuration files OK\n")
+        else:
+            Log.error("Configuration files invalid\n")
+        return result
+
+    def _check_autosubmit_conf(self):
+        result = True
+        result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
+        result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_LOCAL_ROOT')
+        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
+        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
+        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
+        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
+
+        if not result:
+            Log.critical("{0} is not a valid config file".format(os.path.basename(self._conf_parser_file)))
+        else:
+            Log.info('{0} OK'.format(os.path.basename(self._conf_parser_file)))
+        return result
+
+    def _check_queues_conf(self):
+        result = True
+        if len(self._queues_parser.sections()) == 0:
+            Log.warning("No remote queue configured")
+
+        if len(self._queues_parser.sections()) != len(set(self._queues_parser.sections())):
+            Log.error('There are repeated queue names')
+
+        for section in self._queues_parser.sections():
+            result = result and AutosubmitConfig.check_is_choice(self._queues_parser, section, 'TYPE', True,
+                                                                 ['ps', 'pbs', 'sge', 'lsf', 'ecaccess'])
+            queue_type = AutosubmitConfig.get_option(self._queues_parser, section, 'TYPE', '').lower()
+            if queue_type != 'ps':
+                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'PROJECT')
+                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'USER')
+
+            if queue_type in ['pbs', 'ecaccess']:
+                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'VERSION')
+
+            result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'HOST')
+            result = result and AutosubmitConfig.check_is_boolean(self._queues_parser, section,
+                                                                  'ADD_PROJECT_TO_HOST', False)
+            result = result and AutosubmitConfig.check_is_boolean(self._queues_parser, section, 'TEST_SUITE', False)
+
+        if not result:
+            Log.critical("{0} is not a valid config file".format(os.path.basename(self._queues_parser_file)))
+        else:
+            Log.info('{0} OK'.format(os.path.basename(self._queues_parser_file)))
+        return result
+
+    def _check_jobs_conf(self):
+        result = True
+        parser = self._jobs_parser
+        sections = parser.sections()
+        if len(sections) == 0:
+            Log.warning("No remote queue configured")
+
+        if len(sections) != len(set(sections)):
+            Log.error('There are repeated job names')
+
+        for section in sections:
+            result = result and AutosubmitConfig.check_exists(parser, section, 'FILE')
+            if parser.has_option(section, 'DEPENDENCIES'):
+                for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
+                    if '-' in dependency:
+                        dependency = dependency.split('-')[0]
+                    if dependency not in sections:
+                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+            result = result and AutosubmitConfig.check_is_choice(parser, section, 'RUNNING', False,
+                                                                 ['once', 'date', 'member', 'chunk'])
+
+        if not result:
+            Log.critical("{0} is not a valid config file".format(os.path.basename(self._jobs_parser_file)))
+        else:
+            Log.info('{0} OK'.format(os.path.basename(self._jobs_parser_file)))
+
+        return result
+
+    def _check_expdef_conf(self):
+        result = True
+        parser = self._exp_parser
+
+        result = result and AutosubmitConfig.check_exists(parser, 'DEFAULT', 'EXPID')
+        result = result and AutosubmitConfig.check_exists(parser, 'DEFAULT', 'HPCARCH')
+
+        result = result and AutosubmitConfig.check_exists(parser, 'experiment', 'DATELIST')
+        result = result and AutosubmitConfig.check_exists(parser, 'experiment', 'MEMBERS')
+        result = result and AutosubmitConfig.check_is_choice(parser, 'experiment', 'CHUNKSIZEUNIT', True,
+                                                             ['year', 'month', 'day', 'hour'])
+        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'CHUNKSIZE', True)
+        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'NUMCHUNKS', True)
+        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'CHUNKINI', True)
+        result = result and AutosubmitConfig.check_is_choice(parser, 'experiment', 'CALENDAR', True,
+                                                             ['standard', 'noleap'])
+
+        result = result and AutosubmitConfig.check_is_boolean(parser, 'rerun', 'RERUN', True)
+
+        if AutosubmitConfig.check_is_choice(parser, 'project', 'PROJECT_TYPE', True,
+                                            ['none', 'git', 'svn', 'local']):
+            project_type = AutosubmitConfig.get_option(parser, 'project', 'PROJECT_TYPE', '')
+
+            if project_type == 'git':
+                result = result and AutosubmitConfig.check_exists(parser, 'git', 'PROJECT_ORIGIN')
+                result = result and AutosubmitConfig.check_exists(parser, 'git', 'PROJECT_BRANCH')
+            elif project_type == 'svn':
+                result = result and AutosubmitConfig.check_exists(parser, 'svn', 'PROJECT_URL')
+                result = result and AutosubmitConfig.check_exists(parser, 'svn', 'PROJECT_REVISION')
+            elif project_type == 'local':
+                result = result and AutosubmitConfig.check_exists(parser, 'local', 'PROJECT_PATH')
+
+            if project_type != 'none':
+                result = result and AutosubmitConfig.check_exists(parser, 'project_files', 'FILE_PROJECT_CONF')
+        else:
+            result = False
+
+        if not result:
+            Log.critical("{0} is not a valid config file".format(os.path.basename(self._exp_parser_file)))
+        else:
+            Log.info('{0}  OK'.format(os.path.basename(self._exp_parser_file)))
+        return result
 
     def check_proj(self):
         self._proj_parser_file = self.get_file_project_conf()
@@ -66,15 +196,13 @@ class AutosubmitConfig:
             self._proj_parser = None
         else:
             self._proj_parser_file = os.path.join(self.get_project_dir(), self._proj_parser_file)
-            self._proj_parser = projdef_parser(self._proj_parser_file)
+            self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
 
     def reload(self):
-        self._conf_parser = config_parser(self._conf_parser_file)
-        self._exp_parser_file = self._conf_parser.get('config', 'EXPDEFFILE')
-        self._exp_parser = expdef_parser(self._exp_parser_file)
-        project_type = self.get_project_type()
-        if project_type != "none":
-            self.check_proj()
+        self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
+        self._queues_parser = AutosubmitConfig.get_parser(self._queues_parser_file)
+        self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
+        self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
 
     def load_parameters(self):
         expdef = []
@@ -147,14 +275,9 @@ class AutosubmitConfig:
         return result
 
     def get_expid(self):
-        return self._conf_parser.get('config', 'EXPID')
+        return self._exp_parser.get('DEFAULT', 'EXPID')
 
     def set_expid(self, exp_id):
-        # Autosubmit conf
-        content = file(self._conf_parser_file).read()
-        if re.search('EXPID =.*', content):
-            content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._conf_parser_file, 'w').write(content)
         # Experiment conf
         content = file(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
@@ -287,18 +410,22 @@ class AutosubmitConfig:
         return int(self._conf_parser.get('config', 'RETRIALS'))
 
     @staticmethod
-    def read_queues_conf(expid):
+    def get_parser(file_path):
         parser = SafeConfigParser()
         parser.optionxform = str
-        parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'conf', "queues_" + expid + ".conf"))
+        parser.read(file_path)
+        return parser
+
+    def read_queues_conf(self):
+        parser = self._queues_parser
 
         queues = dict()
-        local_queue = PsQueue(expid)
+        local_queue = PsQueue(self.expid)
         local_queue.name = 'local'
         local_queue.type = 'ps'
         local_queue.set_host(platform.node())
         local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
-        local_queue.set_project(expid)
+        local_queue.set_project(self.expid)
         local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
         local_queue.update_cmds()
 
@@ -308,15 +435,15 @@ class AutosubmitConfig:
             queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', None)
             queue = None
             if queue_type == 'pbs':
-                queue = PBSQueue(expid, queue_version)
+                queue = PBSQueue(self.expid, queue_version)
             elif queue_type == 'sge':
-                queue = SgeQueue(expid)
+                queue = SgeQueue(self.expid)
             elif queue_type == 'ps':
-                queue = PsQueue(expid)
+                queue = PsQueue(self.expid)
             elif queue_type == 'lsf':
-                queue = LsfQueue(expid)
+                queue = LsfQueue(self.expid)
             elif queue_type == 'ecaccess':
-                queue = EcQueue(expid, queue_version)
+                queue = EcQueue(self.expid, queue_version)
             elif queue_type == '':
                 Log.error("Queue type not specified".format(queue_type))
                 exit(1)
@@ -352,5 +479,66 @@ class AutosubmitConfig:
             return parser.get(section, option)
         else:
             return default
+
+    @staticmethod
+    def check_exists(parser, section, option):
+        if parser.has_option(section, option):
+            return True
+        else:
+            Log.error('Option {0} in section {1} not found'.format(option, section))
+            return False
+
+    @staticmethod
+    def check_is_boolean(parser, section, option, must_exist):
+        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
+            return False
+        if AutosubmitConfig.get_option(parser, section, option, 'false').lower() not in ['false', 'true']:
+            Log.error('Option {0} in section {1} must be true or false'.format(option, section))
+            return False
+        return True
+
+    @staticmethod
+    def check_is_choice(parser, section, option, must_exist, choices):
+        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
+            return False
+        value = AutosubmitConfig.get_option(parser, section, option, choices[0])
+        if value.lower() not in choices:
+            Log.error('Value {2} in option {0} in section {1} is not a valid choice'.format(option, section, value))
+            return False
+        return True
+
+    @staticmethod
+    def check_is_int(parser, section, option, must_exist):
+        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
+            return False
+        value = AutosubmitConfig.get_option(parser, section, option, '1')
+        try:
+            int(value)
+        except ValueError:
+            Log.error('Option {0} in section {1} is not valid an integer'.format(option, section))
+            return False
+        return True
+
+    @staticmethod
+    def check_regex(parser, section, option, must_exist, regex):
+        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
+            return False
+        prog = re.compile(regex)
+        value = AutosubmitConfig.get_option(parser, section, option, '1')
+        if not prog.match(value):
+            Log.error('Option {0} in section {1} is not valid: {2}'.format(option, section, value))
+            return False
+        return True
+    @staticmethod
+    def check_json(key, value):
+        # noinspection PyBroadException
+        try:
+            nestedExpr('[', ']').parseString(value).asList()
+            return True
+        except:
+            Log.error("Invalid value %s: %s" % (key, value))
+            return False
+
+
 
 
