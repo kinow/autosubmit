@@ -387,7 +387,7 @@ class Autosubmit:
             if job.queue_name is None:
                 job.queue_name = hpcarch
             job.set_queue(queues[job.queue_name])
-            queues_to_test.add(job.queue_name)
+            queues_to_test.add(queues[job.queue_name])
 
         if joblist.check_scripts(as_conf):
             Log.result("Experiment templates check PASSED!")
