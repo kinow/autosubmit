@@ -66,11 +66,11 @@ class Autosubmit:
                             help="return Autosubmit's version number and exit")
         parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                          'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='INFO', type=str,
+                            default='DEBUG', type=str,
                             help="set log to file level.")
         parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='DEBUG', type=str,
+                            default='INFO', type=str,
                             help="set log file level")
 
         subparsers = parser.add_subparsers(dest='command')
@@ -507,6 +507,8 @@ class Autosubmit:
                     else:
                         job_queue.send_script(scriptname)
                         job.id = job_queue.submit_job(scriptname)
+                        if job.id is None:
+                            continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
                         Log.info("%s submitted\n", job.name)

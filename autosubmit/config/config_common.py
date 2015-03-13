@@ -288,16 +288,16 @@ class AutosubmitConfig:
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
 
     def get_file_project_conf(self):
-        return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF').lower()
+        return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
     def get_git_project_origin(self):
-        return self._exp_parser.get('git', 'PROJECT_ORIGIN').lower()
+        return self._exp_parser.get('git', 'PROJECT_ORIGIN')
 
     def get_git_project_branch(self):
-        return self._exp_parser.get('git', 'PROJECT_BRANCH').lower()
+        return self._exp_parser.get('git', 'PROJECT_BRANCH')
 
     def get_git_project_commit(self):
-        return self._exp_parser.get('git', 'PROJECT_COMMIT').lower()
+        return self._exp_parser.get('git', 'PROJECT_COMMIT')
 
     def set_git_project_commit(self):
         """Function to register in the configuration the commit SHA of the git project version."""
@@ -342,13 +342,13 @@ class AutosubmitConfig:
             Log.critical("Changes NOT registered to the configuration file...")
 
     def get_svn_project_url(self):
-        return self._exp_parser.get('svn', 'PROJECT_URL').lower()
+        return self._exp_parser.get('svn', 'PROJECT_URL')
 
     def get_svn_project_revision(self):
-        return self._exp_parser.get('svn', 'PROJECT_REVISION').lower()
+        return self._exp_parser.get('svn', 'PROJECT_REVISION')
 
     def get_local_project_path(self):
-        return self._exp_parser.get('local', 'PROJECT_PATH').lower()
+        return self._exp_parser.get('local', 'PROJECT_PATH')
 
     def get_date_list(self):
         return self._exp_parser.get('experiment', 'DATELIST').split(' ')

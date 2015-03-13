@@ -166,6 +166,8 @@ class HPCQueue:
             job_id = self.get_submitted_job_id(output)
             Log.debug(job_id)
             return int(job_id)
+        else:
+            return None
 
     def normal_stop(self):
         sleep(SLEEPING_TIME)
