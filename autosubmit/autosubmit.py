@@ -99,15 +99,13 @@ class Autosubmit:
         # Monitor
         subparser = subparsers.add_parser('monitor', description="plots specified experiment")
         subparser.add_argument('expid', help='experiment identifier')
-        subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
-        subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
+        subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Stats
         subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
         subparser.add_argument('expid', help='experiment identifier')
-        subparser.add_argument('-j', '--joblist', required=True, help='joblist to print')
-        subparser.add_argument('-o', '--output', required=True, choices=('pdf', 'png', 'ps'), default='pdf',
+        subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
                                help='type of output for generated plot')
 
         # Clean
@@ -122,7 +120,6 @@ class Autosubmit:
         # Recovery
         subparser = subparsers.add_parser('recovery', description="recover specified experiment")
         subparser.add_argument('expid', type=str, help='experiment identifier')
-        subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
         subparser.add_argument('-g', '--get', action="store_true", default=False,
                                help='Get completed files to synchronize pkl')
         subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
@@ -155,7 +152,6 @@ class Autosubmit:
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
         subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
-        subparser.add_argument('-j', '--joblist', type=str, required=True, help='Job list')
         subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
         subparser.add_argument('-t', '--status_final',
                                choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -199,13 +195,13 @@ class Autosubmit:
         elif args.command == 'delete':
             Autosubmit.delete(args.expid, args.force)
         elif args.command == 'monitor':
-            Autosubmit.monitor(args.expid, args.joblist, args.output)
+            Autosubmit.monitor(args.expid, args.output)
         elif args.command == 'stats':
-            Autosubmit.statistics(args.expid, args.joblist, args.output)
+            Autosubmit.statistics(args.expid, args.output)
         elif args.command == 'clean':
             Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
         elif args.command == 'recovery':
-            Autosubmit.recovery(args.expid, args.joblist, args.save, args.get)
+            Autosubmit.recovery(args.expid, args.save, args.get)
         elif args.command == 'check':
             Autosubmit.check(args.expid)
         elif args.command == 'create':
@@ -215,7 +211,7 @@ class Autosubmit:
         elif args.command == 'install':
             Autosubmit.install()
         elif args.command == 'change_pkl':
-            Autosubmit.change_pkl(args.expid, args.joblist, args.save, args.status_final, args.list, args.filter,
+            Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list, args.filter,
                                   args.filter_chunks, args.filter_status, args.filter_section)
         elif args.command == 'test':
             Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
@@ -526,7 +522,8 @@ class Autosubmit:
             return True
 
     @staticmethod
-    def monitor(expid, root_name, output):
+    def monitor(expid, output):
+        root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
@@ -541,7 +538,8 @@ class Autosubmit:
         Log.result("Plot ready")
 
     @staticmethod
-    def statistics(expid, root_name, output):
+    def statistics(expid, output):
+        root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'statistics.log'))
@@ -590,7 +588,8 @@ class Autosubmit:
             monitor_autosubmit.clean_stats(expid)
 
     @staticmethod
-    def recovery(expid, root_name, save, get):
+    def recovery(expid, save, get):
+        root_name = 'job_list'
         BasicConfig.read()
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -855,8 +854,9 @@ class Autosubmit:
         Log.user_warning("Remember to MODIFY the MODEL config files!")
 
     @staticmethod
-    def change_pkl(expid, root_name, save, final, lst, flt,
+    def change_pkl(expid, save, final, lst, flt,
                    filter_chunks, filter_status, filter_section):
+        root_name = 'job_list'
         BasicConfig.read()
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -1087,7 +1087,7 @@ class Autosubmit:
         testid = Autosubmit.expid('test', 'test experiment for {0}'.format(expid), expid, False)
 
         as_conf = AutosubmitConfig(testid)
-        exp_parser = expdef_parser(as_conf.experiment_file)
+        exp_parser = as_conf.get_parser(as_conf.experiment_file)
 
         content = file(as_conf.experiment_file).read()
         if hpc is None:

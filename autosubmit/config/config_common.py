@@ -529,6 +529,7 @@ class AutosubmitConfig:
             Log.error('Option {0} in section {1} is not valid: {2}'.format(option, section, value))
             return False
         return True
+
     @staticmethod
     def check_json(key, value):
         # noinspection PyBroadException

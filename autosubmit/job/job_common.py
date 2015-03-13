@@ -77,6 +77,7 @@ class StatisticsSnippet:
             done
             echo "
             $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            exit
             """)
 
     AS_HEADER_REM = textwrap.dedent("""
@@ -136,5 +137,6 @@ class StatisticsSnippet:
              failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            exit
             """)
 
