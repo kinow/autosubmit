@@ -44,7 +44,6 @@ class StatisticsSnippet:
             # Autosubmit header
             ###################
 
-            set -xuve
             job_name_ptrn=%ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
@@ -86,7 +85,6 @@ class StatisticsSnippet:
             # Autosubmit header
             ###################
 
-            set -xuve
             job_name_ptrn=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)

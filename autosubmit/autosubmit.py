@@ -151,7 +151,7 @@ class Autosubmit:
 
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
-        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
         subparser.add_argument('-t', '--status_final',
                                choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -176,12 +176,16 @@ class Autosubmit:
 
         # Test
         subparser = subparsers.add_parser('test', description='test experiment')
-        subparser.add_argument('-e', '--expid', type=str, required=True, help='experiment identifier')
+        subparser.add_argument('expid',  help='experiment identifier')
         subparser.add_argument('-c', '--chunks', required=True, help='chunks to run')
         subparser.add_argument('-m', '--member', help='member to run')
         subparser.add_argument('-s', '--stardate', help='stardate to run')
         subparser.add_argument('-H', '--HPC', help='HPC to run experiment on it')
         subparser.add_argument('-b', '--branch', help='branch of git to run (or revision from subversion)')
+
+        # Refresh
+        subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
+        subparser.add_argument('expid',  help='experiment identifier')
 
         args = parser.parse_args()
 
@@ -215,6 +219,8 @@ class Autosubmit:
                                   args.filter_chunks, args.filter_status, args.filter_section)
         elif args.command == 'test':
             Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
+        elif args.command == 'refresh':
+            Autosubmit.refresh(args.expid)
 
     @staticmethod
     def delete_expid(expid_delete):
@@ -719,6 +725,19 @@ class Autosubmit:
             exit(1)
 
     @staticmethod
+    def refresh(expid):
+        BasicConfig.read()
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
+                                  'refresh.log'))
+        as_conf = AutosubmitConfig(expid)
+        if not as_conf.check_conf_files():
+            Log.critical('Can not copy with invalid configuration')
+            return False
+        project_type = as_conf.get_project_type()
+        if Autosubmit._copy_code(as_conf, expid, project_type, True):
+            Log.result("Project folder updated")
+
+    @staticmethod
     def create(expid, noplot):
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -728,87 +747,10 @@ class Autosubmit:
             Log.critical('Can not create with invalid configuration')
             return False
 
-        expid = as_conf.get_expid()
         project_type = as_conf.get_project_type()
 
-        if project_type == "git":
-            git_project_origin = as_conf.get_git_project_origin()
-            git_project_branch = as_conf.get_git_project_branch()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
-            if os.path.exists(project_path):
-                Log.debug("The project folder exists. SKIPPING...")
-                Log.info("Using project folder: %s" % project_path)
-            else:
-                os.mkdir(project_path)
-                Log.debug("The project folder %s has been created." % project_path)
-                Log.info("Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
-                (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
-                                                   " " + git_project_origin)
-                if status:
-                    os.rmdir(project_path)
-                    Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                            project_path))
-                    exit(1)
-
-                Log.debug("%s" % output)
-                git_project_name = output[output.find("'")+1:output.find("...")-1]
-                (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
-                                                   "; git submodule update --remote --init")
-                if status:
-                    os.rmdir(project_path)
-                    Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                            project_path))
-                    exit(1)
-                Log.debug("%s" % output)
-
-                (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
-                                                   "; git submodule foreach -q 'branch=\"$(git config "
-                                                   "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
-                                                   "git checkout $branch'")
-                if status:
-                    os.rmdir(project_path)
-                    Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                            project_path))
-                    exit(1)
-                Log.debug("%s" % output)
-
-        elif project_type == "svn":
-            svn_project_url = as_conf.get_svn_project_url()
-            svn_project_revision = as_conf.get_svn_project_revision()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
-            if os.path.exists(project_path):
-                Log.debug("The project folder exists. SKIPPING...")
-                Log.info("Using project folder: %s" % project_path)
-            else:
-                os.mkdir(project_path)
-                Log.debug("The project folder %s has been created." % project_path)
-                Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
-                                                               project_path))
-                (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
-                                                   " " + svn_project_url)
-                if status:
-                    os.rmdir(project_path)
-                    Log.error("Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
-                                                                         project_path))
-                    exit(1)
-                Log.debug("%s" % output)
-
-        elif project_type == "local":
-            local_project_path = as_conf.get_local_project_path()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
-            if os.path.exists(project_path):
-                Log.debug("The project folder exists. SKIPPING...")
-                Log.info("Using project folder: %s" % project_path)
-            else:
-                os.mkdir(project_path)
-                Log.debug("The project folder %s has been created." % project_path)
-                Log.info("Copying %s into %s" % (local_project_path, project_path))
-                (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
-                if status:
-                    os.rmdir(project_path)
-                    Log.error("Can not copy %s into %s. Exiting..." % (local_project_path, project_path))
-                    exit(1)
-                Log.debug("%s" % output)
+        if not Autosubmit._copy_code(as_conf, expid, project_type, False):
+            return False
 
         if project_type != "none":
             # Check project configuration
@@ -852,6 +794,96 @@ class Autosubmit:
 
         Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
+
+    @staticmethod
+    def _copy_code(as_conf, expid, project_type, force):
+        if project_type == "git":
+            git_project_origin = as_conf.get_git_project_origin()
+            git_project_branch = as_conf.get_git_project_branch()
+            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            if os.path.exists(project_path):
+                Log.info("Using project folder: %s" % project_path)
+                if not force:
+                    Log.debug("The project folder exists. SKIPPING...")
+                    return True
+            else:
+                os.mkdir(project_path)
+                Log.debug("The project folder %s has been created." % project_path)
+
+            Log.info("Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
+            (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
+                                               " " + git_project_origin)
+            if status:
+                os.rmdir(project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
+                                                        project_path))
+                return False
+
+            Log.debug("%s" % output)
+            git_project_name = output[output.find("'") + 1:output.find("...") - 1]
+            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
+                                               "; git submodule update --remote --init")
+            if status:
+                os.rmdir(project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
+                                                        project_path))
+                return False
+            Log.debug("%s" % output)
+
+            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
+                                               "; git submodule foreach -q 'branch=\"$(git config "
+                                               "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
+                                               "git checkout $branch'")
+            if status:
+                os.rmdir(project_path)
+                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
+                                                        project_path))
+                return False
+            Log.debug("%s" % output)
+
+        elif project_type == "svn":
+            svn_project_url = as_conf.get_svn_project_url()
+            svn_project_revision = as_conf.get_svn_project_revision()
+            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            if os.path.exists(project_path):
+                Log.info("Using project folder: %s" % project_path)
+                if not force:
+                    Log.debug("The project folder exists. SKIPPING...")
+                    return True
+            else:
+                os.mkdir(project_path)
+                Log.debug("The project folder %s has been created." % project_path)
+            Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
+                                                           project_path))
+            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
+                                               " " + svn_project_url)
+            if status:
+                os.rmdir(project_path)
+                Log.error("Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
+                                                                     project_path))
+                return False
+            Log.debug("%s" % output)
+
+        elif project_type == "local":
+            local_project_path = as_conf.get_local_project_path()
+            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            if os.path.exists(project_path):
+                Log.info("Using project folder: %s" % project_path)
+                if not force:
+                    Log.debug("The project folder exists. SKIPPING...")
+                    return True
+            else:
+                os.mkdir(project_path)
+                Log.debug("The project folder %s has been created." % project_path)
+
+            Log.info("Copying %s into %s" % (local_project_path, project_path))
+            (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
+            if status:
+                os.rmdir(project_path)
+                Log.error("Can not copy %s into %s. Exiting..." % (local_project_path, project_path))
+                return False
+            Log.debug("%s" % output)
+        return True
 
     @staticmethod
     def change_pkl(expid, save, final, lst, flt,

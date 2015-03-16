@@ -119,6 +119,7 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
 
     while number > 0:
         number, i = divmod(number, len(alphabet))
+        # noinspection PyAugmentAssignment
         base36 = alphabet[i] + base36
 
     return sign + base36
