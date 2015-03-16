@@ -62,20 +62,20 @@ class Autosubmit:
 
         parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
         parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
-                            help="return Autosubmit's version number and exit")
+                            help="returns autosubmit's version number and exit")
         parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                          'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
                             default='DEBUG', type=str,
-                            help="set log to file level.")
+                            help="sets file's log level.")
         parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
                             default='INFO', type=str,
-                            help="set log file level")
+                            help="sets console's log level")
 
         subparsers = parser.add_subparsers(dest='command')
 
         # Run
-        subparser = subparsers.add_parser('run', description="run specified experiment")
+        subparser = subparsers.add_parser('run', description="runs specified experiment")
         subparser.add_argument('expid', help='experiment identifier')
 
         # Expid
@@ -86,20 +86,20 @@ class Autosubmit:
                            help='creates a new experiment with default values, usually for testing')
 
         subparser.add_argument('-H', '--HPC', required=True,
-                               help='Specifies the HPC to use for the experiment')
+                               help='specifies the HPC to use for the experiment')
         subparser.add_argument('-d', '--description', type=str, required=True,
-                               help='A description for the experiment to store in the database.')
+                               help='sets a description for the experiment to store in the database.')
 
         # Delete
         subparser = subparsers.add_parser('delete', description="delete specified experiment")
         subparser.add_argument('expid',  help='experiment identifier')
-        subparser.add_argument('-f', '--force', action='store_true', help='delete experiment without confirmation')
+        subparser.add_argument('-f', '--force', action='store_true', help='deletes experiment without confirmation')
 
         # Monitor
         subparser = subparsers.add_parser('monitor', description="plots specified experiment")
         subparser.add_argument('expid', help='experiment identifier')
         subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
-                               help='type of output for generated plot')
+                               help='chooses type of output for generated plot')
 
         # Stats
         subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -805,9 +805,10 @@ class Autosubmit:
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
-            else:
-                os.mkdir(project_path)
-                Log.debug("The project folder %s has been created." % project_path)
+                else:
+                    shutil.rmtree(project_path)
+            os.mkdir(project_path)
+            Log.debug("The project folder %s has been created." % project_path)
 
             Log.info("Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
             (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
@@ -851,7 +852,7 @@ class Autosubmit:
                     return True
             else:
                 Log.debug("The project folder %s has been created." % project_path)
-                shutil.rmtree(project_path)
+            shutil.rmtree(project_path)
             Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
                                                            project_path))
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
@@ -871,9 +872,10 @@ class Autosubmit:
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
-            else:
-                os.mkdir(project_path)
-                Log.debug("The project folder %s has been created." % project_path)
+                else:
+                    shutil.rmtree(project_path)
+            os.mkdir(project_path)
+            Log.debug("The project folder %s has been created." % project_path)
 
             Log.info("Copying %s into %s" % (local_project_path, project_path))
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)

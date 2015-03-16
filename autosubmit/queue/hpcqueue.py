@@ -20,6 +20,7 @@
 
 from commands import getstatusoutput
 import os
+from pxssh import pxssh
 from time import sleep
 from sys import exit
 

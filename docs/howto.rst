@@ -57,10 +57,6 @@ Finally, the ``docs`` folder has the documentation files a README and this user'
 
 How to use it
 =============
-::
-
-	cd <autosubmit_folder>/src
-
 * First Step:
 
 This command creates the directory structure needed to run an experiment, an assigns de experiment id.
