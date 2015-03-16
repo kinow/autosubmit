@@ -22,7 +22,6 @@ from commands import getstatusoutput
 import json
 import time
 import cPickle
-import signal
 import os
 import sys
 import shutil
@@ -356,9 +355,9 @@ class Autosubmit:
         Log.debug("Retrials: %s" % retrials)
         Log.info("Starting job submission...")
 
-        for queue in queues:
-            signal.signal(signal.SIGQUIT, queues[queue].smart_stop)
-            signal.signal(signal.SIGINT, queues[queue].normal_stop)
+        # for queue in queues:
+        #     signal.signal(signal.SIGQUIT, queues[queue].smart_stop)
+        #     signal.signal(signal.SIGINT, queues[queue].normal_stop)
 
         if rerun == 'false':
             filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
@@ -814,9 +813,9 @@ class Autosubmit:
             (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
                                                " " + git_project_origin)
             if status:
-                os.rmdir(project_path)
                 Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
                                                         project_path))
+                shutil.rmtree(project_path)
                 return False
 
             Log.debug("%s" % output)
@@ -824,9 +823,9 @@ class Autosubmit:
             (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule update --remote --init")
             if status:
-                os.rmdir(project_path)
                 Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
                                                         project_path))
+                shutil.rmtree(project_path)
                 return False
             Log.debug("%s" % output)
 
@@ -835,9 +834,9 @@ class Autosubmit:
                                                "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
                                                "git checkout $branch'")
             if status:
-                os.rmdir(project_path)
                 Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
                                                         project_path))
+                shutil.rmtree(project_path)
                 return False
             Log.debug("%s" % output)
 
@@ -851,16 +850,16 @@ class Autosubmit:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
             else:
-                os.mkdir(project_path)
                 Log.debug("The project folder %s has been created." % project_path)
+                shutil.rmtree(project_path)
             Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
                                                            project_path))
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
                                                " " + svn_project_url)
             if status:
-                os.rmdir(project_path)
                 Log.error("Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
                                                                      project_path))
+                shutil.rmtree(project_path)
                 return False
             Log.debug("%s" % output)
 
@@ -879,8 +878,8 @@ class Autosubmit:
             Log.info("Copying %s into %s" % (local_project_path, project_path))
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
             if status:
-                os.rmdir(project_path)
                 Log.error("Can not copy %s into %s. Exiting..." % (local_project_path, project_path))
+                shutil.rmtree(project_path)
                 return False
             Log.debug("%s" % output)
         return True

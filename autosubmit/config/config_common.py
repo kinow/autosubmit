@@ -32,6 +32,7 @@ from autosubmit.queue.lsfqueue import LsfQueue
 from autosubmit.queue.pbsqueue import PBSQueue
 from autosubmit.queue.sgequeue import SgeQueue
 from autosubmit.queue.ecqueue import EcQueue
+from autosubmit.queue.slurmqueue import SlurmQueue
 
 
 class AutosubmitConfig:
@@ -99,7 +100,7 @@ class AutosubmitConfig:
 
         for section in self._queues_parser.sections():
             result = result and AutosubmitConfig.check_is_choice(self._queues_parser, section, 'TYPE', True,
-                                                                 ['ps', 'pbs', 'sge', 'lsf', 'ecaccess'])
+                                                                 ['ps', 'pbs', 'sge', 'lsf', 'ecaccess', 'slurm'])
             queue_type = AutosubmitConfig.get_option(self._queues_parser, section, 'TYPE', '').lower()
             if queue_type != 'ps':
                 result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'PROJECT')
@@ -444,6 +445,8 @@ class AutosubmitConfig:
                 queue = LsfQueue(self.expid)
             elif queue_type == 'ecaccess':
                 queue = EcQueue(self.expid, queue_version)
+            elif queue_type == 'slurm':
+                queue = SlurmQueue(self.expid)
             elif queue_type == '':
                 Log.error("Queue type not specified".format(queue_type))
                 exit(1)

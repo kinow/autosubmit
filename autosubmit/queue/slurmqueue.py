@@ -16,35 +16,37 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import os
 import textwrap
+
 from xml.dom.minidom import parseString
-import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.config.basicConfig import BasicConfig
 
 
-class PsQueue(HPCQueue):
+class SlurmQueue(HPCQueue):
     def __init__(self, expid):
         HPCQueue.__init__(self)
-        self._host = platform.node()
+        self._host = ""
         self.scratch = ""
         self.project = ""
         self.user = ""
-        self._header = PsHeader()
+        self._header = SlurmHeader()
         self.expid = expid
         self.job_status = dict()
-        self.job_status['COMPLETED'] = ['1']
-        self.job_status['RUNNING'] = ['0']
-        self.job_status['QUEUING'] = ['qw', 'hqw', 'hRwq']
-        self.job_status['FAILED'] = ['Eqw', 'Ehqw', 'EhRqw']
+
+        self.job_status['COMPLETED'] = ['COMPLETED']
+        self.job_status['RUNNING'] = ['RUNNING']
+        self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
+        self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT']
+        self._pathdir = "\$HOME/LOG_" + self.expid
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
-        self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
+        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
+                               self.expid)
+        self.cancel_cmd = "ssh " + self._host + " scancel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
+        self._submit_cmd = 'ssh {0} sbatch -D {1} {1}/'.format(self._host, self.remote_log_dir)
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
@@ -52,17 +54,17 @@ class PsQueue(HPCQueue):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
-    def get_remote_log_dir(self):
-        return self.remote_log_dir
-
     def get_mkdir_cmd(self):
         return self.mkdir_cmd
 
+    def get_remote_log_dir(self):
+        return self.remote_log_dir
+
     def parse_job_output(self, output):
-        return output
+        return output.split('\n')[0].strip()
 
     def get_submitted_job_id(self, output):
-        return output
+        return output.split(' ')[3]
 
     def jobs_in_queue(self):
         dom = parseString('')
@@ -70,37 +72,30 @@ class PsQueue(HPCQueue):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script):
-        return "ssh " + self._host + " " + self.get_shcall(job_script)
+        return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_pscall(job_id)
+        return 'ssh {0} sacct -n -j {1} -o "State"'.format(self._host, job_id)
 
 
-class PsHeader:
-    """Class to handle the Ps headers of a job"""
+class SlurmHeader:
+    """Class to handle the SLURM headers of a job"""
 
-    SERIAL = textwrap.dedent("""
-            #!/bin/bash
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)
+    SERIAL = textwrap.dedent("""#!/bin/bash
+###############################################################################
+#                   %TASKTYPE% %EXPID% EXPERIMENT
+###############################################################################
+#
+#SBATCH -n %NUMPROC%
+#SBATCH -t %WALLCLOCK%:00
+#SBATCH -J %JOBNAME%
+#SBATCH -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
+#SBATCH -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
+#
+###############################################################################
+           """)
 
     PARALLEL = textwrap.dedent("""
-            #!/bin/bash
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
+
             """)
 
-# def main():
-# q = PsQueue()
-#     q.check_job(1688)
-#     j = q.submit_job("/cfu/autosubmit/l002/templates/l002.sim")
-#     sleep(10)
-#     print q.check_job(j)
-#     q.cancel_job(j)
-#
-#
-# if __name__ == "__main__":
-#     main()

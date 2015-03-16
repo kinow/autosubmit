@@ -77,9 +77,8 @@ class EcQueue(HPCQueue):
     def get_submitted_job_id(self, output):
         return output
 
-    def jobs_in_queue(self, output):
-        Log.debug(output)
-        return output.split()
+    def jobs_in_queue(self):
+        return ''.split()
 
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)

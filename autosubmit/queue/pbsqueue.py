@@ -80,9 +80,8 @@ class PBSQueue(HPCQueue):
     def get_submitted_job_id(self, output):
         return output.split('.')[0]
 
-    def jobs_in_queue(self, output):
-        Log.debug(output)
-        return output.split()
+    def jobs_in_queue(self):
+        return ''.split()
 
     def get_submit_cmd(self, job_script):
         return self._submit_cmd + job_script

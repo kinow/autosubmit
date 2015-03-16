@@ -169,22 +169,15 @@ class HPCQueue:
         else:
             return None
 
-    def normal_stop(self):
-        sleep(SLEEPING_TIME)
-        (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
-        for job_id in self.jobs_in_queue(output):
+    # noinspection PyUnusedLocal
+    def normal_stop(self, arg1, arg2):
+        for job_id in self.jobs_in_queue():
             self.cancel_job(job_id)
-
         exit(0)
 
     def smart_stop(self):
-        sleep(SLEEPING_TIME)
-        (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
-        Log.debug(self.jobs_in_queue(output))
-        while self.jobs_in_queue(output):
-            Log.debug(self.jobs_in_queue(output))
+        while self.jobs_in_queue():
             sleep(SLEEPING_TIME)
-            (status, output) = getstatusoutput(self.get_checkjob_cmd(' '))
         exit(0)
 
     def set_host(self, new_host):
@@ -211,7 +204,7 @@ class HPCQueue:
     def parse_job_output(self, output):
         raise NotImplementedError
 
-    def jobs_in_queue(self, output):
+    def jobs_in_queue(self):
         raise NotImplementedError
 
     def get_submitted_job_id(self, output):

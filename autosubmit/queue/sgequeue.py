@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+from commands import getstatusoutput
 import textwrap
 
 from xml.dom.minidom import parseString
@@ -66,7 +67,8 @@ class SgeQueue(HPCQueue):
     def get_submitted_job_id(self, output):
         return output.split(' ')[2]
 
-    def jobs_in_queue(self, output):
+    def jobs_in_queue(self):
+        (status, output) = getstatusoutput('ssh {0} qstat -xml'.format(self._host))
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]

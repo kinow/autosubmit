@@ -76,7 +76,7 @@ class StatisticsSnippet:
             done
             echo "
             $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
-            exit
+            exit 0
             """)
 
     AS_HEADER_REM = textwrap.dedent("""
@@ -111,6 +111,7 @@ class StatisticsSnippet:
              lsf)       errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              ecaccess)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              pbs)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
+             slurm)     errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              *) echo "!!! %HPCTYPE% is not valid scheduler !!!"; exit 1 ;;
             esac
             failed_jobs=0; failed_errfiles=""
@@ -135,6 +136,6 @@ class StatisticsSnippet:
              failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
-            exit
+            exit 0
             """)
 

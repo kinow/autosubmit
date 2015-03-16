@@ -64,8 +64,8 @@ class LsfQueue(HPCQueue):
     def get_submitted_job_id(self, output):
         return output.split('<')[1].split('>')[0]
 
-    def jobs_in_queue(self, output):
-        return zip(*[line.split() for line in output.split('\n')])[0][1:]
+    def jobs_in_queue(self):
+        return zip(*[line.split() for line in ''.split('\n')])[0][1:]
 
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
