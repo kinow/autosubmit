@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+from commands import getstatusoutput
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
@@ -53,8 +54,8 @@ class EcQueue(HPCQueue):
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
-        self._submit_cmd = ("ecaccess-job-submit -queueName " + self._host + " " + BasicConfig.LOCAL_ROOT_DIR + "/" +
-                            self.expid + "/tmp/")
+        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self._host + " " + self._host + ":" +
+                            self.remote_log_dir + "/")
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
         self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self.scratch + "/" + self.project + "/" +
@@ -85,6 +86,36 @@ class EcQueue(HPCQueue):
 
     def get_submit_cmd(self, job_script):
         return self._submit_cmd + job_script
+
+    def connect(self):
+        return True
+
+    def send_command(self, command):
+        (status, output) = getstatusoutput(command)
+        if status != 0:
+            Log.error('Could not execute command {0} on {1}'.format(command, self._host))
+            return False
+        self._ssh_output = output
+        return True
+
+    def send_file(self, local_path, remote_path):
+        command = '{0} {1} {3}:{2}'.format(self.put_cmd, local_path, remote_path, self._host)
+        (status, output) = getstatusoutput(command)
+        if status != 0:
+            Log.error('Could not send file {0} to {1}'.format(local_path, remote_path))
+            return False
+        return True
+
+    def get_file(self, remote_path, local_path):
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, remote_path, self._host)
+        (status, output) = getstatusoutput(command)
+        if status != 0:
+            Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+            return False
+        return True
+
+    def get_ssh_output(self):
+        return self._ssh_output
 
 
 class EcHeader:
@@ -144,8 +175,10 @@ class EcCcaHeader:
              #
              #PBS -N %JOBNAME%
              #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK_SETUP%:00
+             #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%HPCPROJ%
+             #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.err
+             #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.out
              #
              ###############################################################################
 
@@ -159,11 +192,13 @@ class EcCcaHeader:
              #
              #PBS -N %JOBNAME%
              #PBS -q np
-             #PBS -l EC_total_tasks=%NUMPROC_SIM%
-             #PBS -l EC_threads_per_task=%NUMTHREAD_SIM%
-             #PBS -l EC_tasks_per_node=%NUMTASK_SIM%
-             #PBS -l walltime=%WALLCLOCK_SIM%:00
+             #PBS -l EC_total_tasks=%NUMPROC%
+             #PBS -l EC_threads_per_task=%NUMTHREADS%
+             #PBS -l EC_tasks_per_node=%NUMTASK%
+             #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%HPCPROJ%
+             #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.err
+             #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.out
              #
              ###############################################################################
             """)
