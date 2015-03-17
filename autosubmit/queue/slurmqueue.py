@@ -44,12 +44,12 @@ class SlurmQueue(HPCQueue):
     def update_cmds(self):
         self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
-        self.cancel_cmd = "ssh " + self._host + " scancel"
-        self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self._submit_cmd = 'ssh {0} sbatch -D {1} {1}/'.format(self._host, self.remote_log_dir)
+        self.cancel_cmd = "scancel"
+        self._checkhost_cmd = "echo 1"
+        self._submit_cmd = 'sbatch -D {1} {1}/'.format(self._host, self.remote_log_dir)
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
+        self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -61,7 +61,7 @@ class SlurmQueue(HPCQueue):
         return self.remote_log_dir
 
     def parse_job_output(self, output):
-        return output.split('\n')[0].strip()
+        return output.strip().split(' ')[0].strip()
 
     def get_submitted_job_id(self, output):
         return output.split(' ')[3]
@@ -75,7 +75,7 @@ class SlurmQueue(HPCQueue):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
-        return 'ssh {0} sacct -n -j {1} -o "State"'.format(self._host, job_id)
+        return 'sacct -n -j {1} -o "State"'.format(self._host, job_id)
 
 
 class SlurmHeader:

@@ -63,6 +63,11 @@ class Job:
         self._tmp_path = BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + "/" + BasicConfig.LOCAL_TMP_DIR + "/"
         self._ancestors = None
 
+    def __getstate__(self):
+        odict = self.__dict__.copy()    # copy the dict since we change it
+        del odict['_queue']              # remove filehandle entry
+        return odict
+
     def delete(self):
         del self.name
         del self._long_name

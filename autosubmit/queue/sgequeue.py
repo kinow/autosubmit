@@ -45,12 +45,12 @@ class SgeQueue(HPCQueue):
     def update_cmds(self):
         self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
-        self.cancel_cmd = "ssh " + self._host + " qdel"
-        self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self._submit_cmd = "ssh " + self._host + " qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
+        self.cancel_cmd = "qdel"
+        self._checkhost_cmd = "echo 1"
+        self._submit_cmd = "qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
+        self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -68,7 +68,7 @@ class SgeQueue(HPCQueue):
         return output.split(' ')[2]
 
     def jobs_in_queue(self):
-        (status, output) = getstatusoutput('ssh {0} qstat -xml'.format(self._host))
+        (status, output) = getstatusoutput('qstat -xml'.format(self._host))
         dom = parseString(output)
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
@@ -77,7 +77,7 @@ class SgeQueue(HPCQueue):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_qstatjob(job_id)
+        return self.get_qstatjob(job_id)
 
 
 class SgeHeader:

@@ -397,6 +397,7 @@ class Autosubmit:
 
         # check the availability of the Queues
         for queue in queues_to_test:
+            queue.connect()
             queue.check_remote_log_dir()
 
         #########################

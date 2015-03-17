@@ -43,11 +43,11 @@ class PsQueue(HPCQueue):
 
     def update_cmds(self):
         self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
-        self.cancel_cmd = "ssh " + self._host + " kill -SIGINT"
-        self._checkhost_cmd = "ssh " + self._host + " echo 1"
+        self.cancel_cmd = "kill -SIGINT"
+        self._checkhost_cmd = "echo 1"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
+        self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -70,10 +70,10 @@ class PsQueue(HPCQueue):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script):
-        return "ssh " + self._host + " " + self.get_shcall(job_script)
+        return self.get_shcall(job_script)
 
     def get_checkjob_cmd(self, job_id):
-        return "ssh " + self._host + " " + self.get_pscall(job_id)
+        return self.get_pscall(job_id)
 
 
 class PsHeader:

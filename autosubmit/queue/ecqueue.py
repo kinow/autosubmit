@@ -16,7 +16,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from pxssh import pxssh
 import textwrap
 
 from autosubmit.queue.hpcqueue import HPCQueue

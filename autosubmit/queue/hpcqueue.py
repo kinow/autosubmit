@@ -18,9 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from commands import getstatusoutput
 import os
-from pxssh import pxssh
+import paramiko
 from time import sleep
 from sys import exit
 
@@ -49,6 +48,67 @@ class HPCQueue:
     def header(self):
         return self._header
 
+    def connect(self):
+        try:
+            self._ssh = paramiko.SSHClient()
+            self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            self._ssh.connect(self._host)
+            return True
+        except BaseException as e:
+            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            return False
+
+    def send_command(self, command):
+        if self._ssh is None:
+            if not self.connect():
+                return None
+        try:
+            stdin, stdout, stderr = self._ssh.exec_command(command)
+            stderr_readlines = stderr.readlines()
+            if len(stderr_readlines) > 0:
+                return False
+            self._ssh_output = stdout.readlines()
+            return True
+        except BaseException as e:
+            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            return False
+
+    def send_file(self, local_path, root_path):
+        if self._ssh is None:
+            if not self.connect():
+                return None
+
+        try:
+            ftp = self._ssh.open_sftp()
+            ftp.put(local_path, root_path)
+            ftp.close()
+            return True
+        except BaseException as e:
+            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            return False
+
+    def get_file(self, remote_path, local_path):
+        if self._ssh is None:
+            if not self.connect():
+                return None
+
+        try:
+            ftp = self._ssh.open_sftp()
+            ftp.get(remote_path, local_path)
+            ftp.close()
+            return True
+        except BaseException as e:
+            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            return False
+
+    def get_ssh_output(self):
+        return ''.join(self._ssh_output).replace('\n', '')
+
+    def close_connection(self):
+        if self._ssh is None:
+            return
+        self._ssh.close()
+
     def get_serial_queue(self):
         if self._serial_queue is None:
             return self
@@ -60,8 +120,7 @@ class HPCQueue:
 
     def cancel_job(self, job_id):
         Log.debug(self.cancel_cmd + ' ' + str(job_id))
-        # noinspection PyUnusedLocal
-        (status, output) = getstatusoutput(self.cancel_cmd + ' ' + str(job_id))
+        self.send_command(self.cancel_cmd + ' ' + str(job_id))
 
     def check_job(self, job_id):
         job_status = Status.UNKNOWN
@@ -73,24 +132,13 @@ class HPCQueue:
             return job_status
 
         retry = 10
-        (status, output) = getstatusoutput(self.get_checkjob_cmd(job_id))
-        Log.debug(status)
-        Log.debug(output)
-        # retry infinitelly except if it was in the RUNNING state, because it can happen that we don't get a
-        # COMPLETE status from autosubmit.queue due to the 5 min lifetime
-        while status != 0 and retry > 0:
-            # if(current_state == Status.RUNNING):
+        while not self.send_command(self.get_checkjob_cmd(job_id)) and retry > 0:
             retry -= 1
             Log.info('Can not get job status, retrying in 10 sec')
-            (status, output) = getstatusoutput(self.get_checkjob_cmd(job_id))
-            Log.debug(status)
-            Log.debug(output)
-            # URi: logger
             sleep(10)
 
-        if status == 0:
-            # URi: this command is specific of mn
-            job_status = self.parse_job_output(output)
+        if retry > 0:
+            job_status = self.parse_job_output(self.get_ssh_output())
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retry == 0:
                 job_status = Status.COMPLETED
@@ -108,30 +156,24 @@ class HPCQueue:
         return job_status
 
     def check_host(self):
-        (status, output) = getstatusoutput(self.get_checkhost_cmd())
-        if status == 0:
-            Log.debug('The host ' + self._host + ' is up')
-            return True
-        else:
-            Log.debug('The host ' + self._host + ' is down')
-            return False
+        checkhost_cmd = self.get_checkhost_cmd()
+        if not self.send_command(checkhost_cmd):
+            self.connect()
+            if not self.send_command(checkhost_cmd):
+                Log.debug('The host ' + self._host + ' is down')
+                return False
+        Log.debug('The host ' + self._host + ' is up')
+        return True
 
     def check_remote_log_dir(self):
-        (status, output) = getstatusoutput(self.get_mkdir_cmd())
-        Log.debug(self.mkdir_cmd)
-        Log.debug(output)
-        if status == 0:
+        if self.send_command(self.get_mkdir_cmd()):
             Log.debug('%s has been created on %s .' % (self.remote_log_dir, self._host))
         else:
             Log.error('Could not create the DIR on HPC')
 
     def send_script(self, job_script):
-        (status, output) = getstatusoutput(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid +
-                                           '/tmp/' + str(job_script) + ' ' + self._host + ':' + self.remote_log_dir +
-                                           "/" + str(job_script))
-        Log.debug(self.put_cmd + ' ' + BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + '/tmp/' + str(
-            job_script) + ' ' + self._host + ':' + self.remote_log_dir + "/" + str(job_script))
-        if status == 0:
+        if self.send_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'tmp', str(job_script)),
+                          os.path.join(self.remote_log_dir, str(job_script))):
             Log.debug('The script {0} has been sent'.format(job_script))
         else:
             Log.error('The script {0} has not been sent'.format(job_script))
@@ -143,28 +185,21 @@ class HPCQueue:
         if os.path.exists(completed_local_path):
             os.remove(completed_local_path)
         completed_remote_path = os.path.join(self.remote_log_dir, filename)
-        (status, output) = getstatusoutput(self.get_cmd + ' ' + self._host + ':' + completed_remote_path +
-                                           ' ' + completed_local_path)
-        Log.debug(self.get_cmd + ' ' + self._host + ':' + self.remote_log_dir + '/' + filename + ' ' +
-                  completed_local_path)
-        if status == 0:
+        if self.get_file(completed_remote_path, completed_local_path):
             Log.debug('The COMPLETED files have been transfered')
             return True
 
         # wait five seconds to check get file
         sleep(5)
-        (status, output) = getstatusoutput(self.get_cmd + ' ' + self._host + ':' + completed_remote_path +
-                                           ' ' + completed_local_path)
-        if status == 0:
+        if self.get_file(completed_remote_path, completed_local_path):
             Log.debug('The COMPLETED files have been transfered')
             return True
         Log.debug('Something did not work well when transferring the COMPLETED files')
         return False
 
     def submit_job(self, job_script):
-        (status, output) = getstatusoutput(self.get_submit_cmd(job_script))
-        if status == 0:
-            job_id = self.get_submitted_job_id(output)
+        if self.send_command(self.get_submit_cmd(job_script)):
+            job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug(job_id)
             return int(job_id)
         else:
@@ -224,14 +259,14 @@ class HPCQueue:
         raise NotImplementedError
 
     def get_shcall(self, job_script):
-        return '"nohup /bin/sh {0} > {0}.stdout 2> {0}.stderr & echo \$!"'.format(os.path.join(self.remote_log_dir,
-                                                                                               job_script))
+        return 'nohup /bin/sh {0} > {0}.stdout 2> {0}.stderr & echo $!'.format(os.path.join(self.remote_log_dir,
+                                                                                            job_script))
 
     @staticmethod
     def get_pscall(job_id):
-        return '"kill -0 {0} > {0}.stat.stdout 2> {0}.stat.stderr; echo \$?"'.format(job_id)
+        return 'kill -0 {0} > {0}.stat.stdout 2> {0}.stat.stderr; echo $?'.format(job_id)
 
     @staticmethod
     def get_qstatjob(job_id):
-        return '''"if [[ \$(qstat | grep {0}) != '' ]];
-        then echo \$(qstat | grep {0} | awk '{{print \$5}}' | head -n 1); else echo 'c'; fi"'''.format(job_id)
+        return '''if [[ $(qstat | grep {0}) != '' ]];
+        then echo $(qstat | grep {0} | awk '{{print $5}}' | head -n 1); else echo 'c'; fi'''.format(job_id)
