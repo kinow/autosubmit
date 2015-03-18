@@ -30,6 +30,8 @@ class BasicConfig:
     LOCAL_ROOT_DIR = '~/autosubmit'
     LOCAL_TMP_DIR = 'tmp'
     LOCAL_PROJ_DIR = 'proj'
+    DEFAULT_QUEUES_CONF = ''
+    DEFAULT_JOBS_CONF = ''
 
     @staticmethod
     def update_config():
@@ -49,6 +51,10 @@ class BasicConfig:
             BasicConfig.DB_DIR = parser.get('database', 'path')
         if parser.has_option('local', 'path'):
             BasicConfig.LOCAL_ROOT_DIR = parser.get('local', 'path')
+        if parser.has_option('conf', 'queues'):
+            BasicConfig.DEFAULT_QUEUES_CONF = parser.get('conf', 'queues')
+        if parser.has_option('conf', 'jobs'):
+            BasicConfig.DEFAULT_JOBS_CONF = parser.get('conf', 'jobs')
 
     @staticmethod
     def read():
