@@ -53,6 +53,10 @@ class AutosubmitConfig:
     def experiment_file(self):
         return self._exp_parser_file
 
+    @property
+    def queues_file(self):
+        return self._queues_parser_file
+
     def get_project_dir(self):
         dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
         # Getting project name for each type of project
@@ -206,16 +210,14 @@ class AutosubmitConfig:
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
 
     def load_parameters(self):
-        expdef = []
-        for section in self._exp_parser.sections():
-            expdef += self._exp_parser.items(section)
-
-        for section in self._conf_parser.sections():
-            expdef += self._conf_parser.items(section)
 
         parameters = dict()
-        for item in expdef:
-            parameters[item[0]] = item[1]
+        for section in self._exp_parser.sections():
+            for option in self._exp_parser.options(section):
+                parameters[option] = self._exp_parser.get(section, option)
+        for section in self._conf_parser.sections():
+            for option in self._conf_parser.options(section):
+                parameters[option] = self._conf_parser.get(section, option)
 
         project_type = self.get_project_type()
         if project_type != "none" and self._proj_parser is not None:
@@ -284,6 +286,11 @@ class AutosubmitConfig:
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
         file(self._exp_parser_file, 'w').write(content)
+
+        content = file(self._conf_parser_file).read()
+        if re.search('EXPID =.*', content):
+            content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
+        file(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()

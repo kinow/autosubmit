@@ -18,7 +18,9 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import logging
+import os
 import sys
+from datetime import datetime
 
 
 class LogFormatter:
@@ -106,6 +108,13 @@ class Log:
         new file.
         :param file_path: file to store the log
         """
+        (directory, filename) = os.path.split(file_path)
+        files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and
+                 f.endswith(filename)]
+        if len(files) >= 5:
+            files.sort()
+            os.remove(os.path.join(directory, files[0]))
+        file_path = os.path.join(directory, '{0:%Y%m%d_%H%M%S}_'.format(datetime.now()) + filename)
         if Log.file_handler is not None:
             Log.log.removeHandler(Log.file_handler)
         Log.file_handler = logging.FileHandler(file_path, 'w')

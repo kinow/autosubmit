@@ -236,7 +236,7 @@ class Autosubmit:
     def expid(hpc, description, copy, dummy):
         BasicConfig.read()
 
-        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid{0}.log'.format(os.getuid()))
+        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid.log'.format(os.getuid()))
         try:
             Log.set_file(log_path)
         except IOError as e:
@@ -325,7 +325,7 @@ class Autosubmit:
             Log.critical("Missing expid.")
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'autosubmit.log'))
+                                  'run.log'))
         os.system('clear')
 
         as_conf = AutosubmitConfig(expid)
@@ -1125,7 +1125,15 @@ class Autosubmit:
 
         content = file(as_conf.experiment_file).read()
         if hpc is None:
-            pass
+            queues_parser = as_conf.get_parser(as_conf.queues_file)
+            test_queues = list()
+            for section in queues_parser.sections():
+                if AutosubmitConfig.get_option(queues_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
+                    test_queues.append(section)
+            if len(test_queues) == 0:
+                Log.critical('No test HPC defined')
+                return False
+            hpc = random.choice(test_queues)
         if member is None:
             member = random.choice(exp_parser.get('experiment', 'MEMBERS').split(' '))
         if stardate is None:
@@ -1138,7 +1146,9 @@ class Autosubmit:
         content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
                                   "NUMCHUNKS = " + chunks)
         content = content.replace(re.search('HPCARCH =.*', content).group(0),
-                                  "HPCARCH = ithaca")
+                                  "HPCARCH = " + hpc)
+        content = content.replace(re.search('EXPID =.*', content).group(0),
+                                  "EXPID = " + testid)
         if branch is not None:
             content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
                                       "PROJECT_BRANCH = " + branch)
