@@ -25,10 +25,10 @@ from time import localtime, strftime
 from sys import setrecursionlimit
 from shutil import move
 
-from job_common import Status
-from job import Job
-from config.basicConfig import BasicConfig
-from config.log import Log
+from autosubmit.job.job_common import Status
+from autosubmit.job.job import Job
+from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.config.log import Log
 
 
 class JobList:

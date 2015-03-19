@@ -21,8 +21,8 @@ import sys
 import sqlite3
 import string
 
-from config.log import Log
-from config.basicConfig import BasicConfig
+from autosubmit.config.log import Log
+from autosubmit.config.basicConfig import BasicConfig
 
 
 def create_db(qry):

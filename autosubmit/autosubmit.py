@@ -56,8 +56,8 @@ class Autosubmit:
     Interface class for autosubmit.
     """
     # Get the version number from the relevant file. If not, from autosubmit package
-    # scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    version_path = os.path.join('..', 'VERSION')
+    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+    version_path = os.path.join(scriptdir, '..', 'VERSION')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()

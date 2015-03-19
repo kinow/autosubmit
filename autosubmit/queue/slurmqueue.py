@@ -20,7 +20,7 @@ import textwrap
 
 from xml.dom.minidom import parseString
 
-from queue.hpcqueue import HPCQueue
+from autosubmit.queue.hpcqueue import HPCQueue
 
 
 class SlurmQueue(HPCQueue):

@@ -19,7 +19,7 @@
 from ConfigParser import SafeConfigParser
 import os
 
-from config.log import Log
+from autosubmit.config.log import Log
 
 
 class BasicConfig:

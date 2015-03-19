@@ -24,15 +24,15 @@ import re
 from os import listdir
 from commands import getstatusoutput
 
-from config.log import Log
-from config.basicConfig import BasicConfig
+from autosubmit.config.log import Log
+from autosubmit.config.basicConfig import BasicConfig
 
-from queue.psqueue import PsQueue
-from queue.lsfqueue import LsfQueue
-from queue.pbsqueue import PBSQueue
-from queue.sgequeue import SgeQueue
-from queue.ecqueue import EcQueue
-from queue.slurmqueue import SlurmQueue
+from autosubmit.queue.psqueue import PsQueue
+from autosubmit.queue.lsfqueue import LsfQueue
+from autosubmit.queue.pbsqueue import PBSQueue
+from autosubmit.queue.sgequeue import SgeQueue
+from autosubmit.queue.ecqueue import EcQueue
+from autosubmit.queue.slurmqueue import SlurmQueue
 
 
 class AutosubmitConfig:

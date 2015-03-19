@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 
-from queue.hpcqueue import HPCQueue
+from autosubmit.queue.hpcqueue import HPCQueue
 
 
 class LsfQueue(HPCQueue):

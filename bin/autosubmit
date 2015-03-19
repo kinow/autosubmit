@@ -21,10 +21,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../autosubmit'))
+scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+assert sys.path[0] == scriptdir
+sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 
 # noinspection PyUnresolvedReferences
-from autosubmit import Autosubmit
+from autosubmit.autosubmit import Autosubmit
 
 
 def main():

@@ -21,10 +21,10 @@
 import os
 import re
 
-from job_common import Status
-from job_common import StatisticsSnippet
-from config.basicConfig import BasicConfig
-from date.chunk_date_lib import *
+from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import StatisticsSnippet
+from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.date.chunk_date_lib import *
 
 
 class Job:

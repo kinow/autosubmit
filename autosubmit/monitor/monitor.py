@@ -32,9 +32,9 @@ import numpy as np
 # noinspection PyPackageRequirements
 import matplotlib.pyplot as plt
 
-from job.job_common import Status
-from config.basicConfig import BasicConfig
-from config.log import Log
+from autosubmit.job.job_common import Status
+from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.config.log import Log
 
 
 class Monitor:
