@@ -141,8 +141,16 @@ class StatisticsSnippet:
             failed_jobs_qt=0; failed_jobs_rt=0
             for failed_errfile in $failed_errfiles; do
              failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-             failed_jobs_qt=$((failed_jobs_qt + $(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))
-             failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
+             job_qt=$(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             if [[ -z $job_qt ]]; then
+               job_qt=0
+             fi
+             failed_jobs_qt=$((failed_jobs_qt + job_qt))
+             job_st=$(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             if [[ -z $job_qt ]]; then
+               job_st=0
+             fi
+             failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - job_st))))
             done
 
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED

@@ -264,7 +264,7 @@ class HPCQueue:
 
     @staticmethod
     def get_pscall(job_id):
-        return 'kill -0 {0} > {0}.stat.stdout 2> {0}.stat.stderr; echo $?'.format(job_id)
+        return 'kill -0 {0} &> /dev/null; echo $?'.format(job_id)
 
     @staticmethod
     def get_qstatjob(job_id):
