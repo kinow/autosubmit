@@ -90,6 +90,15 @@ class StatisticsSnippet:
             job_start_time=$(date +%s)
             job_queue_time=$((job_start_time - job_cmd_stamp))
 
+            if [[ %HPCTYPE% == ecaccess && %HPCVERSION% == pbs ]]; then
+              filein="$(ls -rt %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
+              jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
+              fileout="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
+              ln -s ${fileout} ${job_name_ptrn}_${jobid}.out
+              fileerr="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
+              ln -s ${fileerr} ${job_name_ptrn}_${jobid}.err
+            fi
+
             rm -f ${job_name_ptrn}_COMPLETED
 
             ###################
@@ -135,6 +144,7 @@ class StatisticsSnippet:
              failed_jobs_qt=$((failed_jobs_qt + $(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))
              failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
+
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             exit 0
             """)

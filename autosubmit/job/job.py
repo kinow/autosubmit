@@ -311,6 +311,7 @@ class Job:
         parameters['HPCUSER'] = queue.user
         parameters['HPCPROJ'] = queue.project
         parameters['HPCTYPE'] = queue.type
+        parameters['HPCVERSION'] = queue.version
         parameters['SCRATCH_DIR'] = queue.scratch
 
         self.parameters = parameters

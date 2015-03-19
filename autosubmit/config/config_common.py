@@ -431,6 +431,7 @@ class AutosubmitConfig:
         local_queue = PsQueue(self.expid)
         local_queue.name = 'local'
         local_queue.type = 'ps'
+        local_queue.version = ''
         local_queue.set_host(platform.node())
         local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
         local_queue.set_project(self.expid)
@@ -440,7 +441,7 @@ class AutosubmitConfig:
         queues['local'] = local_queue
         for section in parser.sections():
             queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
-            queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', None)
+            queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
             queue = None
             if queue_type == 'pbs':
                 queue = PBSQueue(self.expid, queue_version)
@@ -462,6 +463,7 @@ class AutosubmitConfig:
                 exit(1)
 
             queue.type = queue_type
+            queue.version = queue_version
             if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
                 host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
                                         AutosubmitConfig.get_option(parser, section, 'PROJECT', None))

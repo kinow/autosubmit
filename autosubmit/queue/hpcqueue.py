@@ -70,7 +70,7 @@ class HPCQueue:
             self._ssh_output = stdout.readlines()
             return True
         except BaseException as e:
-            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            Log.error('Can not send command {0} to {1}: {2}'.format(command, self._host, e.value))
             return False
 
     def send_file(self, local_path, root_path):
@@ -84,7 +84,7 @@ class HPCQueue:
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            Log.error('Can not send file {0} to {1}: {2}'.format(local_path, root_path, e.value))
             return False
 
     def get_file(self, remote_path, local_path):
@@ -98,7 +98,7 @@ class HPCQueue:
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            Log.error('Can not get file from {0} to {1}: {2}'.format(remote_path, local_path, e.value))
             return False
 
     def get_ssh_output(self):
