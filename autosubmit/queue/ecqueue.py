@@ -177,8 +177,6 @@ class EcCcaHeader:
              #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%HPCPROJ%
-             #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.err
-             #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.out
              #
              ###############################################################################
 
@@ -197,8 +195,6 @@ class EcCcaHeader:
              #PBS -l EC_tasks_per_node=%NUMTASK%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%HPCPROJ%
-             #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.err
-             #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%.out
              #
              ###############################################################################
             """)
