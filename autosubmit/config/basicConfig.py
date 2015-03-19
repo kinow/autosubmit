@@ -19,11 +19,13 @@
 from ConfigParser import SafeConfigParser
 import os
 
-from autosubmit.config.log import Log
+from config.log import Log
 
 
 class BasicConfig:
-
+    """
+    Class to manage configuration for autosubmit path, database and default values for new experiments
+    """
     DB_DIR = '~/autosubmit'
     DB_FILE = 'autosubmit.db'
     DB_PATH = DB_DIR + "/" + DB_FILE
@@ -34,7 +36,7 @@ class BasicConfig:
     DEFAULT_JOBS_CONF = ''
 
     @staticmethod
-    def update_config():
+    def _update_config():
         # Just one needed for the moment.
         BasicConfig.DB_PATH = os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE)
 
@@ -58,11 +60,14 @@ class BasicConfig:
 
     @staticmethod
     def read():
+        """
+        Reads configuration from .autosubmitrc files
+        """
         filename = '.autosubmitrc'
 
         BasicConfig.__read_file_config(os.path.join('/etc', filename))
         BasicConfig.__read_file_config(os.path.join(os.path.expanduser('~'), filename))
         BasicConfig.__read_file_config(os.path.join('.', filename))
 
-        BasicConfig.update_config()
+        BasicConfig._update_config()
         return

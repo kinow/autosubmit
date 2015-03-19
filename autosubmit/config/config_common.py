@@ -24,15 +24,15 @@ import re
 from os import listdir
 from commands import getstatusoutput
 
-from autosubmit.config.log import Log
-from autosubmit.config.basicConfig import BasicConfig
+from config.log import Log
+from config.basicConfig import BasicConfig
 
-from autosubmit.queue.psqueue import PsQueue
-from autosubmit.queue.lsfqueue import LsfQueue
-from autosubmit.queue.pbsqueue import PBSQueue
-from autosubmit.queue.sgequeue import SgeQueue
-from autosubmit.queue.ecqueue import EcQueue
-from autosubmit.queue.slurmqueue import SlurmQueue
+from queue.psqueue import PsQueue
+from queue.lsfqueue import LsfQueue
+from queue.pbsqueue import PBSQueue
+from queue.sgequeue import SgeQueue
+from queue.ecqueue import EcQueue
+from queue.slurmqueue import SlurmQueue
 
 
 class AutosubmitConfig:
@@ -136,8 +136,17 @@ class AutosubmitConfig:
 
         for section in sections:
             result = result and AutosubmitConfig.check_exists(parser, section, 'FILE')
+            result = result and AutosubmitConfig.check_is_boolean(parser, section, 'RERUN_ONLY', False)
             if parser.has_option(section, 'DEPENDENCIES'):
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
+                    if '-' in dependency:
+                        dependency = dependency.split('-')[0]
+                    if dependency not in sections:
+                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+
+            if parser.has_option(section, 'RERUN_DEPENDENCIES'):
+                for dependency in str(AutosubmitConfig.get_option(parser, section, 'RERUN_DEPENDENCIES',
+                                                                  '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if dependency not in sections:

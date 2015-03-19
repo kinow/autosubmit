@@ -19,9 +19,9 @@
 import textwrap
 from commands import getstatusoutput
 
-from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from queue.hpcqueue import HPCQueue
+from config.basicConfig import BasicConfig
+from config.log import Log
 
 
 class EcQueue(HPCQueue):

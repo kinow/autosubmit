@@ -21,8 +21,8 @@ import textwrap
 from xml.dom.minidom import parseString
 import platform
 
-from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.config.basicConfig import BasicConfig
+from queue.hpcqueue import HPCQueue
+from config.basicConfig import BasicConfig
 
 
 class PsQueue(HPCQueue):

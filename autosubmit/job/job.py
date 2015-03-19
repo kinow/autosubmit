@@ -23,8 +23,8 @@ import re
 
 from job_common import Status
 from job_common import StatisticsSnippet
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.date.chunk_date_lib import *
+from config.basicConfig import BasicConfig
+from date.chunk_date_lib import *
 
 
 class Job:
@@ -64,8 +64,10 @@ class Job:
         self._ancestors = None
 
     def __getstate__(self):
-        odict = self.__dict__.copy()    # copy the dict since we change it
-        del odict['_queue']              # remove filehandle entry
+        odict = self.__dict__
+        if '_queue' in odict:
+            odict = odict.copy()    # copy the dict since we change it
+            del odict['_queue']              # remove filehandle entry
         return odict
 
     def delete(self):
@@ -85,6 +87,9 @@ class Job:
         del self
 
     def print_job(self):
+        """
+        Prints debug informtion about the job
+        """
         Log.debug('NAME: %s' % self.name)
         Log.debug('JOBID: %s' % self.id)
         Log.debug('STATUS: %s' % self.status)
@@ -100,6 +105,9 @@ class Job:
         return self._parents
 
     def get_queue(self):
+        """
+        Returns the queue to be used by the job. Chooses between serial and parallel queue
+        """
         if self.processors > 1:
             return self._queue
         else:
@@ -110,6 +118,9 @@ class Job:
 
     @property
     def ancestors(self):
+        """
+        Returns all job's ancestors
+        """
         if self._ancestors is None:
             self._ancestors = set()
             if self.has_parents():

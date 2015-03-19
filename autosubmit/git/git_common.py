@@ -22,8 +22,8 @@ from os import listdir
 from shutil import rmtree
 from commands import getstatusoutput
 
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from config.basicConfig import BasicConfig
+from config.log import Log
 
 
 class AutosubmitGit:

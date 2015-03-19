@@ -16,6 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+"""
+
 from ConfigParser import SafeConfigParser
 import argparse
 from commands import getstatusoutput
@@ -47,9 +52,12 @@ from monitor.monitor import Monitor
 
 
 class Autosubmit:
+    """
+    Interface class for autosubmit.
+    """
     # Get the version number from the relevant file. If not, from autosubmit package
-    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    version_path = os.path.join(scriptdir, '..', 'VERSION')
+    # scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
+    version_path = os.path.join('..', 'VERSION')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -58,6 +66,10 @@ class Autosubmit:
 
     @staticmethod
     def parse_args():
+        """
+        Parse arguments given to an executable and start execution of command given
+        :return:
+        """
         BasicConfig.read()
 
         parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
@@ -152,7 +164,7 @@ class Autosubmit:
                                                                       'path')
 
         # Install
-        subparsers.add_parser('install', description='install database and scripts needed for autosubmit')
+        subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
         # Change_pkl
         subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
@@ -230,6 +242,10 @@ class Autosubmit:
 
     @staticmethod
     def delete_expid(expid_delete):
+        """
+        Removes an experiment from path and database
+        :param expid_delete: identifier of the experiment to delete
+        """
         Log.info("Removing experiment directory...")
         try:
             shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete)
@@ -263,9 +279,9 @@ class Autosubmit:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
                 Log.info("Copying config files...")
                 # autosubmit config and experiment copyed from AS.
-                files = resource_listdir('autosubmit.config', 'files')
+                files = resource_listdir('config', 'files')
                 for filename in files:
-                    if resource_exists('autosubmit.config', 'files/' + filename):
+                    if resource_exists('config', 'files/' + filename):
                         index = filename.index('.')
                         new_filename = filename[:index] + "_" + exp_id + filename[index:]
 
@@ -274,7 +290,7 @@ class Autosubmit:
                         elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
                             content = file(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
-                            content = resource_string('autosubmit.config', 'files/' + filename)
+                            content = resource_string('config', 'files/' + filename)
 
                         Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
                         file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)

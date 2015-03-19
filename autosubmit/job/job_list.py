@@ -26,9 +26,9 @@ from sys import setrecursionlimit
 from shutil import move
 
 from job_common import Status
-from autosubmit.job.job import Job
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from job import Job
+from config.basicConfig import BasicConfig
+from config.log import Log
 
 
 class JobList:
@@ -429,6 +429,7 @@ class JobList:
             self._remove_job(job)
 
         self.update_genealogy()
+        del self._dic_jobs
 
     def remove_rerun_only_jobs(self):
         flag = False
@@ -439,7 +440,7 @@ class JobList:
 
         if flag:
             self.update_genealogy()
-
+        del self._dic_jobs
 
 class DicJobs:
 
@@ -559,8 +560,8 @@ class DicJobs:
         job.chunk = chunk
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
-        job.wait = bool(self.get_option(section, "WAIT", False))
-        job.rerun_only = bool(self.get_option(section, "RERUN_ONLY", False))
+        job.wait = self.get_option(section, "WAIT", 'false').lower() == 'true'
+        job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
         job.queue_name = self.get_option(section, "QUEUE", None)
         if job.queue_name is not None:
@@ -580,4 +581,3 @@ class DicJobs:
             return self._parser.get(section, option)
         else:
             return default
-

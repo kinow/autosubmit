@@ -22,7 +22,7 @@ import time
 import calendar
 from dateutil.relativedelta import *
 
-from autosubmit.config.log import Log
+from config.log import Log
 
 
 """In this python script there are tools to manipulate the dates and make mathematical operations between them """

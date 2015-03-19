@@ -23,9 +23,9 @@ import paramiko
 from time import sleep
 from sys import exit
 
-from autosubmit.job.job_common import Status
-from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from job.job_common import Status
+from config.basicConfig import BasicConfig
+from config.log import Log
 
 
 SLEEPING_TIME = 30
