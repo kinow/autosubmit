@@ -44,6 +44,7 @@ class StatisticsSnippet:
             # Autosubmit header
             ###################
 
+            set -x
             job_name_ptrn=%ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
@@ -85,18 +86,24 @@ class StatisticsSnippet:
             # Autosubmit header
             ###################
 
+            set -x
             job_name_ptrn=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
             job_queue_time=$((job_start_time - job_cmd_stamp))
 
-            if [[ %HPCTYPE% == ecaccess && %HPCVERSION% == pbs ]]; then
-              filein="$(ls -rt %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
-              jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
-              fileout="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
-              ln -s ${fileout} ${job_name_ptrn}_${jobid}.out
-              fileerr="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
-              ln -s ${fileerr} ${job_name_ptrn}_${jobid}.err
+            if [[ %HPCTYPE% == ecaccess ]]; then
+              hpcversion=%HPCVERSION%
+              if [[ -z ${hpcversion+x} ]]; then
+                if [[ $hpcversion == pbs ]]; then
+                  filein="$(ls -rt %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
+                  jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
+                  fileout="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
+                  ln -s ${fileout} ${job_name_ptrn}_${jobid}.out
+                  fileerr="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
+                  ln -s ${fileerr} ${job_name_ptrn}_${jobid}.err
+                fi
+              fi
             fi
 
             rm -f ${job_name_ptrn}_COMPLETED
@@ -142,12 +149,12 @@ class StatisticsSnippet:
             for failed_errfile in $failed_errfiles; do
              failed_errfile_stamp=$(stat -c %Z $failed_errfile)
              job_qt=$(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ -z $job_qt ]]; then
+             if [[ -z ${job_qt+x} ]]; then
                job_qt=0
              fi
              failed_jobs_qt=$((failed_jobs_qt + job_qt))
              job_st=$(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ -z $job_qt ]]; then
+             if [[ -z ${job_qt+x} ]]; then
                job_st=0
              fi
              failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - job_st))))
