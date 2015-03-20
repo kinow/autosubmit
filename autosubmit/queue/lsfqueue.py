@@ -40,13 +40,13 @@ class LsfQueue(HPCQueue):
     def update_cmds(self):
         self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_"
                                + self.expid)
-        self.cancel_cmd = "ssh " + self._host + " bkill"
-        self._checkjob_cmd = "ssh " + self._host + " bjobs "
-        self._checkhost_cmd = "ssh " + self._host + " echo 1"
-        self._submit_cmd = "ssh " + self._host + " bsub \< " + self.remote_log_dir + "/"
+        self.cancel_cmd = "bkill"
+        self._checkjob_cmd = "bjobs "
+        self._checkhost_cmd = "echo 1"
+        self._submit_cmd = "bsub \< " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
-        self.mkdir_cmd = "ssh " + self._host + " mkdir -p " + self.remote_log_dir
+        self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd

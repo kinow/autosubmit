@@ -43,6 +43,11 @@ class HPCQueue:
         self.cancel_cmd = None
         self._header = None
         self._serial_queue = None
+        self._ssh_config = None
+        self._user_config_file = None
+        self._host_config = None
+        self._host_config_id = None
+
 
     @property
     def header(self):
@@ -52,7 +57,17 @@ class HPCQueue:
         try:
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-            self._ssh.connect(self._host)
+            self._ssh_config = paramiko.SSHConfig()
+            self._user_config_file = os.path.expanduser("~/.ssh/config")
+            if os.path.exists(self._user_config_file):
+                with open(self._user_config_file) as f:
+                    self._ssh_config.parse(f)
+            self._host_config = self._ssh_config.lookup(self._host)
+            if self._host_config.has_key('identityfile'):
+                self._host_config_id = self._host_config['identityfile']
+
+            self._ssh.connect(self._host_config['hostname'], 22, username=self._host_config['user'],
+                              key_filename=self._host_config_id)
             return True
         except BaseException as e:
             Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
@@ -60,7 +75,8 @@ class HPCQueue:
 
     def send_command(self, command):
         if self._ssh is None:
-            if not self.connect():
+            if not self._ssh.connect(self._host_config['hostname'], 22, username=self._host_config['user'],
+                                     key_filename=self._host_config_id):
                 return None
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
