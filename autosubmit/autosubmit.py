@@ -564,6 +564,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
         Log.info("Getting job list...")
+        Log.debug("JobList: {0}".format(filename))
         jobs = cPickle.load(file(filename, 'r'))
         if not isinstance(jobs, type([])):
             jobs = jobs.get_job_list()

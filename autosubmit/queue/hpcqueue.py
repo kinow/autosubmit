@@ -82,9 +82,17 @@ class HPCQueue:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             stderr_readlines = stderr.readlines()
             if len(stderr_readlines) > 0:
+                Log.warning('Command {0} in {1} warning: {2}'.format(command, self._host, stderr_readlines))
+            self._ssh_output = stdout.read().rstrip()
+            #if stdout.channel.exit_status_ready():
+            if stdout.channel.recv_exit_status() == 0:
+                Log.debug('Command {0} in {1} successful with out message: {2}'.format(command, self._host,
+                                                                                       self._ssh_output))
+                return True
+            else:
+                Log.error('Command {0} in {1} failed with error message: {2}'.format(command, self._host,
+                                                                                     stderr_readlines))
                 return False
-            self._ssh_output = stdout.readlines()
-            return True
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}'.format(command, self._host, e.message))
             return False
@@ -118,7 +126,7 @@ class HPCQueue:
             return False
 
     def get_ssh_output(self):
-        return ''.join(self._ssh_output).replace('\n', '')
+        return self._ssh_output
 
     def close_connection(self):
         if self._ssh is None:
@@ -143,17 +151,20 @@ class HPCQueue:
 
         if type(job_id) is not int:
             # URi: logger
-            Log.error('check_job() The job id (%s) is not an integer.' % job_id)
+            Log.error('check_job() The job id ({0}) is not an integer.'.format(job_id))
             # URi: value ?
             return job_status
 
         retry = 10
         while not self.send_command(self.get_checkjob_cmd(job_id)) and retry > 0:
             retry -= 1
-            Log.info('Can not get job status, retrying in 10 sec')
+            Log.warning('Retrying check job command: {0}'.format(self.get_checkjob_cmd(job_id)))
+            Log.error('Can not get job status for job id ({0}): check job returns {1}, retrying in 10 sec'.
+                      format(job_id, self.send_command(self.get_checkjob_cmd(job_id))))
             sleep(10)
 
         if retry > 0:
+            Log.debug('Successful check job command: {0}'.format(self.get_checkjob_cmd(job_id)))
             job_status = self.parse_job_output(self.get_ssh_output())
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retry == 0:
@@ -169,6 +180,7 @@ class HPCQueue:
         else:
             # BOUOUOUOU	NOT	GOOD!
             job_status = Status.UNKNOWN
+            Log.error('check_job() The job id ({0}) status is {1}.'.format(job_id, job_status))
         return job_status
 
     def check_host(self):
@@ -183,9 +195,9 @@ class HPCQueue:
 
     def check_remote_log_dir(self):
         if self.send_command(self.get_mkdir_cmd()):
-            Log.debug('%s has been created on %s .' % (self.remote_log_dir, self._host))
+            Log.debug('{0} has been created on {1}.'.format(self.remote_log_dir, self._host))
         else:
-            Log.error('Could not create the DIR on HPC')
+            Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self._host))
 
     def send_script(self, job_script):
         if self.send_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'tmp', str(job_script)),

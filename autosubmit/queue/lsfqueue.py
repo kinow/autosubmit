@@ -43,7 +43,7 @@ class LsfQueue(HPCQueue):
         self.cancel_cmd = "bkill"
         self._checkjob_cmd = "bjobs "
         self._checkhost_cmd = "echo 1"
-        self._submit_cmd = "bsub \< " + self.remote_log_dir + "/"
+        self._submit_cmd = "bsub -cwd " + self.remote_log_dir + " < " + self.remote_log_dir + "/"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
