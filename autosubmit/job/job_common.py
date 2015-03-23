@@ -94,7 +94,7 @@ class StatisticsSnippet:
 
             if [[ %HPCTYPE% == ecaccess ]]; then
               hpcversion=%HPCVERSION%
-              if [[ -z ${hpcversion+x} ]]; then
+              if [[ ! -z ${hpcversion+x} ]]; then
                 if [[ $hpcversion == pbs ]]; then
                   filein="$(ls -rt %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
                   jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
