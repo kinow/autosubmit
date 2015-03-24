@@ -863,31 +863,13 @@ class Autosubmit:
             Log.debug("The project folder {0} has been created.", project_path)
 
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
-                                               " " + git_project_origin)
+            (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
+                                               + git_project_branch + " " + git_project_origin)
             if status:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
 
-            Log.debug("{0}", output)
-            git_project_name = output[output.find("'") + 1:output.find("...") - 1]
-            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
-                                               "; git submodule update --remote --init")
-            if status:
-                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-                shutil.rmtree(project_path)
-                return False
-            Log.debug("{0}", output)
-
-            (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
-                                               "; git submodule foreach -q 'branch=\"$(git config "
-                                               "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
-                                               "git checkout $branch'")
-            if status:
-                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-                shutil.rmtree(project_path)
-                return False
             Log.debug("{0}", output)
 
         elif project_type == "svn":
