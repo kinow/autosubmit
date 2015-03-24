@@ -133,6 +133,7 @@ class StatisticsSnippet:
              ecaccess)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              pbs)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
              slurm)     errfile_created="TRUE"; errfile_ptrn="\.err" ;;
+             ps)        errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              *) echo "!!! %HPCTYPE% is not valid scheduler !!!"; exit 1 ;;
             esac
             failed_jobs=0; failed_errfiles=""

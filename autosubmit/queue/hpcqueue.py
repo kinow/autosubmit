@@ -80,19 +80,16 @@ class HPCQueue:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             stderr_readlines = stderr.readlines()
             if len(stderr_readlines) > 0:
-                Log.warning('Command {0} in {1} warning: {2}'.format(command, self._host, stderr_readlines))
+                Log.warning('Command {0} in {1} warning: {2}', command, self._host, stderr_readlines)
             self._ssh_output = stdout.read().rstrip()
-            # if stdout.channel.exit_status_ready():
             if stdout.channel.recv_exit_status() == 0:
-                Log.debug('Command {0} in {1} successful with out message: {2}'.format(command, self._host,
-                                                                                       self._ssh_output))
+                Log.debug('Command {0} in {1} successful with out message: {2}', command, self._host, self._ssh_output)
                 return True
             else:
-                Log.error('Command {0} in {1} failed with error message: {2}'.format(command, self._host,
-                                                                                     stderr_readlines))
+                Log.error('Command {0} in {1} failed with error message: {2}', command, self._host, stderr_readlines)
                 return False
         except BaseException as e:
-            Log.error('Can not send command {0} to {1}: {2}'.format(command, self._host, e.message))
+            Log.error('Can not send command {0} to {1}: {2}', command, self._host, e.message)
             return False
 
     def send_file(self, local_path, root_path):
@@ -106,7 +103,7 @@ class HPCQueue:
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not send file {0} to {1}: {2}'.format(local_path, root_path, e.message))
+            Log.error('Can not send file {0} to {1}: {2}', local_path, root_path, e.message)
             return False
 
     def get_file(self, remote_path, local_path):
@@ -120,7 +117,7 @@ class HPCQueue:
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not get file from {0} to {1}: {2}'.format(remote_path, local_path, e.message))
+            Log.error('Can not get file from {0} to {1}: {2}', remote_path, local_path, e.message)
             return False
 
     def get_ssh_output(self):
@@ -156,13 +153,12 @@ class HPCQueue:
         retry = 10
         while not self.send_command(self.get_checkjob_cmd(job_id)) and retry > 0:
             retry -= 1
-            Log.warning('Retrying check job command: {0}'.format(self.get_checkjob_cmd(job_id)))
-            Log.error('Can not get job status for job id ({0}): check job returns {1}, retrying in 10 sec'.
-                      format(job_id, self.send_command(self.get_checkjob_cmd(job_id))))
+            Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
             sleep(10)
 
         if retry > 0:
-            Log.debug('Successful check job command: {0}'.format(self.get_checkjob_cmd(job_id)))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output())
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retry == 0:
@@ -285,7 +281,7 @@ class HPCQueue:
         raise NotImplementedError
 
     def get_shcall(self, job_script):
-        return 'nohup /bin/sh {0} > {0}.stdout 2> {0}.stderr & echo $!'.format(os.path.join(self.remote_log_dir,
+        return 'nohup /bin/sh {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
                                                                                             job_script))
 
     @staticmethod
