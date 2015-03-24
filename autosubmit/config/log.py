@@ -24,6 +24,9 @@ from datetime import datetime
 
 
 class LogFormatter:
+    """
+    Class to format log output.
+    """
     RESULT = '\033[32m'
     WARNING = '\033[33m'
     ERROR = '\033[31m'
@@ -38,6 +41,10 @@ class LogFormatter:
             self._formatter = logging.Formatter('%(message)s')
 
     def format(self, record):
+        """
+        Format log output, adding labels if needed for log level. If logging to console, also manages font color.
+        If logging to file adds timestamp
+        """
         header = ''
         if record.levelno == Log.RESULT:
             if not self._file:
@@ -124,12 +131,24 @@ class Log:
 
     @staticmethod
     def set_console_level(level):
+        """
+        Sets log level for logging to console. Every output of level equal or higher to parameter level will be
+        printed on console
+        :param level: new level for console
+        :return: None
+        """
         if type(level) is str:
             level = getattr(Log, level)
         Log.console_handler.level = level
 
     @staticmethod
     def set_file_level(level):
+        """
+        Sets log level for logging to file. Every output of level equal or higher to parameter level will be
+        added to log file
+        :param level: new level for log file
+        :return: None
+        """
         if type(level) is str:
             level = getattr(Log, level)
         Log.file_level = level

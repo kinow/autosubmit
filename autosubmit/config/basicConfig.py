@@ -37,11 +37,18 @@ class BasicConfig:
 
     @staticmethod
     def _update_config():
+        """
+        Updates commonly used composed paths
+        """
         # Just one needed for the moment.
         BasicConfig.DB_PATH = os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE)
 
     @staticmethod
     def __read_file_config(file_path):
+        """
+        Reads configuration file. If configuration file dos not exist in given path,
+        no error is raised. Configuration options also are not required to exist
+        """
         if not os.path.isfile(file_path):
             return
         Log.debug('Reading config from ' + file_path)
@@ -61,7 +68,8 @@ class BasicConfig:
     @staticmethod
     def read():
         """
-        Reads configuration from .autosubmitrc files
+        Reads configuration from .autosubmitrc files, first from /etc, then for user
+        directory and last for current path.
         """
         filename = '.autosubmitrc'
 

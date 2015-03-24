@@ -25,10 +25,21 @@ from dateutil.relativedelta import *
 from autosubmit.config.log import Log
 
 
-"""In this python script there are tools to manipulate the dates and make mathematical operations between them """
+"""
+In this python script there are tools to manipulate the dates and make mathematical
+operations between them
+"""
 
 
 def add_time(string_date, total_size, chunk_unit, cal):
+    """
+    Adds given time to a date
+    :param string_date: base date
+    :param total_size: time to add
+    :param chunk_unit: unit of time to add
+    :param cal: calendar to use
+    :return: result of adding time to base date
+    """
     if chunk_unit == 'year':
         return add_years(string_date, total_size)
     elif chunk_unit == 'month':
@@ -42,6 +53,12 @@ def add_time(string_date, total_size, chunk_unit, cal):
 
 
 def add_years(string_date, number_of_years):
+    """
+    Adds years to a date
+    :param string_date: base date
+    :param number_of_years: number of years to add
+    :return: base date plus added years
+    """
     date = time.strptime(string_date, '%Y%m%d')
     delta = relativedelta(years=number_of_years)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
@@ -49,6 +66,13 @@ def add_years(string_date, number_of_years):
 
 
 def add_months(string_date, number_of_months, cal):
+    """
+    Adds years to a date
+    :param string_date: base date
+    :param number_of_months: number of months to add
+    :param cal: calendar to use
+    :return: base date plus added months
+    """
     date = time.strptime(string_date, '%Y%m%d')
     delta = relativedelta(months=number_of_months)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
@@ -59,6 +83,13 @@ def add_months(string_date, number_of_months, cal):
 
 
 def add_days(string_date, number_of_days, cal):
+    """
+    Adds years to a date
+    :param string_date: base date
+    :param number_of_days: number of days to add
+    :param cal: calendar to use
+    :return: base date plus added days
+    """
     date = time.strptime(string_date, '%Y%m%d')
     delta = relativedelta(days=number_of_days)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
@@ -80,6 +111,13 @@ def add_days(string_date, number_of_days, cal):
 
 
 def sub_days(string_date, number_of_days, cal):
+    """
+    Substract days to a date
+    :param string_date: base date
+    :param number_of_days: number of days to substract
+    :param cal: calendar to use
+    :return: base date minus substracted days
+    """
     date = time.strptime(string_date, '%Y%m%d')
     delta = relativedelta(days=number_of_days)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) - delta
@@ -101,6 +139,13 @@ def sub_days(string_date, number_of_days, cal):
 
 
 def add_hours(string_date, number_of_months, cal):
+    """
+    Adds years to a date
+    :param string_date: base date
+    :param number_of_hours: number of hours to add
+    :param cal: calendar to use
+    :return: base date plus added hours
+    """
     date = time.strptime(string_date, '%Y%m%d')
     delta = relativedelta(hours=number_of_months)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
@@ -122,6 +167,13 @@ def add_hours(string_date, number_of_months, cal):
 
 
 def subs_dates(start_date, end_date, cal):
+    """
+    Gets days between start_date and end_date
+    :param start_date:
+    :param end_date:
+    :param cal: calendar to use
+    :return:
+    """
     start = time.strptime(start_date, '%Y%m%d')
     end = time.strptime(end_date, '%Y%m%d')
     start_datetime = datetime.date(start.tm_year, start.tm_mon, start.tm_mday)
@@ -143,6 +195,15 @@ def subs_dates(start_date, end_date, cal):
 
 
 def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
+    """
+    Gets chunk's interval start date
+    :param string_date: start date for member
+    :param chunk: number of chunk
+    :param chunk_length: length of chunks
+    :param chunk_unit: chunk length unit
+    :param cal: calendar to use
+    :return: chunk's start date
+    """
     chunk_1 = chunk - 1
     total_months = chunk_1 * chunk_length
     result = add_time(string_date, total_months, chunk_unit, cal)
@@ -151,12 +212,27 @@ def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
 
 
 def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
+    """
+    Gets chunk interval end date
+    :param start_date: chunk's start date
+    :param chunk_length: length of the chunks
+    :param chunk_unit: chunk length unit
+    :param cal: calendar to use
+    :return: chunk's end date
+    """
     result = add_time(start_date, chunk_length, chunk_unit, cal)
     end_date = "%s%02d%02d" % (result.year, result.month, result.day)
     return end_date
 
 
 def running_days(start_date, end_date, cal):
+    """
+    Get days between dates
+    :param start_date:
+    :param end_date:
+    :param cal: calendar to use
+    :return:
+    """
     return subs_dates(start_date, end_date, cal)
 
 
@@ -165,18 +241,34 @@ def previous_days(string_date, start_date, cal):
 
 
 def previous_day(string_date, cal):
+    """
+    Gets previous day
+    :param string_date: base date
+    :param cal: calendar to use
+    :return: base date minus one day
+    """
     date_1 = sub_days(string_date, 1, cal)
     string_date_1 = "%s%02d%02d" % (date_1.year, date_1.month, date_1.day)
     return string_date_1
 
 
-def chunk_start_month(string_date):
+def get_month(string_date):
+    """
+    Gets date month
+    :param string_date: base date
+    :return: date's month
+    """
     date = time.strptime(string_date, '%Y%m%d')
     result = date.tm_mon
     return result
 
 
-def chunk_start_year(string_date):
+def get_year(string_date):
+    """
+    Gets date year
+    :param string_date: base date
+    :return: date's year
+    """
     date = time.strptime(string_date, '%Y%m%d')
     result = date.tm_year
     return result
@@ -195,8 +287,8 @@ def main():
     Log.info(running_days(start_date, end_date, cal))
     Log.info(running_days(string_date, end_date, cal))
     Log.info(previous_days(string_date, start_date, cal))
-    Log.info("year: {0}".format(chunk_start_year(string_date)))
-    Log.info("month: {0}".format(chunk_start_month(string_date)))
+    Log.info("year: {0}".format(get_year(string_date)))
+    Log.info("month: {0}".format(get_month(string_date)))
     Log.info("yesterday: %s " % previous_day(string_date, cal))
 
 

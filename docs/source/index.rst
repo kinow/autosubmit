@@ -10,12 +10,12 @@ Contents:
 =========
 
 .. toctree::
+   :titlesonly:
    :maxdepth: 2
 
    howto
    dev
-.. automodule:: autosubmit
-   :members:
+   autosubmit
 
 Indices and tables
 ==================

@@ -50,8 +50,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'autosubmit'
-copyright = u'2015, Domingo Manubens - Javier Vegas'
-author = u'Domingo Manubens - Javier Vegas'
+copyright = u'2015, Climate Forecasting Unit, IC3'
+author = u'Climate Forecasting Unit, IC3'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

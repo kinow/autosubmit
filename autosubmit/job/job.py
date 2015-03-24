@@ -17,6 +17,9 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+"""
+Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+"""
 
 import os
 import re
@@ -28,10 +31,12 @@ from autosubmit.date.chunk_date_lib import *
 
 
 class Job:
-    """Class to handle all the tasks with Jobs at HPC.
-       A job is created by default with a name, a jobid, a status and a type.
-       It can have children and parents. The inheritance reflects the dependency between jobs.
-       If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2 """
+    """
+    Class to handle all the tasks with Jobs at HPC.
+    A job is created by default with a name, a jobid, a status and a type.
+    It can have children and parents. The inheritance reflects the dependency between jobs.
+    If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2
+    """
 
     def __init__(self, name, jobid, status, priority):
         self._queue = None
@@ -71,6 +76,9 @@ class Job:
         return odict
 
     def delete(self):
+        """
+
+        """
         del self.name
         del self._long_name
         del self._short_name
@@ -88,7 +96,8 @@ class Job:
 
     def print_job(self):
         """
-        Prints debug informtion about the job
+        Prints debug information about the job
+        :return None
         """
         Log.debug('NAME: %s' % self.name)
         Log.debug('JOBID: %s' % self.id)
@@ -102,11 +111,18 @@ class Job:
     # Properties
     @property
     def parents(self):
+        """
+        Return parent jobs list
+
+        :return: list of parent jobs
+        """
         return self._parents
 
     def get_queue(self):
         """
         Returns the queue to be used by the job. Chooses between serial and parallel queue
+
+        :return hpcqueue object for the job to use
         """
         if self.processors > 1:
             return self._queue
@@ -114,12 +130,19 @@ class Job:
             return self._queue.get_serial_queue()
 
     def set_queue(self, value):
+        """
+        Sets the HPCqueue to be used by the job.
+
+        :return: None
+        """
         self._queue = value
 
     @property
     def ancestors(self):
         """
         Returns all job's ancestors
+
+        :return: job ancestors' list
         """
         if self._ancestors is None:
             self._ancestors = set()
@@ -132,13 +155,18 @@ class Job:
 
     @property
     def children(self):
+        """
+        Returns a list containing all children of the job
+
+        :return: list of children jobs
+        """
         return self._children
 
     @property
     def long_name(self):
-        """Returns the job long name"""
-        # name is returned instead of long_name. Just to ensure backwards compatibility with experiments
-        # that does not have long_name attribute.
+        """
+        Job's long name
+        """
         if hasattr(self, '_long_name'):
             return self._long_name
         else:
@@ -150,7 +178,9 @@ class Job:
 
     @property
     def short_name(self):
-        """Returns the job short name"""
+        """
+        Job short name
+        """
         return self._short_name
 
     @short_name.setter
@@ -166,11 +196,16 @@ class Job:
             self._short_name = n[0][:15]
 
     def log_job(self):
+        """
+        Prints job information in log
+        """
         Log.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
         Log.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
 
     def get_all_children(self):
-        """Returns a list with job's childrens and all it's descendents"""
+        """
+        Returns a list with all job's children and all it's descendants
+        """
         job_list = list()
         for job in self.children:
             job_list.append(job)
@@ -179,48 +214,115 @@ class Job:
         return list(set(job_list))
 
     def print_parameters(self):
+        """
+        Print job parameters in log
+        :return:
+        """
         Log.info(self.parameters)
 
     def inc_fail_count(self):
+        """
+        Increments fail count
+        """
         self.fail_count += 1
 
     def add_parent(self, *new_parent):
+        """
+        Add parents for the job. It also adds current job as a child for all the new parents
+
+        :param new_parent: job parent
+        """
         self._ancestors = None
         for parent in new_parent:
             self._parents.add(parent)
             parent.__add_child(self)
 
-    def __add_child(self, new_children):
-        self.children.add(new_children)
+    def __add_child(self, new_child):
+        """
+        Adds a new child to the job
+
+        :param new_child: new child to add
+        """
+        self.children.add(new_child)
 
     def delete_parent(self, parent):
+        """
+        Remove a parent from the job
+
+        :param parent: parent to remove
+        """
         self._ancestors = None
         # careful, it is only possible to remove one parent at a time
         self.parents.remove(parent)
 
     def delete_child(self, child):
+        """
+        Removes a child from the job
+
+        :param child: child to remove
+        """
         # careful it is only possible to remove one child at a time
         self.children.remove(child)
 
     def has_children(self):
+        """
+        Returns true if job has any children, else return false
+
+        :return: bool
+        """
         return self.children.__len__()
 
     def has_parents(self):
+        """
+        Returns true if job has any parents, else return false
+
+        :return:
+        """
         return self.parents.__len__()
 
     def compare_by_status(self, other):
+        """
+        Compare jobs by status value
+
+        :param other: job to compare
+        :return: comparison result
+        """
         return cmp(self.status(), other.status)
 
     def compare_by_type(self, other):
+        """
+        Compare jobs by priority
+
+        :param other: job to compare
+        :return: comparison result
+        """
         return cmp(self.priority(), other.type)
 
     def compare_by_id(self, other):
+        """
+        Compare jobs by ID
+
+        :param other: job to compare
+        :return: comparison result
+        """
         return cmp(self.id(), other.id)
 
     def compare_by_name(self, other):
+        """
+        Compare jobs by name
+
+        :param other: job to compare
+        :return: comparison result
+        """
         return cmp(self.name, other.name)
 
     def _get_from_completed(self, index):
+        """
+        Returns value from given index position in completed file asociated to job
+
+        :param index: position to retrieve
+        :return: value in index position
+        """
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):
             split_line = open(logname).readline().split()
@@ -232,25 +334,57 @@ class Job:
             return 0
 
     def check_end_time(self):
+        """
+        Returns end time from completed file
+
+        :return: completed date and time
+        """
         return self._get_from_completed(0)
 
     def check_queued_time(self):
+        """
+        Returns job's waiting time in HPC
+
+        :return: total time waiting in HPC queue
+        """
         return self._get_from_completed(1)
 
     def check_run_time(self):
+        """
+        Returns job's running time
+
+        :return: total time running
+        """
         return self._get_from_completed(2)
 
     def check_failed_times(self):
+        """
+        Returns number of failed attempts before completing the job
+
+        :return: failed attempts to run
+        """
         return self._get_from_completed(3)
 
     def check_fail_queued_time(self):
+        """
+        Returns total time spent waiting for failed jobs
+
+        :return: total time waiting in HPC queue for failed jobs
+        """
         return self._get_from_completed(4)
 
     def check_fail_run_time(self):
+        """
+        Returns total time running for failed jobs
+
+        :return: total time running in HPC  for failed jobs
+        """
         return self._get_from_completed(5)
 
     def check_completion(self):
-        """ Check the presence of *COMPLETED file and touch a Checked or failed file """
+        """
+        Check the presence of *COMPLETED file and touch a Checked or failed file
+        """
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):
             self._complete = True
@@ -261,7 +395,9 @@ class Job:
             self.status = Status.FAILED
 
     def remove_dependencies(self):
-        """If Complete remove the dependency """
+        """
+        Checks if job is completed and then remove dependencies for childs
+        """
         if self._complete:
             self.status = Status.COMPLETED
             # job_logger.info("Job is completed, we are now removing the dependency in"
@@ -275,6 +411,9 @@ class Job:
             self.status = Status.FAILED
 
     def update_parameters(self):
+        """
+        Refresh parameters value
+        """
         parameters = self.parameters
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
@@ -330,9 +469,14 @@ class Job:
         return parameters
 
     def update_content(self, project_dir):
+        """
+        Create the script content to be run for the job
+
+        :param project_dir: project directory
+        :return: script code
+        """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            dir_templates = project_dir
-            template = file(os.path.join(dir_templates, self.file), 'r').read()
+            template = file(os.path.join(project_dir, self.file), 'r').read()
         else:
             template = ''
         queue = self.get_queue()
@@ -351,6 +495,12 @@ class Job:
         return template_content
 
     def create_script(self, as_conf):
+        """
+        Creates script file to be run for the job
+
+        :param as_conf: configuration object
+        :return: script's filename
+        """
         parameters = self.update_parameters()
         template_content = self.update_content(as_conf.get_project_dir())
         # print "jobType: %s" % self._type
@@ -366,6 +516,12 @@ class Job:
         return scriptname
 
     def check_script(self, as_conf):
+        """
+        Checks if script is well formed
+
+        :param as_conf: configuration file
+        :return: true if not problem has been detected, false otherwise
+        """
         parameters = self.update_parameters()
         template_content = self.update_content(as_conf.get_project_dir())
 

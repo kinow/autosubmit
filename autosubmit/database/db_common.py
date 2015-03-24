@@ -16,6 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+"""
+Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+"""
 import os
 import sys
 import sqlite3
@@ -26,6 +30,11 @@ from autosubmit.config.basicConfig import BasicConfig
 
 
 def create_db(qry):
+    """
+    Creates a new database for autosubmit
+    :param qry: query to create the new database
+    :return: None
+    """
     (conn, cursor) = open_conn()
     try:
         cursor.execute(qry)
@@ -39,7 +48,13 @@ def create_db(qry):
     return
 
 
-def set_experiment(name, description):
+def _set_experiment(name, description):
+    """
+    Stores experiment in database
+    :param name: experiment's name
+    :param description: experiment's description
+    :return: None
+    """
     check_db()
     name = check_name(name)
 
@@ -81,6 +96,12 @@ def check_experiment_exists(name):
 
 
 def new_experiment(hpc, description):
+    """
+    Stores a new experiment on the database and generates its identifier
+    :param hpc: name of the main HPC to be used by the experiment
+    :param description: experiment's description
+    :return: experiment id for the new experiment
+    """
     last_exp_name = last_name(hpc)
     if last_exp_name == 'empty':
         if hpc == 'test':
@@ -88,13 +109,20 @@ def new_experiment(hpc, description):
         else:
             new_name = hpc[0]+'000'
     else:
-        new_name = next_name(last_exp_name)
-    set_experiment(new_name, description)
+        new_name = _next_name(last_exp_name)
+    _set_experiment(new_name, description)
     Log.info('The new experiment "%s" has been registered.' % new_name)
     return new_name
 
 
 def copy_experiment(name, hpc, description):
+    """
+    Creates a new experiment by copying an existing experiment
+    :param name: identifier of experiment to copy
+    :param hpc: name of the main HPC to be used by the experiment
+    :param description: experiment's description
+    :return: experiment id for the new experiment
+    """
     if not check_experiment_exists(name):
         exit(1)
     new_name = new_experiment(hpc, description)
@@ -102,7 +130,12 @@ def copy_experiment(name, hpc, description):
 
 
 def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
-    """Convert positive integer to a base36 string."""
+    """
+    Convert positive integer to a base36 string.
+    :param number: number to convert
+    :param alphabet: set of characters to use
+    :return: number's base36 string value
+    """
     if not isinstance(number, (int, long)):
         raise TypeError('number must be an integer')
 
@@ -126,16 +159,31 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
 
 
 def base36decode(number):
+    """
+    Converts a base36 string to a positive integer
+    :param number: base36 string to convert
+    :return: number's integer value
+    """
     return int(number, 36)
 
 
-def next_name(name):
+def _next_name(name):
+    """
+    Get next experiment identifier
+    :param name: previous experiment identifier
+    :return: new experiment identifier
+    """
     name = check_name(name)
     # Convert the name to base 36 in number add 1 and then encode it
     return base36encode(base36decode(name) + 1)
 
 
 def last_name(hpc):
+    """
+    Gets last experiment identifier used for HPC
+    :param hpc: HPC name
+    :return: last experiment identifier used for HPC, 'empty' if there is none
+    """
     check_db()
     (conn, cursor) = open_conn()
     conn.text_factory = str
@@ -155,6 +203,11 @@ def last_name(hpc):
 
 
 def delete_experiment(name):
+    """
+    Removes experiment from database
+    :param name: experiment identifier
+    :return: None
+    """
     check_db()
     name = check_name(name)
     (conn, cursor) = open_conn()
@@ -168,6 +221,11 @@ def delete_experiment(name):
 
 
 def check_name(name):
+    """
+    Checks if it is a valid experiment identifier
+    :param name: experiment identifier to check
+    :return: name if is valid, terminates program otherwise
+    """
     name = name.lower()
     if len(name) < 4 or not name.isalnum():
         Log.error("So sorry, but the name must have at least 4 alphanumeric chars!!!")
@@ -176,6 +234,11 @@ def check_name(name):
 
 
 def check_db():
+    """
+    Checks if database file exist
+    :return: None if exists, terminates program if not
+    """
+
     if not os.path.exists(BasicConfig.DB_PATH):
         Log.error('Some problem has happened...check the database file.' + 'DB file:' + BasicConfig.DB_PATH)
         sys.exit(1)
@@ -183,12 +246,22 @@ def check_db():
 
 
 def open_conn():
+    """
+    Opens a connection to database
+    :return: connection object, cursor object
+    """
     conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
     return conn, cursor
 
 
 def close_conn(conn, cursor):
+    """
+    Commits changes and close connection to database
+    :param conn: connection to close
+    :param cursor: cursor to close
+    :return:
+    """
     conn.commit()
     cursor.close()
     conn.close()

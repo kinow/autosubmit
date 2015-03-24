@@ -32,6 +32,9 @@ from autosubmit.config.log import Log
 
 
 class JobList:
+    """
+    Class to manage the list of jobs to be run by autosubmit
+    """
     def __init__(self, expid):
         self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
         self._update_file = "updated_list_" + expid + ".txt"
@@ -44,9 +47,20 @@ class JobList:
 
     @property
     def expid(self):
+        """
+        Experiment identifier
+        """
         return self._expid
 
     def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
+        """
+        Creates all jobs needed for the current workflow
+        :param date_list: list of start dates
+        :param member_list: list of members
+        :param starting_chunk: number of starting chunk
+        :param num_chunks: number of chunks to run
+        :param parameters: parameters for the jobs
+        """
         self._parameters = parameters
 
         parser = SafeConfigParser()
@@ -151,84 +165,142 @@ class JobList:
         return self._job_list.__len__()
 
     def get_job_list(self):
+        """
+        Get inner job list
+
+        :return: job list
+        """
         return self._job_list
 
     def get_completed(self):
-        """Returns a list of completed jobs"""
+        """
+        Returns a list of completed jobs
+        """
         return [job for job in self._job_list if job.status == Status.COMPLETED]
 
     def get_submitted(self):
-        """Returns a list of submitted jobs"""
+        """
+        Returns a list of submitted jobs
+        """
         return [job for job in self._job_list if job.status == Status.SUBMITTED]
 
     def get_running(self):
-        """Returns a list of jobs running"""
+        """
+        Returns a list of jobs running
+        """
         return [job for job in self._job_list if job.status == Status.RUNNING]
 
     def get_queuing(self):
-        """Returns a list of jobs queuing"""
+        """
+        Returns a list of jobs queuing
+        """
         return [job for job in self._job_list if job.status == Status.QUEUING]
 
     def get_failed(self):
-        """Returns a list of failed jobs"""
+        """
+        Returns a list of failed jobs
+        """
         return [job for job in self._job_list if job.status == Status.FAILED]
 
     def get_ready(self):
-        """Returns a list of jobs ready"""
+        """
+        Returns a list of ready jobs
+        """
         return [job for job in self._job_list if job.status == Status.READY]
 
     def get_waiting(self):
-        """Returns a list of jobs waiting"""
+        """
+        Returns a list of jobs waiting
+        """
         return [job for job in self._job_list if job.status == Status.WAITING]
 
     def get_unknown(self):
-        """Returns a list of jobs unknown"""
+        """
+        Returns a list of jobs unknown
+        """
         return [job for job in self._job_list if job.status == Status.UNKNOWN]
 
     def get_in_queue(self):
-        """Returns a list of jobs in the queue (Submitted, Running, Queuing)"""
+        """
+        Returns a list of jobs in the queue (Submitted, Running, Queuing)
+        """
         return self.get_submitted() + self.get_running() + self.get_queuing()
 
     def get_not_in_queue(self):
-        """Returns a list of jobs NOT in the queue (Ready, Waiting)"""
+        """
+        Returns a list of jobs NOT in the queue (Ready, Waiting)
+        """
         return self.get_ready() + self.get_waiting()
 
     def get_finished(self):
-        """Returns a list of jobs finished (Completed, Failed)"""
+        """
+        Returns a list of jobs finished (Completed, Failed)
+        """
         return self.get_completed() + self.get_failed()
 
     def get_active(self):
-        """Returns a list of active jobs (In queue, Ready)"""
+        """
+        Returns a list of active jobs (In queue, Ready)
+        """
         return self.get_in_queue() + self.get_ready() + self.get_unknown()
 
     def get_job_by_name(self, name):
-        """Returns the job that its name matches name"""
+        """
+        Returns the job that its name matches parameter name
+        :parameter name: name to look for
+        """
         for job in self._job_list:
             if job.name == name:
                 return job
         Log.warning("We could not find that job %s in the list!!!!", name)
 
     def sort_by_name(self):
+        """
+        Returns a list of jobs sorted by name
+        :return: job list
+        """
         return sorted(self._job_list, key=lambda k: k.name)
 
     def sort_by_id(self):
+        """
+        Returns a list of jobs sorted by id
+        :return: job list
+        """
         return sorted(self._job_list, key=lambda k: k.id)
 
     def sort_by_type(self):
+        """
+        Returns a list of jobs sorted by type
+        :return: job list
+        """
         return sorted(self._job_list, key=lambda k: k.type)
 
     def sort_by_status(self):
+        """
+        Returns a list of jobs sorted by status
+        :return: job list
+        """
         return sorted(self._job_list, key=lambda k: k.status)
 
     @staticmethod
     def load_file(filename):
+        """
+        Recreates an stored joblist from the pickle file
+        :param filename:
+        :return: loaded joblist object
+        """
         if os.path.exists(filename):
             return pickle.load(file(filename, 'r'))
         else:
-            # URi: print ERROR
+            Log.critical('File {0} does not exist'.format(filename))
             return list()
 
     def load(self):
+        """
+        Recreates an stored joblist from the pickle file
+        :param filename:
+        :return: loaded joblist object
+        """
         Log.info("Loading JobList: " + self._pkl_path + self._job_list_file)
         return JobList.load_file(self._pkl_path + self._job_list_file)
 
@@ -246,7 +318,10 @@ class JobList:
         pickle.dump(failed_list, file(self._pkl_path + self._failed_file, 'w'))
 
     def save(self):
-        # URi: should we check that the path exists?
+        """
+        Stores joblist as a pickle file
+        :return: loaded joblist object
+        """
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + self._pkl_path + self._job_list_file)
         pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
@@ -325,8 +400,10 @@ class JobList:
                 job.status = Status.READY
 
     def check_scripts(self, as_conf):
-        """When we have created the scripts, all parameters should have been substituted.
-        %PARAMETER% handlers not allowed"""
+        """
+        When we have created the scripts, all parameters should have been substituted.
+        %PARAMETER% handlers not allowed
+        """
         out = True
         for job in self._job_list:
             if not job.check_script(as_conf):

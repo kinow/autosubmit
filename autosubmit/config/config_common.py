@@ -51,13 +51,23 @@ class AutosubmitConfig:
 
     @property
     def experiment_file(self):
+        """
+        Returns experiment's config file name
+        """
         return self._exp_parser_file
 
     @property
     def queues_file(self):
+        """
+        Returns experiment's queues config file name
+        """
         return self._queues_parser_file
 
     def get_project_dir(self):
+        """
+        Returns experiment's project directory
+        :return:
+        """
         dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
         # Getting project name for each type of project
         if self.get_project_type().lower() == "local":
@@ -67,6 +77,11 @@ class AutosubmitConfig:
         return dir_templates
 
     def check_conf_files(self):
+        """
+        Checks configuration files (autosubmit, experiment jobs and queues), looking for invalid values, missing
+        required options. Prints results in log
+        Returns True if everithing is correct, False if it founds any error
+        """
         Log.info('\nChecking configuration files...')
         self.reload()
         result = self._check_autosubmit_conf()
@@ -80,6 +95,10 @@ class AutosubmitConfig:
         return result
 
     def _check_autosubmit_conf(self):
+        """
+        Checks experiment's autosubmit configuration file.
+        Returns True if everything is correct, False if it founds any error
+        """
         result = True
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_LOCAL_ROOT')
@@ -95,6 +114,10 @@ class AutosubmitConfig:
         return result
 
     def _check_queues_conf(self):
+        """
+        Checks experiment's queues configuration file.
+        Returns True if everything is correct, False if it founds any error
+        """
         result = True
         if len(self._queues_parser.sections()) == 0:
             Log.warning("No remote queue configured")
@@ -125,6 +148,10 @@ class AutosubmitConfig:
         return result
 
     def _check_jobs_conf(self):
+        """
+        Checks experiment's jobs configuration file.
+        Returns True if everything is correct, False if it founds any error
+        """
         result = True
         parser = self._jobs_parser
         sections = parser.sections()
@@ -162,6 +189,10 @@ class AutosubmitConfig:
         return result
 
     def _check_expdef_conf(self):
+        """
+        Checks experiment's experiment configuration file.
+        Returns True if everything is correct, False if it founds any error
+        """
         result = True
         parser = self._exp_parser
 
@@ -213,13 +244,20 @@ class AutosubmitConfig:
             self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
 
     def reload(self):
+        """
+        Creates parser objects for configuration files
+        """
         self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
         self._queues_parser = AutosubmitConfig.get_parser(self._queues_parser_file)
         self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
 
     def load_parameters(self):
-
+        """
+        Load parameters from experiment and autosubmit config files. If experiment's type is not none,
+        also load parameters from model's config file
+        Returns a dictionary containing tuples [parameter_name, parameter_value]
+        """
         parameters = dict()
         for section in self._exp_parser.sections():
             for option in self._exp_parser.options(section):
@@ -239,6 +277,10 @@ class AutosubmitConfig:
         return parameters
 
     def load_project_parameters(self):
+        """
+        Loads parameters from model config file
+        Returns a dictionary containing tuples [parameter_name, parameter_value]
+        """
         projdef = []
         for section in self._proj_parser.sections():
             projdef += self._proj_parser.items(section)
@@ -251,7 +293,9 @@ class AutosubmitConfig:
 
     @staticmethod
     def print_parameters(title, parameters):
-        """Prints the parameters table in a tabular mode"""
+        """
+        Prints the parameters table in a tabular mode
+        """
         Log.info(title)
         Log.info("----------------------")
         Log.info("{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15))
@@ -260,11 +304,12 @@ class AutosubmitConfig:
         Log.info("")
 
     def check_parameters(self):
-        """Function to check configuration of Autosubmit.
+        """
+        Function to check configuration of Autosubmit.
         Returns True if all variables are set.
         If some parameter do not exist, the function returns False.
 
-        :retruns: bool
+        :return: bool
         """
         result = True
 
@@ -287,9 +332,17 @@ class AutosubmitConfig:
         return result
 
     def get_expid(self):
+        """
+        Returns experiment identifier read from experiment's config file
+        :return:
+        """
         return self._exp_parser.get('DEFAULT', 'EXPID')
 
     def set_expid(self, exp_id):
+        """
+        Set experiment identifier in autosubmit and experiment config files
+        :param exp_id: experiment identifier to store
+        """
         # Experiment conf
         content = file(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
@@ -302,22 +355,36 @@ class AutosubmitConfig:
         file(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
+        """
+        Returns project type from experiment config file
+        """
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
 
     def get_file_project_conf(self):
+        """
+        Returns path to model config file from experiment config file
+        """
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
     def get_git_project_origin(self):
+        """
+        Returns git origin from experiment config file
+        """
         return self._exp_parser.get('git', 'PROJECT_ORIGIN')
 
     def get_git_project_branch(self):
+        """
+        Returns git branch  from experiment's config file
+        """
         return self._exp_parser.get('git', 'PROJECT_BRANCH')
 
     def get_git_project_commit(self):
         return self._exp_parser.get('git', 'PROJECT_COMMIT')
 
     def set_git_project_commit(self):
-        """Function to register in the configuration the commit SHA of the git project version."""
+        """
+        Function to register in the configuration the commit SHA of the git project version.
+        """
         save = False
         project_branch_sha = None
         project_name = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
@@ -359,21 +426,40 @@ class AutosubmitConfig:
             Log.critical("Changes NOT registered to the configuration file...")
 
     def get_svn_project_url(self):
+        """
+        Get url to subversion project
+        """
         return self._exp_parser.get('svn', 'PROJECT_URL')
 
     def get_svn_project_revision(self):
+        """
+        Get revision for subversion project
+        """
         return self._exp_parser.get('svn', 'PROJECT_REVISION')
 
     def get_local_project_path(self):
+        """
+        Returns path to origin for local project
+        """
         return self._exp_parser.get('local', 'PROJECT_PATH')
 
     def get_date_list(self):
+        """
+        Returns startdates list from experiment's config file
+        """
         return self._exp_parser.get('experiment', 'DATELIST').split(' ')
 
     def get_starting_chunk(self):
+        """
+        Returns starting chunk for experiment in experiment's config file
+        """
         return int(self._exp_parser.get('experiment', 'CHUNKINI'))
 
     def get_num_chunks(self):
+        """
+        Returns number of chunks to run for each member
+        :return:
+        """
         return int(self._exp_parser.get('experiment', 'NUMCHUNKS'))
 
     def get_member_list(self):

@@ -38,6 +38,8 @@ from distutils.util import strtobool
 
 from pyparsing import nestedExpr
 
+sys.path.insert(0, os.path.abspath('.'))
+
 from config.basicConfig import BasicConfig
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
@@ -68,7 +70,7 @@ class Autosubmit:
     def parse_args():
         """
         Parse arguments given to an executable and start execution of command given
-        :return:
+        :returns:
         """
         BasicConfig.read()
 
@@ -244,6 +246,7 @@ class Autosubmit:
     def delete_expid(expid_delete):
         """
         Removes an experiment from path and database
+
         :param expid_delete: identifier of the experiment to delete
         """
         Log.info("Removing experiment directory...")

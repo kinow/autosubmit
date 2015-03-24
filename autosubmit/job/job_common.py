@@ -20,7 +20,9 @@ import textwrap
 
 
 class Status:
-    """Class to handle the status of a job"""
+    """
+    Class to handle the status of a job
+    """
     WAITING = 0
     READY = 1
     SUBMITTED = 2
@@ -36,7 +38,10 @@ class Status:
 
 
 class StatisticsSnippet:
-    """Class to handle the statistics snippet of a job"""
+    """
+    Class to handle the statistics snippet of a job. It contains header and tailer for
+    local and remote jobs
+    """
 
     AS_HEADER_LOC = textwrap.dedent("""\
 

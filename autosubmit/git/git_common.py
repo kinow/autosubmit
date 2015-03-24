@@ -27,13 +27,18 @@ from autosubmit.config.log import Log
 
 
 class AutosubmitGit:
-    """Class to handle experiment git repository"""
+    """
+    Class to handle experiment git repository
+    """
 
     def __init__(self, expid):
         self._expid = expid
 
     def clean_git(self):
-        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory."""
+        """
+        Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory.
+        :return None
+        """
         dirs = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR)
         if dirs:
             Log.debug("Checking git directories status...")
