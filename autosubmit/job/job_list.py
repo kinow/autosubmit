@@ -474,12 +474,13 @@ class JobList:
             for m in d['ms']:
                 member = m['m']
                 Log.debug("Member: " + member)
+                previous_chunk = 0
                 for c in m['cs']:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member
                                 and i.chunk == chunk]:
-                        if not job.rerun_only or c is m['cs'][0]:
+                        if not job.rerun_only or chunk != previous_chunk+1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)
                         section = job.section
@@ -515,6 +516,7 @@ class JobList:
                                                                   current_chunk):
                                 parent.status = Status.WAITING
                                 Log.debug("Parent: " + parent.name)
+                    previous_chunk = chunk
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
             self._remove_job(job)
