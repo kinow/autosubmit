@@ -479,8 +479,9 @@ class JobList:
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member
                                 and i.chunk == chunk]:
-                        job.status = Status.WAITING
-                        Log.debug("Job: " + job.name)
+                        if not job.rerun_only or c is m['cs'][0]:
+                            job.status = Status.WAITING
+                            Log.debug("Job: " + job.name)
                         section = job.section
                         if section not in dependencies:
                             continue
@@ -519,7 +520,6 @@ class JobList:
             self._remove_job(job)
 
         self.update_genealogy()
-        del self._dic_jobs
 
     def remove_rerun_only_jobs(self):
         flag = False

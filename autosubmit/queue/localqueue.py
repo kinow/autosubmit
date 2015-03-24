@@ -23,7 +23,7 @@ from xml.dom.minidom import parseString
 
 from autosubmit.queue.hpcqueue import HPCQueue
 from autosubmit.config.basicConfig import BasicConfig
-from config.log import Log
+from autosubmit.config.log import Log
 
 
 class LocalQueue(HPCQueue):
