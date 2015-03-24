@@ -644,7 +644,7 @@ class AutosubmitConfig:
             nestedExpr('[', ']').parseString(value).asList()
             return True
         except:
-            Log.error("Invalid value %s: %s" % (key, value))
+            Log.error("Invalid value {0}: {1}", key, value)
             return False
 
 

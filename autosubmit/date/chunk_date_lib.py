@@ -34,6 +34,7 @@ operations between them
 def add_time(string_date, total_size, chunk_unit, cal):
     """
     Adds given time to a date
+
     :param string_date: base date
     :param total_size: time to add
     :param chunk_unit: unit of time to add
@@ -55,6 +56,7 @@ def add_time(string_date, total_size, chunk_unit, cal):
 def add_years(string_date, number_of_years):
     """
     Adds years to a date
+
     :param string_date: base date
     :param number_of_years: number of years to add
     :return: base date plus added years
@@ -67,7 +69,8 @@ def add_years(string_date, number_of_years):
 
 def add_months(string_date, number_of_months, cal):
     """
-    Adds years to a date
+    Adds months to a date
+
     :param string_date: base date
     :param number_of_months: number of months to add
     :param cal: calendar to use
@@ -84,7 +87,8 @@ def add_months(string_date, number_of_months, cal):
 
 def add_days(string_date, number_of_days, cal):
     """
-    Adds years to a date
+    Adds days to a date
+
     :param string_date: base date
     :param number_of_days: number of days to add
     :param cal: calendar to use
@@ -113,6 +117,7 @@ def add_days(string_date, number_of_days, cal):
 def sub_days(string_date, number_of_days, cal):
     """
     Substract days to a date
+
     :param string_date: base date
     :param number_of_days: number of days to substract
     :param cal: calendar to use
@@ -138,16 +143,17 @@ def sub_days(string_date, number_of_days, cal):
     return result
 
 
-def add_hours(string_date, number_of_months, cal):
+def add_hours(string_date, number_of_hours, cal):
     """
-    Adds years to a date
+    Adds hours to a date
+
     :param string_date: base date
     :param number_of_hours: number of hours to add
     :param cal: calendar to use
     :return: base date plus added hours
     """
     date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(hours=number_of_months)
+    delta = relativedelta(hours=number_of_hours)
     result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
     if cal == 'noleap':
         year = date.tm_year
@@ -169,6 +175,7 @@ def add_hours(string_date, number_of_months, cal):
 def subs_dates(start_date, end_date, cal):
     """
     Gets days between start_date and end_date
+
     :param start_date:
     :param end_date:
     :param cal: calendar to use
@@ -197,6 +204,7 @@ def subs_dates(start_date, end_date, cal):
 def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
     """
     Gets chunk's interval start date
+
     :param string_date: start date for member
     :param chunk: number of chunk
     :param chunk_length: length of chunks
@@ -214,6 +222,7 @@ def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
 def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
     """
     Gets chunk interval end date
+
     :param start_date: chunk's start date
     :param chunk_length: length of the chunks
     :param chunk_unit: chunk length unit
@@ -228,6 +237,7 @@ def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
 def running_days(start_date, end_date, cal):
     """
     Get days between dates
+
     :param start_date:
     :param end_date:
     :param cal: calendar to use
@@ -243,6 +253,7 @@ def previous_days(string_date, start_date, cal):
 def previous_day(string_date, cal):
     """
     Gets previous day
+
     :param string_date: base date
     :param cal: calendar to use
     :return: base date minus one day
@@ -255,6 +266,7 @@ def previous_day(string_date, cal):
 def get_month(string_date):
     """
     Gets date month
+
     :param string_date: base date
     :return: date's month
     """
@@ -266,6 +278,7 @@ def get_month(string_date):
 def get_year(string_date):
     """
     Gets date year
+
     :param string_date: base date
     :return: date's year
     """
@@ -287,9 +300,9 @@ def main():
     Log.info(running_days(start_date, end_date, cal))
     Log.info(running_days(string_date, end_date, cal))
     Log.info(previous_days(string_date, start_date, cal))
-    Log.info("year: {0}".format(get_year(string_date)))
-    Log.info("month: {0}".format(get_month(string_date)))
-    Log.info("yesterday: %s " % previous_day(string_date, cal))
+    Log.info("year: {0}", get_year(string_date))
+    Log.info("month: {0}", get_month(string_date))
+    Log.info("yesterday: {0} ", previous_day(string_date, cal))
 
 
 if __name__ == "__main__":

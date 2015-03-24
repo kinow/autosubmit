@@ -99,14 +99,14 @@ class Job:
         Prints debug information about the job
         :return None
         """
-        Log.debug('NAME: %s' % self.name)
-        Log.debug('JOBID: %s' % self.id)
-        Log.debug('STATUS: %s' % self.status)
-        Log.debug('TYPE: %s' % self.priority)
-        Log.debug('PARENTS: %s' % [p.name for p in self.parents])
-        Log.debug('CHILDREN: %s' % [c.name for c in self.children])
-        Log.debug('FAIL_COUNT: %s' % self.fail_count)
-        Log.debug('EXPID: %s' % self.expid)
+        Log.debug('NAME: {0}', self.name)
+        Log.debug('JOBID: {0}', self.id)
+        Log.debug('STATUS: {0}', self.status)
+        Log.debug('TYPE: {0}', self.priority)
+        Log.debug('PARENTS: {0}', [p.name for p in self.parents])
+        Log.debug('CHILDREN: {0}', [c.name for c in self.children])
+        Log.debug('FAIL_COUNT: {0}', self.fail_count)
+        Log.debug('EXPID: {0}', self.expid)
 
     # Properties
     @property
@@ -199,8 +199,8 @@ class Job:
         """
         Prints job information in log
         """
-        Log.info("%s\t%s\t%s" % ("Job Name", "Job Id", "Job Status"))
-        Log.info("%s\t\t%s\t%s" % (self.name, self.id, self.status))
+        Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
     def get_all_children(self):
         """
@@ -383,7 +383,7 @@ class Job:
 
     def check_completion(self):
         """
-        Check the presence of *COMPLETED file and touch a Checked or failed file
+        Check the presence of *COMPLETED* file and touch a Checked or failed file
         """
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):

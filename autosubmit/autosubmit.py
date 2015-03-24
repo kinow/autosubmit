@@ -381,11 +381,11 @@ class Autosubmit:
 
         queues = as_conf.read_queues_conf()
 
-        Log.debug("The Experiment name is: %s" % expid)
-        Log.debug("Total jobs to submit: %s" % max_jobs)
-        Log.debug("Maximum waiting jobs in queues: %s" % max_waiting_jobs)
-        Log.debug("Sleep: %s" % safetysleeptime)
-        Log.debug("Retrials: %s" % retrials)
+        Log.debug("The Experiment name is: {0}", expid)
+        Log.debug("Total jobs to submit: {0}", max_jobs)
+        Log.debug("Maximum waiting jobs in queues: {0}", max_waiting_jobs)
+        Log.debug("Sleep: {0}", safetysleeptime)
+        Log.debug("Retrials: {0}", retrials)
         Log.info("Starting job submission...")
 
         # for queue in queues:
@@ -401,12 +401,12 @@ class Autosubmit:
         # the experiment should be loaded as well
         if os.path.exists(filename):
             joblist = cPickle.load(file(filename, 'rw'))
-            Log.debug("Starting from joblist pickled in %s " % filename)
+            Log.debug("Starting from joblist pickled in {0}", filename)
         else:
-            Log.error("The pickle file %s necessary does not exist." % filename)
+            Log.error("The necessary pickle file {0} does not exist.", filename)
             sys.exit()
 
-        Log.debug("Length of joblist: %s" % len(joblist))
+        Log.debug("Length of joblist: {0}", len(joblist))
 
         # Load parameters
         Log.debug("Loading parameters...")
@@ -455,9 +455,9 @@ class Autosubmit:
             Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
                                                                 strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
-            Log.debug("Sleep: %s" % safetysleeptime)
+            Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
-            Log.debug("Number of retrials: %s" % retrials)
+            Log.debug("Number of retrials: {0}", retrials)
 
             # read FAIL_RETRIAL number if, blank at creation time put a given number
             # check availability of machine, if not next iteration after sleep time
@@ -466,25 +466,25 @@ class Autosubmit:
             # ??? why
             joblist.save()
 
-            Log.info("Active jobs in queues:\t%s" % active)
-            Log.info("Waiting jobs in queues:\t%s" % waiting)
+            Log.info("Active jobs in queues:\t{0}", active)
+            Log.info("Waiting jobs in queues:\t{0}", waiting)
 
             if available == 0:
                 Log.debug("There's no room for more jobs...")
             else:
-                Log.debug("We can safely submit %s jobs..." % available)
+                Log.debug("We can safely submit {0} jobs...", available)
 
             ######################################
             # AUTOSUBMIT - ALREADY SUBMITTED JOBS
             ######################################
             # get the list of jobs currently in the Queue
             jobinqueue = joblist.get_in_queue()
-            Log.info("Number of jobs in queue: %s" % str(len(jobinqueue)))
+            Log.info("Number of jobs in queue: {0}", str(len(jobinqueue)))
 
             for job in jobinqueue:
 
                 job.print_job()
-                Log.debug("Number of jobs in queue: %s" % str(len(jobinqueue)))
+                Log.debug("Number of jobs in queue: {0}", str(len(jobinqueue)))
                 # Check queue availability
                 job_queue = job.get_queue()
                 queueavail = job_queue.check_host()
@@ -499,13 +499,13 @@ class Autosubmit:
                     else:
                         job.status = status
                     if job.status is Status.QUEUING:
-                        Log.info("Job %s is QUEUING", job.name)
+                        Log.info("Job {0} is QUEUING", job.name)
                     elif job.status is Status.RUNNING:
-                        Log.info("Job %s is RUNNING", job.name)
+                        Log.info("Job {0} is RUNNING", job.name)
                     elif job.status is Status.COMPLETED:
-                        Log.result("Job %s is COMPLETED", job.name)
+                        Log.result("Job {0} is COMPLETED", job.name)
                     elif job.status is Status.FAILED:
-                        Log.user_warning("Job %s is FAILED", job.name)
+                        Log.user_warning("Job {0} is FAILED", job.name)
                         # Uri add check if status UNKNOWN and exit if you want
                         # after checking the jobs , no job should have the status "submitted"
                         # Uri throw an exception if this happens (warning type no exit)
@@ -521,10 +521,10 @@ class Autosubmit:
 
             if min(available, len(jobsavail)) == 0:
                 Log.debug("There is no job READY or available")
-                Log.debug("Number of jobs ready: %s" % len(jobsavail))
-                Log.debug("Number of jobs available in queue: %s" % available)
+                Log.debug("Number of jobs ready: {0}", len(jobsavail))
+                Log.debug("Number of jobs available in queue: {0}", available)
             elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
-                Log.info("\nStarting to submit %s job(s)" % min(available, len(jobsavail)))
+                Log.info("\nStarting to submit {0} job(s)", min(available, len(jobsavail)))
                 # should sort the jobsavail by priority Clean->post->sim>ini
                 # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
                 # probably useless to sort by year before sorting by type
@@ -853,89 +853,85 @@ class Autosubmit:
             git_project_branch = as_conf.get_git_project_branch()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
-                Log.info("Using project folder: %s" % project_path)
+                Log.info("Using project folder: {0}", project_path)
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
                 else:
                     shutil.rmtree(project_path)
             os.mkdir(project_path)
-            Log.debug("The project folder %s has been created." % project_path)
+            Log.debug("The project folder {0} has been created.", project_path)
 
-            Log.info("Cloning %s into %s" % (git_project_branch + " " + git_project_origin, project_path))
+            Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; git clone -b " + git_project_branch +
                                                " " + git_project_origin)
             if status:
-                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                        project_path))
+                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
 
-            Log.debug("%s" % output)
+            Log.debug("{0}", output)
             git_project_name = output[output.find("'") + 1:output.find("...") - 1]
             (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule update --remote --init")
             if status:
-                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                        project_path))
+                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
-            Log.debug("%s" % output)
+            Log.debug("{0}", output)
 
             (status, output) = getstatusoutput("cd " + project_path + "/" + git_project_name +
                                                "; git submodule foreach -q 'branch=\"$(git config "
                                                "-f $toplevel/.gitmodules submodule.$name.branch)\"; "
                                                "git checkout $branch'")
             if status:
-                Log.error("Can not clone %s into %s" % (git_project_branch + " " + git_project_origin,
-                                                        project_path))
+                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
-            Log.debug("%s" % output)
+            Log.debug("{0}", output)
 
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
             svn_project_revision = as_conf.get_svn_project_revision()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
-                Log.info("Using project folder: %s" % project_path)
+                Log.info("Using project folder: {0}", project_path)
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
             else:
-                Log.debug("The project folder %s has been created." % project_path)
+                Log.debug("The project folder {0} has been created.", project_path)
             shutil.rmtree(project_path)
-            Log.info("Checking out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
-                                                           project_path))
+            Log.info("Checking out revision {0} into {1}", svn_project_revision + " " + svn_project_url, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
                                                " " + svn_project_url)
             if status:
-                Log.error("Can not check out revision %s into %s" % (svn_project_revision + " " + svn_project_url,
-                                                                     project_path))
+                Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
+                          project_path)
                 shutil.rmtree(project_path)
                 return False
-            Log.debug("%s" % output)
+            Log.debug("{0}" % output)
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
-                Log.info("Using project folder: %s" % project_path)
+                Log.info("Using project folder: {0}", project_path)
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
                 else:
                     shutil.rmtree(project_path)
             os.mkdir(project_path)
-            Log.debug("The project folder %s has been created." % project_path)
+            Log.debug("The project folder {0} has been created.", project_path)
 
-            Log.info("Copying %s into %s" % (local_project_path, project_path))
+            Log.info("Copying {0} into {1}", local_project_path, project_path)
             (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
             if status:
-                Log.error("Can not copy %s into %s. Exiting..." % (local_project_path, project_path))
+                Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                 shutil.rmtree(project_path)
                 return False
-            Log.debug("%s" % output)
+            Log.debug("{0}", output)
         return True
 
     @staticmethod
@@ -946,7 +942,7 @@ class Autosubmit:
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
-        Log.debug('Exp ID: %', expid)
+        Log.debug('Exp ID: {0}', expid)
         l1 = cPickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
                                ".pkl", 'r'))
 

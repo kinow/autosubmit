@@ -48,7 +48,6 @@ class HPCQueue:
         self._host_config = None
         self._host_config_id = None
 
-
     @property
     def header(self):
         return self._header
@@ -84,7 +83,7 @@ class HPCQueue:
             if len(stderr_readlines) > 0:
                 Log.warning('Command {0} in {1} warning: {2}'.format(command, self._host, stderr_readlines))
             self._ssh_output = stdout.read().rstrip()
-            #if stdout.channel.exit_status_ready():
+            # if stdout.channel.exit_status_ready():
             if stdout.channel.recv_exit_status() == 0:
                 Log.debug('Command {0} in {1} successful with out message: {2}'.format(command, self._host,
                                                                                        self._ssh_output))
@@ -151,7 +150,7 @@ class HPCQueue:
 
         if type(job_id) is not int:
             # URi: logger
-            Log.error('check_job() The job id ({0}) is not an integer.'.format(job_id))
+            Log.error('check_job() The job id ({0}) is not an integer.', job_id)
             # URi: value ?
             return job_status
 
@@ -180,7 +179,7 @@ class HPCQueue:
         else:
             # BOUOUOUOU	NOT	GOOD!
             job_status = Status.UNKNOWN
-            Log.error('check_job() The job id ({0}) status is {1}.'.format(job_id, job_status))
+            Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         return job_status
 
     def check_host(self):
@@ -195,7 +194,7 @@ class HPCQueue:
 
     def check_remote_log_dir(self):
         if self.send_command(self.get_mkdir_cmd()):
-            Log.debug('{0} has been created on {1}.'.format(self.remote_log_dir, self._host))
+            Log.debug('{0} has been created on {1} .', self.remote_log_dir, self._host)
         else:
             Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self._host))
 

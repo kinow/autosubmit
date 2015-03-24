@@ -113,6 +113,7 @@ class Log:
         """
         Configure the file to store the log. If another file was specified earlier, new messages will only go to the
         new file.
+
         :param file_path: file to store the log
         """
         (directory, filename) = os.path.split(file_path)
@@ -134,6 +135,7 @@ class Log:
         """
         Sets log level for logging to console. Every output of level equal or higher to parameter level will be
         printed on console
+
         :param level: new level for console
         :return: None
         """
@@ -146,6 +148,7 @@ class Log:
         """
         Sets log level for logging to file. Every output of level equal or higher to parameter level will be
         added to log file
+
         :param level: new level for log file
         :return: None
         """
@@ -156,73 +159,73 @@ class Log:
             Log.file_handler.level = level
 
     @staticmethod
-    def debug(msg, *args, **kwargs):
+    def debug(msg, *args):
         """
         Sends debug information to the log
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.debug(msg, *args, **kwargs)
+        Log.log.debug(msg.format(*args))
 
     @staticmethod
-    def info(msg, *args, **kwargs):
+    def info(msg, *args):
         """
         Sends information to the log
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.info(msg, *args, **kwargs)
+        Log.log.info(msg.format(*args))
 
     @staticmethod
-    def result(msg, *args, **kwargs):
+    def result(msg, *args):
         """
         Sends results information to the log. It will be shown in green in the console.
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.log(Log.RESULT, msg, *args, **kwargs)
+        Log.log.log(Log.RESULT, msg.format(*args))
 
     @staticmethod
-    def user_warning(msg, *args, **kwargs):
+    def user_warning(msg, *args):
         """
         Sends warnings for the user to the log. It will be shown in yellow in the console.
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.log(Log.USER_WARNING, msg, *args, **kwargs)
+        Log.log.log(Log.USER_WARNING, msg.format(*args))
 
     @staticmethod
-    def warning(msg, *args, **kwargs):
+    def warning(msg, *args):
         """
         Sends program warnings to the log. It will be shown in yellow in the console.
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.warning(msg, *args, **kwargs)
+        Log.log.warning(msg.format(*args))
 
     @staticmethod
-    def error(msg, *args, **kwargs):
+    def error(msg, *args):
         """
         Sends errors to the log. It will be shown in red in the console.
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.error(msg, *args, **kwargs)
+        Log.log.error(msg.format(*args))
 
     @staticmethod
-    def critical(msg, *args, **kwargs):
+    def critical(msg, *args):
         """
         Sends critical errors to the log. It will be shown in red in the console.
+
         :param msg: message to show
         :param args:
-        :param kwargs:
         """
-        Log.log.critical(msg, *args, **kwargs)
+        Log.log.critical(msg.format(*args))
 
 

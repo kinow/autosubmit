@@ -55,6 +55,7 @@ class JobList:
     def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
         """
         Creates all jobs needed for the current workflow
+
         :param date_list: list of start dates
         :param member_list: list of members
         :param starting_chunk: number of starting chunk
@@ -247,16 +248,18 @@ class JobList:
     def get_job_by_name(self, name):
         """
         Returns the job that its name matches parameter name
+
         :parameter name: name to look for
         """
         for job in self._job_list:
             if job.name == name:
                 return job
-        Log.warning("We could not find that job %s in the list!!!!", name)
+        Log.warning("We could not find that job {0} in the list!!!!", name)
 
     def sort_by_name(self):
         """
         Returns a list of jobs sorted by name
+
         :return: job list
         """
         return sorted(self._job_list, key=lambda k: k.name)
@@ -264,6 +267,7 @@ class JobList:
     def sort_by_id(self):
         """
         Returns a list of jobs sorted by id
+
         :return: job list
         """
         return sorted(self._job_list, key=lambda k: k.id)
@@ -271,6 +275,7 @@ class JobList:
     def sort_by_type(self):
         """
         Returns a list of jobs sorted by type
+
         :return: job list
         """
         return sorted(self._job_list, key=lambda k: k.type)
@@ -278,6 +283,7 @@ class JobList:
     def sort_by_status(self):
         """
         Returns a list of jobs sorted by status
+
         :return: job list
         """
         return sorted(self._job_list, key=lambda k: k.status)
@@ -286,6 +292,7 @@ class JobList:
     def load_file(filename):
         """
         Recreates an stored joblist from the pickle file
+
         :param filename:
         :return: loaded joblist object
         """
@@ -298,6 +305,7 @@ class JobList:
     def load(self):
         """
         Recreates an stored joblist from the pickle file
+
         :param filename:
         :return: loaded joblist object
         """
@@ -320,6 +328,7 @@ class JobList:
     def save(self):
         """
         Stores joblist as a pickle file
+
         :return: loaded joblist object
         """
         setrecursionlimit(50000)
@@ -372,14 +381,18 @@ class JobList:
             self.save()
 
     def update_shortened_names(self):
-        """In some cases the scheduler only can operate with names shorter than 15 characters.
-        Update the job list replacing job names by the corresponding shortened job name"""
+        """
+        In some cases the scheduler only can operate with names shorter than 15 characters.
+        Update the job list replacing job names by the corresponding shortened job name
+        """
         for job in self._job_list:
             job.name = job.short_name
 
     def update_genealogy(self):
-        """When we have created the joblist, every type of job is created.
-        Update genealogy remove jobs that have no templates"""
+        """
+        When we have created the joblist, every type of job is created.
+        Update genealogy remove jobs that have no templates
+        """
 
         # Use a copy of job_list because original is modified along iterations
         for job in self._job_list[:]:
@@ -408,7 +421,7 @@ class JobList:
         for job in self._job_list:
             if not job.check_script(as_conf):
                 out = False
-                Log.warning("Invalid parameter substitution in %s!!!" % job.name)
+                Log.warning("Invalid parameter substitution in {0}!!!" % job.name)
 
         return out
 
@@ -519,8 +532,8 @@ class JobList:
             self.update_genealogy()
         del self._dic_jobs
 
-class DicJobs:
 
+class DicJobs:
     def __init__(self, joblist, parser, date_list, member_list, chunk_list):
         self._date_list = date_list
         self._joblist = joblist

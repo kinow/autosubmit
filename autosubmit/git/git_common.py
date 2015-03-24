@@ -77,8 +77,7 @@ class AutosubmitGit:
                                     rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" +
                                            BasicConfig.LOCAL_PROJ_DIR + "/" + dirname)
                                     Log.debug(dirname + " directory clean!")
-                                    Log.user_warning("Further runs will require 'git clone " + dirname + ".git " +
-                                                     dirname + "' ...")
+                                    Log.user_warning("Further runs will require 'git clone {0}.git {0} '...", dirname)
                         else:
                             Log.error("Failed to retrieve git info...")
                             exit(1)

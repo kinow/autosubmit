@@ -3,22 +3,26 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+######################################
 Welcome to autosubmit's documentation!
-======================================
+######################################
 
+#########
 Contents:
-=========
+#########
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 2
+   :maxdepth: 5
 
+   introduction
    howto
    dev
-   autosubmit
+   codedoc/main
 
+##################
 Indices and tables
-==================
+##################
 
 * :ref:`genindex`
 * :ref:`modindex`
