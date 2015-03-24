@@ -421,7 +421,7 @@ class JobList:
         for job in self._job_list:
             if not job.check_script(as_conf):
                 out = False
-                Log.warning("Invalid parameter substitution in {0}!!!" % job.name)
+                Log.warning("Invalid parameter substitution in {0}!!!", job.name)
 
         return out
 

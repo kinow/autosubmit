@@ -532,8 +532,7 @@ class Job:
 
         if not out:
             Log.warning("The following set of variables to be substituted in template script is not part of "
-                        "parameters set: ")
-            Log.warning(set(variables) - set(parameters))
+                        "parameters set: {0}", str(set(variables) - set(parameters)))
         else:
             self.create_script(as_conf)
 
