@@ -154,12 +154,12 @@ class StatisticsSnippet:
             for failed_errfile in $failed_errfiles; do
              failed_errfile_stamp=$(stat -c %Z $failed_errfile)
              job_qt=$(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ -z ${job_qt+x} ]]; then
+             if [[ ! -z ${job_qt+x} ]]; then
                job_qt=0
              fi
              failed_jobs_qt=$((failed_jobs_qt + job_qt))
              job_st=$(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ -z ${job_qt+x} ]]; then
+             if [[ ! -z ${job_qt+x} ]]; then
                job_st=0
              fi
              failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - job_st))))
