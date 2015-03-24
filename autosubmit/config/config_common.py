@@ -33,6 +33,7 @@ from autosubmit.queue.pbsqueue import PBSQueue
 from autosubmit.queue.sgequeue import SgeQueue
 from autosubmit.queue.ecqueue import EcQueue
 from autosubmit.queue.slurmqueue import SlurmQueue
+from autosubmit.queue.localqueue import LocalQueue
 
 
 class AutosubmitConfig:
@@ -523,9 +524,9 @@ class AutosubmitConfig:
         parser = self._queues_parser
 
         queues = dict()
-        local_queue = PsQueue(self.expid)
+        local_queue = LocalQueue(self.expid)
         local_queue.name = 'local'
-        local_queue.type = 'ps'
+        local_queue.type = 'local'
         local_queue.version = ''
         local_queue.set_host(platform.node())
         local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)

@@ -548,7 +548,7 @@ class Autosubmit:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                        Log.info("%s submitted\n", job.name)
+                        Log.info("{0} submitted\n", job.name)
 
             time.sleep(safetysleeptime)
 

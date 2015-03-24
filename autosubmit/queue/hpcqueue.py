@@ -62,20 +62,19 @@ class HPCQueue:
                 with open(self._user_config_file) as f:
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self._host)
-            if self._host_config.has_key('identityfile'):
+            if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
 
             self._ssh.connect(self._host_config['hostname'], 22, username=self._host_config['user'],
                               key_filename=self._host_config_id)
             return True
         except BaseException as e:
-            Log.error('Can not create ssh connection to {0}: {1}'.format(self._host, e.message))
+            Log.error('Can not create ssh connection to {0}: {1}', self._host, e.message)
             return False
 
     def send_command(self, command):
         if self._ssh is None:
-            if not self._ssh.connect(self._host_config['hostname'], 22, username=self._host_config['user'],
-                                     key_filename=self._host_config_id):
+            if not self.connect():
                 return None
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
@@ -291,7 +290,7 @@ class HPCQueue:
 
     @staticmethod
     def get_pscall(job_id):
-        return 'kill -0 {0} &> /dev/null; echo $?'.format(job_id)
+        return 'nohup kill -0 {0}; echo $?'.format(job_id)
 
     @staticmethod
     def get_qstatjob(job_id):

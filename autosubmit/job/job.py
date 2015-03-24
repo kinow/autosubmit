@@ -28,6 +28,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
+from autosubmit.queue.localqueue import LocalQueue
 
 
 class Job:
@@ -441,8 +442,8 @@ class Job:
             parameters['RUN_DAYS'] = str(run_days)
             parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
 
-            chunk_start_m = chunk_start_month(chunk_start)
-            chunk_start_y = chunk_start_year(chunk_start)
+            chunk_start_m = get_month(chunk_start)
+            chunk_start_y = get_year(chunk_start)
 
             parameters['Chunk_START_YEAR'] = str(chunk_start_y)
             parameters['Chunk_START_MONTH'] = str(chunk_start_m)
@@ -480,7 +481,7 @@ class Job:
         else:
             template = ''
         queue = self.get_queue()
-        if queue.name == 'local':
+        if isinstance(queue, LocalQueue):
             stats_header = StatisticsSnippet.AS_HEADER_LOC
             stats_tailer = StatisticsSnippet.AS_TAILER_LOC
         else:
