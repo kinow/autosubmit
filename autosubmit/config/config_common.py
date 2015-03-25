@@ -744,7 +744,7 @@ class AutosubmitConfig:
         :param option: option to get
         :type option: str
         :param default: value to be returned if option is not present
-        :type default: str
+        :type default: object
         :return: option value
         :rtype: str
         """

@@ -34,7 +34,7 @@ def create_db(qry):
     Creates a new database for autosubmit
 
     :param qry: query to create the new database
-    :return: None
+    :type qry: str
     """
     (conn, cursor) = open_conn()
     try:
@@ -54,8 +54,9 @@ def _set_experiment(name, description):
     Stores experiment in database
 
     :param name: experiment's name
+    :type name: str
     :param description: experiment's description
-    :return: None
+    :type description: str
     """
     check_db()
     name = check_name(name)
@@ -79,7 +80,9 @@ def check_experiment_exists(name):
     Checks if exist an experiment with the given name.
 
     :param name: Experiment name
+    :type name: str
     :return: If experiment exists returns true, if not returns false
+    :rtype: bool
     """
     check_db()
     name = check_name(name)
@@ -103,8 +106,11 @@ def new_experiment(hpc, description):
     Stores a new experiment on the database and generates its identifier
 
     :param hpc: name of the main HPC to be used by the experiment
+    :type hpc: str
     :param description: experiment's description
+    :type description: str
     :return: experiment id for the new experiment
+    :rtype: str
     """
     last_exp_name = last_name(hpc)
     if last_exp_name == 'empty':
@@ -115,7 +121,7 @@ def new_experiment(hpc, description):
     else:
         new_name = _next_name(last_exp_name)
     _set_experiment(new_name, description)
-    Log.info('The new experiment "{0}" has been registered.' , new_name)
+    Log.info('The new experiment "{0}" has been registered.', new_name)
     return new_name
 
 
@@ -124,9 +130,13 @@ def copy_experiment(name, hpc, description):
     Creates a new experiment by copying an existing experiment
 
     :param name: identifier of experiment to copy
+    :type name: str
     :param hpc: name of the main HPC to be used by the experiment
+    :type hpc: str
     :param description: experiment's description
+    :type description: str
     :return: experiment id for the new experiment
+    :rtype: str
     """
     if not check_experiment_exists(name):
         exit(1)
@@ -139,8 +149,11 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
     Convert positive integer to a base36 string.
 
     :param number: number to convert
+    :type number: int
     :param alphabet: set of characters to use
+    :type alphabet: str
     :return: number's base36 string value
+    :rtype: str
     """
     if not isinstance(number, (int, long)):
         raise TypeError('number must be an integer')
@@ -169,7 +182,9 @@ def base36decode(number):
     Converts a base36 string to a positive integer
 
     :param number: base36 string to convert
+    :type number: str
     :return: number's integer value
+    :rtype: int
     """
     return int(number, 36)
 
@@ -179,7 +194,9 @@ def _next_name(name):
     Get next experiment identifier
 
     :param name: previous experiment identifier
+    :type name: str
     :return: new experiment identifier
+    :rtype: str
     """
     name = check_name(name)
     # Convert the name to base 36 in number add 1 and then encode it
@@ -191,7 +208,9 @@ def last_name(hpc):
     Gets last experiment identifier used for HPC
 
     :param hpc: HPC name
+    :type hpc: str
     :return: last experiment identifier used for HPC, 'empty' if there is none
+    :rtype: str
     """
     check_db()
     (conn, cursor) = open_conn()
@@ -216,7 +235,9 @@ def delete_experiment(name):
     Removes experiment from database
 
     :param name: experiment identifier
-    :return: None
+    :type name: str
+    :return: True if delete is succesful
+    :rtype: bool
     """
     check_db()
     name = check_name(name)
@@ -235,7 +256,9 @@ def check_name(name):
     Checks if it is a valid experiment identifier
 
     :param name: experiment identifier to check
+    :type name: str
     :return: name if is valid, terminates program otherwise
+    :rtype: str
     """
     name = name.lower()
     if len(name) < 4 or not name.isalnum():
@@ -262,6 +285,7 @@ def open_conn():
     Opens a connection to database
 
     :return: connection object, cursor object
+    :rtype: sqlite3.Connection, sqlite3.Cursor
     """
     conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
@@ -273,8 +297,9 @@ def close_conn(conn, cursor):
     Commits changes and close connection to database
 
     :param conn: connection to close
+    :type conn: sqlite3.Connection
     :param cursor: cursor to close
-    :return:
+    :type cursor: sqlite3.Cursor
     """
     conn.commit()
     cursor.close()

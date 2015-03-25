@@ -71,8 +71,8 @@ class EcQueue(HPCQueue):
         return self.mkdir_cmd
 
     def parse_job_output(self, output):
-        job_state = len(output.split('\n'))
-        if job_state > 7:
+        job_state = output.split('\n')
+        if len(job_state) > 7:
             job_state = job_state[7].split()
             if len(job_state) > 2:
                 return job_state[1]

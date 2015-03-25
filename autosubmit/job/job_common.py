@@ -37,6 +37,7 @@ class Status:
         return getattr(self, value)
 
 
+# noinspection PyPep8
 class StatisticsSnippet:
     """
     Class to handle the statistics snippet of a job. It contains header and tailer for

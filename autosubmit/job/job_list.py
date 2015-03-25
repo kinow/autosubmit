@@ -306,8 +306,8 @@ class JobList:
         """
         Recreates an stored joblist from the pickle file
 
-        :param filename:
         :return: loaded joblist object
+        :rtype: JobList
         """
         Log.info("Loading JobList: " + self._pkl_path + self._job_list_file)
         return JobList.load_file(self._pkl_path + self._job_list_file)

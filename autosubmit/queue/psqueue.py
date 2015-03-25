@@ -16,13 +16,11 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import os
 import textwrap
 from xml.dom.minidom import parseString
 import platform
 
 from autosubmit.queue.hpcqueue import HPCQueue
-from autosubmit.config.basicConfig import BasicConfig
 
 
 class PsQueue(HPCQueue):

@@ -255,8 +255,10 @@ class Autosubmit:
         except OSError:
             pass
         Log.info("Deleting experiment from database...")
-        return delete_experiment(expid_delete)
-        Log.result("Experiment {0} deleted".format(expid_delete))
+        ret = delete_experiment(expid_delete)
+        if ret:
+            Log.result("Experiment {0} deleted".format(expid_delete))
+        return ret
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False):
@@ -271,8 +273,8 @@ class Autosubmit:
         :param description: short experiment's description.
         :param copy_id: experiment identifier of experiment to copy
         :param dummy: if true, writes a default dummy configuration for testing
-        :return: True if creation was succesful, False otherwise
-        :rtype: bool
+        :return: experiment identifier. If method fails, returns ''.
+        :rtype: str
         """
         BasicConfig.read()
 
@@ -284,10 +286,10 @@ class Autosubmit:
         exp_id = None
         if description is None:
             Log.error("Missing experiment description.")
-            exit(2)
+            return ''
         if hpc is None:
             Log.error("Missing HPC.")
-            exit(1)
+            return ''
         if not copy_id:
             exp_id = new_experiment(hpc, description)
             try:
@@ -315,7 +317,7 @@ class Autosubmit:
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
                 Autosubmit._delete_expid(exp_id)
-                exit(1)
+                return ''
         else:
             try:
                 if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id):
@@ -337,7 +339,7 @@ class Autosubmit:
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
                 Autosubmit._delete_expid(exp_id)
-                exit(1)
+                return ''
 
         Log.debug("Creating temporal directory...")
         os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "tmp")
@@ -408,7 +410,6 @@ class Autosubmit:
         max_waiting_jobs = as_conf.get_max_waiting_jobs()
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
-        rerun = as_conf.get_rerun()
 
         queues = as_conf.read_queues_conf()
 
@@ -720,7 +721,7 @@ class Autosubmit:
         hpcarch = as_conf.get_platform()
 
         if get:
-            queues = AutosubmitConfig.read_queues_conf(expid)
+            queues = as_conf.read_queues_conf()
 
             for job in job_list.get_active():
                 if job.queue_name is None:
@@ -1076,7 +1077,7 @@ class Autosubmit:
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
         job_list = cPickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
-                               ".pkl", 'r'))
+                                     ".pkl", 'r'))
 
         final_status = Autosubmit._get_status(final)
         if flt:
@@ -1323,7 +1324,7 @@ class Autosubmit:
         Function to parse rerun specification from json format
 
         :param text: text to parse
-        :type text: str
+        :type text: list
         :return: parsed output
         """
         count = 0
@@ -1371,6 +1372,8 @@ class Autosubmit:
         :rtype: bool
         """
         testid = Autosubmit.expid('test', 'test experiment for {0}'.format(expid), expid, False)
+        if testid == '':
+            return False
 
         as_conf = AutosubmitConfig(testid)
         exp_parser = as_conf.get_parser(as_conf.experiment_file)

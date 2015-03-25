@@ -60,6 +60,7 @@ class HPCQueue:
             self._user_config_file = os.path.expanduser("~/.ssh/config")
             if os.path.exists(self._user_config_file):
                 with open(self._user_config_file) as f:
+                    # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self._host)
             if 'identityfile' in self._host_config:
@@ -283,7 +284,7 @@ class HPCQueue:
 
     def get_shcall(self, job_script):
         return 'nohup /bin/sh {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
-                                                                                            job_script))
+                                                                                      job_script))
 
     @staticmethod
     def get_pscall(job_id):
