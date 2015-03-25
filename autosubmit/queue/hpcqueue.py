@@ -121,6 +121,7 @@ class HPCQueue:
             return False
 
     def get_ssh_output(self):
+        Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
 
     def close_connection(self):

@@ -58,8 +58,14 @@ class LsfQueue(HPCQueue):
         return self.remote_log_dir
 
     def parse_job_output(self, output):
-        job_state = output.split('\n')[1].split()[2]
-        return job_state
+        job_state = output.split('\n')
+        if len(job_state) > 1:
+            job_state = job_state[1].split()
+            if len(job_state) > 2:
+                return job_state[2]
+        # If we can not process output, assuming completed. Then we will look for completed files and status will
+        # change to failed if COMPLETED file is not present.
+        return 'DONE'
 
     def get_submitted_job_id(self, output):
         return output.split('<')[1].split('>')[0]
