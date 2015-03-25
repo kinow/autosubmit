@@ -1,6 +1,6 @@
 ==========
 autosubmit
 ==========
-.. automodule:: autosubmit
+.. automodule:: autosubmit.autosubmit
    :members:
 

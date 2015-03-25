@@ -1,4 +1,4 @@
 autosubmit.monitor
 ==================
-.. automodule:: monitor.monitor
+.. automodule:: autosubmit.monitor.monitor
    :members:

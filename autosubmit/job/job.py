@@ -401,14 +401,10 @@ class Job:
         """
         if self._complete:
             self.status = Status.COMPLETED
-            # job_logger.info("Job is completed, we are now removing the dependency in"
-            # " his %s child/children:" % self.has_children())
             for child in self.children:
-                # job_logger.debug("number of Parents:",child.has_parents())
                 if child.get_parents().__contains__(self):
                     child.delete_parent(self)
         else:
-            # job_logger.info("The checking in check_completion tell us that job %s has failed" % self.name)
             self.status = Status.FAILED
 
     def update_parameters(self):

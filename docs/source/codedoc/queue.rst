@@ -1,16 +1,20 @@
 autosubmit.queue
 ================
-.. automodule:: queue.hpcqueue
+.. automodule:: autosubmit.queue.hpcqueue
    :members:
-.. automodule:: queue.ecqueue
+.. automodule:: autosubmit.queue.ecqueue
    :members:
-.. automodule:: queue.lsfqueue
+.. automodule:: autosubmit.queue.lsfqueue
    :members:
-.. automodule:: queue.pbsqueue
+.. automodule:: autosubmit.queue.pbsqueue
    :members:
-.. automodule:: queue.psqueue
+.. automodule:: autosubmit.queue.psqueue
    :members:
-.. automodule:: queue.sgequeue
+.. automodule:: autosubmit.queue.sgequeue
    :members:
-.. automodule:: queue.slurmqueue
+.. automodule:: autosubmit.queue.slurmqueue
    :members:
+.. automodule:: autosubmit.queue.localqueue
+   :members:
+
+

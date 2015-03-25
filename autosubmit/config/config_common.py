@@ -61,13 +61,18 @@ class AutosubmitConfig:
     def queues_file(self):
         """
         Returns experiment's queues config file name
+
+        :return: queues config file's name
+        :rtype: str
         """
         return self._queues_parser_file
 
     def get_project_dir(self):
         """
         Returns experiment's project directory
-        :return:
+
+        :return: experiment's project directory
+        :rtype: str
         """
         dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
         # Getting project name for each type of project
@@ -81,7 +86,9 @@ class AutosubmitConfig:
         """
         Checks configuration files (autosubmit, experiment jobs and queues), looking for invalid values, missing
         required options. Prints results in log
-        Returns True if everithing is correct, False if it founds any error
+
+        :return: True if everithing is correct, False if it founds any error
+        :rtype: bool
         """
         Log.info('\nChecking configuration files...')
         self.reload()
@@ -98,7 +105,9 @@ class AutosubmitConfig:
     def _check_autosubmit_conf(self):
         """
         Checks experiment's autosubmit configuration file.
-        Returns True if everything is correct, False if it founds any error
+
+        :return: True if everything is correct, False if it founds any error
+        :rtype: bool
         """
         result = True
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
@@ -117,7 +126,9 @@ class AutosubmitConfig:
     def _check_queues_conf(self):
         """
         Checks experiment's queues configuration file.
-        Returns True if everything is correct, False if it founds any error
+
+        :return: True if everything is correct, False if it founds any error
+        :rtype: bool
         """
         result = True
         if len(self._queues_parser.sections()) == 0:
@@ -151,7 +162,9 @@ class AutosubmitConfig:
     def _check_jobs_conf(self):
         """
         Checks experiment's jobs configuration file.
-        Returns True if everything is correct, False if it founds any error
+
+        :return: True if everything is correct, False if it founds any error
+        :rtype: bool
         """
         result = True
         parser = self._jobs_parser
@@ -192,7 +205,9 @@ class AutosubmitConfig:
     def _check_expdef_conf(self):
         """
         Checks experiment's experiment configuration file.
-        Returns True if everything is correct, False if it founds any error
+
+        :return: True if everything is correct, False if it founds any error
+        :rtype: bool
         """
         result = True
         parser = self._exp_parser
@@ -237,6 +252,12 @@ class AutosubmitConfig:
         return result
 
     def check_proj(self):
+        """
+        Checks project config file
+
+        :return: True if everything is correct, False if it founds any error
+        :rtype: bool
+        """
         self._proj_parser_file = self.get_file_project_conf()
         if self._proj_parser_file == '':
             self._proj_parser = None
@@ -257,7 +278,9 @@ class AutosubmitConfig:
         """
         Load parameters from experiment and autosubmit config files. If experiment's type is not none,
         also load parameters from model's config file
-        Returns a dictionary containing tuples [parameter_name, parameter_value]
+
+        :return: a dictionary containing tuples [parameter_name, parameter_value]
+        :rtype: dict
         """
         parameters = dict()
         for section in self._exp_parser.sections():
@@ -280,7 +303,9 @@ class AutosubmitConfig:
     def load_project_parameters(self):
         """
         Loads parameters from model config file
-        Returns a dictionary containing tuples [parameter_name, parameter_value]
+
+        :return: dictionary containing tuples [parameter_name, parameter_value]
+        :rtype: dict
         """
         projdef = []
         for section in self._proj_parser.sections():
@@ -296,6 +321,11 @@ class AutosubmitConfig:
     def print_parameters(title, parameters):
         """
         Prints the parameters table in a tabular mode
+
+        :param title: table's title
+        :type title: str
+        :param parameters: parameters to print
+        :type: list
         """
         Log.info(title)
         Log.info("----------------------")
@@ -307,10 +337,9 @@ class AutosubmitConfig:
     def check_parameters(self):
         """
         Function to check configuration of Autosubmit.
-        Returns True if all variables are set.
-        If some parameter do not exist, the function returns False.
 
-        :return: bool
+        :return: True if all variables are set. If some parameter do not exist, the function returns False.
+        :rtype: bool
         """
         result = True
 
@@ -335,14 +364,18 @@ class AutosubmitConfig:
     def get_expid(self):
         """
         Returns experiment identifier read from experiment's config file
-        :return:
+
+        :return: experiment identifier
+        :rtype: str
         """
         return self._exp_parser.get('DEFAULT', 'EXPID')
 
     def set_expid(self, exp_id):
         """
         Set experiment identifier in autosubmit and experiment config files
+
         :param exp_id: experiment identifier to store
+        :type exp_id: str
         """
         # Experiment conf
         content = file(self._exp_parser_file).read()
@@ -358,28 +391,46 @@ class AutosubmitConfig:
     def get_project_type(self):
         """
         Returns project type from experiment config file
+
+        :return: project type
+        :rtype: str
         """
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
 
     def get_file_project_conf(self):
         """
-        Returns path to model config file from experiment config file
+        Returns path to project config file from experiment config file
+
+        :return: path to project config file
+        :rtype: str
         """
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
     def get_git_project_origin(self):
         """
         Returns git origin from experiment config file
+
+        :return: git origin
+        :rtype: str
         """
         return self._exp_parser.get('git', 'PROJECT_ORIGIN')
 
     def get_git_project_branch(self):
         """
         Returns git branch  from experiment's config file
+
+        :return: git branch
+        :rtype: str
         """
         return self._exp_parser.get('git', 'PROJECT_BRANCH')
 
     def get_git_project_commit(self):
+        """
+        Returns git commit from experiment's config file
+
+        :return: git commit
+        :rtype: str
+        """
         return self._exp_parser.get('git', 'PROJECT_COMMIT')
 
     def set_git_project_commit(self):
@@ -428,60 +479,113 @@ class AutosubmitConfig:
 
     def get_svn_project_url(self):
         """
-        Get url to subversion project
+        Gets subversion project url
+
+        :return: subversion project url
+        :rtype: str
         """
         return self._exp_parser.get('svn', 'PROJECT_URL')
 
     def get_svn_project_revision(self):
         """
         Get revision for subversion project
+
+        :return: revision for subversion project
+        :rtype: str
         """
         return self._exp_parser.get('svn', 'PROJECT_REVISION')
 
     def get_local_project_path(self):
         """
-        Returns path to origin for local project
+        Gets path to origin for local project
+
+        :return: path to local project
+        :rtype: str
         """
         return self._exp_parser.get('local', 'PROJECT_PATH')
 
     def get_date_list(self):
         """
         Returns startdates list from experiment's config file
+
+        :return: experiment's startdates
+        :rtype: list
         """
         return self._exp_parser.get('experiment', 'DATELIST').split(' ')
 
     def get_starting_chunk(self):
         """
         Returns starting chunk for experiment in experiment's config file
+
+        :return: starting chunk
+        :rtype: int
         """
         return int(self._exp_parser.get('experiment', 'CHUNKINI'))
 
     def get_num_chunks(self):
         """
         Returns number of chunks to run for each member
-        :return:
+
+        :return: number of chunks
+        :rtype: int
         """
         return int(self._exp_parser.get('experiment', 'NUMCHUNKS'))
 
     def get_member_list(self):
+        """
+        Returns members list from experiment's config file
+
+        :return: experiment's members
+        :rtype: list
+        """
         return self._exp_parser.get('experiment', 'MEMBERS').split(' ')
 
     def get_rerun(self):
+        """
+        Returns startdates list from experiment's config file
+
+        :return: rerurn value
+        :rtype: list
+        """
         return self._exp_parser.get('rerun', 'RERUN').lower()
 
     def get_chunk_list(self):
+        """
+        Returns chunk list from experiment's config file
+
+        :return: experiment's chunks
+        :rtype: list
+        """
         return self._exp_parser.get('rerun', 'CHUNKLIST')
 
     def get_platform(self):
+        """
+        Returns main platform from experiment's config file
+
+        :return: main platform
+        :rtype: str
+        """
         return self._exp_parser.get('experiment', 'HPCARCH').lower()
 
     def set_platform(self, hpc):
+        """
+        Sets main platform in experiment's config file
+
+        :param hpc: main platform
+        :type: str
+        """
         content = file(self._exp_parser_file).read()
         if re.search('HPCARCH =.*', content):
             content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
         file(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
+        """
+        Sets autosubmit's version in autosubmit's config file
+
+        :param autosubmit_version: autosubmit's version
+        :type autosubmit_version: str
+        """
         content = file(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_VERSION =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
@@ -489,6 +593,9 @@ class AutosubmitConfig:
         file(self._conf_parser_file, 'w').write(content)
 
     def set_local_root(self):
+        """
+        Sets local root in autosubmit's config file
+        """
         content = file(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0),
@@ -496,31 +603,75 @@ class AutosubmitConfig:
         file(self._conf_parser_file, 'w').write(content)
 
     def get_total_jobs(self):
+        """
+        Returns max number of running jobs  from autosubmit's config file
+
+        :return: max number of running jobs
+        :rtype: int
+        """
         return int(self._conf_parser.get('config', 'TOTALJOBS'))
 
     def get_max_waiting_jobs(self):
+        """
+        Returns max number of waitng jobs from autosubmit's config file
+
+        :return: main platform
+        :rtype: int
+        """
         return int(self._conf_parser.get('config', 'MAXWAITINGJOBS'))
 
     def get_safetysleeptime(self):
+        """
+        Returns safety sleep time from autosubmit's config file
+
+        :return: safety sleep time
+        :rtype: int
+        """
         return int(self._conf_parser.get('config', 'SAFETYSLEEPTIME'))
 
     def set_safetysleeptime(self, sleep_time):
+        """
+        Sets autosubmit's version in autosubmit's config file
+
+        :param sleep_time: value to set
+        :type sleep_time: int
+        """
         content = file(self._conf_parser_file).read()
         content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
                                   "SAFETYSLEEPTIME = %d" % sleep_time)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
+        """
+        Returns max number of retrials for job from autosubmit's config file
+
+        :return: safety sleep time
+        :rtype: int
+        """
         return int(self._conf_parser.get('config', 'RETRIALS'))
 
     @staticmethod
     def get_parser(file_path):
+        """
+        Gets parser for given file
+
+        :param file_path: path to file to be parsed
+        :type file_path: str
+        :return: parser
+        :rtype: SafeConfigParser
+        """
         parser = SafeConfigParser()
         parser.optionxform = str
         parser.read(file_path)
         return parser
 
     def read_queues_conf(self):
+        """
+        Read queues configuration file and create defined queues. Also adds the local queue to the list
+
+        :return: queues defined on file and local queue
+        :rtype: list
+        """
         parser = self._queues_parser
 
         queues = dict()
@@ -583,6 +734,20 @@ class AutosubmitConfig:
 
     @staticmethod
     def get_option(parser, section, option, default):
+        """
+        Gets an option from given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to get
+        :type option: str
+        :param default: value to be returned if option is not present
+        :type default: str
+        :return: option value
+        :rtype: str
+        """
         if parser.has_option(section, option):
             return parser.get(section, option)
         else:
@@ -590,6 +755,18 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_exists(parser, section, option):
+        """
+        Checks if an option exists in given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to check
+        :type option: str
+        :return: True if option exists, False otherwise
+        :rtype: bool
+        """
         if parser.has_option(section, option):
             return True
         else:
@@ -598,7 +775,22 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_is_boolean(parser, section, option, must_exist):
+        """
+        Checks if an option is a boolean value in given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to check
+        :type option: str
+        :param must_exist: if True, option must exist
+        :type must_exist: bool
+        :return: True if option value is boolean, False otherwise
+        :rtype: bool
+        """
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
+            Log.error('Option {0} in section {1} must exist'.format(option, section))
             return False
         if AutosubmitConfig.get_option(parser, section, option, 'false').lower() not in ['false', 'true']:
             Log.error('Option {0} in section {1} must be true or false'.format(option, section))
@@ -607,6 +799,22 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_is_choice(parser, section, option, must_exist, choices):
+        """
+        Checks if an option is a valid choice in given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to check
+        :type option: str
+        :param must_exist: if True, option must exist
+        :type must_exist: bool
+        :param choices: valid choices
+        :type choices: list
+        :return: True if option value is a valid choice, False otherwise
+        :rtype: bool
+        """
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
             return False
         value = AutosubmitConfig.get_option(parser, section, option, choices[0])
@@ -617,6 +825,20 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_is_int(parser, section, option, must_exist):
+        """
+        Checks if an option is an integer value in given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to check
+        :type option: str
+        :param must_exist: if True, option must exist
+        :type must_exist: bool
+        :return: True if option value is integer, False otherwise
+        :rtype: bool
+        """
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
             return False
         value = AutosubmitConfig.get_option(parser, section, option, '1')
@@ -629,6 +851,22 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_regex(parser, section, option, must_exist, regex):
+        """
+        Checks if an option complies with a regular expression in given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to check
+        :type option: str
+        :param must_exist: if True, option must exist
+        :type must_exist: bool
+        :param regex: regular expression to check
+        :type regex: str
+        :return: True if option complies with regex, False otherwise
+        :rtype: bool
+        """
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
             return False
         prog = re.compile(regex)
@@ -640,6 +878,16 @@ class AutosubmitConfig:
 
     @staticmethod
     def check_json(key, value):
+        """
+        Checks if value is a valid json
+
+        :param key: key to check
+        :type key: str
+        :param value: value
+        :type value: str
+        :return: True if value is a valid json, False otherwise
+        :rtype: bool
+        """
         # noinspection PyBroadException
         try:
             nestedExpr('[', ']').parseString(value).asList()

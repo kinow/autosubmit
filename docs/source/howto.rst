@@ -342,14 +342,14 @@ To stop immediately experiment b02h:
 How to restart
 ==============
 
-This procedure allows you to modify the pickle without having any knowledge of python.  
+This procedure allows you to modify the job list.
 You must execute 
 
 ::
 	
 	python recovery.py -h
 	
-to read help. This script has two mandatory argument that is -e with which we can specify the experiment id and -j with which we can specify the pickle containing the list of jobs.
+to read help. This script has a mandatory argument  with which we can specify the experiment id.
 
 The -g flag is used to synchronize our experiment locally with the information available on the remote platform (i.e.: download the COMPLETED files we may not have). In case new files are found, the pkl will be updated although we do not specify the -s options, as the information provided is reliable.
 

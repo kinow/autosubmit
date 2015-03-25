@@ -1,8 +1,8 @@
 autosubmit.job
 ==============
-.. automodule:: job.job
+.. automodule:: autosubmit.job.job
    :members:
-.. automodule:: job.job_common
+.. automodule:: autosubmit.job.job_common
    :members:
-.. automodule:: job.job_list
+.. automodule:: autosubmit.job.job_list
    :members:

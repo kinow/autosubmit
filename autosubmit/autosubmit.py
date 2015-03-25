@@ -70,7 +70,6 @@ class Autosubmit:
     def parse_args():
         """
         Parse arguments given to an executable and start execution of command given
-        :returns:
         """
         BasicConfig.read()
 
@@ -243,10 +242,11 @@ class Autosubmit:
             Autosubmit.refresh(args.expid)
 
     @staticmethod
-    def delete_expid(expid_delete):
+    def _delete_expid(expid_delete):
         """
         Removes an experiment from path and database
 
+        :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
         Log.info("Removing experiment directory...")
@@ -255,11 +255,25 @@ class Autosubmit:
         except OSError:
             pass
         Log.info("Deleting experiment from database...")
-        delete_experiment(expid_delete)
+        return delete_experiment(expid_delete)
         Log.result("Experiment {0} deleted".format(expid_delete))
 
     @staticmethod
-    def expid(hpc, description, copy, dummy):
+    def expid(hpc, description, copy_id='', dummy=False):
+        """
+        Creates a new experiment for given HPC
+
+        :type hpc: str
+        :type description: str
+        :type copy_id: str
+        :type dummy: bool
+        :param hpc: name of the main HPC for the experiment
+        :param description: short experiment's description.
+        :param copy_id: experiment identifier of experiment to copy
+        :param dummy: if true, writes a default dummy configuration for testing
+        :return: True if creation was succesful, False otherwise
+        :rtype: bool
+        """
         BasicConfig.read()
 
         log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid.log'.format(os.getuid()))
@@ -274,7 +288,7 @@ class Autosubmit:
         if hpc is None:
             Log.error("Missing HPC.")
             exit(1)
-        if not copy:
+        if not copy_id:
             exp_id = new_experiment(hpc, description)
             try:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
@@ -300,20 +314,20 @@ class Autosubmit:
                 Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
-                Autosubmit.delete_expid(exp_id)
+                Autosubmit._delete_expid(exp_id)
                 exit(1)
         else:
             try:
-                if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy):
-                    exp_id = copy_experiment(copy, hpc, description)
+                if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id):
+                    exp_id = copy_experiment(copy_id, hpc, description)
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
                     Log.info("Copying previous experiment config directories")
-                    files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + copy + "/conf")
+                    files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf")
                     for filename in files:
-                        if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + copy + "/conf/" + filename):
-                            new_filename = filename.replace(copy, exp_id)
-                            content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + copy + "/conf/" + filename, 'r').read()
+                        if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf/" + filename):
+                            new_filename = filename.replace(copy_id, exp_id)
+                            content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf/" + filename, 'r').read()
                             file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename,
                                  'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
@@ -322,7 +336,7 @@ class Autosubmit:
                     sys.exit(1)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
-                Autosubmit.delete_expid(exp_id)
+                Autosubmit._delete_expid(exp_id)
                 exit(1)
 
         Log.debug("Creating temporal directory...")
@@ -340,20 +354,37 @@ class Autosubmit:
 
     @staticmethod
     def delete(expid, force):
+        """
+        Deletes and experiment from database and experiment's folder
+
+        :type force: bool
+        :type expid: str
+        :param expid: identifier of the experiment to delete
+        :param force: if True, does not ask for confrmation
+
+        :returns: True if succesful, False if not
+        :rtype: bool
+        """
         if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + expid):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
-                Autosubmit.delete_expid(expid)
+                return Autosubmit._delete_expid(expid)
             else:
                 Log.info("Quitting...")
-                sys.exit(1)
+                return False
         else:
             Log.error("The experiment does not exist")
-            sys.exit(1)
+            return True
 
     @staticmethod
     def run_experiment(expid):
-        """This is the main script of autosubmit. All the stream of execution is handled here
-        (submitting all the jobs properly and repeating its execution in case of failure)."""
+        """
+        Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
+
+        :type expid: str
+        :param expid: identifier of experiment to be run
+        :return: True if run to the end, False otherwise
+        :rtype: bool
+        """
         if expid is None:
             Log.critical("Missing expid.")
         BasicConfig.read()
@@ -392,10 +423,10 @@ class Autosubmit:
         #     signal.signal(signal.SIGQUIT, queues[queue].smart_stop)
         #     signal.signal(signal.SIGINT, queues[queue].normal_stop)
 
-        if rerun == 'false':
-            filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
-        else:
-            filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_' + expid + '.pkl'
+        # if rerun == 'false':
+        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
+        # else:
+        #     filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_' + expid + '.pkl'
         Log.debug(filename)
 
         # the experiment should be loaded as well
@@ -561,7 +592,16 @@ class Autosubmit:
             return True
 
     @staticmethod
-    def monitor(expid, output):
+    def monitor(expid, file_format):
+        """
+        Plots workflow graph for a given experiment with status of each job coded by node color.
+        Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
+
+        :type file_format: str
+        :type expid: str
+        :param expid: identifier of the experiment to plot
+        :param file_format: plot's file format. It can be pdf, png or ps
+        """
         root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
@@ -574,11 +614,20 @@ class Autosubmit:
 
         Log.info("Plotting...")
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, jobs, output)
+        monitor_exp.generate_output(expid, jobs, file_format)
         Log.result("Plot ready")
 
     @staticmethod
-    def statistics(expid, output):
+    def statistics(expid, file_format):
+        """
+        Plots statistics graph for a given experiment.
+        Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
+
+        :type file_format: str
+        :type expid: str
+        :param expid: identifier of the experiment to plot
+        :param file_format: plot's file format. It can be pdf, png or ps
+        """
         root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -592,13 +641,26 @@ class Autosubmit:
         if len(jobs.get_job_list()) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output_stats(expid, jobs.get_job_list(), output)
+            monitor_exp.generate_output_stats(expid, jobs.get_job_list(), file_format)
             Log.result("Stats plot ready")
         else:
             Log.info("There are no COMPLETED jobs...")
 
     @staticmethod
     def clean(expid, project, plot, stats):
+        """
+        Clean experiment's directory to save storage space.
+        It removes project directory and outdated plots or stats.
+
+        :type plot: bool
+        :type project: bool
+        :type expid: str
+        :type stats: bool
+        :param expid: identifier of experiment to clean
+        :param project: set True to delete project directory
+        :param plot: set True to delete outdated plots
+        :param stats: set True to delete outdated stats
+        """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'finalise_exp.log'))
@@ -629,6 +691,17 @@ class Autosubmit:
 
     @staticmethod
     def recovery(expid, save, get):
+        """
+        TODO
+
+        :param expid: identifier of the experiment to recover
+        :type expid: str
+        :param save: If true, recovery saves changes to joblist
+        :type save: bool
+        :param get: if True, it tries to get completed files for active jobs. If file is found, it sets state to
+                    COMPLETED. If not, it sets state to READY and fail count to 0, unless previous state was SUSPENDED
+        :type get: bool
+        """
         root_name = 'job_list'
         BasicConfig.read()
 
@@ -636,8 +709,8 @@ class Autosubmit:
                                   'recovery.log'))
 
         Log.info('Recovering experiment {0}'.format(expid))
-        l1 = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid + ".pkl"),
-                               'r'))
+        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',
+                                                  root_name + "_" + expid + ".pkl"), 'r'))
 
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
@@ -649,7 +722,7 @@ class Autosubmit:
         if get:
             queues = AutosubmitConfig.read_queues_conf(expid)
 
-            for job in l1.get_active():
+            for job in job_list.get_active():
                 if job.queue_name is None:
                     job.queue_name = hpcarch
                 job.set_queue(queues[job.queue_name])
@@ -663,25 +736,31 @@ class Autosubmit:
                     Log.info("CHANGED job '{0}' status to READY".format(job.name))
 
             sys.setrecursionlimit(50000)
-            l1.update_list()
-            cPickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl",
-                                  'w'))
+            job_list.update_list()
+            cPickle.dump(job_list, file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                     root_name + "_" + expid + ".pkl", 'w')))
 
         if save:
-            l1.update_from_file()
+            job_list.update_from_file()
         else:
-            l1.update_from_file(False)
+            job_list.update_from_file(False)
 
         if save:
             sys.setrecursionlimit(50000)
-            cPickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
-                                  ".pkl", 'w'))
+            cPickle.dump(job_list, file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                     root_name + "_" + expid + ".pkl", 'w')))
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, l1.get_job_list())
+        monitor_exp.generate_output(expid, job_list.get_job_list())
 
     @staticmethod
     def check(expid):
+        """
+        Checks experiment configuration and warns about any detected error or inconsistency.
+
+        :param expid: experiment identifier:
+        :type expid: str
+        """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
         as_conf = AutosubmitConfig(expid)
@@ -706,6 +785,24 @@ class Autosubmit:
 
     @staticmethod
     def configure(database_path, local_root_path, queues_conf_path, jobs_conf_path,  user, local):
+        """
+        Configure several paths for autosubmit: database, local root and others. Can be configured at system,
+        user or local levels. Local level configuration precedes user level and user level precedes system
+        configuration.
+
+        :param database_path: path to autosubmit database
+        :type database_path: str
+        :param local_root_path: path to autosubmit's experiments' directory
+        :type local_root_path: str
+        :param queues_conf_path: path to queues conf file to be used as model for new experiments
+        :type queues_conf_path: str
+        :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
+        :type jobs_conf_path: str
+        :param user: True if this configuration has to be stored by user
+        :type user: bool
+        :param local: True if this configuration has to be stored in the local path
+        :type local: bool
+        """
         home_path = os.path.expanduser('~')
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
@@ -762,6 +859,9 @@ class Autosubmit:
 
     @staticmethod
     def install():
+        """
+        Creates a new database instance for autosubmit at the configured path
+        """
         BasicConfig.read()
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
@@ -777,6 +877,12 @@ class Autosubmit:
 
     @staticmethod
     def refresh(expid):
+        """
+        Refresh project folder for given experiment
+
+        :param expid: experiment identifier
+        :type expid: str
+        """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'refresh.log'))
@@ -790,6 +896,17 @@ class Autosubmit:
 
     @staticmethod
     def create(expid, noplot):
+        """
+        Creates job list for given experiment. Configuration files must be valid before realizaing this process.
+
+        :param expid: experiment identifier
+        :type expid: str
+        :param noplot: if True, method omits final ploting of joblist. Only needed on large experiments when plotting
+                       time can be much larger than creation time.
+        :type noplot: bool
+        :return: True if succesful, False if not
+        :rtype: bool
+        """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
@@ -848,6 +965,19 @@ class Autosubmit:
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
+        """
+        Method to copy code from experiment repository to project directory.
+
+        :param as_conf: experiment configuration class
+        :type as_conf: AutosubmitConfig
+        :param expid: experiment identifier
+        :type expid: str
+        :param project_type: project type (git, svn, local)
+        :type project_type: str
+        :param force: if True, overwrites current data
+        :return: True if succesful, False if not
+        :rtype: bool
+        """
         if project_type == "git":
             git_project_origin = as_conf.get_git_project_origin()
             git_project_branch = as_conf.get_git_project_branch()
@@ -919,23 +1049,44 @@ class Autosubmit:
     @staticmethod
     def change_pkl(expid, save, final, lst, flt,
                    filter_chunks, filter_status, filter_section):
+        """
+        TODO
+
+        :param expid: experiment identifier
+        :type expid: str
+        :param save:
+        :type save: bool
+        :param final:
+        :type final: str
+        :param lst:
+        :type lst: str
+        :param flt:
+        :type flt: bool
+        :param filter_chunks:
+        :type filter_chunks: str
+        :param filter_status:
+        :type filter_status: str
+        :param filter_section:
+        :type filter_section: str
+        """
         root_name = 'job_list'
         BasicConfig.read()
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
-        l1 = cPickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
+        job_list = cPickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
                                ".pkl", 'r'))
 
+        final_status = Autosubmit._get_status(final)
         if flt:
             if filter_chunks:
                 fc = filter_chunks
                 Log.debug(fc)
 
                 if fc == 'Any':
-                    for job in l1.get_job_list():
-                        job.status = Autosubmit._get_status(final)
+                    for job in job_list.get_job_list():
+                        job.status = final_status
                         Log.info("CHANGED: job: " + job.name + " status to: " + final)
                 else:
                     data = json.loads(Autosubmit._create_json(fc))
@@ -944,13 +1095,13 @@ class Autosubmit:
                     for date in data['sds']:
                         for member in date['ms']:
                             jobname_ini = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_ini"
-                            job = l1.get_job_by_name(jobname_ini)
-                            job.status = Autosubmit._get_status(final)
+                            job = job_list.get_job_by_name(jobname_ini)
+                            job.status = final_status
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             # change also trans
                             jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
-                            job = l1.get_job_by_name(jobname_trans)
-                            job.status = Autosubmit._get_status(final)
+                            job = job_list.get_job_by_name(jobname_trans)
+                            job.status = final_status
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
                             # [...]
                             for chunk in member['cs']:
@@ -960,28 +1111,28 @@ class Autosubmit:
                                     chunk) + "_post"
                                 jobname_clean = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
                                     chunk) + "_clean"
-                                job = l1.get_job_by_name(jobname_sim)
-                                job.status = Autosubmit._get_status(final)
+                                job = job_list.get_job_by_name(jobname_sim)
+                                job.status = final_status
                                 Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                                job = l1.get_job_by_name(jobname_post)
-                                job.status = Autosubmit._get_status(final)
+                                job = job_list.get_job_by_name(jobname_post)
+                                job.status = final_status
                                 Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                                job = l1.get_job_by_name(jobname_clean)
-                                job.status = Autosubmit._get_status(final)
+                                job = job_list.get_job_by_name(jobname_clean)
+                                job.status = final_status
                                 Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
             if filter_status:
-                fs = filter_status
-                Log.debug(fs)
-
-                if fs == 'Any':
-                    for job in l1.get_job_list():
-                        job.status = Autosubmit._get_status(final)
+                Log.debug("Filtering jobs with status {0}", filter_status)
+                if filter_status == 'Any':
+                    for job in job_list.get_job_list():
+                        job.status = final_status
                         Log.info("CHANGED: job: " + job.name + " status to: " + final)
                 else:
-                    for job in l1.get_job_list():
-                        if job.status == Autosubmit._get_status(fs):
-                            job.status = Autosubmit._get_status(final)
+                    fs = Autosubmit._get_status(filter_status)
+
+                    for job in job_list.get_job_list():
+                        if job.status == fs:
+                            job.status = final_status
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
             if filter_section:
@@ -989,47 +1140,53 @@ class Autosubmit:
                 Log.debug(ft)
 
                 if ft == 'Any':
-                    for job in l1.get_job_list():
-                        job.status = Autosubmit._get_status(final)
+                    for job in job_list.get_job_list():
+                        job.status = final_status
                         Log.info("CHANGED: job: " + job.name + " status to: " + final)
                 else:
-                    for job in l1.get_job_list():
+                    for job in job_list.get_job_list():
                         if job.section == ft:
-                            job.status = Autosubmit._get_status(final)
+                            job.status = final_status
                             Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         if lst:
             jobs = lst.split()
 
             if jobs == 'Any':
-                for job in l1.get_job_list():
-                    job.status = Autosubmit._get_status(final)
+                for job in job_list.get_job_list():
+                    job.status = final_status
                     Log.info("CHANGED: job: " + job.name + " status to: " + final)
             else:
-                for job in l1.get_job_list():
+                for job in job_list.get_job_list():
                     if job.name in jobs:
-                        job.status = Autosubmit._get_status(final)
+                        job.status = final_status
                         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
         sys.setrecursionlimit(50000)
 
         if save:
-            l1.update_list()
-            cPickle.dump(l1, file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid + ".pkl",
-                                  'w'))
-            Log.info("Saving JobList: " + BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
-                     ".pkl")
+            job_list.update_list()
+            path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
+            cPickle.dump(job_list, file(path, 'w'))
+            Log.info("Saving JobList: {0}", path)
         else:
-            l1.update_list(False)
+            job_list.update_list(False)
             Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
         monitor_exp = Monitor()
-
-        monitor_exp.generate_output(expid, l1.get_job_list())
+        monitor_exp.generate_output(expid, job_list.get_job_list())
 
     @staticmethod
     def _user_yes_no_query(question):
-        sys.stdout.write('%s [y/n]\n' % question)
+        """
+        Utility function to ask user a yes/no question
+
+        :param question: question to ask
+        :type question: str
+        :return: True if answer is yes, False if it is no
+        :rtype: bool
+        """
+        sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
                 return strtobool(raw_input().lower())
@@ -1038,6 +1195,18 @@ class Autosubmit:
 
     @staticmethod
     def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):
+        """
+        Changes default configuration files to match new experminet values
+
+        :param exp_id: experiment identifier
+        :type exp_id: str
+        :param hpc: hpc to use
+        :type hpc: str
+        :param autosubmit_version: current autosubmit's version
+        :type autosubmit_version: str
+        :param dummy: if True, creates a dummy experiment adding some dafault values
+        :type dummy: bool
+        """
         as_conf = AutosubmitConfig(exp_id)
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
@@ -1083,6 +1252,14 @@ class Autosubmit:
 
     @staticmethod
     def _get_status(s):
+        """
+        Convert job status from str to Status
+
+        :param s: status string
+        :type s: str
+        :return: status instance
+        :rtype: Status
+        """
         if s == 'READY':
             return Status.READY
         elif s == 'COMPLETED':
@@ -1098,6 +1275,14 @@ class Autosubmit:
 
     @staticmethod
     def _get_members(out):
+        """
+        Function to get a list of members from json
+
+        :param out: json member definition
+        :type out: str
+        :return: list of members
+        :rtype: list
+        """
         count = 0
         data = []
         # noinspection PyUnusedLocal
@@ -1113,6 +1298,14 @@ class Autosubmit:
 
     @staticmethod
     def _get_chunks(out):
+        """
+        Function to get a list of chunks from json
+
+        :param out: json member definition
+        :type out: str
+        :return: list of chunks
+        :rtype: list
+        """
         data = []
         for element in out:
             if element.find("-") != -1:
@@ -1126,6 +1319,13 @@ class Autosubmit:
 
     @staticmethod
     def _create_json(text):
+        """
+        Function to parse rerun specification from json format
+
+        :param text: text to parse
+        :type text: str
+        :return: parsed output
+        """
         count = 0
         data = []
         # text = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 16651101 [ fc0 [1-30 31 32] ] ]"
@@ -1146,7 +1346,30 @@ class Autosubmit:
         return result
 
     @staticmethod
-    def test(expid, chunks, member, stardate, hpc, branch):
+    def test(expid, chunks, member=None, stardate=None, hpc=None, branch=None):
+        """
+        Method to conduct a test for a given experiment. It creates a new experiment for a given experiment qith a
+        given number of chunks with a random start date and a random member to be run on a random HPC.
+
+
+        :param expid: experiment identifier
+        :type expid: str
+        :param chunks: number of chunks to be run by the experiment
+        :type chunks: int
+        :param member: member to be used by the test. If None, it uses a random one from which are defined on
+                       the experiment.
+        :type member: str
+        :param stardate: start date to be used by the test. If None, it uses a random one from which are defined on
+                         the experiment.
+        :type stardate: str
+        :param hpc: HPC to be used by the test. If None, it uses a random one from which are defined on
+                    the experiment.
+        :type hpc: str
+        :param branch: branch or revision to be used by the test. If None, it uses configured branch.
+        :type branch: str
+        :return: True if test was succesful, False otherwise
+        :rtype: bool
+        """
         testid = Autosubmit.expid('test', 'test experiment for {0}'.format(expid), expid, False)
 
         as_conf = AutosubmitConfig(testid)

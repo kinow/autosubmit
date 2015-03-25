@@ -227,7 +227,7 @@ def delete_experiment(name):
     if row is None:
         Log.debug('The experiment {0} has been deleted!!!', name)
     close_conn(conn, cursor)
-    return
+    return True
 
 
 def check_name(name):

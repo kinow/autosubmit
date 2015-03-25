@@ -26,6 +26,9 @@ from datetime import datetime
 class LogFormatter:
     """
     Class to format log output.
+
+    :param to_file: If True, creates a LogFormatter for files; if False, for console
+    :type to_file: bool
     """
     RESULT = '\033[32m'
     WARNING = '\033[33m'
@@ -34,6 +37,11 @@ class LogFormatter:
     DEFAULT = '\033[0m\033[39m'
 
     def __init__(self, to_file=False):
+        """
+        Initializer for LogFormatter
+
+
+        """
         self._file = to_file
         if self._file:
             self._formatter = logging.Formatter('%(asctime)s %(message)s')
@@ -44,6 +52,11 @@ class LogFormatter:
         """
         Format log output, adding labels if needed for log level. If logging to console, also manages font color.
         If logging to file adds timestamp
+
+        :param record: log record to format
+        :type record: LogRecord
+        :return: formatted record
+        :rtype: str
         """
         header = ''
         if record.levelno == Log.RESULT:
@@ -76,15 +89,16 @@ class Log:
     Static class to manage the log for the application. Messages will be sent to console and to file if it is
     configured. Levels can be set for each output independently. These levels are (from lower to higher priority):
 
-    EVERYTHING : this level is just defined to show every output
-    DEBUG
-    INFO
-    RESULT
-    USER_WARNING
-    WARNING
-    ERROR
-    CRITICAL
-    NO_LOG : this level is just defined to remove every output
+        - EVERYTHING : this level is just defined to show every output
+        - DEBUG
+        - INFO
+        - RESULT
+        - USER_WARNING
+        - WARNING
+        - ERROR
+        - CRITICAL
+        - NO_LOG : this level is just defined to remove every output
+
     """
     EVERYTHING = 0
     DEBUG = logging.DEBUG
@@ -115,6 +129,7 @@ class Log:
         new file.
 
         :param file_path: file to store the log
+        :type file_path: str
         """
         (directory, filename) = os.path.split(file_path)
         files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and
@@ -150,7 +165,6 @@ class Log:
         added to log file
 
         :param level: new level for log file
-        :return: None
         """
         if type(level) is str:
             level = getattr(Log, level)
@@ -164,7 +178,7 @@ class Log:
         Sends debug information to the log
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.debug(msg.format(*args))
 
@@ -174,7 +188,7 @@ class Log:
         Sends information to the log
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.info(msg.format(*args))
 
@@ -184,7 +198,7 @@ class Log:
         Sends results information to the log. It will be shown in green in the console.
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.log(Log.RESULT, msg.format(*args))
 
@@ -194,7 +208,7 @@ class Log:
         Sends warnings for the user to the log. It will be shown in yellow in the console.
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.log(Log.USER_WARNING, msg.format(*args))
 
@@ -204,7 +218,7 @@ class Log:
         Sends program warnings to the log. It will be shown in yellow in the console.
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.warning(msg.format(*args))
 
@@ -214,7 +228,7 @@ class Log:
         Sends errors to the log. It will be shown in red in the console.
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.error(msg.format(*args))
 
@@ -224,7 +238,7 @@ class Log:
         Sends critical errors to the log. It will be shown in red in the console.
 
         :param msg: message to show
-        :param args:
+        :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.critical(msg.format(*args))
 

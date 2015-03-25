@@ -1,4 +1,4 @@
 autosubmit.database
 ===================
-.. automodule:: database.db_common
+.. automodule:: autosubmit.database.db_common
    :members:

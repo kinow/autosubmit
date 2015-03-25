@@ -65,7 +65,7 @@ class HPCQueue:
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
 
-            self._ssh.connect(self._host_config['hostname'], 22, username=self._host_config['user'],
+            self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                               key_filename=self._host_config_id)
             return True
         except BaseException as e:
