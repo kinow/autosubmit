@@ -440,8 +440,8 @@ class Job:
             cal = parameters['CALENDAR'].lower()
             chunk_start = chunk_start_date(self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(chunk_start, chunk_length, chunk_unit, cal)
-            run_days = running_days(chunk_start, chunk_end, cal)
-            chunk_end_days = previous_days(self.date, chunk_end, cal)
+            run_days = subs_dates(chunk_start, chunk_end, cal)
+            chunk_end_days = subs_dates(self.date, chunk_end, cal)
             day_before = previous_day(self.date, cal)
             chunk_end_1 = previous_day(chunk_end, cal)
             parameters['DAY_BEFORE'] = day_before

@@ -252,8 +252,9 @@ class Autosubmit:
         """
         Log.info("Removing experiment directory...")
         try:
-            shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete)
-        except OSError:
+            shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete, ignore_errors=True)
+        except OSError as e:
+            Log.debug(e)
             pass
         Log.info("Deleting experiment from database...")
         ret = delete_experiment(expid_delete)
@@ -316,7 +317,7 @@ class Autosubmit:
                         file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
-                Log.error("Can not create experiment: {0}\nCleaning...".format(e.message))
+                Log.error("Can not create experiment: {0}\nCleaning...".format(e))
                 Autosubmit._delete_expid(exp_id)
                 return ''
         else:
@@ -368,6 +369,12 @@ class Autosubmit:
         :returns: True if succesful, False if not
         :rtype: bool
         """
+        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'delete.log'.format(os.getuid()))
+        try:
+            Log.set_file(log_path)
+        except IOError as e:
+            Log.error("Can not create log file in path {0}: {1}".format(log_path, e.message))
+
         if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + expid):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
                 return Autosubmit._delete_expid(expid)
