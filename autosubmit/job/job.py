@@ -37,6 +37,15 @@ class Job:
     A job is created by default with a name, a jobid, a status and a type.
     It can have children and parents. The inheritance reflects the dependency between jobs.
     If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2
+
+    :param name: job's name
+    :type name: str
+    :param jobid: job's identifier
+    :type jobid: int
+    :param status: job inicial status
+    :type status: Status
+    :param priority: job's priority
+    :type priority: int
     """
 
     def __init__(self, name, jobid, status, priority):
@@ -76,29 +85,9 @@ class Job:
             del odict['_queue']              # remove filehandle entry
         return odict
 
-    def delete(self):
-        """
-
-        """
-        del self.name
-        del self._long_name
-        del self._short_name
-        del self.id
-        del self.status
-        del self.priority
-        del self._parents
-        del self._children
-        del self.fail_count
-        del self.expid
-        del self._complete
-        del self.parameters
-        del self._tmp_path
-        del self
-
     def print_job(self):
         """
         Prints debug information about the job
-        :return None
         """
         Log.debug('NAME: {0}', self.name)
         Log.debug('JOBID: {0}', self.id)
@@ -115,7 +104,8 @@ class Job:
         """
         Return parent jobs list
 
-        :return: list of parent jobs
+        :return: parent jobs
+        :rtype: set
         """
         return self._parents
 
@@ -124,6 +114,7 @@ class Job:
         Returns the queue to be used by the job. Chooses between serial and parallel queue
 
         :return hpcqueue object for the job to use
+        :rtype: HPCqueue
         """
         if self.processors > 1:
             return self._queue
@@ -134,7 +125,8 @@ class Job:
         """
         Sets the HPCqueue to be used by the job.
 
-        :return: None
+        :param value: queue to set
+        :type value: HPCqueue
         """
         self._queue = value
 
@@ -143,7 +135,8 @@ class Job:
         """
         Returns all job's ancestors
 
-        :return: job ancestors' list
+        :return: job ancestors
+        :rtype: set
         """
         if self._ancestors is None:
             self._ancestors = set()
@@ -159,14 +152,18 @@ class Job:
         """
         Returns a list containing all children of the job
 
-        :return: list of children jobs
+        :return: child jobs
+        :rtype: set
         """
         return self._children
 
     @property
     def long_name(self):
         """
-        Job's long name
+        Job's long name. If not setted, returns name
+
+        :return: long name
+        :rtype: str
         """
         if hasattr(self, '_long_name'):
             return self._long_name
@@ -175,17 +172,32 @@ class Job:
 
     @long_name.setter
     def long_name(self, value):
+        """
+        Sets long name for the job
+
+        :param value: long name to set
+        :type value: str
+        """
         self._long_name = value
 
     @property
     def short_name(self):
         """
         Job short name
+
+        :return: short name
+        :rtype: str
         """
         return self._short_name
 
     @short_name.setter
     def short_name(self, value):
+        """
+        Sets short name
+
+        :param value: short name
+        :type value: str
+        """
         n = value.split('_')
         if len(n) == 5:
             self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
@@ -203,21 +215,9 @@ class Job:
         Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
         Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
-    def get_all_children(self):
-        """
-        Returns a list with all job's children and all it's descendants
-        """
-        job_list = list()
-        for job in self.children:
-            job_list.append(job)
-            job_list += job.get_all_children()
-        # convert the list into a Set to remove duplicates and the again to a list
-        return list(set(job_list))
-
     def print_parameters(self):
         """
-        Print job parameters in log
-        :return:
+        Print sjob parameters in log
         """
         Log.info(self.parameters)
 
@@ -231,7 +231,8 @@ class Job:
         """
         Add parents for the job. It also adds current job as a child for all the new parents
 
-        :param new_parent: job parent
+        :param \*new_parent: job parent
+        :type \*new_parent: Job
         """
         self._ancestors = None
         for parent in new_parent:
@@ -243,6 +244,7 @@ class Job:
         Adds a new child to the job
 
         :param new_child: new child to add
+        :type new_child: Job
         """
         self.children.add(new_child)
 
@@ -251,6 +253,7 @@ class Job:
         Remove a parent from the job
 
         :param parent: parent to remove
+        :type parent: Job
         """
         self._ancestors = None
         # careful, it is only possible to remove one parent at a time
@@ -261,6 +264,7 @@ class Job:
         Removes a child from the job
 
         :param child: child to remove
+        :type child: Job
         """
         # careful it is only possible to remove one child at a time
         self.children.remove(child)
@@ -269,7 +273,8 @@ class Job:
         """
         Returns true if job has any children, else return false
 
-        :return: bool
+        :return: true if job has any children, otherwise return false
+        :rtype: bool
         """
         return self.children.__len__()
 
@@ -277,7 +282,8 @@ class Job:
         """
         Returns true if job has any parents, else return false
 
-        :return:
+        :return: true if job has any parent, otherwise return false
+        :rtype: bool
         """
         return self.parents.__len__()
 
@@ -286,34 +292,31 @@ class Job:
         Compare jobs by status value
 
         :param other: job to compare
+        :type other: Job
         :return: comparison result
+        :rtype: bool
         """
-        return cmp(self.status(), other.status)
-
-    def compare_by_type(self, other):
-        """
-        Compare jobs by priority
-
-        :param other: job to compare
-        :return: comparison result
-        """
-        return cmp(self.priority(), other.type)
+        return cmp(self.status, other.status)
 
     def compare_by_id(self, other):
         """
         Compare jobs by ID
 
         :param other: job to compare
+        :type other: Job
         :return: comparison result
+        :rtype: bool
         """
-        return cmp(self.id(), other.id)
+        return cmp(self.id, other.id)
 
     def compare_by_name(self, other):
         """
         Compare jobs by name
 
         :param other: job to compare
+        :type other: Job
         :return: comparison result
+        :rtype: bool
         """
         return cmp(self.name, other.name)
 
@@ -322,7 +325,9 @@ class Job:
         Returns value from given index position in completed file asociated to job
 
         :param index: position to retrieve
+        :type index: int
         :return: value in index position
+        :rtype: str
         """
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):
@@ -339,6 +344,7 @@ class Job:
         Returns end time from completed file
 
         :return: completed date and time
+        :rtype: str
         """
         return self._get_from_completed(0)
 
@@ -347,6 +353,7 @@ class Job:
         Returns job's waiting time in HPC
 
         :return: total time waiting in HPC queue
+        :rtype: str
         """
         return self._get_from_completed(1)
 
@@ -355,6 +362,7 @@ class Job:
         Returns job's running time
 
         :return: total time running
+        :rtype: str
         """
         return self._get_from_completed(2)
 
@@ -363,6 +371,7 @@ class Job:
         Returns number of failed attempts before completing the job
 
         :return: failed attempts to run
+        :rtype: str
         """
         return self._get_from_completed(3)
 
@@ -371,6 +380,7 @@ class Job:
         Returns total time spent waiting for failed jobs
 
         :return: total time waiting in HPC queue for failed jobs
+        :rtype: str
         """
         return self._get_from_completed(4)
 
@@ -379,12 +389,14 @@ class Job:
         Returns total time running for failed jobs
 
         :return: total time running in HPC  for failed jobs
+        :rtype: str
         """
         return self._get_from_completed(5)
 
     def check_completion(self):
         """
-        Check the presence of *COMPLETED* file and touch a Checked or failed file
+        Check the presence of *COMPLETED* file and touch a Checked or failed file.
+        Change statis to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
         """
         logname = self._tmp_path + self.name + '_COMPLETED'
         if os.path.exists(logname):
@@ -470,7 +482,9 @@ class Job:
         Create the script content to be run for the job
 
         :param project_dir: project directory
+        :type project_dir: str
         :return: script code
+        :rtype: str
         """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
             template = file(os.path.join(project_dir, self.file), 'r').read()
@@ -496,7 +510,9 @@ class Job:
         Creates script file to be run for the job
 
         :param as_conf: configuration object
+        :type as_conf: AutosubmitConfig
         :return: script's filename
+        :rtype: str
         """
         parameters = self.update_parameters()
         template_content = self.update_content(as_conf.get_project_dir())
@@ -517,7 +533,9 @@ class Job:
         Checks if script is well formed
 
         :param as_conf: configuration file
+        :type as_conf: AutosubmitConfig
         :return: true if not problem has been detected, false otherwise
+        :rtype: bool
         """
         parameters = self.update_parameters()
         template_content = self.update_content(as_conf.get_project_dir())
@@ -533,25 +551,3 @@ class Job:
             self.create_script(as_conf)
 
         return out
-
-
-if __name__ == "__main__":
-    mainJob = Job('uno', '1', Status.READY, 0)
-    job1 = Job('uno', '1', Status.READY, 0)
-    job2 = Job('dos', '2', Status.READY, 0)
-    job3 = Job('tres', '3', Status.READY, 0)
-    jobs = [job1, job2, job3]
-    mainJob.add_parent(*jobs)
-    Log.info(mainJob.parents)
-    # mainJob.set_children(jobs)
-    # job1.__add_child(mainJob)
-    # job2.__add_child(mainJob)
-    # job3.__add_child(mainJob)
-    Log.info(mainJob.get_all_children())
-    Log.info(mainJob.children)
-    job3.check_completion()
-    Log.info("Number of Parents: ", mainJob.has_parents())
-    Log.info("number of children : ", mainJob.has_children())
-    mainJob.print_job()
-    mainJob.delete()
-#
