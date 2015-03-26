@@ -151,6 +151,7 @@ class Autosubmit:
                                                                    "default at machine level)")
         subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
                                                                            'it will prompt for it')
+        subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
         subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                             'supplied, it will prompt for it')
         subparser.add_argument('-qc', '--queuesconfpath', default=None, help='path to queues.conf file to use by '
@@ -229,8 +230,8 @@ class Autosubmit:
         elif args.command == 'create':
             Autosubmit.create(args.expid, args.noplot)
         elif args.command == 'configure':
-            Autosubmit.configure(args.databasepath, args.localrootpath, args.queuesconfpath, args.jobsconfpath,
-                                 args.user, args.local)
+            Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath, args.queuesconfpath,
+                                 args.jobsconfpath, args.user, args.local)
         elif args.command == 'install':
             Autosubmit.install()
         elif args.command == 'change_pkl':
@@ -785,12 +786,14 @@ class Autosubmit:
         #     Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
 
     @staticmethod
-    def configure(database_path, local_root_path, queues_conf_path, jobs_conf_path,  user, local):
+    def configure(database_path, database_filename, local_root_path, queues_conf_path, jobs_conf_path,  user, local):
         """
         Configure several paths for autosubmit: database, local root and others. Can be configured at system,
         user or local levels. Local level configuration precedes user level and user level precedes system
         configuration.
 
+        :param database_path: path to autosubmit database
+        :type database_path: str
         :param database_path: path to autosubmit database
         :type database_path: str
         :param local_root_path: path to autosubmit's experiments' directory
@@ -818,6 +821,7 @@ class Autosubmit:
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
             exit(1)
+
         if queues_conf_path is not None:
             queues_conf_path = queues_conf_path.replace('~', home_path)
             if not os.path.exists(queues_conf_path):
@@ -843,6 +847,8 @@ class Autosubmit:
             parser = SafeConfigParser()
             parser.add_section('database')
             parser.set('database', 'path', database_path)
+            if database_filename is not None:
+                parser.set('database', 'filename', database_filename)
             parser.add_section('local')
             parser.set('local', 'path', local_root_path)
             if jobs_conf_path is not None or queues_conf_path is not None:
