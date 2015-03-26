@@ -469,6 +469,7 @@ class Job:
         queue = self.get_queue()
         parameters['HPCUSER'] = queue.user
         parameters['HPCPROJ'] = queue.project
+        parameters['HPCBUDG'] = queue.budget
         parameters['HPCTYPE'] = queue.type
         parameters['HPCVERSION'] = queue.version
         parameters['SCRATCH_DIR'] = queue.scratch

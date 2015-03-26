@@ -372,6 +372,14 @@ class HPCQueue:
         """
         self.project = new_project
 
+    def set_budget(self, new_budget):
+        """
+        Sets budget
+        :param new_budget: project
+        :type new_budget: str
+        """
+        self.budget = new_budget
+
     def set_user(self, new_user):
         """
         Sets user name

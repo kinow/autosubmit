@@ -113,7 +113,7 @@ class Pbs12Header:
             #PBS -N %JOBNAME%
             #PBS -l select=serial=true:ncpus=1
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
+            #PBS -A %HPCBUDG%
             #
             ###############################################################################
             """)
@@ -127,7 +127,7 @@ class Pbs12Header:
             #PBS -N %JOBNAME%
             #PBS -l select=%NUMPROC%
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
+            #PBS -A %HPCBUDG%
             #
             ###############################################################################
             """)
@@ -145,7 +145,7 @@ class Pbs10Header:
             #PBS -N %JOBNAME%
             #PBS -q serial
             #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
+            #PBS -A %HPCBUDG%
             #
             ###############################################################################
             """)
@@ -160,7 +160,7 @@ class Pbs10Header:
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=32
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCPROJ%
+            #PBS -A %HPCBUDG%
             #
             ###############################################################################
             """)

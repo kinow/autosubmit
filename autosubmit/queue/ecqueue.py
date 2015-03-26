@@ -202,7 +202,7 @@ class EcCcaHeader:
              #PBS -N %JOBNAME%
              #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%HPCPROJ%
+             #PBS -l EC_billing_account=%HPCBUDG%
              #
              ###############################################################################
 
@@ -220,7 +220,7 @@ class EcCcaHeader:
              #PBS -l EC_threads_per_task=%NUMTHREADS%
              #PBS -l EC_tasks_per_node=%NUMTASK%
              #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%HPCPROJ%
+             #PBS -l EC_billing_account=%HPCBUDG%
              #
              ###############################################################################
             """)

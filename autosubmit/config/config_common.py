@@ -718,6 +718,7 @@ class AutosubmitConfig:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
             queue.set_host(host)
             queue.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            queue.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', queue.project))
             queue.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
             queue.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
             queue.name = section.lower()
