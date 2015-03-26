@@ -61,8 +61,8 @@ class BasicConfig:
 
         if parser.has_option('database', 'path'):
             BasicConfig.DB_DIR = parser.get('database', 'path')
-        if parser.has_option('database', 'name'):
-            BasicConfig.DB_FILE = parser.get('database', 'file')
+        if parser.has_option('database', 'filename'):
+            BasicConfig.DB_FILE = parser.get('database', 'filename')
         if parser.has_option('local', 'path'):
             BasicConfig.LOCAL_ROOT_DIR = parser.get('local', 'path')
         if parser.has_option('conf', 'queues'):
