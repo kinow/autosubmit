@@ -22,6 +22,12 @@ from autosubmit.queue.hpcqueue import HPCQueue
 
 
 class LsfQueue(HPCQueue):
+    """
+    Class to manage jobs to host using LSF scheduler
+
+    :param expid: experiment's identifier
+    :type expid: str
+    """
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = "mn-ecm86"

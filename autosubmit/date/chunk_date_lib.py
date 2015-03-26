@@ -16,6 +16,10 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+"""
+In this python script there are tools to manipulate the dates and make mathematical
+operations between them.
+"""
 
 import datetime
 import time
@@ -23,12 +27,6 @@ import calendar
 from dateutil.relativedelta import *
 
 from autosubmit.config.log import Log
-
-
-"""
-In this python script there are tools to manipulate the dates and make mathematical
-operations between them
-"""
 
 
 def add_time(string_date, total_size, chunk_unit, cal):

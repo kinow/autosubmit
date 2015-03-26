@@ -32,6 +32,9 @@ SLEEPING_TIME = 30
 
 
 class HPCQueue:
+    """
+    Base class to manage schedulers
+    """
     def __init__(self):
         self._submit_cmd = None
         self.get_cmd = None
@@ -50,9 +53,21 @@ class HPCQueue:
 
     @property
     def header(self):
+        """
+        Header to add to jobs for scheduler cofiguration
+
+        :return: header
+        :rtype: object
+        """
         return self._header
 
     def connect(self):
+        """
+        Creates ssh connection to host
+
+        :return: True if connection is created, False otherwise
+        :rtype: bool
+        """
         try:
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -74,6 +89,14 @@ class HPCQueue:
             return False
 
     def send_command(self, command):
+        """
+        Sends given command to HPC
+
+        :param command: command to send
+        :type command: str
+        :return: True if executed, False if failed
+        :rtype: bool
+        """
         if self._ssh is None:
             if not self.connect():
                 return None
@@ -94,6 +117,16 @@ class HPCQueue:
             return False
 
     def send_file(self, local_path, root_path):
+        """
+        Copies file in local_path to remote_path
+
+        :param local_path: path to the local file to copy
+        :type local_path: str
+        :param root_path: path to the remote file to create
+        :type root_path: str
+        :return: True if succesful, False if failed
+        :rtype: bool
+        """
         if self._ssh is None:
             if not self.connect():
                 return None
@@ -108,6 +141,16 @@ class HPCQueue:
             return False
 
     def get_file(self, remote_path, local_path):
+        """
+        Copies file in remote_path to local_path
+
+        :param remote_path: path to the remote file to copy
+        :type remote_path: str
+        :param local_path: path to the local file to create
+        :type local_path: str
+        :return: True if succesful, False if failed
+        :rtype: bool
+        """
         if self._ssh is None:
             if not self.connect():
                 return None
@@ -122,28 +165,63 @@ class HPCQueue:
             return False
 
     def get_ssh_output(self):
+        """
+        Gets output from last command executed
+
+        :return: output from last command
+        :rtype: str
+        """
         Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
 
     def close_connection(self):
+        """
+        Closes ssh connection to host
+        """
         if self._ssh is None:
             return
         self._ssh.close()
 
     def get_serial_queue(self):
+        """
+        Returns serial queue for current host. If not configured, returns self
+
+        :return: serial queue for host
+        :rtype: HPCQueue
+        """
         if self._serial_queue is None:
             return self
         else:
             return self._serial_queue
 
     def set_serial_queue(self, value):
+        """
+        Configures serial queue for current host.
+
+        :param value: serial queue for host
+        :type value: HPCQueue
+        """
         self._serial_queue = value
 
     def cancel_job(self, job_id):
+        """
+        Cancels job
+
+        :param job_id: job to cancel
+        :type job_id: int
+        """
         Log.debug(self.cancel_cmd + ' ' + str(job_id))
         self.send_command(self.cancel_cmd + ' ' + str(job_id))
 
     def check_job(self, job_id):
+        """
+        Checks job statuts
+
+        :param job_id: job to check
+        :type job_id: int
+        :return: current job status
+        :rtype: Status
+        """
         job_status = Status.UNKNOWN
 
         if type(job_id) is not int:
@@ -180,6 +258,12 @@ class HPCQueue:
         return job_status
 
     def check_host(self):
+        """
+        Checks host availability
+
+        :return: True if host is available, False otherwise
+        :rtype: bool
+        """
         checkhost_cmd = self.get_checkhost_cmd()
         if not self.send_command(checkhost_cmd):
             self.connect()
@@ -190,12 +274,21 @@ class HPCQueue:
         return True
 
     def check_remote_log_dir(self):
+        """
+        Creates log dir on remote host
+        """
         if self.send_command(self.get_mkdir_cmd()):
             Log.debug('{0} has been created on {1} .', self.remote_log_dir, self._host)
         else:
             Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self._host))
 
     def send_script(self, job_script):
+        """
+        Send a script to remote host
+
+        :param job_script: name of script to send
+        :type job_script: str
+        """
         if self.send_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'tmp', str(job_script)),
                           os.path.join(self.remote_log_dir, str(job_script))):
             Log.debug('The script {0} has been sent'.format(job_script))
@@ -203,7 +296,14 @@ class HPCQueue:
             Log.error('The script {0} has not been sent'.format(job_script))
 
     def get_completed_files(self, jobname):
+        """
+        Copies *COMPLETED* files from remote to local
 
+        :param jobname: name of job to check
+        :type jobname: str
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
         filename = jobname + '_COMPLETED'
         completed_local_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR, filename)
         if os.path.exists(completed_local_path):
@@ -222,6 +322,14 @@ class HPCQueue:
         return False
 
     def submit_job(self, job_script):
+        """
+        Submits job to scheduler and returns job id
+
+        :param job_script: script path
+        :type job_script: str
+        :return: job id
+        :rtype: int
+        """
         if self.send_command(self.get_submit_cmd(job_script)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug(job_id)
@@ -241,56 +349,178 @@ class HPCQueue:
         exit(0)
 
     def set_host(self, new_host):
+        """
+        Sets host name
+        :param new_host: host
+        :type new_host: str
+        """
         self._host = new_host
 
     def set_scratch(self, new_scratch):
+        """
+        Sets scracth directory name
+        :param new_scratch: scratch path
+        :type new_scratch: str
+        """
         self.scratch = new_scratch
 
     def set_project(self, new_project):
+        """
+        Sets project name
+        :param new_project: project
+        :type new_project: str
+        """
         self.project = new_project
 
     def set_user(self, new_user):
+        """
+        Sets user name
+        :param new_user: user
+        :type new_user: str
+        """
         self.user = new_user
 
     def set_remote_log_dir(self, new_remote_log_dir):
+        """
+        Sets remote directory for logs
+        :param new_remote_log_dir: path to log directory
+        :type new_remote_log_dir: str
+        """
         self.remote_log_dir = new_remote_log_dir
 
     def get_checkhost_cmd(self):
+        """
+        Gets command to check queue availability
+
+        :return: command to check queue availability
+        :rtype: str
+        """
         raise NotImplementedError
 
     def get_mkdir_cmd(self):
+        """
+        Gets command to create directories on HPC
+
+        :return: command to create directories on HPC
+        :rtype: str
+        """
         raise NotImplementedError
 
     def parse_job_output(self, output):
+        """
+        Parses check job command output so it can be interpreted by autosubmit
+
+        :param output: output to parse
+        :type output: str
+        :return: job status
+        :rtype: str
+        """
         raise NotImplementedError
 
     def jobs_in_queue(self):
+        """
+        Get jobs in queue in this host
+
+        :return: jobs in queue
+        :rtype: list
+        """
         raise NotImplementedError
 
     def get_submitted_job_id(self, output):
+        """
+        Parses submit command output to extract job id
+        :param output: output to parse
+        :type output: str
+        :return: job id
+        :rtype: str
+        """
         raise NotImplementedError
 
+    def update_cmds(self):
+        """
+        Updates commands for queue
+        """
+        raise NotImplementedError
+
+    def get_remote_log_dir(self):
+        """
+        Gets remote directory for logs
+
+        :return: log directory path
+        :rtype: str
+        """
+        raise NotImplementedError
+
+    # noinspection PyUnresolvedReferences
     def get_header(self, job):
+        """
+        Gets header to be used by the job
+
+        :param job: job
+        :type job: Job
+        :return: header to use
+        :rtype: str
+        """
         if job.processors > 1:
             return self.header.PARALLEL
         else:
             return self.header.SERIAL
 
     def get_checkjob_cmd(self, job_id):
+        """
+        Returns command to check job status on remote queue
+
+        :param job_id: id of job to check
+        :param job_id: int
+        :return: command to check job status
+        :rtype: str
+        """
         raise NotImplementedError
 
     def get_submit_cmd(self, job_script):
+        """
+        Get command to add job to scheduler
+
+        :param job_script: path to job script
+        :param job_script: str
+        :return: command to submit job to queue
+        :rtype: str
+        """
         raise NotImplementedError
 
     def get_shcall(self, job_script):
+        """
+        Gets execution command for given job
+
+        :param job_script: script to run
+        :type job_script: str
+        :return: command to execute script
+        :rtype: str
+        """
         return 'nohup /bin/sh {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
                                                                                       job_script))
 
     @staticmethod
     def get_pscall(job_id):
+        """
+        Gets command to check if a job is running given process identifier
+
+        :param job_id: process indentifier
+        :type job_id: int
+        :return: command to check job status script
+        :rtype: str
+        """
         return 'nohup kill -0 {0}; echo $?'.format(job_id)
 
     @staticmethod
     def get_qstatjob(job_id):
+        """
+        Gets qstat command for given job id
+
+        :param job_id: job to check
+        :type job_id: int
+        :return: qstat command for job
+        :rtype: str
+        """
         return '''if [[ $(qstat | grep {0}) != '' ]];
         then echo $(qstat | grep {0} | awk '{{print $5}}' | head -n 1); else echo 'c'; fi'''.format(job_id)

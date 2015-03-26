@@ -23,6 +23,14 @@ from autosubmit.config.log import Log
 
 
 class PBSQueue(HPCQueue):
+    """
+    Class to manage jobs to host using PBS scheduler
+
+    :param expid: experiment's identifier
+    :type expid: str
+    :param version: scheduler version
+    :type version: str
+    """
 
     def __init__(self, expid, version):
         HPCQueue.__init__(self)

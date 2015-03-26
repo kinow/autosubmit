@@ -27,6 +27,12 @@ from autosubmit.config.log import Log
 
 
 class LocalQueue(HPCQueue):
+    """
+    Class to manage jobs to localhost
+
+    :param expid: experiment's identifier
+    :type expid: str
+    """
     def __init__(self, expid):
         HPCQueue.__init__(self)
         self._host = ""

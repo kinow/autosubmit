@@ -45,6 +45,14 @@ class Monitor:
 
     @staticmethod
     def color_status(status):
+        """
+        Return color associated to given status
+
+        :param status: status
+        :type status: Status
+        :return: color
+        :rtype: str
+        """
         if status == Status.WAITING:
             return Monitor._table[Status.WAITING]
         elif status == Status.READY:
@@ -65,6 +73,16 @@ class Monitor:
             return Monitor._table[Status.UNKNOWN]
 
     def create_tree_list(self, expid, joblist):
+        """
+        Create graph from joblist
+
+        :param expid: experiment's identifier
+        :type expid: str
+        :param joblist: joblist to plot
+        :type joblist: JobList
+        :return: created graph
+        :rtype: pydotplus.Dot
+        """
         graph = pydotplus.Dot(graph_type='digraph')
 
         legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
@@ -106,6 +124,16 @@ class Monitor:
         return graph
 
     def generate_output(self, expid, joblist, output_format="pdf"):
+        """
+        Plots graph for joblist and stores it in a file
+
+        :param expid: experiment's identifier
+        :type expid: str
+        :param joblist: joblist to plot
+        :type joblist: JobList
+        :param output_format: file format for plot
+        :type output_format: str (png, pdf, ps)
+        """
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_" + output_date + "." +
@@ -124,6 +152,16 @@ class Monitor:
             graph.write_ps(output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
+        """
+        Plots stats for joblist and stores it in a file
+
+        :param expid: experiment's identifier
+        :type expid: str
+        :param joblist: joblist to plot
+        :type joblist: JobList
+        :param output_format: file format for plot
+        :type output_format: str (png, pdf, ps)
+        """
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date +
@@ -132,7 +170,16 @@ class Monitor:
 
     @staticmethod
     def create_bar_diagram(expid, joblist, output_file):
-        """Function to plot statistics"""
+        """
+        Function to plot statistics
+
+        :param expid: experiment's identifier
+        :type expid: str
+        :param joblist: joblist to plot
+        :type joblist: JobList
+        :param output_file: path to create file
+        :type output_file: str
+        """
 
         def autolabel(rects):
             # attach text labels
@@ -226,7 +273,13 @@ class Monitor:
 
     @staticmethod
     def clean_plot(expid):
-        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory."""
+        """
+        Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory.
+        Removes all plots except last two.
+
+        :param expid: experiment's identifier
+        :type expid: str
+        """
         search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
@@ -237,11 +290,16 @@ class Monitor:
         for f in filelist:
             remove(f)
         Log.result("Plots cleaned!\nLast two plots remanining there.\n")
-        return
 
     @staticmethod
     def clean_stats(expid):
-        """Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory."""
+        """
+        Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory.
+        Removes all stats' plots except last two.
+
+        :param expid: experiment's identifier
+        :type expid: str
+        """
         search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
@@ -251,5 +309,4 @@ class Monitor:
         filelist = [f for f in files if f not in remain]
         for f in filelist:
             remove(f)
-        Log.result("Stats cleaned!\nLast plot remanining there.\n")
-        return
+        Log.result("Stats cleaned!\nLast stats' plot remanining there.\n")

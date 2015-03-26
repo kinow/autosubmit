@@ -34,6 +34,9 @@ from autosubmit.config.log import Log
 class JobList:
     """
     Class to manage the list of jobs to be run by autosubmit
+
+    :param expid: experiment's indentifier
+    :type expid: str
     """
     def __init__(self, expid):
         self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
@@ -48,7 +51,10 @@ class JobList:
     @property
     def expid(self):
         """
-        Experiment identifier
+        Returns experiment identifier
+
+        :return: experiment's identifier
+        :rtype: str
         """
         return self._expid
 
@@ -56,11 +62,16 @@ class JobList:
         """
         Creates all jobs needed for the current workflow
 
-        :param date_list: list of start dates
-        :param member_list: list of members
+        :param date_list: start dates
+        :type date_list: list
+        :param member_list: members
+        :type member_list: list
         :param starting_chunk: number of starting chunk
+        :type starting_chunk: int
         :param num_chunks: number of chunks to run
+        :type num_chunks: int
         :param parameters: parameters for the jobs
+        :type parameters: dict
         """
         self._parameters = parameters
 
@@ -143,18 +154,22 @@ class JobList:
                                 for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                                     job.add_parent(parent)
                         elif job.member is not None:
-                            max_distance = (member_list.index(chunk)+1) % job.frequency
+                            member_index = member_list.index(job.member)
+                            max_distance = (member_index + 1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
-                                for parent in dic_jobs.get_jobs(section_name, date, member - distance, chunk):
+                                for parent in dic_jobs.get_jobs(section_name, date,
+                                                                member_list[member_index - distance], chunk):
                                     job.add_parent(parent)
                         elif job.date is not None:
-                            max_distance = (date_list.index(chunk)+1) % job.frequency
+                            date_index = date_list.index(job.date)
+                            max_distance = (date_index + 1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
-                                for parent in dic_jobs.get_jobs(section_name, date - distance, member, chunk):
+                                for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
+                                                                member, chunk):
                                     job.add_parent(parent)
 
         Log.info("Removing redundant dependencies...")
@@ -170,78 +185,115 @@ class JobList:
         Get inner job list
 
         :return: job list
+        :rtype: list
         """
         return self._job_list
 
     def get_completed(self):
         """
         Returns a list of completed jobs
+
+        :return: completed jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.COMPLETED]
 
     def get_submitted(self):
         """
         Returns a list of submitted jobs
+
+        :return: submitted jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.SUBMITTED]
 
     def get_running(self):
         """
         Returns a list of jobs running
+
+        :return: running jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.RUNNING]
 
     def get_queuing(self):
         """
         Returns a list of jobs queuing
+
+        :return: queuedjobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.QUEUING]
 
     def get_failed(self):
         """
         Returns a list of failed jobs
+
+        :return: failed jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.FAILED]
 
     def get_ready(self):
         """
         Returns a list of ready jobs
+
+        :return: ready jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.READY]
 
     def get_waiting(self):
         """
         Returns a list of jobs waiting
+
+        :return: waiting jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.WAITING]
 
     def get_unknown(self):
         """
-        Returns a list of jobs unknown
+        Returns a list of jobs on unknown state
+
+        :return: unknown state jobs
+        :rtype: list
         """
         return [job for job in self._job_list if job.status == Status.UNKNOWN]
 
     def get_in_queue(self):
         """
         Returns a list of jobs in the queue (Submitted, Running, Queuing)
+
+        :return: jobs in queue
+        :rtype: list
         """
         return self.get_submitted() + self.get_running() + self.get_queuing()
 
     def get_not_in_queue(self):
         """
         Returns a list of jobs NOT in the queue (Ready, Waiting)
+
+        :return: jobs not in queue
+        :rtype: list
         """
         return self.get_ready() + self.get_waiting()
 
     def get_finished(self):
         """
         Returns a list of jobs finished (Completed, Failed)
+
+        :return: finsihed jobs
+        :rtype: list
         """
         return self.get_completed() + self.get_failed()
 
     def get_active(self):
         """
         Returns a list of active jobs (In queue, Ready)
+
+        :return: active jobs
+        :rtype: list
         """
         return self.get_in_queue() + self.get_ready() + self.get_unknown()
 
@@ -250,6 +302,9 @@ class JobList:
         Returns the job that its name matches parameter name
 
         :parameter name: name to look for
+        :type name: str
+        :return: found job
+        :rtype: job
         """
         for job in self._job_list:
             if job.name == name:
@@ -260,7 +315,8 @@ class JobList:
         """
         Returns a list of jobs sorted by name
 
-        :return: job list
+        :return: jobs sorted by name
+        :rtype: list
         """
         return sorted(self._job_list, key=lambda k: k.name)
 
@@ -268,7 +324,8 @@ class JobList:
         """
         Returns a list of jobs sorted by id
 
-        :return: job list
+        :return: jobs sorted by ID
+        :rtype: list
         """
         return sorted(self._job_list, key=lambda k: k.id)
 
@@ -276,7 +333,8 @@ class JobList:
         """
         Returns a list of jobs sorted by type
 
-        :return: job list
+        :return: job sorted by type
+        :rtype: list
         """
         return sorted(self._job_list, key=lambda k: k.type)
 
@@ -284,7 +342,8 @@ class JobList:
         """
         Returns a list of jobs sorted by status
 
-        :return: job list
+        :return: job sorted by status
+        :rtype: list
         """
         return sorted(self._job_list, key=lambda k: k.status)
 
@@ -293,8 +352,10 @@ class JobList:
         """
         Recreates an stored joblist from the pickle file
 
-        :param filename:
+        :param filename: pickle file to load
+        :type filename: str
         :return: loaded joblist object
+        :rtype: JobList
         """
         if os.path.exists(filename):
             return pickle.load(file(filename, 'r'))
@@ -330,6 +391,7 @@ class JobList:
         Stores joblist as a pickle file
 
         :return: loaded joblist object
+        :rtype: JobList
         """
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + self._pkl_path + self._job_list_file)
@@ -416,6 +478,9 @@ class JobList:
         """
         When we have created the scripts, all parameters should have been substituted.
         %PARAMETER% handlers not allowed
+
+        :param as_conf: experiment configuration
+        :type as_conf: AutosubmitConfig
         """
         out = True
         for job in self._job_list:
@@ -426,6 +491,12 @@ class JobList:
         return out
 
     def _remove_job(self, job):
+        """
+        Remove a job from the list
+
+        :param job: job to remove
+        :type job: Job
+        """
         for child in job.children:
             for parent in job.parents:
                 child.add_parent(parent)
@@ -437,6 +508,13 @@ class JobList:
         self._job_list.remove(job)
 
     def rerun(self, chunk_list):
+        """
+        Updates joblist to rerun the jobs specified by chunk_list
+
+        :param chunk_list: list of chunks to rerun
+        :type chunk_list: str
+        :return:
+        """
         parser = SafeConfigParser()
         parser.optionxform = str
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
@@ -524,6 +602,9 @@ class JobList:
         self.update_genealogy()
 
     def remove_rerun_only_jobs(self):
+        """
+        Removes all jobs to be runned only in reruns
+        """
         flag = False
         for job in self._job_list:
             if job.rerun_only:
@@ -536,6 +617,21 @@ class JobList:
 
 
 class DicJobs:
+    """
+    Class to create jobs from conf file and to find jobs by stardate, member and chunk
+
+    :param joblist: joblist to use
+    :type joblist: JobList
+    :param parser: jobs conf file parser
+    :type parser: SafeConfigParser
+    :param date_list: startdates
+    :type date_list: list
+    :param member_list: member
+    :type member_list: list
+    :param chunk_list: chunks
+    :type chunk_list: list
+
+    """
     def __init__(self, joblist, parser, date_list, member_list, chunk_list):
         self._date_list = date_list
         self._joblist = joblist
@@ -545,6 +641,14 @@ class DicJobs:
         self._dic = dict()
 
     def read_section(self, section, priority):
+        """
+        Read a section from jobs conf and creates all jobs for it
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        """
         running = 'once'
         if self._parser.has_option(section, 'RUNNING'):
             running = self._parser.get(section, 'RUNNING').lower()
@@ -559,9 +663,28 @@ class DicJobs:
             self._create_jobs_chunk(section, priority, frequency)
 
     def _create_jobs_once(self, section, priority):
+        """
+        Create jobs to be run once
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        """
         self._dic[section] = self._create_job(section, priority, None, None, None)
 
     def _create_jobs_startdate(self, section, priority, frequency):
+        """
+        Create jobs to be run once per startdate
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        :param frequency: if greater than 1, only creates one job each frequency startdates. Allways creates one job
+                          for the last
+        :type frequency: int
+        """
         self._dic[section] = dict()
         count = 0
         for date in self._date_list:
@@ -570,6 +693,17 @@ class DicJobs:
                 self._dic[section][date] = self._create_job(section, priority, date, None, None)
 
     def _create_jobs_member(self, section, priority, frequency):
+        """
+        Create jobs to be run once per member
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        :param frequency: if greater than 1, only creates one job each frequency members. Allways creates one job
+                          for the last
+        :type frequency: int
+        """
         self._dic[section] = dict()
         for date in self._date_list:
             self._dic[section][date] = dict()
@@ -580,6 +714,17 @@ class DicJobs:
                     self._dic[section][date][member] = self._create_job(section, priority, date, member, None)
 
     def _create_jobs_chunk(self, section, priority, frequency):
+        """
+        Create jobs to be run once per chunk
+
+        :param section: section to read
+        :type section: str
+        :param priority: priority for the jobs
+        :type priority: int
+        :param frequency: if greater than 1, only creates one job each frequency chunks. Allways creates one job
+                          for the last
+        :type frequency: int
+        """
         self._dic[section] = dict()
         for date in self._date_list:
             self._dic[section][date] = dict()
@@ -593,6 +738,22 @@ class DicJobs:
                                                                                    chunk)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
+        """
+        Return all the jobs matching section, date, member and chunk provided. If any parameter is none, returns all
+        the jobs without checking that parameter value. If a job has one parameter to None, is returned if all the
+        others match parameters passed
+
+        :param section: section to return
+        :type section: str
+        :param date: stardate to return
+        :type date: str
+        :param member: member to return
+        :type member: str
+        :param chunk: chunk to return
+        :type chunk: int
+        :return: jobs matching parameters passed
+        :rtype: list
+        """
         jobs = list()
         dic = self._dic[section]
         if type(dic) is not dict:
@@ -669,6 +830,16 @@ class DicJobs:
         return job
 
     def get_option(self, section, option, default):
+        """
+        Returns value for a given option
+
+        :param section: section name
+        :type section: str
+        :param option: option to return
+        :type option: str
+        :param default: value to return if not defined in configuration file
+        :type default: object
+        """
         if self._parser.has_option(section, option):
             return self._parser.get(section, option)
         else:

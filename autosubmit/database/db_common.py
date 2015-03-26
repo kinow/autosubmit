@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+Module containing functions to manage autosubmit's database.
 """
 import os
 import sys

@@ -24,6 +24,14 @@ from autosubmit.config.log import Log
 
 
 class EcQueue(HPCQueue):
+    """
+    Class to manage queues with eceacces
+
+    :param expid: experiment's identifier
+    :type expid: str
+    :param scheduler: scheduler to use
+    :type scheduler: str (pbs, loadleveler)
+    """
 
     def __init__(self, expid, scheduler):
         HPCQueue.__init__(self)
@@ -48,6 +56,9 @@ class EcQueue(HPCQueue):
         self.update_cmds()
 
     def update_cmds(self):
+        """
+        Updates commands for queue
+        """
         self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
@@ -82,6 +93,12 @@ class EcQueue(HPCQueue):
         return output
 
     def jobs_in_queue(self):
+        """
+        Returns empty list because ecacces does not support this command
+
+        :return: empty list
+        :rtype: list
+        """
         return ''.split()
 
     def get_checkjob_cmd(self, job_id):
@@ -91,6 +108,12 @@ class EcQueue(HPCQueue):
         return self._submit_cmd + job_script
 
     def connect(self):
+        """
+        In this case, it does nothing because connection is established foe each command
+
+        :return: True
+        :rtype: bool
+        """
         return True
 
     def send_command(self, command):
