@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.queue.hpcqueue import HPCQueue, HPCQueueException
 from autosubmit.config.log import Log
 
 
@@ -48,7 +48,7 @@ class PBSQueue(HPCQueue):
             self._header = Pbs12Header()
         else:
             Log.error('PBS version {0} not supported'.format(version))
-            exit(1)
+            raise HPCQueueException('PBS version {0} not supported'.format(version))
 
         self.expid = expid
         self.job_status = dict()

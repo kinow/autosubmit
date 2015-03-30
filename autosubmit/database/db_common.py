@@ -21,7 +21,6 @@
 Module containing functions to manage autosubmit's database.
 """
 import os
-import sys
 import sqlite3
 import string
 
@@ -36,19 +35,24 @@ def create_db(qry):
     Creates a new database for autosubmit
 
     :param qry: query to create the new database
-    :type qry: str
-    """
-    (conn, cursor) = open_conn()
+    :type qry: str    """
+
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return False
+
     try:
         cursor.execute(qry)
     except sqlite3.Error:
         close_conn(conn, cursor)
         Log.error('The database can not be created.' + 'DB file:' + BasicConfig.DB_PATH)
-        sys.exit(1)
+        return False
 
     conn.commit()
     close_conn(conn, cursor)
-    return
+    return True
 
 
 def _set_experiment(name, description, version):
@@ -60,10 +64,16 @@ def _set_experiment(name, description, version):
     :param description: experiment's description
     :type description: str
     """
-    check_db()
+    if not check_db():
+        return False
     name = check_name(name)
-
-    (conn, cursor) = open_conn()
+    if name == '':
+        return False
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return False
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
@@ -71,11 +81,11 @@ def _set_experiment(name, description, version):
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
         Log.error('Could not register experiment: {0}'.format(e))
-        sys.exit(1)
+        return False
 
     conn.commit()
     close_conn(conn, cursor)
-    return
+    return True
 
 
 def check_experiment_exists(name):
@@ -87,10 +97,17 @@ def check_experiment_exists(name):
     :return: If experiment exists returns true, if not returns false
     :rtype: bool
     """
-    check_db()
+    if not check_db():
+        return False
     name = check_name(name)
+    if name == '':
+        return False
 
-    (conn, cursor) = open_conn()
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return False
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -117,6 +134,8 @@ def new_experiment(hpc, description, version):
     :rtype: str
     """
     last_exp_name = last_name(hpc)
+    if last_exp_name == '':
+        return ''
     if last_exp_name == 'empty':
         if hpc == 'test':
             new_name = 'test000'
@@ -124,7 +143,10 @@ def new_experiment(hpc, description, version):
             new_name = hpc[0]+'000'
     else:
         new_name = _next_name(last_exp_name)
-    _set_experiment(new_name, description, version)
+    if new_name == '':
+        return ''
+    if not _set_experiment(new_name, description, version):
+        return ''
     Log.info('The new experiment "{0}" has been registered.', new_name)
     return new_name
 
@@ -143,7 +165,7 @@ def copy_experiment(name, hpc, description, version):
     :rtype: str
     """
     if not check_experiment_exists(name):
-        exit(1)
+        return ''
     new_name = new_experiment(hpc, description, version)
     return new_name
 
@@ -203,6 +225,8 @@ def _next_name(name):
     :rtype: str
     """
     name = check_name(name)
+    if name == '':
+        return ''
     # Convert the name to base 36 in number add 1 and then encode it
     return base36encode(base36decode(name) + 1)
 
@@ -216,8 +240,13 @@ def last_name(hpc):
     :return: last experiment identifier used for HPC, 'empty' if there is none
     :rtype: str
     """
-    check_db()
-    (conn, cursor) = open_conn()
+    if not check_db():
+        return ''
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return ''
     conn.text_factory = str
     if hpc == 'test':
         hpc_name = 'test'
@@ -243,9 +272,16 @@ def delete_experiment(name):
     :return: True if delete is succesful
     :rtype: bool
     """
-    check_db()
+    if not check_db():
+        return False
     name = check_name(name)
-    (conn, cursor) = open_conn()
+    if name == '':
+        return False
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': name})
     row = cursor.fetchone()
@@ -267,7 +303,7 @@ def check_name(name):
     name = name.lower()
     if len(name) < 4 or not name.isalnum():
         Log.error("So sorry, but the name must have at least 4 alphanumeric chars!!!")
-        sys.exit(1)
+        return ''
     return name
 
 
@@ -280,8 +316,8 @@ def check_db():
 
     if not os.path.exists(BasicConfig.DB_PATH):
         Log.error('Some problem has happened...check the database file.' + 'DB file:' + BasicConfig.DB_PATH)
-        sys.exit(1)
-    return
+        return False
+    return True
 
 
 def open_conn():
@@ -310,11 +346,11 @@ def open_conn():
             version = 0
     if version < CURRENT_DATABASE_VERSION:
         if not _update_database(version, cursor):
-            exit(1)
+            raise DbException('Database version could not be updated')
     elif version > CURRENT_DATABASE_VERSION:
         Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
                      'autosubmit --upgrade')
-        exit(1)
+        raise DbException('Database version not compatible')
     return conn, cursor
 
 
@@ -363,3 +399,11 @@ def _update_database(version, cursor):
         return False
     Log.info("Update completed")
     return True
+
+
+class DbException(Exception):
+    """
+    Exception class for database errors
+    """
+    def __init__(self, message):
+        self.message = message

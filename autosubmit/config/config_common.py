@@ -34,6 +34,7 @@ from autosubmit.queue.sgequeue import SgeQueue
 from autosubmit.queue.ecqueue import EcQueue
 from autosubmit.queue.slurmqueue import SlurmQueue
 from autosubmit.queue.localqueue import LocalQueue
+from autosubmit.queue.hpcqueue import HPCQueueException
 
 
 class AutosubmitConfig:
@@ -669,7 +670,7 @@ class AutosubmitConfig:
         """
         Read queues configuration file and create defined queues. Also adds the local queue to the list
 
-        :return: queues defined on file and local queue
+        :return: queues defined on file and local queue. None if configuration is invalid
         :rtype: list
         """
         parser = self._queues_parser
@@ -690,25 +691,28 @@ class AutosubmitConfig:
         for section in parser.sections():
             queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
             queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
-            queue = None
-            if queue_type == 'pbs':
-                queue = PBSQueue(self.expid, queue_version)
-            elif queue_type == 'sge':
-                queue = SgeQueue(self.expid)
-            elif queue_type == 'ps':
-                queue = PsQueue(self.expid)
-            elif queue_type == 'lsf':
-                queue = LsfQueue(self.expid)
-            elif queue_type == 'ecaccess':
-                queue = EcQueue(self.expid, queue_version)
-            elif queue_type == 'slurm':
-                queue = SlurmQueue(self.expid)
-            elif queue_type == '':
-                Log.error("Queue type not specified".format(queue_type))
-                exit(1)
-            else:
-                Log.error("Queue type {0} not defined".format(queue_type))
-                exit(1)
+            try:
+                if queue_type == 'pbs':
+                    queue = PBSQueue(self.expid, queue_version)
+                elif queue_type == 'sge':
+                    queue = SgeQueue(self.expid)
+                elif queue_type == 'ps':
+                    queue = PsQueue(self.expid)
+                elif queue_type == 'lsf':
+                    queue = LsfQueue(self.expid)
+                elif queue_type == 'ecaccess':
+                    queue = EcQueue(self.expid, queue_version)
+                elif queue_type == 'slurm':
+                    queue = SlurmQueue(self.expid)
+                elif queue_type == '':
+                    Log.error("Queue type not specified".format(queue_type))
+                    return None
+                else:
+                    Log.error("Queue type {0} not defined".format(queue_type))
+                    return None
+            except HPCQueueException as e:
+                Log.error("Queue exception: {0}".format(e.message))
+                return None
 
             queue.type = queue_type
             queue.version = queue_version
@@ -754,6 +758,7 @@ class AutosubmitConfig:
             return parser.get(section, option)
         else:
             return default
+
     @staticmethod
     def get_bool_option(parser, section, option, default):
         """

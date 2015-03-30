@@ -30,7 +30,10 @@ from autosubmit.autosubmit import Autosubmit
 
 
 def main():
-    Autosubmit.parse_args()
+    if not Autosubmit.parse_args():
+        exit(1)
+
+    exit(0)
 
 if __name__ == "__main__":
     main()

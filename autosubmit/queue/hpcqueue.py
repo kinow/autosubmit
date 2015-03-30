@@ -532,3 +532,11 @@ class HPCQueue:
         """
         return '''if [[ $(qstat | grep {0}) != '' ]];
         then echo $(qstat | grep {0} | awk '{{print $5}}' | head -n 1); else echo 'c'; fi'''.format(job_id)
+
+
+class HPCQueueException(Exception):
+    """
+    Exception raised from HPC queues
+    """
+    def __init__(self, msg):
+        self.message = msg

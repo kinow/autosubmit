@@ -57,7 +57,7 @@ class AutosubmitGit:
                             if output:
                                 Log.info("Changes not commited detected... SKIPPING!")
                                 Log.user_warning("Commit needed!")
-                                exit(1)
+                                return False
                             else:
                                 (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
                                                                    self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
@@ -66,7 +66,7 @@ class AutosubmitGit:
                                 if output:
                                     Log.info("Changes not pushed detected... SKIPPING!")
                                     Log.user_warning("Synchronization needed!")
-                                    exit(1)
+                                    return False
                                 else:
                                     Log.debug("Ready to clean...")
                                     Log.debug("Cloning: 'git clone --bare " + dirname + " " + dirname + ".git' ...")
@@ -82,9 +82,9 @@ class AutosubmitGit:
                                     Log.user_warning("Further runs will require 'git clone {0}.git {0} '...", dirname)
                         else:
                             Log.error("Failed to retrieve git info...")
-                            exit(1)
+                            return False
                     else:
                         Log.debug("Not a git repository... SKIPPING!")
                 else:
                     Log.debug("Not a directory... SKIPPING!")
-        return
+        return True

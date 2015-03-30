@@ -19,7 +19,7 @@
 import textwrap
 from commands import getstatusoutput
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.queue.hpcqueue import HPCQueue, HPCQueueException
 from autosubmit.config.log import Log
 
 
@@ -44,8 +44,7 @@ class EcQueue(HPCQueue):
         elif scheduler == 'loadleveler':
             self._header = EcHeader()
         else:
-            Log.error('ecaccess scheduler {0} not supported'.format(scheduler))
-            exit(1)
+            raise HPCQueueException('ecaccess scheduler {0} not supported'.format(scheduler))
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']

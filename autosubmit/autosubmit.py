@@ -71,176 +71,182 @@ class Autosubmit:
         """
         Parse arguments given to an executable and start execution of command given
         """
-        BasicConfig.read()
+        try:
+            BasicConfig.read()
 
-        parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
-        parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
-                            help="returns autosubmit's version number and exit")
-        parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
-                                                         'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='DEBUG', type=str,
-                            help="sets file's log level.")
-        parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
-                                                            'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                            default='INFO', type=str,
-                            help="sets console's log level")
+            parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
+            parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
+                                help="returns autosubmit's version number and exit")
+            parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                                default='DEBUG', type=str,
+                                help="sets file's log level.")
+            parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
+                                                                'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+                                default='INFO', type=str,
+                                help="sets console's log level")
 
-        subparsers = parser.add_subparsers(dest='command')
+            subparsers = parser.add_subparsers(dest='command')
 
-        # Run
-        subparser = subparsers.add_parser('run', description="runs specified experiment")
-        subparser.add_argument('expid', help='experiment identifier')
+            # Run
+            subparser = subparsers.add_parser('run', description="runs specified experiment")
+            subparser.add_argument('expid', help='experiment identifier')
 
-        # Expid
-        subparser = subparsers.add_parser('expid', description="Creates a new experiment")
-        group = subparser.add_mutually_exclusive_group()
-        group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
-        group.add_argument('-dm', '--dummy', action='store_true',
-                           help='creates a new experiment with default values, usually for testing')
+            # Expid
+            subparser = subparsers.add_parser('expid', description="Creates a new experiment")
+            group = subparser.add_mutually_exclusive_group()
+            group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
+            group.add_argument('-dm', '--dummy', action='store_true',
+                               help='creates a new experiment with default values, usually for testing')
 
-        subparser.add_argument('-H', '--HPC', required=True,
-                               help='specifies the HPC to use for the experiment')
-        subparser.add_argument('-d', '--description', type=str, required=True,
-                               help='sets a description for the experiment to store in the database.')
+            subparser.add_argument('-H', '--HPC', required=True,
+                                   help='specifies the HPC to use for the experiment')
+            subparser.add_argument('-d', '--description', type=str, required=True,
+                                   help='sets a description for the experiment to store in the database.')
 
-        # Delete
-        subparser = subparsers.add_parser('delete', description="delete specified experiment")
-        subparser.add_argument('expid',  help='experiment identifier')
-        subparser.add_argument('-f', '--force', action='store_true', help='deletes experiment without confirmation')
+            # Delete
+            subparser = subparsers.add_parser('delete', description="delete specified experiment")
+            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('-f', '--force', action='store_true', help='deletes experiment without confirmation')
 
-        # Monitor
-        subparser = subparsers.add_parser('monitor', description="plots specified experiment")
-        subparser.add_argument('expid', help='experiment identifier')
-        subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
-                               help='chooses type of output for generated plot')
+            # Monitor
+            subparser = subparsers.add_parser('monitor', description="plots specified experiment")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
+                                   help='chooses type of output for generated plot')
 
-        # Stats
-        subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
-        subparser.add_argument('expid', help='experiment identifier')
-        subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
-                               help='type of output for generated plot')
+            # Stats
+            subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
+                                   help='type of output for generated plot')
 
-        # Clean
-        subparser = subparsers.add_parser('clean', description="clean specified experiment")
-        subparser.add_argument('expid', help='experiment identifier')
-        subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
-        subparser.add_argument('-p', '--plot', action="store_true",
-                               help='clean plot, only 2 last will remain')
-        subparser.add_argument('-s', '--stats', action="store_true",
-                               help='clean stats, only last will remain')
+            # Clean
+            subparser = subparsers.add_parser('clean', description="clean specified experiment")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-pr', '--project', action="store_true", help='clean project')
+            subparser.add_argument('-p', '--plot', action="store_true",
+                                   help='clean plot, only 2 last will remain')
+            subparser.add_argument('-s', '--stats', action="store_true",
+                                   help='clean stats, only last will remain')
 
-        # Recovery
-        subparser = subparsers.add_parser('recovery', description="recover specified experiment")
-        subparser.add_argument('expid', type=str, help='experiment identifier')
-        subparser.add_argument('-g', '--get', action="store_true", default=False,
-                               help='Get completed files to synchronize pkl')
-        subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
+            # Recovery
+            subparser = subparsers.add_parser('recovery', description="recover specified experiment")
+            subparser.add_argument('expid', type=str, help='experiment identifier')
+            subparser.add_argument('-g', '--get', action="store_true", default=False,
+                                   help='Get completed files to synchronize pkl')
+            subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
 
-        # Check
-        subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
-        subparser.add_argument('expid',  help='experiment identifier')
+            # Check
+            subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
+            subparser.add_argument('expid',  help='experiment identifier')
 
-        # Create
-        subparser = subparsers.add_parser('create', description="create specified experiment joblist")
-        subparser.add_argument('expid',  help='experiment identifier')
-        subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
+            # Create
+            subparser = subparsers.add_parser('create', description="create specified experiment joblist")
+            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
-        # Configure
-        subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
-                                                                   "can be done at machine, user or local level (by "
-                                                                   "default at machine level)")
-        subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
-                                                                           'it will prompt for it')
-        subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
-        subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
-                                                                            'supplied, it will prompt for it')
-        subparser.add_argument('-qc', '--queuesconfpath', default=None, help='path to queues.conf file to use by '
-                                                                             'default. If not supplied, it will not '
-                                                                             'prompt for it')
-        subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
-                                                                           'default. If not supplied, it will not '
-                                                                           'prompt for it')
-        group = subparser.add_mutually_exclusive_group()
-        group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
-        group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from this '
-                                                                      'path')
+            # Configure
+            subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
+                                                                       "can be done at machine, user or local level (by "
+                                                                       "default at machine level)")
+            subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
+                                                                               'it will prompt for it')
+            subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
+            subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
+                                                                                'supplied, it will prompt for it')
+            subparser.add_argument('-qc', '--queuesconfpath', default=None, help='path to queues.conf file to use by '
+                                                                                 'default. If not supplied, it will not '
+                                                                                 'prompt for it')
+            subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
+                                                                               'default. If not supplied, it will not '
+                                                                               'prompt for it')
+            group = subparser.add_mutually_exclusive_group()
+            group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
+            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from this '
+                                                                          'path')
 
-        # Install
-        subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
+            # Install
+            subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
-        # Change_pkl
-        subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
-        subparser.add_argument('expid',  help='experiment identifier')
-        subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
-        subparser.add_argument('-t', '--status_final',
-                               choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                               required=True,
-                               help='Supply the target status')
-        group1 = subparser.add_mutually_exclusive_group(required=True)
-        group1.add_argument('-l', '--list', type=str,
-                            help='Alternative 1: Supply the list of job names to be changed. Default = "Any". '
-                                 'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
-        group1.add_argument('-f', '--filter', action="store_true",
-                            help='Alternative 2: Supply a filter for the job list. See help of filter arguments: '
-                                 'chunk filter, status filter or type filter')
-        group2 = subparser.add_mutually_exclusive_group(required=False)
-        group2.add_argument('-fc', '--filter_chunks', type=str,
-                            help='Supply the list of chunks to change the status. Default = "Any". '
-                                 'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
-        group2.add_argument('-fs', '--filter_status', type=str,
-                            choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                            help='Select the original status to filter the list of jobs')
-        group2.add_argument('-ft', '--filter_type', type=str,
-                            help='Select the job type to filter the list of jobs')
+            # Change_pkl
+            subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
+            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
+            subparser.add_argument('-t', '--status_final',
+                                   choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                                   required=True,
+                                   help='Supply the target status')
+            group1 = subparser.add_mutually_exclusive_group(required=True)
+            group1.add_argument('-l', '--list', type=str,
+                                help='Alternative 1: Supply the list of job names to be changed. Default = "Any". '
+                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group1.add_argument('-f', '--filter', action="store_true",
+                                help='Alternative 2: Supply a filter for the job list. See help of filter arguments: '
+                                     'chunk filter, status filter or type filter')
+            group2 = subparser.add_mutually_exclusive_group(required=False)
+            group2.add_argument('-fc', '--filter_chunks', type=str,
+                                help='Supply the list of chunks to change the status. Default = "Any". '
+                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group2.add_argument('-fs', '--filter_status', type=str,
+                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                                help='Select the original status to filter the list of jobs')
+            group2.add_argument('-ft', '--filter_type', type=str,
+                                help='Select the job type to filter the list of jobs')
 
-        # Test
-        subparser = subparsers.add_parser('test', description='test experiment')
-        subparser.add_argument('expid',  help='experiment identifier')
-        subparser.add_argument('-c', '--chunks', required=True, help='chunks to run')
-        subparser.add_argument('-m', '--member', help='member to run')
-        subparser.add_argument('-s', '--stardate', help='stardate to run')
-        subparser.add_argument('-H', '--HPC', help='HPC to run experiment on it')
-        subparser.add_argument('-b', '--branch', help='branch of git to run (or revision from subversion)')
+            # Test
+            subparser = subparsers.add_parser('test', description='test experiment')
+            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('-c', '--chunks', required=True, help='chunks to run')
+            subparser.add_argument('-m', '--member', help='member to run')
+            subparser.add_argument('-s', '--stardate', help='stardate to run')
+            subparser.add_argument('-H', '--HPC', help='HPC to run experiment on it')
+            subparser.add_argument('-b', '--branch', help='branch of git to run (or revision from subversion)')
 
-        # Refresh
-        subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
-        subparser.add_argument('expid',  help='experiment identifier')
+            # Refresh
+            subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
+            subparser.add_argument('expid',  help='experiment identifier')
 
-        args = parser.parse_args()
+            args = parser.parse_args()
 
-        Log.set_console_level(args.logconsole)
-        Log.set_file_level(args.logfile)
+            Log.set_console_level(args.logconsole)
+            Log.set_file_level(args.logfile)
 
-        if args.command == 'run':
-            Autosubmit.run_experiment(args.expid)
-        elif args.command == 'expid':
-            Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy)
-        elif args.command == 'delete':
-            Autosubmit.delete(args.expid, args.force)
-        elif args.command == 'monitor':
-            Autosubmit.monitor(args.expid, args.output)
-        elif args.command == 'stats':
-            Autosubmit.statistics(args.expid, args.output)
-        elif args.command == 'clean':
-            Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
-        elif args.command == 'recovery':
-            Autosubmit.recovery(args.expid, args.save, args.get)
-        elif args.command == 'check':
-            Autosubmit.check(args.expid)
-        elif args.command == 'create':
-            Autosubmit.create(args.expid, args.noplot)
-        elif args.command == 'configure':
-            Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath, args.queuesconfpath,
-                                 args.jobsconfpath, args.user, args.local)
-        elif args.command == 'install':
-            Autosubmit.install()
-        elif args.command == 'change_pkl':
-            Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list, args.filter,
-                                  args.filter_chunks, args.filter_status, args.filter_section)
-        elif args.command == 'test':
-            Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
-        elif args.command == 'refresh':
-            Autosubmit.refresh(args.expid)
+            if args.command == 'run':
+                return Autosubmit.run_experiment(args.expid)
+            elif args.command == 'expid':
+                return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy) != ''
+            elif args.command == 'delete':
+                return Autosubmit.delete(args.expid, args.force)
+            elif args.command == 'monitor':
+                return Autosubmit.monitor(args.expid, args.output)
+            elif args.command == 'stats':
+                return Autosubmit.statistics(args.expid, args.output)
+            elif args.command == 'clean':
+                return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
+            elif args.command == 'recovery':
+                return Autosubmit.recovery(args.expid, args.save, args.get)
+            elif args.command == 'check':
+                return Autosubmit.check(args.expid)
+            elif args.command == 'create':
+                return Autosubmit.create(args.expid, args.noplot)
+            elif args.command == 'configure':
+                return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
+                                            args.queuesconfpath, args.jobsconfpath, args.user, args.local)
+            elif args.command == 'install':
+                return Autosubmit.install()
+            elif args.command == 'change_pkl':
+                return Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list, args.filter,
+                                             args.filter_chunks, args.filter_status, args.filter_section)
+            elif args.command == 'test':
+                return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
+            elif args.command == 'refresh':
+                return Autosubmit.refresh(args.expid)
+        except Exception as e:
+            from traceback import format_exc
+            Log.critical('Unhandled excpetion on Autosubmit: {0}\n{1}', e, format_exc(10))
+
+            return False
 
     @staticmethod
     def _delete_expid(expid_delete):
@@ -294,6 +300,8 @@ class Autosubmit:
             return ''
         if not copy_id:
             exp_id = new_experiment(hpc, description, Autosubmit.autosubmit_version)
+            if exp_id == '':
+                return ''
             try:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
 
@@ -324,6 +332,8 @@ class Autosubmit:
             try:
                 if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id):
                     exp_id = copy_experiment(copy_id, hpc, description, Autosubmit.autosubmit_version)
+                    if exp_id == '':
+                        return ''
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
                     Log.info("Copying previous experiment config directories")
@@ -337,7 +347,7 @@ class Autosubmit:
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                 else:
                     Log.critical("The previous experiment directory does not exist")
-                    sys.exit(1)
+                    return ''
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
                 Autosubmit._delete_expid(exp_id)
@@ -420,6 +430,8 @@ class Autosubmit:
         retrials = as_conf.get_retrials()
 
         queues = as_conf.read_queues_conf()
+        if queues is None:
+            return False
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Total jobs to submit: {0}", max_jobs)
@@ -444,7 +456,7 @@ class Autosubmit:
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist.", filename)
-            sys.exit()
+            return False
 
         Log.debug("Length of joblist: {0}", len(joblist))
 
@@ -546,9 +558,13 @@ class Autosubmit:
                         Log.result("Job {0} is COMPLETED", job.name)
                     elif job.status is Status.FAILED:
                         Log.user_warning("Job {0} is FAILED", job.name)
-                        # Uri add check if status UNKNOWN and exit if you want
+                    elif job.status is Status.UNKNOWN:
+                        Log.debug("Job {0} in UNKNOWN status. Checking completed files", job.name)
+                        job_queue.get_completed_files(job.name)
+                        job.check_completion(Status.UNKNOWN)
+                    elif job.status is Status.SUBMITTED:
                         # after checking the jobs , no job should have the status "submitted"
-                        # Uri throw an exception if this happens (warning type no exit)
+                        Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
 
             # explain it !!
             joblist.update_list()
@@ -625,6 +641,7 @@ class Autosubmit:
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format)
         Log.result("Plot ready")
+        return True
 
     @staticmethod
     def statistics(expid, file_format):
@@ -654,6 +671,7 @@ class Autosubmit:
             Log.result("Stats plot ready")
         else:
             Log.info("There are no COMPLETED jobs...")
+        return True
 
     @staticmethod
     def clean(expid, project, plot, stats):
@@ -686,7 +704,8 @@ class Autosubmit:
                 autosubmit_config.set_git_project_commit()
                 autosubmit_git = AutosubmitGit(expid[0])
                 Log.info("Cleaning GIT directory...")
-                autosubmit_git.clean_git()
+                if not autosubmit_git.clean_git():
+                    return False
             else:
                 Log.info("No project to clean...\n")
         if plot:
@@ -697,6 +716,7 @@ class Autosubmit:
             Log.info("Cleaning stats directory...")
             monitor_autosubmit = Monitor()
             monitor_autosubmit.clean_stats(expid)
+        return True
 
     @staticmethod
     def recovery(expid, save, get):
@@ -730,6 +750,8 @@ class Autosubmit:
 
         if get:
             queues = as_conf.read_queues_conf()
+            if queues is None:
+                return False
 
             for job in job_list.get_active():
                 if job.queue_name is None:
@@ -761,6 +783,7 @@ class Autosubmit:
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, job_list.get_job_list())
+        return True
 
     @staticmethod
     def check(expid):
@@ -777,7 +800,7 @@ class Autosubmit:
         project_type = as_conf.get_project_type()
         if project_type != "none":
             as_conf.check_proj()
-
+        return True
         # print "Checking experiment configuration..."
         # if as_conf.check_parameters():
         #     print "Experiment configuration check PASSED!"
@@ -820,25 +843,25 @@ class Autosubmit:
         database_path = database_path.replace('~', home_path)
         if not os.path.exists(database_path):
             Log.error("Database path does not exist.")
-            exit(1)
+            return False
 
         while local_root_path is None:
             local_root_path = raw_input("Introduce Local Root path: ")
         local_root_path = local_root_path.replace('~', home_path)
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
-            exit(1)
+            return False
 
         if queues_conf_path is not None:
             queues_conf_path = queues_conf_path.replace('~', home_path)
             if not os.path.exists(queues_conf_path):
                 Log.error("queues.conf path does not exist.")
-                exit(1)
+                return False
         if jobs_conf_path is not None:
             jobs_conf_path = jobs_conf_path.replace('~', home_path)
             if not os.path.exists(jobs_conf_path):
                 Log.error("jobs.conf path does not exist.")
-                exit(1)
+                return False
 
         if user:
             path = home_path
@@ -870,6 +893,8 @@ class Autosubmit:
             Log.result("Configuration file written successfully")
         except (IOError, OSError) as e:
             Log.critical("Can not write config file: {0}".format(e.message))
+            return False
+        return True
 
     @staticmethod
     def install():
@@ -879,15 +904,15 @@ class Autosubmit:
         BasicConfig.read()
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
-            try:
-                qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
-                create_db(qry)
-                Log.result("Autosubmit database creatd successfully")
-            except Exception as e:
-                Log.critical("Can not write database file: {0}".format(e.message))
+            qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
+            if not create_db(qry):
+                Log.critical("Can not write database file")
+                return False
+            Log.result("Autosubmit database created successfully")
         else:
             Log.error("Database already exists.")
-            exit(1)
+            return False
+        return True
 
     @staticmethod
     def refresh(expid):
@@ -907,6 +932,7 @@ class Autosubmit:
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
+        return True
 
     @staticmethod
     def create(expid, noplot):
@@ -945,13 +971,13 @@ class Autosubmit:
         date_list = as_conf.get_date_list()
         if len(date_list) != len(set(date_list)):
             Log.error('There are repeated start dates!')
-            exit(1)
+            return False
         starting_chunk = as_conf.get_starting_chunk()
         num_chunks = as_conf.get_num_chunks()
         member_list = as_conf.get_member_list()
         if len(date_list) != len(set(date_list)):
             Log.error('There are repeated member names!')
-            exit(1)
+            return False
         rerun = as_conf.get_rerun()
 
         Log.info("\nCreating joblist...")
@@ -976,6 +1002,7 @@ class Autosubmit:
 
         Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
+        return True
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
@@ -1189,6 +1216,7 @@ class Autosubmit:
 
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, job_list.get_job_list())
+        return True
 
     @staticmethod
     def _user_yes_no_query(question):
@@ -1431,6 +1459,6 @@ class Autosubmit:
 
         Autosubmit.create(testid, False)
         if not Autosubmit.run_experiment(testid):
-            exit(1)
-        Autosubmit.delete(testid, True)
+            return False
+        return Autosubmit.delete(testid, True)
 
