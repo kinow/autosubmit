@@ -606,7 +606,7 @@ class JobList:
         Removes all jobs to be runned only in reruns
         """
         flag = False
-        for job in self._job_list:
+        for job in set(self._job_list):
             if job.rerun_only:
                 self._remove_job(job)
                 flag = True

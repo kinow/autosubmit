@@ -237,7 +237,7 @@ class Autosubmit:
                 return Autosubmit.install()
             elif args.command == 'change_pkl':
                 return Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list, args.filter,
-                                             args.filter_chunks, args.filter_status, args.filter_section)
+                                             args.filter_chunks, args.filter_status, args.filter_type)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
@@ -1088,6 +1088,11 @@ class Autosubmit:
         return True
 
     @staticmethod
+    def change_status(final, final_status, job):
+        job.status = final_status
+        Log.info("CHANGED: job: " + job.name + " status to: " + final)
+
+    @staticmethod
     def change_pkl(expid, save, final, lst, flt,
                    filter_chunks, filter_status, filter_section):
         """
@@ -1127,54 +1132,37 @@ class Autosubmit:
 
                 if fc == 'Any':
                     for job in job_list.get_job_list():
-                        job.status = final_status
-                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                        Autosubmit.change_status(final, final_status, job)
                 else:
                     data = json.loads(Autosubmit._create_json(fc))
-                    # change localsetup and remotesetup
-                    # [...]
-                    for date in data['sds']:
-                        for member in date['ms']:
-                            jobname_ini = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_ini"
-                            job = job_list.get_job_by_name(jobname_ini)
-                            job.status = final_status
-                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                            # change also trans
-                            jobname_trans = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_trans"
-                            job = job_list.get_job_by_name(jobname_trans)
-                            job.status = final_status
-                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                            # [...]
-                            for chunk in member['cs']:
-                                jobname_sim = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
-                                    chunk) + "_sim"
-                                jobname_post = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
-                                    chunk) + "_post"
-                                jobname_clean = expid + "_" + str(date['sd']) + "_" + str(member['m']) + "_" + str(
-                                    chunk) + "_clean"
-                                job = job_list.get_job_by_name(jobname_sim)
-                                job.status = final_status
-                                Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                                job = job_list.get_job_by_name(jobname_post)
-                                job.status = final_status
-                                Log.info("CHANGED: job: " + job.name + " status to: " + final)
-                                job = job_list.get_job_by_name(jobname_clean)
-                                job.status = final_status
-                                Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                    for datejson in data['sds']:
+                        date = datejson['sd']
+                        jobs_date = filter(lambda j: j.date == date, job_list.get_job_list())
+
+                        for job in filter(lambda j: j.member is None, jobs_date):
+                                Autosubmit.change_status(final, final_status, job)
+
+                        for memberjson in datejson['ms']:
+                            member = memberjson['m']
+                            jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                            for job in filter(lambda j: j.chunk is None, jobs_member):
+                                Autosubmit.change_status(final, final_status, job)
+
+                            for chunkjson in memberjson['cs']:
+                                chunk = int(chunkjson)
+                                for job in filter(lambda j: j.chunk == chunk, jobs_member):
+                                    Autosubmit.change_status(final, final_status, job)
 
             if filter_status:
                 Log.debug("Filtering jobs with status {0}", filter_status)
                 if filter_status == 'Any':
                     for job in job_list.get_job_list():
-                        job.status = final_status
-                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                        Autosubmit.change_status(final, final_status, job)
                 else:
                     fs = Autosubmit._get_status(filter_status)
-
-                    for job in job_list.get_job_list():
-                        if job.status == fs:
-                            job.status = final_status
-                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                    for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
+                        Autosubmit.change_status(final, final_status, job)
 
             if filter_section:
                 ft = filter_section
@@ -1182,26 +1170,22 @@ class Autosubmit:
 
                 if ft == 'Any':
                     for job in job_list.get_job_list():
-                        job.status = final_status
-                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                        Autosubmit.change_status(final, final_status, job)
                 else:
                     for job in job_list.get_job_list():
                         if job.section == ft:
-                            job.status = final_status
-                            Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                            Autosubmit.change_status(final, final_status, job)
 
         if lst:
             jobs = lst.split()
 
             if jobs == 'Any':
                 for job in job_list.get_job_list():
-                    job.status = final_status
-                    Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                    Autosubmit.change_status(final, final_status, job)
             else:
                 for job in job_list.get_job_list():
                     if job.name in jobs:
-                        job.status = final_status
-                        Log.info("CHANGED: job: " + job.name + " status to: " + final)
+                        Autosubmit.change_status(final, final_status, job)
 
         sys.setrecursionlimit(50000)
 

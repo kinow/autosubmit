@@ -48,6 +48,9 @@ class Job:
     :type priority: int
     """
 
+    def __str__(self):
+        return self.name
+
     def __init__(self, name, jobid, status, priority):
         self._queue = None
         self.queue_name = None
