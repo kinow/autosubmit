@@ -682,6 +682,7 @@ class AutosubmitConfig:
         local_queue.set_host(platform.node())
         local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
         local_queue.set_project(self.expid)
+        local_queue.set_budget(self.expid)
         local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
         local_queue.update_cmds()
 
@@ -751,6 +752,26 @@ class AutosubmitConfig:
         """
         if parser.has_option(section, option):
             return parser.get(section, option)
+        else:
+            return default
+    @staticmethod
+    def get_bool_option(parser, section, option, default):
+        """
+        Gets a boolean option from given parser
+
+        :param parser: parser to use
+        :type parser: SafeConfigParser
+        :param section: section that contains the option
+        :type section: str
+        :param option: option to get
+        :type option: str
+        :param default: value to be returned if option is not present
+        :type default: bool
+        :return: option value
+        :rtype: bool
+        """
+        if parser.has_option(section, option):
+            return parser.get(section, option).lower().strip() == 'true'
         else:
             return default
 

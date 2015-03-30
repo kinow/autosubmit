@@ -293,7 +293,7 @@ class Autosubmit:
             Log.error("Missing HPC.")
             return ''
         if not copy_id:
-            exp_id = new_experiment(hpc, description)
+            exp_id = new_experiment(hpc, description, Autosubmit.autosubmit_version)
             try:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
 
@@ -323,7 +323,7 @@ class Autosubmit:
         else:
             try:
                 if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id):
-                    exp_id = copy_experiment(copy_id, hpc, description)
+                    exp_id = copy_experiment(copy_id, hpc, description, Autosubmit.autosubmit_version)
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
                     os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
                     Log.info("Copying previous experiment config directories")
@@ -1390,6 +1390,10 @@ class Autosubmit:
 
         as_conf = AutosubmitConfig(testid)
         exp_parser = as_conf.get_parser(as_conf.experiment_file)
+        if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
+            Log.error('Can not test a RERUN experiment')
+            Autosubmit.delete(testid, True)
+            return False
 
         content = file(as_conf.experiment_file).read()
         if hpc is None:

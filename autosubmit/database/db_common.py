@@ -28,6 +28,8 @@ import string
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
+CURRENT_DATABASE_VERSION = 1
+
 
 def create_db(qry):
     """
@@ -49,7 +51,7 @@ def create_db(qry):
     return
 
 
-def _set_experiment(name, description):
+def _set_experiment(name, description, version):
     """
     Stores experiment in database
 
@@ -63,8 +65,9 @@ def _set_experiment(name, description):
 
     (conn, cursor) = open_conn()
     try:
-        cursor.execute('insert into experiment (name, description) values (:name, :description)',
-                       {'name': name, 'description': description})
+        cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
+                       ':version)',
+                       {'name': name, 'description': description, 'version': version})
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
         Log.error('Could not register experiment: {0}'.format(e))
@@ -88,6 +91,7 @@ def check_experiment_exists(name):
     name = check_name(name)
 
     (conn, cursor) = open_conn()
+    conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
     # behaviour with the next sentence
@@ -101,7 +105,7 @@ def check_experiment_exists(name):
     return True
 
 
-def new_experiment(hpc, description):
+def new_experiment(hpc, description, version):
     """
     Stores a new experiment on the database and generates its identifier
 
@@ -120,12 +124,12 @@ def new_experiment(hpc, description):
             new_name = hpc[0]+'000'
     else:
         new_name = _next_name(last_exp_name)
-    _set_experiment(new_name, description)
+    _set_experiment(new_name, description, version)
     Log.info('The new experiment "{0}" has been registered.', new_name)
     return new_name
 
 
-def copy_experiment(name, hpc, description):
+def copy_experiment(name, hpc, description, version):
     """
     Creates a new experiment by copying an existing experiment
 
@@ -140,7 +144,7 @@ def copy_experiment(name, hpc, description):
     """
     if not check_experiment_exists(name):
         exit(1)
-    new_name = new_experiment(hpc, description)
+    new_name = new_experiment(hpc, description, version)
     return new_name
 
 
@@ -220,9 +224,9 @@ def last_name(hpc):
     else:
         hpc_name = hpc[0]
     hpc_name += '___'
-    cursor.execute('select name '
-                   'from experiment '
-                   'where rowid=(select max(rowid) from experiment where name LIKE "' + hpc_name + '")')
+    cursor.execute('SELECT name '
+                   'FROM experiment '
+                   'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "' + hpc_name + '")')
     row = cursor.fetchone()
     if row is None:
         row = ('empty', )
@@ -242,8 +246,8 @@ def delete_experiment(name):
     check_db()
     name = check_name(name)
     (conn, cursor) = open_conn()
-    cursor.execute('delete from experiment '
-                   'where name=:name', {'name': name})
+    cursor.execute('DELETE FROM experiment '
+                   'WHERE name=:name', {'name': name})
     row = cursor.fetchone()
     if row is None:
         Log.debug('The experiment {0} has been deleted!!!', name)
@@ -289,6 +293,28 @@ def open_conn():
     """
     conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
+    try:
+        cursor.execute('SELECT version '
+                       'FROM db_version;')
+        row = cursor.fetchone()
+        if row is None:
+            version = 0
+        else:
+            version = row[0]
+    except sqlite3.OperationalError:
+        try:
+            cursor.execute('SELECT type '
+                           'FROM experiment;')
+            version = -1
+        except sqlite3.Error:
+            version = 0
+    if version < CURRENT_DATABASE_VERSION:
+        if not _update_database(version, cursor):
+            exit(1)
+    elif version > CURRENT_DATABASE_VERSION:
+        Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
+                     'autosubmit --upgrade')
+        exit(1)
     return conn, cursor
 
 
@@ -306,3 +332,34 @@ def close_conn(conn, cursor):
     conn.close()
     return
 
+
+def _update_database(version, cursor):
+
+    Log.info("Autosubmit's database version is {0}. Current version is {1}. Updating...",
+             version, CURRENT_DATABASE_VERSION)
+    try:
+        # For databases from Autosubmit 2
+        if version <= -1:
+            cursor.executescript('CREATE TABLE experiment_backup(id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, '
+                                 'name VARCHAR NOT NULL, type VARCHAR, autosubmit_version VARCHAR, '
+                                 'description VARCHAR NOT NULL, model_branch VARCHAR, template_name VARCHAR, '
+                                 'template_branch VARCHAR, ocean_diagnostics_branch VARCHAR);'
+                                 'INSERT INTO experiment_backup (name,type,description,model_branch,template_name,'
+                                 'template_branch,ocean_diagnostics_branch) SELECT name,type,description,model_branch,'
+                                 'template_name,template_branch,ocean_diagnostics_branch FROM experiment;'
+                                 'UPDATE experiment_backup SET autosubmit_version = "2";'
+                                 'DROP TABLE experiment;'
+                                 'ALTER TABLE experiment_backup RENAME TO experiment;')
+        if version <= 0:
+            # Autosubmit beta version. Create db_version table
+            cursor.executescript('CREATE TABLE db_version(version INTEGER NOT NULL);'
+                                 'INSERT INTO db_version (version) VALUES (1);'
+                                 'ALTER TABLE experiment ADD COLUMN autosubmit_version VARCHAR;'
+                                 'UPDATE experiment SET autosubmit_version = "3.0.0b" '
+                                 'WHERE autosubmit_version NOT NULL;')
+        cursor.execute('UPDATE db_version SET version={0};'.format(CURRENT_DATABASE_VERSION))
+    except sqlite3.Error as e:
+        Log.critical('Can not update database: {0}', e)
+        return False
+    Log.info("Update completed")
+    return True
