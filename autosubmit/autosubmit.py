@@ -177,22 +177,18 @@ class Autosubmit:
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                    required=True,
                                    help='Supply the target status')
-            group1 = subparser.add_mutually_exclusive_group(required=True)
-            group1.add_argument('-l', '--list', type=str,
-                                help='Alternative 1: Supply the list of job names to be changed. Default = "Any". '
-                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
-            group1.add_argument('-f', '--filter', action="store_true",
-                                help='Alternative 2: Supply a filter for the job list. See help of filter arguments: '
-                                     'chunk filter, status filter or type filter')
-            group2 = subparser.add_mutually_exclusive_group(required=False)
-            group2.add_argument('-fc', '--filter_chunks', type=str,
-                                help='Supply the list of chunks to change the status. Default = "Any". '
-                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
-            group2.add_argument('-fs', '--filter_status', type=str,
-                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                                help='Select the original status to filter the list of jobs')
-            group2.add_argument('-ft', '--filter_type', type=str,
-                                help='Select the job type to filter the list of jobs')
+            group = subparser.add_mutually_exclusive_group(required=True)
+            group.add_argument('-l', '--list', type=str,
+                               help='Supply the list of job names to be changed. Default = "Any". '
+                                    'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group.add_argument('-fc', '--filter_chunks', type=str,
+                               help='Supply the list of chunks to change the status. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group.add_argument('-ft', '--filter_type', type=str,
+                               help='Select the job type to filter the list of jobs')
 
             # Test
             subparser = subparsers.add_parser('test', description='test experiment')
@@ -236,7 +232,7 @@ class Autosubmit:
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'change_pkl':
-                return Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list, args.filter,
+                return Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
@@ -475,10 +471,7 @@ class Autosubmit:
             job.set_queue(queues[job.queue_name])
             queues_to_test.add(queues[job.queue_name])
 
-        if joblist.check_scripts(as_conf):
-            Log.result("Experiment templates check PASSED!")
-        else:
-            Log.warning("Experiment templates check FAILED!")
+        joblist.check_scripts(as_conf)
 
         # check the availability of the Queues
         for queue in queues_to_test:
@@ -796,24 +789,36 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
         as_conf = AutosubmitConfig(expid)
-        as_conf.check_conf_files()
+        if not as_conf.check_conf_files():
+            return False
         project_type = as_conf.get_project_type()
         if project_type != "none":
-            as_conf.check_proj()
-        return True
-        # print "Checking experiment configuration..."
-        # if as_conf.check_parameters():
-        #     print "Experiment configuration check PASSED!"
-        # else:
-        #     print "Experiment configuration check FAILED!"
-        #     print "WARNING: running after FAILED experiment configuration check is at your own risk!!!"
+            if not as_conf.check_proj():
+                return False
 
-        # Log.info("Checking experiment templates...")
-        # if Autosubmit._check_templates(as_conf):
-        #     Log.result("Experiment templates check PASSED!")
-        # else:
-        #     Log.critical("Experiment templates check FAILED!")
-        #     Log.warning("Running after FAILED experiment templates check is at your own risk!!!")
+        queues = as_conf.read_queues_conf()
+        if queues is None:
+            return False
+
+        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
+        # the experiment should be loaded as well
+        if os.path.exists(filename):
+            joblist = cPickle.load(file(filename, 'rw'))
+            Log.debug("Starting from joblist pickled in {0}", filename)
+        else:
+            Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
+            return False
+
+        parameters = as_conf.load_parameters()
+        joblist.update_parameters(parameters)
+
+        hpcarch = as_conf.get_platform()
+        for job in joblist.get_job_list():
+            if job.queue_name is None:
+                job.queue_name = hpcarch
+            job.set_queue(queues[job.queue_name])
+
+        return joblist.check_scripts(as_conf)
 
     @staticmethod
     def configure(database_path, database_filename, local_root_path, queues_conf_path, jobs_conf_path,  user, local):
@@ -1093,8 +1098,7 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def change_pkl(expid, save, final, lst, flt,
-                   filter_chunks, filter_status, filter_section):
+    def change_pkl(expid, save, final, lst, filter_chunks, filter_status, filter_section):
         """
         TODO
 
@@ -1106,8 +1110,6 @@ class Autosubmit:
         :type final: str
         :param lst:
         :type lst: str
-        :param flt:
-        :type flt: bool
         :param filter_chunks:
         :type filter_chunks: str
         :param filter_status:
@@ -1125,56 +1127,55 @@ class Autosubmit:
                                      ".pkl", 'r'))
 
         final_status = Autosubmit._get_status(final)
-        if flt:
-            if filter_chunks:
-                fc = filter_chunks
-                Log.debug(fc)
+        if filter_chunks:
+            fc = filter_chunks
+            Log.debug(fc)
 
-                if fc == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    data = json.loads(Autosubmit._create_json(fc))
-                    for datejson in data['sds']:
-                        date = datejson['sd']
-                        jobs_date = filter(lambda j: j.date == date, job_list.get_job_list())
+            if fc == 'Any':
+                for job in job_list.get_job_list():
+                    Autosubmit.change_status(final, final_status, job)
+            else:
+                data = json.loads(Autosubmit._create_json(fc))
+                for datejson in data['sds']:
+                    date = datejson['sd']
+                    jobs_date = filter(lambda j: j.date == date, job_list.get_job_list())
 
-                        for job in filter(lambda j: j.member is None, jobs_date):
-                                Autosubmit.change_status(final, final_status, job)
-
-                        for memberjson in datejson['ms']:
-                            member = memberjson['m']
-                            jobs_member = filter(lambda j: j.member == member, jobs_date)
-
-                            for job in filter(lambda j: j.chunk is None, jobs_member):
-                                Autosubmit.change_status(final, final_status, job)
-
-                            for chunkjson in memberjson['cs']:
-                                chunk = int(chunkjson)
-                                for job in filter(lambda j: j.chunk == chunk, jobs_member):
-                                    Autosubmit.change_status(final, final_status, job)
-
-            if filter_status:
-                Log.debug("Filtering jobs with status {0}", filter_status)
-                if filter_status == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    fs = Autosubmit._get_status(filter_status)
-                    for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                        Autosubmit.change_status(final, final_status, job)
-
-            if filter_section:
-                ft = filter_section
-                Log.debug(ft)
-
-                if ft == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    for job in job_list.get_job_list():
-                        if job.section == ft:
+                    for job in filter(lambda j: j.member is None, jobs_date):
                             Autosubmit.change_status(final, final_status, job)
+
+                    for memberjson in datejson['ms']:
+                        member = memberjson['m']
+                        jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                        for job in filter(lambda j: j.chunk is None, jobs_member):
+                            Autosubmit.change_status(final, final_status, job)
+
+                        for chunkjson in memberjson['cs']:
+                            chunk = int(chunkjson)
+                            for job in filter(lambda j: j.chunk == chunk, jobs_member):
+                                Autosubmit.change_status(final, final_status, job)
+
+        if filter_status:
+            Log.debug("Filtering jobs with status {0}", filter_status)
+            if filter_status == 'Any':
+                for job in job_list.get_job_list():
+                    Autosubmit.change_status(final, final_status, job)
+            else:
+                fs = Autosubmit._get_status(filter_status)
+                for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
+                    Autosubmit.change_status(final, final_status, job)
+
+        if filter_section:
+            ft = filter_section
+            Log.debug(ft)
+
+            if ft == 'Any':
+                for job in job_list.get_job_list():
+                    Autosubmit.change_status(final, final_status, job)
+            else:
+                for job in job_list.get_job_list():
+                    if job.section == ft:
+                        Autosubmit.change_status(final, final_status, job)
 
         if lst:
             jobs = lst.split()

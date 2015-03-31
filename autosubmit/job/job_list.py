@@ -482,12 +482,17 @@ class JobList:
         :param as_conf: experiment configuration
         :type as_conf: AutosubmitConfig
         """
+        Log.info("Checking scripts...")
         out = True
         for job in self._job_list:
             if not job.check_script(as_conf):
                 out = False
                 Log.warning("Invalid parameter substitution in {0}!!!", job.name)
-
+        if out:
+            Log.result("Scripts OK")
+        else:
+            Log.error("Scripts check failed")
+            Log.user_warning("Running after failed scripts check is at your own risk!")
         return out
 
     def _remove_job(self, job):

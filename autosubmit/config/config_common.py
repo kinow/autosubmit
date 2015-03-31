@@ -259,12 +259,17 @@ class AutosubmitConfig:
         :return: True if everything is correct, False if it founds any error
         :rtype: bool
         """
-        self._proj_parser_file = self.get_file_project_conf()
-        if self._proj_parser_file == '':
-            self._proj_parser = None
-        else:
-            self._proj_parser_file = os.path.join(self.get_project_dir(), self._proj_parser_file)
-            self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+        try:
+            self._proj_parser_file = self.get_file_project_conf()
+            if self._proj_parser_file == '':
+                self._proj_parser = None
+            else:
+                self._proj_parser_file = os.path.join(self.get_project_dir(), self._proj_parser_file)
+                self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+            return True
+        except Exception as e:
+            Log.error('Project conf file error: {0}', e)
+            return False
 
     def reload(self):
         """
