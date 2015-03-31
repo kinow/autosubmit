@@ -1237,7 +1237,6 @@ class Autosubmit:
         as_conf = AutosubmitConfig(exp_id)
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
-        as_conf.set_local_root()
         as_conf.set_platform(hpc)
         as_conf.set_safetysleeptime(10)
 

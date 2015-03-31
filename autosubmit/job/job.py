@@ -482,6 +482,8 @@ class Job:
         parameters['HPCVERSION'] = queue.version
         parameters['SCRATCH_DIR'] = queue.scratch
 
+        parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+
         self.parameters = parameters
 
         return parameters

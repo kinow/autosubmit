@@ -112,7 +112,6 @@ class AutosubmitConfig:
         """
         result = True
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
-        result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_LOCAL_ROOT')
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
@@ -596,16 +595,6 @@ class AutosubmitConfig:
         if re.search('AUTOSUBMIT_VERSION =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
-        file(self._conf_parser_file, 'w').write(content)
-
-    def set_local_root(self):
-        """
-        Sets local root in autosubmit's config file
-        """
-        content = file(self._conf_parser_file).read()
-        if re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content):
-            content = content.replace(re.search('AUTOSUBMIT_LOCAL_ROOT =.*', content).group(0),
-                                      "AUTOSUBMIT_LOCAL_ROOT = " + BasicConfig.LOCAL_ROOT_DIR)
         file(self._conf_parser_file, 'w').write(content)
 
     def get_total_jobs(self):
