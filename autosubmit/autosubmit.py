@@ -148,23 +148,23 @@ class Autosubmit:
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
-                                                                       "can be done at machine, user or local level (by "
-                                                                       "default at machine level)")
+                                                                       "can be done at machine, user or local level "
+                                                                       "(by default at machine level)")
             subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
                                                                                'it will prompt for it')
             subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
             subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                                 'supplied, it will prompt for it')
             subparser.add_argument('-qc', '--queuesconfpath', default=None, help='path to queues.conf file to use by '
-                                                                                 'default. If not supplied, it will not '
-                                                                                 'prompt for it')
+                                                                                 'default. If not supplied, it will not'
+                                                                                 ' prompt for it')
             subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
             group = subparser.add_mutually_exclusive_group()
             group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
-            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from this '
-                                                                          'path')
+            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from '
+                                                                          'this path')
 
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
@@ -712,7 +712,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, save, all):
+    def recovery(expid, save, all_jobs):
         """
         TODO
 
@@ -720,8 +720,8 @@ class Autosubmit:
         :type expid: str
         :param save: If true, recovery saves changes to joblist
         :type save: bool
-        :param all: if True, it tries to get completed files for all jobs, not only active.
-        :type all: bool
+        :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
+        :type all_jobs: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -745,7 +745,7 @@ class Autosubmit:
             return False
         for queue in queues:
             queues[queue].connect()
-        if all:
+        if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:
             jobs_to_recover = job_list.get_active()
