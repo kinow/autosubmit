@@ -304,9 +304,9 @@ class Autosubmit:
                 os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
                 Log.info("Copying config files...")
                 # autosubmit config and experiment copyed from AS.
-                files = resource_listdir('config', 'files')
+                files = resource_listdir('autosubmit.config', 'files')
                 for filename in files:
-                    if resource_exists('config', 'files/' + filename):
+                    if resource_exists('autosubmit.config', 'files/' + filename):
                         index = filename.index('.')
                         new_filename = filename[:index] + "_" + exp_id + filename[index:]
 
@@ -315,7 +315,7 @@ class Autosubmit:
                         elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
                             content = file(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
-                            content = resource_string('config', 'files/' + filename)
+                            content = resource_string('autosubmit.config', 'files/' + filename)
 
                         Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
                         file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
