@@ -329,28 +329,36 @@ def open_conn():
     """
     conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
+
+    # Getting databse version
     try:
         cursor.execute('SELECT version '
                        'FROM db_version;')
         row = cursor.fetchone()
-        if row is None:
-            version = 0
-        else:
-            version = row[0]
+        version = row[0]
     except sqlite3.OperationalError:
+        # If this exception is thrown it's because db_version does not exist.
+        # Database is from 2.x or 3.0 beta releases
         try:
             cursor.execute('SELECT type '
                            'FROM experiment;')
+            # If type field exists, it's from 2.x
             version = -1
         except sqlite3.Error:
+            # If raises and error , it's from 3.0 beta releases
             version = 0
+
+    # If database version is not the expected, update database....
     if version < CURRENT_DATABASE_VERSION:
         if not _update_database(version, cursor):
             raise DbException('Database version could not be updated')
+
+    # ... or ask for autosubmit upgrade
     elif version > CURRENT_DATABASE_VERSION:
         Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
                      'autosubmit --upgrade')
         raise DbException('Database version not compatible')
+
     return conn, cursor
 
 

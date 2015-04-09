@@ -150,6 +150,9 @@ class Monitor:
         elif output_format == "ps":
             # noinspection PyUnresolvedReferences
             graph.write_ps(output_file)
+        elif output_format == "svg":
+            # noinspection PyUnresolvedReferences
+            graph.write_svg(output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         """

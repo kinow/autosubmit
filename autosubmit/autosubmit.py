@@ -112,13 +112,13 @@ class Autosubmit:
             # Monitor
             subparser = subparsers.add_parser('monitor', description="plots specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps'), default='pdf',
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='type of output for generated plot')
 
             # Clean
@@ -133,7 +133,7 @@ class Autosubmit:
             # Recovery
             subparser = subparsers.add_parser('recovery', description="recover specified experiment")
             subparser.add_argument('expid', type=str, help='experiment identifier')
-            subparser.add_argument('-g', '--get', action="store_true", default=False,
+            subparser.add_argument('-all', action="store_true", default=False,
                                    help='Get completed files to synchronize pkl')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
 
@@ -170,7 +170,7 @@ class Autosubmit:
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
             # Change_pkl
-            subparser = subparsers.add_parser('change_pkl', description="change job status for an experiment")
+            subparser = subparsers.add_parser('setstatus', description="sets job status for an experiment")
             subparser.add_argument('expid',  help='experiment identifier')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
@@ -221,7 +221,7 @@ class Autosubmit:
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
-                return Autosubmit.recovery(args.expid, args.save, args.get)
+                return Autosubmit.recovery(args.expid, args.save, args.all)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'create':
@@ -231,8 +231,8 @@ class Autosubmit:
                                             args.queuesconfpath, args.jobsconfpath, args.user, args.local)
             elif args.command == 'install':
                 return Autosubmit.install()
-            elif args.command == 'change_pkl':
-                return Autosubmit.change_pkl(args.expid, args.save, args.status_final, args.list,
+            elif args.command == 'setstatus':
+                return Autosubmit.set_status(args.expid, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
@@ -712,7 +712,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, save, get):
+    def recovery(expid, save, all):
         """
         TODO
 
@@ -720,9 +720,8 @@ class Autosubmit:
         :type expid: str
         :param save: If true, recovery saves changes to joblist
         :type save: bool
-        :param get: if True, it tries to get completed files for active jobs. If file is found, it sets state to
-                    COMPLETED. If not, it sets state to READY and fail count to 0, unless previous state was SUSPENDED
-        :type get: bool
+        :param all: if True, it tries to get completed files for all jobs, not only active.
+        :type all: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -731,8 +730,8 @@ class Autosubmit:
                                   'recovery.log'))
 
         Log.info('Recovering experiment {0}'.format(expid))
-        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',
-                                                  root_name + "_" + expid + ".pkl"), 'r'))
+        path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
+        job_list = cPickle.load(file(path, 'r'))
 
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
@@ -741,28 +740,32 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
 
-        if get:
-            queues = as_conf.read_queues_conf()
-            if queues is None:
-                return False
+        queues = as_conf.read_queues_conf()
+        if queues is None:
+            return False
+        for queue in queues:
+            queues[queue].connect()
+        if all:
+            jobs_to_recover = job_list.get_job_list()
+        else:
+            jobs_to_recover = job_list.get_active()
 
-            for job in job_list.get_active():
-                if job.queue_name is None:
-                    job.queue_name = hpcarch
-                job.set_queue(queues[job.queue_name])
+        for job in jobs_to_recover:
+            if job.queue_name is None:
+                job.queue_name = hpcarch
+            job.set_queue(queues[job.queue_name])
 
-                if job.get_queue().get_completed_files(job.name):
-                    job.status = Status.COMPLETED
-                    Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-                elif job.status != Status.SUSPENDED:
-                    job.status = Status.READY
-                    job.set_fail_count(0)
-                    Log.info("CHANGED job '{0}' status to READY".format(job.name))
+            if job.get_queue().get_completed_files(job.name):
+                job.status = Status.COMPLETED
+                Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+            elif job.status != Status.SUSPENDED:
+                job.status = Status.WAITING
+                job.fail_count = 0
+                Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
-            sys.setrecursionlimit(50000)
-            job_list.update_list()
-            cPickle.dump(job_list, file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
-                                                     root_name + "_" + expid + ".pkl", 'w')))
+        sys.setrecursionlimit(50000)
+        job_list.update_list()
+        # cPickle.dump(job_list, file(path, 'w'))
 
         if save:
             job_list.update_from_file()
@@ -771,8 +774,7 @@ class Autosubmit:
 
         if save:
             sys.setrecursionlimit(50000)
-            cPickle.dump(job_list, file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
-                                                     root_name + "_" + expid + ".pkl", 'w')))
+            cPickle.dump(job_list, file(path, 'w'))
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, job_list.get_job_list())
@@ -1098,7 +1100,7 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def change_pkl(expid, save, final, lst, filter_chunks, filter_status, filter_section):
+    def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section):
         """
         TODO
 

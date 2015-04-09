@@ -257,36 +257,28 @@ You must execute
 
     autosubmit change_pkl -h
 
-    usage: autosubmit change_pkl [-h] [-s] -t
-                             {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
-                             (-l LIST | -f)
-                             [-fc FILTER_CHUNKS | -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN} | -ft FILTER_TYPE]
-                             expid
-
     change job status for an experiment
 
     positional arguments:
       expid                 experiment identifier
 
     optional arguments:
-      -h, --help            show this help message and exit
-      -s, --save            Save changes to disk
-      -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
-                            Supply the target status
-      -l LIST, --list LIST  Alternative 1: Supply the list of job names to be
-                            changed. Default = "Any". LIST =
-                            "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"
-      -f, --filter          Alternative 2: Supply a filter for the job list. See
-                            help of filter arguments: chunk filter, status filter
-                            or type filter
-      -fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
-                            Supply the list of chunks to change the status.
-                            Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4]
-                            fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
-      -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --filter_status {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
-                            Select the original status to filter the list of jobs
-      -ft FILTER_TYPE, --filter_type FILTER_TYPE
-                            Select the job type to filter the list of jobs
+        -h, --help            show this help message and exit
+        -s, --save            Save changes to disk
+        -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+                                Supply the target status
+            -l LIST, --list LIST  Supply the list of job names to be changed. Default =
+                                "Any". LIST = "b037_20101101_fc3_21_sim
+                                b037_20111101_fc4_26_sim"
+            -fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
+                                Supply the list of chunks to change the status.
+                                Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4]
+                                fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
+            -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --filter_status {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+                                Select the original status to filter the list of jobs
+            -ft FILTER_TYPE, --filter_type FILTER_TYPE
+                                Select the job type to filter the list of jobs
+
 
 	
 to read help.
