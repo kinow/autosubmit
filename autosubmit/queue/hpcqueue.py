@@ -295,7 +295,7 @@ class HPCQueue:
         else:
             Log.error('The script {0} has not been sent'.format(job_script))
 
-    def get_completed_files(self, jobname):
+    def get_completed_files(self, jobname, retries=1):
         """
         Copies *COMPLETED* files from remote to local
 
@@ -313,11 +313,14 @@ class HPCQueue:
             Log.debug('The COMPLETED files have been transfered')
             return True
 
-        # wait five seconds to check get file
-        sleep(5)
-        if self.get_file(completed_remote_path, completed_local_path):
-            Log.debug('The COMPLETED files have been transfered')
-            return True
+        while retries > 0:
+            # wait five seconds to check get file
+            sleep(5)
+            if self.get_file(completed_remote_path, completed_local_path):
+                Log.debug('The COMPLETED files have been transfered')
+                return True
+            retries -= 1
+
         Log.debug('Something did not work well when transferring the COMPLETED files')
         return False
 

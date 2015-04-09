@@ -755,7 +755,7 @@ class Autosubmit:
                 job.queue_name = hpcarch
             job.set_queue(queues[job.queue_name])
 
-            if job.get_queue().get_completed_files(job.name):
+            if job.get_queue().get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
