@@ -31,7 +31,7 @@ from autosubmit.config.log import Log
 SLEEPING_TIME = 30
 
 
-class HPCQueue:
+class HPCPlatform:
     """
     Base class to manage schedulers
     """
@@ -45,6 +45,8 @@ class HPCQueue:
         self.mkdir_cmd = None
         self.cancel_cmd = None
         self._header = None
+        self._default_queue = None
+        self._serial_platform = None
         self._serial_queue = None
         self._ssh_config = None
         self._user_config_file = None
@@ -103,14 +105,14 @@ class HPCQueue:
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             stderr_readlines = stderr.readlines()
-            if len(stderr_readlines) > 0:
-                Log.warning('Command {0} in {1} warning: {2}', command, self._host, stderr_readlines)
             self._ssh_output = stdout.read().rstrip()
             if stdout.channel.recv_exit_status() == 0:
+                if len(stderr_readlines) > 0:
+                    Log.warning('Command {0} in {1} warning: {2}', command, self._host, '\n'.join(stderr_readlines))
                 Log.debug('Command {0} in {1} successful with out message: {2}', command, self._host, self._ssh_output)
                 return True
             else:
-                Log.error('Command {0} in {1} failed with error message: {2}', command, self._host, stderr_readlines)
+                Log.error('Command {0} in {1} failed with error message: {2}', command, self._host, '\n'.join(stderr_readlines))
                 return False
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}', command, self._host, e.message)
@@ -182,26 +184,66 @@ class HPCQueue:
             return
         self._ssh.close()
 
+    def get_queue(self):
+        """
+        Returns default queue for current host. If not configured, returns empty string
+
+        :return: default queue for host
+        :rtype: str
+        """
+        if self._default_queue is None:
+            return ''
+        return self._default_queue
+
+    def set_queue(self, value):
+        """
+        Configures default queue for current host.
+
+        :param value: serial queue for host
+        :type value: str
+        """
+        self._default_queue = value
+
     def get_serial_queue(self):
         """
-        Returns serial queue for current host. If not configured, returns self
+        Returns serial queue for current host. If not configured, returns empty string
 
         :return: serial queue for host
-        :rtype: HPCQueue
+        :rtype: str
         """
         if self._serial_queue is None:
-            return self
-        else:
-            return self._serial_queue
+            return ''
+        return self._serial_queue
 
     def set_serial_queue(self, value):
         """
         Configures serial queue for current host.
 
         :param value: serial queue for host
-        :type value: HPCQueue
+        :type value: str
         """
         self._serial_queue = value
+
+    def get_serial_platform(self):
+        """
+        Returns serial platforms for current host. If not configured, returns self
+
+        :return: serial platforms for host
+        :rtype: HPCPlatform
+        """
+        if self._serial_platform is None:
+            return self
+        else:
+            return self._serial_platform
+
+    def set_serial_platform(self, value):
+        """
+        Configures serial platforms for current host.
+
+        :param value: serial platforms for host
+        :type value: HPCPlatform
+        """
+        self._serial_platform = value
 
     def cancel_job(self, job_id):
         """
@@ -401,9 +443,9 @@ class HPCQueue:
 
     def get_checkhost_cmd(self):
         """
-        Gets command to check queue availability
+        Gets command to check platforms availability
 
-        :return: command to check queue availability
+        :return: command to check platforms availability
         :rtype: str
         """
         raise NotImplementedError
@@ -430,9 +472,9 @@ class HPCQueue:
 
     def jobs_in_queue(self):
         """
-        Get jobs in queue in this host
+        Get jobs in platforms in this host
 
-        :return: jobs in queue
+        :return: jobs in platforms
         :rtype: list
         """
         raise NotImplementedError
@@ -449,7 +491,7 @@ class HPCQueue:
 
     def update_cmds(self):
         """
-        Updates commands for queue
+        Updates commands for platforms
         """
         raise NotImplementedError
 
@@ -473,13 +515,16 @@ class HPCQueue:
         :rtype: str
         """
         if job.processors > 1:
-            return self.header.PARALLEL
+            header = self.header.PARALLEL
         else:
-            return self.header.SERIAL
+            header = self.header.SERIAL
+
+        header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        return header
 
     def get_checkjob_cmd(self, job_id):
         """
-        Returns command to check job status on remote queue
+        Returns command to check job status on remote platforms
 
         :param job_id: id of job to check
         :param job_id: int
@@ -494,7 +539,7 @@ class HPCQueue:
 
         :param job_script: path to job script
         :param job_script: str
-        :return: command to submit job to queue
+        :return: command to submit job to platforms
         :rtype: str
         """
         raise NotImplementedError
@@ -537,7 +582,7 @@ class HPCQueue:
         then echo $(qstat | grep {0} | awk '{{print $5}}' | head -n 1); else echo 'c'; fi'''.format(job_id)
 
 
-class HPCQueueException(Exception):
+class HPCPlatformException(Exception):
     """
     Exception raised from HPC queues
     """

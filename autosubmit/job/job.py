@@ -28,7 +28,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
-from autosubmit.queue.localqueue import LocalQueue
+from autosubmit.platforms.localplatform import LocalPlatform
 
 
 class Job:
@@ -52,8 +52,9 @@ class Job:
         return self.name
 
     def __init__(self, name, jobid, status, priority):
+        self._platform = None
         self._queue = None
-        self.queue_name = None
+        self.platform_name = None
         self.section = None
         self.wallclock = None
         self.tasks = None
@@ -83,9 +84,9 @@ class Job:
 
     def __getstate__(self):
         odict = self.__dict__
-        if '_queue' in odict:
+        if '_platform' in odict:
             odict = odict.copy()    # copy the dict since we change it
-            del odict['_queue']              # remove filehandle entry
+            del odict['_platform']              # remove filehandle entry
         return odict
 
     def print_job(self):
@@ -112,24 +113,47 @@ class Job:
         """
         return self._parents
 
-    def get_queue(self):
+    def get_platform(self):
         """
-        Returns the queue to be used by the job. Chooses between serial and parallel queue
+        Returns the platforms to be used by the job. Chooses between serial and parallel platforms
 
-        :return hpcqueue object for the job to use
-        :rtype: HPCqueue
+        :return HPCPlatform object for the job to use
+        :rtype: HPCPlatform
         """
         if self.processors > 1:
-            return self._queue
+            return self._platform
         else:
-            return self._queue.get_serial_queue()
+            return self._platform.get_serial_platform()
+
+    def set_platform(self, value):
+        """
+        Sets the HPC platforms to be used by the job.
+
+        :param value: platforms to set
+        :type value: HPCPlatform
+        """
+        self._platform = value
+
+    def get_queue(self):
+        """
+        Returns the queue to be used by the job. Chooses between serial and parallel platforms
+
+        :return HPCPlatform object for the job to use
+        :rtype: HPCPlatform
+        """
+        if self._queue is not None:
+            return self._queue
+        if self.processors > 1:
+            return self._platform.get_queue()
+        else:
+            return self._platform.get_serial_platform().get_serial_queue()
 
     def set_queue(self, value):
         """
-        Sets the HPCqueue to be used by the job.
+        Sets the queue to be used by the job.
 
         :param value: queue to set
-        :type value: HPCqueue
+        :type value: HPCPlatform
         """
         self._queue = value
 
@@ -355,7 +379,7 @@ class Job:
         """
         Returns job's waiting time in HPC
 
-        :return: total time waiting in HPC queue
+        :return: total time waiting in HPC platforms
         :rtype: str
         """
         return self._get_from_completed(1)
@@ -382,7 +406,7 @@ class Job:
         """
         Returns total time spent waiting for failed jobs
 
-        :return: total time waiting in HPC queue for failed jobs
+        :return: total time waiting in HPC platforms for failed jobs
         :rtype: str
         """
         return self._get_from_completed(4)
@@ -474,13 +498,15 @@ class Job:
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
 
-        queue = self.get_queue()
-        parameters['HPCUSER'] = queue.user
-        parameters['HPCPROJ'] = queue.project
-        parameters['HPCBUDG'] = queue.budget
-        parameters['HPCTYPE'] = queue.type
-        parameters['HPCVERSION'] = queue.version
-        parameters['SCRATCH_DIR'] = queue.scratch
+        job_platform = self.get_platform()
+        parameters['HPCARCH'] = job_platform.name
+        parameters['HPCQUEUE'] = self.get_queue()
+        parameters['HPCUSER'] = job_platform.user
+        parameters['HPCPROJ'] = job_platform.project
+        parameters['HPCBUDG'] = job_platform.budget
+        parameters['HPCTYPE'] = job_platform.type
+        parameters['HPCVERSION'] = job_platform.version
+        parameters['SCRATCH_DIR'] = job_platform.scratch
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
 
@@ -501,15 +527,15 @@ class Job:
             template = file(os.path.join(project_dir, self.file), 'r').read()
         else:
             template = ''
-        queue = self.get_queue()
-        if isinstance(queue, LocalQueue):
+        current_platform = self.get_platform()
+        if isinstance(current_platform, LocalPlatform):
             stats_header = StatisticsSnippet.AS_HEADER_LOC
             stats_tailer = StatisticsSnippet.AS_TAILER_LOC
         else:
             stats_header = StatisticsSnippet.AS_HEADER_REM
             stats_tailer = StatisticsSnippet.AS_TAILER_REM
 
-        template_content = ''.join([queue.get_header(self),
+        template_content = ''.join([current_platform.get_header(self),
                                    stats_header,
                                    template,
                                    stats_tailer])

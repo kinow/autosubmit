@@ -77,7 +77,7 @@ class JobList:
         parser.optionxform = str
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-        chunk_list = range(1, num_chunks)
+        chunk_list = range(1, num_chunks+1)
 
         self._date_list = date_list
         self._member_list = member_list
@@ -261,18 +261,18 @@ class JobList:
 
     def get_in_queue(self):
         """
-        Returns a list of jobs in the queue (Submitted, Running, Queuing)
+        Returns a list of jobs in the platforms (Submitted, Running, Queuing)
 
-        :return: jobs in queue
+        :return: jobs in platforms
         :rtype: list
         """
         return self.get_submitted() + self.get_running() + self.get_queuing()
 
     def get_not_in_queue(self):
         """
-        Returns a list of jobs NOT in the queue (Ready, Waiting)
+        Returns a list of jobs NOT in the platforms (Ready, Waiting)
 
-        :return: jobs not in queue
+        :return: jobs not in platforms
         :rtype: list
         """
         return self.get_ready() + self.get_waiting()
@@ -288,7 +288,7 @@ class JobList:
 
     def get_active(self):
         """
-        Returns a list of active jobs (In queue, Ready)
+        Returns a list of active jobs (In platforms, Ready)
 
         :return: active jobs
         :rtype: list
@@ -819,10 +819,11 @@ class DicJobs:
         job.wait = self.get_option(section, "WAIT", 'false').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
-        job.queue_name = self.get_option(section, "QUEUE", None)
-        if job.queue_name is not None:
-            job.queue_name = job.queue_name.lower()
+        job.platform_name = self.get_option(section, "PLATFORM", None)
+        if job.platform_name is not None:
+            job.platform_name = job.platform_name.lower()
         job.file = self.get_option(section, "FILE", None)
+        job.set_queue(self.get_option(section, "QUEUE", None))
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
         job.threads = self.get_option(section, "THREADS", 1)

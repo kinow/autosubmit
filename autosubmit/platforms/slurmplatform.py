@@ -20,18 +20,32 @@ import textwrap
 
 from xml.dom.minidom import parseString
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.platforms.hpcplatform import HPCPlatform
 
 
-class SlurmQueue(HPCQueue):
+class SlurmPlatform(HPCPlatform):
     """
     Class to manage jobs to host using SLURM scheduler
 
     :param expid: experiment's identifier
     :type expid: str
     """
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return "#"
+
     def __init__(self, expid):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = ""
         self.scratch = ""
         self.project = ""
@@ -86,6 +100,19 @@ class SlurmQueue(HPCQueue):
 
 class SlurmHeader:
     """Class to handle the SLURM headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""#!/bin/bash
 ###############################################################################

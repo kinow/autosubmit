@@ -19,11 +19,11 @@
 import textwrap
 from commands import getstatusoutput
 
-from autosubmit.queue.hpcqueue import HPCQueue, HPCQueueException
+from autosubmit.platforms.hpcplatform import HPCPlatform, HPCPlatformException
 from autosubmit.config.log import Log
 
 
-class EcQueue(HPCQueue):
+class EcPlatform(HPCPlatform):
     """
     Class to manage queues with eceacces
 
@@ -34,7 +34,7 @@ class EcQueue(HPCQueue):
     """
 
     def __init__(self, expid, scheduler):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = ""
         self.scratch = ""
         self.project = ""
@@ -44,7 +44,7 @@ class EcQueue(HPCQueue):
         elif scheduler == 'loadleveler':
             self._header = EcHeader()
         else:
-            raise HPCQueueException('ecaccess scheduler {0} not supported'.format(scheduler))
+            raise HPCPlatformException('ecaccess scheduler {0} not supported'.format(scheduler))
         self.expid = expid
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
@@ -56,7 +56,7 @@ class EcQueue(HPCQueue):
 
     def update_cmds(self):
         """
-        Updates commands for queue
+        Updates commands for platforms
         """
         self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
                                self.expid)
@@ -146,6 +146,19 @@ class EcQueue(HPCQueue):
 class EcHeader:
     """Class to handle the ECMWF headers of a job"""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
+
     SERIAL = textwrap.dedent("""
             #!/bin/ksh
             ###############################################################################
@@ -161,7 +174,7 @@ class EcHeader:
             #@ notification     = error
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ queue
+            #@ platforms
             #
             ###############################################################################
             """)
@@ -183,7 +196,7 @@ class EcHeader:
             #@ ec_smt           = no
             #@ total_tasks      = %NUMPROC%
             #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ queue
+            #@ platforms
             #
             ###############################################################################
             """)
@@ -191,6 +204,19 @@ class EcHeader:
 
 class EcCcaHeader:
     """Class to handle the ECMWF headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""
              #!/bin/bash

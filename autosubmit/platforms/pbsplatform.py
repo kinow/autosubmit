@@ -18,11 +18,11 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 
-from autosubmit.queue.hpcqueue import HPCQueue, HPCQueueException
+from autosubmit.platforms.hpcplatform import HPCPlatform, HPCPlatformException
 from autosubmit.config.log import Log
 
 
-class PBSQueue(HPCQueue):
+class PBSPlatform(HPCPlatform):
     """
     Class to manage jobs to host using PBS scheduler
 
@@ -33,7 +33,7 @@ class PBSQueue(HPCQueue):
     """
 
     def __init__(self, expid, version):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = ""
         self._version = version
         self.scratch = ""
@@ -48,7 +48,7 @@ class PBSQueue(HPCQueue):
             self._header = Pbs12Header()
         else:
             Log.error('PBS version {0} not supported'.format(version))
-            raise HPCQueueException('PBS version {0} not supported'.format(version))
+            raise HPCPlatformException('PBS version {0} not supported'.format(version))
 
         self.expid = expid
         self.job_status = dict()
@@ -104,6 +104,19 @@ class PBSQueue(HPCQueue):
 class Pbs12Header:
     """Class to handle the Archer headers of a job"""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
+
     SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
@@ -135,6 +148,19 @@ class Pbs12Header:
 
 class Pbs10Header:
     """Class to handle the Hector headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""
             #!/bin/sh
@@ -168,6 +194,19 @@ class Pbs10Header:
 
 class Pbs11Header:
     """Class to handle the Lindgren headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""\
             #!/bin/sh

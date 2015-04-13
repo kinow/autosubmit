@@ -48,7 +48,7 @@ of three characters "xxx" are to represent unique alphanumeric identity for the 
 
 > vi /cfu/autosubmit/cxxx/conf/autosubmit_cxxx.conf
 
-> vi /cfu/autosubmit/cxxx/conf/queues_cxxx.conf
+> vi /cfu/autosubmit/cxxx/conf/platforms_cxxx.conf
 
 > vi /cfu/autosubmit/cxxx/conf/jobs_cxxx.conf
 

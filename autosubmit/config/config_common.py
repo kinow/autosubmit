@@ -27,14 +27,14 @@ from commands import getstatusoutput
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
-from autosubmit.queue.psqueue import PsQueue
-from autosubmit.queue.lsfqueue import LsfQueue
-from autosubmit.queue.pbsqueue import PBSQueue
-from autosubmit.queue.sgequeue import SgeQueue
-from autosubmit.queue.ecqueue import EcQueue
-from autosubmit.queue.slurmqueue import SlurmQueue
-from autosubmit.queue.localqueue import LocalQueue
-from autosubmit.queue.hpcqueue import HPCQueueException
+from autosubmit.platforms.psplatform import PsPlatform
+from autosubmit.platforms.lsfplatform import LsfPlatform
+from autosubmit.platforms.pbsplatform import PBSPlatform
+from autosubmit.platforms.sgeplatform import SgePlatform
+from autosubmit.platforms.ecplatform import EcPlatform
+from autosubmit.platforms.slurmplatform import SlurmPlatform
+from autosubmit.platforms.localplatform import LocalPlatform
+from autosubmit.platforms.hpcplatform import HPCPlatformException
 
 
 class AutosubmitConfig:
@@ -46,8 +46,8 @@ class AutosubmitConfig:
                                               "autosubmit_" + expid + ".conf")
         self._exp_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
                                              "expdef_" + expid + ".conf")
-        self._queues_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
-                                                "queues_" + expid + ".conf")
+        self._platforms_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                                   "platforms_" + expid + ".conf")
         self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
 
@@ -59,14 +59,14 @@ class AutosubmitConfig:
         return self._exp_parser_file
 
     @property
-    def queues_file(self):
+    def platforms_file(self):
         """
         Returns experiment's queues config file name
 
         :return: queues config file's name
         :rtype: str
         """
-        return self._queues_parser_file
+        return self._platforms_parser_file
 
     def get_project_dir(self):
         """
@@ -94,7 +94,7 @@ class AutosubmitConfig:
         Log.info('\nChecking configuration files...')
         self.reload()
         result = self._check_autosubmit_conf()
-        result = result and self._check_queues_conf()
+        result = result and self._check_platforms_conf()
         result = result and self._check_jobs_conf()
         result = result and self._check_expdef_conf()
         if result:
@@ -123,7 +123,7 @@ class AutosubmitConfig:
             Log.info('{0} OK'.format(os.path.basename(self._conf_parser_file)))
         return result
 
-    def _check_queues_conf(self):
+    def _check_platforms_conf(self):
         """
         Checks experiment's queues configuration file.
 
@@ -131,32 +131,32 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
-        if len(self._queues_parser.sections()) == 0:
-            Log.warning("No remote queue configured")
+        if len(self._platforms_parser.sections()) == 0:
+            Log.warning("No remote platforms configured")
 
-        if len(self._queues_parser.sections()) != len(set(self._queues_parser.sections())):
-            Log.error('There are repeated queue names')
+        if len(self._platforms_parser.sections()) != len(set(self._platforms_parser.sections())):
+            Log.error('There are repeated platforms names')
 
-        for section in self._queues_parser.sections():
-            result = result and AutosubmitConfig.check_is_choice(self._queues_parser, section, 'TYPE', True,
+        for section in self._platforms_parser.sections():
+            result = result and AutosubmitConfig.check_is_choice(self._platforms_parser, section, 'TYPE', True,
                                                                  ['ps', 'pbs', 'sge', 'lsf', 'ecaccess', 'slurm'])
-            queue_type = AutosubmitConfig.get_option(self._queues_parser, section, 'TYPE', '').lower()
-            if queue_type != 'ps':
-                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'PROJECT')
-                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'USER')
+            platform_type = AutosubmitConfig.get_option(self._platforms_parser, section, 'TYPE', '').lower()
+            if platform_type != 'ps':
+                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
+                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'USER')
 
-            if queue_type in ['pbs', 'ecaccess']:
-                result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'VERSION')
+            if platform_type in ['pbs', 'ecaccess']:
+                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
 
-            result = result and AutosubmitConfig.check_exists(self._queues_parser, section, 'HOST')
-            result = result and AutosubmitConfig.check_is_boolean(self._queues_parser, section,
+            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
+            result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
                                                                   'ADD_PROJECT_TO_HOST', False)
-            result = result and AutosubmitConfig.check_is_boolean(self._queues_parser, section, 'TEST_SUITE', False)
+            result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section, 'TEST_SUITE', False)
 
         if not result:
-            Log.critical("{0} is not a valid config file".format(os.path.basename(self._queues_parser_file)))
+            Log.critical("{0} is not a valid config file".format(os.path.basename(self._platforms_parser_file)))
         else:
-            Log.info('{0} OK'.format(os.path.basename(self._queues_parser_file)))
+            Log.info('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
         return result
 
     def _check_jobs_conf(self):
@@ -170,7 +170,7 @@ class AutosubmitConfig:
         parser = self._jobs_parser
         sections = parser.sections()
         if len(sections) == 0:
-            Log.warning("No remote queue configured")
+            Log.warning("No remote platforms configured")
 
         if len(sections) != len(set(sections)):
             Log.error('There are repeated job names')
@@ -274,7 +274,7 @@ class AutosubmitConfig:
         Creates parser objects for configuration files
         """
         self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
-        self._queues_parser = AutosubmitConfig.get_parser(self._queues_parser_file)
+        self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
         self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
 
@@ -555,18 +555,18 @@ class AutosubmitConfig:
 
     def get_platform(self):
         """
-        Returns main platform from experiment's config file
+        Returns main platforms from experiment's config file
 
-        :return: main platform
+        :return: main platforms
         :rtype: str
         """
         return self._exp_parser.get('experiment', 'HPCARCH').lower()
 
     def set_platform(self, hpc):
         """
-        Sets main platform in experiment's config file
+        Sets main platforms in experiment's config file
 
-        :param hpc: main platform
+        :param hpc: main platforms
         :type: str
         """
         content = file(self._exp_parser_file).read()
@@ -600,7 +600,7 @@ class AutosubmitConfig:
         """
         Returns max number of waitng jobs from autosubmit's config file
 
-        :return: main platform
+        :return: main platforms
         :rtype: int
         """
         return int(self._conf_parser.get('config', 'MAXWAITINGJOBS'))
@@ -650,77 +650,80 @@ class AutosubmitConfig:
         parser.read(file_path)
         return parser
 
-    def read_queues_conf(self):
+    def read_platforms_conf(self):
         """
-        Read queues configuration file and create defined queues. Also adds the local queue to the list
+        Read platforms configuration file and create defined platforms. Also adds the local remote_platform to the list
 
-        :return: queues defined on file and local queue. None if configuration is invalid
+        :return: platforms defined on file and local remote_platform. None if configuration is invalid
         :rtype: list
         """
-        parser = self._queues_parser
+        parser = self._platforms_parser
 
-        queues = dict()
-        local_queue = LocalQueue(self.expid)
-        local_queue.name = 'local'
-        local_queue.type = 'local'
-        local_queue.version = ''
-        local_queue.set_host(platform.node())
-        local_queue.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
-        local_queue.set_project(self.expid)
-        local_queue.set_budget(self.expid)
-        local_queue.set_user(BasicConfig.LOCAL_TMP_DIR)
-        local_queue.update_cmds()
+        platforms = dict()
+        local_platform = LocalPlatform(self.expid)
+        local_platform.name = 'local'
+        local_platform.type = 'local'
+        local_platform.version = ''
+        local_platform.queue = ''
+        local_platform.set_host(platform.node())
+        local_platform.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
+        local_platform.set_project(self.expid)
+        local_platform.set_budget(self.expid)
+        local_platform.set_user(BasicConfig.LOCAL_TMP_DIR)
+        local_platform.update_cmds()
 
-        queues['local'] = local_queue
+        platforms['local'] = local_platform
         for section in parser.sections():
-            queue_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
-            queue_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
+            platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
+            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
             try:
-                if queue_type == 'pbs':
-                    queue = PBSQueue(self.expid, queue_version)
-                elif queue_type == 'sge':
-                    queue = SgeQueue(self.expid)
-                elif queue_type == 'ps':
-                    queue = PsQueue(self.expid)
-                elif queue_type == 'lsf':
-                    queue = LsfQueue(self.expid)
-                elif queue_type == 'ecaccess':
-                    queue = EcQueue(self.expid, queue_version)
-                elif queue_type == 'slurm':
-                    queue = SlurmQueue(self.expid)
-                elif queue_type == '':
-                    Log.error("Queue type not specified".format(queue_type))
+                if platform_type == 'pbs':
+                    remote_platform = PBSPlatform(self.expid, platform_version)
+                elif platform_type == 'sge':
+                    remote_platform = SgePlatform(self.expid)
+                elif platform_type == 'ps':
+                    remote_platform = PsPlatform(self.expid)
+                elif platform_type == 'lsf':
+                    remote_platform = LsfPlatform(self.expid)
+                elif platform_type == 'ecaccess':
+                    remote_platform = EcPlatform(self.expid, platform_version)
+                elif platform_type == 'slurm':
+                    remote_platform = SlurmPlatform(self.expid)
+                elif platform_type == '':
+                    Log.error("Queue type not specified".format(platform_type))
                     return None
                 else:
-                    Log.error("Queue type {0} not defined".format(queue_type))
+                    Log.error("Queue type {0} not defined".format(platform_type))
                     return None
-            except HPCQueueException as e:
+            except HPCPlatformException as e:
                 Log.error("Queue exception: {0}".format(e.message))
                 return None
 
-            queue.type = queue_type
-            queue.version = queue_version
+            remote_platform.type = platform_type
+            remote_platform.version = platform_version
             if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
                 host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
                                         AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
-            queue.set_host(host)
-            queue.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
-            queue.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', queue.project))
-            queue.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
-            queue.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
-            queue.name = section.lower()
-            queue.update_cmds()
-            queues[section.lower()] = queue
+            remote_platform.set_host(host)
+            remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
+            remote_platform.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
+            remote_platform.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
+            remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
+            remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
+            remote_platform.name = section.lower()
+            remote_platform.update_cmds()
+            platforms[section.lower()] = remote_platform
 
         for section in parser.sections():
-            if parser.has_option(section, 'SERIAL_QUEUE'):
-                queues[section.lower()].set_serial_queue(queues[AutosubmitConfig.get_option(parser, section,
-                                                                                            'SERIAL_QUEUE',
-                                                                                            None).lower()])
+            if parser.has_option(section, 'SERIAL_PLATFORM'):
+                platforms[section.lower()].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
+                                                                                                     'SERIAL_PLATFORM',
+                                                                                                     None).lower()])
 
-        return queues
+        return platforms
 
     @staticmethod
     def get_option(parser, section, option, default):

@@ -18,10 +18,10 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.platforms.hpcplatform import HPCPlatform
 
 
-class LsfQueue(HPCQueue):
+class LsfPlatform(HPCPlatform):
     """
     Class to manage jobs to host using LSF scheduler
 
@@ -29,7 +29,7 @@ class LsfQueue(HPCQueue):
     :type expid: str
     """
     def __init__(self, expid):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = "mn-ecm86"
         self.scratch = ""
         self.project = ""
@@ -89,18 +89,33 @@ class LsfQueue(HPCQueue):
 class LsfHeader:
     """Class to handle the MareNostrum3 headers of a job"""
 
+    # noinspection PyMethodMayBeStatic
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        if job.parameters['HPCQUEUE'] == '':
+            return ""
+        else:
+            return "BSUB -q {0}".format(job.parameters['HPCQUEUE'])
+
     SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
+            #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
             #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
             #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
             #
             ###############################################################################
             """)
@@ -111,6 +126,7 @@ class LsfHeader:
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
+            #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
             #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
             #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err

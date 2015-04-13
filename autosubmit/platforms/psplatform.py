@@ -20,18 +20,19 @@ import textwrap
 from xml.dom.minidom import parseString
 import platform
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.platforms.hpcplatform import HPCPlatform
 
 
-class PsQueue(HPCQueue):
+class PsPlatform(HPCPlatform):
     """
     Class to manage jobs to host not using any scheduler
 
     :param expid: experiment's identifier
     :type expid: str
     """
+
     def __init__(self, expid):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = platform.node()
         self.scratch = ""
         self.project = ""
@@ -83,6 +84,19 @@ class PsQueue(HPCQueue):
 
 class PsHeader:
     """Class to handle the Ps headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""
             #!/bin/bash

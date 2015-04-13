@@ -155,9 +155,9 @@ class Autosubmit:
             subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
             subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                                 'supplied, it will prompt for it')
-            subparser.add_argument('-qc', '--queuesconfpath', default=None, help='path to queues.conf file to use by '
-                                                                                 'default. If not supplied, it will not'
-                                                                                 ' prompt for it')
+            subparser.add_argument('-qc', '--platformsconfpath', default=None,
+                                   help='path to platforms.conf file to use by default. If not supplied, it will not'
+                                   ' prompt for it')
             subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
@@ -228,7 +228,7 @@ class Autosubmit:
                 return Autosubmit.create(args.expid, args.noplot)
             elif args.command == 'configure':
                 return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
-                                            args.queuesconfpath, args.jobsconfpath, args.user, args.local)
+                                            args.platformsconfpath, args.jobsconfpath, args.user, args.local)
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
@@ -309,8 +309,8 @@ class Autosubmit:
                         index = filename.index('.')
                         new_filename = filename[:index] + "_" + exp_id + filename[index:]
 
-                        if filename == 'queues.conf' and BasicConfig.DEFAULT_QUEUES_CONF != '':
-                            content = file(os.path.join(BasicConfig.DEFAULT_QUEUES_CONF, filename)).read()
+                        if filename == 'platforms.conf' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
+                            content = file(os.path.join(BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
                         elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
                             content = file(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
@@ -424,20 +424,20 @@ class Autosubmit:
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
 
-        queues = as_conf.read_queues_conf()
-        if queues is None:
+        platforms = as_conf.read_platforms_conf()
+        if platforms is None:
             return False
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Total jobs to submit: {0}", max_jobs)
-        Log.debug("Maximum waiting jobs in queues: {0}", max_waiting_jobs)
+        Log.debug("Maximum waiting jobs in platforms: {0}", max_waiting_jobs)
         Log.debug("Sleep: {0}", safetysleeptime)
         Log.debug("Retrials: {0}", retrials)
         Log.info("Starting job submission...")
 
-        # for queue in queues:
-        #     signal.signal(signal.SIGQUIT, queues[queue].smart_stop)
-        #     signal.signal(signal.SIGINT, queues[queue].normal_stop)
+        # for platforms in platforms:
+        #     signal.signal(signal.SIGQUIT, platforms[platforms].smart_stop)
+        #     signal.signal(signal.SIGINT, platforms[platforms].normal_stop)
 
         # if rerun == 'false':
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
@@ -463,19 +463,19 @@ class Autosubmit:
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
-        queues_to_test = set()
+        platforms_to_test = set()
         for job in joblist.get_job_list():
-            if job.queue_name is None:
-                job.queue_name = hpcarch
-            job.set_queue(queues[job.queue_name])
-            queues_to_test.add(queues[job.queue_name])
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            job.set_platform(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name])
 
         joblist.check_scripts(as_conf)
 
         # check the availability of the Queues
-        for queue in queues_to_test:
-            queue.connect()
-            queue.check_remote_log_dir()
+        for platform in platforms_to_test:
+            platform.connect()
+            platform.check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
@@ -510,8 +510,8 @@ class Autosubmit:
             # ??? why
             joblist.save()
 
-            Log.info("Active jobs in queues:\t{0}", active)
-            Log.info("Waiting jobs in queues:\t{0}", waiting)
+            Log.info("Active jobs in platforms:\t{0}", active)
+            Log.info("Waiting jobs in platforms:\t{0}", waiting)
 
             if available == 0:
                 Log.debug("There's no room for more jobs...")
@@ -523,22 +523,22 @@ class Autosubmit:
             ######################################
             # get the list of jobs currently in the Queue
             jobinqueue = joblist.get_in_queue()
-            Log.info("Number of jobs in queue: {0}", str(len(jobinqueue)))
+            Log.info("Number of jobs in platforms: {0}", str(len(jobinqueue)))
 
             for job in jobinqueue:
 
                 job.print_job()
-                Log.debug("Number of jobs in queue: {0}", str(len(jobinqueue)))
-                # Check queue availability
-                job_queue = job.get_queue()
-                queueavail = job_queue.check_host()
-                if not queueavail:
-                    Log.debug("There is no queue available")
+                Log.debug("Number of jobs in platforms: {0}", str(len(jobinqueue)))
+                # Check platforms availability
+                job_platform = job.get_platform()
+                platform_available = job_platform.check_host()
+                if not platform_available:
+                    Log.debug("There is no platforms available")
                 else:
-                    status = job_queue.check_job(job.id)
+                    status = job_platform.check_job(job.id)
                     if status == Status.COMPLETED:
                         Log.debug("This job seems to have completed...checking")
-                        job_queue.get_completed_files(job.name)
+                        job_platform.get_completed_files(job.name)
                         job.check_completion()
                     else:
                         job.status = status
@@ -552,7 +552,7 @@ class Autosubmit:
                         Log.user_warning("Job {0} is FAILED", job.name)
                     elif job.status is Status.UNKNOWN:
                         Log.debug("Job {0} in UNKNOWN status. Checking completed files", job.name)
-                        job_queue.get_completed_files(job.name)
+                        job_platform.get_completed_files(job.name)
                         job.check_completion(Status.UNKNOWN)
                     elif job.status is Status.SUBMITTED:
                         # after checking the jobs , no job should have the status "submitted"
@@ -570,7 +570,7 @@ class Autosubmit:
             if min(available, len(jobsavail)) == 0:
                 Log.debug("There is no job READY or available")
                 Log.debug("Number of jobs ready: {0}", len(jobsavail))
-                Log.debug("Number of jobs available in queue: {0}", available)
+                Log.debug("Number of jobs available in platforms: {0}", available)
             elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
                 Log.info("\nStarting to submit {0} job(s)", min(available, len(jobsavail)))
                 # should sort the jobsavail by priority Clean->post->sim>ini
@@ -585,13 +585,13 @@ class Autosubmit:
                     scriptname = job.create_script(as_conf)
                     Log.debug(scriptname)
 
-                    job_queue = job.get_queue()
-                    queueavail = job_queue.check_host()
-                    if not queueavail:
-                        Log.warning("Queue {0} is not available".format(job_queue.name))
+                    job_platform = job.get_platform()
+                    platform_available = job_platform.check_host()
+                    if not platform_available:
+                        Log.warning("Queue {0} is not available".format(job_platform.name))
                     else:
-                        job_queue.send_script(scriptname)
-                        job.id = job_queue.submit_job(scriptname)
+                        job_platform.send_script(scriptname)
+                        job.id = job_platform.submit_job(scriptname)
                         if job.id is None:
                             continue
                         # set status to "submitted"
@@ -739,22 +739,22 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
 
-        queues = as_conf.read_queues_conf()
-        if queues is None:
+        platforms = as_conf.read_platforms_conf()
+        if platforms is None:
             return False
-        for queue in queues:
-            queues[queue].connect()
+        for platform in platforms:
+            platforms[platform].connect()
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:
             jobs_to_recover = job_list.get_active()
 
         for job in jobs_to_recover:
-            if job.queue_name is None:
-                job.queue_name = hpcarch
-            job.set_queue(queues[job.queue_name])
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            job.set_platform(platforms[job.platform_name])
 
-            if job.get_queue().get_completed_files(job.name, 0):
+            if job.get_platform().get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
@@ -797,8 +797,8 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        queues = as_conf.read_queues_conf()
-        if queues is None:
+        platforms = as_conf.read_platforms_conf()
+        if platforms is None:
             return False
 
         filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
@@ -815,14 +815,14 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
-            if job.queue_name is None:
-                job.queue_name = hpcarch
-            job.set_queue(queues[job.queue_name])
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            job.set_platform(platforms[job.platform_name])
 
         return joblist.check_scripts(as_conf)
 
     @staticmethod
-    def configure(database_path, database_filename, local_root_path, queues_conf_path, jobs_conf_path,  user, local):
+    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,  user, local):
         """
         Configure several paths for autosubmit: database, local root and others. Can be configured at system,
         user or local levels. Local level configuration precedes user level and user level precedes system
@@ -834,8 +834,8 @@ class Autosubmit:
         :type database_path: str
         :param local_root_path: path to autosubmit's experiments' directory
         :type local_root_path: str
-        :param queues_conf_path: path to queues conf file to be used as model for new experiments
-        :type queues_conf_path: str
+        :param platforms_conf_path: path to platforms conf file to be used as model for new experiments
+        :type platforms_conf_path: str
         :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
         :type jobs_conf_path: str
         :param user: True if this configuration has to be stored by user
@@ -858,10 +858,10 @@ class Autosubmit:
             Log.error("Local Root path does not exist.")
             return False
 
-        if queues_conf_path is not None:
-            queues_conf_path = queues_conf_path.replace('~', home_path)
-            if not os.path.exists(queues_conf_path):
-                Log.error("queues.conf path does not exist.")
+        if platforms_conf_path is not None:
+            platforms_conf_path = platforms_conf_path.replace('~', home_path)
+            if not os.path.exists(platforms_conf_path):
+                Log.error("platforms.conf path does not exist.")
                 return False
         if jobs_conf_path is not None:
             jobs_conf_path = jobs_conf_path.replace('~', home_path)
@@ -887,12 +887,12 @@ class Autosubmit:
                 parser.set('database', 'filename', database_filename)
             parser.add_section('local')
             parser.set('local', 'path', local_root_path)
-            if jobs_conf_path is not None or queues_conf_path is not None:
+            if jobs_conf_path is not None or platforms_conf_path is not None:
                 parser.add_section('conf')
                 if jobs_conf_path is not None:
                     parser.set('conf', 'jobs', jobs_conf_path)
-                if queues_conf_path is not None:
-                    parser.set('conf', 'queues', queues_conf_path)
+                if platforms_conf_path is not None:
+                    parser.set('conf', 'queues', platforms_conf_path)
 
             parser.write(config_file)
             config_file.close()
@@ -1409,15 +1409,15 @@ class Autosubmit:
 
         content = file(as_conf.experiment_file).read()
         if hpc is None:
-            queues_parser = as_conf.get_parser(as_conf.queues_file)
-            test_queues = list()
-            for section in queues_parser.sections():
-                if AutosubmitConfig.get_option(queues_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
-                    test_queues.append(section)
-            if len(test_queues) == 0:
+            platforms_parser = as_conf.get_parser(as_conf.platforms_file)
+            test_platforms = list()
+            for section in platforms_parser.sections():
+                if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
+                    test_platforms.append(section)
+            if len(test_platforms) == 0:
                 Log.critical('No test HPC defined')
                 return False
-            hpc = random.choice(test_queues)
+            hpc = random.choice(test_platforms)
         if member is None:
             member = random.choice(exp_parser.get('experiment', 'MEMBERS').split(' '))
         if stardate is None:

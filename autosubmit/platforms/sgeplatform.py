@@ -21,10 +21,10 @@ import textwrap
 
 from xml.dom.minidom import parseString
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.platforms.hpcplatform import HPCPlatform
 
 
-class SgeQueue(HPCQueue):
+class SgePlatform(HPCPlatform):
     """
     Class to manage jobs to host using SGE scheduler
 
@@ -32,7 +32,7 @@ class SgeQueue(HPCQueue):
     :type expid: str
     """
     def __init__(self, expid):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = ""
         self.scratch = ""
         self.project = ""
@@ -89,6 +89,22 @@ class SgeQueue(HPCQueue):
 class SgeHeader:
     """Class to handle the Ithaca headers of a job"""
 
+    # noinspection PyMethodMayBeStatic
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        if job.parameters['HPCQUEUE'] == '':
+            return ""
+        else:
+            return "$ -q {0}".format(job.parameters['HPCQUEUE'])
+
     SERIAL = textwrap.dedent("""
             #!/bin/sh
             ###############################################################################
@@ -101,6 +117,7 @@ class SgeHeader:
             #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
+            #%QUEUE_DIRECTIVE%
             #
             ###############################################################################
             """)
@@ -118,6 +135,7 @@ class SgeHeader:
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
             #$ -pe orte %NUMPROC%
+            #%QUEUE_DIRECTIVE%
             #
             ###############################################################################
             """)

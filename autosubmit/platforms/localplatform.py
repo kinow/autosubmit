@@ -21,12 +21,12 @@ import os
 import textwrap
 from xml.dom.minidom import parseString
 
-from autosubmit.queue.hpcqueue import HPCQueue
+from autosubmit.platforms.hpcplatform import HPCPlatform
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
 
 
-class LocalQueue(HPCQueue):
+class LocalPlatform(HPCPlatform):
     """
     Class to manage jobs to localhost
 
@@ -34,7 +34,7 @@ class LocalQueue(HPCQueue):
     :type expid: str
     """
     def __init__(self, expid):
-        HPCQueue.__init__(self)
+        HPCPlatform.__init__(self)
         self._host = ""
         self.scratch = ""
         self.project = ""
@@ -115,6 +115,19 @@ class LocalQueue(HPCQueue):
 
 class LocalHeader:
     """Class to handle the Ps headers of a job"""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_queue_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create queue directibve for
+        :type job: Job
+        :return: queue directive
+        :rtype: str
+        """
+        # There is no queue, so directive is empty
+        return ""
 
     SERIAL = textwrap.dedent("""
             #!/bin/bash
