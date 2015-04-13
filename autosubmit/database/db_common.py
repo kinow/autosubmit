@@ -38,7 +38,7 @@ def create_db(qry):
     :type qry: str    """
 
     try:
-        (conn, cursor) = open_conn()
+        (conn, cursor) = open_conn(False)
     except DbException as e:
         Log.error('Connection to database could not be established: {0}', e.message)
         return False
@@ -320,7 +320,7 @@ def check_db():
     return True
 
 
-def open_conn():
+def open_conn(check_version=True):
     """
     Opens a connection to database
 
@@ -331,33 +331,34 @@ def open_conn():
     cursor = conn.cursor()
 
     # Getting databse version
-    try:
-        cursor.execute('SELECT version '
-                       'FROM db_version;')
-        row = cursor.fetchone()
-        version = row[0]
-    except sqlite3.OperationalError:
-        # If this exception is thrown it's because db_version does not exist.
-        # Database is from 2.x or 3.0 beta releases
+    if check_version:
         try:
-            cursor.execute('SELECT type '
-                           'FROM experiment;')
-            # If type field exists, it's from 2.x
-            version = -1
-        except sqlite3.Error:
-            # If raises and error , it's from 3.0 beta releases
-            version = 0
+            cursor.execute('SELECT version '
+                           'FROM db_version;')
+            row = cursor.fetchone()
+            version = row[0]
+        except sqlite3.OperationalError:
+            # If this exception is thrown it's because db_version does not exist.
+            # Database is from 2.x or 3.0 beta releases
+            try:
+                cursor.execute('SELECT type '
+                               'FROM experiment;')
+                # If type field exists, it's from 2.x
+                version = -1
+            except sqlite3.Error:
+                # If raises and error , it's from 3.0 beta releases
+                version = 0
 
-    # If database version is not the expected, update database....
-    if version < CURRENT_DATABASE_VERSION:
-        if not _update_database(version, cursor):
-            raise DbException('Database version could not be updated')
+        # If database version is not the expected, update database....
+        if version < CURRENT_DATABASE_VERSION:
+            if not _update_database(version, cursor):
+                raise DbException('Database version could not be updated')
 
-    # ... or ask for autosubmit upgrade
-    elif version > CURRENT_DATABASE_VERSION:
-        Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
-                     'autosubmit --upgrade')
-        raise DbException('Database version not compatible')
+        # ... or ask for autosubmit upgrade
+        elif version > CURRENT_DATABASE_VERSION:
+            Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
+                         'autosubmit --upgrade')
+            raise DbException('Database version not compatible')
 
     return conn, cursor
 

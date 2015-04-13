@@ -240,7 +240,7 @@ class Autosubmit:
                 return Autosubmit.refresh(args.expid)
         except Exception as e:
             from traceback import format_exc
-            Log.critical('Unhandled excpetion on Autosubmit: {0}\n{1}', e, format_exc(10))
+            Log.critical('Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
 
             return False
 
@@ -254,10 +254,9 @@ class Autosubmit:
         """
         Log.info("Removing experiment directory...")
         try:
-            shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete, ignore_errors=True)
+            shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete)
         except OSError as e:
-            Log.debug(e)
-            pass
+            Log.warning('Can not delete experiment folder: {0}', e)
         Log.info("Deleting experiment from database...")
         ret = delete_experiment(expid_delete)
         if ret:
@@ -979,7 +978,6 @@ class Autosubmit:
         if len(date_list) != len(set(date_list)):
             Log.error('There are repeated start dates!')
             return False
-        starting_chunk = as_conf.get_starting_chunk()
         num_chunks = as_conf.get_num_chunks()
         member_list = as_conf.get_member_list()
         if len(date_list) != len(set(date_list)):
@@ -989,7 +987,7 @@ class Autosubmit:
 
         Log.info("\nCreating joblist...")
         job_list = JobList(expid)
-        job_list.create(date_list, member_list, starting_chunk, num_chunks, parameters)
+        job_list.create(date_list, member_list,  num_chunks, parameters)
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
@@ -1273,7 +1271,7 @@ class Autosubmit:
         """
         parameters = as_conf.load_parameters()
         joblist = JobList(parameters['EXPID'])
-        joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '), int(parameters['CHUNKINI']),
+        joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '),
                        int(parameters['NUMCHUNKS']), parameters)
         out = joblist.check_scripts(as_conf)
         return out

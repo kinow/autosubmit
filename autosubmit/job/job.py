@@ -458,7 +458,7 @@ class Job:
 
             parameters['Chunk_START_YEAR'] = str(chunk_start_y)
             parameters['Chunk_START_MONTH'] = str(chunk_start_m)
-            if int(parameters['CHUNKINI']) == chunk:
+            if chunk == 1:
                 parameters['Chunk_FIRST'] = 'TRUE'
             else:
                 parameters['Chunk_FIRST'] = 'FALSE'

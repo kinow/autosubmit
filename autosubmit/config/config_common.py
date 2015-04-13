@@ -221,7 +221,6 @@ class AutosubmitConfig:
                                                              ['year', 'month', 'day', 'hour'])
         result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'CHUNKSIZE', True)
         result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'NUMCHUNKS', True)
-        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'CHUNKINI', True)
         result = result and AutosubmitConfig.check_is_choice(parser, 'experiment', 'CALENDAR', True,
                                                              ['standard', 'noleap'])
 
@@ -517,15 +516,6 @@ class AutosubmitConfig:
         :rtype: list
         """
         return self._exp_parser.get('experiment', 'DATELIST').split(' ')
-
-    def get_starting_chunk(self):
-        """
-        Returns starting chunk for experiment in experiment's config file
-
-        :return: starting chunk
-        :rtype: int
-        """
-        return int(self._exp_parser.get('experiment', 'CHUNKINI'))
 
     def get_num_chunks(self):
         """

@@ -58,7 +58,7 @@ class JobList:
         """
         return self._expid
 
-    def create(self, date_list, member_list, starting_chunk, num_chunks, parameters):
+    def create(self, date_list, member_list, num_chunks, parameters):
         """
         Creates all jobs needed for the current workflow
 
@@ -66,8 +66,6 @@ class JobList:
         :type date_list: list
         :param member_list: members
         :type member_list: list
-        :param starting_chunk: number of starting chunk
-        :type starting_chunk: int
         :param num_chunks: number of chunks to run
         :type num_chunks: int
         :param parameters: parameters for the jobs
@@ -79,7 +77,7 @@ class JobList:
         parser.optionxform = str
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-        chunk_list = range(starting_chunk, starting_chunk + num_chunks)
+        chunk_list = range(1, num_chunks)
 
         self._date_list = date_list
         self._member_list = member_list
