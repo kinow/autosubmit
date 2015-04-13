@@ -82,7 +82,7 @@ def set_experiment(name, exp_type, model_branch, template_name, template_branch,
 
 	(conn, cursor) = open_conn()
 	try:
-		cursor.execute('insert into experiment values(null, ?, ?, ?, ?, ?, ?, ?)', (name, exp_type, description, model_branch, template_name, template_branch, ocean_diagnostics_branch))
+		cursor.execute('insert into experiment (name, type, description, model_branch, template_name, template_branch, ocean_diagnostics_branch) values (:name, :type, :description, :model_branch, :template_name, :template_branch, :ocean_diagnostics_branch)', {'name': name, 'type': exp_type, 'description': description, 'model_branch': model_branch, 'template_name': template_name, 'template_branch': template_branch, 'ocean_diagnostics_branch': ocean_diagnostics_branch})
 	except sql.IntegrityError:
 		close_conn(conn, cursor)
 		print 'The experiment name %s - %s already exists!!!' % (name, exp_type)
