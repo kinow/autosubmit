@@ -509,6 +509,7 @@ class Job:
         parameters['SCRATCH_DIR'] = job_platform.scratch
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+        parameters['PROJDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'proj')
 
         self.parameters = parameters
 
