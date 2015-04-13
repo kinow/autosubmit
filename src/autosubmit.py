@@ -266,8 +266,6 @@ if __name__ == "__main__":
 		if (conf_parser.has_option('config','maxtransferjobs')):
 			maxTransferJobs = int(conf_parser.get('config','maxtransferjobs'))
 		logger.info("Maximum transfer jobs: %s" % maxTransferJobs)
-		#totalWraps = int(conf_parser.get('config','totalwraps'))
-		logger.info("Wraps to submit: %s" % totalWraps)
 		if (conf_parser.has_option('config','WRAP')):
 			wrapping = conf_parser.get('config','WRAP').lower()
 		else: 
