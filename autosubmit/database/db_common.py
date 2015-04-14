@@ -88,7 +88,7 @@ def _set_experiment(name, description, version):
     return True
 
 
-def check_experiment_exists(name):
+def check_experiment_exists(name, error_on_inexistence=True):
     """
     Checks if exist an experiment with the given name.
 
@@ -117,7 +117,8 @@ def check_experiment_exists(name):
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:
-        Log.error('The experiment name "{0}" does not exist yet!!!', name)
+        if error_on_inexistence:
+            Log.error('The experiment name "{0}" does not exist yet!!!', name)
         return False
     return True
 
@@ -133,18 +134,22 @@ def new_experiment(hpc, description, version):
     :return: experiment id for the new experiment
     :rtype: str
     """
-    last_exp_name = last_name(hpc)
+    last_exp_name = last_name_used(hpc)
     if last_exp_name == '':
         return ''
     if last_exp_name == 'empty':
         if hpc == 'test':
-            new_name = 'test000'
+            new_name = 'test0000'
         else:
-            new_name = hpc[0]+'000'
+            new_name = '0000'
     else:
         new_name = _next_name(last_exp_name)
-    if new_name == '':
-        return ''
+        if new_name == '':
+            return ''
+    while check_experiment_exists(new_name, False):
+        new_name = _next_name(last_exp_name)
+        if new_name == '':
+            return ''
     if not _set_experiment(new_name, description, version):
         return ''
     Log.info('The new experiment "{0}" has been registered.', new_name)
@@ -200,7 +205,7 @@ def base36encode(number, alphabet=string.digits + string.ascii_lowercase):
         # noinspection PyAugmentAssignment
         base36 = alphabet[i] + base36
 
-    return sign + base36
+    return sign + base36.rjust(4, '0')
 
 
 def base36decode(number):
@@ -231,7 +236,7 @@ def _next_name(name):
     return base36encode(base36decode(name) + 1)
 
 
-def last_name(hpc):
+def last_name_used(hpc):
     """
     Gets last experiment identifier used for HPC
 
@@ -255,7 +260,8 @@ def last_name(hpc):
     hpc_name += '___'
     cursor.execute('SELECT name '
                    'FROM experiment '
-                   'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "' + hpc_name + '")')
+                   'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE autosubmit_version IS NOT NULL AND '
+                   'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     row = cursor.fetchone()
     if row is None:
         row = ('empty', )
