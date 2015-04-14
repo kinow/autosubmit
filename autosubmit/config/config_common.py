@@ -79,8 +79,10 @@ class AutosubmitConfig:
         # Getting project name for each type of project
         if self.get_project_type().lower() == "local":
             dir_templates = os.path.join(dir_templates, os.path.split(self.get_local_project_path())[1])
+        elif self.get_project_type().lower() == "svn":
+            dir_templates = os.path.join(dir_templates, self.get_svn_project_url().split('/')[-1])
         elif self.get_project_type().lower() == "git":
-            dir_templates = self.get_git_project_origin().split('.')[-2]
+            dir_templates = os.path.join(dir_templates, self.get_git_project_origin().split('/')[-1].split('.')[-2])
         return dir_templates
 
     def check_conf_files(self):

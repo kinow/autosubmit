@@ -409,7 +409,7 @@ class JobList:
             if store_change:
                 move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
-    def update_parameters(self, parameters):
+    def update_parameters(self, parameters, as_conf):
         self._parameters = parameters
         for job in self._job_list:
             job.parameters = parameters

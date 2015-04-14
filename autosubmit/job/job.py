@@ -446,9 +446,12 @@ class Job:
         else:
             self.status = Status.FAILED
 
-    def update_parameters(self):
+    def update_parameters(self, as_conf):
         """
         Refresh parameters value
+
+        :param as_conf:
+        :type as_conf: AutosubmitConfig
         """
         parameters = self.parameters
         parameters['JOBNAME'] = self.name
@@ -509,7 +512,7 @@ class Job:
         parameters['SCRATCH_DIR'] = job_platform.scratch
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
-        parameters['PROJDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'proj')
+        parameters['PROJDIR'] = as_conf.get_project_dir()
 
         self.parameters = parameters
 
@@ -552,7 +555,7 @@ class Job:
         :return: script's filename
         :rtype: str
         """
-        parameters = self.update_parameters()
+        parameters = self.update_parameters(as_conf)
         template_content = self.update_content(as_conf.get_project_dir())
         # print "jobType: %s" % self._type
         # print template_content
@@ -575,7 +578,7 @@ class Job:
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
-        parameters = self.update_parameters()
+        parameters = self.update_parameters(as_conf)
         template_content = self.update_content(as_conf.get_project_dir())
 
         variables = re.findall('%' + '(\w+)' + '%', template_content)

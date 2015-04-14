@@ -459,7 +459,7 @@ class Autosubmit:
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         Log.debug("Updating parameters...")
-        joblist.update_parameters(parameters)
+        joblist.update_parameters(parameters, as_conf)
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -490,7 +490,7 @@ class Autosubmit:
             Log.debug("Reloading parameters...")
             as_conf.reload()
             parameters = as_conf.load_parameters()
-            joblist.update_parameters(parameters)
+            joblist.update_parameters(parameters, as_conf)
 
             # variables to be updated on the fly
             max_jobs = as_conf.get_total_jobs()
@@ -811,7 +811,7 @@ class Autosubmit:
             return False
 
         parameters = as_conf.load_parameters()
-        joblist.update_parameters(parameters)
+        joblist.update_parameters(parameters, as_conf)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():

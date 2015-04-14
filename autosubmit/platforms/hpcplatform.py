@@ -212,7 +212,7 @@ class HPCPlatform:
         :rtype: str
         """
         if self._serial_queue is None:
-            return ''
+            return self.get_queue()
         return self._serial_queue
 
     def set_serial_queue(self, value):
