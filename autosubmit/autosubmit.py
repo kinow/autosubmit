@@ -459,7 +459,7 @@ class Autosubmit:
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         Log.debug("Updating parameters...")
-        joblist.update_parameters(parameters, as_conf)
+        joblist.update_parameters(parameters)
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -490,7 +490,7 @@ class Autosubmit:
             Log.debug("Reloading parameters...")
             as_conf.reload()
             parameters = as_conf.load_parameters()
-            joblist.update_parameters(parameters, as_conf)
+            joblist.update_parameters(parameters)
 
             # variables to be updated on the fly
             max_jobs = as_conf.get_total_jobs()
@@ -811,7 +811,7 @@ class Autosubmit:
             return False
 
         parameters = as_conf.load_parameters()
-        joblist.update_parameters(parameters, as_conf)
+        joblist.update_parameters(parameters)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
@@ -987,7 +987,16 @@ class Autosubmit:
 
         Log.info("\nCreating joblist...")
         job_list = JobList(expid)
-        job_list.create(date_list, member_list,  num_chunks, parameters)
+
+        date_format = ''
+        if as_conf.get_chunk_size_unit() is 'hour':
+            date_format = 'H'
+        for date in date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        job_list.create(date_list, member_list,  num_chunks, parameters, date_format)
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
@@ -1256,25 +1265,6 @@ class Autosubmit:
                                       "PROJECT_TYPE = none")
 
             file(as_conf.experiment_file, 'w').write(content)
-
-    @staticmethod
-    def _check_templates(as_conf):
-        """Procedure to check autogeneration of templates given
-        Autosubmit configuration.
-        Returns True if all variables are set.
-        If the parameters are not correctly replaced, the function returns
-        False and the check fails.
-
-        :param as_conf: Autosubmit configuration object
-        :type: AutosubmitConf
-        :retruns: bool
-        """
-        parameters = as_conf.load_parameters()
-        joblist = JobList(parameters['EXPID'])
-        joblist.create(parameters['DATELIST'].split(' '), parameters['MEMBERS'].split(' '),
-                       int(parameters['NUMCHUNKS']), parameters)
-        out = joblist.check_scripts(as_conf)
-        return out
 
     @staticmethod
     def _get_status(s):

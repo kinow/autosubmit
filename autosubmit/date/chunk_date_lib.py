@@ -22,19 +22,18 @@ operations between them.
 """
 
 import datetime
-import time
 import calendar
 from dateutil.relativedelta import *
 
 from autosubmit.config.log import Log
 
 
-def add_time(string_date, total_size, chunk_unit, cal):
+def add_time(date, total_size, chunk_unit, cal):
     """
     Adds given time to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param total_size: time to add
     :type total_size: int
     :param chunk_unit: unit of time to add
@@ -42,43 +41,40 @@ def add_time(string_date, total_size, chunk_unit, cal):
     :param cal: calendar to use
     :type cal: str
     :return: result of adding time to base date
-    :rtype: date
+    :rtype: datetime.datetime
     """
     if chunk_unit == 'year':
-        return add_years(string_date, total_size)
+        return add_years(date, total_size)
     elif chunk_unit == 'month':
-        return add_months(string_date, total_size, cal)
+        return add_months(date, total_size, cal)
     elif chunk_unit == 'day':
-        return add_days(string_date, total_size, cal)
+        return add_days(date, total_size, cal)
     elif chunk_unit == 'hour':
-        return add_hours(string_date, total_size, cal)
+        return add_hours(date, total_size, cal)
     else:
         Log.critical('Chunk unit not valid: {0}'.format(chunk_unit))
 
 
-def add_years(string_date, number_of_years):
+def add_years(date, number_of_years):
     """
     Adds years to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param number_of_years: number of years to add
     :type number_of_years: int
     :return: base date plus added years
     :rtype: date
     """
-    date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(years=number_of_years)
-    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
-    return result
+    return date + relativedelta(years=number_of_years)
 
 
-def add_months(string_date, number_of_months, cal):
+def add_months(date, number_of_months, cal):
     """
     Adds months to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param number_of_months: number of months to add
     :type number_of_months: int
     :param cal: calendar to use
@@ -86,21 +82,19 @@ def add_months(string_date, number_of_months, cal):
     :return: base date plus added months
     :rtype: date
     """
-    date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(months=number_of_months)
-    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    result = date + relativedelta(months=number_of_months)
     if cal == 'noleap':
         if result.month == 2 and result.day == 29:
-            result = datetime.date(result.year, 2, 28)
+            result = result - relativedelta(days=1)
     return result
 
 
-def add_days(string_date, number_of_days, cal):
+def add_days(date, number_of_days, cal):
     """
     Adds days to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param number_of_days: number of days to add
     :type number_of_days: int
     :param cal: calendar to use
@@ -108,9 +102,7 @@ def add_days(string_date, number_of_days, cal):
     :return: base date plus added days
     :rtype: date
     """
-    date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(days=number_of_days)
-    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    result = date + relativedelta(days=number_of_days)
     if cal == 'noleap':
         year = date.tm_year
         if date.tm_mon > 2:
@@ -128,22 +120,20 @@ def add_days(string_date, number_of_days, cal):
     return result
 
 
-def sub_days(string_date, number_of_days, cal):
+def sub_days(date, number_of_days, cal):
     """
     Substract days to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param number_of_days: number of days to substract
     :type number_of_days: int
     :param cal: calendar to use
     :type cal: str
     :return: base date minus substracted days
-    :rtype: date
+    :rtype: datetime.datetime
     """
-    date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(days=number_of_days)
-    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) - delta
+    result = date - relativedelta(days=number_of_days)
     if cal == 'noleap':
         year = date.tm_year
         if date.tm_mon <= 2:
@@ -161,12 +151,12 @@ def sub_days(string_date, number_of_days, cal):
     return result
 
 
-def add_hours(string_date, number_of_hours, cal):
+def add_hours(date, number_of_hours, cal):
     """
     Adds hours to a date
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param number_of_hours: number of hours to add
     :type number_of_hours: int
     :param cal: calendar to use
@@ -174,9 +164,7 @@ def add_hours(string_date, number_of_hours, cal):
     :return: base date plus added hours
     :rtype: date
     """
-    date = time.strptime(string_date, '%Y%m%d')
-    delta = relativedelta(hours=number_of_hours)
-    result = datetime.date(date.tm_year, date.tm_mon, date.tm_mday) + delta
+    result = date + relativedelta(hours=number_of_hours)
     if cal == 'noleap':
         year = date.tm_year
         if date.tm_mon > 2:
@@ -199,27 +187,23 @@ def subs_dates(start_date, end_date, cal):
     Gets days between start_date and end_date
 
     :param start_date: interval's start date
-    :type start_date: str
+    :type start_date: datetime.datetime
     :param end_date: interval's end date
-    :type end_date: str
+    :type end_date: datetime.datetime
     :param cal: calendar to use
     :type cal: str
     :return: interval length in days
     :rtype: int
     """
-    start = time.strptime(start_date, '%Y%m%d')
-    end = time.strptime(end_date, '%Y%m%d')
-    start_datetime = datetime.date(start.tm_year, start.tm_mon, start.tm_mday)
-    end_datetime = datetime.date(end.tm_year, end.tm_mon, end.tm_mday)
-    result = end_datetime - start_datetime
+    result = end_date - start_date
     if cal == 'noleap':
-        year = start_datetime.year
-        if start_datetime.month > 2:
+        year = start_date.year
+        if start_date.month > 2:
             year += 1
 
-        while year <= end_datetime.year:
+        while year <= end_date.year:
             if calendar.isleap(year):
-                if end_datetime.year == year and end_datetime < datetime.date(year, 2, 29):
+                if end_date.year == year and end_date < datetime.date(year, 2, 29):
                     year += 1
                     continue
                 result -= datetime.timedelta(days=1)
@@ -227,12 +211,12 @@ def subs_dates(start_date, end_date, cal):
     return result.days
 
 
-def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
+def chunk_start_date(date, chunk, chunk_length, chunk_unit, cal):
     """
     Gets chunk's interval start date
 
-    :param string_date: start date for member
-    :type string_date: str
+    :param date: start date for member
+    :type date: datetime.datetime
     :param chunk: number of chunk
     :type chunk: int
     :param chunk_length: length of chunks
@@ -242,14 +226,12 @@ def chunk_start_date(string_date, chunk, chunk_length, chunk_unit, cal):
     :param cal: calendar to use
     :type cal: str
     :return: chunk's start date
-    :rtype: str
+    :rtype: datetime.datetime
     """
     chunk_1 = chunk - 1
     total_months = chunk_1 * chunk_length
-    result = add_time(string_date, total_months, chunk_unit, cal)
-    # noinspection PyUnresolvedReferences
-    start_date = "%s%02d%02d" % (result.year, result.month, result.day)
-    return start_date
+    result = add_time(date, total_months, chunk_unit, cal)
+    return result
 
 
 def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
@@ -257,7 +239,7 @@ def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
     Gets chunk interval end date
 
     :param start_date: chunk's start date
-    :type start_date: str
+    :type start_date: datetime.datetime
     :param chunk_length: length of the chunks
     :type chunk_length: int
     :param chunk_unit: chunk length unit
@@ -265,71 +247,72 @@ def chunk_end_date(start_date, chunk_length, chunk_unit, cal):
     :param cal: calendar to use
     :type cal: str
     :return: chunk's end date
-    :rtype: str
+    :rtype: datetime.datetime
     """
-    result = add_time(start_date, chunk_length, chunk_unit, cal)
-    # noinspection PyUnresolvedReferences
-    end_date = "%s%02d%02d" % (result.year, result.month, result.day)
-    return end_date
+    return add_time(start_date, chunk_length, chunk_unit, cal)
 
 
-def previous_day(string_date, cal):
+def previous_day(date, cal):
     """
     Gets previous day
 
-    :param string_date: base date
-    :type string_date: str
+    :param date: base date
+    :type date: datetime.datetime
     :param cal: calendar to use
     :type cal: str
     :return: base date minus one day
+    :rtype: datetime.datetime
+    """
+    return sub_days(date, 1, cal)
+
+
+def parse_date(string_date):
+    """
+    Parses a string into a datetime object
+
+    :param string_date: string to parse
+    :type string_date: str
+    :rtype: datetime.datetime
+    """
+    if string_date is None:
+        return None
+    length = len(string_date)
+    if length == 8:
+        return datetime.datetime.strptime(string_date, "%Y%m%d")
+    elif length == 10:
+        return datetime.datetime.strptime(string_date, "%Y%m%d%H")
+    elif length == 12:
+        return datetime.datetime.strptime(string_date, "%Y%m%d%H%M")
+
+
+def date2str(date, date_format=''):
+    """
+    Converts a datetime object to a str
+
+    :param date: date to convert
+    :type date: datetime.datetime
     :rtype: str
     """
-    date_1 = sub_days(string_date, 1, cal)
-    # noinspection PyUnresolvedReferences
-    string_date_1 = "%s%02d%02d" % (date_1.year, date_1.month, date_1.day)
-    return string_date_1
-
-
-def get_month(string_date):
-    """
-    Gets date month
-
-    :param string_date: base date
-    :type string_date: str
-    :return: date's month
-    :rtype: int
-    """
-    date = time.strptime(string_date, '%Y%m%d')
-    result = date.tm_mon
-    return result
-
-
-def get_year(string_date):
-    """
-    Gets date year
-
-    :param string_date: base date
-    :type string_date: str
-    :return: date's year
-    :rtype: int
-    """
-    date = time.strptime(string_date, '%Y%m%d')
-    result = date.tm_year
-    return result
+    if date is None:
+        return ''
+    if date_format == 'H':
+        return date.strftime("%Y%m%d%H")
+    elif date_format == 'M':
+        return date.strftime("%Y%m%d%H%M")
+    else:
+        return date.strftime("%Y%m%d")
 
 
 ####################
 # Main Program
 ####################
 def main():
-    string_date = '19600201'
+    string_date = datetime.datetime(2010, 5, 1, 12)
     cal = 'noleap'
     start_date = chunk_start_date(string_date, 1, 1, 'month', cal)
     Log.info(start_date)
     end_date = chunk_end_date(start_date, 1, 'month', cal)
     Log.info(end_date)
-    Log.info("year: {0}", get_year(string_date))
-    Log.info("month: {0}", get_month(string_date))
     Log.info("yesterday: {0} ", previous_day(string_date, cal))
 
 

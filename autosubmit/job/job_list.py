@@ -29,6 +29,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
+from autosubmit.date.chunk_date_lib import date2str
 
 
 class JobList:
@@ -58,7 +59,7 @@ class JobList:
         """
         return self._expid
 
-    def create(self, date_list, member_list, num_chunks, parameters):
+    def create(self, date_list, member_list, num_chunks, parameters, date_format):
         """
         Creates all jobs needed for the current workflow
 
@@ -70,6 +71,8 @@ class JobList:
         :type num_chunks: int
         :param parameters: parameters for the jobs
         :type parameters: dict
+        :param date_format: option to formate dates
+        :type date_format: str
         """
         self._parameters = parameters
 
@@ -83,7 +86,7 @@ class JobList:
         self._member_list = member_list
         self._chunk_list = chunk_list
 
-        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list)
+        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format)
         self._dic_jobs = dic_jobs
         priority = 0
 
@@ -409,7 +412,7 @@ class JobList:
             if store_change:
                 move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
 
-    def update_parameters(self, parameters, as_conf):
+    def update_parameters(self, parameters):
         self._parameters = parameters
         for job in self._job_list:
             job.parameters = parameters
@@ -633,14 +636,17 @@ class DicJobs:
     :type member_list: list
     :param chunk_list: chunks
     :type chunk_list: list
+    :param date_format: option to formate dates
+    :type date_format: str
 
     """
-    def __init__(self, joblist, parser, date_list, member_list, chunk_list):
+    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format):
         self._date_list = date_list
         self._joblist = joblist
         self._member_list = member_list
         self._chunk_list = chunk_list
         self._parser = parser
+        self._date_format = date_format
         self._dic = dict()
 
     def read_section(self, section, priority):
@@ -803,7 +809,7 @@ class DicJobs:
     def _create_job(self, section, priority, date, member, chunk):
         name = self._joblist.expid
         if date is not None:
-            name += "_" + date
+            name += "_" + date2str(date, self._date_format)
         if member is not None:
             name += "_" + member
         if chunk is not None:
@@ -814,6 +820,7 @@ class DicJobs:
         job.date = date
         job.member = member
         job.chunk = chunk
+        job.date_format = self._date_format
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
         job.wait = self.get_option(section, "WAIT", 'false').lower() == 'true'

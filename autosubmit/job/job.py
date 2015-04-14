@@ -68,6 +68,7 @@ class Job:
         self.long_name = name
         self._short_name = None
         self.short_name = name
+        self.date_format = ''
 
         self.id = jobid
         self.file = None
@@ -457,7 +458,7 @@ class Job:
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
 
-        parameters['SDATE'] = self.date
+        parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
         if self.chunk is None:
             parameters['CHUNK'] = '1'
@@ -474,14 +475,14 @@ class Job:
             chunk_end_days = subs_dates(self.date, chunk_end, cal)
             day_before = previous_day(self.date, cal)
             chunk_end_1 = previous_day(chunk_end, cal)
-            parameters['DAY_BEFORE'] = day_before
-            parameters['Chunk_START_DATE'] = chunk_start
-            parameters['Chunk_END_DATE'] = chunk_end_1
+            parameters['DAY_BEFORE'] = date2str(day_before, self.date_format)
+            parameters['Chunk_START_DATE'] = date2str(chunk_start, self.date_format)
+            parameters['Chunk_END_DATE'] = date2str(chunk_end_1, self.date_format)
             parameters['RUN_DAYS'] = str(run_days)
             parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
 
-            chunk_start_m = get_month(chunk_start)
-            chunk_start_y = get_year(chunk_start)
+            chunk_start_m = self.date.month
+            chunk_start_y = self.date.year
 
             parameters['Chunk_START_YEAR'] = str(chunk_start_y)
             parameters['Chunk_START_MONTH'] = str(chunk_start_m)

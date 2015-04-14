@@ -106,22 +106,33 @@ class Monitor:
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         for job in joblist:
+            if job.has_parents():
+                continue
+
             node_job = pydotplus.Node(job.name, shape='box', style="filled",
                                       fillcolor=self.color_status(job.status))
             exp.add_node(node_job)
-            # exp.set_node_style(node_job,shape='box', style="filled", fillcolor=ColorStatus(job.status))
-            if job.has_children() != 0:
-                for child in job.children:
-                    node_child = pydotplus.Node(child.name, shape='box', style="filled",
-                                                fillcolor=self.color_status(child.status))
-                    exp.add_node(node_child)
-                    # exp.set_node_style(node_child,shape='box', style="filled", fillcolor=ColorStatus(
-                    # job.status))
-                    exp.add_edge(pydotplus.Edge(node_job, node_child))
+            self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
 
         return graph
+
+    def _add_children(self, job, exp, node_job):
+        if job.has_children() != 0:
+            for child in sorted(job.children, key=lambda k: k.name):
+                node_child = exp.get_node(child.name)
+                if len(node_child) == 0:
+                    node_child = pydotplus.Node(child.name, shape='box', style="filled",
+                                                fillcolor=self.color_status(child.status))
+                    exp.add_node(node_child)
+                    flag = True
+                else:
+                    node_child = node_child[0]
+                    flag = False
+                exp.add_edge(pydotplus.Edge(node_job, node_child))
+                if flag:
+                    self._add_children(child, exp, node_child)
 
     def generate_output(self, expid, joblist, output_format="pdf"):
         """

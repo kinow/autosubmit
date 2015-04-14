@@ -24,6 +24,8 @@ import re
 from os import listdir
 from commands import getstatusoutput
 
+from autosubmit.date.chunk_date_lib import parse_date
+
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
@@ -517,7 +519,22 @@ class AutosubmitConfig:
         :return: experiment's startdates
         :rtype: list
         """
-        return self._exp_parser.get('experiment', 'DATELIST').split(' ')
+        date_list = list()
+        string = self._exp_parser.get('experiment', 'DATELIST')
+        if not string.startswith("["):
+            string = '[{0}]'.format(string)
+        split_string = nestedExpr('[', ']').parseString(string).asList()
+        string_date = None
+        for split in split_string[0]:
+            if type(split) is list:
+                for split_in in split:
+                    date_list.append(parse_date(string_date + split_in))
+                string_date = None
+            else:
+                if string_date is not None:
+                    date_list.append(parse_date(string_date))
+                string_date = split
+        return date_list
 
     def get_num_chunks(self):
         """
@@ -527,6 +544,15 @@ class AutosubmitConfig:
         :rtype: int
         """
         return int(self._exp_parser.get('experiment', 'NUMCHUNKS'))
+
+    def get_chunk_size_unit(self):
+        """
+        Unit for the chunk length
+
+        :return: Unit for the chunk length  Options: {hour, day, month, year}
+        :rtype: str
+        """
+        return self._exp_parser.get('experiment', 'CHUNKSIZEUNIT').lower()
 
     def get_member_list(self):
         """

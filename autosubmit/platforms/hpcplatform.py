@@ -112,7 +112,8 @@ class HPCPlatform:
                 Log.debug('Command {0} in {1} successful with out message: {2}', command, self._host, self._ssh_output)
                 return True
             else:
-                Log.error('Command {0} in {1} failed with error message: {2}', command, self._host, '\n'.join(stderr_readlines))
+                Log.error('Command {0} in {1} failed with error message: {2}',
+                          command, self._host, '\n'.join(stderr_readlines))
                 return False
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}', command, self._host, e.message)
