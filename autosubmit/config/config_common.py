@@ -93,7 +93,7 @@ class AutosubmitConfig:
         elif self.get_project_type().lower() == "svn":
             dir_templates = os.path.join(dir_templates, self.get_svn_project_url().split('/')[-1])
         elif self.get_project_type().lower() == "git":
-            dir_templates = os.path.join(dir_templates, self.get_git_project_destination())
+            dir_templates = os.path.join(dir_templates, self.get_project_destination())
         return dir_templates
 
     def check_conf_files(self):
@@ -448,16 +448,21 @@ class AutosubmitConfig:
         """
         return self._exp_parser.get('git', 'PROJECT_COMMIT')
 
-    def get_git_project_destination(self):
+    def get_project_destination(self):
         """
         Returns git commit from experiment's config file
 
         :return: git commit
         :rtype: str
         """
-        value = self._exp_parser.get('git', 'PROJECT_DESTINATION')
+        value = self._exp_parser.get('project', 'PROJECT_DESTINATION')
         if not value:
-            value = self.get_git_project_origin().split('/')[-1].split('.')[-2]
+            if self.get_project_type().lower() == "local":
+                value = os.path.split(self.get_local_project_path())[1]
+            elif self.get_project_type().lower() == "svn":
+                value = self.get_svn_project_url().split('/')[-1]
+            elif self.get_project_type().lower() == "git":
+                value = self.get_git_project_origin().split('/')[-1].split('.')[-2]
         return value
 
     def set_git_project_commit(self):
@@ -555,6 +560,8 @@ class AutosubmitConfig:
                 if string_date is not None:
                     date_list.append(parse_date(string_date))
                 string_date = split
+        if string_date is not None:
+            date_list.append(parse_date(string_date))
         return date_list
 
     def get_num_chunks(self):

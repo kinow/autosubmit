@@ -105,7 +105,7 @@ class SgeHeader:
         else:
             return "$ -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -122,7 +122,7 @@ class SgeHeader:
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

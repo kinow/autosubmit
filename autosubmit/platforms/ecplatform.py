@@ -159,7 +159,7 @@ class EcHeader:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/ksh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -218,7 +218,7 @@ class EcCcaHeader:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
              #!/bin/bash
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT

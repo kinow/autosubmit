@@ -1003,7 +1003,7 @@ class Autosubmit:
             return False
         num_chunks = as_conf.get_num_chunks()
         member_list = as_conf.get_member_list()
-        if len(date_list) != len(set(date_list)):
+        if len(member_list) != len(set(member_list)):
             Log.error('There are repeated member names!')
             return False
         rerun = as_conf.get_rerun()
@@ -1056,11 +1056,11 @@ class Autosubmit:
         :return: True if succesful, False if not
         :rtype: bool
         """
+        project_destination = as_conf.get_project_destination()
         if project_type == "git":
             git_project_origin = as_conf.get_git_project_origin()
             git_project_branch = as_conf.get_git_project_branch()
             git_project_commit = as_conf.get_git_project_commit()
-            git_project_destination = as_conf.get_git_project_destination()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
@@ -1075,7 +1075,7 @@ class Autosubmit:
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
                                                + git_project_branch + " " + git_project_origin + " "
-                                               + git_project_destination)
+                                               + project_destination)
             if status:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
@@ -1103,7 +1103,7 @@ class Autosubmit:
             shutil.rmtree(project_path)
             Log.info("Checking out revision {0} into {1}", svn_project_revision + " " + svn_project_url, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
-                                               " " + svn_project_url)
+                                               " " + svn_project_url + " " + project_destination)
             if status:
                 Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
                           project_path)
@@ -1113,7 +1113,8 @@ class Autosubmit:
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR,
+                                        project_destination)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:

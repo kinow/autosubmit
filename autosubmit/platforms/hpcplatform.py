@@ -554,7 +554,7 @@ class HPCPlatform:
         :return: command to execute script
         :rtype: str
         """
-        return 'nohup /bin/sh {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
+        return 'nohup bash {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
                                                                                       job_script))
 
     @staticmethod

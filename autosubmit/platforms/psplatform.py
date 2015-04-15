@@ -98,14 +98,14 @@ class PsHeader:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

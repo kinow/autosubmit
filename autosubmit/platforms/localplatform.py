@@ -52,7 +52,7 @@ class LocalPlatform(HPCPlatform):
         self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
         self.cancel_cmd = "kill -SIGINT"
         self._checkhost_cmd = "echo 1"
-        self.put_cmd = "cp"
+        self.put_cmd = "cp -p"
         self.get_cmd = "cp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
@@ -129,14 +129,14 @@ class LocalHeader:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

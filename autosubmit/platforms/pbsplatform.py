@@ -117,7 +117,7 @@ class Pbs12Header:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -131,7 +131,7 @@ class Pbs12Header:
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -162,7 +162,7 @@ class Pbs10Header:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -176,7 +176,7 @@ class Pbs10Header:
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

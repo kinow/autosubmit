@@ -114,21 +114,22 @@ class SlurmHeader:
         # There is no queue, so directive is empty
         return ""
 
-    SERIAL = textwrap.dedent("""#!/bin/bash
-###############################################################################
-#                   %TASKTYPE% %EXPID% EXPERIMENT
-###############################################################################
-#
-#SBATCH -n %NUMPROC%
-#SBATCH -t %WALLCLOCK%:00
-#SBATCH -J %JOBNAME%
-#SBATCH -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
-#SBATCH -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
-#
-###############################################################################
+    SERIAL = textwrap.dedent("""\
+            #!/bin/bash
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #SBATCH -n %NUMPROC%
+            #SBATCH -t %WALLCLOCK%:00
+            #SBATCH -J %JOBNAME%
+            #SBATCH -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
+            #SBATCH -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
+            #
+            ###############################################################################
            """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
 
             """)
 

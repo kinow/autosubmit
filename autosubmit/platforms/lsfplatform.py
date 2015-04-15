@@ -104,7 +104,7 @@ class LsfHeader:
         else:
             return "BSUB -q {0}".format(job.parameters['HPCQUEUE'])
 
-    SERIAL = textwrap.dedent("""
+    SERIAL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -120,7 +120,7 @@ class LsfHeader:
             ###############################################################################
             """)
 
-    PARALLEL = textwrap.dedent("""
+    PARALLEL = textwrap.dedent("""\
             #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

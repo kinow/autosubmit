@@ -64,7 +64,7 @@ class StatisticsSnippet:
             """)
 
     # noinspection PyPep8
-    AS_TAILER_LOC = textwrap.dedent("""
+    AS_TAILER_LOC = textwrap.dedent("""\
             ###################
             # Autosubmit tailer
             ###################
@@ -86,7 +86,7 @@ class StatisticsSnippet:
             exit 0
             """)
 
-    AS_HEADER_REM = textwrap.dedent("""
+    AS_HEADER_REM = textwrap.dedent("""\
 
             ###################
             # Autosubmit header
@@ -121,7 +121,7 @@ class StatisticsSnippet:
             """)
 
     # noinspection PyPep8
-    AS_TAILER_REM = textwrap.dedent("""
+    AS_TAILER_REM = textwrap.dedent("""\
             ###################
             # Autosubmit tailer
             ###################
