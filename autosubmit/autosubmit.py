@@ -1060,6 +1060,7 @@ class Autosubmit:
             git_project_origin = as_conf.get_git_project_origin()
             git_project_branch = as_conf.get_git_project_branch()
             git_project_commit = as_conf.get_git_project_commit()
+            git_project_destination = as_conf.get_git_project_destination()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
@@ -1073,7 +1074,8 @@ class Autosubmit:
 
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
-                                               + git_project_branch + " " + git_project_origin)
+                                               + git_project_branch + " " + git_project_origin + " "
+                                               + git_project_destination)
             if status:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)

@@ -93,7 +93,7 @@ class AutosubmitConfig:
         elif self.get_project_type().lower() == "svn":
             dir_templates = os.path.join(dir_templates, self.get_svn_project_url().split('/')[-1])
         elif self.get_project_type().lower() == "git":
-            dir_templates = os.path.join(dir_templates, self.get_git_project_origin().split('/')[-1].split('.')[-2])
+            dir_templates = os.path.join(dir_templates, self.get_git_project_destination())
         return dir_templates
 
     def check_conf_files(self):
@@ -447,6 +447,18 @@ class AutosubmitConfig:
         :rtype: str
         """
         return self._exp_parser.get('git', 'PROJECT_COMMIT')
+
+    def get_git_project_destination(self):
+        """
+        Returns git commit from experiment's config file
+
+        :return: git commit
+        :rtype: str
+        """
+        value = self._exp_parser.get('git', 'PROJECT_DESTINATION')
+        if not value:
+            value = self.get_git_project_origin().split('/')[-1].split('.')[-2]
+        return value
 
     def set_git_project_commit(self):
         """
