@@ -100,10 +100,10 @@ class SgeHeader:
         :rtype: str
         """
         # There is no queue, so directive is empty
-        if job.parameters['HPCQUEUE'] == '':
+        if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
-            return "$ -q {0}".format(job.parameters['HPCQUEUE'])
+            return "$ -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
     SERIAL = textwrap.dedent("""
             #!/bin/sh

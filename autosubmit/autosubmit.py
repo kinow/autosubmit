@@ -391,6 +391,31 @@ class Autosubmit:
             return True
 
     @staticmethod
+    def _load_parameters(as_conf, joblist, platforms):
+        # Load parameters
+        Log.debug("Loading parameters...")
+        parameters = as_conf.load_parameters()
+        for platform_name in platforms:
+            platform = platforms[platform_name]
+            parameters['{0}_ARCH'.format(platform.name)] = platform.name
+            parameters['{0}_USER'.format(platform.name)] = platform.user
+            parameters['{0}_PROJ'.format(platform.name)] = platform.project
+            parameters['{0}_BUDG'.format(platform.name)] = platform.budget
+            parameters['{0}_TYPE'.format(platform.name)] = platform.type
+            parameters['{0}_VERSION'.format(platform.name)] = platform.version
+            parameters['{0}_SCRATCH_DIR'.format(platform.name)] = platform.scratch
+        platform = platforms[as_conf.get_platform()]
+        parameters['HPCARCH'] = platform.name
+        parameters['HPCUSER'] = platform.user
+        parameters['HPCPROJ'] = platform.project
+        parameters['HPCBUDG'] = platform.budget
+        parameters['HPCTYPE'] = platform.type
+        parameters['HPCVERSION'] = platform.version
+        parameters['SCRATCH_DIR'] = platform.scratch
+        Log.debug("Updating parameters...")
+        joblist.update_parameters(parameters)
+
+    @staticmethod
     def run_experiment(expid):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
@@ -455,11 +480,7 @@ class Autosubmit:
 
         Log.debug("Length of joblist: {0}", len(joblist))
 
-        # Load parameters
-        Log.debug("Loading parameters...")
-        parameters = as_conf.load_parameters()
-        Log.debug("Updating parameters...")
-        joblist.update_parameters(parameters)
+        Autosubmit._load_parameters(as_conf, joblist, platforms)
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -489,8 +510,7 @@ class Autosubmit:
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
-            parameters = as_conf.load_parameters()
-            joblist.update_parameters(parameters)
+            Autosubmit._load_parameters(as_conf, joblist, platforms)
 
             # variables to be updated on the fly
             max_jobs = as_conf.get_total_jobs()
@@ -810,8 +830,7 @@ class Autosubmit:
             Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
             return False
 
-        parameters = as_conf.load_parameters()
-        joblist.update_parameters(parameters)
+        Autosubmit._load_parameters(as_conf, joblist, platforms)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
@@ -965,6 +984,10 @@ class Autosubmit:
 
         if not Autosubmit._copy_code(as_conf, expid, project_type, False):
             return False
+        if as_conf.get_project_type() != 'none':
+            destiny = as_conf.project_file
+            if not os.path.exists(destiny):
+                shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
 
         if project_type != "none":
             # Check project configuration
@@ -1036,6 +1059,7 @@ class Autosubmit:
         if project_type == "git":
             git_project_origin = as_conf.get_git_project_origin()
             git_project_branch = as_conf.get_git_project_branch()
+            git_project_commit = as_conf.get_git_project_commit()
             project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
@@ -1054,6 +1078,12 @@ class Autosubmit:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
+            if git_project_commit:
+                (status, output) = getstatusoutput("cd {0}; git checkout {1} ".format(project_path, git_project_commit))
+                if status:
+                    Log.error("Can not checkout commit {0}", git_project_commit)
+                    shutil.rmtree(project_path)
+                    return False
 
             Log.debug("{0}", output)
 

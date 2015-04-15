@@ -460,32 +460,31 @@ class Job:
 
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
-        if self.chunk is None:
-            parameters['CHUNK'] = '1'
-        else:
-            parameters['CHUNK'] = self.chunk
-            chunk = self.chunk
+        if self.date is not None:
+            if self.chunk is None:
+                chunk = 1
+            else:
+                chunk = self.chunk
+
+            parameters['CHUNK'] = chunk
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
             cal = parameters['CALENDAR'].lower()
             chunk_start = chunk_start_date(self.date, chunk, chunk_length, chunk_unit, cal)
             chunk_end = chunk_end_date(chunk_start, chunk_length, chunk_unit, cal)
-            run_days = subs_dates(chunk_start, chunk_end, cal)
-            chunk_end_days = subs_dates(self.date, chunk_end, cal)
-            day_before = previous_day(self.date, cal)
             chunk_end_1 = previous_day(chunk_end, cal)
-            parameters['DAY_BEFORE'] = date2str(day_before, self.date_format)
+            parameters['DAY_BEFORE'] = date2str(previous_day(self.date, cal), self.date_format)
             parameters['Chunk_START_DATE'] = date2str(chunk_start, self.date_format)
             parameters['Chunk_END_DATE'] = date2str(chunk_end_1, self.date_format)
-            parameters['RUN_DAYS'] = str(run_days)
-            parameters['Chunk_End_IN_DAYS'] = str(chunk_end_days)
+            parameters['RUN_DAYS'] = str(subs_dates(chunk_start, chunk_end, cal))
+            parameters['Chunk_End_IN_DAYS'] = str(subs_dates(self.date, chunk_end, cal))
 
-            chunk_start_m = self.date.month
-            chunk_start_y = self.date.year
+            parameters['Chunk_START_YEAR'] = str(self.date.year)
+            parameters['Chunk_START_MONTH'] = str(self.date.month)
 
-            parameters['Chunk_START_YEAR'] = str(chunk_start_y)
-            parameters['Chunk_START_MONTH'] = str(chunk_start_m)
+            parameters['PREV'] = str(subs_dates(self.date, chunk_start, cal))
+
             if chunk == 1:
                 parameters['Chunk_FIRST'] = 'TRUE'
             else:
@@ -503,14 +502,14 @@ class Job:
         parameters['TASKTYPE'] = self.section
 
         job_platform = self.get_platform()
-        parameters['HPCARCH'] = job_platform.name
-        parameters['HPCQUEUE'] = self.get_queue()
-        parameters['HPCUSER'] = job_platform.user
-        parameters['HPCPROJ'] = job_platform.project
-        parameters['HPCBUDG'] = job_platform.budget
-        parameters['HPCTYPE'] = job_platform.type
-        parameters['HPCVERSION'] = job_platform.version
-        parameters['SCRATCH_DIR'] = job_platform.scratch
+        parameters['CURRENT_ARCH'] = job_platform.name
+        parameters['CURRENT_QUEUE'] = self.get_queue()
+        parameters['CURRENT_USER'] = job_platform.user
+        parameters['CURRENT_PROJ'] = job_platform.project
+        parameters['CURRENT_BUDG'] = job_platform.budget
+        parameters['CURRENT_TYPE'] = job_platform.type
+        parameters['CURRENT_VERSION'] = job_platform.version
+        parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()

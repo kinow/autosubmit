@@ -485,10 +485,14 @@ class JobList:
         """
         Log.info("Checking scripts...")
         out = True
+        sections_checked = set()
         for job in self._job_list:
+            if job.section in sections_checked:
+                continue
             if not job.check_script(as_conf):
                 out = False
-                Log.warning("Invalid parameter substitution in {0}!!!", job.name)
+                Log.warning("Invalid parameter substitution in {0} template!!!", job.section)
+            sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
         else:

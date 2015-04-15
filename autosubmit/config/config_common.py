@@ -52,6 +52,8 @@ class AutosubmitConfig:
                                                    "platforms_" + expid + ".conf")
         self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
+        self._proj_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+                                              "model_" + expid + ".conf")
 
     @property
     def experiment_file(self):
@@ -69,6 +71,13 @@ class AutosubmitConfig:
         :rtype: str
         """
         return self._platforms_parser_file
+
+    @property
+    def project_file(self):
+        """
+        Returns model's config file name
+        """
+        return self._proj_parser_file
 
     def get_project_dir(self):
         """
@@ -262,11 +271,9 @@ class AutosubmitConfig:
         :rtype: bool
         """
         try:
-            self._proj_parser_file = self.get_file_project_conf()
             if self._proj_parser_file == '':
                 self._proj_parser = None
             else:
-                self._proj_parser_file = os.path.join(self.get_project_dir(), self._proj_parser_file)
                 self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
             return True
         except Exception as e:
@@ -482,8 +489,10 @@ class AutosubmitConfig:
                                           "PROJECT_COMMIT = " + project_branch_sha)
             file(self._exp_parser_file, 'w').write(content)
             Log.debug("Project commit SHA succesfully registered to the configuration file.")
+            return True
         else:
             Log.critical("Changes NOT registered to the configuration file...")
+        return False
 
     def get_svn_project_url(self):
         """
@@ -694,10 +703,10 @@ class AutosubmitConfig:
         local_platform.version = ''
         local_platform.queue = ''
         local_platform.set_host(platform.node())
-        local_platform.set_scratch(BasicConfig.LOCAL_ROOT_DIR)
+        local_platform.set_scratch(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR))
         local_platform.set_project(self.expid)
         local_platform.set_budget(self.expid)
-        local_platform.set_user(BasicConfig.LOCAL_TMP_DIR)
+        local_platform.set_user('')
         local_platform.update_cmds()
 
         platforms['local'] = local_platform

@@ -99,7 +99,7 @@ class LsfHeader:
         :return: queue directive
         :rtype: str
         """
-        if job.parameters['HPCQUEUE'] == '':
+        if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
             return "BSUB -q {0}".format(job.parameters['HPCQUEUE'])
