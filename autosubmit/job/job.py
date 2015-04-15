@@ -566,6 +566,7 @@ class Job:
 
         scriptname = self.name + '.cmd'
         file(self._tmp_path + scriptname, 'w').write(template_content)
+        os.chmod(self._tmp_path + scriptname, 0775)
 
         return scriptname
 
