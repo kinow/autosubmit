@@ -53,7 +53,7 @@ class AutosubmitConfig:
         self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
         self._proj_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
-                                              "model_" + expid + ".conf")
+                                              "proj_" + expid + ".conf")
 
     @property
     def experiment_file(self):
