@@ -51,7 +51,7 @@ class SgePlatform(HPCPlatform):
 
     def update_cmds(self):
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
-        self.remote_log_dir = os.path.join(self.root_dir, "/LOG_"+self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "LOG_"+self.expid)
         self.cancel_cmd = "qdel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = "qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"
