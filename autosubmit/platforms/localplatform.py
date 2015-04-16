@@ -49,7 +49,8 @@ class LocalPlatform(HPCPlatform):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, "tmp", 'LOG_' + self.expid)
+        self.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "tmp", 'LOG_' + self.expid)
         self.cancel_cmd = "kill -SIGINT"
         self._checkhost_cmd = "echo 1"
         self.put_cmd = "cp -p"

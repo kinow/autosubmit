@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from commands import getstatusoutput
 import textwrap
+import os
 
 from xml.dom.minidom import parseString
 
@@ -49,8 +50,8 @@ class SgePlatform(HPCPlatform):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
-                               self.expid)
+        self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "/LOG_"+self.expid)
         self.cancel_cmd = "qdel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = "qsub -wd " + self.remote_log_dir + " " + self.remote_log_dir + "/"

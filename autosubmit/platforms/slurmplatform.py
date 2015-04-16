@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+import os
 
 from xml.dom.minidom import parseString
 
@@ -62,8 +63,8 @@ class SlurmPlatform(HPCPlatform):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
-                               self.expid)
+        self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "/LOG_"+self.expid)
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = 'sbatch -D {1} {1}/'.format(self._host, self.remote_log_dir)

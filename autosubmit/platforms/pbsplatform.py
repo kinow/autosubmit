@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+import os
 
 from autosubmit.platforms.hpcplatform import HPCPlatform, HPCPlatformException
 from autosubmit.config.log import Log
@@ -59,8 +60,8 @@ class PBSPlatform(HPCPlatform):
         self.update_cmds()
 
     def update_cmds(self):
-        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" +
-                               self.expid + "/LOG_" + self.expid)
+        self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "/LOG_"+self.expid)
         self.cancel_cmd = "ssh " + self._host + " qdel"
         self._checkhost_cmd = "ssh " + self._host + " echo 1"
         self.put_cmd = "scp"

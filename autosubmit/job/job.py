@@ -510,6 +510,7 @@ class Job:
         parameters['CURRENT_TYPE'] = job_platform.type
         parameters['CURRENT_VERSION'] = job_platform.version
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
+        parameters['CURRENT_ROOT_DIR'] = job_platform.root_dir
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()

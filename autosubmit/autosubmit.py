@@ -404,6 +404,8 @@ class Autosubmit:
             parameters['{0}_TYPE'.format(platform.name)] = platform.type
             parameters['{0}_VERSION'.format(platform.name)] = platform.version
             parameters['{0}_SCRATCH_DIR'.format(platform.name)] = platform.scratch
+            parameters['{0}_ROOT_DIR'.format(platform.name)] = platform.root_dir
+
         platform = platforms[as_conf.get_platform()]
         parameters['HPCARCH'] = platform.name
         parameters['HPCUSER'] = platform.user
@@ -412,6 +414,7 @@ class Autosubmit:
         parameters['HPCTYPE'] = platform.type
         parameters['HPCVERSION'] = platform.version
         parameters['SCRATCH_DIR'] = platform.scratch
+        parameters['HPCROOT_DIR'] = platform.root_dir
         Log.debug("Updating parameters...")
         joblist.update_parameters(parameters)
 

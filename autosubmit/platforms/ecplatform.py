@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+import os
 from commands import getstatusoutput
 
 from autosubmit.platforms.hpcplatform import HPCPlatform, HPCPlatformException
@@ -58,8 +59,8 @@ class EcPlatform(HPCPlatform):
         """
         Updates commands for platforms
         """
-        self.remote_log_dir = (self.scratch + "/" + self.project + "/" + self.user + "/" + self.expid + "/LOG_" +
-                               self.expid)
+        self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "/LOG_"+self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
