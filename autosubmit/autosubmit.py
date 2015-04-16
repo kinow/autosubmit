@@ -162,7 +162,7 @@ class Autosubmit:
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
             group = subparser.add_mutually_exclusive_group()
-            group.add_argument('-u', '--user', action="store_true", help='configure only for this user')
+            group.add_argument('-a', '--all', action="store_true", help='configure for all users')
             group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from '
                                                                           'this path')
 
@@ -228,7 +228,7 @@ class Autosubmit:
                 return Autosubmit.create(args.expid, args.noplot)
             elif args.command == 'configure':
                 return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
-                                            args.platformsconfpath, args.jobsconfpath, args.user, args.local)
+                                            args.platformsconfpath, args.jobsconfpath, args.all, args.local)
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
@@ -616,7 +616,7 @@ class Autosubmit:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                        Log.info("{0} submitted\n", job.name)
+                        Log.info("{0} submitted to {1}\n", job.name, job.get_platform().name)
 
             time.sleep(safetysleeptime)
 
@@ -841,7 +841,7 @@ class Autosubmit:
         return joblist.check_scripts(as_conf)
 
     @staticmethod
-    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,  user, local):
+    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,  all, local):
         """
         Configure several paths for autosubmit: database, local root and others. Can be configured at system,
         user or local levels. Local level configuration precedes user level and user level precedes system
@@ -857,8 +857,8 @@ class Autosubmit:
         :type platforms_conf_path: str
         :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
         :type jobs_conf_path: str
-        :param user: True if this configuration has to be stored by user
-        :type user: bool
+        :param all: True if this configuration has to be stored for all the machine users
+        :type all: bool
         :param local: True if this configuration has to be stored in the local path
         :type local: bool
         """
@@ -888,12 +888,12 @@ class Autosubmit:
                 Log.error("jobs.conf path does not exist.")
                 return False
 
-        if user:
-            path = home_path
+        if all:
+            path = '/etc'
         elif local:
             path = '.'
         else:
-            path = '/etc'
+            path = home_path
         path = os.path.join(path, '.autosubmitrc')
 
         config_file = open(path, 'w')

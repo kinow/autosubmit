@@ -528,7 +528,8 @@ class Job:
         :rtype: str
         """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            template = file(os.path.join(project_dir, self.file), 'r').read()
+            template_file = file(os.path.join(project_dir, self.file), 'r')
+            template = template_file.read()
         else:
             template = ''
         current_platform = self.get_platform()
