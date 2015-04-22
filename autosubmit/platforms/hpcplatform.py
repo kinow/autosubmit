@@ -378,7 +378,7 @@ class HPCPlatform:
         """
         if self.send_command(self.get_submit_cmd(job_script)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
-            Log.debug(job_id)
+            Log.debug("Job ID: {0}", job_id)
             return int(job_id)
         else:
             return None

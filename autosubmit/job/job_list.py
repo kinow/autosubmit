@@ -395,8 +395,9 @@ class JobList:
         :rtype: JobList
         """
         setrecursionlimit(50000)
-        Log.debug("Saving JobList: " + self._pkl_path + self._job_list_file)
-        pickle.dump(self, file(self._pkl_path + self._job_list_file, 'w'))
+        path = os.path.join(self._pkl_path + self._job_list_file)
+        Log.debug("Saving JobList: " + path)
+        pickle.dump(self, file(path, 'w'))
 
     def update_from_file(self, store_change=True):
         if os.path.exists(self._pkl_path + self._update_file):
