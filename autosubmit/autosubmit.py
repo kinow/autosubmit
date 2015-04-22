@@ -1291,15 +1291,15 @@ class Autosubmit:
             content = file(as_conf.experiment_file).read()
 
             # Experiment
-            content = content.replace(re.search('DATELIST =.*', content).group(0),
+            content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
                                       "DATELIST = 20000101")
-            content = content.replace(re.search('MEMBERS =.*', content).group(0),
+            content = content.replace(re.search('^MEMBERS =.*', content, re.MULTILINE).group(0),
                                       "MEMBERS = fc0")
-            content = content.replace(re.search('CHUNKSIZE =.*', content).group(0),
+            content = content.replace(re.search('^CHUNKSIZE =.*', content, re.MULTILINE).group(0),
                                       "CHUNKSIZE = 4")
-            content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
+            content = content.replace(re.search('^NUMCHUNKS =.*', content, re.MULTILINE).group(0),
                                       "NUMCHUNKS = 1")
-            content = content.replace(re.search('PROJECT_TYPE =.*', content).group(0),
+            content = content.replace(re.search('^PROJECT_TYPE =.*', content, re.MULTILINE).group(0),
                                       "PROJECT_TYPE = none")
 
             file(as_conf.experiment_file, 'w').write(content)
