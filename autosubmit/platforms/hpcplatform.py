@@ -555,7 +555,7 @@ class HPCPlatform:
         :rtype: str
         """
         return 'nohup bash {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
-                                                                                      job_script))
+                                                                                   job_script))
 
     @staticmethod
     def get_pscall(job_id):

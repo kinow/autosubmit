@@ -169,12 +169,13 @@ class Autosubmit:
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
-            # Change_pkl
+            # Set stattus
             subparser = subparsers.add_parser('setstatus', description="sets job status for an experiment")
             subparser.add_argument('expid',  help='experiment identifier')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
-                                   choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                                   choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',
+                                            'QUEUING', 'RUNNING'),
                                    required=True,
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
@@ -844,7 +845,8 @@ class Autosubmit:
         return joblist.check_scripts(as_conf)
 
     @staticmethod
-    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,  all, local):
+    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
+                  machine, local):
         """
         Configure several paths for autosubmit: database, local root and others. Can be configured at system,
         user or local levels. Local level configuration precedes user level and user level precedes system
@@ -860,8 +862,8 @@ class Autosubmit:
         :type platforms_conf_path: str
         :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
         :type jobs_conf_path: str
-        :param all: True if this configuration has to be stored for all the machine users
-        :type all: bool
+        :param machine: True if this configuration has to be stored for all the machine users
+        :type machine: bool
         :param local: True if this configuration has to be stored in the local path
         :type local: bool
         """
@@ -891,7 +893,7 @@ class Autosubmit:
                 Log.error("jobs.conf path does not exist.")
                 return False
 
-        if all:
+        if machine:
             path = '/etc'
         elif local:
             path = '.'
@@ -1322,6 +1324,10 @@ class Autosubmit:
             return Status.SUSPENDED
         elif s == 'FAILED':
             return Status.FAILED
+        elif s == 'RUNNING':
+            return Status.RUNNING
+        elif s == 'QUEUING':
+            return Status.QUEUING
         elif s == 'UNKNOWN':
             return Status.UNKNOWN
 
