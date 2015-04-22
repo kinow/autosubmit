@@ -106,6 +106,7 @@ class Monitor:
         graph.add_subgraph(legend)
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
+        self.nodes_ploted = set()
         for job in joblist:
             if job.has_parents():
                 continue
@@ -120,6 +121,9 @@ class Monitor:
         return graph
 
     def _add_children(self, job, exp, node_job):
+        if job in self.nodes_ploted:
+            return
+        self.nodes_ploted.add(job)
         if job.has_children() != 0:
             for child in sorted(job.children, key=lambda k: k.name):
                 node_child = exp.get_node(child.name)
