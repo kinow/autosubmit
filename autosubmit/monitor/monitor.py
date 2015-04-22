@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import os
 
 import time
 from os import path
@@ -147,8 +148,8 @@ class Monitor:
         """
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_" + output_date + "." +
-                       output_format)
+        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
+                                   output_format)
 
         graph = self.create_tree_list(expid, joblist)
 
@@ -178,8 +179,8 @@ class Monitor:
         """
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = (BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/" + expid + "_statistics_" + output_date +
-                       "." + output_format)
+        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot",  expid + "_statistics_" + output_date +
+                                   "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
 
     @staticmethod
@@ -294,7 +295,7 @@ class Monitor:
         :param expid: experiment's identifier
         :type expid: str
         """
-        search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
+        search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
         files = [path.join(search_dir, f) for f in files if 'statistics' not in f]
@@ -314,7 +315,7 @@ class Monitor:
         :param expid: experiment's identifier
         :type expid: str
         """
-        search_dir = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/plot/"
+        search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
         files = [path.join(search_dir, f) for f in files if 'statistics' in f]

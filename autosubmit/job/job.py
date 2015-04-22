@@ -80,7 +80,7 @@ class Job:
         self.expid = name.split('_')[0]
         self._complete = True
         self.parameters = dict()
-        self._tmp_path = BasicConfig.LOCAL_ROOT_DIR + "/" + self.expid + "/" + BasicConfig.LOCAL_TMP_DIR + "/"
+        self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self._ancestors = None
 
     def __getstate__(self):

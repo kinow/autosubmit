@@ -255,7 +255,7 @@ class Autosubmit:
         """
         Log.info("Removing experiment directory...")
         try:
-            shutil.rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + expid_delete)
+            shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
         except OSError as e:
             Log.warning('Can not delete experiment folder: {0}', e)
         Log.info("Deleting experiment from database...")
@@ -299,9 +299,9 @@ class Autosubmit:
             if exp_id == '':
                 return ''
             try:
-                os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
+                os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id))
 
-                os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
+                os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
                 Log.info("Copying config files...")
                 # autosubmit config and experiment copyed from AS.
                 files = resource_listdir('autosubmit.config', 'files')
@@ -317,8 +317,9 @@ class Autosubmit:
                         else:
                             content = resource_string('autosubmit.config', 'files/' + filename)
 
-                        Log.debug(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename)
-                        file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename, 'w').write(content)
+                        conf_new_filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", new_filename)
+                        Log.debug(conf_new_filename)
+                        file(conf_new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
@@ -326,20 +327,21 @@ class Autosubmit:
                 return ''
         else:
             try:
-                if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id):
+                if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
                     exp_id = copy_experiment(copy_id, hpc, description, Autosubmit.autosubmit_version)
                     if exp_id == '':
                         return ''
-                    os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id)
-                    os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + '/conf')
+                    dir_exp_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
+                    os.mkdir(dir_exp_id)
+                    os.mkdir(dir_exp_id + '/conf')
                     Log.info("Copying previous experiment config directories")
-                    files = os.listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf")
+                    conf_copy_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf")
+                    files = os.listdir(conf_copy_id)
                     for filename in files:
-                        if os.path.isfile(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf/" + filename):
+                        if os.path.isfile(os.path.join(conf_copy_id, filename)):
                             new_filename = filename.replace(copy_id, exp_id)
-                            content = file(BasicConfig.LOCAL_ROOT_DIR + "/" + copy_id + "/conf/" + filename, 'r').read()
-                            file(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/conf/" + new_filename,
-                                 'w').write(content)
+                            content = file(os.path.join(conf_copy_id, filename), 'r').read()
+                            file(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                 else:
                     Log.critical("The previous experiment directory does not exist")
@@ -350,14 +352,15 @@ class Autosubmit:
                 return ''
 
         Log.debug("Creating temporal directory...")
-        os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "tmp")
+        exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
+        os.mkdir(os.path.join(exp_id_path, "tmp"))
 
         Log.debug("Creating pkl directory...")
-        os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "pkl")
+        os.mkdir(os.path.join(exp_id_path, "pkl"))
 
         Log.debug("Creating plot directory...")
-        os.mkdir(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot")
-        os.chmod(BasicConfig.LOCAL_ROOT_DIR + "/" + exp_id + "/" + "plot", 0o775)
+        os.mkdir(os.path.join(exp_id_path, "plot"))
+        os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
         Log.result("Experiment registered successfully")
         Log.user_warning("Remember to MODIFY the config files!")
         return exp_id
@@ -381,7 +384,7 @@ class Autosubmit:
         except IOError as e:
             Log.error("Can not create log file in path {0}: {1}".format(log_path, e.message))
 
-        if os.path.exists(BasicConfig.LOCAL_ROOT_DIR + "/" + expid):
+        if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
                 return Autosubmit._delete_expid(expid)
             else:
@@ -468,10 +471,7 @@ class Autosubmit:
         #     signal.signal(signal.SIGQUIT, platforms[platforms].smart_stop)
         #     signal.signal(signal.SIGINT, platforms[platforms].normal_stop)
 
-        # if rerun == 'false':
-        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
-        # else:
-        #     filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/rerun_job_list_' + expid + '.pkl'
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         Log.debug(filename)
 
         # the experiment should be loaded as well
@@ -646,7 +646,7 @@ class Autosubmit:
         root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
-        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
         jobs = cPickle.load(file(filename, 'r'))
@@ -675,7 +675,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'statistics.log'))
         Log.info("Loading jobs...")
-        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/' + root_name + '_' + expid + '.pkl'
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         jobs = cPickle.load(file(filename, 'r'))
         # if not isinstance(jobs, type([])):
         #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
@@ -825,7 +825,7 @@ class Autosubmit:
         if platforms is None:
             return False
 
-        filename = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + '/pkl/job_list_' + expid + '.pkl'
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         # the experiment should be loaded as well
         if os.path.exists(filename):
             joblist = cPickle.load(file(filename, 'rw'))
@@ -1066,7 +1066,7 @@ class Autosubmit:
             git_project_origin = as_conf.get_git_project_origin()
             git_project_branch = as_conf.get_git_project_branch()
             git_project_commit = as_conf.get_git_project_commit()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
@@ -1097,7 +1097,7 @@ class Autosubmit:
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
             svn_project_revision = as_conf.get_svn_project_revision()
-            project_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/" + BasicConfig.LOCAL_PROJ_DIR
+            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
@@ -1170,8 +1170,8 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
-        job_list = cPickle.load(file(BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/" + root_name + "_" + expid +
-                                     ".pkl", 'r'))
+        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + "_" + expid +
+                                     ".pkl"), 'r'))
 
         final_status = Autosubmit._get_status(final)
         if filter_chunks:

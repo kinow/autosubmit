@@ -471,21 +471,18 @@ class AutosubmitConfig:
         """
         save = False
         project_branch_sha = None
-        project_name = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
-                               BasicConfig.LOCAL_PROJ_DIR)[0]
-        (status1, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
-                                            BasicConfig.LOCAL_PROJ_DIR + "/" + project_name)
-        (status2, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
-                                            BasicConfig.LOCAL_PROJ_DIR + "/" + project_name + "; " +
+        full_proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
+        project_name = listdir(full_proj_dir)[0]
+        full_project_path = os.path.join(full_proj_dir, project_name)
+        (status1, output) = getstatusoutput("cd " + full_project_path)
+        (status2, output) = getstatusoutput("cd " + full_project_path + "; " +
                                             "git rev-parse --abbrev-ref HEAD")
         if status1 == 0 and status2 == 0:
             project_branch = output
             Log.debug("Project branch is: " + project_branch)
 
-            (status1, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
-                                                BasicConfig.LOCAL_PROJ_DIR + "/" + project_name)
-            (status2, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self.get_expid() + "/" +
-                                                BasicConfig.LOCAL_PROJ_DIR + "/" + project_name + "; " +
+            (status1, output) = getstatusoutput("cd " + full_project_path)
+            (status2, output) = getstatusoutput("cd " + full_project_path + "; " +
                                                 "git rev-parse HEAD")
             if status1 == 0 and status2 == 0:
                 project_sha = output

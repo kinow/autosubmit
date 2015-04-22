@@ -40,7 +40,7 @@ class JobList:
     :type expid: str
     """
     def __init__(self, expid):
-        self._pkl_path = BasicConfig.LOCAL_ROOT_DIR + "/" + expid + "/pkl/"
+        self._pkl_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl")
         self._update_file = "updated_list_" + expid + ".txt"
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._job_list_file = "job_list_" + expid + ".pkl"

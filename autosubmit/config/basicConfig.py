@@ -28,7 +28,7 @@ class BasicConfig:
     """
     DB_DIR = '~/autosubmit'
     DB_FILE = 'autosubmit.db'
-    DB_PATH = DB_DIR + "/" + DB_FILE
+    DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = '~/autosubmit'
     LOCAL_TMP_DIR = 'tmp'
     LOCAL_PROJ_DIR = 'proj'

@@ -19,6 +19,7 @@
 
 from os import path
 from os import listdir
+import os
 from shutil import rmtree
 from commands import getstatusoutput
 
@@ -41,17 +42,16 @@ class AutosubmitGit:
         """
         Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory.
         """
-        dirs = listdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR)
+        proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, BasicConfig.LOCAL_PROJ_DIR)
+        dirs = listdir(proj_dir)
         if dirs:
             Log.debug("Checking git directories status...")
             for dirname in dirs:
+                dirname_path = os.path.join(proj_dir, dirname)
                 Log.debug("Directory: " + dirname)
-                if path.isdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
-                              "/" + dirname):
-                    if path.isdir(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
-                                  "/" + dirname + "/.git"):
-                        (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid +
-                                                           "/" + BasicConfig.LOCAL_PROJ_DIR + "/" + dirname + "; " +
+                if path.isdir(dirname_path):
+                    if path.isdir(os.path.join(dirname_path, '.git')):
+                        (status, output) = getstatusoutput("cd " + dirname_path + "; " +
                                                            "git diff-index HEAD --")
                         if status == 0:
                             if output:
@@ -59,9 +59,7 @@ class AutosubmitGit:
                                 Log.user_warning("Commit needed!")
                                 return False
                             else:
-                                (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
-                                                                   self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
-                                                                   "/" + dirname + "; " +
+                                (status, output) = getstatusoutput("cd " + dirname_path + "; " +
                                                                    "git log --branches --not --remotes")
                                 if output:
                                     Log.info("Changes not pushed detected... SKIPPING!")
@@ -71,13 +69,11 @@ class AutosubmitGit:
                                     Log.debug("Ready to clean...")
                                     Log.debug("Cloning: 'git clone --bare " + dirname + " " + dirname + ".git' ...")
                                     # noinspection PyUnusedLocal
-                                    (status, output) = getstatusoutput("cd " + BasicConfig.LOCAL_ROOT_DIR + "/" +
-                                                                       self._expid + "/" + BasicConfig.LOCAL_PROJ_DIR +
-                                                                       "/" + "; " + "git clone --bare " + dirname +
+                                    (status, output) = getstatusoutput("cd " + proj_dir + "; " +
+                                                                       "git clone --bare " + dirname +
                                                                        " " + dirname + ".git")
                                     Log.debug("Removing: " + dirname)
-                                    rmtree(BasicConfig.LOCAL_ROOT_DIR + "/" + self._expid + "/" +
-                                           BasicConfig.LOCAL_PROJ_DIR + "/" + dirname)
+                                    rmtree(dirname_path)
                                     Log.debug(dirname + " directory clean!")
                                     Log.user_warning("Further runs will require 'git clone {0}.git {0} '...", dirname)
                         else:
