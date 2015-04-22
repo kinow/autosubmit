@@ -426,13 +426,13 @@ class Job:
         Check the presence of *COMPLETED* file and touch a Checked or failed file.
         Change statis to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
         """
-        logname = self._tmp_path + self.name + '_COMPLETED'
+        logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
             self._complete = True
-            os.system('touch ' + self._tmp_path + self.name + 'Checked')
+            os.system('touch ' + os.path.join(self._tmp_path, self.name + 'Checked'))
             self.status = Status.COMPLETED
         else:
-            os.system('touch ' + self._tmp_path + self.name + 'Failed')
+            os.system('touch ' + os.path.join(self._tmp_path, self.name + 'Failed'))
             self.status = default_status
 
     def remove_dependencies(self):

@@ -85,7 +85,7 @@ class EcPlatform(HPCPlatform):
         job_state = output.split('\n')
         if len(job_state) > 7:
             job_state = job_state[7].split()
-            if len(job_state) > 2:
+            if len(job_state) > 1:
                 return job_state[1]
         return 'DONE'
 
