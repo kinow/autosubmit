@@ -567,8 +567,8 @@ class Job:
             template_content = template_content.replace("%" + key + "%", str(parameters[key]))
 
         scriptname = self.name + '.cmd'
-        file(self._tmp_path + scriptname, 'w').write(template_content)
-        os.chmod(self._tmp_path + scriptname, 0775)
+        file(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, scriptname), 0775)
 
         return scriptname
 
