@@ -395,7 +395,7 @@ class JobList:
         :rtype: JobList
         """
         setrecursionlimit(50000)
-        path = os.path.join(self._pkl_path + self._job_list_file)
+        path = os.path.join(self._pkl_path, self._job_list_file)
         Log.debug("Saving JobList: " + path)
         pickle.dump(self, file(path, 'w'))
 
