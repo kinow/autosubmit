@@ -147,7 +147,7 @@ def new_experiment(hpc, description, version):
         if new_name == '':
             return ''
     while check_experiment_exists(new_name, False):
-        new_name = _next_name(last_exp_name)
+        new_name = _next_name(new_name)
         if new_name == '':
             return ''
     if not _set_experiment(new_name, description, version):
@@ -253,11 +253,6 @@ def last_name_used(hpc):
         Log.error('Connection to database could not be established: {0}', e.message)
         return ''
     conn.text_factory = str
-    if hpc == 'test':
-        hpc_name = 'test'
-    else:
-        hpc_name = hpc[0]
-    hpc_name += '___'
     cursor.execute('SELECT name '
                    'FROM experiment '
                    'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE autosubmit_version IS NOT NULL AND '
