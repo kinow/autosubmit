@@ -141,7 +141,7 @@ def new_experiment(hpc, description, version):
         if hpc == 'test':
             new_name = 'test0000'
         else:
-            new_name = '0000'
+            new_name = 'a000'
     else:
         new_name = _next_name(last_exp_name)
         if new_name == '':
@@ -263,10 +263,16 @@ def last_name_used(hpc):
                    'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE autosubmit_version IS NOT NULL AND '
                    'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     row = cursor.fetchone()
-    if row is None:
-        row = ('empty', )
     close_conn(conn, cursor)
-    return row[0]
+    if row is None:
+        return 'empty'
+
+    # If starts by number (during 3.0 beta some jobs starting with numbers where created), returns empty.
+    try:
+        int(row[0][0])
+        return 'empty'
+    except ValueError:
+        return row[0]
 
 
 def delete_experiment(name):
