@@ -89,7 +89,7 @@ HOW TO RESTART EXPERIMENT
 
 > autosubmit recovery  cxxx -s # saving the pickle file
 
-> nohup autosubmit run cxxx >& cxxx_02.log &
+> nohup autosubmit run cxxx
 
 
 FULL DOCUMENTATION AND HOW TOs
