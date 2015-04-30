@@ -102,11 +102,12 @@ class LocalPlatform(HPCPlatform):
             return False
         return True
 
-    def get_file(self, remote_path, local_path):
+    def get_file(self, remote_path, local_path, omit_error=False):
         command = '{0} {2} {1}'.format(self.get_cmd, local_path, remote_path)
         (status, output) = getstatusoutput(command)
         if status != 0:
-            Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+            if not omit_error:
+                Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
             return False
         return True
 
