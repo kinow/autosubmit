@@ -134,7 +134,7 @@ def new_experiment(hpc, description, version):
     :return: experiment id for the new experiment
     :rtype: str
     """
-    last_exp_name = last_name_used(hpc)
+    last_exp_name = last_name_used()
     if last_exp_name == '':
         return ''
     if last_exp_name == 'empty':
@@ -236,12 +236,10 @@ def _next_name(name):
     return base36encode(base36decode(name) + 1)
 
 
-def last_name_used(hpc):
+def last_name_used():
     """
     Gets last experiment identifier used for HPC
 
-    :param hpc: HPC name
-    :type hpc: str
     :return: last experiment identifier used for HPC, 'empty' if there is none
     :rtype: str
     """

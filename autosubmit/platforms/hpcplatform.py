@@ -143,7 +143,7 @@ class HPCPlatform:
             Log.error('Can not send file {0} to {1}: {2}', local_path, root_path, e.message)
             return False
 
-    def get_file(self, remote_path, local_path):
+    def get_file(self, remote_path, local_path, omit_error=False):
         """
         Copies file in remote_path to local_path
 
@@ -164,7 +164,8 @@ class HPCPlatform:
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not get file from {0} to {1}: {2}', remote_path, local_path, e.message)
+            if not omit_error:
+                Log.error('Can not get file from {0} to {1}: {2}', remote_path, local_path, e.message)
             return False
 
     def get_ssh_output(self):
@@ -338,7 +339,7 @@ class HPCPlatform:
         else:
             Log.error('The script {0} has not been sent'.format(job_script))
 
-    def get_completed_files(self, jobname, retries=1):
+    def get_completed_files(self, jobname, retries=1, omit_error=False):
         """
         Copies *COMPLETED* files from remote to local
 
@@ -352,14 +353,14 @@ class HPCPlatform:
         if os.path.exists(completed_local_path):
             os.remove(completed_local_path)
         completed_remote_path = os.path.join(self.remote_log_dir, filename)
-        if self.get_file(completed_remote_path, completed_local_path):
+        if self.get_file(completed_remote_path, completed_local_path, omit_error):
             Log.debug('The COMPLETED files have been transfered')
             return True
 
         while retries > 0:
             # wait five seconds to check get file
             sleep(5)
-            if self.get_file(completed_remote_path, completed_local_path):
+            if self.get_file(completed_remote_path, completed_local_path, omit_error):
                 Log.debug('The COMPLETED files have been transfered')
                 return True
             retries -= 1

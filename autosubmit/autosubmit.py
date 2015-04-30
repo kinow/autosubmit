@@ -778,7 +778,7 @@ class Autosubmit:
                 job.platform_name = hpcarch
             job.set_platform(platforms[job.platform_name])
 
-            if job.get_platform().get_completed_files(job.name, 0):
+            if job.get_platform().get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
@@ -787,17 +787,12 @@ class Autosubmit:
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
         sys.setrecursionlimit(50000)
-        job_list.update_list()
-        # cPickle.dump(job_list, file(path, 'w'))
+        job_list.update_list(False)
+        job_list.update_from_file(False)
 
         if save:
-            job_list.update_from_file()
-        else:
-            job_list.update_from_file(False)
+            job_list.save()
 
-        if save:
-            sys.setrecursionlimit(50000)
-            cPickle.dump(job_list, file(path, 'w'))
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, job_list.get_job_list())
