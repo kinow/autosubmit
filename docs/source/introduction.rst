@@ -52,7 +52,7 @@ To create a new experiment, run the command:
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
 
-This command assigns a unique four character identifier (``xxxx``, all the names starting from a letter, the other three characters allowing for the use of cyphers) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
+This command assigns a unique four character identifier (``xxxx``, names starting from a letter, the other three characters) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
 
 .. figure:: fig1.png
    :scale: 25 %

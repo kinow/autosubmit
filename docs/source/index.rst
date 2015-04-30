@@ -16,4 +16,5 @@ Welcome to autosubmit's documentation!
    usage
    troubleshoot
    tutorial
+   project
    codedoc/main
