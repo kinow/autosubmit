@@ -112,34 +112,69 @@ Example:
 
 	autosubmit run cxxx
 
+.. important:: Before launching Autosubmit check password-less ssh is feasible (*HPCName* is the hostname):
 
-.. caution:: By The Way
-    Before launching AUTOSUBMIT check the following stuff:
+    ``ssh HPCName``
 
-    ``ssh localhost`` # password-les ssh is feasible
-    ``ssh HPC`` # say for example similarly check other HPC's where password-less ssh is feasible
+More info on password-less ssh can be found at: http://www.linuxproblem.org/art_9.html
 
-    After launching Autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC) and renew the login access accordingly (by using token/key etc) before expiry.
+.. caution:: After launching Autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC) and renew the login access accordingly (by using token/key etc) before expiry.
 
 How to monitor the experiment
 =============================
+To monitor the status of the experiment, use the command:
 ::
 
-	usage: autosubmit monitor [-h] [-o {pdf,png,ps}] expid
+	autosubmit monitor EXPID
+
+*EXPID* is the experiment identifier.
+
+Options:
+::
+
+	usage: autosubmit monitor [-h] [-o {pdf,png,ps,svg}] expid
 
 	  expid                 experiment identifier
 
 	  -h, --help            show this help message and exit
-	  -o {pdf,png,ps}, --output {pdf,png,ps}
+	  -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
 	                        type of output for generated plot
 
+Example:
+::
+
+	autosubmit monitor cxxx
+
+The location where user can find the generated plots with date and timestamp can be found below:
+
+::
+
+	<experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
 
 How to monitor job statistics
 =============================
-The following command could be adopted to generate the plots for visualizing the simulation jobs statistics of the experiment at any instance:
+The following command could be adopted to generate the plots for visualizing the jobs statistics of the experiment at any instance:
 ::
 
-	autosubmit statistics cxxx
+	autosubmit stats EXPID
+
+*EXPID* is the experiment identifier.
+
+Options:
+::
+
+	usage: autosubmit stats [-h] [-o {pdf,png,ps,svg}] expid
+
+	  expid                 experiment identifier
+
+	  -h, --help            show this help message and exit
+	  -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
+	                        type of output for generated plot
+
+Example:
+::
+
+	autosubmit stats cxxx
 
 The location where user can find the generated plots with date and timestamp can be found below:
 
@@ -147,70 +182,6 @@ The location where user can find the generated plots with date and timestamp can
 
 	<experiments_directory>/cxxx/plot/cxxx_statistics_<date>_<time>.pdf
 
-How to change the job status without stopping autosubmit
-========================================================
-
-Create a file in ``<experiments_directory>/<expid>/pkl/`` named ``updated_list_<expid>.txt``.
-This file should have two columns: the first one has to be the job_name and the second one the status (READY, COMPLETED, FAILED, SUSPENDED). Keep in mind that autosubmit
-reads the file automatically so it is suggested to create the file in another location like ``/tmp`` or ``/var/tmp`` and then copy/move it to the ``pkl`` folder. Alternativelly you can create the file with a different name an rename it when you have finished.
-
-
-How to change the job status stopping autosubmit
-================================================
-
-This procedure allows you to modify the pickle without having any knowledge of python. Beware that Autosubmit must be stopped to use ``change_pkl.py``. 
-You must execute 
-
-::
-
-	autosubmit change_pkl -h
-
-	change job status for an experiment
-
-	positional arguments:
-	  expid                 experiment identifier
-
-	optional arguments:
-		-h, --help            show this help message and exit
-		-s, --save            Save changes to disk
-		-t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
-								Supply the target status
-			-l LIST, --list LIST  Supply the list of job names to be changed. Default =
-								"Any". LIST = "b037_20101101_fc3_21_sim
-								b037_20111101_fc4_26_sim"
-			-fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
-								Supply the list of chunks to change the status.
-								Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4]
-								fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
-			-fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}, --filter_status {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
-								Select the original status to filter the list of jobs
-			-ft FILTER_TYPE, --filter_type FILTER_TYPE
-								Select the job type to filter the list of jobs
-
-
-
-to read help.
-
-This script has three mandatory arguments.
-
-The first with which we must specify the experiment id,
-the -t with which we must specify the target status of the jobs we want to change to ``{READY,COMPLETED,WAITING,
-SUSPENDED,FAILED,UNKNOWN}``.
-
-The third argument has two alternatives, the -l and -f with which we can apply a filter for the jobs we want to change.
-
-The -l flag recieves a list of jobnames separated by blank spaces (i.e. ``"b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"``) same as in the previous ``updated_list_<expid>.txt``.
-If we supply the key word "Any", all jobs will be changed to the target status.
-
-The -f flag can be used in three modes: the chunk filter, the status filter or the type filter.
-
-* The variable -fc should be a list of individual chunks or ranges of chunks in the following format: ``"[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"``
-
-* The variable -fs can be one of the following status for job: ``{Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}``
-
-* The variable -ft can be one of the defined types of job.
-
-When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.
 
 How to stop autosubmit
 ======================

@@ -9,7 +9,7 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 
 - Pre-requisties: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion) must be available at local host machine. These packages (argparse, dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko) must be available for python runtime.
 
-**The host machine has to be able to access HPC's/Clusters via password-less ssh.**
+.. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh.
 
 To install autosubmit just execute:
 ::
@@ -41,6 +41,6 @@ For installing the database for Autosubmit on the configured folder, when no dat
 
     autosubmit install
 
-**Be careful ! autosubmit install will create a blank database.**
+.. warning:: Be careful ! autosubmit install will create a blank database.
 
 Now you are ready to use Autosubmit !
