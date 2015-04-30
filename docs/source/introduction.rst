@@ -14,7 +14,7 @@ to run NMMB air quality model.
 
 Autosubmit has been used to manage models running at supercomputers in IC3, BSC, ECMWF, EPCC, PDC and OLCF.
 
-Autosubmit 3.0 version is now available via PyPi package under the terms of GNU General Public License.
+Autosubmit 3.0 version is now available via *PyPi* package under the terms of *GNU General Public License*.
 
 
 Why is Autosubmit needed ?
@@ -52,7 +52,7 @@ To create a new experiment, run the command:
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
 
-This command assigns a unique four character identifier (``xxxx``) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
+This command assigns a unique four character identifier (``xxxx``, all the names starting from a letter, the other three characters allowing for the use of cyphers) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
 
 .. figure:: fig1.png
    :scale: 25 %
