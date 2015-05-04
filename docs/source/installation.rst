@@ -41,6 +41,6 @@ For installing the database for Autosubmit on the configured folder, when no dat
 
     autosubmit install
 
-.. warning:: Be careful ! autosubmit install will create a blank database.
+.. danger:: Be careful ! autosubmit install will create a blank database.
 
 Now you are ready to use Autosubmit !
