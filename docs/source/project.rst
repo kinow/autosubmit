@@ -5,8 +5,11 @@ Developing a project
 Autosubmit is used at IC3 to run EC-Earth. To do that, a git repository has been created that contains the model source code and the scripts used to run the tasks.
 
 .. figure:: fig3.png
+   :width: 70%
    :align: center
    :alt: EC-Earth experiment
+
+   Example of monitoring plot for EC-Earth run with Autosubmit for 1 start date, 1 member and 3 chunks.
 
 The workflow is defined using seven job types, as shown in the figure above. These job types are:
 

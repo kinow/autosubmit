@@ -458,7 +458,7 @@ To refresh the project directory of the experiment, use the command:
 
 It checks experiment configuration and copy code from original repository to project directory.
 
-.. danger:: DO NOT USE THIS COMMAND IF YOU ARE NOT SURE !
+.. warning:: DO NOT USE THIS COMMAND IF YOU ARE NOT SURE !
     Project directory will be overwritten and you may loose local changes.
 
 
@@ -488,7 +488,7 @@ To delete the experiment, use the command:
 
 *EXPID* is the experiment identifier.
 
-.. danger:: DO NOT USE THIS COMMAND IF YOU ARE NOT SURE !
+.. warning:: DO NOT USE THIS COMMAND IF YOU ARE NOT SURE !
     It deletes the experiment from database and experiment’s folder.
 
 Options:
@@ -499,7 +499,8 @@ Options:
 	  expid                 experiment identifier
 
 	  -h, --help            show this help message and exit
-      -f, --force  deletes experiment without confirmation
+	  -f, --force  deletes experiment without confirmation
+
 
 Example:
 ::
