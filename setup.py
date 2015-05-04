@@ -47,7 +47,6 @@ setup(
         'autosubmit/config/files/autosubmit.conf',
         'autosubmit/config/files/expdef.conf',
         'autosubmit/database/data/autosubmit.sql',
-		'docs/autosubmit.pdf'
     ]
     },
     scripts=['bin/autosubmit'],  # data_files = [
