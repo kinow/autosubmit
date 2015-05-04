@@ -1,5 +1,5 @@
 # Online documentation: http://autosbumit.ic3.cat
-# Full document: docs/autosubmit.pdf
+# PDF documentation: docs/autosubmit.pdf
 
 Autosubmit is a tool to create, manage and monitor experiments using
 Computing Clusters, HPC's and Supercomputers remotely via ssh.
@@ -96,4 +96,5 @@ FULL DOCUMENTATION AND HOW TOs
 ==============================
 
 Check the Autosubmit documentation provided in the docs/ folder of the package, in PDF format.
-Look at the online documentation http://autosbumit.ic3.cat
+Check the online documentation in the following web page: http://autosbumit.ic3.cat
+

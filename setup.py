@@ -46,7 +46,7 @@ setup(
     package_data={'autosubmit': [
         'autosubmit/config/files/autosubmit.conf',
         'autosubmit/config/files/expdef.conf',
-        'autosubmit/database/data/autosubmit.sql'
+        'autosubmit/database/data/autosubmit.sql',
     ]
     },
     scripts=['bin/autosubmit'],  # data_files = [

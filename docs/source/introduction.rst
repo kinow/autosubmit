@@ -55,7 +55,7 @@ To create a new experiment, run the command:
 This command assigns a unique four character identifier (``xxxx``, names starting from a letter, the other three characters) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
 
 .. figure:: fig1.png
-   :scale: 25 %
+   :width: 33%
    :align: center
    :alt: experiment folder
 
@@ -64,12 +64,14 @@ This command assigns a unique four character identifier (``xxxx``, names startin
 Experiment configuration
 ------------------------
 
-To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and ``platforms_xxxx.conf`` in the ``conf`` folder of the experiment.
+To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and ``platforms_xxxx.conf`` in the ``conf`` folder of the experiment (see contents in Figure 1.2).
 
-.. image:: fig2.png
-   :scale: 50 %
+.. figure:: fig2.png
+   :width: 50%
    :align: center
    :alt: configuration files
+
+   Configuration files content
 
 After that, you are expected to run the command:
 ::
@@ -98,6 +100,7 @@ To monitor the status of the experiment, the command:
 is available. This will plot the workflow of the experiment and the current status.
 
 .. figure:: fig3.png
+   :width: 70%
    :align: center
    :alt: experiment plot
 
