@@ -23,17 +23,37 @@ Examples:
 
 	autosubmit expid --HPC ithaca --description "experiment is about..."
 
+.. caution:: The *HPCname*, e.g. ithaca, must be defined in the platforms configuration.
+    See next section :ref:`confexp`.
+
 ::
 
-	autosubmit expid --copy i001 --HPC ithaca -d "experiment is about..."
+	autosubmit expid --copy a000 --HPC ithaca -d "experiment is about..."
 
+.. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
+
+.. _confexp:
 
 Second Step: Experiment configuration
 -------------------------------------
 
 To configure the experiment, edit ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` and ``platforms_cxxx.conf`` in the ``conf`` folder of the experiment.
 
-To configure Autosubmit parameters for the experiment, edit ``autosubmit_cxxx.conf``.
+*expdef_cxxx.conf* contains:
+    - Start dates, members and chunks (number and length).
+    - Experiment project source: origin (version control system or path)
+    - Project configuration file path.
+
+*jobs_cxxx.conf* contains the workflow to be run:
+    - Scripts to execute.
+    - Dependencies between tasks.
+    - Task requirements (processors, wallclock time...).
+    - Platform to use.
+
+*platforms_cxxx.conf* contains:
+    - HPC, fat-nodes and supporting computers configuration.
+
+.. note:: *platforms_cxxx.conf* is usually provided by technicians, users will only have to change login and accounting options for HPCs.
 
 Examples:
 ::
@@ -52,6 +72,23 @@ Examples:
 		# Path relative to the project directory
 		FILE = scripts/run.sh
 
+You may want to configure Autosubmit parameters for the experiment. Just edit ``autosubmit_cxxx.conf``.
+
+*expdef_cxxx.conf* contains:
+    - Maximum number of jobs to be waiting in the HPC queue.
+    - Maximum number of jobs to be running at the same time at the HPC.
+    - Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status.
+    - Number of retrials if a job fails.
+
+Example:
+::
+
+    vi <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf
+
+        # Maximum number of jobs to be running at the same time at the HPC
+        # Default = 6
+        TOTALJOBS = 10
+
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::
 
@@ -68,12 +105,16 @@ Third Step: Experiment run
 
 After filling the experiment configuration and create, user can go into ``proj`` which has a copy of the model.
 
-A complete reference on how to prepare the experiment project is detailed in the following section of this documentation:
+A short reference on how to prepare the experiment project is detailed in the following section of this documentation:
 
 :doc:`project`
 
 The experiment project contains the scripts specified in ``jobs_xxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
-To configure experiment project parameters for the experiment, edit ``proj_cxxx.conf``. The project dependant experiment variables, will be substituted in the scripts to be run.
+
+To configure experiment project parameters for the experiment, edit ``proj_cxxx.conf``.
+
+*proj_cxxx.conf* contains:
+    - The project dependant experiment variables that Autosubmit will substitute in the scripts to be run.
 
 Example:
 ::
@@ -86,7 +127,7 @@ Example:
 Launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
 ::
 
-	nohup autosubmit run cxxx
+	nohup autosubmit run cxxx &
 
 Fourth Step: Experiment monitor
 -------------------------------
