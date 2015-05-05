@@ -385,15 +385,20 @@ Example:
 
 	vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
 
-	    [rerun]
-	    # Is a rerun or not? [Default: Do set FALSE]. BOOLEAN = TRUE, FALSE
-	    RERUN = TRUE
-	    # If RERUN = TRUE then supply the list of chunks to rerun
-	    # LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
-	    CHUNKLIST = [ 19601101 [ fc1 [1] ]
+.. code-block:: ini
 
+    [...]
 
-Then we are able to start again Autosubmit for the rerun of cxxx 19601101, chunk 1, member 1:
+    [rerun]
+    # Is a rerun or not? [Default: Do set FALSE]. BOOLEAN = TRUE, FALSE
+    RERUN = TRUE
+    # If RERUN = TRUE then supply the list of chunks to rerun
+    # LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
+    CHUNKLIST = [ 19601101 [ fc1 [1] ]
+
+    [...]
+
+Then you are able to start again Autosubmit for the rerun of cxxx 19601101, chunk 1, member 1:
 
 ::
 

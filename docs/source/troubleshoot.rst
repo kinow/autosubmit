@@ -115,8 +115,10 @@ Example:
 
     vi updated_list_cxxx.txt
 
-        cxxx_20101101_fc3_21_sim    READY
-        cxxx_20111101_fc4_26_sim    READY
+.. code-block:: ini
+
+    cxxx_20101101_fc3_21_sim    READY
+    cxxx_20111101_fc4_26_sim    READY
 
 If Autosubmit finds the above file, it will process it. You can check that the processing was OK at a given date and time,
 if you see that the file name has changed to:
