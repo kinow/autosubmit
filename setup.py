@@ -36,7 +36,7 @@ setup(
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
     author_email='domingo.manubens@ic3.cat',
-    url='https://autosubmit.ic3.cat',
+    url='http://autosubmit.ic3.cat',
     download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>=1,<2', 'pydotplus', 'pyparsing', 'paramiko'],
