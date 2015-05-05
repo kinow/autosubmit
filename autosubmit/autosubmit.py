@@ -155,7 +155,7 @@ class Autosubmit:
             subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
             subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
                                                                                 'supplied, it will prompt for it')
-            subparser.add_argument('-qc', '--platformsconfpath', default=None,
+            subparser.add_argument('-pc', '--platformsconfpath', default=None,
                                    help='path to platforms.conf file to use by default. If not supplied, it will not'
                                    ' prompt for it')
             subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
@@ -911,7 +911,7 @@ class Autosubmit:
                 if jobs_conf_path is not None:
                     parser.set('conf', 'jobs', jobs_conf_path)
                 if platforms_conf_path is not None:
-                    parser.set('conf', 'queues', platforms_conf_path)
+                    parser.set('conf', 'platforms', platforms_conf_path)
 
             parser.write(config_file)
             config_file.close()
