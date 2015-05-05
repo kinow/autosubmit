@@ -69,6 +69,7 @@ class StatisticsSnippet:
             # Autosubmit tailer
             ###################
 
+            set -x
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
             errfile_ptrn="\.e"
@@ -125,7 +126,8 @@ class StatisticsSnippet:
             ###################
             # Autosubmit tailer
             ###################
-            
+
+            set -x
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
             case %HPCTYPE% in
