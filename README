@@ -1,5 +1,3 @@
-# Online documentation: http://autosbumit.ic3.cat
-# PDF documentation: docs/autosubmit.pdf
 
 Autosubmit is a tool to create, manage and monitor experiments using
 Computing Clusters, HPC's and Supercomputers remotely via ssh.

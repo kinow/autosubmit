@@ -27,4 +27,7 @@ The different projects contain the shell script to run, for each job type (local
 Additionally the user can modify the sources under proj folder.
 The executable scripts are created at runtime so the modifications on the sources can be done on the fly.
 
+.. warning:: Autosubmit automatically adds small shell script code blocks in the header and the tailer of your scripts, to control the workflow.
+    Please, remove any exit command in the end of your scripts, e.g. ``exit 0``.
+
 .. important:: For a complete reference on how to develop an EC-Earth project, please have a look in the following wiki page: http://ic3.cat/wikicfu/index.php/Models
