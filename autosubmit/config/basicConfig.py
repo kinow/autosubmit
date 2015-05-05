@@ -65,8 +65,8 @@ class BasicConfig:
             BasicConfig.DB_FILE = parser.get('database', 'filename')
         if parser.has_option('local', 'path'):
             BasicConfig.LOCAL_ROOT_DIR = parser.get('local', 'path')
-        if parser.has_option('conf', 'queues'):
-            BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get('conf', 'queues')
+        if parser.has_option('conf', 'platforms'):
+            BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get('conf', 'platforms')
         if parser.has_option('conf', 'jobs'):
             BasicConfig.DEFAULT_JOBS_CONF = parser.get('conf', 'jobs')
 

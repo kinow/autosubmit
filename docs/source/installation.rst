@@ -31,7 +31,7 @@ If it does not exist, create a repository for experiments: Say for example ``/cf
 Then follow the confiugre instructions after executing:
 ::
 
-    autosubmit configure -u
+    autosubmit configure
 
 and introduce path to experiment storage and database. Folders must exit.
 
