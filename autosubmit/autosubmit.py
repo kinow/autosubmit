@@ -203,6 +203,8 @@ class Autosubmit:
             # Refresh
             subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
             subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
+                                   help='overwrite model conf file')
 
             args = parser.parse_args()
 
@@ -238,7 +240,7 @@ class Autosubmit:
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
-                return Autosubmit.refresh(args.expid)
+                return Autosubmit.refresh(args.expid, args.model_conf)
         except Exception as e:
             from traceback import format_exc
             Log.critical('Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
@@ -940,7 +942,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def refresh(expid):
+    def refresh(expid, model_conf):
         """
         Refresh project folder for given experiment
 
@@ -957,7 +959,19 @@ class Autosubmit:
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
+        Autosubmit._create_model_conf(as_conf, model_conf)
         return True
+
+    @staticmethod
+    def _create_model_conf(as_conf, force):
+        destiny = as_conf.project_file
+        if os.path.exists(destiny):
+            if force:
+                os.remove(destiny)
+            else:
+                return
+        if as_conf.get_project_type() != 'none':
+            shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
 
     @staticmethod
     def create(expid, noplot):
@@ -984,10 +998,7 @@ class Autosubmit:
 
         if not Autosubmit._copy_code(as_conf, expid, project_type, False):
             return False
-        if as_conf.get_project_type() != 'none':
-            destiny = as_conf.project_file
-            if not os.path.exists(destiny):
-                shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
+        Autosubmit._create_model_conf(as_conf, False)
 
         if project_type != "none":
             # Check project configuration
@@ -1113,8 +1124,7 @@ class Autosubmit:
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
-            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR,
-                                        project_destination)
+            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
