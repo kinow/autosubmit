@@ -475,6 +475,7 @@ Options:
 	  expid                 experiment identifier
 
 	  -h, --help            show this help message and exit
+	  -mc, --model_conf     overwrite model conf file
 
 Example:
 ::
