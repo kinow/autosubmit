@@ -1124,8 +1124,7 @@ class Autosubmit:
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
-            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR,
-                                        project_destination)
+            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
