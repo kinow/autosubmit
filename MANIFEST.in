@@ -1,3 +1,5 @@
 include LICENSE
 include VERSION
+include CHANGES
+include docs/autosubmit.pdf
 global-include *.conf *.sql
