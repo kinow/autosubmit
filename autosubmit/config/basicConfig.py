@@ -76,11 +76,11 @@ class BasicConfig:
         Reads configuration from .autosubmitrc files, first from /etc, then for user
         directory and last for current path.
         """
-        filename = '.autosubmitrc'
+        filename = 'autosubmitrc'
 
         BasicConfig.__read_file_config(os.path.join('/etc', filename))
-        BasicConfig.__read_file_config(os.path.join(os.path.expanduser('~'), filename))
-        BasicConfig.__read_file_config(os.path.join('.', filename))
+        BasicConfig.__read_file_config(os.path.join(os.path.expanduser('~'), '.' + filename))
+        BasicConfig.__read_file_config(os.path.join('.', '.' + filename))
 
         BasicConfig._update_config()
         return
