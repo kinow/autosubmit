@@ -20,6 +20,7 @@ from commands import getstatusoutput
 import os
 import textwrap
 from xml.dom.minidom import parseString
+import subprocess
 
 from autosubmit.platforms.hpcplatform import HPCPlatform
 from autosubmit.config.basicConfig import BasicConfig
@@ -67,7 +68,7 @@ class LocalPlatform(HPCPlatform):
         return self.mkdir_cmd
 
     def parse_job_output(self, output):
-        return output
+        return output[0]
 
     def get_submitted_job_id(self, output):
         return output
@@ -87,10 +88,12 @@ class LocalPlatform(HPCPlatform):
         return True
 
     def send_command(self, command):
-        (status, output) = getstatusoutput(command)
-        if status != 0:
-            Log.error('Could not execute command {0} on {1}'.format(command, self._host))
+        try:
+            output = subprocess.check_output(command, shell=True)
+        except subprocess.CalledProcessError as e:
+            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self._host))
             return False
+        Log.debug("Command '{0}': {1}", command, output)
         self._ssh_output = output
         return True
 
