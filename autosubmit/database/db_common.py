@@ -123,22 +123,25 @@ def check_experiment_exists(name, error_on_inexistence=True):
     return True
 
 
-def new_experiment(hpc, description, version):
+def new_experiment(description, version, test=False):
     """
     Stores a new experiment on the database and generates its identifier
 
-    :param hpc: name of the main HPC to be used by the experiment
-    :type hpc: str
+    :param test: flag for test experiments
+    :type test: bool
     :param description: experiment's description
     :type description: str
     :return: experiment id for the new experiment
     :rtype: str
     """
-    last_exp_name = last_name_used()
+    if test:
+        last_exp_name = last_name_used(True)
+    else:
+        last_exp_name = last_name_used()
     if last_exp_name == '':
         return ''
     if last_exp_name == 'empty':
-        if hpc == 'test':
+        if test:
             new_name = 'test0000'
         else:
             new_name = 'a000'
@@ -156,14 +159,12 @@ def new_experiment(hpc, description, version):
     return new_name
 
 
-def copy_experiment(name, hpc, description, version):
+def copy_experiment(name, description, version, test=False):
     """
     Creates a new experiment by copying an existing experiment
 
     :param name: identifier of experiment to copy
     :type name: str
-    :param hpc: name of the main HPC to be used by the experiment
-    :type hpc: str
     :param description: experiment's description
     :type description: str
     :return: experiment id for the new experiment
@@ -171,7 +172,7 @@ def copy_experiment(name, hpc, description, version):
     """
     if not check_experiment_exists(name):
         return ''
-    new_name = new_experiment(hpc, description, version)
+    new_name = new_experiment(description, version, test)
     return new_name
 
 
@@ -236,11 +237,13 @@ def _next_name(name):
     return base36encode(base36decode(name) + 1)
 
 
-def last_name_used():
+def last_name_used(test=False):
     """
-    Gets last experiment identifier used for HPC
+    Gets last experiment identifier used
 
-    :return: last experiment identifier used for HPC, 'empty' if there is none
+    :param test: flag for test experiments
+    :type test: bool
+    :return: last experiment identifier used, 'empty' if there is none
     :rtype: str
     """
     if not check_db():
@@ -251,10 +254,18 @@ def last_name_used():
         Log.error('Connection to database could not be established: {0}', e.message)
         return ''
     conn.text_factory = str
-    cursor.execute('SELECT name '
-                   'FROM experiment '
-                   'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE autosubmit_version IS NOT NULL AND '
-                   'NOT (autosubmit_version LIKE "%3.0.0b%"))')
+    if test:
+        cursor.execute('SELECT name '
+                       'FROM experiment '
+                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "test%" AND '
+                       'autosubmit_version IS NOT NULL AND '
+                       'NOT (autosubmit_version LIKE "%3.0.0b%"))')
+    else:
+        cursor.execute('SELECT name '
+                       'FROM experiment '
+                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name NOT LIKE "test%" AND '
+                       'autosubmit_version IS NOT NULL AND '
+                       'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:

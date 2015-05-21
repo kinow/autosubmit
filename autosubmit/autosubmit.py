@@ -267,7 +267,7 @@ class Autosubmit:
         return ret
 
     @staticmethod
-    def expid(hpc, description, copy_id='', dummy=False):
+    def expid(hpc, description, copy_id='', dummy=False, test=False):
         """
         Creates a new experiment for given HPC
 
@@ -279,6 +279,7 @@ class Autosubmit:
         :param description: short experiment's description.
         :param copy_id: experiment identifier of experiment to copy
         :param dummy: if true, writes a default dummy configuration for testing
+        :param test: if true, creates an experiment for testing
         :return: experiment identifier. If method fails, returns ''.
         :rtype: str
         """
@@ -297,7 +298,7 @@ class Autosubmit:
             Log.error("Missing HPC.")
             return ''
         if not copy_id:
-            exp_id = new_experiment(hpc, description, Autosubmit.autosubmit_version)
+            exp_id = new_experiment(description, Autosubmit.autosubmit_version)
             if exp_id == '':
                 return ''
             try:
@@ -330,7 +331,7 @@ class Autosubmit:
         else:
             try:
                 if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
-                    exp_id = copy_experiment(copy_id, hpc, description, Autosubmit.autosubmit_version)
+                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test)
                     if exp_id == '':
                         return ''
                     dir_exp_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
@@ -1411,7 +1412,7 @@ class Autosubmit:
     @staticmethod
     def test(expid, chunks, member=None, stardate=None, hpc=None, branch=None):
         """
-        Method to conduct a test for a given experiment. It creates a new experiment for a given experiment qith a
+        Method to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
         given number of chunks with a random start date and a random member to be run on a random HPC.
 
 
@@ -1433,7 +1434,7 @@ class Autosubmit:
         :return: True if test was succesful, False otherwise
         :rtype: bool
         """
-        testid = Autosubmit.expid('test', 'test experiment for {0}'.format(expid), expid, False)
+        testid = Autosubmit.expid('test', 'test experiment for {0}'.format(expid), expid, False, True)
         if testid == '':
             return False
 
