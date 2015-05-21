@@ -1,2 +1,7 @@
+3.0.2
+        Fixed bug in expid test.
+        Fixed bug in localplatform.
+3.0.1
+        Fixed bug in config.
 3.0.0
-		Restructure layout
+		Restructure layout.
