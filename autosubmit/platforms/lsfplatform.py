@@ -103,7 +103,7 @@ class LsfHeader:
         if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
-            return "BSUB -q {0}".format(job.parameters['HPCQUEUE'])
+            return "BSUB -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
     SERIAL = textwrap.dedent("""\
             #!/bin/sh
@@ -113,8 +113,8 @@ class LsfHeader:
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             #
@@ -129,8 +129,8 @@ class LsfHeader:
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             #BSUB -R "span[ptile=16]"

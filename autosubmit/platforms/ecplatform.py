@@ -171,8 +171,8 @@ class EcHeader:
             #@ class            = ns
             #@ job_type         = serial
             #@ job_name         = %JOBNAME%
-            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
+            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
             #@ notification     = error
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ wall_clock_limit = %WALLCLOCK%:00
@@ -191,8 +191,8 @@ class EcHeader:
             #@ class            = np
             #@ job_type         = parallel
             #@ job_name         = %JOBNAME%
-            #@ output           = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
+            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
+            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
             #@ notification     = error
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ ec_smt           = no
@@ -229,7 +229,7 @@ class EcCcaHeader:
              #PBS -N %JOBNAME%
              #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%HPCBUDG%
+             #PBS -l EC_billing_account=%CURRENT_BUDG%
              #
              ###############################################################################
 
@@ -247,7 +247,7 @@ class EcCcaHeader:
              #PBS -l EC_threads_per_task=%NUMTHREADS%
              #PBS -l EC_tasks_per_node=%NUMTASK%
              #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%HPCBUDG%
+             #PBS -l EC_billing_account=%CURRENT_BUDG%
              #
              ###############################################################################
             """)

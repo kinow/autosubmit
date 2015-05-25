@@ -114,8 +114,8 @@ class SgeHeader:
             #
             #$ -S /bin/sh
             #$ -N %JOBNAME%
-            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
+            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
             #%QUEUE_DIRECTIVE%
@@ -131,8 +131,8 @@ class SgeHeader:
             #
             #$ -S /bin/sh
             #$ -N %JOBNAME%
-            #$ -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/
+            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
+            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
             #$ -pe orte %NUMPROC%
