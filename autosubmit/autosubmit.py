@@ -458,8 +458,7 @@ class Autosubmit:
 
         expid = as_conf.get_expid()
         hpcarch = as_conf.get_platform()
-        max_jobs = as_conf.get_total_jobs()
-        max_waiting_jobs = as_conf.get_max_waiting_jobs()
+
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
 
@@ -468,8 +467,6 @@ class Autosubmit:
             return False
 
         Log.debug("The Experiment name is: {0}", expid)
-        Log.debug("Total jobs to submit: {0}", max_jobs)
-        Log.debug("Maximum waiting jobs in platforms: {0}", max_waiting_jobs)
         Log.debug("Sleep: {0}", safetysleeptime)
         Log.debug("Retrials: {0}", retrials)
         Log.info("Starting job submission...")
@@ -499,7 +496,9 @@ class Autosubmit:
         for job in joblist.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
+            # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name])
+            # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name])
 
         joblist.check_scripts(as_conf)
@@ -514,62 +513,41 @@ class Autosubmit:
         #########################
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
-            active = len(joblist.get_running())
-            waiting = len(joblist.get_submitted() + joblist.get_queuing())
-            available = max_waiting_jobs - waiting
-
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
             Autosubmit._load_parameters(as_conf, joblist, platforms)
 
             # variables to be updated on the fly
-            max_jobs = as_conf.get_total_jobs()
-            Log.debug("Total jobs: {0}".format(max_jobs))
             total_jobs = len(joblist.get_job_list())
-            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
                                                                 strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", retrials)
 
-            # read FAIL_RETRIAL number if, blank at creation time put a given number
-            # check availability of machine, if not next iteration after sleep time
-            # check availability of jobs, if no new jobs submited and no jobs available, then stop
-
-            # ??? why
-            joblist.save()
-
-            Log.info("Active jobs in platforms:\t{0}", active)
-            Log.info("Waiting jobs in platforms:\t{0}", waiting)
-
-            if available == 0:
-                Log.debug("There's no room for more jobs...")
-            else:
-                Log.debug("We can safely submit {0} jobs...", available)
-
             ######################################
             # AUTOSUBMIT - ALREADY SUBMITTED JOBS
             ######################################
-            # get the list of jobs currently in the Queue
-            jobinqueue = joblist.get_in_queue()
-            Log.info("Number of jobs in platforms: {0}", str(len(jobinqueue)))
+            for platform in platforms_to_test:
 
-            for job in jobinqueue:
+                jobinqueue = joblist.get_in_queue(platform)
+                if len(jobinqueue) == 0:
+                    continue
 
-                job.print_job()
-                Log.debug("Number of jobs in platforms: {0}", str(len(jobinqueue)))
-                # Check platforms availability
-                job_platform = job.get_platform()
-                platform_available = job_platform.check_host()
-                if not platform_available:
-                    Log.debug("There is no platforms available")
-                else:
-                    status = job_platform.check_job(job.id)
+                Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
+
+                if not platform.check_host():
+                    Log.debug("{0} is not available")
+                    continue
+
+                for job in jobinqueue:
+                    job.print_job()
+                    status = platform.check_job(job.id)
                     if status == Status.COMPLETED:
                         Log.debug("This job seems to have completed...checking")
-                        job_platform.get_completed_files(job.name)
+                        platform.get_completed_files(job.name)
                         job.check_completion()
                     else:
                         job.status = status
@@ -583,52 +561,60 @@ class Autosubmit:
                         Log.user_warning("Job {0} is FAILED", job.name)
                     elif job.status is Status.UNKNOWN:
                         Log.debug("Job {0} in UNKNOWN status. Checking completed files", job.name)
-                        job_platform.get_completed_files(job.name)
+                        platform.get_completed_files(job.name)
                         job.check_completion(Status.UNKNOWN)
                     elif job.status is Status.SUBMITTED:
                         # after checking the jobs , no job should have the status "submitted"
                         Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
 
-            # explain it !!
-            joblist.update_list()
-
             ##############################
             # AUTOSUBMIT - JOBS TO SUBMIT
             ##############################
             # get the list of jobs READY
-            jobsavail = joblist.get_ready()
+            joblist.update_list()
+            for platform in platforms_to_test:
 
-            if min(available, len(jobsavail)) == 0:
-                Log.debug("There is no job READY or available")
-                Log.debug("Number of jobs ready: {0}", len(jobsavail))
-                Log.debug("Number of jobs available in platforms: {0}", available)
-            elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
-                Log.info("\nStarting to submit {0} job(s)", min(available, len(jobsavail)))
-                # should sort the jobsavail by priority Clean->post->sim>ini
-                # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
-                # probably useless to sort by year before sorting by type
-                s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
+                jobsavail = joblist.get_ready(platform)
+                if len(jobsavail) == 0:
+                    continue
 
-                list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
+                Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
 
-                for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
-                    Log.debug(job.name)
-                    scriptname = job.create_script(as_conf)
-                    Log.debug(scriptname)
+                if not platform.check_host():
+                    Log.debug("{0} is not available", platform.name)
+                    continue
 
-                    job_platform = job.get_platform()
-                    platform_available = job_platform.check_host()
-                    if not platform_available:
-                        Log.warning("Queue {0} is not available".format(job_platform.name))
-                    else:
-                        job_platform.send_script(scriptname)
-                        job.id = job_platform.submit_job(scriptname)
+                max_jobs = platform.total_jobs
+                max_waiting_jobs = platform.max_waiting_jobs
+                waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
+                available = max_waiting_jobs - waiting
+
+                if min(available, len(jobsavail)) == 0:
+                    Log.debug("Number of jobs ready: {0}", len(jobsavail))
+                    Log.debug("Number of jobs available: {0}", available)
+                elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
+                    Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
+                    # should sort the jobsavail by priority Clean->post->sim>ini
+                    # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
+                    # probably useless to sort by year before sorting by type
+                    s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
+
+                    list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
+
+                    for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
+                        Log.debug(job.name)
+                        scriptname = job.create_script(as_conf)
+                        Log.debug(scriptname)
+
+                        platform.send_script(scriptname)
+                        job.id = platform.submit_job(scriptname)
                         if job.id is None:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                        Log.info("{0} submitted to {1}\n", job.name, job.get_platform().name)
+                        Log.info("{0} submitted", job.name)
 
+            joblist.save()
             time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
@@ -783,6 +769,7 @@ class Autosubmit:
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
+            # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name])
 
             if job.get_platform().get_completed_files(job.name, 0, True):
@@ -842,6 +829,7 @@ class Autosubmit:
         for job in joblist.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
+            # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name])
 
         return joblist.check_scripts(as_conf)
@@ -1192,6 +1180,7 @@ class Autosubmit:
                 for job in job_list.get_job_list():
                     Autosubmit.change_status(final, final_status, job)
             else:
+                # noinspection PyTypeChecker
                 data = json.loads(Autosubmit._create_json(fc))
                 for datejson in data['sds']:
                     date = datejson['sd']
@@ -1469,6 +1458,7 @@ class Autosubmit:
                                   "DATELIST = " + stardate)
         content = content.replace(re.search('MEMBERS =.*', content).group(0),
                                   "MEMBERS = " + member)
+        # noinspection PyTypeChecker
         content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
                                   "NUMCHUNKS = " + chunks)
         content = content.replace(re.search('HPCARCH =.*', content).group(0),
@@ -1487,4 +1477,3 @@ class Autosubmit:
         if not Autosubmit.run_experiment(testid):
             return False
         return Autosubmit.delete(testid, True)
-

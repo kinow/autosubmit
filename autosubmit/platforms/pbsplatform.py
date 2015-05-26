@@ -127,7 +127,7 @@ class Pbs12Header:
             #PBS -N %JOBNAME%
             #PBS -l select=serial=true:ncpus=1
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCBUDG%
+            #PBS -A %CURRENT_BUDG%
             #
             ###############################################################################
             """)
@@ -141,7 +141,7 @@ class Pbs12Header:
             #PBS -N %JOBNAME%
             #PBS -l select=%NUMPROC%
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCBUDG%
+            #PBS -A %CURRENT_BUDG%
             #
             ###############################################################################
             """)
@@ -172,7 +172,7 @@ class Pbs10Header:
             #PBS -N %JOBNAME%
             #PBS -q serial
             #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %HPCBUDG%
+            #PBS -A %CURRENT_BUDG%
             #
             ###############################################################################
             """)
@@ -187,7 +187,7 @@ class Pbs10Header:
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=32
             #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %HPCBUDG%
+            #PBS -A %CURRENT_BUDG%
             #
             ###############################################################################
             """)
@@ -220,8 +220,8 @@ class Pbs11Header:
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=%NUMTASK%
             #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #
             ###############################################################################
             """)
@@ -237,8 +237,8 @@ class Pbs11Header:
             #PBS -l mppwidth=%NUMPROC%
             #PBS -l mppnppn=%NUMTASK%
             #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%
+            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #
             ###############################################################################
             """)

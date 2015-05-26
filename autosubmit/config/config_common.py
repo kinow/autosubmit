@@ -165,6 +165,9 @@ class AutosubmitConfig:
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
                                                                   'ADD_PROJECT_TO_HOST', False)
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section, 'TEST_SUITE', False)
+            result = result and AutosubmitConfig.check_is_int(self._platforms_parser, section, 'MAX_WAITING_JOBS',
+                                                              False)
+            result = result and AutosubmitConfig.check_is_int(self._platforms_parser, section, 'TOTAL_JOBS', False)
 
         if not result:
             Log.critical("{0} is not a valid config file".format(os.path.basename(self._platforms_parser_file)))
@@ -718,6 +721,8 @@ class AutosubmitConfig:
         local_platform.type = 'local'
         local_platform.version = ''
         local_platform.queue = ''
+        local_platform.max_waiting_jobs = self.get_max_waiting_jobs()
+        local_platform.total_jobs = self.get_total_jobs()
         local_platform.set_host(platform.node())
         local_platform.set_scratch(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR))
         local_platform.set_project(self.expid)
@@ -759,6 +764,11 @@ class AutosubmitConfig:
                                         AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
+
+            remote_platform.max_waiting_jobs = AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
+                                                                           self.get_max_waiting_jobs())
+            remote_platform.total_jobs = AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
+                                                                     self.get_total_jobs())
             remote_platform.set_host(host)
             remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
@@ -962,7 +972,3 @@ class AutosubmitConfig:
         except:
             Log.error("Invalid value {0}: {1}", key, value)
             return False
-
-
-
-

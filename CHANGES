@@ -1,8 +1,16 @@
+3.0.4
+    Fixed bug in platform headers
+    MAX_WAITING_JOBS and TOTAL_JOBS now defined by platform
+    Simplified console output of run subcommand
+
 3.0.3
-        Fixed bug in expid test.
+    Fixed bug in expid test.
+
 3.0.2
-        Fixed bug in localplatform.
+    Fixed bug in localplatform.
+
 3.0.1
-        Fixed bug in config.
+    Fixed bug in config.
+
 3.0.0
-        Restructure layout.
+    Restructure layout.
