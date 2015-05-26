@@ -255,11 +255,15 @@ class Autosubmit:
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
-        Log.info("Removing experiment directory...")
-        try:
-            shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
-        except OSError as e:
-            Log.warning('Can not delete experiment folder: {0}', e)
+        if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+            Log.info("Experiment directory does not exist.")
+        else:
+            Log.info("Removing experiment directory...")
+            try:
+                shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+            except OSError as e:
+                Log.warning('Can not delete experiment folder: {0}', e)
+                return False
         Log.info("Deleting experiment from database...")
         ret = delete_experiment(expid_delete)
         if ret:
@@ -742,6 +746,7 @@ class Autosubmit:
                                   'recovery.log'))
 
         Log.info('Recovering experiment {0}'.format(expid))
+
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
         job_list = cPickle.load(file(path, 'r'))
 
@@ -782,6 +787,8 @@ class Autosubmit:
 
         if save:
             job_list.save()
+        else:
+            Log.warning('Changes NOT saved to the jobList. Use -s option to save')
 
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
