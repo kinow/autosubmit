@@ -514,3 +514,132 @@ Example:
 	autosubmit delete cxxx
 
 .. warning:: Be careful ! force option does not ask for your confirmation.
+
+How to add a new job
+====================
+
+To add a new job, open the <experiments_directory>/cxxx/conf/jobs_cxxx.conf file where cxxx is the experiment
+identifier and add this text:
+
+.. code-block:: ini
+
+    [new_job]
+    FILE = <new_job_template>
+
+This will create a new job named "new_job" that will be executed once at the default platform. This job will user the
+template located at <new_job_template> (path is relative to project folder).
+
+This is the minimun job definition and usually is not enough. You usually will need to add some others parameters:
+
+* PLATFORM: allows you to execute the job in a platform of yout choice. It must be defined in the experiment's
+  platforms.conf file or to have the value 'LOCAL' that always refer to the machine running Autosubmit
+
+* RUNNING: defines if jobs runs only once or once per stardate, member or chunk. Options are: once, date,
+  member, chunk
+
+* DEPENDENCIES: defines dependencies from job as a list of parents jobs separed by spaces. For example, if
+  'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES = old_job". For dependencies to
+  jobs running in previous chunks, members or startdates, use -(DISTANCE). For example, for a job "SIM" waiting for
+  the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1"
+
+For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more
+. To do this use:
+
+* WALLCLOCK: wallclock time to be submitted to the HPC queue in format HH:MM
+
+* PROCESSORS: processors number to be submitted to the HPC. If not specified, defaults to 1.
+
+* THREADS:  threads number to be submitted to the HPC. If not specified, defaults to 1.
+
+* TASKS: tasks number to be submitted to the HPC. If not specified, defaults to 1.
+
+* QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
+
+There are also another, less used features that you can use:
+
+* FREQUENCY: specifies that a job has only to be run after X dates, members or chunk. A job will always be created for
+  the last one. If not specified, defaults to 1
+
+* RERUN_ONLY: determines if a job is only to be executed in reruns. If not specified, defaults to false.
+
+* RERUN_DEPENDENCIES: defines the jobs to be rerun if this job is going to be rerunned. Syntax is identical to
+  the used in DEPENDENCIES
+
+Example:
+
+.. code-block:: ini
+
+    [SIM]
+    FILE = templates/ecearth3/ecearth3.sim
+    DEPENDENCIES = INI SIM-1 CLEAN-2
+    RUNNING = chunk
+    WALLCLOCK = 04:00
+    PROCESSORS = 1616
+    THREADS = 1
+    TASKS = 1
+
+How to add a new platform
+=========================
+
+To add a new platform, open the <experiments_directory>/cxxx/conf/platforms_cxxx.conf file where cxxx is the experiment
+identifier and add this text:
+
+.. code-block:: ini
+
+    [new_platform]
+    TYPE = <platform_type>
+    HOST = <host_name>
+    PROJECT = <project>
+    USER = <user>
+    SCRATCH = <scratch_dir>
+
+
+This will create a platform named "new_platform". The options specified are all mandatory:
+
+* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM
+
+* HOST: hostname of the platform
+
+* PROJECT: project for the machine scheduler.
+
+* USER: user for the machine scheduler
+
+* SCRATCH_DIR: path to the scratch directory of the machine
+
+.. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
+VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
+
+Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
+configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:
+
+* SERIAL_PLATFORM: if specified, Autosubmit will run jobs with only one processor in the specified platform.
+
+* SERIAL_QUEUE: if specified, Autosubmit will run jobs with only one processor in the specified queue. Autosubmit
+  will ignore this configuration if SERIAL_PLATFORM is provided
+
+There are some other paramaters that you must need to specify:
+
+* BUDGET: budget account for the machine scheduler. If omited, takes the value defined in PROJECT
+
+* ADD_PROJECT_TO_HOST = option to add project name to host. This is required for some HPCs
+
+* QUEUE: if given, Autosubmit will add jobs to the given queue instead of platformn's default queue
+
+* TEST_SUITE: if true, autosubmit test command can use this queue as a main queue. Defaults to false
+
+* MAX_WAITING_JOBS: maximum number of jobs to be waiting in this platform.
+
+* TOTAL_JOBS: maximum number of jobs to be running at the same time in this platform.
+
+Example:
+
+.. code-block:: ini
+
+    [platform]
+    TYPE = SGE
+    HOST = hostname
+    PROJECT = my_project
+    ADD_PROJECT_TO_HOST = true
+    USER = my_user
+    SCRATCH_DIR = /scratch
+    TEST_SUITE = True

@@ -516,44 +516,27 @@ class Autosubmit:
 
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
-            Log.info("\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
                                                                 strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", retrials)
 
+            ######################################
+            # AUTOSUBMIT - ALREADY SUBMITTED JOBS
+            ######################################
             for platform in platforms_to_test:
 
-                Log.info("\nPLATFORM {0}", platform.name)
-                if not platform.check_host():
-                    Log.debug("Platform is not available")
+                jobinqueue = joblist.get_in_queue(platform)
+                if len(jobinqueue) == 0:
                     continue
 
-                max_jobs = platform.total_jobs
-                max_waiting_jobs = platform.max_waiting_jobs
-                active = len(joblist.get_running(platform))
-                waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                available = max_waiting_jobs - waiting
+                Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
 
-                # read FAIL_RETRIAL number if, blank at creation time put a given number
-                # check availability of machine, if not next iteration after sleep time
-                # check availability of jobs, if no new jobs submited and no jobs available, then stop
-
-                Log.info("Active jobs:\t{0}", active)
-                Log.info("Waiting jobs\t{0}", waiting)
-
-                if available == 0:
-                    Log.debug("There's no room for more jobs...")
-                else:
-                    Log.debug("We can safely submit {0} jobs", available)
-
-                ######################################
-                # AUTOSUBMIT - ALREADY SUBMITTED JOBS
-                ######################################
-                # get the list of jobs currently in the Queue
-                jobinqueue = joblist.get_in_queue(platform)
-                Log.info("Jobs in queue: {0}", str(len(jobinqueue)))
+                if not platform.check_host():
+                    Log.debug("{0} is not available")
+                    continue
 
                 for job in jobinqueue:
                     job.print_job()
@@ -580,18 +563,33 @@ class Autosubmit:
                         # after checking the jobs , no job should have the status "submitted"
                         Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
 
-                ##############################
-                # AUTOSUBMIT - JOBS TO SUBMIT
-                ##############################
-                # get the list of jobs READY
-                joblist.update_list()
+            ##############################
+            # AUTOSUBMIT - JOBS TO SUBMIT
+            ##############################
+            # get the list of jobs READY
+            joblist.update_list()
+            for platform in platforms_to_test:
+
                 jobsavail = joblist.get_ready(platform)
+                if len(jobsavail) == 0:
+                    continue
+
+                Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
+
+                if not platform.check_host():
+                    Log.debug("{0} is not available", platform.name)
+                    continue
+
+                max_jobs = platform.total_jobs
+                max_waiting_jobs = platform.max_waiting_jobs
+                waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
+                available = max_waiting_jobs - waiting
 
                 if min(available, len(jobsavail)) == 0:
                     Log.debug("Number of jobs ready: {0}", len(jobsavail))
                     Log.debug("Number of jobs available: {0}", available)
                 elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
-                    Log.info("\nStarting to submit {0} job(s)", min(available, len(jobsavail)))
+                    Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
                     # should sort the jobsavail by priority Clean->post->sim>ini
                     # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
                     # probably useless to sort by year before sorting by type
@@ -610,7 +608,7 @@ class Autosubmit:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
-                        Log.info("{0} submitted\n", job.name)
+                        Log.info("{0} submitted", job.name)
 
             joblist.save()
             time.sleep(safetysleeptime)
