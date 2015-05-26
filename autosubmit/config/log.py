@@ -241,5 +241,3 @@ class Log:
         :param args: arguments for message formating (it will be done using format() method on str)
         """
         Log.log.critical(msg.format(*args))
-
-

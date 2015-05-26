@@ -51,7 +51,7 @@ class StatisticsSnippet:
             ###################
 
             set -x
-            job_name_ptrn=%ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
+            job_name_ptrn=%CURRENT_ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
 
@@ -94,20 +94,20 @@ class StatisticsSnippet:
             ###################
 
             set -x
-            job_name_ptrn=%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
+            job_name_ptrn=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
             job_queue_time=$((job_start_time - job_cmd_stamp))
 
-            if [[ %HPCTYPE% == ecaccess ]]; then
-              hpcversion=%HPCVERSION%
+            if [[ %CURRENT_TYPE% == ecaccess ]]; then
+              hpcversion=%CURRENT_VERSION%
               if [[ ! -z ${hpcversion+x} ]]; then
                 if [[ $hpcversion == pbs ]]; then
-                  filein="$(ls -rt %SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
+                  filein="$(ls -rt %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
                   jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
-                  fileout="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
+                  fileout="%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
                   ln -s ${fileout} ${job_name_ptrn}_${jobid}.out
-                  fileerr="%SCRATCH_DIR%/%HPCPROJ%/%HPCUSER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
+                  fileerr="%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
                   ln -s ${fileerr} ${job_name_ptrn}_${jobid}.err
                 fi
               fi
@@ -130,14 +130,14 @@ class StatisticsSnippet:
             set -x
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
-            case %HPCTYPE% in
+            case %CURRENT_TYPE% in
              sge)       errfile_created="TRUE"; errfile_ptrn="\.e" ;;
              lsf)       errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              ecaccess)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              pbs)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
              slurm)     errfile_created="TRUE"; errfile_ptrn="\.err" ;;
              ps)        errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             *) echo "!!! %HPCTYPE% is not valid scheduler !!!"; exit 1 ;;
+             *) echo "!!! %CURRENT_TYPE% is not valid scheduler !!!"; exit 1 ;;
             esac
             failed_jobs=0; failed_errfiles=""
             set +e; ls -1 ${job_name_ptrn}* | grep $errfile_ptrn
@@ -172,4 +172,3 @@ class StatisticsSnippet:
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             exit 0
             """)
-

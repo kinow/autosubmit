@@ -32,14 +32,15 @@ setup(
     license='GNU GPL v3',
     platforms=['GNU/Linux Debian'],
     version=version,
-    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
+    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse'
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
     author_email='domingo.manubens@ic3.cat',
     url='http://autosubmit.ic3.cat',
     download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
-    install_requires=['argparse>=1.2,<2', 'python-dateutil>=1,<2', 'pydotplus', 'pyparsing', 'paramiko'],
+    install_requires=['argparse>=1.2,<2', 'python-dateutil>=1,<2', 'pydotplus>=2', 'pyparsing>=2.0.1',
+                      'paramiko>=1.15'],
     # 'numpy','matplotlib>=1.1.1',
     packages=find_packages(),
     include_package_data=True,
