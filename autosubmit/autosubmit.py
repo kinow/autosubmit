@@ -746,6 +746,7 @@ class Autosubmit:
                                   'recovery.log'))
 
         Log.info('Recovering experiment {0}'.format(expid))
+
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
         job_list = cPickle.load(file(path, 'r'))
 
@@ -786,6 +787,8 @@ class Autosubmit:
 
         if save:
             job_list.save()
+        else:
+            Log.warning('Changes NOT saved to the jobList. Use -s option to save')
 
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
