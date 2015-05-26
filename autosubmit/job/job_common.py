@@ -172,4 +172,3 @@ class StatisticsSnippet:
             echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             exit 0
             """)
-

@@ -133,4 +133,3 @@ class SlurmHeader:
     PARALLEL = textwrap.dedent("""\
 
             """)
-

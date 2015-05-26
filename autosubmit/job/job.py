@@ -49,7 +49,7 @@ class Job:
     """
 
     def __str__(self):
-        return self.name
+        return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, jobid, status, priority):
         self._platform = None

@@ -32,7 +32,7 @@ setup(
     license='GNU GPL v3',
     platforms=['GNU/Linux Debian'],
     version=version,
-    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
+    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse'
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
     author_email='domingo.manubens@ic3.cat',

@@ -190,113 +190,146 @@ class JobList:
         """
         return self._job_list
 
-    def get_completed(self):
+    def get_completed(self, platform=None):
         """
         Returns a list of completed jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: completed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.COMPLETED]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.COMPLETED]
 
-    def get_submitted(self):
+    def get_submitted(self, platform=None):
         """
         Returns a list of submitted jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: submitted jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.SUBMITTED]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.SUBMITTED]
 
-    def get_running(self):
+    def get_running(self, platform=None):
         """
         Returns a list of jobs running
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: running jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.RUNNING]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.RUNNING]
 
-    def get_queuing(self):
+    def get_queuing(self, platform=None):
         """
         Returns a list of jobs queuing
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: queuedjobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.QUEUING]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.QUEUING]
 
-    def get_failed(self):
+    def get_failed(self, platform=None):
         """
         Returns a list of failed jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: failed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.FAILED]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.FAILED]
 
-    def get_ready(self):
+    def get_ready(self, platform=None):
         """
         Returns a list of ready jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: ready jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.READY]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.READY]
 
-    def get_waiting(self):
+    def get_waiting(self, platform=None):
         """
         Returns a list of jobs waiting
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: waiting jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.WAITING]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.WAITING]
 
-    def get_unknown(self):
+    def get_unknown(self, platform=None):
         """
         Returns a list of jobs on unknown state
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: unknown state jobs
         :rtype: list
         """
-        return [job for job in self._job_list if job.status == Status.UNKNOWN]
+        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+                job.status == Status.UNKNOWN]
 
-    def get_in_queue(self):
+    def get_in_queue(self, platform=None):
         """
         Returns a list of jobs in the platforms (Submitted, Running, Queuing)
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: jobs in platforms
         :rtype: list
         """
-        return self.get_submitted() + self.get_running() + self.get_queuing()
+        return self.get_submitted(platform) + self.get_running(platform) + self.get_queuing(platform)
 
-    def get_not_in_queue(self):
+    def get_not_in_queue(self, platform=None):
         """
         Returns a list of jobs NOT in the platforms (Ready, Waiting)
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: jobs not in platforms
         :rtype: list
         """
-        return self.get_ready() + self.get_waiting()
+        return self.get_ready(platform) + self.get_waiting(platform)
 
-    def get_finished(self):
+    def get_finished(self, platform=None):
         """
         Returns a list of jobs finished (Completed, Failed)
 
+
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: finsihed jobs
         :rtype: list
         """
-        return self.get_completed() + self.get_failed()
+        return self.get_completed(platform) + self.get_failed(platform)
 
-    def get_active(self):
+    def get_active(self, platform=None):
         """
         Returns a list of active jobs (In platforms, Ready)
 
+        :param platform: job platform
+        :type platform: HPCPlatform
         :return: active jobs
         :rtype: list
         """
-        return self.get_in_queue() + self.get_ready() + self.get_unknown()
+        return self.get_in_queue(platform) + self.get_ready(platform) + self.get_unknown(platform)
 
     def get_job_by_name(self, name):
         """
@@ -424,6 +457,7 @@ class JobList:
 
         # reset jobs that has failed less ethan 10 times
         if 'RETRIALS' in self._parameters:
+            # noinspection PyTypeChecker
             retrials = int(self._parameters['RETRIALS'])
         else:
             retrials = 4
