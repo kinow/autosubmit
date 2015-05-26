@@ -53,9 +53,9 @@ Examples:
 ::
 
     autosubmit setstatus cxxx -l "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
-    autosubmit setstatus cxxx -f -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
-    autosubmit setstatus cxxx -f -fs FAILED -t READY -s
-    autosubmit setstatus cxxx -f -ft TRANSFER -t SUSPENDED -s
+    autosubmit setstatus cxxx -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
+    autosubmit setstatus cxxx -fs FAILED -t READY -s
+    autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
 
 This script has three mandatory arguments.
 

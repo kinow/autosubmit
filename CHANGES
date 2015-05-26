@@ -1,7 +1,7 @@
 3.0.4
     Fixed bug in platform headers
-    Fixed bug in delete: experiment now can not been removed from database if experiment's folder can not be deleted
-    Added a warning on recovery when using it without -s option
+    Fixed bug in delete
+    Added readme and changelog commands
     MAX_WAITING_JOBS and TOTAL_JOBS now defined by platform
     Simplified console output of run subcommand
 
