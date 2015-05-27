@@ -181,7 +181,7 @@ class Autosubmit:
                                    required=True,
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
-            group.add_argument('-l', '--list', type=str,
+            group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be changed. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
@@ -275,7 +275,7 @@ class Autosubmit:
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
-        if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+        if not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
