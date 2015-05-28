@@ -58,10 +58,14 @@ class Autosubmit:
     Interface class for autosubmit.
     """
     # Get the version number from the relevant file. If not, from autosubmit package
-    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    version_path = os.path.join(scriptdir, '..', 'VERSION')
-    readme_path = os.path.join(scriptdir, '..', 'README')
-    changes_path = os.path.join(scriptdir, '..', 'CHANGES')
+    scriptdir = os.path.abspath(os.path.dirname(__file__))
+
+    if not os.path.exists(os.path.join(scriptdir, 'VERSION')):
+        scriptdir = os.path.join(scriptdir, os.path.pardir)
+
+    version_path = os.path.join(scriptdir, 'VERSION')
+    readme_path = os.path.join(scriptdir, 'README')
+    changes_path = os.path.join(scriptdir, 'CHANGES')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -541,7 +545,7 @@ class Autosubmit:
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
             Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
-                                                                strftime("%H:%M")))
+                                                                  strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()

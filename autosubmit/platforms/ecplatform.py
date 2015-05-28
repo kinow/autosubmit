@@ -161,6 +161,7 @@ class EcHeader:
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyPep8
     SERIAL = textwrap.dedent("""\
             #!/bin/ksh
             ###############################################################################
@@ -181,6 +182,7 @@ class EcHeader:
             ###############################################################################
             """)
 
+    # noinspection PyPep8
     PARALLEL = textwrap.dedent("""\
             #!/bin/ksh
             ###############################################################################
