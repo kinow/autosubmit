@@ -36,7 +36,7 @@ Options:
     -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN},
                 --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
                             Supply the target status
-        -l LIST, --list LIST  Supply the list of job names to be changed. Default =
+        -fl LIST, --list LIST  Supply the list of job names to be changed. Default =
                             "Any". LIST = "cxxx_20101101_fc3_21_sim
                             cxxx_20111101_fc4_26_sim"
         -fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
@@ -52,10 +52,10 @@ Options:
 Examples:
 ::
 
-    autosubmit setstatus cxxx -l "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
-    autosubmit setstatus cxxx -f -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
-    autosubmit setstatus cxxx -f -fs FAILED -t READY -s
-    autosubmit setstatus cxxx -f -ft TRANSFER -t SUSPENDED -s
+    autosubmit setstatus cxxx -fl "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
+    autosubmit setstatus cxxx -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
+    autosubmit setstatus cxxx -fs FAILED -t READY -s
+    autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
 
 This script has three mandatory arguments.
 

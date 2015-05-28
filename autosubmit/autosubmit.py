@@ -60,6 +60,8 @@ class Autosubmit:
     # Get the version number from the relevant file. If not, from autosubmit package
     scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
     version_path = os.path.join(scriptdir, '..', 'VERSION')
+    readme_path = os.path.join(scriptdir, '..', 'README')
+    changes_path = os.path.join(scriptdir, '..', 'CHANGES')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -179,7 +181,7 @@ class Autosubmit:
                                    required=True,
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
-            group.add_argument('-l', '--list', type=str,
+            group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be changed. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
@@ -205,6 +207,12 @@ class Autosubmit:
             subparser.add_argument('expid',  help='experiment identifier')
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
+
+            # Readme
+            subparsers.add_parser('readme', description='show readme')
+
+            # Changelog
+            subparsers.add_parser('changelog', description='show changelog')
 
             args = parser.parse_args()
 
@@ -241,6 +249,18 @@ class Autosubmit:
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
                 return Autosubmit.refresh(args.expid, args.model_conf)
+            elif args.command == 'readme':
+                if os.path.isfile(Autosubmit.readme_path):
+                    with open(Autosubmit.readme_path) as f:
+                        print f.read()
+                        return True
+                return False
+            elif args.command == 'changelog':
+                if os.path.isfile(Autosubmit.changes_path):
+                    with open(Autosubmit.changes_path) as f:
+                        print f.read()
+                        return True
+                return False
         except Exception as e:
             from traceback import format_exc
             Log.critical('Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
@@ -255,7 +275,7 @@ class Autosubmit:
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
-        if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+        if not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
