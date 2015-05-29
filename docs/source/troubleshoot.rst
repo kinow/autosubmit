@@ -24,7 +24,7 @@ Options:
 
     usage: autosubmit setstatus [-h] [-s] -t
         {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN,QUEUING,RUNNING}
-        (-l LIST
+        (-fl LIST
         | -fc FILTER_CHUNKS
         | -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
         | -ft FILTER_TYPE)
@@ -36,7 +36,7 @@ Options:
     -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN},
                 --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
                             Supply the target status
-        -l LIST, --list LIST  Supply the list of job names to be changed. Default =
+        -fl LIST, --list LIST  Supply the list of job names to be changed. Default =
                             "Any". LIST = "cxxx_20101101_fc3_21_sim
                             cxxx_20111101_fc4_26_sim"
         -fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
@@ -52,30 +52,27 @@ Options:
 Examples:
 ::
 
-    autosubmit setstatus cxxx -l "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
+    autosubmit setstatus cxxx -fl "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
     autosubmit setstatus cxxx -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
     autosubmit setstatus cxxx -fs FAILED -t READY -s
     autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
 
-This script has three mandatory arguments.
+This script has two mandatory arguments.
 
-The first where you must specify the experiment id,
-the -t where you must specify the target status of the jobs you want to change to:
+The -t where you must specify the target status of the jobs you want to change to:
 ::
 
     {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
 
 
-The third argument has two alternatives, the -l and -f; with those we can apply a filter for the jobs we want to change:
+The second argument has four alternatives, the -fl, -fc, -fs and -ft; with those we can apply a filter for the jobs we want to change:
 
-The -l flag recieves a list of jobnames separated by blank spaces: e.g.:
-::
+* The -fl variable recieves a list of jobnames separated by blank spaces: e.g.:
+    ::
 
      "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim"
 
 If we supply the key word "Any", all jobs will be changed to the target status.
-
-The -f flag can be used in three modes: the chunk filter, the status filter or the type filter.
 
 * The variable -fc should be a list of individual chunks or ranges of chunks in the following format:
     ::
