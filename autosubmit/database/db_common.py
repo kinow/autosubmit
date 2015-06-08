@@ -142,7 +142,7 @@ def new_experiment(description, version, test=False):
         return ''
     if last_exp_name == 'empty':
         if test:
-            new_name = 'test0000'
+            new_name = 't000'
         else:
             new_name = 'a000'
     else:
@@ -257,13 +257,13 @@ def last_name_used(test=False):
     if test:
         cursor.execute('SELECT name '
                        'FROM experiment '
-                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "test%" AND '
+                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "t%" AND '
                        'autosubmit_version IS NOT NULL AND '
                        'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     else:
         cursor.execute('SELECT name '
                        'FROM experiment '
-                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name NOT LIKE "test%" AND '
+                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name NOT LIKE "t%" AND '
                        'autosubmit_version IS NOT NULL AND '
                        'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     row = cursor.fetchone()
