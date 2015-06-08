@@ -58,10 +58,14 @@ class Autosubmit:
     Interface class for autosubmit.
     """
     # Get the version number from the relevant file. If not, from autosubmit package
-    scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
-    version_path = os.path.join(scriptdir, '..', 'VERSION')
-    readme_path = os.path.join(scriptdir, '..', 'README')
-    changes_path = os.path.join(scriptdir, '..', 'CHANGES')
+    scriptdir = os.path.abspath(os.path.dirname(__file__))
+
+    if not os.path.exists(os.path.join(scriptdir, 'VERSION')):
+        scriptdir = os.path.join(scriptdir, os.path.pardir)
+
+    version_path = os.path.join(scriptdir, 'VERSION')
+    readme_path = os.path.join(scriptdir, 'README')
+    changes_path = os.path.join(scriptdir, 'CHANGES')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -181,7 +185,7 @@ class Autosubmit:
                                    required=True,
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
-            group.add_argument('-l', '--list', type=str,
+            group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be changed. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
@@ -275,7 +279,7 @@ class Autosubmit:
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
-        if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+        if not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
@@ -541,7 +545,7 @@ class Autosubmit:
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
             Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
-                                                                strftime("%H:%M")))
+                                                                  strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
