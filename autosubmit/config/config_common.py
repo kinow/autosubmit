@@ -65,9 +65,9 @@ class AutosubmitConfig:
     @property
     def platforms_file(self):
         """
-        Returns experiment's queues config file name
+        Returns experiment's platforms config file name
 
-        :return: queues config file's name
+        :return: platforms config file's name
         :rtype: str
         """
         return self._platforms_parser_file
@@ -75,7 +75,7 @@ class AutosubmitConfig:
     @property
     def project_file(self):
         """
-        Returns model's config file name
+        Returns project's config file name
         """
         return self._proj_parser_file
 
@@ -98,7 +98,7 @@ class AutosubmitConfig:
 
     def check_conf_files(self):
         """
-        Checks configuration files (autosubmit, experiment jobs and queues), looking for invalid values, missing
+        Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
 
         :return: True if everithing is correct, False if it founds any error
