@@ -1,9 +1,16 @@
+3.0.6
+    Fixed bug in setstatus.
+    Change in test.
+
+3.0.5
+    Fixed bug in recovery.
+
 3.0.4
-    Fixed bug in platform headers
-    Fixed bug in delete
-    Added readme and changelog commands
-    MAX_WAITING_JOBS and TOTAL_JOBS now defined by platform
-    Simplified console output of run subcommand
+    Fixed bug in platform headers.
+    Fixed bug in delete.
+    Added readme and changelog commands.
+    MAX_WAITING_JOBS and TOTAL_JOBS now defined by platform.
+    Simplified console output of run subcommand.
 
 3.0.3
     Fixed bug in expid test.
