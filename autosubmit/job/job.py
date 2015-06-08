@@ -357,7 +357,7 @@ class Job:
         :return: value in index position
         :rtype: str
         """
-        logname = self._tmp_path + self.name + '_COMPLETED'
+        logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
             split_line = open(logname).readline().split()
             if len(split_line) >= index + 1:
