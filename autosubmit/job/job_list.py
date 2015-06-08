@@ -407,19 +407,6 @@ class JobList:
         Log.info("Loading JobList: " + self._pkl_path + self._job_list_file)
         return JobList.load_file(self._pkl_path + self._job_list_file)
 
-    def load_updated(self):
-        Log.info("Loading updated list: " + self._pkl_path + self._update_file)
-        return JobList.load_file(self._pkl_path + self._update_file)
-
-    def load_failed(self):
-        Log.info("Loading failed list: " + self._pkl_path + self._failed_file)
-        return JobList.load_file(self._pkl_path + self._failed_file)
-
-    def save_failed(self, failed_list):
-        # URi: should we check that the path exists?
-        Log.info("Saving failed list: " + self._pkl_path + self._failed_file)
-        pickle.dump(failed_list, file(self._pkl_path + self._failed_file, 'w'))
-
     def save(self):
         """
         Stores joblist as a pickle file
@@ -433,8 +420,9 @@ class JobList:
         pickle.dump(self, file(path, 'w'))
 
     def update_from_file(self, store_change=True):
-        if os.path.exists(self._pkl_path + self._update_file):
-            for line in open(self._pkl_path + self._update_file):
+        if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
+            Log.info("Loading updated list: {0}".format(os.path.join(self._pkl_path, self._update_file)))
+            for line in open(os.path.join(self._pkl_path, self._update_file)):
                 if line.strip() == '':
                     continue
                 job = self.get_job_by_name(line.split()[0])
@@ -444,7 +432,8 @@ class JobList:
             now = localtime()
             output_date = strftime("%Y%m%d_%H%M", now)
             if store_change:
-                move(self._pkl_path + self._update_file, self._pkl_path + self._update_file + "_" + output_date)
+                move(os.path.join(self._pkl_path, self._update_file), os.path.join(self._pkl_path, self._update_file +
+                                                                                   "_" + output_date))
 
     def update_parameters(self, parameters):
         self._parameters = parameters
