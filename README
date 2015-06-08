@@ -83,8 +83,6 @@ HOW TO RESTART EXPERIMENT
 
 > autosubmit recovery -h
 
-> autosubmit recovery  cxxx -g # getting/fetching completed files
-
 > autosubmit recovery  cxxx -s # saving the pickle file
 
 > nohup autosubmit run cxxx

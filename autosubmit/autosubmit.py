@@ -51,6 +51,7 @@ from database.db_common import new_experiment
 from database.db_common import copy_experiment
 from database.db_common import delete_experiment
 from monitor.monitor import Monitor
+from date.chunk_date_lib import date2str
 
 
 class Autosubmit:
@@ -1211,7 +1212,7 @@ class Autosubmit:
                 data = json.loads(Autosubmit._create_json(fc))
                 for datejson in data['sds']:
                     date = datejson['sd']
-                    jobs_date = filter(lambda j: j.date == date, job_list.get_job_list())
+                    jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
                     for job in filter(lambda j: j.member is None, jobs_date):
                             Autosubmit.change_status(final, final_status, job)
