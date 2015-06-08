@@ -291,6 +291,10 @@ class AutosubmitConfig:
         self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
         self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
+        if self._proj_parser_file == '':
+            self._proj_parser = None
+        else:
+            self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
 
     def load_parameters(self):
         """
