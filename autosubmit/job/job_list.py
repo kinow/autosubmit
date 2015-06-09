@@ -457,10 +457,10 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
-                    Log.info("Resetting job: {0} status to: READY for retrial...".format(job.name))
+                    Log.debug("Resetting job: {0} status to: READY for retrial...".format(job.name))
                 else:
                     job.status = Status.WAITING
-                    Log.info("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
+                    Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_waiting():
@@ -470,7 +470,7 @@ class JobList:
             # break
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
-                Log.info("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+                Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
         if store_change:
             self.save()
 
