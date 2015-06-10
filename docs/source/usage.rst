@@ -27,7 +27,7 @@ How to create an experiment
 To create a new experiment, just run the command:
 ::
 
-	autosubmit expid –H HPCname –d Description
+	autosubmit expid -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -55,7 +55,7 @@ This option makes a copy of an existing experiment.
 It registrates a new unique identifier and copies all configuration files in the new experiment folder:
 ::
 
-	autosubmit expid –H HPCname -y COPY –d Description
+	autosubmit expid -H HPCname -y COPY -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *COPY* is the experiment identifier to copy from.
@@ -73,7 +73,7 @@ How to create a dummy experiment
 This command creates a new experiment with default values, useful for testing:
 ::
 
-	autosubmit expid –H HPCname -dm –d Description
+	autosubmit expid -H HPCname -dm -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -319,7 +319,7 @@ To send a signal to a process you can use kill also on a terminal.
 To stop immediately experiment cxxx:
 ::
 
-	kill –9 22835
+	kill -9 22835
 
 .. important:: In case you want to restart the experiment, you must follow the
     :ref:`restexp` procedure, explained below, in order to properly resynchronize all completed jobs.
