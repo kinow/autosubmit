@@ -47,7 +47,7 @@ Experiment creation
 To create a new experiment, run the command:
 ::
 
-    autosubmit expid –H HPCname –d Description
+    autosubmit expid -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
