@@ -271,6 +271,10 @@ The location where user can find the generated plots with date and timestamp can
 
 	<experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
 
+.. hint::
+	Very large plots may be a problem for some pdf and image viewers.
+	If you are having trouble with your usual monitoring tool, try using svg output and opening it with Google Chrome with the SVG Navigator extension installed.
+
 How to monitor job statistics
 =============================
 The following command could be adopted to generate the plots for visualizing the jobs statistics of the experiment at any instance:

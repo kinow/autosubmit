@@ -91,7 +91,7 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 How to change the job status without stopping autosubmit
 ========================================================
 
-This procedure allows you to modify the status of your jobs without having to stop Autosubmit.
+    This procedure allows you to modify the status of your jobs without having to stop Autosubmit.
 
 You must create a file in ``<experiments_directory>/<expid>/pkl/`` named:
 ::
