@@ -96,6 +96,18 @@ class AutosubmitConfig:
             dir_templates = os.path.join(dir_templates, self.get_project_destination())
         return dir_templates
 
+    def get_wallclock(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
+
+    def get_processors(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1)
+
+    def get_threads(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1)
+
+    def get_tasks(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1)
+
     def check_conf_files(self):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing

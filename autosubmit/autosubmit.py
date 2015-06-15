@@ -514,6 +514,7 @@ class Autosubmit:
         Log.debug("Length of joblist: {0}", len(joblist))
 
         Autosubmit._load_parameters(as_conf, joblist, platforms)
+
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -597,6 +598,7 @@ class Autosubmit:
             ##############################
             # get the list of jobs READY
             joblist.update_list()
+            job_submitted = False
             for platform in platforms_to_test:
 
                 jobsavail = joblist.get_ready(platform)
@@ -628,6 +630,7 @@ class Autosubmit:
 
                     for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
                         Log.debug(job.name)
+                        job.update_parameters(as_conf, joblist.parameters)
                         scriptname = job.create_script(as_conf)
                         Log.debug(scriptname)
 
@@ -638,8 +641,10 @@ class Autosubmit:
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
                         Log.info("{0} submitted", job.name)
+                        job_submitted = True
 
-            joblist.save()
+            if job_submitted:
+                joblist.save()
             time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
@@ -855,6 +860,7 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
+            job.update_parameters(as_conf, joblist.parameters)
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
