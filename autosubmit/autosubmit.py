@@ -32,6 +32,7 @@ import sys
 import shutil
 import re
 import random
+import signal
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from time import strftime
 from distutils.util import strtobool
@@ -54,10 +55,16 @@ from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 
 
+# noinspection PyUnusedLocal
+def signal_handler(signal_received, frame):
+    Log.info('Autosubmit will interrupt at the next safe ocasion')
+    Autosubmit.exit = True
+
 class Autosubmit:
     """
     Interface class for autosubmit.
     """
+
     # Get the version number from the relevant file. If not, from autosubmit package
     scriptdir = os.path.abspath(os.path.dirname(__file__))
 
@@ -471,6 +478,9 @@ class Autosubmit:
                                   'run.log'))
         os.system('clear')
 
+        Autosubmit.exit = False
+        signal.signal(signal.SIGINT, signal_handler)
+
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
@@ -539,6 +549,9 @@ class Autosubmit:
         #########################
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
+            if Autosubmit.exit:
+                Log.info('Interrupted by user.')
+                return 0
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
@@ -598,7 +611,6 @@ class Autosubmit:
             ##############################
             # get the list of jobs READY
             joblist.update_list()
-            job_submitted = False
             for platform in platforms_to_test:
 
                 jobsavail = joblist.get_ready(platform)
@@ -641,10 +653,11 @@ class Autosubmit:
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
                         Log.info("{0} submitted", job.name)
-                        job_submitted = True
 
-            if job_submitted:
-                joblist.save()
+            joblist.save()
+            if Autosubmit.exit:
+                Log.info('Interrupted by user.')
+                return 0
             time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
