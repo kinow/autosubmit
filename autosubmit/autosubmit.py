@@ -578,7 +578,7 @@ class Autosubmit:
                 Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
 
                 if not platform.check_host():
-                    Log.debug("{0} is not available")
+                    Log.debug("{0} is not available", platform.name)
                     continue
 
                 for job in jobinqueue:
