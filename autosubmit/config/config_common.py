@@ -781,10 +781,10 @@ class AutosubmitConfig:
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
 
-            remote_platform.max_waiting_jobs = AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                           self.get_max_waiting_jobs())
-            remote_platform.total_jobs = AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                     self.get_total_jobs())
+            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
+                                                                           self.get_max_waiting_jobs()))
+            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
+                                                                     self.get_total_jobs()))
             remote_platform.set_host(host)
             remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
