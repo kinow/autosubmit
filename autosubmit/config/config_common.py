@@ -86,14 +86,8 @@ class AutosubmitConfig:
         :return: experiment's project directory
         :rtype: str
         """
-        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
-        # Getting project name for each type of project
-        if self.get_project_type().lower() == "local":
-            dir_templates = os.path.join(dir_templates, os.path.split(self.get_local_project_path())[1])
-        elif self.get_project_type().lower() == "svn":
-            dir_templates = os.path.join(dir_templates, self.get_svn_project_url().split('/')[-1])
-        elif self.get_project_type().lower() == "git":
-            dir_templates = os.path.join(dir_templates, self.get_project_destination())
+        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR,
+                                     self.get_project_destination())
         return dir_templates
 
     def get_wallclock(self, section):

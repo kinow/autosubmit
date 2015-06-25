@@ -1165,6 +1165,7 @@ class Autosubmit:
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
+            local_destination = os.path.join(project_path, project_destination)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
@@ -1172,11 +1173,15 @@ class Autosubmit:
                     return True
                 else:
                     shutil.rmtree(project_path)
+
             os.mkdir(project_path)
+            os.mkdir(local_destination)
             Log.debug("The project folder {0} has been created.", project_path)
 
             Log.info("Copying {0} into {1}", local_project_path, project_path)
-            (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
+
+            (status, output) = getstatusoutput("cp -R " + local_project_path + "/* " +
+                                               local_destination)
             if status:
                 Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                 shutil.rmtree(project_path)
