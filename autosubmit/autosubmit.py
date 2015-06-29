@@ -32,6 +32,7 @@ import sys
 import shutil
 import re
 import random
+import signal
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from time import strftime
 from distutils.util import strtobool
@@ -54,10 +55,16 @@ from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 
 
+# noinspection PyUnusedLocal
+def signal_handler(signal_received, frame):
+    Log.info('Autosubmit will interrupt at the next safe ocasion')
+    Autosubmit.exit = True
+
 class Autosubmit:
     """
     Interface class for autosubmit.
     """
+
     # Get the version number from the relevant file. If not, from autosubmit package
     scriptdir = os.path.abspath(os.path.dirname(__file__))
 
@@ -471,6 +478,9 @@ class Autosubmit:
                                   'run.log'))
         os.system('clear')
 
+        Autosubmit.exit = False
+        signal.signal(signal.SIGINT, signal_handler)
+
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
@@ -514,6 +524,7 @@ class Autosubmit:
         Log.debug("Length of joblist: {0}", len(joblist))
 
         Autosubmit._load_parameters(as_conf, joblist, platforms)
+
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -538,6 +549,9 @@ class Autosubmit:
         #########################
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
+            if Autosubmit.exit:
+                Log.info('Interrupted by user.')
+                return 0
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
@@ -564,7 +578,7 @@ class Autosubmit:
                 Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
 
                 if not platform.check_host():
-                    Log.debug("{0} is not available")
+                    Log.debug("{0} is not available", platform.name)
                     continue
 
                 for job in jobinqueue:
@@ -628,6 +642,7 @@ class Autosubmit:
 
                     for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
                         Log.debug(job.name)
+                        job.update_parameters(as_conf, joblist.parameters)
                         scriptname = job.create_script(as_conf)
                         Log.debug(scriptname)
 
@@ -640,6 +655,9 @@ class Autosubmit:
                         Log.info("{0} submitted", job.name)
 
             joblist.save()
+            if Autosubmit.exit:
+                Log.info('Interrupted by user.')
+                return 0
             time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
@@ -855,6 +873,7 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
+            job.update_parameters(as_conf, joblist.parameters)
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
@@ -1146,6 +1165,7 @@ class Autosubmit:
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
+            local_destination = os.path.join(project_path, project_destination)
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if not force:
@@ -1153,11 +1173,15 @@ class Autosubmit:
                     return True
                 else:
                     shutil.rmtree(project_path)
+
             os.mkdir(project_path)
+            os.mkdir(local_destination)
             Log.debug("The project folder {0} has been created.", project_path)
 
             Log.info("Copying {0} into {1}", local_project_path, project_path)
-            (status, output) = getstatusoutput("cp -R " + local_project_path + " " + project_path)
+
+            (status, output) = getstatusoutput("cp -R " + local_project_path + "/* " +
+                                               local_destination)
             if status:
                 Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                 shutil.rmtree(project_path)

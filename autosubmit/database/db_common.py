@@ -44,7 +44,7 @@ def create_db(qry):
         return False
 
     try:
-        cursor.execute(qry)
+        cursor.executescript(qry)
     except sqlite3.Error:
         close_conn(conn, cursor)
         Log.error('The database can not be created.' + 'DB file:' + BasicConfig.DB_PATH)

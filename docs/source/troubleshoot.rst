@@ -13,7 +13,7 @@ This procedure allows you to modify the status of your jobs.
 You must execute:
 ::
 
-	autosubmit setstatus EXPID -f fs STATUS_ORIGINAL -t STATUS_FINAL -s
+	autosubmit setstatus EXPID -fs STATUS_ORIGINAL -t STATUS_FINAL -s
 
 *EXPID* is the experiment identifier.
 *STATUS_ORIGINAL* is the original status to filter by the list of jobs.
@@ -91,7 +91,7 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 How to change the job status without stopping autosubmit
 ========================================================
 
-This procedure allows you to modify the status of your jobs without having to stop Autosubmit.
+    This procedure allows you to modify the status of your jobs without having to stop Autosubmit.
 
 You must create a file in ``<experiments_directory>/<expid>/pkl/`` named:
 ::

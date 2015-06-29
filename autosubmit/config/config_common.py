@@ -86,15 +86,21 @@ class AutosubmitConfig:
         :return: experiment's project directory
         :rtype: str
         """
-        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
-        # Getting project name for each type of project
-        if self.get_project_type().lower() == "local":
-            dir_templates = os.path.join(dir_templates, os.path.split(self.get_local_project_path())[1])
-        elif self.get_project_type().lower() == "svn":
-            dir_templates = os.path.join(dir_templates, self.get_svn_project_url().split('/')[-1])
-        elif self.get_project_type().lower() == "git":
-            dir_templates = os.path.join(dir_templates, self.get_project_destination())
+        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR,
+                                     self.get_project_destination())
         return dir_templates
+
+    def get_wallclock(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
+
+    def get_processors(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1)
+
+    def get_threads(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1)
+
+    def get_tasks(self, section):
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1)
 
     def check_conf_files(self):
         """
@@ -769,10 +775,10 @@ class AutosubmitConfig:
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
 
-            remote_platform.max_waiting_jobs = AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                           self.get_max_waiting_jobs())
-            remote_platform.total_jobs = AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                     self.get_total_jobs())
+            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
+                                                                           self.get_max_waiting_jobs()))
+            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
+                                                                     self.get_total_jobs()))
             remote_platform.set_host(host)
             remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))

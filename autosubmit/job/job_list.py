@@ -435,10 +435,12 @@ class JobList:
                 move(os.path.join(self._pkl_path, self._update_file), os.path.join(self._pkl_path, self._update_file +
                                                                                    "_" + output_date))
 
+    @property
+    def parameters(self):
+        return self._parameters
+
     def update_parameters(self, parameters):
         self._parameters = parameters
-        for job in self._job_list:
-            job.parameters = parameters
 
     def update_list(self, store_change=True):
         # load updated file list
@@ -520,7 +522,7 @@ class JobList:
         for job in self._job_list:
             if job.section in sections_checked:
                 continue
-            if not job.check_script(as_conf):
+            if not job.check_script(as_conf, self.parameters):
                 out = False
                 Log.warning("Invalid parameter substitution in {0} template!!!", job.section)
             sections_checked.add(job.section)
@@ -870,7 +872,6 @@ class DicJobs:
         job.processors = self.get_option(section, "PROCESSORS", 1)
         job.threads = self.get_option(section, "THREADS", 1)
         job.tasks = self.get_option(section, "TASKS", 1)
-
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         self._joblist.get_job_list().append(job)
         return job

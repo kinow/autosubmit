@@ -447,14 +447,16 @@ class Job:
         else:
             self.status = Status.FAILED
 
-    def update_parameters(self, as_conf):
+    def update_parameters(self, as_conf, parameters):
         """
         Refresh parameters value
 
         :param as_conf:
         :type as_conf: AutosubmitConfig
+        :param parameters:
+        :type parameters: dict
         """
-        parameters = self.parameters
+        parameters = parameters.copy()
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
 
@@ -503,6 +505,11 @@ class Job:
                 parameters['Chunk_LAST'] = 'TRUE'
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
+
+        self.processors = as_conf.get_processors(self.section)
+        self.threads = as_conf.get_threads(self.section)
+        self.tasks = as_conf.get_tasks(self.section)
+        self.wallclock = as_conf.get_wallclock(self.section)
 
         parameters['NUMPROC'] = self.processors
         parameters['NUMTHREADS'] = self.threads
@@ -566,7 +573,7 @@ class Job:
         :return: script's filename
         :rtype: str
         """
-        parameters = self.update_parameters(as_conf)
+        parameters = self.parameters
         template_content = self.update_content(as_conf.get_project_dir())
         # print "jobType: %s" % self._type
         # print template_content
@@ -581,7 +588,7 @@ class Job:
 
         return scriptname
 
-    def check_script(self, as_conf):
+    def check_script(self, as_conf, parameters):
         """
         Checks if script is well formed
 
@@ -590,7 +597,7 @@ class Job:
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
-        parameters = self.update_parameters(as_conf)
+        parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf.get_project_dir())
 
         variables = re.findall('%' + '(\w+)' + '%', template_content)
