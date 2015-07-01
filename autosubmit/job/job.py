@@ -575,12 +575,9 @@ class Job:
         """
         parameters = self.parameters
         template_content = self.update_content(as_conf.get_project_dir())
-        # print "jobType: %s" % self._type
-        # print template_content
-
         for key, value in parameters.items():
-            # print "%s:\t%s" % (key,parameters[key])
-            template_content = template_content.replace("%" + key + "%", str(parameters[key]))
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
+        template_content = template_content.replace("%%", "%")
 
         scriptname = self.name + '.cmd'
         file(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
@@ -600,8 +597,8 @@ class Job:
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf.get_project_dir())
 
-        variables = re.findall('%' + '(\w+)' + '%', template_content)
-        # variables += re.findall('%%'+'(.+?)'+'%%', template_content)
+        variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
+        variables = [variable[1:-1] for variable in variables]
         out = set(parameters).issuperset(set(variables))
 
         if not out:
