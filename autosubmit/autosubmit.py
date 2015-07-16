@@ -25,6 +25,7 @@ from ConfigParser import SafeConfigParser
 import argparse
 from commands import getstatusoutput
 import json
+import tarfile
 import time
 import cPickle
 import os
@@ -33,6 +34,7 @@ import shutil
 import re
 import random
 import signal
+import datetime
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from time import strftime
 from distutils.util import strtobool
@@ -59,6 +61,7 @@ from date.chunk_date_lib import date2str
 def signal_handler(signal_received, frame):
     Log.info('Autosubmit will interrupt at the next safe ocasion')
     Autosubmit.exit = True
+
 
 class Autosubmit:
     """
@@ -220,6 +223,14 @@ class Autosubmit:
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
 
+            # Archive
+            subparser = subparsers.add_parser('archive', description='archives an experiment')
+            subparser.add_argument('expid',  help='experiment identifier')
+
+            # Unarchive
+            subparser = subparsers.add_parser('unarchive', description='unarchives an experiment')
+            subparser.add_argument('expid',  help='experiment identifier')
+
             # Readme
             subparsers.add_parser('readme', description='show readme')
 
@@ -261,6 +272,10 @@ class Autosubmit:
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
                 return Autosubmit.refresh(args.expid, args.model_conf)
+            elif args.command == 'archive':
+                return Autosubmit.archive(args.expid)
+            elif args.command == 'unarchive':
+                return Autosubmit.unarchive(args.expid)
             elif args.command == 'readme':
                 if os.path.isfile(Autosubmit.readme_path):
                     with open(Autosubmit.readme_path) as f:
@@ -566,6 +581,9 @@ class Autosubmit:
             retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", retrials)
 
+            # Flag to write the pickle only if something has changed
+            save_pkl = False
+
             ######################################
             # AUTOSUBMIT - ALREADY SUBMITTED JOBS
             ######################################
@@ -584,6 +602,8 @@ class Autosubmit:
                 for job in jobinqueue:
                     job.print_job()
                     status = platform.check_job(job.id)
+                    if job.status != status:
+                        save_pkl = True
                     if status == Status.COMPLETED:
                         Log.debug("This job seems to have completed...checking")
                         platform.get_completed_files(job.name)
@@ -652,9 +672,11 @@ class Autosubmit:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
+                        save_pkl = True
                         Log.info("{0} submitted", job.name)
 
-            joblist.save()
+            if save_pkl:
+                joblist.save()
             if Autosubmit.exit:
                 Log.info('Interrupted by user.')
                 return 0
@@ -726,7 +748,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def clean(expid, project, plot, stats):
+    def clean(expid, project, plot, stats, create_log_file=True):
         """
         Clean experiment's directory to save storage space.
         It removes project directory and outdated plots or stats.
@@ -741,8 +763,9 @@ class Autosubmit:
         :param stats: set True to delete outdated stats
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'finalise_exp.log'))
+        if create_log_file:
+            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
+                                      'clean_exp.log'))
         if project:
             autosubmit_config = AutosubmitConfig(expid)
             if not autosubmit_config.check_conf_files():
@@ -753,10 +776,10 @@ class Autosubmit:
             if project_type == "git":
                 autosubmit_config.check_proj()
                 Log.info("Registering commit SHA...")
-                autosubmit_config.set_git_project_commit()
+                autosubmit_config.set_git_project_commit(autosubmit_config)
                 autosubmit_git = AutosubmitGit(expid[0])
                 Log.info("Cleaning GIT directory...")
-                if not autosubmit_git.clean_git():
+                if not autosubmit_git.clean_git(autosubmit_config):
                     return False
             else:
                 Log.info("No project to clean...\n")
@@ -1003,6 +1026,114 @@ class Autosubmit:
         return True
 
     @staticmethod
+    def archive(expid):
+        """
+        Archives an experiment: compress folder to tar.gz and moves to year's folder
+
+        :param expid: experiment identifier
+        :type expid: str
+        """
+        BasicConfig.read()
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'archive{0}.log'.format(expid)))
+        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+
+        # Cleaning to reduce file size.
+        if not Autosubmit.clean(expid, True, True, True, False):
+            Log.critical("Can not archive project. Clean not successful")
+            return False
+
+        # Getting year of last completed. If not, year of expid folder
+        year = None
+        tmp_folder = os.path.join(exp_folder, BasicConfig.LOCAL_TMP_DIR)
+        for filename in os.listdir(tmp_folder):
+            if filename.endswith("COMPLETED"):
+                file_year = time.localtime(os.path.getmtime(os.path.join(tmp_folder, filename))).tm_year
+                if year is None or year < file_year:
+                    year = file_year
+
+        if year is None:
+            year = time.localtime(os.path.getmtime(exp_folder)).tm_year
+        Log.info("Archiving in year {0}", year)
+
+        # Creating tar file
+        Log.info("Creating tar file ... ")
+        try:
+            year_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year))
+            if not os.path.exists(year_path):
+                os.mkdir(year_path)
+            with tarfile.open(os.path.join(year_path, '{0}.tar.gz'.format(expid)), "w:gz") as tar:
+                tar.add(exp_folder, arcname='')
+                tar.close()
+        except Exception as e:
+            Log.critical("Can not write tar file: {0}".format(e))
+            return False
+
+        Log.info("Tar file created!")
+
+        try:
+            shutil.rmtree(exp_folder)
+        except Exception as e:
+            Log.critical("Can not remove experiments folder: {0}".format(e))
+            Autosubmit.unarchive(expid)
+            return False
+
+        Log.result("Experiment archived succesfully")
+        return True
+
+    @staticmethod
+    def unarchive(expid):
+        """
+        Archives an experiment: compress folder to tar.gz and moves to year's folder
+
+        :param expid: experiment identifier
+        :type expid: str
+        """
+        BasicConfig.read()
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'unarchive{0}.log'.format(expid)))
+        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+
+        if os.path.exists(exp_folder):
+            Log.error("Experiment {0} is not archived", expid)
+            return False
+
+        # Searching by year. We will store it on database
+        year = datetime.datetime.today().year
+        archive_path = None
+        while year > 2000:
+            archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
+            if os.path.exists(archive_path):
+                break
+            year -= 1
+
+        if year == 2000:
+            Log.critical("Experiment can not be located on archive")
+            return False
+        Log.info("Experiment located in {0} archive", year)
+
+        # Creating tar file
+        Log.info("Unpacking tar file ... ")
+        try:
+            os.mkdir(exp_folder)
+            with tarfile.open(os.path.join(archive_path), "r:gz") as tar:
+                tar.extractall(exp_folder)
+                tar.close()
+        except Exception as e:
+            os.rmdir(exp_folder)
+            Log.critical("Can not extract tar file: {0}".format(e))
+            return False
+
+        Log.info("Unpacking finished.")
+
+        try:
+            os.remove(archive_path)
+        except Exception as e:
+            Log.error("Can not remove archived file folder: {0}".format(e))
+            return False
+
+        Log.result("Experiment {0} unarchived succesfully", expid)
+        return True
+
+    @staticmethod
     def _create_model_conf(as_conf, force):
         destiny = as_conf.project_file
         if os.path.exists(destiny):
@@ -1109,37 +1240,7 @@ class Autosubmit:
         """
         project_destination = as_conf.get_project_destination()
         if project_type == "git":
-            git_project_origin = as_conf.get_git_project_origin()
-            git_project_branch = as_conf.get_git_project_branch()
-            git_project_commit = as_conf.get_git_project_commit()
-            project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
-            if os.path.exists(project_path):
-                Log.info("Using project folder: {0}", project_path)
-                if not force:
-                    Log.debug("The project folder exists. SKIPPING...")
-                    return True
-                else:
-                    shutil.rmtree(project_path)
-            os.mkdir(project_path)
-            Log.debug("The project folder {0} has been created.", project_path)
-
-            Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
-                                               + git_project_branch + " " + git_project_origin + " "
-                                               + project_destination)
-            if status:
-                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-                shutil.rmtree(project_path)
-                return False
-            if git_project_commit:
-                (status, output) = getstatusoutput("cd {0}; git checkout {1} ".format(project_path, git_project_commit))
-                if status:
-                    Log.error("Can not checkout commit {0}", git_project_commit)
-                    shutil.rmtree(project_path)
-                    return False
-
-            Log.debug("{0}", output)
-
+            return AutosubmitGit.clone_repository(as_conf, force)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
             svn_project_revision = as_conf.get_svn_project_revision()
