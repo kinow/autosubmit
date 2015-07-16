@@ -336,7 +336,7 @@ class Autosubmit:
         """
         BasicConfig.read()
 
-        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'expid.log'.format(os.getuid()))
+        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs', 'expid.log'.format(os.getuid()))
         try:
             Log.set_file(log_path)
         except IOError as e:
@@ -432,7 +432,7 @@ class Autosubmit:
         :returns: True if succesful, False if not
         :rtype: bool
         """
-        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'delete.log'.format(os.getuid()))
+        log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'delete.log'.format(os.getuid()))
         try:
             Log.set_file(log_path)
         except IOError as e:
@@ -990,8 +990,10 @@ class Autosubmit:
     def install():
         """
         Creates a new database instance for autosubmit at the configured path
+
         """
         BasicConfig.read()
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'install.log'))
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
             qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
@@ -1034,7 +1036,7 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'archive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         # Cleaning to reduce file size.
@@ -1089,7 +1091,7 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'unarchive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         if os.path.exists(exp_folder):
