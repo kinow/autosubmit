@@ -295,26 +295,27 @@ def date2str(date, date_format=''):
     :type date: datetime.datetime
     :rtype: str
     """
+    # Can not use strftime because it not works with dates prior to 1-1-1900
     if date is None:
         return ''
     if date_format == 'H':
-        return date.strftime("%Y%m%d%H")
+        return "{0:04}{1:02}{2:02}{3:02}".format(date.year, date.month, date.day, date.hour)
     elif date_format == 'M':
-        return date.strftime("%Y%m%d%H%M")
+        return "{0:04}{1:02}{2:02}{3:02}{4:02}".format(date.year, date.month, date.day, date.hour, date.minute)
     else:
-        return date.strftime("%Y%m%d")
+        return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
 
 
 ####################
 # Main Program
 ####################
 def main():
-    string_date = datetime.datetime(2010, 5, 1, 12)
+    string_date = datetime.datetime(1800, 5, 1, 15)
     cal = 'noleap'
     start_date = chunk_start_date(string_date, 1, 1, 'month', cal)
-    Log.info(start_date)
+    Log.info(date2str(start_date, 'M'))
     end_date = chunk_end_date(start_date, 1, 'month', cal)
-    Log.info(end_date)
+    Log.info(date2str(end_date))
     Log.info("yesterday: {0} ", previous_day(string_date, cal))
 
 

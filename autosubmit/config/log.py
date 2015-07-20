@@ -132,6 +132,8 @@ class Log:
         :type file_path: str
         """
         (directory, filename) = os.path.split(file_path)
+        if not os.path.exists(directory):
+            os.mkdir(directory)
         files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and
                  f.endswith(filename)]
         if len(files) >= 5:

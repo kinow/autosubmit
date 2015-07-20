@@ -18,10 +18,10 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 from os import path
-from os import listdir
 import os
 from shutil import rmtree
 from commands import getstatusoutput
+import shutil
 
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
@@ -38,49 +38,80 @@ class AutosubmitGit:
     def __init__(self, expid):
         self._expid = expid
 
-    def clean_git(self):
+    @staticmethod
+    def clean_git(as_conf):
         """
         Function to clean space on BasicConfig.LOCAL_ROOT_DIR/git directory.
+
+        :param as_conf: experiment configuration
+        :type as_conf: autosubmit.config.AutosubmitConfig
         """
-        proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, BasicConfig.LOCAL_PROJ_DIR)
-        dirs = listdir(proj_dir)
-        if dirs:
-            Log.debug("Checking git directories status...")
-            for dirname in dirs:
-                dirname_path = os.path.join(proj_dir, dirname)
-                Log.debug("Directory: " + dirname)
-                if path.isdir(dirname_path):
-                    if path.isdir(os.path.join(dirname_path, '.git')):
-                        (status, output) = getstatusoutput("cd " + dirname_path + "; " +
-                                                           "git diff-index HEAD --")
-                        if status == 0:
-                            if output:
-                                Log.info("Changes not commited detected... SKIPPING!")
-                                Log.user_warning("Commit needed!")
-                                return False
-                            else:
-                                (status, output) = getstatusoutput("cd " + dirname_path + "; " +
-                                                                   "git log --branches --not --remotes")
-                                if output:
-                                    Log.info("Changes not pushed detected... SKIPPING!")
-                                    Log.user_warning("Synchronization needed!")
-                                    return False
-                                else:
-                                    Log.debug("Ready to clean...")
-                                    Log.debug("Cloning: 'git clone --bare " + dirname + " " + dirname + ".git' ...")
-                                    # noinspection PyUnusedLocal
-                                    (status, output) = getstatusoutput("cd " + proj_dir + "; " +
-                                                                       "git clone --bare " + dirname +
-                                                                       " " + dirname + ".git")
-                                    Log.debug("Removing: " + dirname)
-                                    rmtree(dirname_path)
-                                    Log.debug(dirname + " directory clean!")
-                                    Log.user_warning("Further runs will require 'git clone {0}.git {0} '...", dirname)
-                        else:
-                            Log.error("Failed to retrieve git info...")
-                            return False
+        proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
+        dirname_path = as_conf.get_project_dir()
+        Log.debug("Checking git directory status...")
+        if path.isdir(dirname_path):
+            if path.isdir(os.path.join(dirname_path, '.git')):
+                (status, output) = getstatusoutput("cd " + dirname_path + "; " +
+                                                   "git diff-index HEAD --")
+                if status == 0:
+                    if output:
+                        Log.info("Changes not commited detected... SKIPPING!")
+                        Log.user_warning("Commit needed!")
+                        return False
                     else:
-                        Log.debug("Not a git repository... SKIPPING!")
+                        (status, output) = getstatusoutput("cd " + dirname_path + "; " +
+                                                           "git log --branches --not --remotes")
+                        if output:
+                            Log.info("Changes not pushed detected... SKIPPING!")
+                            Log.user_warning("Synchronization needed!")
+                            return False
+                        else:
+                            if not as_conf.set_git_project_commit(as_conf):
+                                return False
+                            Log.debug("Removing directory")
+                            rmtree(proj_dir)
                 else:
-                    Log.debug("Not a directory... SKIPPING!")
+                    Log.error("Failed to retrieve git info...")
+                    return False
+            else:
+                Log.debug("Not a git repository... SKIPPING!")
+        else:
+            Log.debug("Not a directory... SKIPPING!")
+        return True
+
+    @staticmethod
+    def clone_repository(as_conf, force):
+        git_project_origin = as_conf.get_git_project_origin()
+        git_project_branch = as_conf.get_git_project_branch()
+        git_project_commit = as_conf.get_git_project_commit()
+        project_destination = as_conf.get_project_destination()
+        project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
+        git_path = as_conf.get_project_dir()
+
+        if os.path.exists(project_path):
+            Log.info("Using project folder: {0}", project_path)
+            if not force:
+                Log.debug("The project folder exists. SKIPPING...")
+                return True
+            else:
+                shutil.rmtree(project_path)
+        os.mkdir(project_path)
+        Log.debug("The project folder {0} has been created.", project_path)
+
+        Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+        (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
+                                           + git_project_branch + " " + git_project_origin + " "
+                                           + project_destination)
+        if status:
+            Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+            shutil.rmtree(project_path)
+            return False
+        if git_project_commit:
+            (status, output) = getstatusoutput("cd {0}; git checkout {1} ".format(git_path, git_project_commit))
+            if status:
+                Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
+                shutil.rmtree(project_path)
+                return False
+
+        Log.debug("{0}", output)
         return True

@@ -21,7 +21,6 @@ import os
 import platform
 from pyparsing import nestedExpr
 import re
-from os import listdir
 from commands import getstatusoutput
 
 from autosubmit.date.chunk_date_lib import parse_date
@@ -478,48 +477,40 @@ class AutosubmitConfig:
                 value = self.get_git_project_origin().split('/')[-1].split('.')[-2]
         return value
 
-    def set_git_project_commit(self):
+    def set_git_project_commit(self, as_conf):
         """
         Function to register in the configuration the commit SHA of the git project version.
+        :param as_conf: Configuration class for exteriment
+        :type as_conf: AutosubmitConfig
         """
-        save = False
-        project_branch_sha = None
-        full_proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
-        project_name = listdir(full_proj_dir)[0]
-        full_project_path = os.path.join(full_proj_dir, project_name)
-        (status1, output) = getstatusoutput("cd " + full_project_path)
-        (status2, output) = getstatusoutput("cd " + full_project_path + "; " +
-                                            "git rev-parse --abbrev-ref HEAD")
-        if status1 == 0 and status2 == 0:
+        full_project_path = as_conf.get_project_dir()
+        (status, output) = getstatusoutput("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path))
+        if status == 0:
             project_branch = output
             Log.debug("Project branch is: " + project_branch)
 
-            (status1, output) = getstatusoutput("cd " + full_project_path)
-            (status2, output) = getstatusoutput("cd " + full_project_path + "; " +
-                                                "git rev-parse HEAD")
-            if status1 == 0 and status2 == 0:
+            (status, output) = getstatusoutput("cd {0}; git rev-parse HEAD".format(full_project_path))
+            if status == 0:
                 project_sha = output
-                save = True
                 Log.debug("Project commit SHA is: " + project_sha)
-                project_branch_sha = project_branch + " " + project_sha
             else:
                 Log.critical("Failed to retrieve project commit SHA...")
-
+                return False
         else:
             Log.critical("Failed to retrieve project branch...")
+            return False
 
-            # register changes
-        if save:
-            content = file(self._exp_parser_file).read()
-            if re.search('PROJECT_COMMIT =.*', content):
-                content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
-                                          "PROJECT_COMMIT = " + project_branch_sha)
-            file(self._exp_parser_file, 'w').write(content)
-            Log.debug("Project commit SHA succesfully registered to the configuration file.")
-            return True
-        else:
-            Log.critical("Changes NOT registered to the configuration file...")
-        return False
+        # register changes
+        content = file(self._exp_parser_file).read()
+        if re.search('PROJECT_BRANCH =.*', content):
+            content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
+                                      "PROJECT_BRANCH = " + project_branch)
+        if re.search('PROJECT_COMMIT =.*', content):
+            content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
+                                      "PROJECT_COMMIT = " + project_sha)
+        file(self._exp_parser_file, 'w').write(content)
+        Log.debug("Project commit SHA succesfully registered to the configuration file.")
+        return True
 
     def get_svn_project_url(self):
         """
@@ -776,9 +767,9 @@ class AutosubmitConfig:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
 
             remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                           self.get_max_waiting_jobs()))
+                                                                               self.get_max_waiting_jobs()))
             remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                     self.get_total_jobs()))
+                                                                         self.get_total_jobs()))
             remote_platform.set_host(host)
             remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
             remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
