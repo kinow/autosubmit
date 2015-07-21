@@ -12,9 +12,9 @@ Welcome to autosubmit's documentation!
    :maxdepth: 5
 
    introduction
+   tutorial
    installation
    usage
    troubleshoot
-   tutorial
    project
    codedoc/main

@@ -1,3 +1,6 @@
+3.1.0
+    Added archive and unarchive commands
+
 3.0.6
     Fixed bug in setstatus.
     Change in test.

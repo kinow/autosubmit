@@ -20,6 +20,9 @@ Command list
 -delete  Delete specified experiment
 -configure  Configure database and path for autosubmit
 -install  Install database for Autosubmit on the configured folder
+-refresh Refresh project directory for an experiment
+-archive Clean, compress and remove from the experiments' folder a finalized experiment
+-unarchive Restores an archived experiment
 
 
 How to create an experiment
@@ -37,12 +40,12 @@ Options:
 
 	usage: autosubmit expid [-h] [-y COPY | -dm] -H HPC -d DESCRIPTION
 
-	  -h, --help            show this help message and exit
-	  -y COPY, --copy COPY  makes a copy of the specified experiment
-	  -dm, --dummy          creates a new experiment with default values, usually for testing
-	  -H HPC, --HPC HPC     specifies the HPC to use for the experiment
-	  -d DESCRIPTION, --description DESCRIPTION
-	                        sets a description for the experiment to store in the database.
+	    -h, --help            show this help message and exit
+	    -y COPY, --copy COPY  makes a copy of the specified experiment
+	    -dm, --dummy          creates a new experiment with default values, usually for testing
+	    -H HPC, --HPC HPC     specifies the HPC to use for the experiment
+	    -d DESCRIPTION, --description DESCRIPTION
+	        sets a description for the experiment to store in the database.
 
 Example:
 ::
@@ -611,7 +614,7 @@ This will create a platform named "new_platform". The options specified are all 
 * SCRATCH_DIR: path to the scratch directory of the machine
 
 .. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
-VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
+	VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:
@@ -647,3 +650,94 @@ Example:
     USER = my_user
     SCRATCH_DIR = /scratch
     TEST_SUITE = True
+
+
+How to refresh an experiment
+============================
+To refresh the project folder after creating the experiment use the command:
+::
+	autosubmit refresh EXPID
+
+*EXPID* is the experiment identifier.
+
+Options:
+::
+
+	usage: autosubmit refresh [-h] [-mc] expid
+
+	refresh project directory for an experiment
+
+	positional arguments:
+	  expid              experiment identifier
+
+	optional arguments:
+	  -h, --help         show this help message and exit
+	  -mc, --model_conf  overwrite model conf file
+
+Example:
+::
+
+	autosubmit refresh cxxx
+
+
+How to archive an experiment
+============================
+
+To archive the experiment, use the command:
+::
+
+	autosubmit archive EXPID
+
+*EXPID* is the experiment identifier.
+
+.. warning:: this command calls implicitly the clean command. Check clean command documentation.
+
+.. warning:: experiment will be unusable after archiving. If you want to use it, you will need to call first the
+	unarchive command
+
+
+Options:
+::
+
+	usage: autosubmit archive [-h] expid
+
+	  expid                 experiment identifier
+
+	  -h, --help            show this help message and exit
+
+
+Example:
+::
+
+	autosubmit archive cxxx
+
+.. hint:: Archived experiment will be stored as a tar.gz file on a folder named after the year of the last
+	COMPLETED file date. If not COMPLETED file is present, it will be stored in the folder matching the
+	date at the time the archive command was run.
+
+How to unarchive an experiment
+============================
+
+To unarchive an experiment, use the command:
+::
+
+	autosubmit unarchive EXPID
+
+*EXPID* is the experiment identifier.
+
+Options:
+::
+
+	usage: autosubmit unarchive [-h] expid
+
+	  expid                 experiment identifier
+
+	  -h, --help            show this help message and exit
+
+
+Example:
+::
+
+	autosubmit unarchive cxxx
+
+
