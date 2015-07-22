@@ -125,7 +125,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
 
 def get_autosubmit_version(expid):
     """
-    Get the version that the experiment was created for
+    Get the minimun autosubmit version needed for the experiment
 
     :param expid: Experiment name
     :type expid: str

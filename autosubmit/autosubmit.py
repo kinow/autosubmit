@@ -1031,7 +1031,8 @@ class Autosubmit:
     @staticmethod
     def archive(expid):
         """
-        Archives an experiment: compress folder to tar.gz and moves to year's folder
+        Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
+        to tar.gz and moves to year's folder
 
         :param expid: experiment identifier
         :type expid: str
@@ -1086,7 +1087,7 @@ class Autosubmit:
     @staticmethod
     def unarchive(expid):
         """
-        Archives an experiment: compress folder to tar.gz and moves to year's folder
+        Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
         :param expid: experiment identifier
         :type expid: str
