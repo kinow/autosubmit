@@ -53,6 +53,7 @@ from database.db_common import create_db
 from database.db_common import new_experiment
 from database.db_common import copy_experiment
 from database.db_common import delete_experiment
+from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 
@@ -1040,7 +1041,7 @@ class Autosubmit:
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         # Cleaning to reduce file size.
-        if not Autosubmit.clean(expid, True, True, True, False):
+        if get_autosubmit_version(expid) != '2' and not Autosubmit.clean(expid, True, True, True, False):
             Log.critical("Can not archive project. Clean not successful")
             return False
 
