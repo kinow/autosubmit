@@ -28,7 +28,6 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
-from autosubmit.platforms.localplatform import LocalPlatform
 
 
 class Job:

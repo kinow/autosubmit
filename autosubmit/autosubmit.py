@@ -39,6 +39,7 @@ from pkg_resources import require, resource_listdir, resource_exists, resource_s
 from time import strftime
 from distutils.util import strtobool
 
+
 from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
@@ -56,6 +57,8 @@ from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
+
+from platforms.submitter import Submitter
 
 
 # noinspection PyUnusedLocal
@@ -456,25 +459,11 @@ class Autosubmit:
         parameters = as_conf.load_parameters()
         for platform_name in platforms:
             platform = platforms[platform_name]
-            parameters['{0}_ARCH'.format(platform.name)] = platform.name
-            parameters['{0}_USER'.format(platform.name)] = platform.user
-            parameters['{0}_PROJ'.format(platform.name)] = platform.project
-            parameters['{0}_BUDG'.format(platform.name)] = platform.budget
-            parameters['{0}_TYPE'.format(platform.name)] = platform.type
-            parameters['{0}_VERSION'.format(platform.name)] = platform.version
-            parameters['{0}_SCRATCH_DIR'.format(platform.name)] = platform.scratch
-            parameters['{0}_ROOTDIR'.format(platform.name)] = platform.root_dir
+            platform.add_parameters(parameters)
 
         platform = platforms[as_conf.get_platform()]
-        parameters['HPCARCH'] = platform.name
-        parameters['HPCUSER'] = platform.user
-        parameters['HPCPROJ'] = platform.project
-        parameters['HPCBUDG'] = platform.budget
-        parameters['HPCTYPE'] = platform.type
-        parameters['HPCVERSION'] = platform.version
-        parameters['SCRATCH_DIR'] = platform.scratch
-        parameters['HPCROOTDIR'] = platform.root_dir
-        Log.debug("Updating parameters...")
+        platform.add_parameters(parameters, True)
+
         joblist.update_parameters(parameters)
 
     @staticmethod
@@ -513,18 +502,13 @@ class Autosubmit:
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
 
-        platforms = as_conf.read_platforms_conf()
-        if platforms is None:
-            return False
+        submitter = Submitter()
+        submitter.load_platforms(as_conf)
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
         Log.debug("Retrials: {0}", retrials)
         Log.info("Starting job submission...")
-
-        # for platforms in platforms:
-        #     signal.signal(signal.SIGQUIT, platforms[platforms].smart_stop)
-        #     signal.signal(signal.SIGINT, platforms[platforms].normal_stop)
 
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         Log.debug(filename)
@@ -539,7 +523,7 @@ class Autosubmit:
 
         Log.debug("Length of joblist: {0}", len(joblist))
 
-        Autosubmit._load_parameters(as_conf, joblist, platforms)
+        Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
         # check the job list script creation
         Log.debug("Checking experiment templates...")
@@ -557,7 +541,7 @@ class Autosubmit:
 
         # check the availability of the Queues
         for platform in platforms_to_test:
-            platform.connect()
+            platform.service
             platform.check_remote_log_dir()
 
         #########################
