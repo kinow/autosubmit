@@ -123,7 +123,7 @@ class Job:
         if self.processors > 1:
             return self._platform
         else:
-            return self._platform.get_serial_platform()
+            return self._platform.serial_platform
 
     def set_platform(self, value):
         """
@@ -144,9 +144,9 @@ class Job:
         if self._queue is not None:
             return self._queue
         if self.processors > 1:
-            return self._platform.get_queue()
+            return self._platform.queue
         else:
-            return self._platform.get_serial_platform().get_serial_queue()
+            return self._platform.serial_platform.serial_queue
 
     def set_queue(self, value):
         """
@@ -523,7 +523,6 @@ class Job:
         parameters['CURRENT_PROJ'] = job_platform.project
         parameters['CURRENT_BUDG'] = job_platform.budget
         parameters['CURRENT_TYPE'] = job_platform.type
-        parameters['CURRENT_VERSION'] = job_platform.version
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
 
@@ -548,18 +547,16 @@ class Job:
             template = template_file.read()
         else:
             template = ''
-        current_platform = self.get_platform()
-        if isinstance(current_platform, LocalPlatform):
-            stats_header = StatisticsSnippet.AS_HEADER_LOC
-            stats_tailer = StatisticsSnippet.AS_TAILER_LOC
-        else:
-            stats_header = StatisticsSnippet.AS_HEADER_REM
-            stats_tailer = StatisticsSnippet.AS_TAILER_REM
 
-        template_content = ''.join([current_platform.get_header(self),
-                                   stats_header,
-                                   template,
-                                   stats_tailer])
+        # if isinstance(current_platform, LocalPlatform):
+        stats_header = StatisticsSnippet.AS_HEADER_LOC
+        stats_tailer = StatisticsSnippet.AS_TAILER_LOC
+        # else:
+        #     stats_header = StatisticsSnippet.AS_HEADER_REM
+        #     stats_tailer = StatisticsSnippet.AS_TAILER_REM
+        template_content = ''.join([stats_header,
+                                    template,
+                                    stats_tailer])
 
         return template_content
 

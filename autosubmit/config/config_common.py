@@ -165,8 +165,8 @@ class AutosubmitConfig:
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'USER')
 
-            if platform_type in ['pbs', 'ecaccess']:
-                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
+            # if platform_type in ['pbs', 'ecaccess']:
+            #     result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
 
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,

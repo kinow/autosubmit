@@ -82,8 +82,7 @@ class StatisticsSnippet:
                 failed_errfile_stamp=$(stat -c %Z $failed_errfile)
                 failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
-            echo "
-            $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            echo "$job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             exit 0
             """)
 

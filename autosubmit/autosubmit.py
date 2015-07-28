@@ -533,16 +533,11 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(submitter.platforms[job.platform_name])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(submitter.platforms[job.platform_name])
 
         joblist.check_scripts(as_conf)
-
-        # check the availability of the Queues
-        for platform in platforms_to_test:
-            platform.service
-            platform.check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
@@ -555,7 +550,7 @@ class Autosubmit:
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
-            Autosubmit._load_parameters(as_conf, joblist, platforms)
+            Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
@@ -579,10 +574,6 @@ class Autosubmit:
                     continue
 
                 Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
-
-                if not platform.check_host():
-                    Log.debug("{0} is not available", platform.name)
-                    continue
 
                 for job in jobinqueue:
                     job.print_job()
@@ -617,16 +608,12 @@ class Autosubmit:
             # get the list of jobs READY
             joblist.update_list()
             for platform in platforms_to_test:
-
+                jobinqueue = joblist.get_in_queue(platform)
                 jobsavail = joblist.get_ready(platform)
                 if len(jobsavail) == 0:
                     continue
 
                 Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
-
-                if not platform.check_host():
-                    Log.debug("{0} is not available", platform.name)
-                    continue
 
                 max_jobs = platform.total_jobs
                 max_waiting_jobs = platform.max_waiting_jobs
@@ -636,23 +623,17 @@ class Autosubmit:
                 if min(available, len(jobsavail)) == 0:
                     Log.debug("Number of jobs ready: {0}", len(jobsavail))
                     Log.debug("Number of jobs available: {0}", available)
-                elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
+                elif min(available, len(jobsavail)) > 0 and len(joblist.get_in_queue(platform)) <= max_jobs:
                     Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
-                    # should sort the jobsavail by priority Clean->post->sim>ini
-                    # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
-                    # probably useless to sort by year before sorting by type
-                    s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
 
+                    s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
                     list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
 
                     for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
-                        Log.debug(job.name)
                         job.update_parameters(as_conf, joblist.parameters)
                         scriptname = job.create_script(as_conf)
-                        Log.debug(scriptname)
-
-                        platform.send_script(scriptname)
-                        job.id = platform.submit_job(scriptname)
+                        platform.send_file(scriptname)
+                        job.id = platform.submit_job(job, scriptname)
                         if job.id is None:
                             continue
                         # set status to "submitted"
