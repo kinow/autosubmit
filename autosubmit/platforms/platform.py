@@ -87,7 +87,7 @@ class Platform:
     def send_file(self, filename):
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
         if self.type == 'local':
-            out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_'+self.expid, filename,)),
+            out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename,)),
                      saga.filesystem.CREATE_PARENTS)
         else:
             workdir = self.get_workdir(self.root_dir)
@@ -111,7 +111,7 @@ class Platform:
     def get_file(self, filename, must_exist=True):
         try:
             if self.type == 'local':
-                out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_'+self.expid,
+                out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
                                                                             filename)))
             else:
                 out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.root_dir, filename)))
@@ -130,7 +130,14 @@ class Platform:
             path = self.root_dir
         return path
 
-    def submit_job(self, job, scriptname):
+    def create_saga_job(self, job, scriptname):
+        """
+
+        :param job:
+        :param scriptname:
+        :return:
+        :rtype: saga.job.Job
+        """
         jd = saga.job.Description()
         jd.executable = os.path.join(self._get_files_path(), scriptname)
         jd.working_directory = self._get_files_path()
@@ -147,7 +154,6 @@ class Platform:
         self.add_atribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
         saga_job = self.service.create_job(jd)
-        saga_job.run()
         return saga_job
 
     def add_atribute(self, jd, name, value):

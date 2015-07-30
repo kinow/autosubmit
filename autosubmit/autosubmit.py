@@ -38,9 +38,11 @@ import datetime
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from time import strftime
 from distutils.util import strtobool
+from threading import Semaphore
 
 
 from pyparsing import nestedExpr
+import saga
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -67,7 +69,7 @@ from platforms.submitter import Submitter
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
     Log.info('Autosubmit will interrupt at the next safe ocasion')
-    Autosubmit.exit = True
+    Autosubmit.exit()
 
 
 class Autosubmit:
@@ -89,6 +91,8 @@ class Autosubmit:
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+
+    _mutex = None
 
     @staticmethod
     def parse_args():
@@ -486,7 +490,7 @@ class Autosubmit:
                                   'run.log'))
         os.system('clear')
 
-        Autosubmit.exit = False
+        Autosubmit.exit
         signal.signal(signal.SIGINT, signal_handler)
 
         as_conf = AutosubmitConfig(expid)
@@ -547,110 +551,19 @@ class Autosubmit:
         #########################
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
-            if Autosubmit.exit:
-                Log.info('Interrupted by user.')
-                return 0
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
             Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
-            # variables to be updated on the fly
-            total_jobs = len(joblist.get_job_list())
-            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
-                                                                  strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", retrials)
 
-            # Flag to write the pickle only if something has changed
-            save_pkl = False
-
-            ######################################
-            # AUTOSUBMIT - ALREADY SUBMITTED JOBS
-            ######################################
-            for platform in platforms_to_test:
-
-                jobinqueue = joblist.get_in_queue(platform)
-                if len(jobinqueue) == 0:
-                    continue
-
-                Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
-
-                for job in jobinqueue:
-                    job.print_job()
-                    status = platform.check_job(job.id)
-                    if job.status != status:
-                        save_pkl = True
-                    if status == Status.COMPLETED:
-                        Log.debug("This job seems to have completed...checking")
-                        platform.get_completed_files(job.name)
-                        job.check_completion()
-                    else:
-                        job.status = status
-                    if job.status is Status.QUEUING:
-                        Log.info("Job {0} is QUEUING", job.name)
-                    elif job.status is Status.RUNNING:
-                        Log.info("Job {0} is RUNNING", job.name)
-                    elif job.status is Status.COMPLETED:
-                        Log.result("Job {0} is COMPLETED", job.name)
-                    elif job.status is Status.FAILED:
-                        Log.user_warning("Job {0} is FAILED", job.name)
-                    elif job.status is Status.UNKNOWN:
-                        Log.debug("Job {0} in UNKNOWN status. Checking completed files", job.name)
-                        platform.get_completed_files(job.name)
-                        job.check_completion(Status.UNKNOWN)
-                    elif job.status is Status.SUBMITTED:
-                        # after checking the jobs , no job should have the status "submitted"
-                        Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
-
-            ##############################
-            # AUTOSUBMIT - JOBS TO SUBMIT
-            ##############################
-            # get the list of jobs READY
-            joblist.update_list()
-            for platform in platforms_to_test:
-                jobinqueue = joblist.get_in_queue(platform)
-                jobsavail = joblist.get_ready(platform)
-                if len(jobsavail) == 0:
-                    continue
-
-                Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
-
-                max_jobs = platform.total_jobs
-                max_waiting_jobs = platform.max_waiting_jobs
-                waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                available = max_waiting_jobs - waiting
-
-                if min(available, len(jobsavail)) == 0:
-                    Log.debug("Number of jobs ready: {0}", len(jobsavail))
-                    Log.debug("Number of jobs available: {0}", available)
-                elif min(available, len(jobsavail)) > 0 and len(joblist.get_in_queue(platform)) <= max_jobs:
-                    Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
-
-                    s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
-                    list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
-
-                    for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
-                        job.update_parameters(as_conf, joblist.parameters)
-                        scriptname = job.create_script(as_conf)
-                        platform.send_file(scriptname)
-                        saga_job = platform.submit_job(job, scriptname)
-                        job.id = saga_job.id
-                        if job.id is None:
-                            continue
-                        # set status to "submitted"
-                        job.status = Status.SUBMITTED
-                        save_pkl = True
-                        Log.info("{0} submitted", job.name)
-
-            if save_pkl:
-                joblist.save()
-            if Autosubmit.exit:
-                Log.info('Interrupted by user.')
-                return 0
-            time.sleep(safetysleeptime)
+            Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test)
+            joblist.save()
+            time.sleep(1)
 
         Log.info("No more jobs to run.")
         if len(joblist.get_failed()) > 0:
@@ -659,6 +572,46 @@ class Autosubmit:
         else:
             Log.result("Run successful")
             return True
+
+    @staticmethod
+    def submit_ready_jobs(as_conf, joblist, platforms_to_test):
+        for platform in platforms_to_test:
+            jobinqueue = joblist.get_in_queue(platform)
+            jobsavail = joblist.get_ready(platform)
+            if len(jobsavail) == 0:
+                continue
+
+            Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
+
+            max_jobs = platform.total_jobs
+            max_waiting_jobs = platform.max_waiting_jobs
+            waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
+            available = max_waiting_jobs - waiting
+
+            if min(available, len(jobsavail)) == 0:
+                Log.debug("Number of jobs ready: {0}", len(jobsavail))
+                Log.debug("Number of jobs available: {0}", available)
+            elif min(available, len(jobsavail)) > 0 and len(joblist.get_in_queue(platform)) <= max_jobs:
+                Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
+
+                s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
+                list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
+
+                for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
+                    job.update_parameters(as_conf, joblist.parameters)
+                    scriptname = job.create_script(as_conf)
+                    platform.send_file(scriptname)
+                    saga_job = platform.create_saga_job(job, scriptname)
+                    cb = StateChangedCallback(joblist, platforms_to_test, job, as_conf)
+                    saga_job.add_callback(saga.STATE, cb)
+                    saga_job.run()
+                    job.id = saga_job.id
+                    if job.id is None:
+                        continue
+                    Log.info("{0} submitted", job.name)
+                    # set status to "submitted"
+                    job.status = Status.SUBMITTED
+
 
     @staticmethod
     def monitor(expid, file_format):
@@ -674,7 +627,7 @@ class Autosubmit:
         root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
-        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + '_' + expid + '.pkl')
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
         jobs = cPickle.load(file(filename, 'r'))
@@ -1174,7 +1127,7 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.create(date_list, member_list,  num_chunks, parameters, date_format)
+        job_list.create(date_list, member_list, num_chunks, parameters, date_format)
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
@@ -1294,7 +1247,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
-        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + "_" + expid +
+        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
                                      ".pkl"), 'r'))
 
         final_status = Autosubmit._get_status(final)
@@ -1603,3 +1556,24 @@ class Autosubmit:
         if not Autosubmit.run_experiment(testid):
             return False
         return Autosubmit.delete(testid, True)
+
+    @staticmethod
+    def exit():
+        exit(2)
+
+class StateChangedCallback (saga.Callback):
+
+    def __init__(self, joblist, platforms, job, as_conf):
+        self.job_list = joblist
+        self.platforms = platforms
+        self.platform = job.get_platform()
+        self.job = job
+        self.as_conf = as_conf
+
+    def cb(self, obj, key, val):
+        job = self.job
+        status = self.platform.check_job(job.id)
+        job.update_status(status)
+        self.job_list.update_list()
+        self.job_list.save()
+

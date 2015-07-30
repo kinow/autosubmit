@@ -601,7 +601,7 @@ class JobList:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member
-                    and i.chunk == chunk]:
+                                and i.chunk == chunk]:
                         if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)

@@ -81,6 +81,7 @@ class Job:
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self._ancestors = None
+        self._platform = None
 
     def __getstate__(self):
         odict = self.__dict__
@@ -419,6 +420,29 @@ class Job:
         :rtype: str
         """
         return self._get_from_completed(5)
+
+    def update_status(self, new_status):
+        if new_status == Status.COMPLETED:
+            Log.debug("This job seems to have completed...checking")
+            self.get_platform().get_completed_files(self.name)
+            self.check_completion()
+        else:
+            self.status = new_status
+        if self.status is Status.QUEUING:
+            Log.info("Job {0} is QUEUING", self.name)
+        elif self.status is Status.RUNNING:
+            Log.info("Job {0} is RUNNING", self.name)
+        elif self.status is Status.COMPLETED:
+            Log.result("Job {0} is COMPLETED", self.name)
+        elif self.status is Status.FAILED:
+            Log.user_warning("Job {0} is FAILED", self.name)
+        elif self.status is Status.UNKNOWN:
+            Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
+            self.get_platform().get_completed_files(self.name)
+            self.check_completion(Status.UNKNOWN)
+        elif self.status is Status.SUBMITTED:
+            # after checking the jobs , no job should have the status "submitted"
+            Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
 
     def check_completion(self, default_status=Status.FAILED):
         """

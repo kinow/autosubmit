@@ -28,7 +28,6 @@ from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 
-
 class AutosubmitConfig:
     """Class to handle experiment configuration coming from file or database"""
 

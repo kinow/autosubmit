@@ -323,7 +323,7 @@ class Adaptor(saga.adaptors.base.Base):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding,PyMethodOverriding
+# noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember
 class MNJobService(saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
@@ -875,7 +875,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding
+# noinspection PyMethodOverriding,PyProtectedMember
 class MNJob(saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
