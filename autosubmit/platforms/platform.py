@@ -109,12 +109,24 @@ class Platform:
         jd.working_directory = self._get_files_path()
         jd.output = "{0}.out".format(job.name)
         jd.error = "{0}.err".format(job.name)
-        jd.wall_time_limit   = 1 # minute
-        jd.total_cpu_count   = 1
-        jd.project           = "bsc32"
+        self.add_atribute(jd, 'wall_time_limit', 5)
+
+        self.add_atribute(jd, 'queue', job.parameters["CURRENT_QUEUE"])
+        self.add_atribute(jd, 'project', job.parameters["CURRENT_BUDGET"])
+
+        self.add_atribute(jd, 'total_cpu_count', int(job.parameters["PROCESSORS"]))
+        self.add_atribute(jd, 'number_of_processes', 5)
+        self.add_atribute(jd, 'processes_per_host', 5)
+        self.add_atribute(jd, 'threads_per_process', 5)
+
         saga_job = self.service.create_job(jd)
         saga_job.run()
         return saga_job.id
+
+    def add_atribute(self, jd, name, value):
+        if self.service is None:
+            return
+
 
     def check_job(self, id):
         if id not in self.service.jobs:
@@ -134,5 +146,7 @@ class Platform:
             return Status.RUNNING
         elif saga_status == saga.job.SUSPENDED:
             return Status.SUSPENDED
+
+
 
 

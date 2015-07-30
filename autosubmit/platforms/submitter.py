@@ -24,6 +24,7 @@ import os
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.basicConfig import  BasicConfig
 from platform import Platform
+import mn_adaptor
 
 
 class Submitter:
@@ -33,6 +34,8 @@ class Submitter:
         :param asconf:
         :type asconf: AutosubmitConfig
         """
+
+        mn_adaptor.Adaptor()
         parser = asconf.platforms_parser
 
         platforms = dict()
@@ -65,7 +68,7 @@ class Submitter:
             elif platform_type == 'ps':
                 adaptor = 'ssh'
             elif platform_type == 'lsf':
-                adaptor = 'lsf+ssh'
+                adaptor = 'mn+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
             elif platform_type == 'slurm':
@@ -112,13 +115,14 @@ class Submitter:
 
 
 def main():
+        mn_adaptor.Adaptor()
         ctx = saga.Context("ssh")
         ctx.user_id = "bsc32906"
 
         session = saga.Session()
         session.add_context(ctx)
 
-        js = saga.job.Service("lsf+ssh://mn-bsc32", session=session)
+        js = saga.job.Service("mn+ssh://mn-bsc32", session=session)
 
         # Next, we describe the job we want to run. A complete set of job
         # description attributes can be found in the API documentation.
