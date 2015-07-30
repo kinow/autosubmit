@@ -4,6 +4,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 
 
+# noinspection PyProtectedMember
 class Platform:
     def __init__(self, expid, name):
         """
@@ -174,7 +175,3 @@ class Platform:
             return Status.RUNNING
         elif saga_status == saga.job.SUSPENDED:
             return Status.SUSPENDED
-
-
-
-

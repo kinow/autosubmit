@@ -18,7 +18,6 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from ConfigParser import SafeConfigParser
 import os
-import platform
 from pyparsing import nestedExpr
 import re
 from commands import getstatusoutput

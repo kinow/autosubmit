@@ -22,7 +22,7 @@ import sys
 import saga
 import os
 from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.config.basicConfig import  BasicConfig
+from autosubmit.config.basicConfig import BasicConfig
 from platform import Platform
 import mn_adaptor
 
@@ -115,34 +115,33 @@ class Submitter:
 
 
 def main():
-        mn_adaptor.Adaptor()
-        ctx = saga.Context("ssh")
-        ctx.user_id = "bsc32906"
+    mn_adaptor.Adaptor()
+    ctx = saga.Context("ssh")
+    ctx.user_id = "bsc32906"
 
-        session = saga.Session()
-        session.add_context(ctx)
+    session = saga.Session()
+    session.add_context(ctx)
 
-        js = saga.job.Service("mn+ssh://mn-bsc32", session=session)
+    js = saga.job.Service("mn+ssh://mn-bsc32", session=session)
 
-        # Next, we describe the job we want to run. A complete set of job
-        # description attributes can be found in the API documentation.
-        jd = saga.job.Description()
-        jd.wall_time_limit   = 1  # minutes
-        jd.executable        = '/gpfs/scratch/bsc32/bsc32906/a000/a000_REMOTE_SETUP.cmd'
+    # Next, we describe the job we want to run. A complete set of job
+    # description attributes can be found in the API documentation.
+    jd = saga.job.Description()
+    jd.wall_time_limit = 1  # minutes
+    jd.executable = '/gpfs/scratch/bsc32/bsc32906/a000/a000_REMOTE_SETUP.cmd'
 
-        jd.total_cpu_count   = 1
-        jd.queue             = "sequential"
-        jd.project           = "bsc32"
+    jd.total_cpu_count = 1
+    jd.queue = "sequential"
+    jd.project = "bsc32"
 
-        jd.working_directory = "/gpfs/scratch/bsc32/bsc32906/a000"
-        jd.output            = "a000_REMOTE_SETUP.out"
-        jd.error             = "a000_REMOTE_SETUP.err"
+    jd.working_directory = "/gpfs/scratch/bsc32/bsc32906/a000"
+    jd.output = "a000_REMOTE_SETUP.out"
+    jd.error = "a000_REMOTE_SETUP.err"
 
-        # Create a new job from the job description. The initial state of
-        # the job is 'New'.
-        touchjob = js.create_job(jd)
-        touchjob.run()
-
+    # Create a new job from the job description. The initial state of
+    # the job is 'New'.
+    touchjob = js.create_job(jd)
+    touchjob.run()
 
 
 if __name__ == "__main__":

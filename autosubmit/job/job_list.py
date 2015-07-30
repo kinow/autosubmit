@@ -39,6 +39,7 @@ class JobList:
     :param expid: experiment's indentifier
     :type expid: str
     """
+
     def __init__(self, expid):
         self._pkl_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl")
         self._update_file = "updated_list_" + expid + ".txt"
@@ -80,7 +81,7 @@ class JobList:
         parser.optionxform = str
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-        chunk_list = range(1, num_chunks+1)
+        chunk_list = range(1, num_chunks + 1)
 
         self._date_list = date_list
         self._member_list = member_list
@@ -148,7 +149,7 @@ class JobList:
 
                     if job.wait and job.frequency > 1:
                         if job.chunk is not None:
-                            max_distance = (chunk_list.index(chunk)+1) % job.frequency
+                            max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
                             for distance in range(1, max_distance, 1):
@@ -600,8 +601,8 @@ class JobList:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member
-                                and i.chunk == chunk]:
-                        if not job.rerun_only or chunk != previous_chunk+1:
+                    and i.chunk == chunk]:
+                        if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)
                         section = job.section
@@ -677,6 +678,7 @@ class DicJobs:
     :type date_format: str
 
     """
+
     def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format):
         self._date_list = date_list
         self._joblist = joblist

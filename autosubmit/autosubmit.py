@@ -44,11 +44,14 @@ from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
 
+# noinspection PyPackageRequirements
 from config.basicConfig import BasicConfig
+# noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
 from git.git_common import AutosubmitGit
 from job.job_list import JobList
+# noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
 from database.db_common import new_experiment
@@ -127,7 +130,7 @@ class Autosubmit:
 
             # Delete
             subparser = subparsers.add_parser('delete', description="delete specified experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-f', '--force', action='store_true', help='deletes experiment without confirmation')
 
             # Monitor
@@ -160,11 +163,11 @@ class Autosubmit:
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Create
             subparser = subparsers.add_parser('create', description="create specified experiment joblist")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
             # Configure
@@ -192,7 +195,7 @@ class Autosubmit:
 
             # Set stattus
             subparser = subparsers.add_parser('setstatus', description="sets job status for an experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',
@@ -214,7 +217,7 @@ class Autosubmit:
 
             # Test
             subparser = subparsers.add_parser('test', description='test experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-c', '--chunks', required=True, help='chunks to run')
             subparser.add_argument('-m', '--member', help='member to run')
             subparser.add_argument('-s', '--stardate', help='stardate to run')
@@ -223,17 +226,17 @@ class Autosubmit:
 
             # Refresh
             subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
 
             # Archive
             subparser = subparsers.add_parser('archive', description='archives an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Unarchive
             subparser = subparsers.add_parser('unarchive', description='unarchives an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Readme
             subparsers.add_parser('readme', description='show readme')
@@ -845,7 +848,8 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        platforms = as_conf.read_platforms_conf()
+        submitter = Submitter()
+        platforms = submitter.load_platforms(as_conf)
         if platforms is None:
             return False
 
