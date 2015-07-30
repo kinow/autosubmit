@@ -535,7 +535,7 @@ class Autosubmit:
             # noinspection PyTypeChecker
             job.set_platform(submitter.platforms[job.platform_name])
             # noinspection PyTypeChecker
-            platforms_to_test.add(submitter.platforms[job.platform_name])
+            platforms_to_test.add(submitter.platforms[job.get_platform().name])
 
         joblist.check_scripts(as_conf)
 
@@ -633,7 +633,8 @@ class Autosubmit:
                         job.update_parameters(as_conf, joblist.parameters)
                         scriptname = job.create_script(as_conf)
                         platform.send_file(scriptname)
-                        job.id = platform.submit_job(job, scriptname)
+                        saga_job = platform.submit_job(job, scriptname)
+                        job.id = saga_job.id
                         if job.id is None:
                             continue
                         # set status to "submitted"
@@ -788,12 +789,11 @@ class Autosubmit:
             return False
 
         hpcarch = as_conf.get_platform()
-
-        platforms = as_conf.read_platforms_conf()
+        submitter = Submitter()
+        platforms = submitter.load_platforms(as_conf)
         if platforms is None:
             return False
-        for platform in platforms:
-            platforms[platform].connect()
+
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:

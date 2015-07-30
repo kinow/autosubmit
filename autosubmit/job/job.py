@@ -548,12 +548,12 @@ class Job:
         else:
             template = ''
 
-        # if isinstance(current_platform, LocalPlatform):
-        stats_header = StatisticsSnippet.AS_HEADER_LOC
-        stats_tailer = StatisticsSnippet.AS_TAILER_LOC
-        # else:
-        #     stats_header = StatisticsSnippet.AS_HEADER_REM
-        #     stats_tailer = StatisticsSnippet.AS_TAILER_REM
+        if self.get_platform().type == 'local':
+            stats_header = StatisticsSnippet.AS_HEADER_LOC
+            stats_tailer = StatisticsSnippet.AS_TAILER_LOC
+        else:
+            stats_header = StatisticsSnippet.AS_HEADER_REM
+            stats_tailer = StatisticsSnippet.AS_TAILER_REM
         template_content = ''.join([stats_header,
                                     template,
                                     stats_tailer])

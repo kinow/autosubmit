@@ -4,7 +4,6 @@
 """ LSF mn adaptor implementation
 """
 
-import radical.utils.which
 import radical.utils.threads as sut
 
 import saga.url as surl
@@ -12,8 +11,6 @@ import saga.utils.pty_shell
 
 import saga.adaptors.base
 import saga.adaptors.cpi.job
-
-from saga.job.constants import *
 
 import re
 import os
@@ -195,19 +192,19 @@ def _mnscript_generator(url, logger, jd, ppn, mn_version, queue=None, ):
 
     mn_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
-    #tcc = int(jd.total_cpu_count)
-    #tbd = float(tcc) / float(ppn)
-    #if float(tbd) > int(tbd):
+    # tcc = int(jd.total_cpu_count)
+    # tbd = float(tcc) / float(ppn)
+    # if float(tbd) > int(tbd):
     #    mn_params += "#PBS -l nodes=%s:ppn=%s \n" \
     #        % (str(int(tbd) + 1), ppn)
-    #else:
+    # else:
     #    mn_params += "#PBS -l nodes=%s:ppn=%s \n" \
     #        % (str(int(tbd)), ppn)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
-    #exec_n_args = workdir_directives exec_n_args
+    # exec_n_args = workdir_directives exec_n_args
     exec_n_args = exec_n_args.replace('$', '\\$')
 
     mnscript = "\n#!/bin/bash \n%s\n%s\n%s" % (mn_params, env_variable_list, exec_n_args)

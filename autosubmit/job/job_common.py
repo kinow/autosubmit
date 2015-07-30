@@ -93,24 +93,9 @@ class StatisticsSnippet:
             ###################
 
             set -x
-            job_name_ptrn=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%
+            job_name_ptrn=%CURRENT_ROOTDIR%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
-            job_queue_time=$((job_start_time - job_cmd_stamp))
-
-            if [[ %CURRENT_TYPE% == ecaccess ]]; then
-              hpcversion=%CURRENT_VERSION%
-              if [[ ! -z ${hpcversion+x} ]]; then
-                if [[ $hpcversion == pbs ]]; then
-                  filein="$(ls -rt %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.i* | xargs grep -l %JOBNAME% | tail -1)"
-                  jobid="$(echo "$filein" | cut -d. -f3 | cut -c2-)"
-                  fileout="%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.o"$jobid"_0"
-                  ln -s ${fileout} ${job_name_ptrn}_${jobid}.out
-                  fileerr="%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/.ecaccess_DO_NOT_REMOVE/job.e"$jobid"_0"
-                  ln -s ${fileerr} ${job_name_ptrn}_${jobid}.err
-                fi
-              fi
-            fi
 
             rm -f ${job_name_ptrn}_COMPLETED
 
@@ -129,45 +114,18 @@ class StatisticsSnippet:
             set -x
             job_end_time=$(date +%s)
             job_run_time=$((job_end_time - job_start_time))
-            case %CURRENT_TYPE% in
-             sge)       errfile_created="TRUE"; errfile_ptrn="\.e" ;;
-             lsf)       errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             ecaccess)  errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             pbs)       errfile_created="FALSE"; errfile_ptrn="\.e" ;;
-             slurm)     errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             ps)        errfile_created="TRUE"; errfile_ptrn="\.err" ;;
-             *) echo "!!! %CURRENT_TYPE% is not valid scheduler !!!"; exit 1 ;;
-            esac
-            failed_jobs=0; failed_errfiles=""
-            set +e; ls -1 ${job_name_ptrn}* | grep $errfile_ptrn
-            if [[ $? -eq 0 ]]; then
-             case $errfile_created in 
-              TRUE)
-                failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
-                failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
-              ;;
-              FALSE)
-                failed_jobs=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l)
-                failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn)
-              ;;
-              *) "!!! $errfile_created is not valid errfile_created option !!!"; exit 1 ;;
-             esac
-            fi; set -e
-            failed_jobs_qt=0; failed_jobs_rt=0
-            for failed_errfile in $failed_errfiles; do
-             failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-             job_qt=$(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ ! -z ${job_qt+x} ]]; then
-               job_qt=0
-             fi
-             failed_jobs_qt=$((failed_jobs_qt + job_qt))
-             job_st=$(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
-             if [[ ! -z ${job_qt+x} ]]; then
-               job_st=0
-             fi
-             failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - job_st))))
-            done
+            errfile_ptrn="\.e"
 
-            echo "$job_end_time $job_queue_time $job_run_time $failed_jobs $failed_jobs_qt $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
+            failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
+            failed_jobs_rt=0
+
+            for failed_errfile in $failed_errfiles; do
+                failed_errfile_stamp=$(stat -c %Z $failed_errfile)
+                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
+            done
+            echo "$job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
             exit 0
             """)
+
+
