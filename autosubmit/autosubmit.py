@@ -36,13 +36,9 @@ import random
 import signal
 import datetime
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
-from time import strftime
 from distutils.util import strtobool
-from threading import Semaphore
-
 
 from pyparsing import nestedExpr
-import saga
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -69,7 +65,7 @@ from platforms.submitter import Submitter
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
     Log.info('Autosubmit will interrupt at the next safe ocasion')
-    Autosubmit.exit()
+    Autosubmit.exit = True
 
 
 class Autosubmit:
@@ -92,7 +88,7 @@ class Autosubmit:
     else:
         autosubmit_version = require("autosubmit")[0].version
 
-    _mutex = None
+    exit = False
 
     @staticmethod
     def parse_args():
@@ -490,7 +486,6 @@ class Autosubmit:
                                   'run.log'))
         os.system('clear')
 
-        Autosubmit.exit
         signal.signal(signal.SIGINT, signal_handler)
 
         as_conf = AutosubmitConfig(expid)
@@ -551,6 +546,9 @@ class Autosubmit:
         #########################
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
+            if Autosubmit.exit:
+                return 2
+
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
@@ -561,9 +559,23 @@ class Autosubmit:
             retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", retrials)
 
+            total_jobs = len(joblist.get_job_list())
+            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+                                                                  time.strftime("%H:%M")))
+
+            for platform in platforms_to_test:
+                for job in joblist.get_in_queue(platform):
+                    job.update_status(platform.check_job(job.id))
+
+            joblist.update_list(True)
+            if Autosubmit.exit:
+                return 2
+
             Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test)
             joblist.save()
-            time.sleep(1)
+            if Autosubmit.exit:
+                return 2
+            time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
         if len(joblist.get_failed()) > 0:
@@ -602,8 +614,6 @@ class Autosubmit:
                     scriptname = job.create_script(as_conf)
                     platform.send_file(scriptname)
                     saga_job = platform.create_saga_job(job, scriptname)
-                    cb = StateChangedCallback(joblist, platforms_to_test, job, as_conf)
-                    saga_job.add_callback(saga.STATE, cb)
                     saga_job.run()
                     job.id = saga_job.id
                     if job.id is None:
@@ -611,7 +621,6 @@ class Autosubmit:
                     Log.info("{0} submitted", job.name)
                     # set status to "submitted"
                     job.status = Status.SUBMITTED
-
 
     @staticmethod
     def monitor(expid, file_format):
@@ -1556,24 +1565,3 @@ class Autosubmit:
         if not Autosubmit.run_experiment(testid):
             return False
         return Autosubmit.delete(testid, True)
-
-    @staticmethod
-    def exit():
-        exit(2)
-
-class StateChangedCallback (saga.Callback):
-
-    def __init__(self, joblist, platforms, job, as_conf):
-        self.job_list = joblist
-        self.platforms = platforms
-        self.platform = job.get_platform()
-        self.job = job
-        self.as_conf = as_conf
-
-    def cb(self, obj, key, val):
-        job = self.job
-        status = self.platform.check_job(job.id)
-        job.update_status(status)
-        self.job_list.update_list()
-        self.job_list.save()
-

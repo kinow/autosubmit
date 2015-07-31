@@ -163,10 +163,17 @@ class Platform:
             return
         jd.set_attribute(name, value)
 
-    def check_job(self, jobid):
+    def check_job(self, jobid, default_status=Status.COMPLETED):
         if jobid not in self.service.jobs:
             return Status.COMPLETED
-        saga_status = self.service.get_job(jobid).state
+        # noinspection PyBroadException
+        try:
+            saga_status = self.service.get_job(jobid).state
+        except Exception:
+            # If SAGA can not get the job state, we change it to completed
+            # It will change to FAILED if not COMPLETED file is present
+            return default_status
+
         if saga_status == saga.job.UNKNOWN:
             return Status.UNKNOWN
         elif saga_status == saga.job.PENDING:
