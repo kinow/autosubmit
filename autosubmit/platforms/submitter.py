@@ -71,6 +71,7 @@ class Submitter:
                 adaptor = 'mn+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
+                remote_platform.option = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
             elif platform_type == 'slurm':
                 adaptor = 'slurm+ssh'
             elif platform_type == '':
