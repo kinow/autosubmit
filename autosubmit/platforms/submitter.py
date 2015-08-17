@@ -71,7 +71,7 @@ class Submitter:
                 adaptor = 'mn+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
-                remote_platform.option = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
+                remote_platform.scheduler = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
             elif platform_type == 'slurm':
                 adaptor = 'slurm+ssh'
             elif platform_type == '':
@@ -89,8 +89,14 @@ class Submitter:
             ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
             session = saga.Session()
             session.add_context(ctx)
-            remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
             remote_platform.host = host
+            if remote_platform.type == 'ecaccess':
+                # It has to be fork because we are communciating through commands at the lcoal machine
+                host = 'localhost'
+            remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
+            remote_platform.service._adaptor.host = remote_platform.host
+            remote_platform.service._adaptor.scheduler = remote_platform.scheduler
+
             remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
                                                                                asconf.get_max_waiting_jobs()))
             remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
@@ -123,7 +129,7 @@ def main():
     session = saga.Session()
     session.add_context(ctx)
 
-    js = saga.job.Service("mn+ssh://mn-bsc32", session=session)
+    js = saga.job.Service("ecaccces://localhost", session=session)
 
     # Next, we describe the job we want to run. A complete set of job
     # description attributes can be found in the API documentation.

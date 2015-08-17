@@ -93,7 +93,7 @@ class StatisticsSnippet:
             ###################
 
             set -x
-            job_name_ptrn=%CURRENT_ROOTDIR%/%JOBNAME%
+            job_name_ptrn=%CURRENT_ROOTDIR%/LOG_%EXPID%/%JOBNAME%
             job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
             job_start_time=$(date +%s)
 
