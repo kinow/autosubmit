@@ -71,7 +71,9 @@ class Submitter:
                 adaptor = 'mn+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
-                remote_platform.option = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
+                remote_platform.scheduler = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
+                remote_platform.scheduler_version = AutosubmitConfig.get_option(parser, section, 'SCHEDULER_VERSION',
+                                                                     '').lower()
             elif platform_type == 'slurm':
                 adaptor = 'slurm+ssh'
             elif platform_type == '':
@@ -90,6 +92,8 @@ class Submitter:
             session = saga.Session()
             session.add_context(ctx)
             remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
+            remote_platform.service.scheduler = remote_platform.scheduler
+            remote_platform.service.scheduler_version = remote_platform.scheduler_version
             remote_platform.host = host
             remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
                                                                                asconf.get_max_waiting_jobs()))

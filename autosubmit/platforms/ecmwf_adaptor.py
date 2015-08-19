@@ -1,4 +1,4 @@
-""" LSF mn adaptor implementation
+""" ECMWF adaptor implementation
 """
 
 import re
@@ -113,17 +113,15 @@ _PTY_TIMEOUT = 2.0
 #
 _ADAPTOR_NAME = "autosubmit.platforms.ecmwf_adaptor"
 _ADAPTOR_SCHEMAS = ["ecmwf"]
-_ADAPTOR_OPTIONS       = [
-    {
-    'category'         : 'saga.adaptor.loadljob',
-    'name'             : 'scheduler',
-    'type'             : str,
-    'default'          : 'pbs',
-    'valid_options'    : ['pbs', 'load'],
-    'documentation'    : '''Specifies the scheduler that uses the target machine. Can be PBS or LoadLeveler.''',
-    'env_variable'     : None
-    },
-]
+_ADAPTOR_OPTIONS = [{
+                    'category': 'autosubmit.platforms.ECMWFjob',
+                    'name': 'scheduler',
+                    'type': str,
+                    'default': 'pbs',
+                    'valid_options': ['pbs', 'load'],
+                    'documentation': '''Specifies the scheduler that uses the target machine. Can be PBS or LoadLeveler.''',
+                    'env_variable': None
+                    }, ]
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -203,7 +201,6 @@ class Adaptor(saga.adaptors.base.Base):
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config(_ADAPTOR_NAME)
-        self.scheduler = self.opts['scheduler'].get_value()
 
     # ----------------------------------------------------------------
     #
@@ -241,6 +238,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
+        self.scheduler = None
+        self.scheduler_version = None
 
     # ----------------------------------------------------------------
     #
@@ -322,7 +321,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            if self._adaptor.scheduler == 'load':
+            if self.scheduler == 'load':
                 script = saga.adaptors.loadl.loadljob.LOADLJobService.__generate_llsubmit_script(jd)
             else:
                 script = saga.adaptors.pbs.pbsjob._pbscript_generator("", self._logger, jd, self.ppn, None,
@@ -364,20 +363,20 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             lines = out.split("\n")
             lines = filter(lambda l: l != '', lines)  # remove empty
 
-            self._logger.info('bsub: %s' % ''.join(lines))
+            self._logger.info('ecaccess-job-submit: %s' % ''.join(lines))
 
-            mn_job_id = None
+            ecmwf_job_id = None
             for line in lines:
                 if re.search('Job <.+> is submitted to queue', line):
-                    mn_job_id = re.findall(r'<(.*?)>', line)[0]
+                    ecmwf_job_id = re.findall(r'<(.*?)>', line)[0]
                     break
 
-            if not mn_job_id:
+            if not ecmwf_job_id:
                 raise Exception("Failed to detect job id after submission.")
 
-            job_id = "[%s]-[%s]" % (self.rm, mn_job_id)
+            job_id = "[%s]-[%s]" % (self.rm, ecmwf_job_id)
 
-            self._logger.info("Submitted LSF job with id: %s" % job_id)
+            self._logger.info("Submitted ECMWF job with id: %s" % job_id)
 
             # update job dictionary
             self.jobs[job_obj]['job_id'] = job_id
@@ -478,8 +477,9 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning(
-                    "Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("Previously running job has disappeared. "
+                                     "This probably means that the backend doesn't store informations "
+                                     "about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE

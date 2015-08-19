@@ -28,7 +28,8 @@ class Platform:
         self.scratch = ''
         self.root_dir = ''
         self.service = None
-        self.option = None
+        self.scheduler = None
+        self.scheduler_version = None
 
     @property
     def serial_platform(self):
