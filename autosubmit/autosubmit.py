@@ -53,6 +53,7 @@ from database.db_common import create_db
 from database.db_common import new_experiment
 from database.db_common import copy_experiment
 from database.db_common import delete_experiment
+from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 
@@ -1030,7 +1031,8 @@ class Autosubmit:
     @staticmethod
     def archive(expid):
         """
-        Archives an experiment: compress folder to tar.gz and moves to year's folder
+        Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
+        to tar.gz and moves to year's folder
 
         :param expid: experiment identifier
         :type expid: str
@@ -1040,7 +1042,7 @@ class Autosubmit:
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         # Cleaning to reduce file size.
-        if not Autosubmit.clean(expid, True, True, True, False):
+        if get_autosubmit_version(expid) != '2' and not Autosubmit.clean(expid, True, True, True, False):
             Log.critical("Can not archive project. Clean not successful")
             return False
 
@@ -1085,7 +1087,7 @@ class Autosubmit:
     @staticmethod
     def unarchive(expid):
         """
-        Archives an experiment: compress folder to tar.gz and moves to year's folder
+        Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
         :param expid: experiment identifier
         :type expid: str
@@ -1099,7 +1101,7 @@ class Autosubmit:
             return False
 
         # Searching by year. We will store it on database
-        year = datetime.datetime.today().year
+        year = datetime.datetimetime.today().year
         archive_path = None
         while year > 2000:
             archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))

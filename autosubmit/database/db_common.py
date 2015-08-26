@@ -123,6 +123,37 @@ def check_experiment_exists(name, error_on_inexistence=True):
     return True
 
 
+def get_autosubmit_version(expid):
+    """
+    Get the minimun autosubmit version needed for the experiment
+
+    :param expid: Experiment name
+    :type expid: str
+    :return: If experiment exists returns the autosubmit version for it, if not returns None
+    :rtype: str
+    """
+    if not check_db():
+        return False
+
+    try:
+        (conn, cursor) = open_conn()
+    except DbException as e:
+        Log.error('Connection to database could not be established: {0}', e.message)
+        return False
+    conn.isolation_level = None
+
+    # SQLite always return a unicode object, but we can change this
+    # behaviour with the next sentence
+    conn.text_factory = str
+    cursor.execute('SELECT autosubmit_version FROM experiment WHERE name=:expid', {'expid': expid})
+    row = cursor.fetchone()
+    close_conn(conn, cursor)
+    if row is None:
+        Log.error('The experiment "{0}" does not exist yet!!!', expid)
+        return None
+    return row[0]
+
+
 def new_experiment(description, version, test=False):
     """
     Stores a new experiment on the database and generates its identifier
