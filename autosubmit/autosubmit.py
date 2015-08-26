@@ -1101,7 +1101,7 @@ class Autosubmit:
             return False
 
         # Searching by year. We will store it on database
-        year = datetime.datetime.today().year
+        year = datetime.datetimetime.today().year
         archive_path = None
         while year > 2000:
             archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
