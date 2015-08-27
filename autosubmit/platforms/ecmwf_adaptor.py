@@ -400,8 +400,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         if jd.wall_time_limit is not None:
             hours = jd.wall_time_limit / 60
             minutes = jd.wall_time_limit % 60
-            loadl_params += "#@ wall_clock_limit = %s:%s:00\n" \
-                % (str(hours), str(minutes))
+            loadl_params += "#@ wall_clock_limit = {0:02}:{1:02}:00\n".format(hours, minutes)
 
         if jd.total_cpu_count is None:
             # try to come up with a sensible (?) default value
@@ -448,8 +447,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         if jd.wall_time_limit:
             hours = jd.wall_time_limit / 60
             minutes = jd.wall_time_limit % 60
-            pbs_params += "#PBS -l walltime=%s:0%s:00 \n" \
-                % (str(hours), str(minutes))
+            pbs_params += "#PBS -l walltime={0:02}:{1:02}:00 \n".format(hours, minutes)
 
         if jd.queue:
             pbs_params += "#PBS -q %s \n" % jd.queue
