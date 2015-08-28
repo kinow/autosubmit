@@ -83,7 +83,13 @@ class _job_state_monitor(threading.Thread):
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
-    """ loggs an 'error' message and subsequently throws an exception
+    """
+    loggs an 'error' message and subsequently throws an exception
+
+    :param message: message to show
+    :type message: str
+    :param exception: exception to raise
+    :param logger: logger to use
     """
     logger.error(message)
     raise exception(message)
