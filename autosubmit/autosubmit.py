@@ -1042,7 +1042,8 @@ class Autosubmit:
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         # Cleaning to reduce file size.
-        if get_autosubmit_version(expid) != '2' and not Autosubmit.clean(expid, True, True, True, False):
+        version = get_autosubmit_version(expid)
+        if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
             Log.critical("Can not archive project. Clean not successful")
             return False
 
@@ -1101,7 +1102,7 @@ class Autosubmit:
             return False
 
         # Searching by year. We will store it on database
-        year = datetime.datetimetime.today().year
+        year = datetime.datetime.today().year
         archive_path = None
         while year > 2000:
             archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
