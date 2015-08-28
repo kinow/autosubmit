@@ -1,5 +1,6 @@
 import saga
 import os
+from commands import getstatusoutput
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 
@@ -29,7 +30,6 @@ class Platform:
         self.root_dir = ''
         self.service = None
         self.scheduler = None
-        self.scheduler_version = None
 
     @property
     def serial_platform(self):
@@ -87,12 +87,26 @@ class Platform:
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
 
     def send_file(self, filename):
+        if self.type == 'ecaccess':
+            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self.root_dir))
+            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self._get_files_path()))
+            destiny_path = os.path.join(self._get_files_path(), filename)
+            (status, output) = getstatusoutput('ecaccess-file-put {0} {1}:{2}'.format(os.path.join(self.tmp_path,
+                                                                                                   filename),
+                                                                                          self.host,
+                                                                                      destiny_path))
+            if status == 0:
+                getstatusoutput('ecaccess-file-chmod 740 {0}:{1}'.format(self.host, destiny_path))
+                return
+            else:
+                raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
+                                                                          self.host, self._get_files_path()))
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
         if self.type == 'local':
             out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename,)),
                      saga.filesystem.CREATE_PARENTS)
         else:
-            workdir = self.get_workdir(self.root_dir)
+            workdir = self.get_workdir(self._get_files_path())
             out.copy(workdir.get_url())
 
     def get_workdir(self, path):
@@ -111,12 +125,22 @@ class Platform:
                                              saga.filesystem.CREATE, session=self.service.session)
 
     def get_file(self, filename, must_exist=True):
+        if self.type == 'ecaccess':
+            get_command = 'ecaccess-file-get {0}:{1} {2}'.format(self.host, os.path.join(self._get_files_path(), filename),
+                                                                 os.path.join(self.tmp_path, filename))
+            (status, output) = getstatusoutput(get_command)
+            if status == 0:
+                return
+            elif must_exist:
+                raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
+                                                                           self.host, self._get_files_path()))
         try:
             if self.type == 'local':
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
                                                                             filename)))
             else:
-                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.root_dir, filename)))
+                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self._get_files_path(),
+                                                                                          filename)))
             out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
         except saga.DoesNotExist as ex:
             if must_exist:
@@ -129,7 +153,7 @@ class Platform:
         if self.type == "local":
             path = os.path.join(self.root_dir, BasicConfig.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
-            path = self.root_dir
+            path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path
 
     def create_saga_job(self, job, scriptname):

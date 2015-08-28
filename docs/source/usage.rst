@@ -20,9 +20,9 @@ Command list
 -delete  Delete specified experiment
 -configure  Configure database and path for autosubmit
 -install  Install database for Autosubmit on the configured folder
--refresh Refresh project directory for an experiment
--archive Clean, compress and remove from the experiments' folder a finalized experiment
--unarchive Restores an archived experiment
+-refresh  Refresh project directory for an experiment
+-archive  Clean, compress and remove from the experiments' folder a finalized experiment
+-unarchive  Restores an archived experiment
 
 
 How to create an experiment

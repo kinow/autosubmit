@@ -104,13 +104,13 @@ def add_days(date, number_of_days, cal):
     """
     result = date + relativedelta(days=number_of_days)
     if cal == 'noleap':
-        year = date.tm_year
-        if date.tm_mon > 2:
+        year = date.year
+        if date.month > 2:
             year += 1
 
         while year <= result.year:
             if calendar.isleap(year):
-                if result.year == year and result < datetime.date(year, 2, 29):
+                if result.year == year and result < datetime.datetime(year, 2, 29):
                     year += 1
                     continue
                 result += relativedelta(days=1)
@@ -135,13 +135,13 @@ def sub_days(date, number_of_days, cal):
     """
     result = date - relativedelta(days=number_of_days)
     if cal == 'noleap':
-        year = date.tm_year
-        if date.tm_mon <= 2:
+        year = date.year
+        if date.month <= 2:
             year -= 1
 
         while year >= result.year:
             if calendar.isleap(year):
-                if result.year == year and result > datetime.date(year, 2, 29):
+                if result.year == year and result > datetime.datetime(year, 2, 29):
                     year -= 1
                     continue
                 result -= relativedelta(days=1)
@@ -162,17 +162,17 @@ def add_hours(date, number_of_hours, cal):
     :param cal: calendar to use
     :type cal: str
     :return: base date plus added hours
-    :rtype: date
+    :rtype: datetime
     """
     result = date + relativedelta(hours=number_of_hours)
     if cal == 'noleap':
-        year = date.tm_year
-        if date.tm_mon > 2:
+        year = date.tyear
+        if date.month > 2:
             year += 1
 
         while year <= result.year:
             if calendar.isleap(year):
-                if result.year == year and result < datetime.date(year, 2, 29):
+                if result.year == year and result < datetime.datetime(year, 2, 29):
                     year += 1
                     continue
                 result += relativedelta(days=1)
@@ -203,7 +203,7 @@ def subs_dates(start_date, end_date, cal):
 
         while year <= end_date.year:
             if calendar.isleap(year):
-                if end_date.year == year and end_date < datetime.date(year, 2, 29):
+                if end_date.year == year and end_date < datetime.datetime(year, 2, 29):
                     year += 1
                     continue
                 result -= datetime.timedelta(days=1)

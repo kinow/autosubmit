@@ -1,4 +1,4 @@
-""" ECMWF adaptor implementation
+""" LSF mn adaptor implementation
 """
 
 import re
@@ -14,6 +14,7 @@ import saga.adaptors.base
 import saga.adaptors.cpi.job
 import saga.adaptors.loadl.loadljob
 import saga.adaptors.pbs.pbsjob
+from autosubmit.config.basicConfig import BasicConfig
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -112,16 +113,9 @@ _PTY_TIMEOUT = 2.0
 # the adaptor name
 #
 _ADAPTOR_NAME = "autosubmit.platforms.ecmwf_adaptor"
-_ADAPTOR_SCHEMAS = ["ecmwf"]
-_ADAPTOR_OPTIONS = [{
-                    'category': 'autosubmit.platforms.ECMWFjob',
-                    'name': 'scheduler',
-                    'type': str,
-                    'default': 'pbs',
-                    'valid_options': ['pbs', 'load'],
-                    'documentation': '''Specifies the scheduler that uses the target machine. Can be PBS or LoadLeveler.''',
-                    'env_variable': None
-                    }, ]
+_ADAPTOR_SCHEMAS = ["ecaccess"]
+_ADAPTOR_OPTIONS = []
+
 
 # --------------------------------------------------------------------
 # the adaptor capabilities & supported attributes
@@ -139,7 +133,9 @@ _ADAPTOR_CAPABILITIES = {
                         saga.job.WALL_TIME_LIMIT,
                         saga.job.WORKING_DIRECTORY,
                         saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
-                        saga.job.TOTAL_CPU_COUNT],
+                        saga.job.TOTAL_CPU_COUNT,
+                        saga.job.THREADS_PER_PROCESS,
+                        saga.job.PROCESSES_PER_HOST],
     "job_attributes": [saga.job.EXIT_CODE,
                        saga.job.EXECUTION_HOSTS,
                        saga.job.CREATED,
@@ -160,9 +156,9 @@ _ADAPTOR_DOC = {
     "cfg_options": _ADAPTOR_OPTIONS,
     "capabilities": _ADAPTOR_CAPABILITIES,
     "description": """
-The ecmwf adaptor allows to run and manage jobs on ECMWF machines
+The ecaccess adaptor allows to run and manage jobs on ECMWF machines
 """,
-    "schemas": {"ecmwf": "connect usig ecaccess tools"}
+    "schemas": {"ecaccess": "connect using ecaccess tools"}
 }
 
 # --------------------------------------------------------------------
@@ -200,7 +196,6 @@ class Adaptor(saga.adaptors.base.Base):
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
-        self.opts = self.get_config(_ADAPTOR_NAME)
 
     # ----------------------------------------------------------------
     #
@@ -238,8 +233,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         _cpi_base.__init__(api, adaptor)
 
         self._adaptor = adaptor
+        self.host = None
         self.scheduler = None
-        self.scheduler_version = None
 
     # ----------------------------------------------------------------
     #
@@ -290,7 +285,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the mn+ part. We use the PTYShell to execute
         # mn commands either locally or via gsissh or ssh.
-        if rm_scheme == "ecmwf":
+        if rm_scheme == "ecaccess":
             pty_url.scheme = "fork"
 
         self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
@@ -306,7 +301,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             self._logger.info("Found ECMWF tools. Version: {0}".format(out))
 
     def _job_run(self, job_obj):
-        """ runs a job via qsub
+        """
+        runs a job via ecaccess-job-submit
         """
         # get the job description
         jd = job_obj.jd
@@ -315,66 +311,55 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         if jd.working_directory:
             jd.working_directory = os.path.normpath(jd.working_directory)
 
-        if (self.queue is not None) and (jd.queue is not None):
-            self._logger.warning("Job service was instantiated explicitly with 'queue=%s', but job description tries to"
-                                 " a differnt queue: '%s'. Using '%s'." % (self.queue, jd.queue, self.queue))
-
         try:
-            # create an LSF job script from SAGA job description
-            if self.scheduler == 'load':
-                script = saga.adaptors.loadl.loadljob.LOADLJobService.__generate_llsubmit_script(jd)
+            # create a loadleveler or PBS job script from SAGA job description
+            if self.scheduler == 'loadleveler':
+                header = self._generate_ll_header(jd)
             else:
-                script = saga.adaptors.pbs.pbsjob._pbscript_generator("", self._logger, jd, self.ppn, None,
-                                                                      self.scheduler_version)
-            self._logger.info("Generated ECMWF script: %s" % script)
+                header = self._generate_pbs_header(jd)
+            self._logger.info("Generated ECMWF header: %s" % header)
         except Exception, ex:
-            script = ''
+            header = ''
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
-        # try to create the working directory (if defined)
-        # WARNING: this assumes a shared filesystem between login node and
-        #          compute nodes.
-        if jd.working_directory is not None:
-            self._logger.info("Creating working directory %s" % jd.working_directory)
-            ret, out, _ = self.shell.run_sync("ecaccess-file-mkdir -p %s" % jd.working_directory)
-            if ret != 0:
-                # something went wrong
-                message = "Couldn't create working directory - %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+        local_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, jd.name.split('_')[0], BasicConfig.LOCAL_TMP_DIR,
+                                  "{0}.cmd".format(str(jd.name)))
+        f = open(local_file, 'r+')
+        shebang = f.readline()
+        script = f.read()
+        script = shebang + header + script
+        f.seek(0)
+        f.write(script)
+        f.truncate()
+        f.close()
 
-        # Now we want to execute the script. This process consists of two steps:
-        # (1) we create a temporary file with 'mktemp' and write the contents of
-        #     the generated PBS script into it
-        # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
-        cmdline = 'SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && ' \
-                  'echo "{0}" > $SCRIPTFILE && ' \
-                  '{1} < $SCRIPTFILE && ' \
-                  'rm -f $SCRIPTFILE'.format(script, 'ecaccess-job-submit')
+        cmdline = "ecaccess-file-put {0} {1}:{2}".format(local_file, self.host, jd.executable)
         ret, out, _ = self.shell.run_sync(cmdline)
-
         if ret != 0:
             # something went wrong
-            message = "Error running job via 'ecaccess-job-submit': %s. Commandline was: %s" \
+            message = "Error sending file job via 'ecaccess-job-put': %s. Commandline was: %s" \
+                      % (out, cmdline)
+            log_error_and_raise(message, saga.NoSuccess, self._logger)
+
+        cmdline = "ecaccess-job-submit -queueName {0} -jobName {1} -distant {0}:{2}".format(self.host, jd.name, jd.executable)
+        ret, out, _ = self.shell.run_sync(cmdline)
+        if ret != 0:
+            # something went wrong
+            message = "Error sending file job via 'ecaccess-job-put': %s. Commandline was: %s" \
                       % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
-            # parse the job id. bsub's output looks like this:
-            # Job <901545> is submitted to queue <regular>
             lines = out.split("\n")
             lines = filter(lambda l: l != '', lines)  # remove empty
 
             self._logger.info('ecaccess-job-submit: %s' % ''.join(lines))
 
-            ecmwf_job_id = None
-            for line in lines:
-                if re.search('Job <.+> is submitted to queue', line):
-                    ecmwf_job_id = re.findall(r'<(.*?)>', line)[0]
-                    break
+            mn_job_id = lines[0]
 
-            if not ecmwf_job_id:
+            if not mn_job_id:
                 raise Exception("Failed to detect job id after submission.")
 
-            job_id = "[%s]-[%s]" % (self.rm, ecmwf_job_id)
+            job_id = "[%s]-[%s]" % (self.rm, mn_job_id)
 
             self._logger.info("Submitted ECMWF job with id: %s" % job_id)
 
@@ -389,6 +374,99 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             # return the job id
             return job_id
 
+    def _generate_ll_header(self, jd):
+        """
+        generates a IMB LoadLeveler script from a SAGA job description
+        :param jd: job descriptor
+        :return: the llsubmit script
+        """
+        loadl_params = ''
+
+        if jd.name is not None:
+            loadl_params += "#@ job_name = %s \n" % jd.name
+
+        if jd.environment is not None:
+            variable_list = ''
+            for key in jd.environment.keys():
+                variable_list += "%s=%s;" % (key, jd.environment[key])
+            loadl_params += "#@ environment = %s \n" % variable_list
+
+        if jd.working_directory is not None:
+            loadl_params += "#@ initialdir = %s\n" % jd.working_directory
+        if jd.output is not None:
+            loadl_params += "#@ output = %s\n" % os.path.join(jd.working_directory, jd.output)
+        if jd.error is not None:
+            loadl_params += "#@ error = %s\n" % os.path.join(jd.working_directory, jd.error)
+        if jd.wall_time_limit is not None:
+            hours = jd.wall_time_limit / 60
+            minutes = jd.wall_time_limit % 60
+            loadl_params += "#@ wall_clock_limit = {0:02}:{1:02}:00\n".format(hours, minutes)
+
+        if jd.total_cpu_count is None:
+            # try to come up with a sensible (?) default value
+            jd.total_cpu_count = 1
+        else:
+            if jd.total_cpu_count > 1:
+                loadl_params += "#@ total_tasks = %s\n" % jd.total_cpu_count
+
+        if jd.job_contact is not None:
+            if len(jd.job_contact) > 1:
+                raise Exception("Only one notify user supported.")
+            loadl_params += "#@ notify_user = %s\n" % jd.job_contact[0]
+            loadl_params += "#@ notification = always\n"
+
+        # some default (?) parameter that seem to work fine everywhere...
+        if jd.queue is not None:
+            loadl_params += "#@ class = %s\n" % jd.queue
+
+        # finally, we 'queue' the job
+        loadl_params += "#@ queue\n"
+
+        loadlscript = "\n%s" % (loadl_params)
+
+        return loadlscript.replace('"', '\\"')
+
+    def _generate_pbs_header(self, jd):
+        """ generates a PBS script from a SAGA job description
+        """
+        pbs_params = str()
+        exec_n_args = str()
+ 
+        if jd.name:
+            pbs_params += "#PBS -N %s \n" % jd.name
+
+        # if jd.working_directory:
+        #     pbs_params += "#PBS -d %s \n" % jd.working_directory
+        #
+        if jd.output:
+            pbs_params += "#PBS -o %s \n" % os.path.join(jd.working_directory, jd.output)
+
+        if jd.error:
+            pbs_params += "#PBS -e %s \n" % os.path.join(jd.working_directory, jd.error)
+
+        if jd.wall_time_limit:
+            hours = jd.wall_time_limit / 60
+            minutes = jd.wall_time_limit % 60
+            pbs_params += "#PBS -l walltime={0:02}:{1:02}:00 \n".format(hours, minutes)
+
+        if jd.queue:
+            pbs_params += "#PBS -q %s \n" % jd.queue
+
+        if jd.project:
+            pbs_params += "#PBS -l EC_billing_account=%s \n" % str(jd.project)
+
+        if jd.total_cpu_count:
+            pbs_params += "#PBS -l EC_total_tasks=%s \n" % str(jd.total_cpu_count)
+        if jd.threads_per_process:
+            pbs_params += "#PBS -l EC_threads_per_task=%s \n" % str(jd.threads_per_process)
+        if jd.processes_per_host:
+            pbs_params += "#PBS -l EC_tasks_per_node=%s \n" % str(jd.processes_per_host)
+
+        pbscript = pbs_params
+
+        pbscript = pbscript.replace('"', '\\"')
+        return pbscript
+
     # ----------------------------------------------------------------
     #
     def _retrieve_job(self, job_id):
@@ -397,15 +475,24 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         """
         rm, pid = self._adaptor.parse_id(job_id)
 
-        ret, out, _ = self.shell.run_sync(
-            "%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time delimiter=\",\"' %s" % ('bjobs', pid))
+        ret, out, _ = self.shell.run_sync("ecaccess-job-list {0}".format(pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
         else:
-            # the job seems to exist on the backend. let's gather some data
+            # the job seems to exist on the backend. let's gather some data. Output will look like
+            #      Job-Id: 7100070
+            #   Job Name: SAGA-Python-LSFJobScript.j5u51g
+            #      Queue: ecgate
+            #       Host: ecgb.ecmwf.int
+            #   Schedule: Aug 21 09:59
+            # Expiration: Aug 28 09:59
+            #  Try Count: 1/1
+            #     Status: STOP
+            #    Comment: Status STOP received from Slurm (exitCode: 127)
+
             job_info = {
                 'state': saga.job.UNKNOWN,
                 'exec_hosts': None,
@@ -416,14 +503,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
                 'gone': False
             }
 
-            results = out.split(',')
-            job_info['state'] = _ecaccess_to_saga_jobstate(results[0])
-            job_info['exec_hosts'] = results[1]
-            if results[2] != '-':
-                job_info['returncode'] = int(results[2])
-            job_info['create_time'] = results[3]
-            job_info['start_time'] = results[4]
-            job_info['end_time'] = results[5]
+            results = out.split('\n')
+            job_info['state'] = _ecaccess_to_saga_jobstate(results[7].split(":")[1].strip())
 
             return job_info
 
@@ -477,9 +558,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning("Previously running job has disappeared. "
-                                     "This probably means that the backend doesn't store informations "
-                                     "about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning(
+                    "Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
