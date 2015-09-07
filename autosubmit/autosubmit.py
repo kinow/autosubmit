@@ -1050,11 +1050,12 @@ class Autosubmit:
         # Getting year of last completed. If not, year of expid folder
         year = None
         tmp_folder = os.path.join(exp_folder, BasicConfig.LOCAL_TMP_DIR)
-        for filename in os.listdir(tmp_folder):
-            if filename.endswith("COMPLETED"):
-                file_year = time.localtime(os.path.getmtime(os.path.join(tmp_folder, filename))).tm_year
-                if year is None or year < file_year:
-                    year = file_year
+        if os.path.isdir(tmp_folder):
+            for filename in os.listdir(tmp_folder):
+                if filename.endswith("COMPLETED"):
+                    file_year = time.localtime(os.path.getmtime(os.path.join(tmp_folder, filename))).tm_year
+                    if year is None or year < file_year:
+                        year = file_year
 
         if year is None:
             year = time.localtime(os.path.getmtime(exp_folder)).tm_year
