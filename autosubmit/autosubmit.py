@@ -1207,7 +1207,7 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.create(date_list, member_list,  num_chunks, parameters, date_format)
+        job_list.create(date_list, member_list, num_chunks, parameters, date_format)
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
