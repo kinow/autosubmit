@@ -34,8 +34,20 @@ class Submitter:
         :param asconf:
         :type asconf: AutosubmitConfig
         """
+        adaptors_variable = os.environ.get('SAGA_ADAPTOR_PATH')
+        if adaptors_variable is None:
+            adaptors_variable = ''
+        if 'autosubmit.platforms.ecmwf_adaptor' not in adaptors_variable:
+            if len(adaptors_variable) > 0 and not adaptors_variable.endswith(':'):
+                adaptors_variable += ':'
+            adaptors_variable += 'autosubmit.platforms.ecmwf_adaptor'
 
-        mn_adaptor.Adaptor()
+        if 'autosubmit.platforms.mn_adaptor' not in adaptors_variable:
+            if len(adaptors_variable) > 0 and not adaptors_variable.endswith(':'):
+                adaptors_variable += ':'
+            adaptors_variable += 'autosubmit.platforms.mn_adaptor'
+
+        os.environ['SAGA_ADAPTOR_PATH'] = adaptors_variable
         parser = asconf.platforms_parser
 
         platforms = dict()
@@ -77,7 +89,7 @@ class Submitter:
             elif platform_type == '':
                 raise Exception("Queue type not specified on platform {0}".format(section))
             else:
-                raise Exception("Queue type {0} specified on platform {0} is not valid".format(platform_type, section))
+                adaptor = platform_type
 
             if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
                 host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
@@ -85,16 +97,22 @@ class Submitter:
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
 
-            ctx = saga.Context("ssh")
-            ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
-            session = saga.Session()
-            session.add_context(ctx)
+            # if adaptor.endswith('ssh'):
+            #     ctx = saga.Context('ssh')
+            #     ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
+            #     session = saga.Session()
+            #     session.add_context(ctx)
+            # else:
+            session = None
+
             remote_platform.host = host
             if remote_platform.type == 'ecaccess':
                 # It has to be fork because we are communciating through commands at the lcoal machine
                 host = 'localhost'
             remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
+            # noinspection PyProtectedMember
             remote_platform.service._adaptor.host = remote_platform.host
+            # noinspection PyProtectedMember
             remote_platform.service._adaptor.scheduler = remote_platform.scheduler
 
             remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',

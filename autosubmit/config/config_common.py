@@ -156,8 +156,7 @@ class AutosubmitConfig:
             Log.error('There are repeated platforms names')
 
         for section in self._platforms_parser.sections():
-            result = result and AutosubmitConfig.check_is_choice(self._platforms_parser, section, 'TYPE', True,
-                                                                 ['ps', 'pbs', 'sge', 'lsf', 'ecaccess', 'slurm'])
+            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'TYPE')
             platform_type = AutosubmitConfig.get_option(self._platforms_parser, section, 'TYPE', '').lower()
             if platform_type != 'ps':
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
