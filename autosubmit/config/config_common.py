@@ -93,13 +93,13 @@ class AutosubmitConfig:
         return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
 
     def check_conf_files(self):
         """
