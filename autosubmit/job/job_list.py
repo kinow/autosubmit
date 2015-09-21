@@ -29,7 +29,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str
+from autosubmit.date.chunk_date_lib import date2str, parse_date
 
 
 class JobList:
@@ -148,10 +148,10 @@ class JobList:
 
                     if job.wait and job.frequency > 1:
                         if job.chunk is not None:
-                            max_distance = (chunk_list.index(chunk)+1) % job.frequency
+                            max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
-                            for distance in range(1, max_distance, 1):
+                            for distance in range(1, max_distance):
                                 for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                                     job.add_parent(parent)
                         elif job.member is not None:
@@ -590,8 +590,8 @@ class JobList:
 
         data = json.loads(chunk_list)
         for d in data['sds']:
-            date = d['sd']
-            Log.debug("Date: " + date)
+            date = parse_date(d['sd'])
+            Log.debug("Date: {0}", date)
             for m in d['ms']:
                 member = m['m']
                 Log.debug("Member: " + member)
@@ -601,7 +601,7 @@ class JobList:
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member
                                 and i.chunk == chunk]:
-                        if not job.rerun_only or chunk != previous_chunk+1:
+                        if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)
                         section = job.section
@@ -636,6 +636,8 @@ class JobList:
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
                                 parent.status = Status.WAITING
+                                if chunk != previous_chunk + 1:
+                                    job.add_parent(parent)
                                 Log.debug("Parent: " + parent.name)
                     previous_chunk = chunk
 
