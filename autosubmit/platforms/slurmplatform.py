@@ -113,7 +113,10 @@ class SlurmHeader:
         :rtype: str
         """
         # There is no queue, so directive is empty
-        return ""
+        if job.parameters['CURRENT_QUEUE'] == '':
+            return ""
+        else:
+            return "SBATCH --qos {0}".format(job.parameters['CURRENT_QUEUE'])
 
     SERIAL = textwrap.dedent("""\
             #!/bin/bash
@@ -121,6 +124,7 @@ class SlurmHeader:
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
+            #%QUEUE_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
@@ -131,5 +135,17 @@ class SlurmHeader:
            """)
 
     PARALLEL = textwrap.dedent("""\
-
+            #!/bin/bash
+            ###############################################################################
+            #                   %TASKTYPE% %EXPID% EXPERIMENT
+            ###############################################################################
+            #
+            #%QUEUE_DIRECTIVE%
+            #SBATCH -n %NUMPROC%
+            #SBATCH -t %WALLCLOCK%:00
+            #SBATCH -J %JOBNAME%
+            #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
+            #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
+            #
+            ###############################################################################
             """)
