@@ -11,7 +11,7 @@ First Step: Experiment creation
 To create a new experiment, run the command:
 ::
 
-	autosubmit expid -H HPCname -d Description
+    autosubmit expid -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -21,14 +21,14 @@ This command assigns a unique four character identifier (``xxxx``, names startin
 Examples:
 ::
 
-	autosubmit expid --HPC ithaca --description "experiment is about..."
+    autosubmit expid --HPC ithaca --description "experiment is about..."
 
 .. caution:: The *HPCname*, e.g. ithaca, must be defined in the platforms configuration.
     See next section :ref:`confexp`.
 
 ::
 
-	autosubmit expid --copy a000 --HPC ithaca -d "experiment is about..."
+    autosubmit expid --copy a000 --HPC ithaca -d "experiment is about..."
 
 .. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
 
@@ -66,7 +66,7 @@ You may want to configure Autosubmit parameters for the experiment. Just edit ``
 Examples:
 ::
 
-	vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
 
 .. code-block:: ini
 
@@ -139,7 +139,7 @@ Examples:
 
 ::
 
-	vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
 
 .. code-block:: ini
 
@@ -223,7 +223,7 @@ Examples:
 
 ::
 
-	vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf
 
 .. code-block:: ini
 
@@ -298,7 +298,7 @@ Examples:
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::
 
-	autosubmit create cxxx
+    autosubmit create cxxx
 
 *cxxx* is the name of the experiment.
 
@@ -325,7 +325,7 @@ To configure experiment project parameters for the experiment, edit ``proj_cxxx.
 Example:
 ::
 
-	vi <experiments_directory>/cxxx/conf/proj_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/proj_cxxx.conf
 
 .. code-block:: ini
 
@@ -532,7 +532,7 @@ Example:
 Finally, you can launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
 ::
 
-	nohup autosubmit run cxxx &
+    nohup autosubmit run cxxx &
 
 Fourth Step: Experiment monitor
 -------------------------------
@@ -542,10 +542,11 @@ With this command we can generate new plots to check which is the status of the 
 
 ::
 
-	autosubmit monitor  cxxx
+    autosubmit monitor  cxxx
 
 The location where user can find the generated plots with date and timestamp can be found below:
 
 ::
 
-	<experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
+    <experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
+

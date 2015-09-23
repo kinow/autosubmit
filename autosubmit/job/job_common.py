@@ -142,7 +142,7 @@ class StatisticsSnippet:
             failed_jobs=0; failed_errfiles=""
             set +e; ls -1 ${job_name_ptrn}* | grep $errfile_ptrn
             if [[ $? -eq 0 ]]; then
-             case $errfile_created in 
+             case $errfile_created in
               TRUE)
                 failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
                 failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)

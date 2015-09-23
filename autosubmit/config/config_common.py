@@ -16,12 +16,17 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 import os
 import platform
 from pyparsing import nestedExpr
 import re
-from commands import getstatusoutput
+import subprocess
 
 from autosubmit.date.chunk_date_lib import parse_date
 
@@ -405,15 +410,15 @@ class AutosubmitConfig:
         :type exp_id: str
         """
         # Experiment conf
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
         """
@@ -484,31 +489,32 @@ class AutosubmitConfig:
         :type as_conf: AutosubmitConfig
         """
         full_project_path = as_conf.get_project_dir()
-        (status, output) = getstatusoutput("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path))
-        if status == 0:
-            project_branch = output
-            Log.debug("Project branch is: " + project_branch)
-
-            (status, output) = getstatusoutput("cd {0}; git rev-parse HEAD".format(full_project_path))
-            if status == 0:
-                project_sha = output
-                Log.debug("Project commit SHA is: " + project_sha)
-            else:
-                Log.critical("Failed to retrieve project commit SHA...")
-                return False
-        else:
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
+                                             shell=True)
+        except subprocess.CalledProcessError:
             Log.critical("Failed to retrieve project branch...")
             return False
 
+        project_branch = output
+        Log.debug("Project branch is: " + project_branch)
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
+        except subprocess.CalledProcessError:
+            Log.critical("Failed to retrieve project commit SHA...")
+            return False
+        project_sha = output
+        Log.debug("Project commit SHA is: " + project_sha)
+
         # register changes
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('PROJECT_BRANCH =.*', content):
             content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
                                       "PROJECT_BRANCH = " + project_branch)
         if re.search('PROJECT_COMMIT =.*', content):
             content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                       "PROJECT_COMMIT = " + project_sha)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
         Log.debug("Project commit SHA succesfully registered to the configuration file.")
         return True
 
@@ -626,10 +632,10 @@ class AutosubmitConfig:
         :param hpc: main platforms
         :type: str
         """
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('HPCARCH =.*', content):
             content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
         """
@@ -638,11 +644,11 @@ class AutosubmitConfig:
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_VERSION =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_total_jobs(self):
         """
@@ -678,10 +684,10 @@ class AutosubmitConfig:
         :param sleep_time: value to set
         :type sleep_time: int
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
                                   "SAFETYSLEEPTIME = %d" % sleep_time)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
         """

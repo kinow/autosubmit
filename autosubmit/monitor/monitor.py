@@ -183,7 +183,7 @@ class Monitor:
         """
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot",  expid + "_statistics_" + output_date +
+        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
 

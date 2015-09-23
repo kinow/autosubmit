@@ -324,7 +324,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.status, other.status)
+        return self.status < other.status
 
     def compare_by_id(self, other):
         """
@@ -335,7 +335,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.id, other.id)
+        return self.id < other.id
 
     def compare_by_name(self, other):
         """
@@ -346,7 +346,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.name, other.name)
+        return self.name < other.name
 
     def _get_from_completed(self, index):
         """
@@ -545,7 +545,7 @@ class Job:
         :rtype: str
         """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            template_file = file(os.path.join(project_dir, self.file), 'r')
+            template_file = open(os.path.join(project_dir, self.file), 'r')
             template = template_file.read()
         else:
             template = ''
@@ -580,8 +580,8 @@ class Job:
         template_content = template_content.replace("%%", "%")
 
         scriptname = self.name + '.cmd'
-        file(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
-        os.chmod(os.path.join(self._tmp_path, scriptname), 0775)
+        open(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, scriptname), 0o775)
 
         return scriptname
 

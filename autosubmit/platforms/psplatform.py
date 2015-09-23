@@ -49,7 +49,7 @@ class PsPlatform(HPCPlatform):
 
     def update_cmds(self):
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
-        self.remote_log_dir = os.path.join(self.root_dir, "LOG_"+self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "kill -SIGINT"
         self._checkhost_cmd = "echo 1"
         self.put_cmd = "scp"

@@ -13,7 +13,7 @@ This procedure allows you to modify the status of your jobs.
 You must execute:
 ::
 
-	autosubmit setstatus EXPID -fs STATUS_ORIGINAL -t STATUS_FINAL -s
+    autosubmit setstatus EXPID -fs STATUS_ORIGINAL -t STATUS_FINAL -s
 
 *EXPID* is the experiment identifier.
 *STATUS_ORIGINAL* is the original status to filter by the list of jobs.

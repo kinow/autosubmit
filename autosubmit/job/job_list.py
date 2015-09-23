@@ -16,7 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 import json
 
 import os
@@ -80,7 +85,7 @@ class JobList:
         parser.optionxform = str
         parser.read(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
 
-        chunk_list = range(1, num_chunks+1)
+        chunk_list = range(1, num_chunks + 1)
 
         self._date_list = date_list
         self._member_list = member_list
@@ -392,7 +397,7 @@ class JobList:
         :rtype: JobList
         """
         if os.path.exists(filename):
-            return pickle.load(file(filename, 'r'))
+            return pickle.load(open(filename, 'r'))
         else:
             Log.critical('File {0} does not exist'.format(filename))
             return list()
@@ -417,7 +422,7 @@ class JobList:
         setrecursionlimit(50000)
         path = os.path.join(self._pkl_path, self._job_list_file)
         Log.debug("Saving JobList: " + path)
-        pickle.dump(self, file(path, 'w'))
+        pickle.dump(self, open(path, 'w'))
 
     def update_from_file(self, store_change=True):
         if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
@@ -599,8 +604,8 @@ class JobList:
                 for c in m['cs']:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
-                    for job in [i for i in self._job_list if i.date == date and i.member == member
-                                and i.chunk == chunk]:
+                    for job in [i for i in self._job_list if i.date == date and i.member == member and
+                                i.chunk == chunk]:
                         if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)

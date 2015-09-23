@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
 import os
-from commands import getstatusoutput
+import subprocess
 
 from autosubmit.platforms.hpcplatform import HPCPlatform, HPCPlatformException
 from autosubmit.config.log import Log
@@ -60,7 +60,7 @@ class EcPlatform(HPCPlatform):
         Updates commands for platforms
         """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
-        self.remote_log_dir = os.path.join(self.root_dir, "LOG_"+self.expid)
+        self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
@@ -117,25 +117,28 @@ class EcPlatform(HPCPlatform):
         return True
 
     def send_command(self, command):
-        (status, output) = getstatusoutput(command)
-        if status != 0:
-            Log.error('Could not execute command {0} on {1}'.format(command, self._host))
+        try:
+            output = subprocess.check_output(command)
+        except subprocess.CalledProcessError as e:
+            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self._host))
             return False
         self._ssh_output = output
         return True
 
     def send_file(self, local_path, remote_path):
         command = '{0} {1} {3}:{2}'.format(self.put_cmd, local_path, remote_path, self._host)
-        (status, output) = getstatusoutput(command)
-        if status != 0:
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
             Log.error('Could not send file {0} to {1}'.format(local_path, remote_path))
             return False
         return True
 
     def get_file(self, remote_path, local_path, omit_error=False):
         command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, remote_path, self._host)
-        (status, output) = getstatusoutput(command)
-        if status != 0:
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
             if not omit_error:
                 Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
             return False
