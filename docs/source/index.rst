@@ -18,3 +18,4 @@ Welcome to autosubmit's documentation!
    troubleshoot
    project
    codedoc/main
+   variables

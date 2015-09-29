@@ -188,9 +188,9 @@ class Autosubmit:
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
             group = subparser.add_mutually_exclusive_group()
-            group.add_argument('-a', '--all', action="store_true", help='configure for all users')
-            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from '
-                                                                          'this path')
+            group.add_argument('--all', action="store_true", help='configure for all users')
+            group.add_argument('--local', action="store_true", help='configure only for using Autosubmit from '
+                                                                    'this path')
 
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
@@ -655,12 +655,12 @@ class Autosubmit:
                 max_jobs = platform.total_jobs
                 max_waiting_jobs = platform.max_waiting_jobs
                 waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                available = max_waiting_jobs - waiting
+                available = min(max_waiting_jobs - waiting, max_jobs - len(joblist.get_in_queue(platform)))
 
                 if min(available, len(jobsavail)) == 0:
                     Log.debug("Number of jobs ready: {0}", len(jobsavail))
                     Log.debug("Number of jobs available: {0}", available)
-                elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
+                elif min(available, len(jobsavail)) > 0:
                     Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
                     # should sort the jobsavail by priority Clean->post->sim>ini
                     # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])

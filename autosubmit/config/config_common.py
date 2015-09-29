@@ -24,15 +24,14 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 import os
 import platform
-from pyparsing import nestedExpr
 import re
 import subprocess
 
-from autosubmit.date.chunk_date_lib import parse_date
+from pyparsing import nestedExpr
 
+from autosubmit.date.chunk_date_lib import parse_date
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
-
 from autosubmit.platforms.psplatform import PsPlatform
 from autosubmit.platforms.lsfplatform import LsfPlatform
 from autosubmit.platforms.pbsplatform import PBSPlatform
@@ -134,6 +133,8 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
+
+        self._conf_parser.read(self._conf_parser_file)
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)

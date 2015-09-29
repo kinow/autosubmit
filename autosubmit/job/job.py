@@ -25,7 +25,7 @@ import os
 import re
 
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import StatisticsSnippet
+from autosubmit.job.job_common import StatisticsSnippetBash
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 from autosubmit.platforms.localplatform import LocalPlatform
@@ -551,11 +551,11 @@ class Job:
             template = ''
         current_platform = self.get_platform()
         if isinstance(current_platform, LocalPlatform):
-            stats_header = StatisticsSnippet.AS_HEADER_LOC
-            stats_tailer = StatisticsSnippet.AS_TAILER_LOC
+            stats_header = StatisticsSnippetBash.AS_HEADER_LOC
+            stats_tailer = StatisticsSnippetBash.AS_TAILER_LOC
         else:
-            stats_header = StatisticsSnippet.AS_HEADER_REM
-            stats_tailer = StatisticsSnippet.AS_TAILER_REM
+            stats_header = StatisticsSnippetBash.AS_HEADER_REM
+            stats_tailer = StatisticsSnippetBash.AS_TAILER_REM
 
         template_content = ''.join([current_platform.get_header(self),
                                    stats_header,
