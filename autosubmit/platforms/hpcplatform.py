@@ -403,6 +403,12 @@ class HPCPlatform:
         """
         self._host = new_host
 
+    def get_host(self):
+        """
+        Gets host name
+        """
+        return self._host
+
     def set_scratch(self, new_scratch):
         """
         Sets scracth directory name

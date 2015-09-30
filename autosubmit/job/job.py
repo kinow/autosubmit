@@ -519,6 +519,7 @@ class Job:
 
         job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
+        parameters['CURRENT_HOST'] = job_platform.get_host()
         parameters['CURRENT_QUEUE'] = self.get_queue()
         parameters['CURRENT_USER'] = job_platform.user
         parameters['CURRENT_PROJ'] = job_platform.project

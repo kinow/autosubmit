@@ -465,6 +465,7 @@ class Autosubmit:
         for platform_name in platforms:
             platform = platforms[platform_name]
             parameters['{0}_ARCH'.format(platform.name)] = platform.name
+            parameters['{0}_HOST'.format(platform.name)] = platform.get_host()
             parameters['{0}_USER'.format(platform.name)] = platform.user
             parameters['{0}_PROJ'.format(platform.name)] = platform.project
             parameters['{0}_BUDG'.format(platform.name)] = platform.budget
@@ -475,6 +476,7 @@ class Autosubmit:
 
         platform = platforms[as_conf.get_platform()]
         parameters['HPCARCH'] = platform.name
+        parameters['HPCHOST'] = platform.get_host()
         parameters['HPCUSER'] = platform.user
         parameters['HPCPROJ'] = platform.project
         parameters['HPCBUDG'] = platform.budget
