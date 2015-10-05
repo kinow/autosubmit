@@ -844,6 +844,7 @@ class Autosubmit:
         else:
             jobs_to_recover = job_list.get_active()
 
+        Log.info("Looking for COMPLETED files")
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
@@ -858,6 +859,7 @@ class Autosubmit:
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
+        Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(False)
         job_list.update_from_file(False)

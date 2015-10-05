@@ -84,8 +84,10 @@ class Monitor:
         :return: created graph
         :rtype: pydotplus.Dot
         """
+        Log.debug('Creating workflow graph...')
         graph = pydotplus.Dot(graph_type='digraph')
 
+        Log.debug('Creating legend...')
         legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
                                        fillcolor=self._table[Status.WAITING]))
@@ -107,6 +109,7 @@ class Monitor:
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         self.nodes_ploted = set()
+        Log.debug('Creating job graph...')
         for job in joblist:
             if job.has_parents():
                 continue
@@ -117,7 +120,7 @@ class Monitor:
             self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
-
+        Log.debug('Graph definition finalished')
         return graph
 
     def _add_children(self, job, exp, node_job):
@@ -157,6 +160,7 @@ class Monitor:
 
         graph = self.create_tree_list(expid, joblist)
 
+        Log.info("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
             graph.write_png(output_file)
@@ -169,6 +173,10 @@ class Monitor:
         elif output_format == "svg":
             # noinspection PyUnresolvedReferences
             graph.write_svg(output_file)
+        else:
+            Log.error('Format {0} not supported', output_format)
+            return
+        Log.result('Plot succesfully created')
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         """

@@ -423,6 +423,7 @@ class JobList:
         path = os.path.join(self._pkl_path, self._job_list_file)
         Log.debug("Saving JobList: " + path)
         pickle.dump(self, open(path, 'w'))
+        Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):
         if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
@@ -458,6 +459,7 @@ class JobList:
         else:
             retrials = 4
 
+        Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
             if job.fail_count < retrials:
@@ -470,6 +472,7 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
+        Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
             tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
             # for parent in job.parents:
@@ -478,6 +481,7 @@ class JobList:
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
                 Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+        Log.debug('Update finished')
         if store_change:
             self.save()
 
