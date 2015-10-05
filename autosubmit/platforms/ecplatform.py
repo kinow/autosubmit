@@ -118,7 +118,7 @@ class EcPlatform(HPCPlatform):
 
     def send_command(self, command):
         try:
-            output = subprocess.check_output(command)
+            output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
             Log.error('Could not execute command {0} on {1}'.format(e.cmd, self._host))
             return False

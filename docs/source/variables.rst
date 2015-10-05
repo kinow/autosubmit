@@ -16,19 +16,19 @@ This variables are relatives to the current job.
 - **SDATE**: current startdate.
 - **MEMBER**: current member.
 - **CHUNK**: current chunk.
-- **DAY_BEFORE**:
-- **Chunk_End_IN_DAYS**:
-- **Chunk_START_DATE**:
-- **Chunk_START_YEAR**:
-- **Chunk_START_MONTH**:
-- **Chunk_START_DAY**:
-- **Chunk_START_HOUR**:
-- **Chunk_END_DATE**:
-- **Chunk_END_YEAR**:
-- **Chunk_END_MONTH**:
-- **Chunk_END_DAY**:
-- **Chunk_END_HOUR**:
-- **PREV**:
+- **DAY_BEFORE**: day before the startdate
+- **Chunk_End_IN_DAYS**: chunk's length in days
+- **Chunk_START_DATE**: chunk's start date
+- **Chunk_START_YEAR**: chunk's start year
+- **Chunk_START_MONTH**: chunk's start month
+- **Chunk_START_DAY**: chunk's start day
+- **Chunk_START_HOUR**: chunk's start hout
+- **Chunk_END_DATE**: chunk's end date
+- **Chunk_END_YEAR**: chunk's end year
+- **Chunk_END_MONTH**: chunk's end month
+- **Chunk_END_DAY**: chunk's end day
+- **Chunk_END_HOUR**: chunk's end hour
+- **PREV**: days since startdate at the chunk's start
 - **Chunk_FIRST**: True if the current chunk is the first, false otherwise.
 - **Chunk_LAST**: True if the current chunk is the last, false otherwise.
 - **NUMPROC**: Number of processors that the job will use.
@@ -44,27 +44,27 @@ This variables are relative to the platoforms defined on the jobs conf. A full s
 each platform defined on the platforms configuration file, substituting {PLATFORM_NAME} for each platform's name. Also, a
 suite of varables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.
 
-- **{PLATFORM_NAME}_ARCH**:
-- **{PLATFORM_NAME}_HOST**:
-- **{PLATFORM_NAME}_USER**:
-- **{PLATFORM_NAME}_PROJ**:
-- **{PLATFORM_NAME}_BUDG**:
-- **{PLATFORM_NAME}_TYPE**:
-- **{PLATFORM_NAME}_VERSION**:
-- **{PLATFORM_NAME}_SCRATCH_DIR**:
-- **{PLATFORM_NAME}_ROOTDIR**:
+- **{PLATFORM_NAME}_ARCH**: Platform name
+- **{PLATFORM_NAME}_HOST**: Platform url
+- **{PLATFORM_NAME}_USER**: Platform user
+- **{PLATFORM_NAME}_PROJ**: Platform project
+- **{PLATFORM_NAME}_BUDG**: Platform budget
+- **{PLATFORM_NAME}_TYPE**: Platform scheduler type
+- **{PLATFORM_NAME}_VERSION**: Platform scheduler version
+- **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
+- **{PLATFORM_NAME}_ROOTDIR**: Platform's experiment folder path
 
 It is also defined a suite of variables for the experiment's default platform:
 
-- **HPCARCH**:
-- **HPCHOST**:
-- **HPCUSER**:
-- **HPCPROJ**:
-- **HPCBUDG**:
-- **HPCTYPE**:
-- **HPCVERSION**:
-- **SCRATCH_DIR**:
-- **HPCROOTDIR**:
+- **HPCARCH**: Default HPC platform name
+- **HPCHOST**: Default HPC platform url
+- **HPCUSER**: Default HPC platform user
+- **HPCPROJ**: Default HPC platform project
+- **HPCBUDG**: Default HPC platform budget
+- **HPCTYPE**: Default HPC platform scheduler type
+- **HPCVERSION**: Default HPC platform scheduler version
+- **SCRATCH_DIR**: Default HPC platform scratch folder path
+- **HPCROOTDIR**: Default HPC platform experiment's foñder path
 
 
 Project variables
@@ -74,6 +74,6 @@ Project variables
 - **CHUNKSIZE**: size of each chunk
 - **CHUNKSIZEUNIT**: unit of the chuk size. Can be hour, day, month or year.
 - **CALENDAR**: calendar used for the experiment. Can be standard or noleap.
-- **ROOTDIR**:
-- **PROJDIR**:
+- **ROOTDIR**: local path to experiment's folder
+- **PROJDIR**: local path to experiment's proj folder
 
