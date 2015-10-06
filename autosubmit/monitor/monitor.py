@@ -153,6 +153,7 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Creating workflow plot')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
@@ -160,7 +161,7 @@ class Monitor:
 
         graph = self.create_tree_list(expid, joblist)
 
-        Log.info("Saving workflow plot at '{0}'", output_file)
+        Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
             graph.write_png(output_file)
@@ -176,7 +177,7 @@ class Monitor:
         else:
             Log.error('Format {0} not supported', output_format)
             return
-        Log.result('Plot succesfully created')
+        Log.result('Plot created at {0}', output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         """
@@ -189,11 +190,13 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
+        Log.result('Stats created at {0}', output_file)
 
     @staticmethod
     def create_bar_diagram(expid, joblist, output_file):
