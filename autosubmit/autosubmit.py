@@ -722,10 +722,8 @@ class Autosubmit:
         if not isinstance(jobs, type([])):
             jobs = jobs.get_job_list()
 
-        Log.info("Plotting...")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format)
-        Log.result("Plot ready")
         return True
 
     @staticmethod

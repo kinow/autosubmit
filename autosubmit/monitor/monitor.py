@@ -153,7 +153,7 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
-        Log.info('Creating workflow plot')
+        Log.info('Plotting...')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +

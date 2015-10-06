@@ -177,7 +177,7 @@ class StatisticsSnippetBash:
 
 
 # noinspection PyPep8
-class StatisticsSnippetBash:
+class StatisticsSnippetPython:
     """
     Class to handle the statistics snippet of a job. It contains header and tailer for
     local and remote jobs
@@ -344,8 +344,8 @@ def main():
     failed_jobs_rt = 0
 
     for failed_errfile in failed_errfiles:
-        failed_errfile_stamp = datetime.datetime.fromtimestamp(os.path.getmtime('{0}'.format(os.path.join(log_directory,
-                                                                                                          failed_errfile))))
+        failed_err_stamp = datetime.datetime.fromtimestamp(os.path.getmtime('{0}'.format(os.path.join(log_directory,
+                                                                                                      failed_errfile))))
         failed_jobs += 1
 
     file_completed = open('{0}_COMPLETED'.format(job_name_ptrn), 'w')
