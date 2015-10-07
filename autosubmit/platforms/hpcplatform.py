@@ -354,14 +354,14 @@ class HPCPlatform:
             os.remove(completed_local_path)
         completed_remote_path = os.path.join(self.remote_log_dir, filename)
         if self.get_file(completed_remote_path, completed_local_path, omit_error):
-            Log.debug('The COMPLETED files have been transfered')
+            Log.debug('{0}_COMPLETED have been transfered', jobname)
             return True
 
         while retries > 0:
             # wait five seconds to check get file
             sleep(5)
             if self.get_file(completed_remote_path, completed_local_path, omit_error):
-                Log.debug('The COMPLETED files have been transfered')
+                Log.debug('{0}_COMPLETED files have been transfered', jobname)
                 return True
             retries -= 1
 
@@ -402,6 +402,12 @@ class HPCPlatform:
         :type new_host: str
         """
         self._host = new_host
+
+    def get_host(self):
+        """
+        Gets host name
+        """
+        return self._host
 
     def set_scratch(self, new_scratch):
         """

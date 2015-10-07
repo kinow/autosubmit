@@ -17,4 +17,6 @@ Welcome to autosubmit's documentation!
    usage
    troubleshoot
    project
+   variables
    codedoc/main
+

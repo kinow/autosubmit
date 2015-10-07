@@ -39,7 +39,7 @@ You can find help about how to use autosubmit and a list of available commands, 
 Execute autosubmit <command> -h for detailed help for each command:
 ::
 
-	autosubmit expid -h
+    autosubmit expid -h
 
 Experiment creation
 -------------------
@@ -76,8 +76,8 @@ To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and `
 After that, you are expected to run the command:
 ::
 
-	autosubmit create xxxx
-	
+    autosubmit create xxxx
+
 This command creates the experiment project in the ``proj`` folder. The experiment project contains the scripts specified in ``jobs_xxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
 
 Experiment run
@@ -87,15 +87,15 @@ To run the experiment, just execute the command:
 
 ::
 
-	autosubmit run xxxx
-	
+    autosubmit run xxxx
+
 Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.conf``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.conf``.
 
 To monitor the status of the experiment, the command:
 
 ::
 
-	autosubmit monitor xxxx
+    autosubmit monitor xxxx
 
 is available. This will plot the workflow of the experiment and the current status.
 

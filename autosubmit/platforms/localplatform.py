@@ -16,7 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from commands import getstatusoutput
+
 import os
 import textwrap
 from xml.dom.minidom import parseString
@@ -99,18 +99,19 @@ class LocalPlatform(HPCPlatform):
 
     def send_file(self, local_path, remote_path):
         command = '{0} {1} {2}'.format(self.put_cmd, local_path, remote_path)
-        (status, output) = getstatusoutput(command)
-        if status != 0:
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
             Log.error('Could not send file {0} to {1}'.format(local_path, remote_path))
             return False
         return True
 
     def get_file(self, remote_path, local_path, omit_error=False):
-        command = '{0} {2} {1}'.format(self.get_cmd, local_path, remote_path)
-        (status, output) = getstatusoutput(command)
-        if status != 0:
-            if not omit_error:
-                Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+        command = '{0} {1} {2}'.format(self.get_cmd, remote_path, local_path)
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
+            Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
             return False
         return True
 

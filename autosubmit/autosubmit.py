@@ -17,17 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
 
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
+
 import argparse
-from commands import getstatusoutput
+import subprocess
 import json
 import tarfile
 import time
-import cPickle
+import pickle
 import os
 import sys
 import shutil
@@ -124,7 +132,7 @@ class Autosubmit:
 
             # Delete
             subparser = subparsers.add_parser('delete', description="delete specified experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-f', '--force', action='store_true', help='deletes experiment without confirmation')
 
             # Monitor
@@ -157,11 +165,11 @@ class Autosubmit:
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Create
             subparser = subparsers.add_parser('create', description="create specified experiment joblist")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
 
             # Configure
@@ -180,16 +188,16 @@ class Autosubmit:
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
             group = subparser.add_mutually_exclusive_group()
-            group.add_argument('-a', '--all', action="store_true", help='configure for all users')
-            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from '
-                                                                          'this path')
+            group.add_argument('--all', action="store_true", help='configure for all users')
+            group.add_argument('--local', action="store_true", help='configure only for using Autosubmit from '
+                                                                    'this path')
 
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
             # Set stattus
             subparser = subparsers.add_parser('setstatus', description="sets job status for an experiment")
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',
@@ -211,7 +219,7 @@ class Autosubmit:
 
             # Test
             subparser = subparsers.add_parser('test', description='test experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-c', '--chunks', required=True, help='chunks to run')
             subparser.add_argument('-m', '--member', help='member to run')
             subparser.add_argument('-s', '--stardate', help='stardate to run')
@@ -220,17 +228,17 @@ class Autosubmit:
 
             # Refresh
             subparser = subparsers.add_parser('refresh', description='refresh project directory for an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
 
             # Archive
             subparser = subparsers.add_parser('archive', description='archives an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Unarchive
             subparser = subparsers.add_parser('unarchive', description='unarchives an experiment')
-            subparser.add_argument('expid',  help='experiment identifier')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Readme
             subparsers.add_parser('readme', description='show readme')
@@ -280,13 +288,13 @@ class Autosubmit:
             elif args.command == 'readme':
                 if os.path.isfile(Autosubmit.readme_path):
                     with open(Autosubmit.readme_path) as f:
-                        print f.read()
+                        print(f.read())
                         return True
                 return False
             elif args.command == 'changelog':
                 if os.path.isfile(Autosubmit.changes_path):
                     with open(Autosubmit.changes_path) as f:
-                        print f.read()
+                        print(f.read())
                         return True
                 return False
         except Exception as e:
@@ -366,15 +374,15 @@ class Autosubmit:
                         new_filename = filename[:index] + "_" + exp_id + filename[index:]
 
                         if filename == 'platforms.conf' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
-                            content = file(os.path.join(BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
+                            content = open(os.path.join(BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
                         elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
-                            content = file(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
+                            content = open(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
                             content = resource_string('autosubmit.config', 'files/' + filename)
 
                         conf_new_filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", new_filename)
                         Log.debug(conf_new_filename)
-                        file(conf_new_filename, 'w').write(content)
+                        open(conf_new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
@@ -395,8 +403,8 @@ class Autosubmit:
                     for filename in files:
                         if os.path.isfile(os.path.join(conf_copy_id, filename)):
                             new_filename = filename.replace(copy_id, exp_id)
-                            content = file(os.path.join(conf_copy_id, filename), 'r').read()
-                            file(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
+                            content = open(os.path.join(conf_copy_id, filename), 'r').read()
+                            open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                 else:
                     Log.critical("The previous experiment directory does not exist")
@@ -457,6 +465,7 @@ class Autosubmit:
         for platform_name in platforms:
             platform = platforms[platform_name]
             parameters['{0}_ARCH'.format(platform.name)] = platform.name
+            parameters['{0}_HOST'.format(platform.name)] = platform.get_host()
             parameters['{0}_USER'.format(platform.name)] = platform.user
             parameters['{0}_PROJ'.format(platform.name)] = platform.project
             parameters['{0}_BUDG'.format(platform.name)] = platform.budget
@@ -467,6 +476,7 @@ class Autosubmit:
 
         platform = platforms[as_conf.get_platform()]
         parameters['HPCARCH'] = platform.name
+        parameters['HPCHOST'] = platform.get_host()
         parameters['HPCUSER'] = platform.user
         parameters['HPCPROJ'] = platform.project
         parameters['HPCBUDG'] = platform.budget
@@ -531,7 +541,7 @@ class Autosubmit:
 
         # the experiment should be loaded as well
         if os.path.exists(filename):
-            joblist = cPickle.load(file(filename, 'rw'))
+            joblist = pickle.load(open(filename, 'rw'))
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist.", filename)
@@ -575,7 +585,7 @@ class Autosubmit:
 
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
-            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
                                                                   strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
@@ -647,16 +657,17 @@ class Autosubmit:
                 max_jobs = platform.total_jobs
                 max_waiting_jobs = platform.max_waiting_jobs
                 waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                available = max_waiting_jobs - waiting
+                jobinqueue = joblist.get_in_queue(platform)
+                available = min(max_waiting_jobs - waiting, max_jobs - len(jobinqueue))
 
                 if min(available, len(jobsavail)) == 0:
                     Log.debug("Number of jobs ready: {0}", len(jobsavail))
                     Log.debug("Number of jobs available: {0}", available)
-                elif min(available, len(jobsavail)) > 0 and len(jobinqueue) <= max_jobs:
+                elif min(available, len(jobsavail)) > 0:
                     Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
                     # should sort the jobsavail by priority Clean->post->sim>ini
                     # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
-                    # probably useless to sort by year before sorting by type
+                    # probably useless to sort by year before sor1ting by type
                     s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
 
                     list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
@@ -705,17 +716,15 @@ class Autosubmit:
         root_name = 'job_list'
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
-        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + '_' + expid + '.pkl')
+        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
-        jobs = cPickle.load(file(filename, 'r'))
+        jobs = pickle.load(open(filename, 'r'))
         if not isinstance(jobs, type([])):
             jobs = jobs.get_job_list()
 
-        Log.info("Plotting...")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format)
-        Log.result("Plot ready")
         return True
 
     @staticmethod
@@ -735,7 +744,7 @@ class Autosubmit:
                                   'statistics.log'))
         Log.info("Loading jobs...")
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
-        jobs = cPickle.load(file(filename, 'r'))
+        jobs = pickle.load(open(filename, 'r'))
         # if not isinstance(jobs, type([])):
         #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
@@ -815,7 +824,7 @@ class Autosubmit:
         Log.info('Recovering experiment {0}'.format(expid))
 
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-        job_list = cPickle.load(file(path, 'r'))
+        job_list = pickle.load(open(path, 'r'))
 
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
@@ -834,6 +843,7 @@ class Autosubmit:
         else:
             jobs_to_recover = job_list.get_active()
 
+        Log.info("Looking for COMPLETED files")
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
@@ -848,6 +858,7 @@ class Autosubmit:
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
+        Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(False)
         job_list.update_from_file(False)
@@ -887,7 +898,7 @@ class Autosubmit:
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         # the experiment should be loaded as well
         if os.path.exists(filename):
-            joblist = cPickle.load(file(filename, 'rw'))
+            joblist = pickle.load(open(filename, 'rw'))
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
@@ -930,14 +941,14 @@ class Autosubmit:
         """
         home_path = os.path.expanduser('~')
         while database_path is None:
-            database_path = raw_input("Introduce Database path: ")
+            database_path = input("Introduce Database path: ")
         database_path = database_path.replace('~', home_path)
         if not os.path.exists(database_path):
             Log.error("Database path does not exist.")
             return False
 
         while local_root_path is None:
-            local_root_path = raw_input("Introduce Local Root path: ")
+            local_root_path = input("Introduce Local Root path: ")
         local_root_path = local_root_path.replace('~', home_path)
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
@@ -1147,7 +1158,7 @@ class Autosubmit:
                 os.remove(destiny)
             else:
                 return
-        if as_conf.get_project_type() != 'none':
+        if as_conf.get_project_type() != 'none' and as_conf.get_file_project_conf():
             shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
 
     @staticmethod
@@ -1260,9 +1271,10 @@ class Autosubmit:
                 Log.debug("The project folder {0} has been created.", project_path)
             shutil.rmtree(project_path)
             Log.info("Checking out revision {0} into {1}", svn_project_revision + " " + svn_project_url, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
-                                               " " + svn_project_url + " " + project_destination)
-            if status:
+            try:
+                output = subprocess.check_output("cd " + project_path + "; svn checkout -r " + svn_project_revision +
+                                                 " " + svn_project_url + " " + project_destination, shell=True)
+            except subprocess.CalledProcessError:
                 Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
                           project_path)
                 shutil.rmtree(project_path)
@@ -1287,9 +1299,9 @@ class Autosubmit:
 
             Log.info("Copying {0} into {1}", local_project_path, project_path)
 
-            (status, output) = getstatusoutput("cp -R " + local_project_path + "/* " +
-                                               local_destination)
-            if status:
+            try:
+                output = subprocess.check_output("cp -R " + local_project_path + "/* " + local_destination, shell=True)
+            except subprocess.CalledProcessError:
                 Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                 shutil.rmtree(project_path)
                 return False
@@ -1327,8 +1339,8 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
-        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl',  root_name + "_" + expid +
-                                     ".pkl"), 'r'))
+        job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
+                                    ".pkl"), 'r'))
 
         final_status = Autosubmit._get_status(final)
         if filter_chunks:
@@ -1398,7 +1410,7 @@ class Autosubmit:
         if save:
             job_list.update_list()
             path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-            cPickle.dump(job_list, file(path, 'w'))
+            pickle.dump(job_list, open(path, 'w'))
             Log.info("Saving JobList: {0}", path)
         else:
             job_list.update_list(False)
@@ -1421,7 +1433,7 @@ class Autosubmit:
         sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
-                return strtobool(raw_input().lower())
+                return strtobool(input().lower())
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
@@ -1446,7 +1458,7 @@ class Autosubmit:
         as_conf.set_safetysleeptime(10)
 
         if dummy:
-            content = file(as_conf.experiment_file).read()
+            content = open(as_conf.experiment_file).read()
 
             # Experiment
             content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
@@ -1460,7 +1472,7 @@ class Autosubmit:
             content = content.replace(re.search('^PROJECT_TYPE =.*', content, re.MULTILINE).group(0),
                                       "PROJECT_TYPE = none")
 
-            file(as_conf.experiment_file, 'w').write(content)
+            open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def _get_status(s):
@@ -1597,7 +1609,7 @@ class Autosubmit:
             Autosubmit.delete(testid, True)
             return False
 
-        content = file(as_conf.experiment_file).read()
+        content = open(as_conf.experiment_file).read()
         if hpc is None:
             platforms_parser = as_conf.get_parser(as_conf.platforms_file)
             test_platforms = list()
@@ -1630,7 +1642,7 @@ class Autosubmit:
             content = content.replace(re.search('PROJECT_REVISION =.*', content).group(0),
                                       "PROJECT_REVISION = " + branch)
 
-        file(as_conf.experiment_file, 'w').write(content)
+        open(as_conf.experiment_file, 'w').write(content)
 
         Autosubmit.create(testid, False)
         if not Autosubmit.run_experiment(testid):

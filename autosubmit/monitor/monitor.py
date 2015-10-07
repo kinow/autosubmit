@@ -84,8 +84,10 @@ class Monitor:
         :return: created graph
         :rtype: pydotplus.Dot
         """
+        Log.debug('Creating workflow graph...')
         graph = pydotplus.Dot(graph_type='digraph')
 
+        Log.debug('Creating legend...')
         legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
                                        fillcolor=self._table[Status.WAITING]))
@@ -107,6 +109,7 @@ class Monitor:
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         self.nodes_ploted = set()
+        Log.debug('Creating job graph...')
         for job in joblist:
             if job.has_parents():
                 continue
@@ -117,7 +120,7 @@ class Monitor:
             self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
-
+        Log.debug('Graph definition finalished')
         return graph
 
     def _add_children(self, job, exp, node_job):
@@ -150,6 +153,7 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Plotting...')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
@@ -157,6 +161,7 @@ class Monitor:
 
         graph = self.create_tree_list(expid, joblist)
 
+        Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
             graph.write_png(output_file)
@@ -169,6 +174,10 @@ class Monitor:
         elif output_format == "svg":
             # noinspection PyUnresolvedReferences
             graph.write_svg(output_file)
+        else:
+            Log.error('Format {0} not supported', output_format)
+            return
+        Log.result('Plot created at {0}', output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         """
@@ -181,11 +190,13 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot",  expid + "_statistics_" + output_date +
+        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
+        Log.result('Stats created at {0}', output_file)
 
     @staticmethod
     def create_bar_diagram(expid, joblist, output_file):
