@@ -1158,7 +1158,7 @@ class Autosubmit:
                 os.remove(destiny)
             else:
                 return
-        if as_conf.get_project_type() != 'none':
+        if as_conf.get_project_type() != 'none' and as_conf.get_file_project_conf():
             shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
 
     @staticmethod

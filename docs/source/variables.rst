@@ -64,7 +64,7 @@ It is also defined a suite of variables for the experiment's default platform:
 - **HPCTYPE**: Default HPC platform scheduler type
 - **HPCVERSION**: Default HPC platform scheduler version
 - **SCRATCH_DIR**: Default HPC platform scratch folder path
-- **HPCROOTDIR**: Default HPC platform experiment's foñder path
+- **HPCROOTDIR**: Default HPC platform experiment's folder path
 
 
 Project variables
