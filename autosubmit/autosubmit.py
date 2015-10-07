@@ -657,7 +657,8 @@ class Autosubmit:
                 max_jobs = platform.total_jobs
                 max_waiting_jobs = platform.max_waiting_jobs
                 waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                available = min(max_waiting_jobs - waiting, max_jobs - len(joblist.get_in_queue(platform)))
+                jobinqueue = joblist.get_in_queue(platform)
+                available = min(max_waiting_jobs - waiting, max_jobs - len(jobinqueue))
 
                 if min(available, len(jobsavail)) == 0:
                     Log.debug("Number of jobs ready: {0}", len(jobsavail))
@@ -666,7 +667,7 @@ class Autosubmit:
                     Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
                     # should sort the jobsavail by priority Clean->post->sim>ini
                     # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
-                    # probably useless to sort by year before sorting by type
+                    # probably useless to sort by year before sor1ting by type
                     s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
 
                     list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
