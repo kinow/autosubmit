@@ -82,6 +82,13 @@ class AutosubmitConfig:
         """
         return self._proj_parser_file
 
+    @property
+    def jobs_file(self):
+        """
+        Returns project's jobs file name
+        """
+        return self._jobs_parser_file
+
     def get_project_dir(self):
         """
         Returns experiment's project directory
@@ -439,6 +446,15 @@ class AutosubmitConfig:
         """
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
+    def get_file_jobs_conf(self):
+        """
+        Returns path to project config file from experiment config file
+
+        :return: path to project config file
+        :rtype: str
+        """
+        return self._exp_parser.get('project_files', 'FILE_JOBS_CONF')
+
     def get_git_project_origin(self):
         """
         Returns git origin from experiment config file
@@ -446,7 +462,7 @@ class AutosubmitConfig:
         :return: git origin
         :rtype: str
         """
-        return self._exp_parser.get('git', 'PROJECT_ORIGIN')
+        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
 
     def get_git_project_branch(self):
         """

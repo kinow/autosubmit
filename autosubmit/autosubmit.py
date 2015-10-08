@@ -231,6 +231,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
+            subparser.add_argument('-jc', '--jobs_conf', default=False, action='store_true',
+                                   help='overwrite jobs conf file')
 
             # Archive
             subparser = subparsers.add_parser('archive', description='archives an experiment')
@@ -280,7 +282,7 @@ class Autosubmit:
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
-                return Autosubmit.refresh(args.expid, args.model_conf)
+                return Autosubmit.refresh(args.expid, args.model_conf, args.jobs_conf)
             elif args.command == 'archive':
                 return Autosubmit.archive(args.expid)
             elif args.command == 'unarchive':
@@ -1019,7 +1021,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def refresh(expid, model_conf):
+    def refresh(expid, model_conf, jobs_conf):
         """
         Refresh project folder for given experiment
 
@@ -1036,7 +1038,7 @@ class Autosubmit:
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
-        Autosubmit._create_model_conf(as_conf, model_conf)
+        Autosubmit._create_project_associated_conf(as_conf, model_conf, jobs_conf)
         return True
 
     @staticmethod
@@ -1151,15 +1153,32 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def _create_model_conf(as_conf, force):
-        destiny = as_conf.project_file
-        if os.path.exists(destiny):
-            if force:
-                os.remove(destiny)
-            else:
-                return
-        if as_conf.get_project_type() != 'none' and as_conf.get_file_project_conf():
-            shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
+    def _create_project_associated_conf(as_conf, force_model_conf, force_jobs_conf):
+        project_destiny = as_conf.project_file
+        jobs_destiny = as_conf.jobs_file
+
+        if as_conf.get_project_type() != 'none':
+            if as_conf.get_file_project_conf():
+                copy = True
+                if os.path.exists(project_destiny):
+                    if force_model_conf:
+                        os.remove(project_destiny)
+                    else:
+                        copy = False
+                if copy:
+                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()),
+                                    project_destiny)
+
+            if as_conf.get_file_jobs_conf():
+                copy = True
+                if os.path.exists(jobs_destiny):
+                    if force_jobs_conf:
+                        os.remove(jobs_destiny)
+                    else:
+                        copy = False
+                if copy:
+                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf()),
+                                    jobs_destiny)
 
     @staticmethod
     def create(expid, noplot):
@@ -1186,7 +1205,9 @@ class Autosubmit:
 
         if not Autosubmit._copy_code(as_conf, expid, project_type, False):
             return False
-        Autosubmit._create_model_conf(as_conf, False)
+        update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                     "job_list_" + expid + ".pkl"))
+        Autosubmit._create_project_associated_conf(as_conf, False, update_job)
 
         if project_type != "none":
             # Check project configuration
