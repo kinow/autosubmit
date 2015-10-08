@@ -136,6 +136,8 @@ Examples:
     [project_files]
     # Where is PROJECT CONFIGURATION file location relative to project root path
     FILE_PROJECT_CONF = templates/ecearth3/ecearth3.conf
+    # Where is JOBS CONFIGURATION file location relative to project root path
+    FILE_JOBS_CONF = templates/common/jobs.conf
 
 ::
 
