@@ -86,8 +86,8 @@ class HPCPlatform:
             self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                               key_filename=self._host_config_id)
             return True
-        except BaseException as e:
-            Log.error('Can not create ssh connection to {0}: {1}', self._host, e.message)
+        except IOError as e:
+            Log.error('Can not create ssh connection to {0}: {1}', self._host, e.strerror)
             return False
 
     def send_command(self, command):
