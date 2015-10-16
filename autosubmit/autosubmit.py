@@ -808,7 +808,8 @@ class Autosubmit:
     @staticmethod
     def recovery(expid, save, all_jobs):
         """
-        TODO
+        Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+        otherwise it will be set to WAITING. It will also update the joblist.
 
         :param expid: identifier of the experiment to recover
         :type expid: str
@@ -1331,27 +1332,34 @@ class Autosubmit:
 
     @staticmethod
     def change_status(final, final_status, job):
+        """
+        Set job status to final
+
+        :param final:
+        :param final_status:
+        :param job:
+        """
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
     def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section):
         """
-        TODO
+        Set status
 
         :param expid: experiment identifier
         :type expid: str
-        :param save:
+        :param save: if true, saves the new joblist
         :type save: bool
-        :param final:
+        :param final: status to set on jobs
         :type final: str
-        :param lst:
+        :param lst: list of jobs to change status
         :type lst: str
-        :param filter_chunks:
+        :param filter_chunks: chunks to change status
         :type filter_chunks: str
-        :param filter_status:
+        :param filter_status: current status of the jobs to change status
         :type filter_status: str
-        :param filter_section:
+        :param filter_section: sections to change status
         :type filter_section: str
         """
         root_name = 'job_list'
