@@ -81,6 +81,15 @@ class AutosubmitGit:
 
     @staticmethod
     def clone_repository(as_conf, force):
+        """
+        Clones a specified git repository on the project folder
+
+        :param as_conf: experiment configuration
+        :type as_conf: autosubmit.config.AutosubmitConfig
+        :param force: if True, it will overwrite any existing clone
+        :type force: bool
+        :return: True if clone was succesfull, False otherwise
+        """
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()

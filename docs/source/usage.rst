@@ -483,6 +483,7 @@ Options:
 
       -h, --help            show this help message and exit
       -mc, --model_conf     overwrite model conf file
+      -jc, --jobs_conf      overwrite jobs conf file
 
 Example:
 ::
