@@ -1,3 +1,11 @@
+3.1.5
+    Connect fixed to use Proxy Command
+    Fixes in documentation
+
+3.1.4
+    Documentation for Variables
+    Minor bug fixes
+
 3.1.3
     Minor bug fixes, mostly related to SLURM
 
