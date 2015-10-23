@@ -23,7 +23,6 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 import os
-import platform
 import re
 import subprocess
 
@@ -43,7 +42,12 @@ from autosubmit.platforms.hpcplatform import HPCPlatformException
 
 
 class AutosubmitConfig:
-    """Class to handle experiment configuration coming from file or database"""
+    """
+    Class to handle experiment configuration coming from file or database
+
+    :param expid: experiment identifier
+    :type expid: str
+    """
 
     def __init__(self, expid):
         self.expid = expid
@@ -747,7 +751,7 @@ class AutosubmitConfig:
         local_platform.queue = ''
         local_platform.max_waiting_jobs = self.get_max_waiting_jobs()
         local_platform.total_jobs = self.get_total_jobs()
-        local_platform.set_host(platform.node())
+        local_platform.set_host('localhost')
         local_platform.set_scratch(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR))
         local_platform.set_project(self.expid)
         local_platform.set_budget(self.expid)

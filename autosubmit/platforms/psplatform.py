@@ -19,7 +19,6 @@
 import textwrap
 import os
 from xml.dom.minidom import parseString
-import platform
 
 from autosubmit.platforms.hpcplatform import HPCPlatform
 
@@ -34,7 +33,7 @@ class PsPlatform(HPCPlatform):
 
     def __init__(self, expid):
         HPCPlatform.__init__(self)
-        self._host = platform.node()
+        self._host = 'localhost'
         self.scratch = ""
         self.project = ""
         self.user = ""
