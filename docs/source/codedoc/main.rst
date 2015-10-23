@@ -12,4 +12,4 @@ Module documentation
    git
    job
    monitor
-   queue
+   platforms
