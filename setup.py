@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -35,8 +35,8 @@ setup(
     description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse'
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
-    author_email='domingo.manubens@ic3.cat',
-    url='http://autosubmit.ic3.cat',
+    author_email='domingo.manubens@bsc.cat',
+    url='http://autosubmit.bsc.es',
     download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
