@@ -453,7 +453,7 @@ class AutosubmitConfig:
         :return: path to project config file
         :rtype: str
         """
-        return self._exp_parser.get('project_files', 'FILE_JOBS_CONF')
+        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
 
     def get_git_project_origin(self):
         """
@@ -462,7 +462,7 @@ class AutosubmitConfig:
         :return: git origin
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
+        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_ORIGIN', '')
 
     def get_git_project_branch(self):
         """
