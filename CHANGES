@@ -1,5 +1,5 @@
 3.1.6
-    Fux issue when creating, no option FILE_JOBS_CONF
+    Fix issue when creating, no option FILE_JOBS_CONF
     Fixes in documentation
 
 3.1.5
