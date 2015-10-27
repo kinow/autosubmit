@@ -817,8 +817,8 @@ class AutosubmitConfig:
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_PLATFORM'):
                 platforms[section].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
-                                                                                                     'SERIAL_PLATFORM',
-                                                                                                     None)])
+                                                                                             'SERIAL_PLATFORM',
+                                                                                             None)])
 
         return platforms
 

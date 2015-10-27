@@ -51,6 +51,7 @@ from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
 
+# noinspection PyPep8
 from config.basicConfig import BasicConfig
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
@@ -1462,7 +1463,8 @@ class Autosubmit:
         sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
-                return strtobool(input().lower())
+                answer = raw_input()
+                return strtobool(answer.lower())
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
