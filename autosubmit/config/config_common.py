@@ -804,15 +804,15 @@ class AutosubmitConfig:
             remote_platform.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
             remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
             remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
-            remote_platform.name = section.lower()
+            remote_platform.name = section
             remote_platform.update_cmds()
-            platforms[section.lower()] = remote_platform
+            platforms[section] = remote_platform
 
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section.lower()].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
+                platforms[section].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
                                                                                                      'SERIAL_PLATFORM',
-                                                                                                     None).lower()])
+                                                                                                     None)])
 
         return platforms
 
