@@ -2,7 +2,8 @@
 Developing a project
 ####################
 
-Autosubmit is used at IC3 to run EC-Earth. To do that, a git repository has been created that contains the model source code and the scripts used to run the tasks.
+Autosubmit is used at BSC to run EC-Earth. To do that, a git repository has been created that contains the model source
+code and the scripts used to run the tasks.
 
 .. figure:: fig3.png
    :width: 70%
@@ -30,4 +31,4 @@ The executable scripts are created at runtime so the modifications on the source
 .. warning:: Autosubmit automatically adds small shell script code blocks in the header and the tailer of your scripts, to control the workflow.
     Please, remove any exit command in the end of your scripts, e.g. ``exit 0``.
 
-.. important:: For a complete reference on how to develop an EC-Earth project, please have a look in the following wiki page: http://ic3.cat/wikicfu/index.php/Models
+.. important:: For a complete reference on how to develop an EC-Earth project, please have a look in the following wiki page: https://earth.bsc.es/wiki/doku.php?id=models:models

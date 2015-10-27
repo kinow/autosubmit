@@ -37,7 +37,7 @@ setup(
     author='Domingo Manubens-Gil',
     author_email='domingo.manubens@bsc.cat',
     url='http://autosubmit.bsc.es',
-    download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
+    download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
                       'numpy', 'matplotlib', 'paramiko>=1.15', 'pycrypto'],
