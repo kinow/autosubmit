@@ -876,7 +876,7 @@ class DicJobs:
 
         job.platform_name = self.get_option(section, "PLATFORM", None)
         if job.platform_name is not None:
-            job.platform_name = job.platform_name.lower()
+            job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
         job.set_queue(self.get_option(section, "QUEUE", None))
 
