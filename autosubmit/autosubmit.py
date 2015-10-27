@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -17,17 +17,25 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+from __future__ import print_function
+
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
 
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
+
 import argparse
-from commands import getstatusoutput
+import subprocess
 import json
 import tarfile
 import time
-import cPickle
+import pickle
 import os
 import sys
 import shutil
@@ -186,9 +194,9 @@ class Autosubmit:
                                                                                'default. If not supplied, it will not '
                                                                                'prompt for it')
             group = subparser.add_mutually_exclusive_group()
-            group.add_argument('-a', '--all', action="store_true", help='configure for all users')
-            group.add_argument('-l', '--local', action="store_true", help='configure only for using Autosubmit from '
-                                                                          'this path')
+            group.add_argument('--all', action="store_true", help='configure for all users')
+            group.add_argument('--local', action="store_true", help='configure only for using Autosubmit from '
+                                                                    'this path')
 
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
@@ -229,6 +237,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-mc', '--model_conf', default=False, action='store_true',
                                    help='overwrite model conf file')
+            subparser.add_argument('-jc', '--jobs_conf', default=False, action='store_true',
+                                   help='overwrite jobs conf file')
 
             # Archive
             subparser = subparsers.add_parser('archive', description='archives an experiment')
@@ -278,7 +288,7 @@ class Autosubmit:
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
-                return Autosubmit.refresh(args.expid, args.model_conf)
+                return Autosubmit.refresh(args.expid, args.model_conf, args.jobs_conf)
             elif args.command == 'archive':
                 return Autosubmit.archive(args.expid)
             elif args.command == 'unarchive':
@@ -286,13 +296,13 @@ class Autosubmit:
             elif args.command == 'readme':
                 if os.path.isfile(Autosubmit.readme_path):
                     with open(Autosubmit.readme_path) as f:
-                        print f.read()
+                        print(f.read())
                         return True
                 return False
             elif args.command == 'changelog':
                 if os.path.isfile(Autosubmit.changes_path):
                     with open(Autosubmit.changes_path) as f:
-                        print f.read()
+                        print(f.read())
                         return True
                 return False
         except Exception as e:
@@ -372,15 +382,15 @@ class Autosubmit:
                         new_filename = filename[:index] + "_" + exp_id + filename[index:]
 
                         if filename == 'platforms.conf' and BasicConfig.DEFAULT_PLATFORMS_CONF != '':
-                            content = file(os.path.join(BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
+                            content = open(os.path.join(BasicConfig.DEFAULT_PLATFORMS_CONF, filename)).read()
                         elif filename == 'jobs.conf' and BasicConfig.DEFAULT_JOBS_CONF != '':
-                            content = file(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
+                            content = open(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
                             content = resource_string('autosubmit.config', 'files/' + filename)
 
                         conf_new_filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", new_filename)
                         Log.debug(conf_new_filename)
-                        file(conf_new_filename, 'w').write(content)
+                        open(conf_new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
@@ -401,8 +411,8 @@ class Autosubmit:
                     for filename in files:
                         if os.path.isfile(os.path.join(conf_copy_id, filename)):
                             new_filename = filename.replace(copy_id, exp_id)
-                            content = file(os.path.join(conf_copy_id, filename), 'r').read()
-                            file(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
+                            content = open(os.path.join(conf_copy_id, filename), 'r').read()
+                            open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                 else:
                     Log.critical("The previous experiment directory does not exist")
@@ -517,7 +527,7 @@ class Autosubmit:
 
         # the experiment should be loaded as well
         if os.path.exists(filename):
-            joblist = cPickle.load(file(filename, 'rw'))
+            joblist = pickle.load(open(filename, 'rw'))
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist.", filename)
@@ -554,6 +564,10 @@ class Autosubmit:
             as_conf.reload()
             Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
+            # variables to be updated on the fly
+            total_jobs = len(joblist.get_job_list())
+            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
+                                                                  strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             retrials = as_conf.get_retrials()
@@ -639,14 +653,12 @@ class Autosubmit:
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
-        jobs = cPickle.load(file(filename, 'r'))
+        jobs = pickle.load(open(filename, 'r'))
         if not isinstance(jobs, type([])):
             jobs = jobs.get_job_list()
 
-        Log.info("Plotting...")
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format)
-        Log.result("Plot ready")
         return True
 
     @staticmethod
@@ -666,7 +678,7 @@ class Autosubmit:
                                   'statistics.log'))
         Log.info("Loading jobs...")
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
-        jobs = cPickle.load(file(filename, 'r'))
+        jobs = pickle.load(open(filename, 'r'))
         # if not isinstance(jobs, type([])):
         #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
@@ -728,7 +740,8 @@ class Autosubmit:
     @staticmethod
     def recovery(expid, save, all_jobs):
         """
-        TODO
+        Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+        otherwise it will be set to WAITING. It will also update the joblist.
 
         :param expid: identifier of the experiment to recover
         :type expid: str
@@ -746,7 +759,7 @@ class Autosubmit:
         Log.info('Recovering experiment {0}'.format(expid))
 
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-        job_list = cPickle.load(file(path, 'r'))
+        job_list = pickle.load(open(path, 'r'))
 
         as_conf = AutosubmitConfig(expid)
         if not as_conf.check_conf_files():
@@ -764,6 +777,7 @@ class Autosubmit:
         else:
             jobs_to_recover = job_list.get_active()
 
+        Log.info("Looking for COMPLETED files")
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
@@ -778,6 +792,7 @@ class Autosubmit:
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
+        Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(False)
         job_list.update_from_file(False)
@@ -818,7 +833,7 @@ class Autosubmit:
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         # the experiment should be loaded as well
         if os.path.exists(filename):
-            joblist = cPickle.load(file(filename, 'rw'))
+            joblist = pickle.load(open(filename, 'rw'))
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
@@ -861,14 +876,14 @@ class Autosubmit:
         """
         home_path = os.path.expanduser('~')
         while database_path is None:
-            database_path = raw_input("Introduce Database path: ")
+            database_path = input("Introduce Database path: ")
         database_path = database_path.replace('~', home_path)
         if not os.path.exists(database_path):
             Log.error("Database path does not exist.")
             return False
 
         while local_root_path is None:
-            local_root_path = raw_input("Introduce Local Root path: ")
+            local_root_path = input("Introduce Local Root path: ")
         local_root_path = local_root_path.replace('~', home_path)
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
@@ -939,7 +954,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def refresh(expid, model_conf):
+    def refresh(expid, model_conf, jobs_conf):
         """
         Refresh project folder for given experiment
 
@@ -956,7 +971,7 @@ class Autosubmit:
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
-        Autosubmit._create_model_conf(as_conf, model_conf)
+        Autosubmit._create_project_associated_conf(as_conf, model_conf, jobs_conf)
         return True
 
     @staticmethod
@@ -973,18 +988,20 @@ class Autosubmit:
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         # Cleaning to reduce file size.
-        if get_autosubmit_version(expid) != '2' and not Autosubmit.clean(expid, True, True, True, False):
+        version = get_autosubmit_version(expid)
+        if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
             Log.critical("Can not archive project. Clean not successful")
             return False
 
         # Getting year of last completed. If not, year of expid folder
         year = None
         tmp_folder = os.path.join(exp_folder, BasicConfig.LOCAL_TMP_DIR)
-        for filename in os.listdir(tmp_folder):
-            if filename.endswith("COMPLETED"):
-                file_year = time.localtime(os.path.getmtime(os.path.join(tmp_folder, filename))).tm_year
-                if year is None or year < file_year:
-                    year = file_year
+        if os.path.isdir(tmp_folder):
+            for filename in os.listdir(tmp_folder):
+                if filename.endswith("COMPLETED"):
+                    file_year = time.localtime(os.path.getmtime(os.path.join(tmp_folder, filename))).tm_year
+                    if year is None or year < file_year:
+                        year = file_year
 
         if year is None:
             year = time.localtime(os.path.getmtime(exp_folder)).tm_year
@@ -1032,7 +1049,7 @@ class Autosubmit:
             return False
 
         # Searching by year. We will store it on database
-        year = datetime.datetimetime.today().year
+        year = datetime.datetime.today().year
         archive_path = None
         while year > 2000:
             archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
@@ -1069,15 +1086,32 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def _create_model_conf(as_conf, force):
-        destiny = as_conf.project_file
-        if os.path.exists(destiny):
-            if force:
-                os.remove(destiny)
-            else:
-                return
+    def _create_project_associated_conf(as_conf, force_model_conf, force_jobs_conf):
+        project_destiny = as_conf.project_file
+        jobs_destiny = as_conf.jobs_file
+
         if as_conf.get_project_type() != 'none':
-            shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()), destiny)
+            if as_conf.get_file_project_conf():
+                copy = True
+                if os.path.exists(project_destiny):
+                    if force_model_conf:
+                        os.remove(project_destiny)
+                    else:
+                        copy = False
+                if copy:
+                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_project_conf()),
+                                    project_destiny)
+
+            if as_conf.get_file_jobs_conf():
+                copy = True
+                if os.path.exists(jobs_destiny):
+                    if force_jobs_conf:
+                        os.remove(jobs_destiny)
+                    else:
+                        copy = False
+                if copy:
+                    shutil.copyfile(os.path.join(as_conf.get_project_dir(), as_conf.get_file_jobs_conf()),
+                                    jobs_destiny)
 
     @staticmethod
     def create(expid, noplot):
@@ -1104,7 +1138,9 @@ class Autosubmit:
 
         if not Autosubmit._copy_code(as_conf, expid, project_type, False):
             return False
-        Autosubmit._create_model_conf(as_conf, False)
+        update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                     "job_list_" + expid + ".pkl"))
+        Autosubmit._create_project_associated_conf(as_conf, False, update_job)
 
         if project_type != "none":
             # Check project configuration
@@ -1189,9 +1225,10 @@ class Autosubmit:
                 Log.debug("The project folder {0} has been created.", project_path)
             shutil.rmtree(project_path)
             Log.info("Checking out revision {0} into {1}", svn_project_revision + " " + svn_project_url, project_path)
-            (status, output) = getstatusoutput("cd " + project_path + "; svn checkout -r " + svn_project_revision +
-                                               " " + svn_project_url + " " + project_destination)
-            if status:
+            try:
+                output = subprocess.check_output("cd " + project_path + "; svn checkout -r " + svn_project_revision +
+                                                 " " + svn_project_url + " " + project_destination, shell=True)
+            except subprocess.CalledProcessError:
                 Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
                           project_path)
                 shutil.rmtree(project_path)
@@ -1216,9 +1253,9 @@ class Autosubmit:
 
             Log.info("Copying {0} into {1}", local_project_path, project_path)
 
-            (status, output) = getstatusoutput("cp -R " + local_project_path + "/* " +
-                                               local_destination)
-            if status:
+            try:
+                output = subprocess.check_output("cp -R " + local_project_path + "/* " + local_destination, shell=True)
+            except subprocess.CalledProcessError:
                 Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                 shutil.rmtree(project_path)
                 return False
@@ -1227,27 +1264,34 @@ class Autosubmit:
 
     @staticmethod
     def change_status(final, final_status, job):
+        """
+        Set job status to final
+
+        :param final:
+        :param final_status:
+        :param job:
+        """
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
     def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section):
         """
-        TODO
+        Set status
 
         :param expid: experiment identifier
         :type expid: str
-        :param save:
+        :param save: if true, saves the new joblist
         :type save: bool
-        :param final:
+        :param final: status to set on jobs
         :type final: str
-        :param lst:
+        :param lst: list of jobs to change status
         :type lst: str
-        :param filter_chunks:
+        :param filter_chunks: chunks to change status
         :type filter_chunks: str
-        :param filter_status:
+        :param filter_status: current status of the jobs to change status
         :type filter_status: str
-        :param filter_section:
+        :param filter_section: sections to change status
         :type filter_section: str
         """
         root_name = 'job_list'
@@ -1256,8 +1300,8 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'change_pkl.log'))
         Log.debug('Exp ID: {0}', expid)
-        job_list = cPickle.load(file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
-                                     ".pkl"), 'r'))
+        job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
+                                    ".pkl"), 'r'))
 
         final_status = Autosubmit._get_status(final)
         if filter_chunks:
@@ -1327,7 +1371,7 @@ class Autosubmit:
         if save:
             job_list.update_list()
             path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-            cPickle.dump(job_list, file(path, 'w'))
+            pickle.dump(job_list, open(path, 'w'))
             Log.info("Saving JobList: {0}", path)
         else:
             job_list.update_list(False)
@@ -1350,7 +1394,7 @@ class Autosubmit:
         sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
-                return strtobool(raw_input().lower())
+                return strtobool(input().lower())
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
@@ -1375,7 +1419,7 @@ class Autosubmit:
         as_conf.set_safetysleeptime(10)
 
         if dummy:
-            content = file(as_conf.experiment_file).read()
+            content = open(as_conf.experiment_file).read()
 
             # Experiment
             content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
@@ -1389,7 +1433,7 @@ class Autosubmit:
             content = content.replace(re.search('^PROJECT_TYPE =.*', content, re.MULTILINE).group(0),
                                       "PROJECT_TYPE = none")
 
-            file(as_conf.experiment_file, 'w').write(content)
+            open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def _get_status(s):
@@ -1526,7 +1570,7 @@ class Autosubmit:
             Autosubmit.delete(testid, True)
             return False
 
-        content = file(as_conf.experiment_file).read()
+        content = open(as_conf.experiment_file).read()
         if hpc is None:
             platforms_parser = as_conf.get_parser(as_conf.platforms_file)
             test_platforms = list()
@@ -1559,7 +1603,7 @@ class Autosubmit:
             content = content.replace(re.search('PROJECT_REVISION =.*', content).group(0),
                                       "PROJECT_REVISION = " + branch)
 
-        file(as_conf.experiment_file, 'w').write(content)
+        open(as_conf.experiment_file, 'w').write(content)
 
         Autosubmit.create(testid, False)
         if not Autosubmit.run_experiment(testid):

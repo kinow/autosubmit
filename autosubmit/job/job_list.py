@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,7 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 import json
 
 import os
@@ -29,7 +34,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str
+from autosubmit.date.chunk_date_lib import date2str, parse_date
 
 
 class JobList:
@@ -152,7 +157,7 @@ class JobList:
                             max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                             if max_distance == 0:
                                 max_distance = job.frequency
-                            for distance in range(1, max_distance, 1):
+                            for distance in range(1, max_distance):
                                 for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                                     job.add_parent(parent)
                         elif job.member is not None:
@@ -393,7 +398,7 @@ class JobList:
         :rtype: JobList
         """
         if os.path.exists(filename):
-            return pickle.load(file(filename, 'r'))
+            return pickle.load(open(filename, 'r'))
         else:
             Log.critical('File {0} does not exist'.format(filename))
             return list()
@@ -418,7 +423,8 @@ class JobList:
         setrecursionlimit(50000)
         path = os.path.join(self._pkl_path, self._job_list_file)
         Log.debug("Saving JobList: " + path)
-        pickle.dump(self, file(path, 'w'))
+        pickle.dump(self, open(path, 'w'))
+        Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):
         if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
@@ -454,6 +460,7 @@ class JobList:
         else:
             retrials = 4
 
+        Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
             if job.fail_count < retrials:
@@ -466,6 +473,7 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
+        Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
             tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
             # for parent in job.parents:
@@ -474,6 +482,7 @@ class JobList:
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
                 Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+        Log.debug('Update finished')
         if store_change:
             self.save()
 
@@ -591,8 +600,8 @@ class JobList:
 
         data = json.loads(chunk_list)
         for d in data['sds']:
-            date = d['sd']
-            Log.debug("Date: " + date)
+            date = parse_date(d['sd'])
+            Log.debug("Date: {0}", date)
             for m in d['ms']:
                 member = m['m']
                 Log.debug("Member: " + member)
@@ -637,6 +646,8 @@ class JobList:
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
                                 parent.status = Status.WAITING
+                                if chunk != previous_chunk + 1:
+                                    job.add_parent(parent)
                                 Log.debug("Parent: " + parent.name)
                     previous_chunk = chunk
 

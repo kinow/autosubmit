@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -25,7 +25,7 @@ import os
 import re
 
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import StatisticsSnippet
+from autosubmit.job.job_common import StatisticsSnippetBash
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 
@@ -324,7 +324,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.status, other.status)
+        return self.status < other.status
 
     def compare_by_id(self, other):
         """
@@ -335,7 +335,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.id, other.id)
+        return self.id < other.id
 
     def compare_by_name(self, other):
         """
@@ -346,7 +346,7 @@ class Job:
         :return: comparison result
         :rtype: bool
         """
-        return cmp(self.name, other.name)
+        return self.name < other.name
 
     def _get_from_completed(self, index):
         """
@@ -542,6 +542,7 @@ class Job:
 
         job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
+        parameters['CURRENT_HOST'] = job_platform.get_host()
         parameters['CURRENT_QUEUE'] = self.get_queue()
         parameters['CURRENT_USER'] = job_platform.user
         parameters['CURRENT_PROJ'] = job_platform.project
@@ -567,17 +568,17 @@ class Job:
         :rtype: str
         """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            template_file = file(os.path.join(project_dir, self.file), 'r')
+            template_file = open(os.path.join(project_dir, self.file), 'r')
             template = template_file.read()
         else:
             template = ''
 
         if self.get_platform().type == 'local':
-            stats_header = StatisticsSnippet.AS_HEADER_LOC
-            stats_tailer = StatisticsSnippet.AS_TAILER_LOC
+            stats_header = StatisticsSnippetBash.AS_HEADER_LOC
+            stats_tailer = StatisticsSnippetBash.AS_TAILER_LOC
         else:
-            stats_header = StatisticsSnippet.AS_HEADER_REM
-            stats_tailer = StatisticsSnippet.AS_TAILER_REM
+            stats_header = StatisticsSnippetBash.AS_HEADER_REM
+            stats_tailer = StatisticsSnippetBash.AS_TAILER_REM
         template_content = ''.join([stats_header,
                                     template,
                                     stats_tailer])
@@ -600,8 +601,8 @@ class Job:
         template_content = template_content.replace("%%", "%")
 
         scriptname = self.name + '.cmd'
-        file(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
-        os.chmod(os.path.join(self._tmp_path, scriptname), 0775)
+        open(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, scriptname), 0o775)
 
         return scriptname
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,20 +16,30 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 import os
-from pyparsing import nestedExpr
 import re
-from commands import getstatusoutput
+import subprocess
+
+from pyparsing import nestedExpr
 
 from autosubmit.date.chunk_date_lib import parse_date
-
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 
 class AutosubmitConfig:
-    """Class to handle experiment configuration coming from file or database"""
+    """
+    Class to handle experiment configuration coming from file or database
+
+    :param expid: experiment identifier
+    :type expid: str
+    """
 
     def __init__(self, expid):
         self.expid = expid
@@ -78,6 +88,13 @@ class AutosubmitConfig:
         """
         return self._proj_parser_file
 
+    @property
+    def jobs_file(self):
+        """
+        Returns project's jobs file name
+        """
+        return self._jobs_parser_file
+
     def get_project_dir(self):
         """
         Returns experiment's project directory
@@ -93,13 +110,13 @@ class AutosubmitConfig:
         return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
 
     def check_conf_files(self):
         """
@@ -129,6 +146,8 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
+
+        self._conf_parser.read(self._conf_parser_file)
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
@@ -404,15 +423,15 @@ class AutosubmitConfig:
         :type exp_id: str
         """
         # Experiment conf
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
         """
@@ -432,6 +451,15 @@ class AutosubmitConfig:
         """
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
+    def get_file_jobs_conf(self):
+        """
+        Returns path to project config file from experiment config file
+
+        :return: path to project config file
+        :rtype: str
+        """
+        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
+
     def get_git_project_origin(self):
         """
         Returns git origin from experiment config file
@@ -439,7 +467,7 @@ class AutosubmitConfig:
         :return: git origin
         :rtype: str
         """
-        return self._exp_parser.get('git', 'PROJECT_ORIGIN')
+        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_ORIGIN', '')
 
     def get_git_project_branch(self):
         """
@@ -483,31 +511,32 @@ class AutosubmitConfig:
         :type as_conf: AutosubmitConfig
         """
         full_project_path = as_conf.get_project_dir()
-        (status, output) = getstatusoutput("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path))
-        if status == 0:
-            project_branch = output
-            Log.debug("Project branch is: " + project_branch)
-
-            (status, output) = getstatusoutput("cd {0}; git rev-parse HEAD".format(full_project_path))
-            if status == 0:
-                project_sha = output
-                Log.debug("Project commit SHA is: " + project_sha)
-            else:
-                Log.critical("Failed to retrieve project commit SHA...")
-                return False
-        else:
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
+                                             shell=True)
+        except subprocess.CalledProcessError:
             Log.critical("Failed to retrieve project branch...")
             return False
 
+        project_branch = output
+        Log.debug("Project branch is: " + project_branch)
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
+        except subprocess.CalledProcessError:
+            Log.critical("Failed to retrieve project commit SHA...")
+            return False
+        project_sha = output
+        Log.debug("Project commit SHA is: " + project_sha)
+
         # register changes
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('PROJECT_BRANCH =.*', content):
             content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
                                       "PROJECT_BRANCH = " + project_branch)
         if re.search('PROJECT_COMMIT =.*', content):
             content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                       "PROJECT_COMMIT = " + project_sha)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
         Log.debug("Project commit SHA succesfully registered to the configuration file.")
         return True
 
@@ -625,10 +654,10 @@ class AutosubmitConfig:
         :param hpc: main platforms
         :type: str
         """
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('HPCARCH =.*', content):
             content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
         """
@@ -637,11 +666,11 @@ class AutosubmitConfig:
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_VERSION =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_total_jobs(self):
         """
@@ -677,10 +706,10 @@ class AutosubmitConfig:
         :param sleep_time: value to set
         :type sleep_time: int
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
                                   "SAFETYSLEEPTIME = %d" % sleep_time)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
         """
@@ -705,6 +734,88 @@ class AutosubmitConfig:
         parser.optionxform = str
         parser.read(file_path)
         return parser
+
+    def read_platforms_conf(self):
+        """
+        Read platforms configuration file and create defined platforms. Also adds the local remote_platform to the list
+
+        :return: platforms defined on file and local remote_platform. None if configuration is invalid
+        :rtype: list
+        """
+        parser = self._platforms_parser
+
+        platforms = dict()
+        local_platform = LocalPlatform(self.expid)
+        local_platform.name = 'local'
+        local_platform.type = 'local'
+        local_platform.version = ''
+        local_platform.queue = ''
+        local_platform.max_waiting_jobs = self.get_max_waiting_jobs()
+        local_platform.total_jobs = self.get_total_jobs()
+        local_platform.set_host(platform.node())
+        local_platform.set_scratch(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR))
+        local_platform.set_project(self.expid)
+        local_platform.set_budget(self.expid)
+        local_platform.set_user('')
+        local_platform.update_cmds()
+
+        platforms['local'] = local_platform
+        for section in parser.sections():
+            platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
+            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
+            try:
+                if platform_type == 'pbs':
+                    remote_platform = PBSPlatform(self.expid, platform_version)
+                elif platform_type == 'sge':
+                    remote_platform = SgePlatform(self.expid)
+                elif platform_type == 'ps':
+                    remote_platform = PsPlatform(self.expid)
+                elif platform_type == 'lsf':
+                    remote_platform = LsfPlatform(self.expid)
+                elif platform_type == 'ecaccess':
+                    remote_platform = EcPlatform(self.expid, platform_version)
+                elif platform_type == 'slurm':
+                    remote_platform = SlurmPlatform(self.expid)
+                elif platform_type == '':
+                    Log.error("Queue type not specified".format(platform_type))
+                    return None
+                else:
+                    Log.error("Queue type {0} not defined".format(platform_type))
+                    return None
+            except HPCPlatformException as e:
+                Log.error("Queue exception: {0}".format(e.message))
+                return None
+
+            remote_platform.type = platform_type
+            remote_platform.version = platform_version
+            if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
+                host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
+                                        AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            else:
+                host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
+
+            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
+                                                                               self.get_max_waiting_jobs()))
+            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
+                                                                         self.get_total_jobs()))
+            remote_platform.set_host(host)
+            remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
+            remote_platform.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
+            remote_platform.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
+            remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
+            remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
+            remote_platform.name = section.lower()
+            remote_platform.update_cmds()
+            platforms[section.lower()] = remote_platform
+
+        for section in parser.sections():
+            if parser.has_option(section, 'SERIAL_PLATFORM'):
+                platforms[section.lower()].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
+                                                                                                     'SERIAL_PLATFORM',
+                                                                                                     None).lower()])
+
+        return platforms
 
     @staticmethod
     def get_option(parser, section, option, default):

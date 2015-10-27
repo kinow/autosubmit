@@ -30,7 +30,7 @@ How to create an experiment
 To create a new experiment, just run the command:
 ::
 
-	autosubmit expid -H HPCname -d Description
+    autosubmit expid -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -38,19 +38,19 @@ To create a new experiment, just run the command:
 Options:
 ::
 
-	usage: autosubmit expid [-h] [-y COPY | -dm] -H HPC -d DESCRIPTION
+    usage: autosubmit expid [-h] [-y COPY | -dm] -H HPC -d DESCRIPTION
 
-	    -h, --help            show this help message and exit
-	    -y COPY, --copy COPY  makes a copy of the specified experiment
-	    -dm, --dummy          creates a new experiment with default values, usually for testing
-	    -H HPC, --HPC HPC     specifies the HPC to use for the experiment
-	    -d DESCRIPTION, --description DESCRIPTION
-	        sets a description for the experiment to store in the database.
+        -h, --help            show this help message and exit
+        -y COPY, --copy COPY  makes a copy of the specified experiment
+        -dm, --dummy          creates a new experiment with default values, usually for testing
+        -H HPC, --HPC HPC     specifies the HPC to use for the experiment
+        -d DESCRIPTION, --description DESCRIPTION
+            sets a description for the experiment to store in the database.
 
 Example:
 ::
 
-	autosubmit expid --HPC ithaca --description "experiment is about..."
+    autosubmit expid --HPC ithaca --description "experiment is about..."
 
 How to create a copy of an experiment
 =====================================
@@ -58,7 +58,7 @@ This option makes a copy of an existing experiment.
 It registrates a new unique identifier and copies all configuration files in the new experiment folder:
 ::
 
-	autosubmit expid -H HPCname -y COPY -d Description
+    autosubmit expid -H HPCname -y COPY -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *COPY* is the experiment identifier to copy from.
@@ -67,7 +67,7 @@ It registrates a new unique identifier and copies all configuration files in the
 Example:
 ::
 
-	autosubmit expid -H ithaca -y cxxx -d "experiment is about..."
+    autosubmit expid -H ithaca -y cxxx -d "experiment is about..."
 
 .. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
 
@@ -76,7 +76,7 @@ How to create a dummy experiment
 This command creates a new experiment with default values, useful for testing:
 ::
 
-	autosubmit expid -H HPCname -dm -d Description
+    autosubmit expid -H HPCname -dm -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -84,7 +84,7 @@ This command creates a new experiment with default values, useful for testing:
 Example:
 ::
 
-	autosubmit expid -H ithaca -dm "experiment is about..."
+    autosubmit expid -H ithaca -dm "experiment is about..."
 
 How to configure the experiment
 ===============================
@@ -119,24 +119,24 @@ After editing the files you can proceed to the experiment workflow creation.
 Experiment workflow, which contains all the jobs and its dependencies, will be saved as a *pkl* file:
 ::
 
-	autosubmit create EXPID
+    autosubmit create EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit create [-h] [-np] expid
+    usage: autosubmit create [-h] [-np] expid
 
-	  expid          experiment identifier
+      expid          experiment identifier
 
-	  -h, --help     show this help message and exit
-	  -np, --noplot  omit plot
+      -h, --help     show this help message and exit
+      -np, --noplot  omit plot
 
 Example:
 ::
 
-	autosubmit create cxxx
+    autosubmit create cxxx
 
 More info on pickle can be found at http://docs.python.org/library/pickle.html
 
@@ -145,7 +145,7 @@ How to check the experiment configuration
 To check the configuration of the experiment, use the command:
 ::
 
-	autosubmit check EXPID
+    autosubmit check EXPID
 
 *EXPID* is the experiment identifier.
 
@@ -154,16 +154,16 @@ It checks experiment configuration and warns about any detected error or inconsi
 Options:
 ::
 
-	usage: autosubmit check [-h] expid
+    usage: autosubmit check [-h] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
+      -h, --help            show this help message and exit
 
 Example:
 ::
 
-	autosubmit check cxxx
+    autosubmit check cxxx
 
 
 How to run the experiment
@@ -171,30 +171,30 @@ How to run the experiment
 Launch Autosubmit with the command:
 ::
 
-	autosubmit run EXPID
+    autosubmit run EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit run [-h] expid
+    usage: autosubmit run [-h] expid
 
-	  expid       experiment identifier
+      expid       experiment identifier
 
-	  -h, --help  show this help message and exit
+      -h, --help  show this help message and exit
 
 Example:
 ::
 
-	autosubmit run cxxx
+    autosubmit run cxxx
 
 .. hint:: It is recommended to launch it in background and with ``nohup`` (continue running although the user who launched the process logs out).
 
 Example:
 ::
 
-	nohup autosubmit run cxxx &
+    nohup autosubmit run cxxx &
 
 .. important:: Before launching Autosubmit check password-less ssh is feasible (*HPCName* is the hostname):
 
@@ -212,7 +212,7 @@ given number of chunks with a random start date and a random member to be run on
 To test the experiment, use the command:
 ::
 
-	autosubmit test CHUNKS EXPID
+    autosubmit test CHUNKS EXPID
 
 *EXPID* is the experiment identifier.
 *CHUNKS* is the number of chunks to run in the test.
@@ -222,7 +222,7 @@ To test the experiment, use the command:
 Options:
 ::
 
-	usage: autosubmit test [-h] -c CHUNKS [-m MEMBER] [-s STARDATE] [-H HPC] [-b BRANCH] expid
+    usage: autosubmit test [-h] -c CHUNKS [-m MEMBER] [-s STARDATE] [-H HPC] [-b BRANCH] expid
 
         expid                 experiment identifier
 
@@ -240,7 +240,7 @@ Options:
 Example:
 ::
 
-	autosubmit test -c 1 -s 19801101 -m fc0 -H ithaca -b develop cxxx
+    autosubmit test -c 1 -s 19801101 -m fc0 -H ithaca -b develop cxxx
 
 
 How to monitor the experiment
@@ -248,66 +248,66 @@ How to monitor the experiment
 To monitor the status of the experiment, use the command:
 ::
 
-	autosubmit monitor EXPID
+    autosubmit monitor EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit monitor [-h] [-o {pdf,png,ps,svg}] expid
+    usage: autosubmit monitor [-h] [-o {pdf,png,ps,svg}] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
-	  -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
-	                        type of output for generated plot
+      -h, --help            show this help message and exit
+      -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
+                            type of output for generated plot
 
 Example:
 ::
 
-	autosubmit monitor cxxx
+    autosubmit monitor cxxx
 
 The location where user can find the generated plots with date and timestamp can be found below:
 
 ::
 
-	<experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
+    <experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
 
 .. hint::
-	Very large plots may be a problem for some pdf and image viewers.
-	If you are having trouble with your usual monitoring tool, try using svg output and opening it with Google Chrome with the SVG Navigator extension installed.
+    Very large plots may be a problem for some pdf and image viewers.
+    If you are having trouble with your usual monitoring tool, try using svg output and opening it with Google Chrome with the SVG Navigator extension installed.
 
 How to monitor job statistics
 =============================
 The following command could be adopted to generate the plots for visualizing the jobs statistics of the experiment at any instance:
 ::
 
-	autosubmit stats EXPID
+    autosubmit stats EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit stats [-h] [-o {pdf,png,ps,svg}] expid
+    usage: autosubmit stats [-h] [-o {pdf,png,ps,svg}] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
-	  -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
-	                        type of output for generated plot
+      -h, --help            show this help message and exit
+      -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
+                            type of output for generated plot
 
 Example:
 ::
 
-	autosubmit stats cxxx
+    autosubmit stats cxxx
 
 The location where user can find the generated plots with date and timestamp can be found below:
 
 ::
 
-	<experiments_directory>/cxxx/plot/cxxx_statistics_<date>_<time>.pdf
+    <experiments_directory>/cxxx/plot/cxxx_statistics_<date>_<time>.pdf
 
 
 How to stop the experiment
@@ -317,16 +317,16 @@ You can stop Autosubmit by sending a signal to the process.
 To get the process identifier (PID) you can use the ps command on a shell interpreter/terminal.
 ::
 
-	ps -ef | grep autosubmit
-	dmanubens  22835     1  1 May04 ?        00:45:35 autosubmit run cxxy
-	dmanubens  25783     1  1 May04 ?        00:42:25 autosubmit run cxxx
+    ps -ef | grep autosubmit
+    dmanubens  22835     1  1 May04 ?        00:45:35 autosubmit run cxxy
+    dmanubens  25783     1  1 May04 ?        00:42:25 autosubmit run cxxx
 
 To send a signal to a process you can use kill also on a terminal.
 
 To stop immediately experiment cxxx:
 ::
 
-	kill -9 22835
+    kill -9 22835
 
 .. important:: In case you want to restart the experiment, you must follow the
     :ref:`restexp` procedure, explained below, in order to properly resynchronize all completed jobs.
@@ -341,7 +341,7 @@ This procedure allows you to restart an experiment.
 You must execute:
 ::
 
-	autosubmit recovery EXPID
+    autosubmit recovery EXPID
 
 *EXPID* is the experiment identifier.
 
@@ -381,7 +381,7 @@ Using the ``expdef_<expid>.conf`` the ``create`` command will generate the rerun
 
 ::
 
-	autosubmit create cxxx
+    autosubmit create cxxx
 
 It will read the list of chunks specified in the CHUNKLIST and will generate a new plot.
 
@@ -390,7 +390,7 @@ It will read the list of chunks specified in the CHUNKLIST and will generate a n
 Example:
 ::
 
-	vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
 
 .. code-block:: ini
 
@@ -409,7 +409,7 @@ Then you are able to start again Autosubmit for the rerun of cxxx 19601101, chun
 
 ::
 
-	nohup autosubmit run cxxx &
+    nohup autosubmit run cxxx &
 
 
 How to clean the experiment
@@ -419,7 +419,7 @@ This procedure allows you to save space after finalising an experiment.
 You must execute:
 ::
 
-	autosubmit clean EXPID
+    autosubmit clean EXPID
 
 
 Options:
@@ -464,7 +464,7 @@ How to refresh the experiment project
 To refresh the project directory of the experiment, use the command:
 ::
 
-	autosubmit refresh EXPID
+    autosubmit refresh EXPID
 
 *EXPID* is the experiment identifier.
 
@@ -477,17 +477,18 @@ It checks experiment configuration and copy code from original repository to pro
 Options:
 ::
 
-	usage: autosubmit refresh [-h] expid
+    usage: autosubmit refresh [-h] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
-	  -mc, --model_conf     overwrite model conf file
+      -h, --help            show this help message and exit
+      -mc, --model_conf     overwrite model conf file
+      -jc, --jobs_conf      overwrite jobs conf file
 
 Example:
 ::
 
-	autosubmit refresh cxxx
+    autosubmit refresh cxxx
 
 
 
@@ -497,7 +498,7 @@ How to delete the experiment
 To delete the experiment, use the command:
 ::
 
-	autosubmit delete EXPID
+    autosubmit delete EXPID
 
 *EXPID* is the experiment identifier.
 
@@ -507,18 +508,18 @@ To delete the experiment, use the command:
 Options:
 ::
 
-	usage: autosubmit delete [-h] [-f] expid
+    usage: autosubmit delete [-h] [-f] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
-	  -f, --force  deletes experiment without confirmation
+      -h, --help            show this help message and exit
+      -f, --force  deletes experiment without confirmation
 
 
 Example:
 ::
 
-	autosubmit delete cxxx
+    autosubmit delete cxxx
 
 .. warning:: Be careful ! force option does not ask for your confirmation.
 
@@ -614,7 +615,7 @@ This will create a platform named "new_platform". The options specified are all 
 * SCRATCH_DIR: path to the scratch directory of the machine
 
 .. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
-	VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
+    VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:
@@ -656,28 +657,28 @@ How to refresh an experiment
 ============================
 To refresh the project folder after creating the experiment use the command:
 ::
-	autosubmit refresh EXPID
+    autosubmit refresh EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit refresh [-h] [-mc] expid
+    usage: autosubmit refresh [-h] [-mc] expid
 
-	refresh project directory for an experiment
+    refresh project directory for an experiment
 
-	positional arguments:
-	  expid              experiment identifier
+    positional arguments:
+      expid              experiment identifier
 
-	optional arguments:
-	  -h, --help         show this help message and exit
-	  -mc, --model_conf  overwrite model conf file
+    optional arguments:
+      -h, --help         show this help message and exit
+      -mc, --model_conf  overwrite model conf file
 
 Example:
 ::
 
-	autosubmit refresh cxxx
+    autosubmit refresh cxxx
 
 
 How to archive an experiment
@@ -686,58 +687,58 @@ How to archive an experiment
 To archive the experiment, use the command:
 ::
 
-	autosubmit archive EXPID
+    autosubmit archive EXPID
 
 *EXPID* is the experiment identifier.
 
 .. warning:: this command calls implicitly the clean command. Check clean command documentation.
 
 .. warning:: experiment will be unusable after archiving. If you want to use it, you will need to call first the
-	unarchive command
+    unarchive command
 
 
 Options:
 ::
 
-	usage: autosubmit archive [-h] expid
+    usage: autosubmit archive [-h] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
+      -h, --help            show this help message and exit
 
 
 Example:
 ::
 
-	autosubmit archive cxxx
+    autosubmit archive cxxx
 
 .. hint:: Archived experiment will be stored as a tar.gz file on a folder named after the year of the last
-	COMPLETED file date. If not COMPLETED file is present, it will be stored in the folder matching the
-	date at the time the archive command was run.
+    COMPLETED file date. If not COMPLETED file is present, it will be stored in the folder matching the
+    date at the time the archive command was run.
 
 How to unarchive an experiment
-============================
+==============================
 
 To unarchive an experiment, use the command:
 ::
 
-	autosubmit unarchive EXPID
+    autosubmit unarchive EXPID
 
 *EXPID* is the experiment identifier.
 
 Options:
 ::
 
-	usage: autosubmit unarchive [-h] expid
+    usage: autosubmit unarchive [-h] expid
 
-	  expid                 experiment identifier
+      expid                 experiment identifier
 
-	  -h, --help            show this help message and exit
+      -h, --help            show this help message and exit
 
 
 Example:
 ::
 
-	autosubmit unarchive cxxx
+    autosubmit unarchive cxxx
 
 
