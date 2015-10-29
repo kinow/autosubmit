@@ -82,7 +82,7 @@ class StatisticsSnippetBash:
 
             for failed_errfile in $failed_errfiles; do
                 failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
+                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
             echo "
             $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
@@ -159,12 +159,12 @@ class StatisticsSnippetBash:
             failed_jobs_qt=0; failed_jobs_rt=0
             for failed_errfile in $failed_errfiles; do
              failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-             job_qt=$(grep "^+ job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             job_qt=$(grep "job_queue_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
              if [[ -z ${job_qt+x} ]]; then
                job_qt=0
              fi
              failed_jobs_qt=$((failed_jobs_qt + job_qt))
-             job_st=$(grep "^+ job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             job_st=$(grep "job_start_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
              if [[ -z ${job_st+x} ]]; then
                job_st=0
              fi
@@ -218,7 +218,7 @@ class StatisticsSnippetPython:
 
             for failed_errfile in $failed_errfiles; do
                 failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
+                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
             done
             echo "
             $job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
@@ -295,12 +295,12 @@ class StatisticsSnippetPython:
             failed_jobs_qt=0; failed_jobs_rt=0
             for failed_errfile in $failed_errfiles; do
              failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-             job_qt=$(grep "job_queue_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             job_qt=$(grep "job_queue_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
              if [[ ! -z ${job_qt+x} ]]; then
                job_qt=0
              fi
              failed_jobs_qt=$((failed_jobs_qt + job_qt))
-             job_st=$(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
+             job_st=$(grep "job_start_time=[0-9]" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)
              if [[ ! -z ${job_qt+x} ]]; then
                job_st=0
              fi
