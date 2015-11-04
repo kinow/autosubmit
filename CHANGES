@@ -1,3 +1,6 @@
+3.1.8
+	Hot fix LOCAL platform
+
 3.1.7
     Fix issue StatsSnippet (job_st typo)
     Fix issue recovery platforms to test
