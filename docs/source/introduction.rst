@@ -9,8 +9,7 @@ Autosubmit is a python-based tool to create, manage and monitor experiments by u
 Supercomputers remotely via ssh. It has support for experiments running in more than one HPC and for different workflow
 configurations.
 
-Autosubmit is currently used at IC3 to run EC-Earth and NEMO models and at Barcelona Supercomputing Centre (BSC)
-to run NMMB air quality model.
+Autosubmit is currently used at Barcelona Supercomputing Centre (BSC) to run EC-Earth, NEMO and  NMMB air quality model.
 
 Autosubmit has been used to manage models running at supercomputers in IC3, BSC, ECMWF, EPCC, PDC and OLCF.
 

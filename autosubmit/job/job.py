@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 

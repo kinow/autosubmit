@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -207,6 +207,8 @@ class AutosubmitConfig:
         result = True
         parser = self._jobs_parser
         sections = parser.sections()
+        platforms = self._platforms_parser.sections()
+        platforms.append('LOCAL')
         if len(sections) == 0:
             Log.warning("No remote platforms configured")
 
@@ -216,6 +218,10 @@ class AutosubmitConfig:
         for section in sections:
             result = result and AutosubmitConfig.check_exists(parser, section, 'FILE')
             result = result and AutosubmitConfig.check_is_boolean(parser, section, 'RERUN_ONLY', False)
+
+            if parser.has_option(section, 'PLATFORM'):
+                result = result and AutosubmitConfig.check_is_choice(parser, section, 'PLATFORM', False, platforms)
+
             if parser.has_option(section, 'DEPENDENCIES'):
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
@@ -644,7 +650,7 @@ class AutosubmitConfig:
         :return: main platforms
         :rtype: str
         """
-        return self._exp_parser.get('experiment', 'HPCARCH').lower()
+        return self._exp_parser.get('experiment', 'HPCARCH')
 
     def set_platform(self, hpc):
         """
@@ -804,15 +810,15 @@ class AutosubmitConfig:
             remote_platform.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
             remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
             remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
-            remote_platform.name = section.lower()
+            remote_platform.name = section
             remote_platform.update_cmds()
-            platforms[section.lower()] = remote_platform
+            platforms[section] = remote_platform
 
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section.lower()].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
-                                                                                                     'SERIAL_PLATFORM',
-                                                                                                     None).lower()])
+                platforms[section].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
+                                                                                             'SERIAL_PLATFORM',
+                                                                                             None)])
 
         return platforms
 

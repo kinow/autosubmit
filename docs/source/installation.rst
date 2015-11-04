@@ -24,10 +24,13 @@ or download, unpack and:
 .. hint::
     To check if autosubmit has been installed run ``autosubmit -v.`` This command will print autosubmit's current
     version
+
 .. hint::
     To read autosubmit's readme file, run ``autosubmit readme``
+
 .. hint::
     To see the changelog, use ``autosubmit changelog``
+
 How to configure
 ================
 

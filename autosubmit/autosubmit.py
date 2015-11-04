@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -51,6 +51,7 @@ from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
 
+# noinspection PyPep8
 from config.basicConfig import BasicConfig
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
@@ -839,8 +840,20 @@ class Autosubmit:
         platforms = as_conf.read_platforms_conf()
         if platforms is None:
             return False
-        for platform in platforms:
-            platforms[platform].connect()
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.set_platform(platforms[job.platform_name])
+            # noinspection PyTypeChecker
+            platforms_to_test.add(platforms[job.platform_name])
+
+        for platform in platforms_to_test:
+            platform.connect()
+            platform.check_remote_log_dir()
+            
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:
@@ -1462,7 +1475,8 @@ class Autosubmit:
         sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
-                return strtobool(input().lower())
+                answer = raw_input()
+                return strtobool(answer.lower())
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 

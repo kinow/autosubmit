@@ -339,7 +339,7 @@ Example:
     # No need to change.
     TEMPLATE_NAME = ecearth3
     # Select the model output control class. STRING = Option
-    # listed under the section : http://ic3.cat/wikicfu/index.php/Models#Outclass.
+    # listed under the section : https://earth.bsc.es/wiki/doku.php?id=overview_outclasses
     OUTCLASS = specs
     # After transferring output at /cfunas/exp remove a copy available at permanent storage of HPC
     # [Default: Do set "TRUE"]. BOOLEAN = TRUE, FALSE
@@ -379,7 +379,7 @@ Example:
 
     [ifs]
     # Atmospheric initial conditions ready to be used.
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Atmospheric
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:atmospheric
     ATM_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -489,7 +489,7 @@ Example:
 
     [nemo]
     # Ocean initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Oceanic
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:oceanic
     OCEAN_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -513,7 +513,7 @@ Example:
     # Sea-Ice Model [Default: Do set "LIM2"]. STRING = LIM2, LIM3
     ICE = LIM3
     # Sea-ice initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Sea-Ice
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:sea_ice
     ICE_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -525,7 +525,7 @@ Example:
     # Activate PISCES (TRUE) or not (FALSE) [Default: leave empty]
     PISCES = FALSE
     # PISCES initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Biogeochemistry
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:biogeochemistry
     PISCES_ini =
     # Set timestep (in sec) w.r.t resolution. NUMERIC = 3600 (ORCA1), 3600 (ORCA025)
     PISCES_timestep = 3600

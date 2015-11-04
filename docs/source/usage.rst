@@ -657,6 +657,7 @@ How to refresh an experiment
 ============================
 To refresh the project folder after creating the experiment use the command:
 ::
+
     autosubmit refresh EXPID
 
 *EXPID* is the experiment identifier.
