@@ -840,8 +840,20 @@ class Autosubmit:
         platforms = as_conf.read_platforms_conf()
         if platforms is None:
             return False
-        for platform in platforms:
-            platforms[platform].connect()
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.set_platform(platforms[job.platform_name])
+            # noinspection PyTypeChecker
+            platforms_to_test.add(platforms[job.platform_name])
+
+        for platform in platforms_to_test:
+            platform.connect()
+            platform.check_remote_log_dir()
+            
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:
