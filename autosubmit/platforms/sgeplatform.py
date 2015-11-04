@@ -118,6 +118,7 @@ class SgeHeader:
             #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
+            #$ -l s_rt=%WALLCLOCK%:00
             #%QUEUE_DIRECTIVE%
             #
             ###############################################################################
@@ -135,6 +136,7 @@ class SgeHeader:
             #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
             #$ -V
             #$ -l h_rt=%WALLCLOCK%:00
+            #$ -l s_rt=%WALLCLOCK%:00
             #$ -pe orte %NUMPROC%
             #%QUEUE_DIRECTIVE%
             #
