@@ -208,7 +208,7 @@ class AutosubmitConfig:
         parser = self._jobs_parser
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
-        platforms.append('LOCAL')
+        platforms.append('local')
         if len(sections) == 0:
             Log.warning("No remote platforms configured")
 
