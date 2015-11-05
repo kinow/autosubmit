@@ -208,7 +208,7 @@ class AutosubmitConfig:
         parser = self._jobs_parser
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
-        platforms.append('local')
+        platforms.append('LOCAL')
         if len(sections) == 0:
             Log.warning("No remote platforms configured")
 
@@ -751,7 +751,7 @@ class AutosubmitConfig:
 
         platforms = dict()
         local_platform = LocalPlatform(self.expid)
-        local_platform.name = 'local'
+        local_platform.name = 'LOCAL'
         local_platform.type = 'local'
         local_platform.version = ''
         local_platform.queue = ''
@@ -764,7 +764,7 @@ class AutosubmitConfig:
         local_platform.set_user('')
         local_platform.update_cmds()
 
-        platforms['local'] = local_platform
+        platforms['LOCAL'] = local_platform
         for section in parser.sections():
             platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
             platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
@@ -929,7 +929,7 @@ class AutosubmitConfig:
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
             return False
         value = AutosubmitConfig.get_option(parser, section, option, choices[0])
-        if value.lower() not in choices:
+        if value not in choices:
             Log.error('Value {2} in option {0} in section {1} is not a valid choice'.format(option, section, value))
             return False
         return True
