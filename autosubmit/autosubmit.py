@@ -532,7 +532,7 @@ class Autosubmit:
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
-        Log.debug("Retrials: {0}", retrials)
+        Log.debug("Default retrials: {0}", retrials)
         Log.info("Starting job submission...")
 
         # for platforms in platforms:
@@ -562,9 +562,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name.lower()])
 
         joblist.check_scripts(as_conf)
 
@@ -592,8 +592,8 @@ class Autosubmit:
                                                                   strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
-            retrials = as_conf.get_retrials()
-            Log.debug("Number of retrials: {0}", retrials)
+            default_retrials = as_conf.get_retrials()
+            Log.debug("Number of retrials: {0}", default_retrials)
 
             # Flag to write the pickle only if something has changed
             save_pkl = False
@@ -1261,7 +1261,7 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.create(date_list, member_list, num_chunks, parameters, date_format)
+        job_list.create(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)

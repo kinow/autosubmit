@@ -464,6 +464,10 @@ class Job:
 
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
+
+        if hasattr(self, 'retrials'):
+            parameters['RETRIALS'] = self.retrials
+
         if self.date is not None:
             if self.chunk is None:
                 chunk = 1
