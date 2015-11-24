@@ -277,6 +277,7 @@ def parse_date(string_date):
     if string_date is None:
         return None
     length = len(string_date)
+    # Date and time can be given as year, year+month, year+month+day, year+month+day+hour or year+month+day+hour+minute
     if length == 4:
         return datetime.datetime.strptime(string_date, "%Y")
     if length == 6:
