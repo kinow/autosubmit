@@ -151,6 +151,8 @@ class HPCPlatform:
         """
         Copies file in remote_path to local_path
 
+        :param omit_error: if false, logs an error if file does not exists
+        :type omit_error: bool
         :param remote_path: path to the remote file to copy
         :type remote_path: str
         :param local_path: path to the local file to create
@@ -347,6 +349,10 @@ class HPCPlatform:
         """
         Copies *COMPLETED* files from remote to local
 
+        :param omit_error: if false, adds an error log if completed file can not be get
+        :type omit_error: bool
+        :param retries: number of intents to get the completed files
+        :type retries: int
         :param jobname: name of job to check
         :type jobname: str
         :return: True if succesful, False otherwise

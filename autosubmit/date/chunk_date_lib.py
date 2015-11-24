@@ -291,6 +291,9 @@ def date2str(date, date_format=''):
     """
     Converts a datetime object to a str
 
+    :param date_format: specifies format for date time convcersion. It can be H to show hours,
+    M to show hour and minute. Other values will return only the date.
+    :type date_format: str
     :param date: date to convert
     :type date: datetime.datetime
     :rtype: str
