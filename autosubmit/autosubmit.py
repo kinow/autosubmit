@@ -681,7 +681,8 @@ class Autosubmit:
                         scriptname = job.create_script(as_conf)
                         Log.debug(scriptname)
 
-                        platform.send_script(scriptname)
+                        if not platform.send_script(scriptname):
+                            continue
                         job.id = platform.submit_job(scriptname)
                         if job.id is None:
                             continue
