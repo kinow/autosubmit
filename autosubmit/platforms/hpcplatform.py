@@ -328,11 +328,15 @@ class HPCPlatform:
     def check_remote_log_dir(self):
         """
         Creates log dir on remote host
+        :return: True if succesful, False if failed
+        :rtype: bool
         """
         if self.send_command(self.get_mkdir_cmd()):
             Log.debug('{0} has been created on {1} .', self.remote_log_dir, self._host)
+            return True
         else:
             Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self._host))
+            return False
 
     def send_script(self, job_script):
         """
@@ -340,12 +344,16 @@ class HPCPlatform:
 
         :param job_script: name of script to send
         :type job_script: str
+        :return: True if succesful, False if failed
+        :rtype: bool
         """
         if self.send_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, 'tmp', str(job_script)),
                           os.path.join(self.remote_log_dir, str(job_script))):
             Log.debug('The script {0} has been sent'.format(job_script))
+            return True
         else:
             Log.error('The script {0} has not been sent'.format(job_script))
+            return False
 
     def get_completed_files(self, jobname, retries=1, omit_error=False):
         """
