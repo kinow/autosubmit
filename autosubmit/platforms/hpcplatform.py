@@ -82,13 +82,15 @@ class HPCPlatform:
             self._host_config = self._ssh_config.lookup(self._host)
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
-            if 'proxycommand' in self._host_config:
-                self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
-                self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, sock=self._proxy)
+                if 'proxycommand' in self._host_config:
+                    self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id, sock=self._proxy)
+                else:
+                    self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
+                                      key_filename=self._host_config_id)
             else:
-                self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id)
+                self._ssh.connect(self._host_config['hostname'], 22, username=self.user)
             return True
         except IOError as e:
             Log.error('Can not create ssh connection to {0}: {1}', self._host, e.strerror)
