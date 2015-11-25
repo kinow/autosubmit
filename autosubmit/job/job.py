@@ -583,7 +583,8 @@ class Job:
         parameters = self.parameters
         template_content = self.update_content(as_conf.get_project_dir())
         for key, value in parameters.items():
-            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
+                                      flags=re.IGNORECASE)
         template_content = template_content.replace("%%", "%")
 
         scriptname = self.name + '.cmd'
