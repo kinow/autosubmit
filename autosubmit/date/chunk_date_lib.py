@@ -277,6 +277,9 @@ def parse_date(string_date):
     if string_date is None:
         return None
     length = len(string_date)
+    # Date and time can be given as year, year+month, year+month+day, year+month+day+hour or year+month+day+hour+minute
+    if length == 4:
+        return datetime.datetime.strptime(string_date, "%Y")
     if length == 6:
         return datetime.datetime.strptime(string_date, "%Y%m")
     if length == 8:
@@ -285,12 +288,17 @@ def parse_date(string_date):
         return datetime.datetime.strptime(string_date, "%Y%m%d%H")
     elif length == 12:
         return datetime.datetime.strptime(string_date, "%Y%m%d%H%M")
+    else:
+        raise ValueError("String '{0}' can not be converted to date".format(string_date))
 
 
 def date2str(date, date_format=''):
     """
     Converts a datetime object to a str
 
+    :param date_format: specifies format for date time convcersion. It can be H to show hours,
+    M to show hour and minute. Other values will return only the date.
+    :type date_format: str
     :param date: date to convert
     :type date: datetime.datetime
     :rtype: str

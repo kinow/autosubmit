@@ -764,7 +764,7 @@ class AutosubmitConfig:
         local_platform.set_user('')
         local_platform.update_cmds()
 
-        platforms['LOCAL'] = local_platform
+        platforms['local'] = local_platform
         for section in parser.sections():
             platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
             platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')

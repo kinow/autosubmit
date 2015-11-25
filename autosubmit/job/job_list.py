@@ -64,7 +64,7 @@ class JobList:
         """
         return self._expid
 
-    def create(self, date_list, member_list, num_chunks, parameters, date_format):
+    def create(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials):
         """
         Creates all jobs needed for the current workflow
 
@@ -78,6 +78,8 @@ class JobList:
         :type parameters: dict
         :param date_format: option to formate dates
         :type date_format: str
+        :param default_retrials: default retrials for ech job
+        :type default_retrials: int
         """
         self._parameters = parameters
 
@@ -91,7 +93,7 @@ class JobList:
         self._member_list = member_list
         self._chunk_list = chunk_list
 
-        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format)
+        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
 
@@ -453,15 +455,15 @@ class JobList:
         self.update_from_file(store_change)
 
         # reset jobs that has failed less ethan 10 times
-        if 'RETRIALS' in self._parameters:
-            # noinspection PyTypeChecker
-            retrials = int(self._parameters['RETRIALS'])
-        else:
-            retrials = 4
+
 
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
+            if hasattr(self, 'retrials'):
+                retrials = retrials
+            else:
+                retrials = self._dic_jobs.default_retrials
             if job.fail_count < retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
@@ -686,15 +688,18 @@ class DicJobs:
     :type chunk_list: list
     :param date_format: option to formate dates
     :type date_format: str
+    :param default_retrials: default retrials for ech job
+    :type default_retrials: int
 
     """
-    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format):
+    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format, default_retrials):
         self._date_list = date_list
         self._joblist = joblist
         self._member_list = member_list
         self._chunk_list = chunk_list
         self._parser = parser
         self._date_format = date_format
+        self.default_retrials = default_retrials
         self._dic = dict()
 
     def read_section(self, section, priority):
@@ -884,6 +889,7 @@ class DicJobs:
         job.threads = self.get_option(section, "THREADS", 1)
         job.tasks = self.get_option(section, "TASKS", 1)
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
+        job.max_retrials = self.get_option(section, 'RETRIALS', self.default_retrials)
         self._joblist.get_job_list().append(job)
         return job
 

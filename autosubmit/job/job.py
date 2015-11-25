@@ -259,8 +259,8 @@ class Job:
         """
         Add parents for the job. It also adds current job as a child for all the new parents
 
-        :param \*new_parent: job parent
-        :type \*new_parent: Job
+        :param new_parent: job's parents to add
+        :type new_parent: *Job
         """
         self._ancestors = None
         for parent in new_parent:
@@ -425,6 +425,8 @@ class Job:
         """
         Check the presence of *COMPLETED* file and touch a Checked or failed file.
         Change statis to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
+        :param default_status: status to set if job is not completed. By default is FAILED
+        :type default_status: Status
         """
         logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
@@ -462,6 +464,10 @@ class Job:
 
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
+
+        if hasattr(self, 'retrials'):
+            parameters['RETRIALS'] = self.retrials
+
         if self.date is not None:
             if self.chunk is None:
                 chunk = 1
@@ -577,7 +583,8 @@ class Job:
         parameters = self.parameters
         template_content = self.update_content(as_conf.get_project_dir())
         for key, value in parameters.items():
-            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
+                                      flags=re.IGNORECASE)
         template_content = template_content.replace("%%", "%")
 
         scriptname = self.name + '.cmd'
@@ -590,6 +597,8 @@ class Job:
         """
         Checks if script is well formed
 
+        :param parameters: script parameters
+        :type parameters: dict
         :param as_conf: configuration file
         :type as_conf: AutosubmitConfig
         :return: true if not problem has been detected, false otherwise

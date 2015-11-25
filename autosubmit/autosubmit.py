@@ -532,7 +532,7 @@ class Autosubmit:
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
-        Log.debug("Retrials: {0}", retrials)
+        Log.debug("Default retrials: {0}", retrials)
         Log.info("Starting job submission...")
 
         # for platforms in platforms:
@@ -562,9 +562,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name.lower()])
 
         joblist.check_scripts(as_conf)
 
@@ -592,8 +592,8 @@ class Autosubmit:
                                                                   strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
-            retrials = as_conf.get_retrials()
-            Log.debug("Number of retrials: {0}", retrials)
+            default_retrials = as_conf.get_retrials()
+            Log.debug("Number of retrials: {0}", default_retrials)
 
             # Flag to write the pickle only if something has changed
             save_pkl = False
@@ -766,6 +766,8 @@ class Autosubmit:
         Clean experiment's directory to save storage space.
         It removes project directory and outdated plots or stats.
 
+        :param create_log_file: if true, creates log file
+        :type create_log_file: bool
         :type plot: bool
         :type project: bool
         :type expid: str
@@ -940,6 +942,8 @@ class Autosubmit:
         user or local levels. Local level configuration precedes user level and user level precedes system
         configuration.
 
+        :param database_filename: database filename
+        :type database_filename: str
         :param database_path: path to autosubmit database
         :type database_path: str
         :param database_path: path to autosubmit database
@@ -1039,6 +1043,10 @@ class Autosubmit:
         """
         Refresh project folder for given experiment
 
+        :param model_conf:
+        :type model_conf: bool
+        :param jobs_conf:
+        :type jobs_conf: bool
         :param expid: experiment identifier
         :type expid: str
         """
@@ -1253,7 +1261,7 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.create(date_list, member_list, num_chunks, parameters, date_format)
+        job_list.create(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
         if rerun == "true":
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
             job_list.rerun(chunk_list)
@@ -1475,7 +1483,11 @@ class Autosubmit:
         sys.stdout.write('{0} [y/n]\n'.format(question))
         while True:
             try:
-                answer = raw_input()
+                if sys.version_info[0] == 3:
+                    answer = input()
+                else:
+                    # noinspection PyCompatibility
+                    answer = raw_input()
                 return strtobool(answer.lower())
             except ValueError:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
