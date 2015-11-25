@@ -177,7 +177,7 @@ def new_experiment(description, version, test=False):
         return ''
     if last_exp_name == 'empty':
         if test:
-            # Test identifier restricted also to 4 characters.
+            # test identifier restricted also to 4 characters.
             new_name = 't000'
         else:
             new_name = 'a000'

@@ -166,7 +166,7 @@ def add_hours(date, number_of_hours, cal):
     """
     result = date + relativedelta(hours=number_of_hours)
     if cal == 'noleap':
-        year = date.tyear
+        year = date.year
         if date.month > 2:
             year += 1
 
