@@ -55,7 +55,7 @@ sys.path.insert(0, os.path.abspath('.'))
 from config.basicConfig import BasicConfig
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
-from git.git_common import AutosubmitGit
+from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
 from config.log import Log
 from database.db_common import create_db
