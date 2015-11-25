@@ -274,7 +274,7 @@ def parse_date(string_date):
     :type string_date: str
     :rtype: datetime.datetime
     """
-    if string_date is None:
+    if string_date is None or string_date == '':
         return None
     length = len(string_date)
     # Date and time can be given as year, year+month, year+month+day, year+month+day+hour or year+month+day+hour+minute
@@ -312,20 +312,6 @@ def date2str(date, date_format=''):
         return "{0:04}{1:02}{2:02}{3:02}{4:02}".format(date.year, date.month, date.day, date.hour, date.minute)
     else:
         return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
-
-
-####################
-# Main Program
-####################
-def main():
-    string_date = datetime.datetime(1800, 5, 1, 15)
-    cal = 'noleap'
-    start_date = chunk_start_date(string_date, 1, 1, 'month', cal)
-    Log.info(date2str(start_date, 'M'))
-    end_date = chunk_end_date(start_date, 1, 'month', cal)
-    Log.info(date2str(end_date))
-    Log.info("yesterday: {0} ", previous_day(string_date, cal))
-
 
 if __name__ == "__main__":
     main()
