@@ -1,4 +1,3 @@
-import os
 from unittest import TestCase
 from autosubmit.config.config_common import AutosubmitConfig, BasicConfig
 import datetime
