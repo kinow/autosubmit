@@ -378,38 +378,11 @@ class AutosubmitConfig:
         :type: list
         """
         Log.info(title)
-        Log.info("----------------------")
-        Log.info("{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15))
-        for i in parameters:
-            Log.info("{0:<{col1}}| {1:<{col2}}".format(i[0], i[1], col1=15, col2=15))
+        Log.info("---------------------------------------")
+        Log.info("{0:<{col1}}| {1:<{col2}}".format("  -- Parameter --", "  -- Value --", col1=20, col2=20))
+        for key in parameters:
+            Log.info("{0:<{col1}}| {1:<{col2}}".format(key, parameters[key], col1=20, col2=20))
         Log.info("")
-
-    def check_parameters(self):
-        """
-        Function to check configuration of Autosubmit.
-
-        :return: True if all variables are set. If some parameter do not exist, the function returns False.
-        :rtype: bool
-        """
-        result = True
-
-        for section in self._conf_parser.sections():
-            self.print_parameters("AUTOSUBMIT PARAMETERS - " + section, self._conf_parser.items(section))
-            if "" in [item[1] for item in self._conf_parser.items(section)]:
-                result = False
-        for section in self._exp_parser.sections():
-            self.print_parameters("EXPERIMENT PARAMETERS - " + section, self._exp_parser.items(section))
-            if "" in [item[1] for item in self._exp_parser.items(section)]:
-                result = False
-
-        project_type = self.get_project_type()
-        if project_type != "none" and self._proj_parser is not None:
-            for section in self._proj_parser.sections():
-                self.print_parameters("PROJECT PARAMETERS - " + section, self._proj_parser.items(section))
-                if "" in [item[1] for item in self._proj_parser.items(section)]:
-                    result = False
-
-        return result
 
     def get_expid(self):
         """
