@@ -476,6 +476,7 @@ class Autosubmit:
             parameters['{0}_VERSION'.format(platform.name)] = platform.version
             parameters['{0}_SCRATCH_DIR'.format(platform.name)] = platform.scratch
             parameters['{0}_ROOTDIR'.format(platform.name)] = platform.root_dir
+            parameters['{0}_LOGDIR'.format(platform.name)] = platform.remote_log_dir
 
         platform = platforms[as_conf.get_platform()]
         parameters['HPCARCH'] = platform.name
@@ -487,6 +488,7 @@ class Autosubmit:
         parameters['HPCVERSION'] = platform.version
         parameters['SCRATCH_DIR'] = platform.scratch
         parameters['HPCROOTDIR'] = platform.root_dir
+        parameters['HPCLOGDIR'.format(platform.name)] = platform.remote_log_dir
         Log.debug("Updating parameters...")
         joblist.update_parameters(parameters)
 
@@ -615,6 +617,7 @@ class Autosubmit:
 
                 for job in jobinqueue:
                     job.print_job()
+                    previous_status = job.status
                     status = platform.check_job(job.id)
                     if job.status != status:
                         save_pkl = True
@@ -624,6 +627,7 @@ class Autosubmit:
                         job.check_completion()
                     else:
                         job.status = status
+
                     if job.status is Status.QUEUING:
                         Log.info("Job {0} is QUEUING", job.name)
                     elif job.status is Status.RUNNING:
@@ -639,6 +643,14 @@ class Autosubmit:
                     elif job.status is Status.SUBMITTED:
                         # after checking the jobs , no job should have the status "submitted"
                         Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
+
+                    if job.write_start or previous_status != Status.RUNNING and job.status in [Status.COMPLETED,
+                                                                                               Status.FAILED,
+                                                                                               Status.UNKNOWN,
+                                                                                               Status.RUNNING]:
+                        job.write_start = not job.write_start_time()
+                    if job.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
+                        job.write_end_time(job.status == Status.COMPLETED)
 
             ##############################
             # AUTOSUBMIT - JOBS TO SUBMIT
@@ -688,6 +700,7 @@ class Autosubmit:
                             continue
                         # set status to "submitted"
                         job.status = Status.SUBMITTED
+                        job.write_submit_time()
                         save_pkl = True
                         Log.info("{0} submitted", job.name)
 

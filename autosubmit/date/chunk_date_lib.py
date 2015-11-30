@@ -310,8 +310,9 @@ def date2str(date, date_format=''):
         return "{0:04}{1:02}{2:02}{3:02}".format(date.year, date.month, date.day, date.hour)
     elif date_format == 'M':
         return "{0:04}{1:02}{2:02}{3:02}{4:02}".format(date.year, date.month, date.day, date.hour, date.minute)
+    elif date_format == 'S':
+        return "{0:04}{1:02}{2:02}{3:02}{4:02}{5:02}".format(date.year, date.month, date.day, date.hour, date.minute,
+                                                             date.second)
     else:
         return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
 
-if __name__ == "__main__":
-    main()

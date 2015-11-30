@@ -23,13 +23,12 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 
 import os
 import re
+from time import sleep
 
 from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import StatisticsSnippetBash
+from autosubmit.job.job_common import StatisticsSnippet
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
-from autosubmit.platforms.localplatform import LocalPlatform
-
 
 class Job:
     """
@@ -82,6 +81,7 @@ class Job:
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self._ancestors = None
+        self.write_start = False
 
     def __getstate__(self):
         odict = self.__dict__
@@ -348,20 +348,20 @@ class Job:
         """
         return self.name < other.name
 
-    def _get_from_completed(self, index):
+    def _get_from_stat(self, index):
         """
-        Returns value from given index position in completed file asociated to job
+        Returns value from given index position in STAT file asociated to job
 
         :param index: position to retrieve
         :type index: int
         :return: value in index position
-        :rtype: str
+        :rtype: int
         """
-        logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
+        logname = os.path.join(self._tmp_path, self.name + '_STAT')
         if os.path.exists(logname):
-            split_line = open(logname).readline().split()
-            if len(split_line) >= index + 1:
-                return split_line[index]
+            lines = open(logname).readlines()
+            if len(lines) >= index + 1:
+                return int(lines[index])
             else:
                 return 0
         else:
@@ -374,52 +374,16 @@ class Job:
         :return: completed date and time
         :rtype: str
         """
-        return self._get_from_completed(0)
+        return self._get_from_stat(1)
 
-    def check_queued_time(self):
-        """
-        Returns job's waiting time in HPC
-
-        :return: total time waiting in HPC platforms
-        :rtype: str
-        """
-        return self._get_from_completed(1)
-
-    def check_run_time(self):
+    def check_start_time(self):
         """
         Returns job's running time
 
         :return: total time running
         :rtype: str
         """
-        return self._get_from_completed(2)
-
-    def check_failed_times(self):
-        """
-        Returns number of failed attempts before completing the job
-
-        :return: failed attempts to run
-        :rtype: str
-        """
-        return self._get_from_completed(3)
-
-    def check_fail_queued_time(self):
-        """
-        Returns total time spent waiting for failed jobs
-
-        :return: total time waiting in HPC platforms for failed jobs
-        :rtype: str
-        """
-        return self._get_from_completed(4)
-
-    def check_fail_run_time(self):
-        """
-        Returns total time running for failed jobs
-
-        :return: total time running in HPC  for failed jobs
-        :rtype: str
-        """
-        return self._get_from_completed(5)
+        return self._get_from_stat(0)
 
     def check_completion(self, default_status=Status.FAILED):
         """
@@ -534,6 +498,7 @@ class Job:
         parameters['CURRENT_VERSION'] = job_platform.version
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
+        parameters['CURRENT_LOGDIR'] = job_platform.remote_log_dir
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
@@ -555,19 +520,12 @@ class Job:
             template_file = open(os.path.join(project_dir, self.file), 'r')
             template = template_file.read()
         else:
-            template = ''
+            template = 'sleep 5'
         current_platform = self.get_platform()
-        if isinstance(current_platform, LocalPlatform):
-            stats_header = StatisticsSnippetBash.AS_HEADER_LOC
-            stats_tailer = StatisticsSnippetBash.AS_TAILER_LOC
-        else:
-            stats_header = StatisticsSnippetBash.AS_HEADER_REM
-            stats_tailer = StatisticsSnippetBash.AS_TAILER_REM
-
         template_content = ''.join([current_platform.get_header(self),
-                                   stats_header,
+                                   StatisticsSnippet.AS_HEADER,
                                    template,
-                                   stats_tailer])
+                                   StatisticsSnippet.AS_TAILER])
 
         return template_content
 
@@ -618,3 +576,39 @@ class Job:
             self.create_script(as_conf)
 
         return out
+
+    def write_submit_time(self):
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        if os.path.exists(path):
+            f = open(path, 'a')
+            f.write('\n')
+        else:
+            f = open(path, 'w')
+        f.write(date2str(datetime.datetime.now(), 'S'))
+
+    def write_start_time(self):
+        while not self.get_platform().get_stat_file(self.name, retries=0):
+            return False
+
+        time = self.check_start_time()
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        f = open(path, 'a')
+        f.write(' ')
+        f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
+        return True
+
+    def write_end_time(self, completed):
+        self.get_platform().get_stat_file(self.name)
+        time = self.check_end_time()
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        f = open(path, 'a')
+        f.write(' ')
+        if time > 0:
+            f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
+        else:
+            f.write(date2str(datetime.datetime.now(), 'S'))
+        f.write(' ')
+        if completed:
+            f.write('COMPLETED')
+        else:
+            f.write('FAILED')
