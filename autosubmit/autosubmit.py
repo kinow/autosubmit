@@ -1426,6 +1426,8 @@ class Autosubmit:
         Log.debug('Exp ID: {0}', expid)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
                                     ".pkl"), 'r'))
+        as_conf = AutosubmitConfig(expid)
+        as_conf.reload()
 
         final_status = Autosubmit._get_status(final)
         if filter_chunks:
