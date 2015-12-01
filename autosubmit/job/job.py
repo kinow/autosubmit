@@ -350,9 +350,9 @@ class Job:
 
     def _get_from_stat(self, index):
         """
-        Returns value from given index position in STAT file asociated to job
+        Returns value from given row index position in STAT file asociated to job
 
-        :param index: position to retrieve
+        :param index: row position to retrieve
         :type index: int
         :return: value in index position
         :rtype: int
@@ -367,23 +367,69 @@ class Job:
         else:
             return 0
 
+    def _get_from_total_stats(self, index):
+        """
+        Returns list of values from given column index position in TOTAL_STATS file asociated to job
+
+        :param index: column position to retrieve
+        :type index: int
+        :return: list of values in column index position
+        :rtype: list[int]
+        """
+        logname = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        lst = []
+        if os.path.exists(logname):
+            lines = open(logname).readlines()
+            for line in lines:
+                fields = line.split()
+                if len(fields) >= index + 1:
+                    lst.append(int(fields[index]))
+        return lst
+
     def check_end_time(self):
         """
-        Returns end time from completed file
+        Returns end time from stat file
 
-        :return: completed date and time
+        :return: date and time
         :rtype: str
         """
         return self._get_from_stat(1)
 
     def check_start_time(self):
         """
-        Returns job's running time
+        Returns job's start time
 
-        :return: total time running
+        :return: start time
         :rtype: str
         """
         return self._get_from_stat(0)
+
+    def check_retrials_submit_time(self):
+        """
+        Returns list of submit datetime for retrials from total stats file
+
+        :return: date and time
+        :rtype: list[int]
+        """
+        return self._get_from_total_stats(0)
+
+    def check_retrials_end_time(self):
+        """
+        Returns list of end datetime for retrials from total stats file
+
+        :return: date and time
+        :rtype: list[int]
+        """
+        return self._get_from_total_stats(2)
+
+    def check_retrials_start_time(self):
+        """
+        Returns list of start datetime for retrials from total stats file
+
+        :return: date and time
+        :rtype: list[int]
+        """
+        return self._get_from_total_stats(1)
 
     def check_completion(self, default_status=Status.FAILED):
         """
@@ -612,3 +658,9 @@ class Job:
             f.write('COMPLETED')
         else:
             f.write('FAILED')
+
+    def check_started_after(self, date_limit):
+        if any(parse_date(str(date_retrial)) > date_limit for date_retrial in self.check_retrials_start_time()):
+            return True
+        else:
+            return False

@@ -288,6 +288,8 @@ def parse_date(string_date):
         return datetime.datetime.strptime(string_date, "%Y%m%d%H")
     elif length == 12:
         return datetime.datetime.strptime(string_date, "%Y%m%d%H%M")
+    elif length == 14:
+        return datetime.datetime.strptime(string_date, "%Y%m%d%H%M%S")
     else:
         raise ValueError("String '{0}' can not be converted to date".format(string_date))
 

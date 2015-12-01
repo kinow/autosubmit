@@ -36,6 +36,7 @@ import matplotlib.pyplot as plt
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
+from date.chunk_date_lib import parse_date
 
 
 class Monitor:
@@ -226,10 +227,10 @@ class Monitor:
                     ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1 + height, '%d' % int(height), ha='center',
                                       va='bottom', fontsize=9)
 
-        average_run_time = sum([float(job.check_run_time()) / 3600 for job in joblist]) / len(joblist)
-        max_time = max(max([float(job.check_run_time()) / 3600 for job in joblist]),
-                       max([float(job.check_queued_time()) / 3600 for job in joblist]))
-        min_time = min([int(float(job.check_run_time()) / 3600 - average_run_time) for job in joblist])
+        average_run_time = sum([float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) for job in joblist]) / len(joblist)
+        max_time = max(max([float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) for job in joblist]),
+                       max([float(job.check_retrials_start_time()[-1] - job.check_retrials_submit_time()[-1]) for job in joblist]))
+        min_time = min([int(float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) - average_run_time) for job in joblist])
         # print average_run_time
         # l1 = 0
         # l2 = len(joblist)
@@ -257,12 +258,12 @@ class Monitor:
             ax.append(fig.add_subplot(num_plots, 1, plot))
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
-            queued = [float(job.check_queued_time()) / 3600 for job in joblist[l1:l2]]
-            run = [float(job.check_run_time()) / 3600 for job in joblist[l1:l2]]
-            excess = [float(job.check_run_time()) / 3600 - average_run_time for job in joblist[l1:l2]]
-            failed_jobs = [int(job.check_failed_times()) for job in joblist[l1:l2]]
-            fail_queued = [float(job.check_fail_queued_time()) / 3600 for job in joblist[l1:l2]]
-            fail_run = [float(job.check_fail_run_time()) / 3600 for job in joblist[l1:l2]]
+            queued = [float(job.check_retrials_start_time()[-1] - job.check_retrials_submit_time()[-1]) for job in joblist[l1:l2]]
+            run = [float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) for job in joblist[l1:l2]]
+            excess = [float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) - average_run_time for job in joblist[l1:l2]]
+            failed_jobs = [len(job.check_retrials_submit_time()) - 1 for job in joblist[l1:l2]]
+            fail_queued = [float(sum([x1 - x2 for (x1, x2) in zip(job.check_retrials_start_time()[:-1], job.check_retrials_submit_time()[:-1])])) for job in joblist[l1:l2]]
+            fail_run = [float(sum([x1 - x2 for (x1, x2) in zip(job.check_retrials_end_time()[:-1], job.check_retrials_start_time()[:-1])])) for job in joblist[l1:l2]]
             if plot == num_plots:
                 queued = queued + [0] * int(MAX - len(joblist[l1:l2]))
                 run = run + [0] * int(MAX - len(joblist[l1:l2]))

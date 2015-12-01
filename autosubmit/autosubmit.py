@@ -145,6 +145,11 @@ class Autosubmit:
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-ft', '--filter_type', type=str, help='Select the job type to filter '
+                                                                          'the list of jobs')
+            subparser.add_argument('-fp', '--filter_period', type=int, help='Select the period to filter jobs '
+                                                                            'from current time to the past '
+                                                                            'in number of hours back')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='type of output for generated plot')
 
@@ -263,7 +268,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output)
             elif args.command == 'stats':
-                return Autosubmit.statistics(args.expid, args.output)
+                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output)
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
@@ -745,7 +750,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def statistics(expid, file_format):
+    def statistics(expid, filter_type, filter_period, file_format):
         """
         Plots statistics graph for a given experiment.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -753,6 +758,8 @@ class Autosubmit:
         :type file_format: str
         :type expid: str
         :param expid: identifier of the experiment to plot
+        :param filter_type: type of the jobs to plot
+        :param filter_period: period to plot
         :param file_format: plot's file format. It can be pdf, png or ps
         """
         root_name = 'job_list'
@@ -762,16 +769,30 @@ class Autosubmit:
         Log.info("Loading jobs...")
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         jobs = pickle.load(open(filename, 'r'))
-        # if not isinstance(jobs, type([])):
-        #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
-        if len(jobs.get_job_list()) > 0:
+        if filter_type:
+            ft = filter_type
+            Log.debug(ft)
+            if ft == 'Any':
+                jobs = jobs.get_job_list()
+            else:
+                jobs = [job for job in jobs.get_job_list() if job.section == ft]
+        else:
+            ft = 'Any'
+            jobs = jobs.get_job_list()
+
+        if filter_period:
+            fp = datetime.datetime.now() - datetime.timedelta(hours=filter_period)
+            Log.debug(str(fp))
+            jobs = [job for job in jobs if job.check_started_after(fp)]
+
+        if len(jobs) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output_stats(expid, jobs.get_job_list(), file_format)
+            monitor_exp.generate_output_stats(expid, jobs, file_format)
             Log.result("Stats plot ready")
         else:
-            Log.info("There are no COMPLETED jobs...")
+            Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, fp, datetime.datetime.now()))
         return True
 
     @staticmethod

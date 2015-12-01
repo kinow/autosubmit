@@ -53,8 +53,8 @@ class StatisticsSnippet:
             ###################
 
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
+            echo $(date +%s) > ${job_name_ptrn}_STAT
             rm -f ${job_name_ptrn}_COMPLETED
-            echo $(date +%s) >> ${job_name_ptrn}_STAT
 
             ###################
             # Autosubmit job
