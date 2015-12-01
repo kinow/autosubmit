@@ -661,7 +661,7 @@ class Autosubmit:
             # AUTOSUBMIT - JOBS TO SUBMIT
             ##############################
             # get the list of jobs READY
-            joblist.update_list()
+            joblist.update_list(as_conf)
             for platform in platforms_to_test:
 
                 jobsavail = joblist.get_ready(platform)
@@ -913,7 +913,7 @@ class Autosubmit:
 
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
-        job_list.update_list(False)
+        job_list.update_list(as_conf,False)
         job_list.update_from_file(False)
 
         if save:
@@ -1493,12 +1493,12 @@ class Autosubmit:
         sys.setrecursionlimit(50000)
 
         if save:
-            job_list.update_list()
+            job_list.update_list(as_conf)
             path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
             pickle.dump(job_list, open(path, 'w'))
             Log.info("Saving JobList: {0}", path)
         else:
-            job_list.update_list(False)
+            job_list.update_list(as_conf, False)
             Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
         monitor_exp = Monitor()
