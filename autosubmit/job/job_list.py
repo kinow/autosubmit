@@ -450,7 +450,7 @@ class JobList:
     def update_parameters(self, parameters):
         self._parameters = parameters
 
-    def update_list(self, store_change=True):
+    def update_list(self, as_conf, store_change=True):
         # load updated file list
         self.update_from_file(store_change)
 
@@ -462,7 +462,7 @@ class JobList:
             if hasattr(self, 'retrials'):
                 retrials = self.retrials
             else:
-                retrials = self._dic_jobs.default_retrials
+                retrials = as_conf.get_retrials()
             if job.fail_count < retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
