@@ -9,8 +9,7 @@ Autosubmit is a python-based tool to create, manage and monitor experiments by u
 Supercomputers remotely via ssh. It has support for experiments running in more than one HPC and for different workflow
 configurations.
 
-Autosubmit is currently used at IC3 to run EC-Earth and NEMO models and at Barcelona Supercomputing Centre (BSC)
-to run NMMB air quality model.
+Autosubmit is currently used at Barcelona Supercomputing Centre (BSC) to run EC-Earth, NEMO and  NMMB air quality model.
 
 Autosubmit has been used to manage models running at supercomputers in IC3, BSC, ECMWF, EPCC, PDC and OLCF.
 
@@ -39,7 +38,7 @@ You can find help about how to use autosubmit and a list of available commands, 
 Execute autosubmit <command> -h for detailed help for each command:
 ::
 
-	autosubmit expid -h
+    autosubmit expid -h
 
 Experiment creation
 -------------------
@@ -76,8 +75,8 @@ To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and `
 After that, you are expected to run the command:
 ::
 
-	autosubmit create xxxx
-	
+    autosubmit create xxxx
+
 This command creates the experiment project in the ``proj`` folder. The experiment project contains the scripts specified in ``jobs_xxxx.conf`` and a copy of model source code and data specified in ``expdef_xxxx.conf``.
 
 Experiment run
@@ -87,15 +86,15 @@ To run the experiment, just execute the command:
 
 ::
 
-	autosubmit run xxxx
-	
+    autosubmit run xxxx
+
 Autosubmit will start submitting jobs to the relevant platforms (both HPC and supporting computers) by using the scripts specified in ``jobs_xxxx.conf``. Autosubmit will substitute variables present on scripts where handlers appear in *%variable_name%* format. Autosubmit provides variables for *current chunk*, *start date*, *member*, *computer configuration* and more, and also will replace variables form ``proj_xxxx.conf``.
 
 To monitor the status of the experiment, the command:
 
 ::
 
-	autosubmit monitor xxxx
+    autosubmit monitor xxxx
 
 is available. This will plot the workflow of the experiment and the current status.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -36,6 +36,7 @@ import matplotlib.pyplot as plt
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
+from date.chunk_date_lib import parse_date
 
 
 class Monitor:
@@ -84,8 +85,10 @@ class Monitor:
         :return: created graph
         :rtype: pydotplus.Dot
         """
+        Log.debug('Creating workflow graph...')
         graph = pydotplus.Dot(graph_type='digraph')
 
+        Log.debug('Creating legend...')
         legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
                                        fillcolor=self._table[Status.WAITING]))
@@ -107,6 +110,7 @@ class Monitor:
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         self.nodes_ploted = set()
+        Log.debug('Creating job graph...')
         for job in joblist:
             if job.has_parents():
                 continue
@@ -117,7 +121,7 @@ class Monitor:
             self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
-
+        Log.debug('Graph definition finalished')
         return graph
 
     def _add_children(self, job, exp, node_job):
@@ -150,6 +154,7 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Plotting...')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
@@ -157,6 +162,7 @@ class Monitor:
 
         graph = self.create_tree_list(expid, joblist)
 
+        Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
             graph.write_png(output_file)
@@ -169,6 +175,10 @@ class Monitor:
         elif output_format == "svg":
             # noinspection PyUnresolvedReferences
             graph.write_svg(output_file)
+        else:
+            Log.error('Format {0} not supported', output_format)
+            return
+        Log.result('Plot created at {0}', output_file)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf"):
         """
@@ -181,11 +191,13 @@ class Monitor:
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         """
+        Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file)
+        Log.result('Stats created at {0}', output_file)
 
     @staticmethod
     def create_bar_diagram(expid, joblist, output_file):
@@ -215,17 +227,10 @@ class Monitor:
                     ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1 + height, '%d' % int(height), ha='center',
                                       va='bottom', fontsize=9)
 
-        average_run_time = sum([float(job.check_run_time()) / 3600 for job in joblist]) / len(joblist)
-        max_time = max(max([float(job.check_run_time()) / 3600 for job in joblist]),
-                       max([float(job.check_queued_time()) / 3600 for job in joblist]))
-        min_time = min([int(float(job.check_run_time()) / 3600 - average_run_time) for job in joblist])
-        # print average_run_time
-        # l1 = 0
-        # l2 = len(joblist)
-        # print [int(job.check_queued_time())/3600 for job in joblist[l1:l2]]
-        # print [int(job.check_run_time())/3600 for job in joblist[l1:l2]]
-        # print [int(int(job.check_run_time())/3600-average_run_time) for job in joblist[l1:l2]]
-        # print [int(job.check_failed_times()) for job in joblist[l1:l2]]
+        average_run_time = sum([float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) for job in joblist]) / len(joblist)
+        max_time = max(max([float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) for job in joblist]),
+                       max([float(job.check_retrials_start_time()[-1] - job.check_retrials_submit_time()[-1]) for job in joblist]))
+        min_time = min([int(float(job.check_retrials_end_time()[-1] - job.check_retrials_start_time()[-1]) - average_run_time) for job in joblist])
 
         # These are constants, so they need to be CAPS. Suppress PyCharm warning
         # noinspection PyPep8Naming
@@ -239,19 +244,39 @@ class Monitor:
 
         plt.close('all')
         fig = plt.figure(figsize=(14, 6 * num_plots))
-        # fig = plt.figure()
         ax = []
         lgd = None
         for plot in range(1, num_plots + 1):
             ax.append(fig.add_subplot(num_plots, 1, plot))
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
-            queued = [float(job.check_queued_time()) / 3600 for job in joblist[l1:l2]]
-            run = [float(job.check_run_time()) / 3600 for job in joblist[l1:l2]]
-            excess = [float(job.check_run_time()) / 3600 - average_run_time for job in joblist[l1:l2]]
-            failed_jobs = [int(job.check_failed_times()) for job in joblist[l1:l2]]
-            fail_queued = [float(job.check_fail_queued_time()) / 3600 for job in joblist[l1:l2]]
-            fail_run = [float(job.check_fail_run_time()) / 3600 for job in joblist[l1:l2]]
+
+            run = [0] * (l2 - l1)
+            queued = [0] * (l2 - l1)
+            excess = [0] * (l2 - l1)
+            failed_jobs = [0] * (l2 - l1)
+            fail_queued = [0] * (l2 - l1)
+            fail_run = [0] * (l2 - l1)
+
+            for i, job in enumerate(joblist[l1:l2]):
+                submit_times = job.check_retrials_submit_time()
+                start_times = job.check_retrials_start_time()
+                end_times = job.check_retrials_end_time()
+
+                for j in enumerate(submit_times):
+
+                    if j >= len(end_times):
+                        if j < len(start_times):
+                            queued[i] += start_times[j] - submit_times[j]
+                    elif job.status == Status.COMPLETED:
+                        queued[i] += start_times[j] - submit_times[j]
+                        run[i] += end_times[j] - start_times[j]
+                        excess[i] += end_times[j] - start_times[j] - average_run_time
+                    else:
+                        failed_jobs[i] += 1
+                        fail_queued[i] += start_times[j] - submit_times[j]
+                        fail_run[i] += end_times[j] - start_times[j]
+
             if plot == num_plots:
                 queued = queued + [0] * int(MAX - len(joblist[l1:l2]))
                 run = run + [0] * int(MAX - len(joblist[l1:l2]))
@@ -259,7 +284,7 @@ class Monitor:
                 failed_jobs = failed_jobs + [0] * int(MAX - len(joblist[l1:l2]))
                 fail_queued = fail_queued + [0] * int(MAX - len(joblist[l1:l2]))
                 fail_run = fail_run + [0] * int(MAX - len(joblist[l1:l2]))
-                # ind = np.arange(len([int(job.check_queued_time())/3600 for job in joblist[l1:l2]]))
+
             rects1 = ax[plot - 1].bar(ind, queued, width, color='r')
             rects2 = ax[plot - 1].bar(ind + width, run, width, color='g')
             rects3 = ax[plot - 1].bar(ind + width * 2, excess, width, color='b')
@@ -282,11 +307,6 @@ class Monitor:
             autolabel(rects6)
             plt.ylim((1.15 * min_time, 1.15 * max_time))
 
-        # fig.set_size_inches(14,num_plots*6)
-        # plt.savefig(output_file, bbox_extra_artists=(lgd), bbox_inches='tight')
-        # plt.savefig(output_file, bbox_inches='tight')
-        # fig.tight_layout()
-        # plt.show()
         plt.subplots_adjust(left=0.1, right=0.8, top=0.97, bottom=0.05, wspace=0.2, hspace=0.6)
         plt.savefig(output_file, bbox_extra_artists=lgd)
 

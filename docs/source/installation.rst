@@ -3,7 +3,7 @@ Installation
 ############
 
 How to install
-===============
+==============
 
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
@@ -14,7 +14,7 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 To install autosubmit just execute:
 ::
 
-	pip install autosubmit
+    pip install autosubmit
 
 or download, unpack and:
 ::
@@ -24,10 +24,13 @@ or download, unpack and:
 .. hint::
     To check if autosubmit has been installed run ``autosubmit -v.`` This command will print autosubmit's current
     version
+
 .. hint::
     To read autosubmit's readme file, run ``autosubmit readme``
+
 .. hint::
     To see the changelog, use ``autosubmit changelog``
+
 How to configure
 ================
 

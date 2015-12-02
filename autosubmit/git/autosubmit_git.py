@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -20,7 +20,7 @@
 from os import path
 import os
 from shutil import rmtree
-from commands import getstatusoutput
+import subprocess
 import shutil
 
 from autosubmit.config.basicConfig import BasicConfig
@@ -51,28 +51,28 @@ class AutosubmitGit:
         Log.debug("Checking git directory status...")
         if path.isdir(dirname_path):
             if path.isdir(os.path.join(dirname_path, '.git')):
-                (status, output) = getstatusoutput("cd " + dirname_path + "; " +
-                                                   "git diff-index HEAD --")
-                if status == 0:
-                    if output:
-                        Log.info("Changes not commited detected... SKIPPING!")
-                        Log.user_warning("Commit needed!")
-                        return False
-                    else:
-                        (status, output) = getstatusoutput("cd " + dirname_path + "; " +
-                                                           "git log --branches --not --remotes")
-                        if output:
-                            Log.info("Changes not pushed detected... SKIPPING!")
-                            Log.user_warning("Synchronization needed!")
-                            return False
-                        else:
-                            if not as_conf.set_git_project_commit(as_conf):
-                                return False
-                            Log.debug("Removing directory")
-                            rmtree(proj_dir)
-                else:
+                try:
+                    output = subprocess.check_output("cd {0}; git diff-index HEAD --".format(dirname_path),
+                                                     shell=True)
+                except subprocess.CalledProcessError:
                     Log.error("Failed to retrieve git info...")
                     return False
+                if output:
+                    Log.info("Changes not commited detected... SKIPPING!")
+                    Log.user_warning("Commit needed!")
+                    return False
+                else:
+                    output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
+                                                     shell=True)
+                    if output:
+                        Log.info("Changes not pushed detected... SKIPPING!")
+                        Log.user_warning("Synchronization needed!")
+                        return False
+                    else:
+                        if not as_conf.set_git_project_commit(as_conf):
+                            return False
+                        Log.debug("Removing directory")
+                        rmtree(proj_dir)
             else:
                 Log.debug("Not a git repository... SKIPPING!")
         else:
@@ -81,6 +81,15 @@ class AutosubmitGit:
 
     @staticmethod
     def clone_repository(as_conf, force):
+        """
+        Clones a specified git repository on the project folder
+
+        :param as_conf: experiment configuration
+        :type as_conf: autosubmit.config.AutosubmitConfig
+        :param force: if True, it will overwrite any existing clone
+        :type force: bool
+        :return: True if clone was succesfull, False otherwise
+        """
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()
@@ -99,19 +108,22 @@ class AutosubmitGit:
         Log.debug("The project folder {0} has been created.", project_path)
 
         Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-        (status, output) = getstatusoutput("cd " + project_path + "; git clone --recursive -b "
-                                           + git_project_branch + " " + git_project_origin + " "
-                                           + project_destination)
-        if status:
+        try:
+            command = "cd {0}; git clone --recursive -b {1} {2} {3}".format(project_path, git_project_branch,
+                                                                            git_project_origin, project_destination)
+            output = subprocess.check_output(command, shell=True)
+            Log.debug('{0}:{1}', command, output)
+        except subprocess.CalledProcessError:
             Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             shutil.rmtree(project_path)
             return False
         if git_project_commit:
-            (status, output) = getstatusoutput("cd {0}; git checkout {1} ".format(git_path, git_project_commit))
-            if status:
+            try:
+                output = subprocess.check_call("cd {0}; git checkout {1} ".format(git_path, git_project_commit),
+                                               shell=True)
+            except subprocess.CalledProcessError:
                 Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
                 shutil.rmtree(project_path)
                 return False
 
-        Log.debug("{0}", output)
         return True

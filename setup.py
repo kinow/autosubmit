@@ -35,12 +35,12 @@ setup(
     description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse'
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
-    author_email='domingo.manubens@ic3.cat',
-    url='http://autosubmit.ic3.cat',
-    download_url='http://ic3.cat/wikicfu/index.php/Tools/Autosubmit',
+    author_email='domingo.manubens@bsc.es',
+    url='http://www.bsc.es/projects/earthscience/autosubmit/',
+    download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
-    install_requires=['argparse>=1.2,<2', 'python-dateutil>=1,<2', 'pydotplus>=2', 'pyparsing>=2.0.1',
-                      'numpy', 'matplotlib>=1.1.0', 'paramiko>=1.15', 'saga-python'],
+    install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
+                      'numpy', 'matplotlib', 'paramiko>=1.15', 'pycrypto', 'saga-python'],
     packages=find_packages(),
     include_package_data=True,
     package_data={'autosubmit': [

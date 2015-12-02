@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -92,6 +92,8 @@ def check_experiment_exists(name, error_on_inexistence=True):
     """
     Checks if exist an experiment with the given name.
 
+    :param error_on_inexistence: if True, adds an error log if experiment does not exists
+    :type error_on_inexistence: bool
     :param name: Experiment name
     :type name: str
     :return: If experiment exists returns true, if not returns false
@@ -158,6 +160,8 @@ def new_experiment(description, version, test=False):
     """
     Stores a new experiment on the database and generates its identifier
 
+    :param version: autosubmit version associated to the experiment
+    :type version: str
     :param test: flag for test experiments
     :type test: bool
     :param description: experiment's description
@@ -173,7 +177,7 @@ def new_experiment(description, version, test=False):
         return ''
     if last_exp_name == 'empty':
         if test:
-            # Test identifier restricted also to 4 characters.
+            # test identifier restricted also to 4 characters.
             new_name = 't000'
         else:
             new_name = 'a000'
@@ -195,6 +199,10 @@ def copy_experiment(name, description, version, test=False):
     """
     Creates a new experiment by copying an existing experiment
 
+    :param test: specifies if it is a test experiment
+    :type test: bool
+    :param version: experiment's associated autosubmit version
+    :type version: str
     :param name: identifier of experiment to copy
     :type name: str
     :param description: experiment's description
@@ -372,13 +380,15 @@ def open_conn(check_version=True):
     """
     Opens a connection to database
 
+    :param check_version: If true, check if the database is compatible with this autosubmit version
+    :type check_version: bool
     :return: connection object, cursor object
     :rtype: sqlite3.Connection, sqlite3.Cursor
     """
     conn = sqlite3.connect(BasicConfig.DB_PATH)
     cursor = conn.cursor()
 
-    # Getting databse version
+    # Getting database version
     if check_version:
         try:
             cursor.execute('SELECT version '

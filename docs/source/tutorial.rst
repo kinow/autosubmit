@@ -11,7 +11,7 @@ First Step: Experiment creation
 To create a new experiment, run the command:
 ::
 
-	autosubmit expid -H HPCname -d Description
+    autosubmit expid -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
@@ -21,14 +21,14 @@ This command assigns a unique four character identifier (``xxxx``, names startin
 Examples:
 ::
 
-	autosubmit expid --HPC ithaca --description "experiment is about..."
+    autosubmit expid --HPC ithaca --description "experiment is about..."
 
 .. caution:: The *HPCname*, e.g. ithaca, must be defined in the platforms configuration.
     See next section :ref:`confexp`.
 
 ::
 
-	autosubmit expid --copy a000 --HPC ithaca -d "experiment is about..."
+    autosubmit expid --copy a000 --HPC ithaca -d "experiment is about..."
 
 .. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
 
@@ -66,7 +66,7 @@ You may want to configure Autosubmit parameters for the experiment. Just edit ``
 Examples:
 ::
 
-	vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
 
 .. code-block:: ini
 
@@ -136,10 +136,12 @@ Examples:
     [project_files]
     # Where is PROJECT CONFIGURATION file location relative to project root path
     FILE_PROJECT_CONF = templates/ecearth3/ecearth3.conf
+    # Where is JOBS CONFIGURATION file location relative to project root path
+    FILE_JOBS_CONF = templates/common/jobs.conf
 
 ::
 
-	vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/jobs_cxxx.conf
 
 .. code-block:: ini
 
@@ -223,7 +225,7 @@ Examples:
 
 ::
 
-	vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/platforms_cxxx.conf
 
 .. code-block:: ini
 
@@ -298,7 +300,7 @@ Examples:
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::
 
-	autosubmit create cxxx
+    autosubmit create cxxx
 
 *cxxx* is the name of the experiment.
 
@@ -325,7 +327,7 @@ To configure experiment project parameters for the experiment, edit ``proj_cxxx.
 Example:
 ::
 
-	vi <experiments_directory>/cxxx/conf/proj_cxxx.conf
+    vi <experiments_directory>/cxxx/conf/proj_cxxx.conf
 
 .. code-block:: ini
 
@@ -337,7 +339,7 @@ Example:
     # No need to change.
     TEMPLATE_NAME = ecearth3
     # Select the model output control class. STRING = Option
-    # listed under the section : http://ic3.cat/wikicfu/index.php/Models#Outclass.
+    # listed under the section : https://earth.bsc.es/wiki/doku.php?id=overview_outclasses
     OUTCLASS = specs
     # After transferring output at /cfunas/exp remove a copy available at permanent storage of HPC
     # [Default: Do set "TRUE"]. BOOLEAN = TRUE, FALSE
@@ -377,7 +379,7 @@ Example:
 
     [ifs]
     # Atmospheric initial conditions ready to be used.
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Atmospheric
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:atmospheric
     ATM_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -487,7 +489,7 @@ Example:
 
     [nemo]
     # Ocean initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Oceanic
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:oceanic
     OCEAN_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -511,7 +513,7 @@ Example:
     # Sea-Ice Model [Default: Do set "LIM2"]. STRING = LIM2, LIM3
     ICE = LIM3
     # Sea-ice initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Sea-Ice
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:sea_ice
     ICE_ini =
     # A different IC member per EXPID member ["PERT"] or which common IC member
     # for all EXPID members ["fc0" / "fc1"]. String = PERT/fc0/fc1...
@@ -523,7 +525,7 @@ Example:
     # Activate PISCES (TRUE) or not (FALSE) [Default: leave empty]
     PISCES = FALSE
     # PISCES initial conditions ready to be used. [Default: leave empty].
-    # STRING = ID found here : http://ic3.cat/wikicfu/index.php/Initial_Conditions/Biogeochemistry
+    # STRING = ID found here : https://earth.bsc.es/wiki/doku.php?id=initial_conditions:biogeochemistry
     PISCES_ini =
     # Set timestep (in sec) w.r.t resolution. NUMERIC = 3600 (ORCA1), 3600 (ORCA025)
     PISCES_timestep = 3600
@@ -532,7 +534,7 @@ Example:
 Finally, you can launch Autosubmit *run* in background and with ``nohup`` (continue running although the user who launched the process logs out).
 ::
 
-	nohup autosubmit run cxxx &
+    nohup autosubmit run cxxx &
 
 Fourth Step: Experiment monitor
 -------------------------------
@@ -542,10 +544,11 @@ With this command we can generate new plots to check which is the status of the 
 
 ::
 
-	autosubmit monitor  cxxx
+    autosubmit monitor  cxxx
 
 The location where user can find the generated plots with date and timestamp can be found below:
 
 ::
 
-	<experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
+    <experiments_directory>/cxxx/plot/cxxx_<date>_<time>.pdf
+

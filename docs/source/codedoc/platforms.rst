@@ -1,34 +1,33 @@
-autosubmit.queue
-================
-.. automodule:: autosubmit.queue.hpcqueue
+autosubmit.platform
+===================
+.. automodule:: autosubmit.platforms.hpcplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.ecqueue
+.. automodule:: autosubmit.platforms.ecplatform
+   :show-inheritance:
+   :members:
+.. automodule:: autosubmit.platforms.lsfplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.lsfqueue
+.. automodule:: autosubmit.platforms.pbsplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.pbsqueue
+.. automodule:: autosubmit.platforms.psplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.psqueue
+.. automodule:: autosubmit.platforms.sgeplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.sgequeue
+.. automodule:: autosubmit.platforms.slurmplatform
    :show-inheritance:
    :inherited-members:
    :members:
-.. automodule:: autosubmit.queue.slurmqueue
-   :show-inheritance:
-   :inherited-members:
-   :members:
-.. automodule:: autosubmit.queue.localqueue
+.. automodule:: autosubmit.platforms.localplatform
    :show-inheritance:
    :inherited-members:
    :members:

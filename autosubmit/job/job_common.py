@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -17,6 +17,8 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+import os
+import datetime
 
 
 class Status:
@@ -44,17 +46,14 @@ class StatisticsSnippet:
     local and remote jobs
     """
 
-    AS_HEADER_LOC = textwrap.dedent("""\
+    AS_HEADER = textwrap.dedent("""\
 
             ###################
             # Autosubmit header
             ###################
 
-            set -x
-            job_name_ptrn=%CURRENT_ROOTDIR%/tmp/LOG_%EXPID%/%JOBNAME%
-            job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
-            job_start_time=$(date +%s)
-
+            job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
+            echo $(date +%s) > ${job_name_ptrn}_STAT
             rm -f ${job_name_ptrn}_COMPLETED
 
             ###################
@@ -64,66 +63,14 @@ class StatisticsSnippet:
             """)
 
     # noinspection PyPep8
-    AS_TAILER_LOC = textwrap.dedent("""\
+    AS_TAILER = textwrap.dedent("""\
+
             ###################
             # Autosubmit tailer
             ###################
 
-            set -x
-            job_end_time=$(date +%s)
-            job_run_time=$((job_end_time - job_start_time))
-            errfile_ptrn="\.e"
-
-            failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
-            failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
-            failed_jobs_rt=0
-
-            for failed_errfile in $failed_errfiles; do
-                failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
-            done
-            echo "$job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
+            echo $(date +%s) >> ${job_name_ptrn}_STAT
+            touch ${job_name_ptrn}_COMPLETED
             exit 0
             """)
 
-    AS_HEADER_REM = textwrap.dedent("""\
-
-            ###################
-            # Autosubmit header
-            ###################
-
-            set -x
-            job_name_ptrn=%CURRENT_ROOTDIR%/LOG_%EXPID%/%JOBNAME%
-            job_cmd_stamp=$(stat -c %Z $job_name_ptrn.cmd)
-            job_start_time=$(date +%s)
-
-            rm -f ${job_name_ptrn}_COMPLETED
-
-            ###################
-            # Autosubmit job
-            ###################
-
-            """)
-
-    # noinspection PyPep8
-    AS_TAILER_REM = textwrap.dedent("""\
-            ###################
-            # Autosubmit tailer
-            ###################
-
-            set -x
-            job_end_time=$(date +%s)
-            job_run_time=$((job_end_time - job_start_time))
-            errfile_ptrn="\.e"
-
-            failed_jobs=$(($(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | wc -l) - 1))
-            failed_errfiles=$(ls -1 ${job_name_ptrn}* | grep $errfile_ptrn | head -n $failed_jobs)
-            failed_jobs_rt=0
-
-            for failed_errfile in $failed_errfiles; do
-                failed_errfile_stamp=$(stat -c %Z $failed_errfile)
-                failed_jobs_rt=$((failed_jobs_rt + $((failed_errfile_stamp - $(grep "job_start_time=" $failed_errfile | head -n 2 | tail -n 1 | cut -d '=' -f 2)))))
-            done
-            echo "$job_end_time 0 $job_run_time $failed_jobs 0 $failed_jobs_rt" > ${job_name_ptrn}_COMPLETED
-            exit 0
-            """)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2014 Climate Forecasting Unit, IC3
+# Copyright 2015 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,20 +16,31 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-from ConfigParser import SafeConfigParser
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 import os
 from pyparsing import nestedExpr
 import re
-from commands import getstatusoutput
+import subprocess
+
+from pyparsing import nestedExpr
 
 from autosubmit.date.chunk_date_lib import parse_date
-
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 
 class AutosubmitConfig:
-    """Class to handle experiment configuration coming from file or database"""
+    """
+    Class to handle experiment configuration coming from file or database
+
+    :param expid: experiment identifier
+    :type expid: str
+    """
 
     def __init__(self, expid):
         self.expid = expid
@@ -78,6 +89,13 @@ class AutosubmitConfig:
         """
         return self._proj_parser_file
 
+    @property
+    def jobs_file(self):
+        """
+        Returns project's jobs file name
+        """
+        return self._jobs_parser_file
+
     def get_project_dir(self):
         """
         Returns experiment's project directory
@@ -93,13 +111,13 @@ class AutosubmitConfig:
         return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1)
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
 
     def check_conf_files(self):
         """
@@ -129,6 +147,8 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
+
+        self._conf_parser.read(self._conf_parser_file)
         result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
@@ -189,6 +209,8 @@ class AutosubmitConfig:
         result = True
         parser = self._jobs_parser
         sections = parser.sections()
+        platforms = self._platforms_parser.sections()
+        platforms.append('LOCAL')
         if len(sections) == 0:
             Log.warning("No remote platforms configured")
 
@@ -198,6 +220,10 @@ class AutosubmitConfig:
         for section in sections:
             result = result and AutosubmitConfig.check_exists(parser, section, 'FILE')
             result = result and AutosubmitConfig.check_is_boolean(parser, section, 'RERUN_ONLY', False)
+
+            if parser.has_option(section, 'PLATFORM'):
+                result = result and AutosubmitConfig.check_is_choice(parser, section, 'PLATFORM', False, platforms)
+
             if parser.has_option(section, 'DEPENDENCIES'):
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
@@ -354,38 +380,11 @@ class AutosubmitConfig:
         :type: list
         """
         Log.info(title)
-        Log.info("----------------------")
-        Log.info("{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15))
-        for i in parameters:
-            Log.info("{0:<{col1}}| {1:<{col2}}".format(i[0], i[1], col1=15, col2=15))
+        Log.info("---------------------------------------")
+        Log.info("{0:<{col1}}| {1:<{col2}}".format("  -- Parameter --", "  -- Value --", col1=20, col2=20))
+        for key in parameters:
+            Log.info("{0:<{col1}}| {1:<{col2}}".format(key, parameters[key], col1=20, col2=20))
         Log.info("")
-
-    def check_parameters(self):
-        """
-        Function to check configuration of Autosubmit.
-
-        :return: True if all variables are set. If some parameter do not exist, the function returns False.
-        :rtype: bool
-        """
-        result = True
-
-        for section in self._conf_parser.sections():
-            self.print_parameters("AUTOSUBMIT PARAMETERS - " + section, self._conf_parser.items(section))
-            if "" in [item[1] for item in self._conf_parser.items(section)]:
-                result = False
-        for section in self._exp_parser.sections():
-            self.print_parameters("EXPERIMENT PARAMETERS - " + section, self._exp_parser.items(section))
-            if "" in [item[1] for item in self._exp_parser.items(section)]:
-                result = False
-
-        project_type = self.get_project_type()
-        if project_type != "none" and self._proj_parser is not None:
-            for section in self._proj_parser.sections():
-                self.print_parameters("PROJECT PARAMETERS - " + section, self._proj_parser.items(section))
-                if "" in [item[1] for item in self._proj_parser.items(section)]:
-                    result = False
-
-        return result
 
     def get_expid(self):
         """
@@ -404,15 +403,15 @@ class AutosubmitConfig:
         :type exp_id: str
         """
         # Experiment conf
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('EXPID =.*', content):
             content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
         """
@@ -432,6 +431,15 @@ class AutosubmitConfig:
         """
         return self._exp_parser.get('project_files', 'FILE_PROJECT_CONF')
 
+    def get_file_jobs_conf(self):
+        """
+        Returns path to project config file from experiment config file
+
+        :return: path to project config file
+        :rtype: str
+        """
+        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
+
     def get_git_project_origin(self):
         """
         Returns git origin from experiment config file
@@ -439,7 +447,7 @@ class AutosubmitConfig:
         :return: git origin
         :rtype: str
         """
-        return self._exp_parser.get('git', 'PROJECT_ORIGIN')
+        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_ORIGIN', '')
 
     def get_git_project_branch(self):
         """
@@ -483,31 +491,32 @@ class AutosubmitConfig:
         :type as_conf: AutosubmitConfig
         """
         full_project_path = as_conf.get_project_dir()
-        (status, output) = getstatusoutput("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path))
-        if status == 0:
-            project_branch = output
-            Log.debug("Project branch is: " + project_branch)
-
-            (status, output) = getstatusoutput("cd {0}; git rev-parse HEAD".format(full_project_path))
-            if status == 0:
-                project_sha = output
-                Log.debug("Project commit SHA is: " + project_sha)
-            else:
-                Log.critical("Failed to retrieve project commit SHA...")
-                return False
-        else:
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
+                                             shell=True)
+        except subprocess.CalledProcessError:
             Log.critical("Failed to retrieve project branch...")
             return False
 
+        project_branch = output
+        Log.debug("Project branch is: " + project_branch)
+        try:
+            output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
+        except subprocess.CalledProcessError:
+            Log.critical("Failed to retrieve project commit SHA...")
+            return False
+        project_sha = output
+        Log.debug("Project commit SHA is: " + project_sha)
+
         # register changes
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('PROJECT_BRANCH =.*', content):
             content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
                                       "PROJECT_BRANCH = " + project_branch)
         if re.search('PROJECT_COMMIT =.*', content):
             content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                       "PROJECT_COMMIT = " + project_sha)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
         Log.debug("Project commit SHA succesfully registered to the configuration file.")
         return True
 
@@ -616,7 +625,7 @@ class AutosubmitConfig:
         :return: main platforms
         :rtype: str
         """
-        return self._exp_parser.get('experiment', 'HPCARCH').lower()
+        return self._exp_parser.get('experiment', 'HPCARCH')
 
     def set_platform(self, hpc):
         """
@@ -625,10 +634,10 @@ class AutosubmitConfig:
         :param hpc: main platforms
         :type: str
         """
-        content = file(self._exp_parser_file).read()
+        content = open(self._exp_parser_file).read()
         if re.search('HPCARCH =.*', content):
             content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
-        file(self._exp_parser_file, 'w').write(content)
+        open(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
         """
@@ -637,11 +646,11 @@ class AutosubmitConfig:
         :param autosubmit_version: autosubmit's version
         :type autosubmit_version: str
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         if re.search('AUTOSUBMIT_VERSION =.*', content):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_total_jobs(self):
         """
@@ -677,10 +686,10 @@ class AutosubmitConfig:
         :param sleep_time: value to set
         :type sleep_time: int
         """
-        content = file(self._conf_parser_file).read()
+        content = open(self._conf_parser_file).read()
         content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
                                   "SAFETYSLEEPTIME = %d" % sleep_time)
-        file(self._conf_parser_file, 'w').write(content)
+        open(self._conf_parser_file, 'w').write(content)
 
     def get_retrials(self):
         """
@@ -813,7 +822,7 @@ class AutosubmitConfig:
         if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
             return False
         value = AutosubmitConfig.get_option(parser, section, option, choices[0])
-        if value.lower() not in choices:
+        if value not in choices:
             Log.error('Value {2} in option {0} in section {1} is not a valid choice'.format(option, section, value))
             return False
         return True
