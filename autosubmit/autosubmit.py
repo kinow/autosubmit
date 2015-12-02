@@ -883,9 +883,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name.lower()])
 
         for platform in platforms_to_test:
             platform.connect()
@@ -901,7 +901,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
 
             if job.get_platform().get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
