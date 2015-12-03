@@ -550,9 +550,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name.lower()])
+            job.set_platform(submitter.platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name.lower()])
+            platforms_to_test.add(job.get_platform())
 
         joblist.check_scripts(as_conf)
 
@@ -572,21 +572,17 @@ class Autosubmit:
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
             Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
-                                                                  strftime("%H:%M")))
+                                                                  time.strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             default_retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", default_retrials)
 
-            total_jobs = len(joblist.get_job_list())
-            Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs-len(joblist.get_completed()), total_jobs,
-                                                                  time.strftime("%H:%M")))
-
             for platform in platforms_to_test:
                 for job in joblist.get_in_queue(platform):
                     job.update_status(platform.check_job(job.id))
 
-            joblist.update_list(True)
+            joblist.update_list(as_conf, True)
             if Autosubmit.exit:
                 return 2
 

@@ -1,6 +1,9 @@
 import saga
 import os
 from commands import getstatusoutput
+
+from autosubmit.config.log import Log
+
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 
@@ -89,8 +92,8 @@ class Platform:
     def send_file(self, filename):
         if self.type == 'ecaccess':
             getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self.root_dir))
-            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self._get_files_path()))
-            destiny_path = os.path.join(self._get_files_path(), filename)
+            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self.get_files_path()))
+            destiny_path = os.path.join(self.get_files_path(), filename)
             (status, output) = getstatusoutput('ecaccess-file-put {0} {1}:{2}'.format(os.path.join(self.tmp_path,
                                                                                                    filename),
                                                                                           self.host,
@@ -100,14 +103,15 @@ class Platform:
                 return
             else:
                 raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
-                                                                          self.host, self._get_files_path()))
+                                                                          self.host, self.get_files_path()))
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
         if self.type == 'local':
             out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename,)),
                      saga.filesystem.CREATE_PARENTS)
         else:
-            workdir = self.get_workdir(self._get_files_path())
+            workdir = self.get_workdir(self.get_files_path())
             out.copy(workdir.get_url())
+        del out
 
     def get_workdir(self, path):
         if not path:
@@ -126,22 +130,23 @@ class Platform:
 
     def get_file(self, filename, must_exist=True):
         if self.type == 'ecaccess':
-            get_command = 'ecaccess-file-get {0}:{1} {2}'.format(self.host, os.path.join(self._get_files_path(), filename),
+            get_command = 'ecaccess-file-get {0}:{1} {2}'.format(self.host, os.path.join(self.get_files_path(), filename),
                                                                  os.path.join(self.tmp_path, filename))
             (status, output) = getstatusoutput(get_command)
             if status == 0:
                 return
             elif must_exist:
                 raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
-                                                                           self.host, self._get_files_path()))
+                                                                           self.host, self.get_files_path()))
         try:
             if self.type == 'local':
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
                                                                             filename)))
             else:
-                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self._get_files_path(),
+                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
                                                                                           filename)))
             out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
+            del out
         except saga.DoesNotExist as ex:
             if must_exist:
                 raise ex
@@ -149,7 +154,7 @@ class Platform:
     def get_completed_files(self, job_name):
         self.get_file('{0}_COMPLETED'.format(job_name), False)
 
-    def _get_files_path(self):
+    def get_files_path(self):
         if self.type == "local":
             path = os.path.join(self.root_dir, BasicConfig.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
@@ -165,8 +170,8 @@ class Platform:
         :rtype: saga.job.Job
         """
         jd = saga.job.Description()
-        jd.executable = os.path.join(self._get_files_path(), scriptname)
-        jd.working_directory = self._get_files_path()
+        jd.executable = os.path.join(self.get_files_path(), scriptname)
+        jd.working_directory = self.get_files_path()
         jd.output = "{0}.out".format(job.name)
         jd.error = "{0}.err".format(job.name)
         self.add_atribute(jd, 'Name', job.name)
@@ -195,7 +200,7 @@ class Platform:
         # noinspection PyBroadException
         try:
             saga_status = self.service.get_job(jobid).state
-        except Exception:
+        except Exception as e:
             # If SAGA can not get the job state, we change it to completed
             # It will change to FAILED if not COMPLETED file is present
             return default_status

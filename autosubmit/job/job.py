@@ -560,7 +560,7 @@ class Job:
 
         job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
-        parameters['CURRENT_HOST'] = job_platform.get_host()
+        parameters['CURRENT_HOST'] = job_platform.host
         parameters['CURRENT_QUEUE'] = self.get_queue()
         parameters['CURRENT_USER'] = job_platform.user
         parameters['CURRENT_PROJ'] = job_platform.project
@@ -568,7 +568,7 @@ class Job:
         parameters['CURRENT_TYPE'] = job_platform.type
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
-        parameters['CURRENT_LOGDIR'] = job_platform.remote_log_dir
+        parameters['CURRENT_LOGDIR'] = job_platform.get_files_path()
 
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
@@ -592,8 +592,7 @@ class Job:
         else:
             template = 'sleep 5'
         current_platform = self.get_platform()
-        template_content = ''.join([current_platform.get_header(self),
-                                   StatisticsSnippet.AS_HEADER,
+        template_content = ''.join([StatisticsSnippet.AS_HEADER,
                                    template,
                                    StatisticsSnippet.AS_TAILER])
 
