@@ -118,6 +118,22 @@ class SlurmHeader:
         else:
             return "SBATCH --qos {0}".format(job.parameters['CURRENT_QUEUE'])
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_memory_directive(self, job):
+        """
+        Returns memory directive for the specified job
+
+        :param job: job to create memory directibve for
+        :type job: Job
+        :return: memory directive
+        :rtype: str
+        """
+        # There is no memory requirement, so directive is empty
+        if job.parameters['MEMORY'] == '':
+            return ""
+        else:
+            return "SBATCH --mem={0}".format(job.parameters['MEMORY'])
+
     SERIAL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
@@ -130,6 +146,7 @@ class SlurmHeader:
             #SBATCH -J %JOBNAME%
             #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
             #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
+            #%MEMORY_DIRECTIVE%
             #
             ###############################################################################
            """)
@@ -146,6 +163,7 @@ class SlurmHeader:
             #SBATCH -J %JOBNAME%
             #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
             #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
+            #%MEMORY_DIRECTIVE%
             #
             ###############################################################################
             """)

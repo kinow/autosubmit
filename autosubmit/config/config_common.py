@@ -116,6 +116,9 @@ class AutosubmitConfig:
     def get_tasks(self, section):
         return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
 
+    def get_memory(self, section):
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', 1))
+
     def check_conf_files(self):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing

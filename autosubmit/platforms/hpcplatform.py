@@ -548,6 +548,7 @@ class HPCPlatform:
             header = self.header.SERIAL
 
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        header = header.replace('%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
         return header
 
     def get_checkjob_cmd(self, job_id):

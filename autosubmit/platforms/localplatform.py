@@ -135,6 +135,19 @@ class LocalHeader:
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_memory_directive(self, job):
+        """
+        Returns queue directive for the specified job
+
+        :param job: job to create memory directibve for
+        :type job: Job
+        :return: memory directive
+        :rtype: str
+        """
+        # There is no memory requirements support, so directive is empty
+        return ""
+
     SERIAL = textwrap.dedent("""\
             #!/bin/bash
             ###############################################################################
