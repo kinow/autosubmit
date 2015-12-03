@@ -181,7 +181,7 @@ class Monitor:
             return
         Log.result('Plot created at {0}', output_file)
 
-    def generate_output_stats(self, expid, joblist, output_format="pdf"):
+    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None):
         """
         Plots stats for joblist and stores it in a file
 
@@ -191,17 +191,21 @@ class Monitor:
         :type joblist: JobList
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
+        :param period_ini: initial datetime of filtered period
+        :type period_ini: datetime
+        :param period_fi: final datetime of filtered period
+        :type period_fi: datetime
         """
         Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
-        self.create_bar_diagram(expid, joblist, output_file)
+        self.create_bar_diagram(expid, joblist, output_file, period_ini, period_fi)
         Log.result('Stats created at {0}', output_file)
 
     @staticmethod
-    def create_bar_diagram(expid, joblist, output_file):
+    def create_bar_diagram(expid, joblist, output_file, period_ini=None, period_fi=None):
         """
         Function to plot statistics
 
@@ -211,6 +215,10 @@ class Monitor:
         :type joblist: JobList
         :param output_file: path to create file
         :type output_file: str
+        :param period_ini: initial datetime of filtered period
+        :type period_ini: datetime
+        :param period_fi: final datetime of filtered period
+        :type period_fi: datetime
         """
 
         def autolabel(rects):
@@ -230,11 +238,11 @@ class Monitor:
 
         total_jobs_submitted = 0
         total_consumption = 0
-        total_jobs_running = 0
+        total_jobs_run = 0
         total_jobs_failed = 0
         total_jobs_completed = 0
-        expected_consumption = 0
-        percentage_consumption = 0
+        expected_total_consumption = 0
+        expected_real_consumption = 0
         threshold = 0
         for job in joblist:
             total_jobs_submitted += len(job.check_retrials_submit_time())
@@ -244,7 +252,8 @@ class Monitor:
             else:
                 hours = 0
             threshold = max(threshold, hours)
-            expected_consumption += hours
+            expected_total_consumption += hours * int(job.processors)
+            expected_real_consumption += hours
         # These are constants, so they need to be CAPS. Suppress PyCharm warning
         # noinspection PyPep8Naming
         MAX = 12.0
@@ -257,9 +266,9 @@ class Monitor:
 
         plt.close('all')
 
-        RATIO = 3
+        RATIO = 4
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
-        gs = gridspec.GridSpec(RATIO * num_plots + 1, 1)
+        gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
         fig.suptitle('STATS - ' + expid, size=20)
         ax0 = fig.add_subplot(gs[0, 0])
         ax0.set_frame_on(False)
@@ -268,7 +277,7 @@ class Monitor:
 
         ax = []
         for plot in range(1, num_plots + 1):
-            ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 1:RATIO * plot]))
+            ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
 
@@ -277,6 +286,8 @@ class Monitor:
             failed_jobs = [0] * (l2 - l1)
             fail_queued = [0] * (l2 - l1)
             fail_run = [0] * (l2 - l1)
+            total_consumption = 0
+            real_consumption = 0
 
             for i, job in enumerate(joblist[l1:l2]):
                 submit_times = job.check_retrials_submit_time()
@@ -291,14 +302,17 @@ class Monitor:
                     elif j == (len(submit_times) - 1) and job.status == Status.COMPLETED:
                         queued[i] += float(start_times[j] - submit_times[j]) / 3600
                         run[i] += float(end_times[j] - start_times[j]) / 3600
+                        total_consumption += run[i] * int(job.processors)
+                        real_consumption += run[i]
                     else:
                         failed_jobs[i] += 1
                         fail_queued[i] += float(start_times[j] - submit_times[j]) / 3600
                         fail_run[i] += float(end_times[j] - start_times[j]) / 3600
-                total_jobs_running += len(submit_times) - failed_jobs[i]
+                        total_consumption += fail_run[i] * int(job.processors)
+                        real_consumption += fail_run[i]
+                total_jobs_run += len(start_times)
                 total_jobs_failed += failed_jobs[i]
                 total_jobs_completed += len(end_times) - failed_jobs[i]
-            total_consumption += sum(run) + sum(fail_run)
             max_time = float(max(max(max(run, fail_run, queued, fail_queued)), threshold))
             min_time = 0
 
@@ -325,20 +339,25 @@ class Monitor:
 
         plt.gca().add_artist(first_legend)
 
-        percentage_consumption = total_consumption / expected_consumption * 100
+        percentage_consumption = total_consumption / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
-        ax0.legend([white, white, white, white, white, white, white],
-                   ['Submitted (#): ' + str(total_jobs_submitted),
-                    'Running  (#): ' + str(total_jobs_running),
-                    'Failed  (#): ' + str(total_jobs_failed),
-                    'Completed (#): ' + str(total_jobs_completed),
-                    'Expected consumption (h): ' + str(expected_consumption),
-                    'Consumption (h): ' + str(total_consumption),
-                    'Consumption (%): ' + str(percentage_consumption)],
+        totals = ['Period: ' + str(period_ini) + " ~ " + str(period_fi),
+                  'Submitted (#): ' + str(total_jobs_submitted),
+                  'Run  (#): ' + str(total_jobs_run),
+                  'Failed  (#): ' + str(total_jobs_failed),
+                  'Completed (#): ' + str(total_jobs_completed),
+                  'Expected consumption real (h): ' + str(round(expected_real_consumption, 2)),
+                  'Expected consumption CPU time (h): ' + str(round(expected_total_consumption, 2)),
+                  'Consumption real (h): ' + str(round(real_consumption, 2)),
+                  'Consumption CPU time (h): ' + str(round(total_consumption, 2)),
+                  'Consumption (%): ' + str(round(percentage_consumption, 2))]
+        Log.result('\n'.join(totals))
+        ax0.legend([white, white, white, white, white, white, white, white, white, white],
+                   totals,
                    handlelength=0,
                    loc="upper left")
 
-        gs.tight_layout(fig)
+        gs.tight_layout(fig, rect=[0, 0.03, 1, 0.97])  # adjust rect parameter while leaving some room for suptitle.
         #plt.show()
         plt.savefig(output_file)
 
