@@ -184,6 +184,8 @@ class Platform:
         self.add_atribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_atribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
+        self.add_atribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])
+
         saga_job = self.service.create_job(jd)
         return saga_job
 

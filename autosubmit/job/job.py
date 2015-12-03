@@ -63,6 +63,7 @@ class Job:
         self.chunk = None
         self.member = None
         self.date = None
+        self.memory = None
         self.name = name
         self._long_name = None
         self.long_name = name
@@ -550,6 +551,7 @@ class Job:
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
+        self.memory = as_conf.get_memory(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
 
         parameters['NUMPROC'] = self.processors
@@ -557,6 +559,7 @@ class Job:
         parameters['NUMTASK'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
+        parameters['MEMORY'] = self.memory
 
         job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
