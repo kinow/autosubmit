@@ -690,3 +690,9 @@ class Job:
             return True
         else:
             return False
+
+    def check_running_after(self, date_limit):
+        if any(parse_date(str(date_end)) > date_limit for date_end in self.check_retrials_end_time()):
+            return True
+        else:
+            return False

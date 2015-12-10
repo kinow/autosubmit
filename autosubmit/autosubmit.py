@@ -694,18 +694,21 @@ class Autosubmit:
             ft = 'Any'
             jobs = jobs.get_job_list()
 
+        period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
         if filter_period:
-            fp = datetime.datetime.now() - datetime.timedelta(hours=filter_period)
-            Log.debug(str(fp))
-            jobs = [job for job in jobs if job.check_started_after(fp)]
+            period_ini = period_fi - datetime.timedelta(hours=filter_period)
+            Log.debug(str(period_ini))
+            jobs = [job for job in jobs if job.check_started_after(period_ini) or job.check_running_after(period_ini)]
+        else:
+            period_ini = None
 
         if len(jobs) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output_stats(expid, jobs, file_format)
+            monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi)
             Log.result("Stats plot ready")
         else:
-            Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, fp, datetime.datetime.now()))
+            Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, period_ini, period_fi))
         return True
 
     @staticmethod
@@ -796,9 +799,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name.lower()])
 
         for platform in platforms_to_test:
             platform.connect()
@@ -814,7 +817,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
 
             if job.get_platform().get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
