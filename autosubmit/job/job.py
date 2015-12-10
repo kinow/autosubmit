@@ -453,6 +453,8 @@ class Job:
             Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
             self.get_platform().get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
+            if self.status == Status.UNKNOWN:
+                Log.warning('Job {0} in UNKNOWN status', self.name)
         elif self.status is Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)

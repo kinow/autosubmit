@@ -99,10 +99,12 @@ def _mn_to_saga_jobstate(mnjs):
         return saga.job.PENDING
     elif mnjs in ['DONE']:
         return saga.job.DONE
-    elif mnjs in ['UNKNOWN', 'ZOMBI', 'EXIT']:
+    elif mnjs in ['ZOMBI', 'EXIT']:
         return saga.job.FAILED
     elif mnjs in ['USUSP', 'SSUSP', 'PSUSP']:
         return saga.job.SUSPENDED
+    elif mnjs in ['UNKNOWN']:
+        return saga.job.UNKNOWN
     else:
         return saga.job.UNKNOWN
 
@@ -564,7 +566,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         rm, pid = self._adaptor.parse_id(job_id)
 
         ret, out, _ = self.shell.run_sync(
-            "%s -noheader -o 'stat exec_host exit_code submit_time start_time finish_time delimiter=\",\"' %s" % ('bjobs', pid))
+            "%s -noheader %s" % ('bjobs', pid))
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
@@ -582,14 +584,14 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                 'gone': False
             }
 
-            results = out.split(',')
-            job_info['state'] = _mn_to_saga_jobstate(results[0])
-            job_info['exec_hosts'] = results[1]
-            if results[2] != '-':
-                job_info['returncode'] = int(results[2])
-            job_info['create_time'] = results[3]
-            job_info['start_time'] = results[4]
-            job_info['end_time'] = results[5]
+            results = out.split()
+            job_info['state'] = _mn_to_saga_jobstate(results[2])
+            job_info['exec_hosts'] = results[5]
+            # if results[2] != '-':
+            #     job_info['returncode'] = int(results[2])
+            job_info['create_time'] = results[7]
+            # job_info['start_time'] = results[4]
+            # job_info['end_time'] = results[5]
 
             return job_info
 
@@ -638,15 +640,24 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         ret, out, _ = self.shell.run_sync("%s -noheader %s" % ('bjobs', pid))
 
-        if ret != 0:
-            if "Illegal job ID" in out:
+        if ret == 0:
+
+
+            # parse the result
+            results = out.split()
+            curr_info['state'] = _mn_to_saga_jobstate(results[2])
+            curr_info['exec_hosts'] = results[5]
+        else:
+            if "Illegal job ID" in out or "is not found" in out:
                 # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning(
-                    "Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("Previously running job has disappeared." +
+                                     "This probably means that the backend doesn't " +
+                                     "store informations about finished jobs." +
+                                     "Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE
@@ -656,11 +667,6 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                 # something went wrong
                 message = "Error retrieving job info via 'bjobs': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
-        else:
-            # parse the result
-            results = out.split()
-            curr_info['state'] = _mn_to_saga_jobstate(results[2])
-            curr_info['exec_hosts'] = results[5]
 
         # return the new job info dict
         return curr_info
