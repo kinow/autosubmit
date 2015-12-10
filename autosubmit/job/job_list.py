@@ -888,6 +888,7 @@ class DicJobs:
         job.processors = self.get_option(section, "PROCESSORS", 1)
         job.threads = self.get_option(section, "THREADS", 1)
         job.tasks = self.get_option(section, "TASKS", 1)
+        job.memory = self.get_option(section, "MEMORY", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         job.max_retrials = self.get_option(section, 'RETRIALS', self.default_retrials)
         self._joblist.get_job_list().append(job)

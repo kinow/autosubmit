@@ -60,6 +60,7 @@ class Job:
         self.tasks = None
         self.threads = None
         self.processors = None
+        self.memory = None
         self.chunk = None
         self.member = None
         self.date = None
@@ -557,6 +558,7 @@ class Job:
         self.wallclock = as_conf.get_wallclock(self.section)
 
         parameters['NUMPROC'] = self.processors
+        parameters['MEMORY'] = self.memory
         parameters['NUMTHREADS'] = self.threads
         parameters['NUMTASK'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
