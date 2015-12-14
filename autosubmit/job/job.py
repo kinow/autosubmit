@@ -23,7 +23,6 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 
 import os
 import re
-from time import sleep
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import StatisticsSnippet
@@ -598,7 +597,6 @@ class Job:
             template = template_file.read()
         else:
             template = 'sleep 5'
-        current_platform = self.get_platform()
         template_content = ''.join([StatisticsSnippet.AS_HEADER,
                                    template,
                                    StatisticsSnippet.AS_TAILER])
@@ -670,6 +668,7 @@ class Job:
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')
+        # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
         return True
 
@@ -680,6 +679,7 @@ class Job:
         f = open(path, 'a')
         f.write(' ')
         if time > 0:
+            # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
         else:
             f.write(date2str(datetime.datetime.now(), 'S'))

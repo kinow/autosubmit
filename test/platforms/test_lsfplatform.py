@@ -58,7 +58,6 @@ class PlatformsTests(TestCase):
         job_id = self.platform.submit_job(self.scriptname)
         self.assertNotEqual(job_id, 0)
 
-
-    #def test_send_script(self):
+    # def test_send_script(self):
     #    self.platform.connect()
     #    self.assertTrue(self.platform.send_script(self.scriptname))

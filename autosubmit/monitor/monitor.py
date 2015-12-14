@@ -266,6 +266,7 @@ class Monitor:
 
         plt.close('all')
 
+        # noinspection PyPep8Naming
         RATIO = 4
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
         gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
@@ -333,9 +334,10 @@ class Monitor:
             autolabel(rects5)
             plt.ylim((float(0.85 * min_time), float(1.15 * max_time)))
 
+        # noinspection PyUnboundLocalVariable
         first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]),
-                   ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
-                   loc="upper right")
+                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
+                                  loc="upper right")
 
         plt.gca().add_artist(first_legend)
 
@@ -358,7 +360,7 @@ class Monitor:
                    loc="upper left")
 
         gs.tight_layout(fig, rect=[0, 0.03, 1, 0.97])  # adjust rect parameter while leaving some room for suptitle.
-        #plt.show()
+        # plt.show()
         plt.savefig(output_file)
 
     @staticmethod

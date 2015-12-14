@@ -5,6 +5,7 @@ import re
 import os
 import time
 import threading
+import saga
 
 # noinspection PyPackageRequirements
 import radical.utils.threads as sut
@@ -14,6 +15,7 @@ import saga.adaptors.base
 import saga.adaptors.cpi.job
 import saga.adaptors.loadl.loadljob
 import saga.adaptors.pbs.pbsjob
+import saga.adaptors.cpi.decorators
 from autosubmit.config.basicConfig import BasicConfig
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
@@ -273,6 +275,10 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
         """ service instance constructor
+        :param session:
+        :type session: saga.Session
+        :param adaptor_state:
+        :param rm_url:
         """
         self.rm = rm_url
         self.session = session
@@ -324,7 +330,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             else:
                 header = self._generate_pbs_header(jd)
             self._logger.info("Generated ECMWF header: %s" % header)
-        except Exception, ex:
+        except Exception as ex:
             header = ''
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -347,7 +353,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
                       % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
-        cmdline = "ecaccess-job-submit -queueName {0} -jobName {1} -distant {0}:{2}".format(self.host, jd.name, jd.executable)
+        cmdline = "ecaccess-job-submit -queueName {0} -jobName {1} -distant {0}:{2}".format(self.host,
+                                                                                            jd.name, jd.executable)
         ret, out, _ = self.shell.run_sync(cmdline)
         if ret != 0:
             # something went wrong
@@ -380,7 +387,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             # return the job id
             return job_id
 
-    def _generate_ll_header(self, jd):
+    @staticmethod
+    def _generate_ll_header(jd):
         """
         generates a IMB LoadLeveler script from a SAGA job description
         :param jd: job descriptor
@@ -428,16 +436,16 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         # finally, we 'queue' the job
         loadl_params += "#@ queue\n"
 
-        loadlscript = "\n%s" % (loadl_params)
+        loadlscript = "\n%s" % loadl_params
 
         return loadlscript.replace('"', '\\"')
 
-    def _generate_pbs_header(self, jd):
+    @staticmethod
+    def _generate_pbs_header(jd):
         """ generates a PBS script from a SAGA job description
         """
         pbs_params = str()
-        exec_n_args = str()
- 
+
         if jd.name:
             pbs_params += "#PBS -N %s \n" % jd.name
 
@@ -564,8 +572,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
                 # or FAILED. the only thing we can do is set it to 'DONE'
                 curr_info['gone'] = True
                 # we can also set the end time
-                self._logger.warning(
-                    "Previously running job has disappeared. This probably means that the backend doesn't store informations about finished jobs. Setting state to 'DONE'.")
+                self._logger.warning("Previously running job has disappeared. This probably means that the backend " +
+                                     "doesn't store informations about finished jobs. Setting state to 'DONE'.")
 
                 if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
                     curr_info['state'] = saga.job.DONE

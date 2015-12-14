@@ -14,6 +14,8 @@ import saga.url as surl
 import saga.utils.pty_shell
 import saga.adaptors.base
 import saga.adaptors.cpi.job
+import saga
+import saga.adaptors.cpi.decorators
 
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
@@ -391,7 +393,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             # noinspection PyDeprecation
-            for key, val in parse_qs(rm_url.query).iteritems():
+            for key, val in parse_qs(rm_url.query).items():
                 if key == 'queue':
                     self.queue = val[0]
 
@@ -498,7 +500,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                                          )
 
             self._logger.info("Generated LSF script: %s" % script)
-        except Exception, ex:
+        except Exception as ex:
             script = ''
             log_error_and_raise(str(ex), saga.BadParameter, self._logger)
 
@@ -517,6 +519,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         # (1) we create a temporary file with 'mktemp' and write the contents of
         #     the generated PBS script into it
         # (2) we call 'qsub <tmpfile>' to submit the script to the queueing system
+        # noinspection PyPep8
         cmdline = """SCRIPTFILE=`mktemp -t SAGA-Python-LSFJobScript.XXXXXX` && echo "%s" > $SCRIPTFILE && %s < $SCRIPTFILE && rm -f $SCRIPTFILE""" % (script, 'bsub')
         ret, out, _ = self.shell.run_sync(cmdline)
 
@@ -641,8 +644,6 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         ret, out, _ = self.shell.run_sync("%s -noheader %s" % ('bjobs', pid))
 
         if ret == 0:
-
-
             # parse the result
             results = out.split()
             curr_info['state'] = _mn_to_saga_jobstate(results[2])

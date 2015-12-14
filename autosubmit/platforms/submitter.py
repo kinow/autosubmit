@@ -18,7 +18,6 @@
 # along with Autosubmit.  If not, see <http: www.gnu.org / licenses / >.
 
 
-import sys
 import saga
 import os
 from autosubmit.config.config_common import AutosubmitConfig

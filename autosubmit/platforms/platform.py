@@ -1,14 +1,14 @@
+import subprocess
+
 import saga
 import os
-from commands import getstatusoutput
-
-from autosubmit.config.log import Log
 
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
+# noinspection PyPackageRequirements
+from config.log import Log
 
 
-# noinspection PyProtectedMember
 class Platform:
     def __init__(self, expid, name):
         """
@@ -91,17 +91,15 @@ class Platform:
 
     def send_file(self, filename):
         if self.type == 'ecaccess':
-            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self.root_dir))
-            getstatusoutput('ecaccess-file-mkdir {0}:{1}'.format(self.host, self.get_files_path()))
-            destiny_path = os.path.join(self.get_files_path(), filename)
-            (status, output) = getstatusoutput('ecaccess-file-put {0} {1}:{2}'.format(os.path.join(self.tmp_path,
-                                                                                                   filename),
-                                                                                          self.host,
-                                                                                      destiny_path))
-            if status == 0:
-                getstatusoutput('ecaccess-file-chmod 740 {0}:{1}'.format(self.host, destiny_path))
+            try:
+                subprocess.check_call(['ecaccess-file-mkdir', '{0}:{1}'.format(self.host, self.root_dir)])
+                subprocess.check_call(['ecaccess-file-mkdir', '{0}:{1}'.format(self.host, self.get_files_path())])
+                destiny_path = os.path.join(self.get_files_path(), filename)
+                subprocess.check_call(['ecaccess-file-put', os.path.join(self.tmp_path, filename),
+                                       '{0}:{1}'.format(self.host, destiny_path)])
+                subprocess.check_call(['ecaccess-file-chmod', '740', '{0}:{1}'.format(self.host, destiny_path)])
                 return
-            else:
+            except subprocess.CalledProcessError:
                 raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                           self.host, self.get_files_path()))
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
@@ -130,14 +128,16 @@ class Platform:
 
     def get_file(self, filename, must_exist=True):
         if self.type == 'ecaccess':
-            get_command = 'ecaccess-file-get {0}:{1} {2}'.format(self.host, os.path.join(self.get_files_path(), filename),
-                                                                 os.path.join(self.tmp_path, filename))
-            (status, output) = getstatusoutput(get_command)
-            if status == 0:
+            try:
+                subprocess.check_call(['ecaccess-file-get', '{0}:{1}'.format(self.host,
+                                                                             os.path.join(self.get_files_path(),
+                                                                                          filename)),
+                                       os.path.join(self.tmp_path, filename)])
                 return
-            elif must_exist:
-                raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
-                                                                           self.host, self.get_files_path()))
+            except subprocess.CalledProcessError:
+                if must_exist:
+                    raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
+                                                                               self.host, self.get_files_path()))
         try:
             if self.type == 'local':
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
@@ -175,7 +175,14 @@ class Platform:
         jd.output = "{0}.out".format(job.name)
         jd.error = "{0}.err".format(job.name)
         self.add_atribute(jd, 'Name', job.name)
-        self.add_atribute(jd, 'WallTimeLimit', 5)
+
+        wallclock = job.parameters["WALLCLOCK"]
+        if wallclock == '':
+            wallclock = 0
+        else:
+            wallclock = wallclock.split(':')
+            wallclock = int(wallclock[0]) * 60 + int(wallclock[1])
+        self.add_atribute(jd, 'WallTimeLimit', wallclock)
 
         self.add_atribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
         self.add_atribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
@@ -191,6 +198,7 @@ class Platform:
 
     def add_atribute(self, jd, name, value):
         if self._attributes is None:
+            # noinspection PyProtectedMember
             self._attributes = self.service._adaptor._adaptor._info['capabilities']['jdes_attributes']
         if name not in self._attributes or not value:
             return
@@ -205,6 +213,7 @@ class Platform:
         except Exception as e:
             # If SAGA can not get the job state, we change it to completed
             # It will change to FAILED if not COMPLETED file is present
+            Log.debug('Can not get job state: {0}', e)
             return default_status
 
         if saga_status == saga.job.UNKNOWN:

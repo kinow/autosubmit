@@ -23,7 +23,6 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 import os
-from pyparsing import nestedExpr
 import re
 import subprocess
 

@@ -50,7 +50,7 @@ from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
 
-# noinspection PyPep8
+# noinspection PyPackageRequirements
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
@@ -705,6 +705,7 @@ class Autosubmit:
         if len(jobs) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
+            # noinspection PyTypeChecker
             monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi)
             Log.result("Stats plot ready")
         else:
@@ -829,7 +830,7 @@ class Autosubmit:
 
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
-        job_list.update_list(as_conf,False)
+        job_list.update_list(as_conf, False)
         job_list.update_from_file(False)
 
         if save:
