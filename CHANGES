@@ -1,3 +1,7 @@
+3.2.0
+    Now using SAGA for connection and queue management, adding support for more queue types
+    Stats revamped to provide more information and make it available earlier.
+
 3.1.9
 	Hot fix LOCAL platform
 
