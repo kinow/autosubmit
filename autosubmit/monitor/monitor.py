@@ -238,6 +238,7 @@ class Monitor:
 
         total_jobs_submitted = 0
         total_consumption = 0
+        real_consumption = 0
         total_jobs_run = 0
         total_jobs_failed = 0
         total_jobs_completed = 0
@@ -287,8 +288,6 @@ class Monitor:
             failed_jobs = [0] * (l2 - l1)
             fail_queued = [0] * (l2 - l1)
             fail_run = [0] * (l2 - l1)
-            total_consumption = 0
-            real_consumption = 0
 
             for i, job in enumerate(joblist[l1:l2]):
                 submit_times = job.check_retrials_submit_time()

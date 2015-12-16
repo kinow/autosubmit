@@ -84,7 +84,12 @@ class _job_state_monitor(threading.Thread):
 # --------------------------------------------------------------------
 #
 def log_error_and_raise(message, exception, logger):
-    """ loggs an 'error' message and subsequently throws an exception
+    """
+    loggs an 'error' message and subsequently throws an exception
+
+    :param message: message to log
+    :param exception: exception to rise
+    :param logger: logger to use
     """
     logger.error(message)
     raise exception(message)
@@ -373,7 +378,12 @@ class MNJobService(saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def init_instance(self, adaptor_state, rm_url, session):
-        """ service instance constructor
+        """
+        service instance constructor
+
+        :param adaptor_state: state of the adaptor
+        :param rm_url: machine url
+        :param session: SAGA session to use
         """
         self.rm = rm_url
         self.session = session
@@ -764,7 +774,10 @@ class MNJobService(saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """
+        implements saga.adaptors.cpi.job.Service.get_url()
+
+        :param jd: job description
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -797,7 +810,11 @@ class MNJobService(saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements saga.adaptors.cpi.job.Service.get_job()
+        """
+        Implements saga.adaptors.cpi.job.Service.get_job()
+
+        :param jobid: job identifier
+        :type jobid: str
         """
 
         # try to get some information about this job
@@ -899,7 +916,11 @@ class MNJob(saga.adaptors.cpi.job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements saga.adaptors.cpi.job.Job.init_instance()
+        """
+        implements saga.adaptors.cpi.job.Job.init_instance()
+
+        :param job_info: job descriptiom
+        :type job_info: dict
         """
         # init_instance is called for every new saga.job.Job object
         # that is created
@@ -927,7 +948,11 @@ class MNJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.wait()
+        """
+        implements saga.adaptors.cpi.job.Job.wait()
+
+        :param timeout: time to wait
+        :type timeout: int
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -939,7 +964,11 @@ class MNJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """
+        implements saga.adaptors.cpi.job.Job.cancel()
+
+        :param timeout: time to wait
+        :type timeout: int
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",

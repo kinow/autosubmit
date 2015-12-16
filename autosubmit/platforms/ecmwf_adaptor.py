@@ -683,7 +683,10 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def create_job(self, jd):
-        """ implements saga.adaptors.cpi.job.Service.get_url()
+        """
+        implements saga.adaptors.cpi.job.Service.get_url()
+
+        :param jd: job description
         """
         # this dict is passed on to the job adaptor class -- use it to pass any
         # state information you need there.
@@ -716,7 +719,11 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
     #
     @SYNC_CALL
     def get_job(self, jobid):
-        """ Implements saga.adaptors.cpi.job.Service.get_job()
+        """
+        Implements saga.adaptors.cpi.job.Service.get_job()
+
+        :param jobid: job identifier
+        :type jobid: str
         """
 
         # try to get some information about this job
@@ -818,7 +825,11 @@ class ECMWFJob(saga.adaptors.cpi.job.Job):
 
     @SYNC_CALL
     def init_instance(self, job_info):
-        """ implements saga.adaptors.cpi.job.Job.init_instance()
+        """
+        implements saga.adaptors.cpi.job.Job.init_instance()
+
+        :param job_info: job descriptiom
+        :type job_info: dict
         """
         # init_instance is called for every new saga.job.Job object
         # that is created
@@ -846,7 +857,11 @@ class ECMWFJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def wait(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.wait()
+        """
+        implements saga.adaptors.cpi.job.Job.wait()
+
+        :param timeout: time to wait
+        :type timeout: int
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
@@ -858,7 +873,11 @@ class ECMWFJob(saga.adaptors.cpi.job.Job):
     #
     @SYNC_CALL
     def cancel(self, timeout):
-        """ implements saga.adaptors.cpi.job.Job.cancel()
+        """
+        implements saga.adaptors.cpi.job.Job.cancel()
+
+        :param timeout: time to wait
+        :type timeout: int
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
