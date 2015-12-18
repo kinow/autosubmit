@@ -119,7 +119,7 @@ class AutosubmitConfig:
         return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
 
     def get_memory(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', 1))
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', 0))
 
     def check_conf_files(self):
         """
