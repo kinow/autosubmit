@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2014 Climate Forecasting Unit, IC3
 
 # This file is part of Autosubmit.
 
@@ -32,7 +32,7 @@ setup(
     license='GNU GPL v3',
     platforms=['GNU/Linux Debian'],
     version=version,
-    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse'
+    description='Autosubmit: a versatile tool to manage Weather and Climate Experiments in diverse '
                 'Supercomputing Environments',
     author='Domingo Manubens-Gil',
     author_email='domingo.manubens@bsc.es',
@@ -40,7 +40,7 @@ setup(
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
-                      'numpy', 'matplotlib', 'paramiko>=1.15', 'pycrypto'],
+                      'numpy', 'matplotlib', 'saga-python>=0.39'],
     packages=find_packages(),
     include_package_data=True,
     package_data={'autosubmit': [

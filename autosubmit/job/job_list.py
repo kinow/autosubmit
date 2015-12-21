@@ -44,6 +44,7 @@ class JobList:
     :param expid: experiment's indentifier
     :type expid: str
     """
+
     def __init__(self, expid):
         self._pkl_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl")
         self._update_file = "updated_list_" + expid + ".txt"
@@ -450,20 +451,19 @@ class JobList:
     def update_parameters(self, parameters):
         self._parameters = parameters
 
-    def update_list(self, store_change=True):
+    def update_list(self, as_conf, store_change=True):
         # load updated file list
         self.update_from_file(store_change)
 
-        # reset jobs that has failed less ethan 10 times
-
+        # reset jobs that has failed less than 10 times
 
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
             if hasattr(self, 'retrials'):
-                retrials = retrials
+                retrials = self.retrials
             else:
-                retrials = self._dic_jobs.default_retrials
+                retrials = as_conf.get_retrials()
             if job.fail_count < retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):

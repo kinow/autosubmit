@@ -44,19 +44,20 @@ import random
 import signal
 import datetime
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
-from time import strftime
 from distutils.util import strtobool
 
 from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
 
-# noinspection PyPep8
+# noinspection PyPackageRequirements
 from config.basicConfig import BasicConfig
+# noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
 from job.job_common import Status
-from git.git_common import AutosubmitGit
+from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
+# noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
 from database.db_common import new_experiment
@@ -65,6 +66,8 @@ from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
+
+from platforms.submitter import Submitter
 
 
 # noinspection PyUnusedLocal
@@ -92,6 +95,8 @@ class Autosubmit:
             autosubmit_version = f.read().strip()
     else:
         autosubmit_version = require("autosubmit")[0].version
+
+    exit = False
 
     @staticmethod
     def parse_args():
@@ -145,6 +150,11 @@ class Autosubmit:
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-ft', '--filter_type', type=str, help='Select the job type to filter '
+                                                                          'the list of jobs')
+            subparser.add_argument('-fp', '--filter_period', type=int, help='Select the period to filter jobs '
+                                                                            'from current time to the past '
+                                                                            'in number of hours back')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='type of output for generated plot')
 
@@ -263,7 +273,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output)
             elif args.command == 'stats':
-                return Autosubmit.statistics(args.expid, args.output)
+                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output)
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
@@ -467,27 +477,11 @@ class Autosubmit:
         parameters = as_conf.load_parameters()
         for platform_name in platforms:
             platform = platforms[platform_name]
-            parameters['{0}_ARCH'.format(platform.name)] = platform.name
-            parameters['{0}_HOST'.format(platform.name)] = platform.get_host()
-            parameters['{0}_USER'.format(platform.name)] = platform.user
-            parameters['{0}_PROJ'.format(platform.name)] = platform.project
-            parameters['{0}_BUDG'.format(platform.name)] = platform.budget
-            parameters['{0}_TYPE'.format(platform.name)] = platform.type
-            parameters['{0}_VERSION'.format(platform.name)] = platform.version
-            parameters['{0}_SCRATCH_DIR'.format(platform.name)] = platform.scratch
-            parameters['{0}_ROOTDIR'.format(platform.name)] = platform.root_dir
+            platform.add_parameters(parameters)
 
         platform = platforms[as_conf.get_platform()]
-        parameters['HPCARCH'] = platform.name
-        parameters['HPCHOST'] = platform.get_host()
-        parameters['HPCUSER'] = platform.user
-        parameters['HPCPROJ'] = platform.project
-        parameters['HPCBUDG'] = platform.budget
-        parameters['HPCTYPE'] = platform.type
-        parameters['HPCVERSION'] = platform.version
-        parameters['SCRATCH_DIR'] = platform.scratch
-        parameters['HPCROOTDIR'] = platform.root_dir
-        Log.debug("Updating parameters...")
+        platform.add_parameters(parameters, True)
+
         joblist.update_parameters(parameters)
 
     @staticmethod
@@ -507,7 +501,6 @@ class Autosubmit:
                                   'run.log'))
         os.system('clear')
 
-        Autosubmit.exit = False
         signal.signal(signal.SIGINT, signal_handler)
 
         as_conf = AutosubmitConfig(expid)
@@ -526,18 +519,13 @@ class Autosubmit:
         safetysleeptime = as_conf.get_safetysleeptime()
         retrials = as_conf.get_retrials()
 
-        platforms = as_conf.read_platforms_conf()
-        if platforms is None:
-            return False
+        submitter = Submitter()
+        submitter.load_platforms(as_conf)
 
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
         Log.debug("Default retrials: {0}", retrials)
         Log.info("Starting job submission...")
-
-        # for platforms in platforms:
-        #     signal.signal(signal.SIGQUIT, platforms[platforms].smart_stop)
-        #     signal.signal(signal.SIGINT, platforms[platforms].normal_stop)
 
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
         Log.debug(filename)
@@ -552,7 +540,7 @@ class Autosubmit:
 
         Log.debug("Length of joblist: {0}", len(joblist))
 
-        Autosubmit._load_parameters(as_conf, joblist, platforms)
+        Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
         # check the job list script creation
         Log.debug("Checking experiment templates...")
@@ -562,16 +550,11 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name.lower()])
+            job.set_platform(submitter.platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name.lower()])
+            platforms_to_test.add(job.get_platform())
 
         joblist.check_scripts(as_conf)
-
-        # check the availability of the Queues
-        for platform in platforms_to_test:
-            platform.connect()
-            platform.check_remote_log_dir()
 
         #########################
         # AUTOSUBMIT - MAIN LOOP
@@ -579,123 +562,34 @@ class Autosubmit:
         # Main loop. Finishing when all jobs have been submitted
         while joblist.get_active():
             if Autosubmit.exit:
-                Log.info('Interrupted by user.')
-                return 0
+                return 2
+
             # reload parameters changes
             Log.debug("Reloading parameters...")
             as_conf.reload()
-            Autosubmit._load_parameters(as_conf, joblist, platforms)
+            Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
             # variables to be updated on the fly
             total_jobs = len(joblist.get_job_list())
             Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
-                                                                  strftime("%H:%M")))
+                                                                  time.strftime("%H:%M")))
             safetysleeptime = as_conf.get_safetysleeptime()
             Log.debug("Sleep: {0}", safetysleeptime)
             default_retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", default_retrials)
 
-            # Flag to write the pickle only if something has changed
-            save_pkl = False
-
-            ######################################
-            # AUTOSUBMIT - ALREADY SUBMITTED JOBS
-            ######################################
             for platform in platforms_to_test:
+                for job in joblist.get_in_queue(platform):
+                    job.update_status(platform.check_job(job.id))
 
-                jobinqueue = joblist.get_in_queue(platform)
-                if len(jobinqueue) == 0:
-                    continue
-
-                Log.info("\nJobs in {0} queue: {1}", platform.name, str(len(jobinqueue)))
-
-                if not platform.check_host():
-                    Log.debug("{0} is not available", platform.name)
-                    continue
-
-                for job in jobinqueue:
-                    job.print_job()
-                    status = platform.check_job(job.id)
-                    if job.status != status:
-                        save_pkl = True
-                    if status == Status.COMPLETED:
-                        Log.debug("This job seems to have completed...checking")
-                        platform.get_completed_files(job.name)
-                        job.check_completion()
-                    else:
-                        job.status = status
-                    if job.status is Status.QUEUING:
-                        Log.info("Job {0} is QUEUING", job.name)
-                    elif job.status is Status.RUNNING:
-                        Log.info("Job {0} is RUNNING", job.name)
-                    elif job.status is Status.COMPLETED:
-                        Log.result("Job {0} is COMPLETED", job.name)
-                    elif job.status is Status.FAILED:
-                        Log.user_warning("Job {0} is FAILED", job.name)
-                    elif job.status is Status.UNKNOWN:
-                        Log.debug("Job {0} in UNKNOWN status. Checking completed files", job.name)
-                        platform.get_completed_files(job.name)
-                        job.check_completion(Status.UNKNOWN)
-                    elif job.status is Status.SUBMITTED:
-                        # after checking the jobs , no job should have the status "submitted"
-                        Log.warning('Job {0} in SUBMITTED status after checking.', job.name)
-
-            ##############################
-            # AUTOSUBMIT - JOBS TO SUBMIT
-            ##############################
-            # get the list of jobs READY
-            joblist.update_list()
-            for platform in platforms_to_test:
-
-                jobsavail = joblist.get_ready(platform)
-                if len(jobsavail) == 0:
-                    continue
-
-                Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
-
-                if not platform.check_host():
-                    Log.debug("{0} is not available", platform.name)
-                    continue
-
-                max_jobs = platform.total_jobs
-                max_waiting_jobs = platform.max_waiting_jobs
-                waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
-                jobinqueue = joblist.get_in_queue(platform)
-                available = min(max_waiting_jobs - waiting, max_jobs - len(jobinqueue))
-
-                if min(available, len(jobsavail)) == 0:
-                    Log.debug("Number of jobs ready: {0}", len(jobsavail))
-                    Log.debug("Number of jobs available: {0}", available)
-                elif min(available, len(jobsavail)) > 0:
-                    Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
-                    # should sort the jobsavail by priority Clean->post->sim>ini
-                    # s = sorted(jobsavail, key=lambda k:k.name.split('_')[1][:6])
-                    # probably useless to sort by year before sor1ting by type
-                    s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
-
-                    list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
-
-                    for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
-                        Log.debug(job.name)
-                        job.update_parameters(as_conf, joblist.parameters)
-                        scriptname = job.create_script(as_conf)
-                        Log.debug(scriptname)
-
-                        if not platform.send_script(scriptname):
-                            continue
-                        job.id = platform.submit_job(scriptname)
-                        if job.id is None:
-                            continue
-                        # set status to "submitted"
-                        job.status = Status.SUBMITTED
-                        save_pkl = True
-                        Log.info("{0} submitted", job.name)
-
-            if save_pkl:
-                joblist.save()
+            joblist.update_list(as_conf, True)
             if Autosubmit.exit:
-                Log.info('Interrupted by user.')
-                return 0
+                return 2
+
+            Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test)
+            joblist.save()
+            if Autosubmit.exit:
+                return 2
             time.sleep(safetysleeptime)
 
         Log.info("No more jobs to run.")
@@ -705,6 +599,43 @@ class Autosubmit:
         else:
             Log.result("Run successful")
             return True
+
+    @staticmethod
+    def submit_ready_jobs(as_conf, joblist, platforms_to_test):
+        for platform in platforms_to_test:
+            jobinqueue = joblist.get_in_queue(platform)
+            jobsavail = joblist.get_ready(platform)
+            if len(jobsavail) == 0:
+                continue
+
+            Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
+
+            max_jobs = platform.total_jobs
+            max_waiting_jobs = platform.max_waiting_jobs
+            waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
+            available = max_waiting_jobs - waiting
+
+            if min(available, len(jobsavail)) == 0:
+                Log.debug("Number of jobs ready: {0}", len(jobsavail))
+                Log.debug("Number of jobs available: {0}", available)
+            elif min(available, len(jobsavail)) > 0 and len(joblist.get_in_queue(platform)) <= max_jobs:
+                Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
+
+                s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
+                list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
+
+                for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
+                    job.update_parameters(as_conf, joblist.parameters)
+                    scriptname = job.create_script(as_conf)
+                    platform.send_file(scriptname)
+                    saga_job = platform.create_saga_job(job, scriptname)
+                    saga_job.run()
+                    job.id = saga_job.id
+                    if job.id is None:
+                        continue
+                    Log.info("{0} submitted", job.name)
+                    # set status to "submitted"
+                    job.status = Status.SUBMITTED
 
     @staticmethod
     def monitor(expid, file_format):
@@ -732,7 +663,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def statistics(expid, file_format):
+    def statistics(expid, filter_type, filter_period, file_format):
         """
         Plots statistics graph for a given experiment.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -740,6 +671,8 @@ class Autosubmit:
         :type file_format: str
         :type expid: str
         :param expid: identifier of the experiment to plot
+        :param filter_type: type of the jobs to plot
+        :param filter_period: period to plot
         :param file_format: plot's file format. It can be pdf, png or ps
         """
         root_name = 'job_list'
@@ -749,16 +682,34 @@ class Autosubmit:
         Log.info("Loading jobs...")
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         jobs = pickle.load(open(filename, 'r'))
-        # if not isinstance(jobs, type([])):
-        #     jobs = [job for job in jobs.get_finished() if job.type == Type.SIMULATION]
 
-        if len(jobs.get_job_list()) > 0:
+        if filter_type:
+            ft = filter_type
+            Log.debug(ft)
+            if ft == 'Any':
+                jobs = jobs.get_job_list()
+            else:
+                jobs = [job for job in jobs.get_job_list() if job.section == ft]
+        else:
+            ft = 'Any'
+            jobs = jobs.get_job_list()
+
+        period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
+        if filter_period:
+            period_ini = period_fi - datetime.timedelta(hours=filter_period)
+            Log.debug(str(period_ini))
+            jobs = [job for job in jobs if job.check_started_after(period_ini) or job.check_running_after(period_ini)]
+        else:
+            period_ini = None
+
+        if len(jobs) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output_stats(expid, jobs.get_job_list(), file_format)
+            # noinspection PyTypeChecker
+            monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi)
             Log.result("Stats plot ready")
         else:
-            Log.info("There are no COMPLETED jobs...")
+            Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, period_ini, period_fi))
         return True
 
     @staticmethod
@@ -839,24 +790,21 @@ class Autosubmit:
             return False
 
         hpcarch = as_conf.get_platform()
-
-        platforms = as_conf.read_platforms_conf()
-        if platforms is None:
+        submitter = Submitter()
+        submitter.load_platforms(as_conf)
+        if submitter.platforms is None:
             return False
+        platforms = submitter.platforms
 
         platforms_to_test = set()
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
-            platforms_to_test.add(platforms[job.platform_name])
+            platforms_to_test.add(platforms[job.platform_name.lower()])
 
-        for platform in platforms_to_test:
-            platform.connect()
-            platform.check_remote_log_dir()
-            
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
         else:
@@ -867,9 +815,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(platforms[job.platform_name.lower()])
 
-            if job.get_platform().get_completed_files(job.name, 0, True):
+            if job.get_platform().get_completed_files(job.name):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
@@ -879,7 +827,7 @@ class Autosubmit:
 
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
-        job_list.update_list(False)
+        job_list.update_list(as_conf, False)
         job_list.update_from_file(False)
 
         if save:
@@ -910,7 +858,8 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        platforms = as_conf.read_platforms_conf()
+        submitter = Submitter()
+        platforms = submitter.load_platforms(as_conf)
         if platforms is None:
             return False
 
@@ -1392,6 +1341,8 @@ class Autosubmit:
         Log.debug('Exp ID: {0}', expid)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
                                     ".pkl"), 'r'))
+        as_conf = AutosubmitConfig(expid)
+        as_conf.reload()
 
         final_status = Autosubmit._get_status(final)
         if filter_chunks:
@@ -1459,12 +1410,12 @@ class Autosubmit:
         sys.setrecursionlimit(50000)
 
         if save:
-            job_list.update_list()
+            job_list.update_list(as_conf)
             path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
             pickle.dump(job_list, open(path, 'w'))
             Log.info("Saving JobList: {0}", path)
         else:
-            job_list.update_list(False)
+            job_list.update_list(as_conf, False)
             Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
         monitor_exp = Monitor()
