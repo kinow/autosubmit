@@ -272,10 +272,6 @@ class Monitor:
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
         gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
         fig.suptitle('STATS - ' + expid, size=20)
-        ax0 = fig.add_subplot(gs[0, 0])
-        ax0.set_frame_on(False)
-        ax0.axes.get_xaxis().set_visible(False)
-        ax0.axes.get_yaxis().set_visible(False)
 
         ax = []
         for plot in range(1, num_plots + 1):
@@ -333,13 +329,6 @@ class Monitor:
             autolabel(rects5)
             plt.ylim((float(0.85 * min_time), float(1.15 * max_time)))
 
-        # noinspection PyUnboundLocalVariable
-        first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]),
-                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
-                                  loc="upper right")
-
-        plt.gca().add_artist(first_legend)
-
         percentage_consumption = total_consumption / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
         totals = ['Period: ' + str(period_ini) + " ~ " + str(period_fi),
@@ -353,6 +342,17 @@ class Monitor:
                   'Consumption CPU time (h): ' + str(round(total_consumption, 2)),
                   'Consumption (%): ' + str(round(percentage_consumption, 2))]
         Log.result('\n'.join(totals))
+
+        ax0 = fig.add_subplot(gs[0, 0])
+        ax0.set_frame_on(False)
+        ax0.axes.get_xaxis().set_visible(False)
+        ax0.axes.get_yaxis().set_visible(False)
+        # noinspection PyUnboundLocalVariable
+        first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]),
+                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
+                                  loc="upper right")
+        plt.gca().add_artist(first_legend)
+
         ax0.legend([white, white, white, white, white, white, white, white, white, white],
                    totals,
                    handlelength=0,
