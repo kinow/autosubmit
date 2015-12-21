@@ -35,6 +35,8 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 
+import subprocess
+
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
@@ -144,7 +146,7 @@ class Monitor:
                 if flag:
                     self._add_children(child, exp, node_child)
 
-    def generate_output(self, expid, joblist, output_format="pdf"):
+    def generate_output(self, expid, joblist, output_format="pdf", show=False):
         """
         Plots graph for joblist and stores it in a file
 
@@ -154,6 +156,8 @@ class Monitor:
         :type joblist: JobList
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
+        :param show: if true, will open the new plot with the default viewer
+        :type show: bool
         """
         Log.info('Plotting...')
         now = time.localtime()
@@ -180,8 +184,13 @@ class Monitor:
             Log.error('Format {0} not supported', output_format)
             return
         Log.result('Plot created at {0}', output_file)
+        if show:
+            try:
+                subprocess.check_call(['xdg-open', output_file])
+            except subprocess.CalledProcessError:
+                Log.error('File {0} could not be opened', output_file)
 
-    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None):
+    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
         """
         Plots stats for joblist and stores it in a file
 
@@ -195,6 +204,8 @@ class Monitor:
         :type period_ini: datetime
         :param period_fi: final datetime of filtered period
         :type period_fi: datetime
+        :param show: if true, will open the new plot with the default viewer
+        :type show: bool
         """
         Log.info('Creating stats file')
         now = time.localtime()
@@ -203,6 +214,11 @@ class Monitor:
                                    "." + output_format)
         self.create_bar_diagram(expid, joblist, output_file, period_ini, period_fi)
         Log.result('Stats created at {0}', output_file)
+        if show:
+            try:
+                subprocess.check_call(['xdg-open', output_file])
+            except subprocess.CalledProcessError:
+                Log.error('File {0} could not be opened', output_file)
 
     @staticmethod
     def create_bar_diagram(expid, joblist, output_file, period_ini=None, period_fi=None):

@@ -146,6 +146,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
+            subparser.add_argument('--hide', action='store_true', default=False,
+                                   help='hides plot window')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -157,6 +159,8 @@ class Autosubmit:
                                                                             'in number of hours back')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='type of output for generated plot')
+            subparser.add_argument('--hide', action='store_true', default=False,
+                                   help='hides plot window')
 
             # Clean
             subparser = subparsers.add_parser('clean', description="clean specified experiment")
@@ -271,9 +275,9 @@ class Autosubmit:
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
-                return Autosubmit.monitor(args.expid, args.output)
+                return Autosubmit.monitor(args.expid, args.output, args.hide)
             elif args.command == 'stats':
-                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output)
+                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
@@ -638,7 +642,7 @@ class Autosubmit:
                     job.status = Status.SUBMITTED
 
     @staticmethod
-    def monitor(expid, file_format):
+    def monitor(expid, file_format, hide):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -659,11 +663,11 @@ class Autosubmit:
             jobs = jobs.get_job_list()
 
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, jobs, file_format)
+        monitor_exp.generate_output(expid, jobs, file_format, not hide)
         return True
 
     @staticmethod
-    def statistics(expid, filter_type, filter_period, file_format):
+    def statistics(expid, filter_type, filter_period, file_format, hide):
         """
         Plots statistics graph for a given experiment.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -706,7 +710,7 @@ class Autosubmit:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
             # noinspection PyTypeChecker
-            monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi)
+            monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi, not hide)
             Log.result("Stats plot ready")
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, period_ini, period_fi))
