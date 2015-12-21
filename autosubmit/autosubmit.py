@@ -791,9 +791,10 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
         submitter = Submitter()
-        platforms = submitter.load_platforms(as_conf)
-        if platforms is None:
+        submitter.load_platforms(as_conf)
+        if submitter.platforms is None:
             return False
+        platforms = submitter.platforms
 
         platforms_to_test = set()
         for job in job_list.get_job_list():
@@ -803,10 +804,6 @@ class Autosubmit:
             job.set_platform(platforms[job.platform_name.lower()])
             # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name.lower()])
-
-        for platform in platforms_to_test:
-            platform.connect()
-            platform.check_remote_log_dir()
 
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
@@ -820,7 +817,7 @@ class Autosubmit:
             # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name.lower()])
 
-            if job.get_platform().get_completed_files(job.name, 0, True):
+            if job.get_platform().get_completed_files(job.name):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:

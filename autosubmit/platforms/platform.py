@@ -78,6 +78,7 @@ class Platform:
 
         if main_hpc:
             prefix = 'HPC'
+            parameters['SCRATCH_DIR'.format(prefix)] = self.scratch
         else:
             prefix = self.name + '_'
 
@@ -117,14 +118,16 @@ class Platform:
 
         sftp_directory = 'sftp://{0}{1}'.format(self.host, path)
         try:
-            return saga.filesystem.Directory(sftp_directory,
-                                             saga.filesystem.CREATE, session=self.service.session)
-        except saga.BadParameter:
-            new_directory = os.path.split(path)[1]
-            parent = self.get_workdir(os.path.dirname(path))
-            parent.make_dir(new_directory)
-            return saga.filesystem.Directory(sftp_directory,
-                                             saga.filesystem.CREATE, session=self.service.session)
+            return saga.filesystem.Directory(sftp_directory, session=self.service.session)
+        except saga.BadParameter as ex:
+            try:
+                return saga.filesystem.Directory(sftp_directory,
+                                                 saga.filesystem.CREATE, session=self.service.session)
+            except saga.BadParameter as ex:
+                new_directory = os.path.split(path)[1]
+                parent = self.get_workdir(os.path.dirname(path))
+                parent.make_dir(new_directory)
+                return saga.filesystem.Directory(sftp_directory, session=self.service.session)
 
     def get_file(self, filename, must_exist=True):
         if self.type == 'ecaccess':
@@ -133,11 +136,12 @@ class Platform:
                                                                              os.path.join(self.get_files_path(),
                                                                                           filename)),
                                        os.path.join(self.tmp_path, filename)])
-                return
+                return True
             except subprocess.CalledProcessError:
                 if must_exist:
                     raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                                self.host, self.get_files_path()))
+                return False
         try:
             if self.type == 'local':
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
@@ -147,12 +151,14 @@ class Platform:
                                                                                           filename)))
             out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
             del out
+            return True
         except saga.DoesNotExist as ex:
             if must_exist:
                 raise ex
+            return False
 
     def get_completed_files(self, job_name):
-        self.get_file('{0}_COMPLETED'.format(job_name), False)
+        return self.get_file('{0}_COMPLETED'.format(job_name), False)
 
     def get_files_path(self):
         if self.type == "local":
