@@ -5,7 +5,6 @@ import os
 
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
-# noinspection PyPackageRequirements
 from autosubmit.config.log import Log
 
 
@@ -119,11 +118,11 @@ class Platform:
         sftp_directory = 'sftp://{0}{1}'.format(self.host, path)
         try:
             return saga.filesystem.Directory(sftp_directory, session=self.service.session)
-        except saga.BadParameter as ex:
+        except saga.BadParameter:
             try:
                 return saga.filesystem.Directory(sftp_directory,
                                                  saga.filesystem.CREATE, session=self.service.session)
-            except saga.BadParameter as ex:
+            except saga.BadParameter:
                 new_directory = os.path.split(path)[1]
                 parent = self.get_workdir(os.path.dirname(path))
                 parent.make_dir(new_directory)

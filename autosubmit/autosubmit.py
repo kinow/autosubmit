@@ -177,6 +177,8 @@ class Autosubmit:
             subparser.add_argument('-all', action="store_true", default=False,
                                    help='Get completed files to synchronize pkl')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
+            subparser.add_argument('--hide', action='store_true', default=False,
+                                   help='hides plot window')
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -186,6 +188,8 @@ class Autosubmit:
             subparser = subparsers.add_parser('create', description="create specified experiment joblist")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
+            subparser.add_argument('--hide', action='store_true', default=False,
+                                   help='hides plot window')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -231,6 +235,8 @@ class Autosubmit:
                                help='Select the original status to filter the list of jobs')
             group.add_argument('-ft', '--filter_type', type=str,
                                help='Select the job type to filter the list of jobs')
+            subparser.add_argument('--hide', action='store_true', default=False,
+                                   help='hides plot window')
 
             # Test
             subparser = subparsers.add_parser('test', description='test experiment')
@@ -281,11 +287,11 @@ class Autosubmit:
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
-                return Autosubmit.recovery(args.expid, args.save, args.all)
+                return Autosubmit.recovery(args.expid, args.save, args.all, args.hide)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot)
+                return Autosubmit.create(args.expid, args.noplot, args.hide)
             elif args.command == 'configure':
                 return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
                                             args.platformsconfpath, args.jobsconfpath, args.all, args.local)
@@ -293,7 +299,7 @@ class Autosubmit:
                 return Autosubmit.install()
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.save, args.status_final, args.list,
-                                             args.filter_chunks, args.filter_status, args.filter_type)
+                                             args.filter_chunks, args.filter_status, args.filter_type, args.hide)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
@@ -651,6 +657,8 @@ class Autosubmit:
         :type expid: str
         :param expid: identifier of the experiment to plot
         :param file_format: plot's file format. It can be pdf, png or ps
+        :param hide: hides plot window
+        :type hide: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -678,6 +686,8 @@ class Autosubmit:
         :param filter_type: type of the jobs to plot
         :param filter_period: period to plot
         :param file_format: plot's file format. It can be pdf, png or ps
+        :param hide: hides plot window
+        :type hide: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -765,7 +775,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, save, all_jobs):
+    def recovery(expid, save, all_jobs, hide):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the joblist.
@@ -776,6 +786,8 @@ class Autosubmit:
         :type save: bool
         :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
         :type all_jobs: bool
+        :param hide: hides plot window
+        :type hide: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -841,7 +853,7 @@ class Autosubmit:
 
         Log.result("Recovery finalized")
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, job_list.get_job_list())
+        monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
         return True
 
     @staticmethod
@@ -1157,7 +1169,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot):
+    def create(expid, noplot, hide):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1168,6 +1180,8 @@ class Autosubmit:
         :type noplot: bool
         :return: True if succesful, False if not
         :rtype: bool
+        :param hide: hides plot window
+        :type hide: bool
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -1231,7 +1245,7 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPloting joblist...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf')
+            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf', not hide)
 
         Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -1318,7 +1332,7 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section):
+    def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section, hide):
         """
         Set status
 
@@ -1336,6 +1350,8 @@ class Autosubmit:
         :type filter_status: str
         :param filter_section: sections to change status
         :type filter_section: str
+        :param hide: hides plot window
+        :type hide: bool
         """
         root_name = 'job_list'
         BasicConfig.read()
@@ -1423,7 +1439,7 @@ class Autosubmit:
             Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, job_list.get_job_list())
+        monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
         return True
 
     @staticmethod
@@ -1655,7 +1671,7 @@ class Autosubmit:
 
         open(as_conf.experiment_file, 'w').write(content)
 
-        Autosubmit.create(testid, False)
+        Autosubmit.create(testid, False, True)
         if not Autosubmit.run_experiment(testid):
             return False
         return Autosubmit.delete(testid, True)
