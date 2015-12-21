@@ -6,7 +6,7 @@ import os
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 # noinspection PyPackageRequirements
-from config.log import Log
+from autosubmit.config.log import Log
 
 
 class Platform:
