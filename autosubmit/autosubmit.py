@@ -646,6 +646,7 @@ class Autosubmit:
                     Log.info("{0} submitted", job.name)
                     # set status to "submitted"
                     job.status = Status.SUBMITTED
+                    job.write_submit_time()
 
     @staticmethod
     def monitor(expid, file_format, hide):

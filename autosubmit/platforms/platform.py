@@ -159,6 +159,37 @@ class Platform:
     def get_completed_files(self, job_name):
         return self.get_file('{0}_COMPLETED'.format(job_name), False)
 
+    def get_stat_file(self, jobname, retries=1, omit_error=True):
+        """
+        Copies *STAT* files from remote to local
+
+        :param omit_error: if false, adds an error log if completed file can not be get
+        :type omit_error: bool
+        :param retries: number of intents to get the completed files
+        :type retries: int
+        :param jobname: name of job to check
+        :type jobname: str
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
+        filename = jobname + '_STAT'
+        stat_local_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR, filename)
+        if os.path.exists(stat_local_path):
+            os.remove(stat_local_path)
+        if self.get_file(filename):
+            Log.debug('{0}_STAT have been transfered', jobname)
+            return True
+
+        while retries > 0:
+            # wait five seconds to check get file
+            if self.get_file(filename):
+                Log.debug('{0}_STAT files have been transfered', jobname)
+                return True
+            retries -= 1
+
+        Log.debug('Something did not work well when transferring the STAT file')
+        return False
+
     def get_files_path(self):
         if self.type == "local":
             path = os.path.join(self.root_dir, BasicConfig.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))

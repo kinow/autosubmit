@@ -435,6 +435,9 @@ class Job:
         return self._get_from_total_stats(1)
 
     def update_status(self, new_status):
+
+        previous_status = self.status
+
         if new_status == Status.COMPLETED:
             Log.debug("This job seems to have completed...checking")
             self.get_platform().get_completed_files(self.name)
@@ -458,6 +461,14 @@ class Job:
         elif self.status is Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
+
+        if self.write_start or previous_status != Status.RUNNING and self.status in [Status.COMPLETED,
+                                                                                     Status.FAILED,
+                                                                                     Status.UNKNOWN,
+                                                                                     Status.RUNNING]:
+            self.write_start = not self.write_start_time()
+        if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
+            self.write_end_time(self.status == Status.COMPLETED)
 
     def check_completion(self, default_status=Status.FAILED):
         """
