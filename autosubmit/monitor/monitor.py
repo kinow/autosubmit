@@ -246,15 +246,8 @@ class Monitor:
                     ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1.05 * max_time, '%d' % int(height),
                                       ha='center', va='bottom', rotation='vertical', fontsize=9)
 
-        def failabel(rects):
-            for rect in rects:
-                height = rect.get_height()
-                if height > 0:
-                    ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1 + height, '%d' % int(height), ha='center',
-                                      va='bottom', fontsize=9)
-
-        def timedelta2hours(delta):
-            return delta.days * 24 + delta.seconds / 3600.0
+        def timedelta2hours(deltatime):
+            return deltatime.days * 24 + deltatime.seconds / 3600.0
 
         total_jobs_submitted = 0
         total_consumption = datetime.timedelta()
@@ -294,8 +287,10 @@ class Monitor:
         fig.suptitle('STATS - ' + expid, size=20)
 
         ax = []
+        ax2 = []
         for plot in range(1, num_plots + 1):
             ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
+            ax2.append(ax[plot-1].twinx())
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
 
@@ -333,6 +328,7 @@ class Monitor:
             max_time = max(max(max(run, fail_run, queued, fail_queued)), datetime.timedelta(hours=threshold))
             max_time = max_time.days * 24 + max_time.seconds / 3600.0
             min_time = 0
+            max_fail = max(failed_jobs)
 
             for i, delta in enumerate(queued):
                 queued[i] = timedelta2hours(delta)
@@ -348,20 +344,22 @@ class Monitor:
 
             rects1 = ax[plot - 1].bar(ind, queued, width, color='r')
             rects2 = ax[plot - 1].bar(ind + width, run, width, color='g')
-            rects3 = ax[plot - 1].bar(ind + width * 2, failed_jobs, width, color='y')
+            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='y')
             rects4 = ax[plot - 1].bar(ind + width * 3, fail_queued, width, color='m')
             rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='c')
             ax[plot - 1].set_ylabel('hours')
+            ax2[plot - 1].set_ylabel('# failed jobs')
             ax[plot - 1].set_xticks(ind + width)
             ax[plot - 1].set_xticklabels([job.name for job in joblist[l1:l2]], rotation='vertical')
             ax[plot - 1].set_title(expid, fontsize=10, fontweight='bold')
-            ax[plot - 1].plot([0., width * 6 * MAX], [threshold, threshold], "k--")
+            rects6 = ax[plot - 1].plot([0., width * 6 * MAX], [threshold, threshold], "k--", label='wallclock sim')
             autolabel(rects1)
             autolabel(rects2)
-            failabel(rects3)
             autolabel(rects4)
             autolabel(rects5)
-            plt.ylim((float(0.85 * min_time), float(1.15 * max_time)))
+            ax[plot-1].set_ylim((float(0.85 * min_time), float(1.15 * max_time)))
+            ax2[plot-1].set_ylim(0, max_fail + 2)
+            ax2[plot-1].yaxis.set_ticks(range(0, max_fail + 2))
 
         percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
@@ -382,9 +380,9 @@ class Monitor:
         ax0.axes.get_xaxis().set_visible(False)
         ax0.axes.get_yaxis().set_visible(False)
         # noinspection PyUnboundLocalVariable
-        first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0]),
-                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
-                                  loc="upper right")
+        first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0], rects6[0]),
+                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)',
+                                   'Max wallclock (h)'), loc="upper right")
         plt.gca().add_artist(first_legend)
 
         ax0.legend([white, white, white, white, white, white, white, white, white, white],
