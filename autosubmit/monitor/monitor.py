@@ -342,11 +342,11 @@ class Monitor:
             for i, delta in enumerate(fail_run):
                 fail_run[i] = timedelta2hours(delta)
 
-            rects1 = ax[plot - 1].bar(ind, queued, width, color='r')
-            rects2 = ax[plot - 1].bar(ind + width, run, width, color='g')
-            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='y')
-            rects4 = ax[plot - 1].bar(ind + width * 3, fail_queued, width, color='m')
-            rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='c')
+            rects1 = ax[plot - 1].bar(ind, queued, width, color='orchid')
+            rects2 = ax[plot - 1].bar(ind + width, run, width, color='limegreen')
+            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='tomato')
+            rects4 = ax[plot - 1].bar(ind + width * 3, fail_queued, width, color='purple')
+            rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='red')
             ax[plot - 1].set_ylabel('hours')
             ax2[plot - 1].set_ylabel('# failed jobs')
             ax[plot - 1].set_xticks(ind + width)
@@ -357,8 +357,9 @@ class Monitor:
             autolabel(rects2)
             autolabel(rects4)
             autolabel(rects5)
-            ax[plot-1].set_ylim((float(0.85 * min_time), float(1.15 * max_time)))
-            ax2[plot-1].set_ylim(0, max_fail + 2)
+            # ax[plot-1].set_ylim((float(0.85 * min_time), float(1.15 * max_time)))
+            # ax2[plot-1].set_ylim(0, max_fail + 2)
+            plt.ylim(float(0.85 * min_time), float(1.15 * max_time))
             ax2[plot-1].yaxis.set_ticks(range(0, max_fail + 2))
 
         percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
