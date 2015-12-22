@@ -638,6 +638,7 @@ class Autosubmit:
                     job.update_parameters(as_conf, joblist.parameters)
                     scriptname = job.create_script(as_conf)
                     platform.send_file(scriptname)
+                    platform.remove_stat_file(job.name)
                     saga_job = platform.create_saga_job(job, scriptname)
                     saga_job.run()
                     job.id = saga_job.id

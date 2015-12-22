@@ -1,4 +1,5 @@
 import subprocess
+from time import sleep
 
 import saga
 import os
@@ -109,7 +110,7 @@ class Platform:
         else:
             workdir = self.get_workdir(self.get_files_path())
             out.copy(workdir.get_url())
-        del out
+        out.close()
 
     def get_workdir(self, path):
         if not path:
@@ -149,22 +150,56 @@ class Platform:
                 out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
                                                                                           filename)))
             out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
-            del out
+            out.close()
             return True
         except saga.DoesNotExist as ex:
             if must_exist:
                 raise ex
             return False
 
+    def delete_file(self, filename):
+        if self.type == 'ecaccess':
+            try:
+                subprocess.check_call(['ecaccess-file-delete',
+                                       '{0}:{1}'.format(self.host, os.path.join(self.get_files_path(), filename))])
+                return True
+            except subprocess.CalledProcessError:
+                return True
+        try:
+            if self.type == 'local':
+                out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
+                                                                            filename)))
+            else:
+                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
+                                                                                          filename)))
+            out.remove()
+            out.close()
+            return True
+        except saga.DoesNotExist:
+            return True
+
     def get_completed_files(self, job_name):
         return self.get_file('{0}_COMPLETED'.format(job_name), False)
 
-    def get_stat_file(self, jobname, retries=1, omit_error=True):
+    def remove_stat_file(self, jobname):
+        """
+        Removes *STAT* files from remote
+
+        :param jobname: name of job to check
+        :type jobname: str
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
+        filename = jobname + '_STAT'
+        if self.delete_file(filename):
+            Log.debug('{0}_STAT have been removed', jobname)
+            return True
+        return False
+
+    def get_stat_file(self, jobname, retries=1):
         """
         Copies *STAT* files from remote to local
 
-        :param omit_error: if false, adds an error log if completed file can not be get
-        :type omit_error: bool
         :param retries: number of intents to get the completed files
         :type retries: int
         :param jobname: name of job to check
@@ -176,16 +211,16 @@ class Platform:
         stat_local_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
-        if self.get_file(filename):
-            Log.debug('{0}_STAT have been transfered', jobname)
-            return True
 
-        while retries > 0:
-            # wait five seconds to check get file
-            if self.get_file(filename):
-                Log.debug('{0}_STAT files have been transfered', jobname)
+        while True:
+            if self.get_file(filename, False):
+                Log.debug('{0}_STAT file have been transfered', jobname)
                 return True
+            if retries == 0:
+                break
             retries -= 1
+            # wait five seconds to check get file
+            sleep(5)
 
         Log.debug('Something did not work well when transferring the STAT file')
         return False

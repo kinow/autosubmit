@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import datetime
 import os
 
 import time
@@ -252,9 +253,12 @@ class Monitor:
                     ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1 + height, '%d' % int(height), ha='center',
                                       va='bottom', fontsize=9)
 
+        def timedelta2hours(delta):
+            return delta.days * 24 + delta.seconds / 3600.0
+
         total_jobs_submitted = 0
-        total_consumption = 0
-        real_consumption = 0
+        total_consumption = datetime.timedelta()
+        real_consumption = datetime.timedelta()
         total_jobs_run = 0
         total_jobs_failed = 0
         total_jobs_completed = 0
@@ -295,11 +299,11 @@ class Monitor:
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
 
-            run = [0] * (l2 - l1)
-            queued = [0] * (l2 - l1)
+            run = [datetime.timedelta()] * (l2 - l1)
+            queued = [datetime.timedelta()] * (l2 - l1)
             failed_jobs = [0] * (l2 - l1)
-            fail_queued = [0] * (l2 - l1)
-            fail_run = [0] * (l2 - l1)
+            fail_queued = [datetime.timedelta()] * (l2 - l1)
+            fail_run = [datetime.timedelta()] * (l2 - l1)
 
             for i, job in enumerate(joblist[l1:l2]):
                 submit_times = job.check_retrials_submit_time()
@@ -310,23 +314,37 @@ class Monitor:
 
                     if j >= len(end_times):
                         if j < len(start_times):
-                            queued[i] += float(start_times[j] - submit_times[j]) / 3600
+                            queued[i] += start_times[j] - submit_times[j]
                     elif j == (len(submit_times) - 1) and job.status == Status.COMPLETED:
-                        queued[i] += float(start_times[j] - submit_times[j]) / 3600
-                        run[i] += float(end_times[j] - start_times[j]) / 3600
-                        total_consumption += run[i] * int(job.processors)
-                        real_consumption += run[i]
+                        queued[i] += start_times[j] - submit_times[j]
+                        run[i] += end_times[j] - start_times[j]
+                        tc = run[i] * int(job.processors)
+                        total_consumption += tc
+                        real_consumption += run[i] * int(job.processors)
                     else:
                         failed_jobs[i] += 1
-                        fail_queued[i] += float(start_times[j] - submit_times[j]) / 3600
-                        fail_run[i] += float(end_times[j] - start_times[j]) / 3600
+                        fail_queued[i] += start_times[j] - submit_times[j]
+                        fail_run[i] += end_times[j] - start_times[j]
                         total_consumption += fail_run[i] * int(job.processors)
-                        real_consumption += fail_run[i]
+                        real_consumption += fail_run[i] * int(job.processors)
                 total_jobs_run += len(start_times)
                 total_jobs_failed += failed_jobs[i]
                 total_jobs_completed += len(end_times) - failed_jobs[i]
-            max_time = float(max(max(max(run, fail_run, queued, fail_queued)), threshold))
+            max_time = max(max(max(run, fail_run, queued, fail_queued)), datetime.timedelta(hours=threshold))
+            max_time = max_time.days * 24 + max_time.seconds / 3600.0
             min_time = 0
+
+            for i, delta in enumerate(queued):
+                queued[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(run):
+                run[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(fail_queued):
+                fail_queued[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(fail_run):
+                fail_run[i] = timedelta2hours(delta)
 
             rects1 = ax[plot - 1].bar(ind, queued, width, color='r')
             rects2 = ax[plot - 1].bar(ind + width, run, width, color='g')
@@ -345,7 +363,7 @@ class Monitor:
             autolabel(rects5)
             plt.ylim((float(0.85 * min_time), float(1.15 * max_time)))
 
-        percentage_consumption = total_consumption / expected_total_consumption * 100
+        percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
         totals = ['Period: ' + str(period_ini) + " ~ " + str(period_fi),
                   'Submitted (#): ' + str(total_jobs_submitted),
@@ -354,8 +372,8 @@ class Monitor:
                   'Completed (#): ' + str(total_jobs_completed),
                   'Expected consumption real (h): ' + str(round(expected_real_consumption, 2)),
                   'Expected consumption CPU time (h): ' + str(round(expected_total_consumption, 2)),
-                  'Consumption real (h): ' + str(round(real_consumption, 2)),
-                  'Consumption CPU time (h): ' + str(round(total_consumption, 2)),
+                  'Consumption real (h): ' + str(round(timedelta2hours(real_consumption), 2)),
+                  'Consumption CPU time (h): ' + str(round(timedelta2hours(total_consumption), 2)),
                   'Consumption (%): ' + str(round(percentage_consumption, 2))]
         Log.result('\n'.join(totals))
 

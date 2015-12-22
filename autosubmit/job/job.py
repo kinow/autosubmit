@@ -377,7 +377,7 @@ class Job:
         :param index: column position to retrieve
         :type index: int
         :return: list of values in column index position
-        :rtype: list[int]
+        :rtype: list[datetime.datetime]
         """
         logname = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         lst = []
@@ -386,7 +386,7 @@ class Job:
             for line in lines:
                 fields = line.split()
                 if len(fields) >= index + 1:
-                    lst.append(int(fields[index]))
+                    lst.append(parse_date(fields[index]))
         return lst
 
     def check_end_time(self):
@@ -672,7 +672,7 @@ class Job:
         f.write(date2str(datetime.datetime.now(), 'S'))
 
     def write_start_time(self):
-        while not self.get_platform().get_stat_file(self.name, retries=0):
+        while not self.get_platform().get_stat_file(self.name, retries=1):
             return False
 
         time = self.check_start_time()
