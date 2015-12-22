@@ -359,8 +359,10 @@ class Monitor:
             autolabel(rects2)
             autolabel(rects4)
             autolabel(rects5)
-            plt.ylim(float(0.85 * min_time), float(1.15 * max_time))
-            plt.yticks(range(0, max_fail + 2))
+
+        for plot in range(1, num_plots + 1):
+            ax[plot - 1].set_ylim(float(0.85 * min_time), float(1.15 * max_time))
+            ax2[plot - 1].set_yticks(range(0, max_fail + 2))
 
         percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
