@@ -462,11 +462,9 @@ class Job:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
 
-        if self.write_start or previous_status != Status.RUNNING and self.status in [Status.COMPLETED,
-                                                                                     Status.FAILED,
-                                                                                     Status.UNKNOWN,
-                                                                                     Status.RUNNING]:
-            self.write_start = not self.write_start_time()
+        if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
+                                                                 Status.RUNNING]:
+            self.write_start_time()
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
 
@@ -672,10 +670,12 @@ class Job:
         f.write(date2str(datetime.datetime.now(), 'S'))
 
     def write_start_time(self):
-        while not self.get_platform().get_stat_file(self.name, retries=1):
-            return False
+        if self.get_platform().get_stat_file(self.name, retries=5):
+            time = self.check_start_time()
+        else:
+            Log.warning('Could not get start time for {0}. Using current time as an aproximation', self.name)
+            time = datetime.datetime.now()
 
-        time = self.check_start_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')
@@ -684,7 +684,7 @@ class Job:
         return True
 
     def write_end_time(self, completed):
-        self.get_platform().get_stat_file(self.name)
+        self.get_platform().get_stat_file(self.name, retries=5)
         time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')

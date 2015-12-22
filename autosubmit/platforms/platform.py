@@ -156,11 +156,6 @@ class Platform:
             if must_exist:
                 raise ex
             return False
-        except:
-            Log.error('Exception catched geeting {0}', filename)
-            sleep(1)
-            self.get_file(filename, must_exist)
-            return False
 
     def delete_file(self, filename):
         if self.type == 'ecaccess':

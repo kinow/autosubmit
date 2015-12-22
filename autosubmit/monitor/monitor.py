@@ -250,12 +250,12 @@ class Monitor:
             return deltatime.days * 24 + deltatime.seconds / 3600.0
 
         total_jobs_submitted = 0
-        total_consumption = datetime.timedelta()
+        cpu_consumption = datetime.timedelta()
         real_consumption = datetime.timedelta()
         total_jobs_run = 0
         total_jobs_failed = 0
         total_jobs_completed = 0
-        expected_total_consumption = 0
+        expected_cpu_consumption = 0
         expected_real_consumption = 0
         threshold = 0
         for job in joblist:
@@ -266,7 +266,7 @@ class Monitor:
             else:
                 hours = 0
             threshold = max(threshold, hours)
-            expected_total_consumption += hours * int(job.processors)
+            expected_cpu_consumption += hours * int(job.processors)
             expected_real_consumption += hours
         # These are constants, so they need to be CAPS. Suppress PyCharm warning
         # noinspection PyPep8Naming
@@ -284,7 +284,7 @@ class Monitor:
         RATIO = 4
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
         gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
-        fig.suptitle('STATS - ' + expid, size=20)
+        fig.suptitle('STATS - ' + expid, size=30)
 
         ax = []
         ax2 = []
@@ -316,15 +316,14 @@ class Monitor:
                     elif j == (len(submit_times) - 1) and job.status == Status.COMPLETED:
                         queued[i] += start_times[j] - submit_times[j]
                         run[i] += end_times[j] - start_times[j]
-                        tc = run[i] * int(job.processors)
-                        total_consumption += tc
-                        real_consumption += run[i] * int(job.processors)
+                        cpu_consumption += run[i] * int(job.processors)
+                        real_consumption += run[i]
                     else:
                         failed_jobs[i] += 1
                         fail_queued[i] += start_times[j] - submit_times[j]
                         fail_run[i] += end_times[j] - start_times[j]
-                        total_consumption += fail_run[i] * int(job.processors)
-                        real_consumption += fail_run[i] * int(job.processors)
+                        cpu_consumption += fail_run[i] * int(job.processors)
+                        real_consumption += fail_run[i]
                 total_jobs_run += len(start_times)
                 total_jobs_failed += failed_jobs[i]
                 total_jobs_completed += len(end_times) - failed_jobs[i]
@@ -346,25 +345,27 @@ class Monitor:
 
             rects1 = ax[plot - 1].bar(ind, queued, width, color='orchid')
             rects2 = ax[plot - 1].bar(ind + width, run, width, color='limegreen')
-            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='tomato')
+            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='red')
             rects4 = ax[plot - 1].bar(ind + width * 3, fail_queued, width, color='purple')
-            rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='red')
+            rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='tomato')
             ax[plot - 1].set_ylabel('hours')
             ax2[plot - 1].set_ylabel('# failed jobs')
             ax[plot - 1].set_xticks(ind + width)
             ax[plot - 1].set_xticklabels([job.name for job in joblist[l1:l2]], rotation='vertical')
-            ax[plot - 1].set_title(expid, fontsize=10, fontweight='bold')
+            ax[plot - 1].set_title(expid, fontsize=24, fontweight='bold')
+            # autolabel(rects1)
+            # autolabel(rects2)
+            # autolabel(rects4)
+            # autolabel(rects5)
+
             rects6 = ax[plot - 1].plot([0., width * 6 * MAX], [threshold, threshold], "k--", label='wallclock sim')
-            autolabel(rects1)
-            autolabel(rects2)
-            autolabel(rects4)
-            autolabel(rects5)
 
         for plot in range(1, num_plots + 1):
-            ax[plot - 1].set_ylim(float(0.85 * min_time), float(1.15 * max_time))
+            ax[plot - 1].set_ylim(float(0.9 * min_time), float(1.10 * max_time))
             ax2[plot - 1].set_yticks(range(0, max_fail + 2))
+            ax2[plot - 1].set_ylim(0, max_fail + 1)
 
-        percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
+        percentage_consumption = timedelta2hours(cpu_consumption) / expected_cpu_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
         totals = ['Period: ' + str(period_ini) + " ~ " + str(period_fi),
                   'Submitted (#): ' + str(total_jobs_submitted),
@@ -372,9 +373,9 @@ class Monitor:
                   'Failed  (#): ' + str(total_jobs_failed),
                   'Completed (#): ' + str(total_jobs_completed),
                   'Expected consumption real (h): ' + str(round(expected_real_consumption, 2)),
-                  'Expected consumption CPU time (h): ' + str(round(expected_total_consumption, 2)),
+                  'Expected consumption CPU time (h): ' + str(round(expected_cpu_consumption, 2)),
                   'Consumption real (h): ' + str(round(timedelta2hours(real_consumption), 2)),
-                  'Consumption CPU time (h): ' + str(round(timedelta2hours(total_consumption), 2)),
+                  'Consumption CPU time (h): ' + str(round(timedelta2hours(cpu_consumption), 2)),
                   'Consumption (%): ' + str(round(percentage_consumption, 2))]
         Log.result('\n'.join(totals))
 
