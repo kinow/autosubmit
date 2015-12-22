@@ -288,6 +288,9 @@ class Monitor:
 
         ax = []
         ax2 = []
+        max_time = 0
+        min_time = 0
+        max_fail = 0
         for plot in range(1, num_plots + 1):
             ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
             ax2.append(ax[plot-1].twinx())
@@ -325,10 +328,9 @@ class Monitor:
                 total_jobs_run += len(start_times)
                 total_jobs_failed += failed_jobs[i]
                 total_jobs_completed += len(end_times) - failed_jobs[i]
-            max_time = max(max(max(run, fail_run, queued, fail_queued)), datetime.timedelta(hours=threshold))
-            max_time = max_time.days * 24 + max_time.seconds / 3600.0
-            min_time = 0
-            max_fail = max(failed_jobs)
+            max_timedelta = max(max(max(run, fail_run, queued, fail_queued)), datetime.timedelta(hours=threshold))
+            max_time = max(max_time, max_timedelta.days * 24 + max_timedelta.seconds / 3600.0)
+            max_fail = max(max_fail, max(failed_jobs))
 
             for i, delta in enumerate(queued):
                 queued[i] = timedelta2hours(delta)
@@ -357,10 +359,8 @@ class Monitor:
             autolabel(rects2)
             autolabel(rects4)
             autolabel(rects5)
-            # ax[plot-1].set_ylim((float(0.85 * min_time), float(1.15 * max_time)))
-            # ax2[plot-1].set_ylim(0, max_fail + 2)
             plt.ylim(float(0.85 * min_time), float(1.15 * max_time))
-            ax2[plot-1].yaxis.set_ticks(range(0, max_fail + 2))
+            plt.yticks(range(0, max_fail + 2))
 
         percentage_consumption = timedelta2hours(total_consumption) / expected_total_consumption * 100
         white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
