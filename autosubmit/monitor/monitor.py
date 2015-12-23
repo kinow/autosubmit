@@ -284,12 +284,11 @@ class Monitor:
         RATIO = 4
         fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
         gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
-        fig.suptitle('STATS - ' + expid, size=30)
+        fig.suptitle('STATS - ' + expid, fontsize=24, fontweight='bold')
 
         ax = []
         ax2 = []
         max_time = 0
-        min_time = 0
         max_fail = 0
         for plot in range(1, num_plots + 1):
             ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
@@ -352,7 +351,7 @@ class Monitor:
             ax2[plot - 1].set_ylabel('# failed jobs')
             ax[plot - 1].set_xticks(ind + width)
             ax[plot - 1].set_xticklabels([job.name for job in joblist[l1:l2]], rotation='vertical')
-            ax[plot - 1].set_title(expid, fontsize=24, fontweight='bold')
+            ax[plot - 1].set_title(expid, fontsize=20)
             # autolabel(rects1)
             # autolabel(rects2)
             # autolabel(rects4)
@@ -361,7 +360,7 @@ class Monitor:
             rects6 = ax[plot - 1].plot([0., width * 6 * MAX], [threshold, threshold], "k--", label='wallclock sim')
 
         for plot in range(1, num_plots + 1):
-            ax[plot - 1].set_ylim(float(0.9 * min_time), float(1.10 * max_time))
+            ax[plot - 1].set_ylim(0, float(1.10 * max_time))
             ax2[plot - 1].set_yticks(range(0, max_fail + 2))
             ax2[plot - 1].set_ylim(0, max_fail + 1)
 
