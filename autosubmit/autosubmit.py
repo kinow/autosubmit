@@ -489,7 +489,7 @@ class Autosubmit:
             platform = platforms[platform_name]
             platform.add_parameters(parameters)
 
-        platform = platforms[as_conf.get_platform()]
+        platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
 
         joblist.update_parameters(parameters)

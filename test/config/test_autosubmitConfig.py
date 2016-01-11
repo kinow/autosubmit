@@ -170,35 +170,35 @@ class TestAutosubmitConfig(TestCase):
                          '')
         self.assertEqual(AutosubmitConfig.get_option(self.config._exp_parser, 'DEFAULT', 'HPCARCH', ''),
                          'patata')
-        self.assertEqual(AutosubmitConfig.get_option(self.config._jobs_parser, 'INI', 'PROCESSORS', 1),
+        self.assertEqual(AutosubmitConfig.get_option(self.config.jobs_parser, 'INI', 'PROCESSORS', 1),
                          1)
-        self.assertEqual(AutosubmitConfig.get_option(self.config._jobs_parser, 'INI', 'PROCESSORS', 2),
+        self.assertEqual(AutosubmitConfig.get_option(self.config.jobs_parser, 'INI', 'PROCESSORS', 2),
                          2)
 
     def test_get_bool_option(self):
         self.assertFalse(AutosubmitConfig.get_bool_option(self.config._exp_parser, 'rerun', 'RERUN', True))
 
     def test_check_exists(self):
-        self.assertFalse(AutosubmitConfig.check_exists(self.config._jobs_parser, 'INI', 'PROCESSORS'))
+        self.assertFalse(AutosubmitConfig.check_exists(self.config.jobs_parser, 'INI', 'PROCESSORS'))
         self.assertTrue(AutosubmitConfig.check_exists(self.config._exp_parser, 'DEFAULT', 'HPCARCH'))
 
     def test_check_is_boolean(self):
         self.assertTrue(AutosubmitConfig.check_is_boolean(self.config._exp_parser, 'rerun', 'RERUN', True))
         self.assertFalse(AutosubmitConfig.check_is_boolean(self.config._exp_parser, 'DEFAULT', 'HPCARCH', True))
-        self.assertFalse(AutosubmitConfig.check_is_boolean(self.config._jobs_parser, 'INI', 'PROCESSORS', True))
-        self.assertTrue(AutosubmitConfig.check_is_boolean(self.config._jobs_parser, 'INI', 'PROCESSORS', False))
+        self.assertFalse(AutosubmitConfig.check_is_boolean(self.config.jobs_parser, 'INI', 'PROCESSORS', True))
+        self.assertTrue(AutosubmitConfig.check_is_boolean(self.config.jobs_parser, 'INI', 'PROCESSORS', False))
 
     def test_check_is_choice(self):
         self.assertTrue(AutosubmitConfig.check_is_choice(self.config._exp_parser, 'DEFAULT', 'HPCARCH', True,
                                                          ['patata']))
-        self.assertTrue(AutosubmitConfig.check_is_choice(self.config._jobs_parser, 'INI', 'PROCESSORS', False,
+        self.assertTrue(AutosubmitConfig.check_is_choice(self.config.jobs_parser, 'INI', 'PROCESSORS', False,
                                                          ['patata']))
-        self.assertFalse(AutosubmitConfig.check_is_choice(self.config._jobs_parser, 'INI', 'PROCESSORS', True,
+        self.assertFalse(AutosubmitConfig.check_is_choice(self.config.jobs_parser, 'INI', 'PROCESSORS', True,
                                                           ['patata']))
 
     def test_check_is_int(self):
-        self.assertFalse(AutosubmitConfig.check_is_int(self.config._jobs_parser, 'INI', 'PROCESSORS', True))
-        self.assertTrue(AutosubmitConfig.check_is_int(self.config._jobs_parser, 'SIM', 'PROCESSORS', True))
+        self.assertFalse(AutosubmitConfig.check_is_int(self.config.jobs_parser, 'INI', 'PROCESSORS', True))
+        self.assertTrue(AutosubmitConfig.check_is_int(self.config.jobs_parser, 'SIM', 'PROCESSORS', True))
 
     # def test_check_regex(self):
     #     self.fail()

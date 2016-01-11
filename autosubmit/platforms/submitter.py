@@ -45,6 +45,15 @@ class Submitter:
                 adaptors_variable += ':'
             adaptors_variable += 'autosubmit.platforms.mn_adaptor'
 
+        platforms_used = list()
+        hpcarch = asconf.get_platform()
+
+        job_parser = asconf.jobs_parser
+        for job in job_parser.sections():
+            hpc = AutosubmitConfig.get_option(job_parser, job, 'HPC', hpcarch)
+            if hpc not in platforms_used:
+                platforms_used.append(hpc)
+
         os.environ['SAGA_ADAPTOR_PATH'] = adaptors_variable
         parser = asconf.platforms_parser
 
@@ -65,6 +74,10 @@ class Submitter:
         platforms['local'] = local_platform
 
         for section in parser.sections():
+
+            if section.lower() not in platforms_used:
+                continue
+
             platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
 
             remote_platform = Platform(asconf.expid, section.lower())

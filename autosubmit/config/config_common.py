@@ -107,19 +107,19 @@ class AutosubmitConfig:
         return dir_templates
 
     def get_wallclock(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
+        return AutosubmitConfig.get_option(self.jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 1))
 
     def get_memory(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', 0))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', 0))
 
     def check_conf_files(self):
         """
@@ -209,7 +209,7 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
-        parser = self._jobs_parser
+        parser = self.jobs_parser
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
         platforms.append('LOCAL')
@@ -321,7 +321,7 @@ class AutosubmitConfig:
         """
         self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
         self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
-        self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
+        self.jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None
