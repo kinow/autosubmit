@@ -202,6 +202,21 @@ class Platform:
             return True
         return False
 
+    def remove_completed_file(self, jobname):
+        """
+        Removes *COMPLETED* files from remote
+
+        :param jobname: name of job to check
+        :type jobname: str
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
+        filename = jobname + '_COMPLETED'
+        if self.delete_file(filename):
+            Log.debug('{0} been removed', filename)
+            return True
+        return False
+
     def get_stat_file(self, jobname, retries=1):
         """
         Copies *STAT* files from remote to local
