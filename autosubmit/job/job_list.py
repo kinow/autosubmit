@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import fcntl
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -400,7 +402,9 @@ class JobList:
         :rtype: JobList
         """
         if os.path.exists(filename):
-            return pickle.load(open(filename, 'r'))
+            fd = open(filename, 'rw')
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            return pickle.load(fd)
         else:
             Log.critical('File {0} does not exist'.format(filename))
             return list()
@@ -422,10 +426,12 @@ class JobList:
         :return: loaded joblist object
         :rtype: JobList
         """
-        setrecursionlimit(50000)
         path = os.path.join(self._pkl_path, self._job_list_file)
+        fd = open(path, 'w')
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
-        pickle.dump(self, open(path, 'w'))
+        pickle.dump(self, fd)
         Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):

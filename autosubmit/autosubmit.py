@@ -542,7 +542,7 @@ class Autosubmit:
 
         # the experiment should be loaded as well
         if os.path.exists(filename):
-            joblist = pickle.load(open(filename, 'rw'))
+            joblist = JobList.load_file(filename)
             Log.debug("Starting from joblist pickled in {0}", filename)
         else:
             Log.error("The necessary pickle file {0} does not exist.", filename)
