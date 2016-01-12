@@ -142,28 +142,22 @@ class Platform:
                     raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                                self.host, self.get_files_path()))
                 return False
-        try:
-            if self.type == 'local':
-                out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
-                                                                            filename)))
-            else:
-                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
-                                                                                          filename)))
-        except saga.DoesNotExist as ex:
+
+        if self.type == 'local':
+            directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid)))
+        else:
+            directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
+
+        if directory.exists(filename):
+            out = directory.open(filename)
+        else:
             if must_exist:
-                raise ex
+                raise Exception('File {0} does not exists'.format(filename))
             return False
 
-        try:
-            out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
-        except saga.DoesNotExist as ex:
-            out.close()
-            if must_exist:
-                raise ex
-            return False
+        out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
         out.close()
         return True
-
 
     def delete_file(self, filename):
         if self.type == 'ecaccess':

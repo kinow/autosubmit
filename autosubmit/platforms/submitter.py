@@ -50,7 +50,7 @@ class Submitter:
 
         job_parser = asconf.jobs_parser
         for job in job_parser.sections():
-            hpc = AutosubmitConfig.get_option(job_parser, job, 'HPC', hpcarch).lower()
+            hpc = AutosubmitConfig.get_option(job_parser, job, 'PLATFORM', hpcarch).lower()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
