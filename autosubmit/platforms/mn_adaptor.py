@@ -306,6 +306,7 @@ class Adaptor(saga.adaptors.base.Base):
     # ----------------------------------------------------------------
     #
     def __init__(self):
+        # noinspection PyCallByClass,PyTypeChecker
         saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
@@ -393,6 +394,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         self.jobs = dict()
 
         # the monitoring thread - one per service instance
+        # noinspection PyTypeChecker
         self.mt = _job_state_monitor(job_service=self)
         self.mt.start()
 

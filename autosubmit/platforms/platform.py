@@ -3,10 +3,12 @@ from time import sleep
 
 import saga
 import os
+import datetime
 
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
+from autosubmit.date.chunk_date_lib import date2str
 
 
 class Platform:
@@ -145,7 +147,8 @@ class Platform:
         # noinspection PyBroadException
         try:
             if self.type == 'local':
-                directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid)))
+                directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
+                                                                                       'LOG_' + self.expid)))
             else:
                 directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
             directory.list(filename)
@@ -264,8 +267,9 @@ class Platform:
         jd = saga.job.Description()
         jd.executable = os.path.join(self.get_files_path(), scriptname)
         jd.working_directory = self.get_files_path()
-        jd.output = "{0}.out".format(job.name)
-        jd.error = "{0}.err".format(job.name)
+        str_datetime = date2str(datetime.datetime.now(), 'S')
+        jd.output = "{0}.{1}.out".format(job.name, str_datetime)
+        jd.error = "{0}.{1}.err".format(job.name, str_datetime)
         self.add_atribute(jd, 'Name', job.name)
 
         wallclock = job.parameters["WALLCLOCK"]

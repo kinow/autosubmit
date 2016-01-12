@@ -238,14 +238,6 @@ class Monitor:
         :type period_fi: datetime
         """
 
-        def autolabel(rects):
-            # attach text labels
-            for rect in rects:
-                height = rect.get_height()
-                if height > max_time:
-                    ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1.05 * max_time, '%d' % int(height),
-                                      ha='center', va='bottom', rotation='vertical', fontsize=9)
-
         def timedelta2hours(deltatime):
             return deltatime.days * 24 + deltatime.seconds / 3600.0
 
@@ -292,7 +284,7 @@ class Monitor:
         max_fail = 0
         for plot in range(1, num_plots + 1):
             ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
-            ax2.append(ax[plot-1].twinx())
+            ax2.append(ax[plot - 1].twinx())
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
 
