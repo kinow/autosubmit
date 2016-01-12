@@ -149,13 +149,21 @@ class Platform:
             else:
                 out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
                                                                                           filename)))
-            out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
-            out.close()
-            return True
         except saga.DoesNotExist as ex:
             if must_exist:
                 raise ex
             return False
+
+        try:
+            out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
+        except saga.DoesNotExist as ex:
+            out.close()
+            if must_exist:
+                raise ex
+            return False
+        out.close()
+        return True
+
 
     def delete_file(self, filename):
         if self.type == 'ecaccess':
