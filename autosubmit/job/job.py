@@ -647,6 +647,9 @@ class Job:
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
+        if not self.check:
+            Log.info('Template {0} will not be checked'.format(self.section))
+            return True
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf.get_project_dir())
 

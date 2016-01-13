@@ -160,12 +160,10 @@ Examples:
     ## Defines dependencies from job as a list of parents jobs separed by spaces.
     ## Dependencies to jobs in previous chunk, member o startdate, use -(DISTANCE)
     # DEPENDENCIES = INI SIM-1 CLEAN-2
-    ## Define if jobs runs once, once per stardate, once per member or once per chunk.
-    ## Options: once, date, member, chunk.
+    ## Define if jobs runs once, once per stardate, once per member or once per chunk. Options: once, date, member, chunk.
     ## If not specified, defaults to once
     # RUNNING = once
-    ## Specifies that job has only to be run after X dates, members or chunk.
-    ## A job will always be created for the last
+    ## Specifies that job has only to be run after X dates, members or chunk. A job will always be created for the last
     ## If not specified, defaults to once
     # FREQUENCY = 3
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
@@ -180,6 +178,12 @@ Examples:
     # THREADS = 1
     ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
     # TASKS = 1
+    ## Memory requirements for the job in MB
+    # MEMORY = 4096
+    ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.conf
+    # RETRIALS = 4
+    ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
+    # CHECK = False
 
     [LOCAL_SETUP]
     FILE = templates/common/common.localsetup
@@ -229,14 +233,13 @@ Examples:
 
 .. code-block:: ini
 
-    # Example queue with all options specified
+    # Example platform with all options specified
 
     ## Platform name
     # [PLAFORM]
     ## Queue type. Options: PBS, SGE, PS, LSF, ecaccess, SLURM
     # TYPE =
-    ## Version of queue manager to use. Needed only in PBS (options: 10, 11, 12)
-    ## and ecaccess (options: pbs, loadleveler)
+    ## Version of queue manager to use. Needed only in PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler)
     # VERSION =
     ## Hostname of the HPC
     # HOST =
@@ -259,6 +262,12 @@ Examples:
     ## If specified, autosubmit will run jobs with only one processor in the specified queue.
     ## Autosubmit will ignore this configuration if SERIAL_PLATFORM is provided
     # SERIAL_QUEUE = SERIAL_QUEUE_NAME
+    ## Default Maximum number of jobs to be waiting in any platform queue
+    ## Default = 3
+    # MAX_WAITING_JOBS = 3
+    ## Default maximum number of jobs to be running at the same time at any platform
+    ## Default = 6
+    # TOTAL_JOBS = 6
 
     [ithaca]
     # Queue type. Options: ps, SGE, LSF, SLURM, PBS, eceaccess
@@ -279,23 +288,22 @@ Examples:
     [config]
     # Experiment identifier
     # No need to change
-    EXPID = cxxx
+    EXPID =
     # No need to change.
     # Autosubmit version identifier
-    AUTOSUBMIT_VERSION = 3.0.0rc1
-    # Maximum number of jobs to be waiting in the HPC queue
+    AUTOSUBMIT_VERSION =
+    # Default maximum number of jobs to be waiting in any platform
     # Default = 3
     MAXWAITINGJOBS = 3
-    # Maximum number of jobs to be running at the same time at the HPC
+    # Default maximum number of jobs to be running at the same time at any platform
     # Default = 6
     TOTALJOBS = 6
-    # Time (seconds) between connections to the HPC queue scheduler to poll already
-    # submitted jobs status
+    # Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status
     # Default = 10
     SAFETYSLEEPTIME = 10
-    # Number of retrials if a job fails
-    # Default = 4
-    RETRIALS = 4
+    # Number of retrials if a job fails. Can ve override at job level
+    # Default = 0
+    RETRIALS = 0
 
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::
