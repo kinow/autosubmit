@@ -23,6 +23,7 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 import fcntl
 import os
 import re
+import time
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import StatisticsSnippet
@@ -85,6 +86,7 @@ class Job:
         self._ancestors = None
         self.write_start = False
         self._platform = None
+        self.check = True
 
     def __getstate__(self):
         odict = self.__dict__
@@ -678,29 +680,29 @@ class Job:
 
     def write_start_time(self):
         if self.get_platform().get_stat_file(self.name, retries=5):
-            time = self.check_start_time()
+            start_time = self.check_start_time()
         else:
             Log.warning('Could not get start time for {0}. Using current time as an aproximation', self.name)
-            time = datetime.datetime.now()
+            start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         fcntl.flock(f, fcntl.LOCK_EX)
         f.write(' ')
         # noinspection PyTypeChecker
-        f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
+        f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         return True
 
     def write_end_time(self, completed):
         self.get_platform().get_stat_file(self.name, retries=5)
-        time = self.check_end_time()
+        end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         fcntl.flock(f, fcntl.LOCK_EX)
         f.write(' ')
         if time > 0:
             # noinspection PyTypeChecker
-            f.write(date2str(datetime.datetime.fromtimestamp(time), 'S'))
+            f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
         else:
             f.write(date2str(datetime.datetime.now(), 'S'))
         f.write(' ')

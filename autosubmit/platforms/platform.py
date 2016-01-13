@@ -124,7 +124,8 @@ class Platform:
         except saga.BadParameter:
             try:
                 return saga.filesystem.Directory(sftp_directory,
-                                                 saga.filesystem.CREATE, session=self.service.session)
+                                                 saga.filesystem.CREATE,
+                                                 session=self.service.session)
             except saga.BadParameter:
                 new_directory = os.path.split(path)[1]
                 parent = self.get_workdir(os.path.dirname(path))
@@ -187,8 +188,14 @@ class Platform:
         except saga.DoesNotExist:
             return True
 
-    def get_completed_files(self, job_name):
-        return self.get_file('{0}_COMPLETED'.format(job_name), False)
+    def get_completed_files(self, job_name, retries=1):
+        while True:
+            if self.get_file('{0}_COMPLETED'.format(job_name), False):
+                return True
+            if retries == 0:
+                return False
+            retries -= 1
+            sleep(5)
 
     def remove_stat_file(self, jobname):
         """
