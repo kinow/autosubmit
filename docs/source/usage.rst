@@ -20,7 +20,6 @@ Command list
 -delete  Delete specified experiment
 -configure  Configure database and path for autosubmit
 -install  Install database for Autosubmit on the configured folder
--refresh  Refresh project directory for an experiment
 -archive  Clean, compress and remove from the experiments' folder a finalized experiment
 -unarchive  Restores an archived experiment
 
@@ -656,35 +655,6 @@ Example:
     USER = my_user
     SCRATCH_DIR = /scratch
     TEST_SUITE = True
-
-
-How to refresh an experiment
-============================
-To refresh the project folder after creating the experiment use the command:
-::
-
-    autosubmit refresh EXPID
-
-*EXPID* is the experiment identifier.
-
-Options:
-::
-
-    usage: autosubmit refresh [-h] [-mc] expid
-
-    refresh project directory for an experiment
-
-    positional arguments:
-      expid              experiment identifier
-
-    optional arguments:
-      -h, --help         show this help message and exit
-      -mc, --model_conf  overwrite model conf file
-
-Example:
-::
-
-    autosubmit refresh cxxx
 
 
 How to archive an experiment

@@ -653,10 +653,10 @@ class JobList:
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
                                 parent.status = Status.WAITING
-                                if chunk != previous_chunk + 1:
-                                    job.add_parent(parent)
                                 Log.debug("Parent: " + parent.name)
-                    previous_chunk = chunk
+
+        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
+            self._remove_job(job)
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
             self._remove_job(job)
@@ -723,7 +723,7 @@ class DicJobs:
         frequency = int(self.get_option(section, "FREQUENCY", 1))
         if running == 'once':
             self._create_jobs_once(section, priority)
-        elif running == 'startdate':
+        elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency)
         elif running == 'member':
             self._create_jobs_member(section, priority, frequency)

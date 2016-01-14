@@ -190,6 +190,8 @@ class Autosubmit:
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
+                                   help='chooses type of output for generated plot')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -291,7 +293,7 @@ class Autosubmit:
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot, args.hide)
+                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
                 return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
                                             args.platformsconfpath, args.jobsconfpath, args.all, args.local)
@@ -1172,7 +1174,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide):
+    def create(expid, noplot, hide, output):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1185,6 +1187,11 @@ class Autosubmit:
         :rtype: bool
         :param hide: hides plot window
         :type hide: bool
+        :param hide: hides plot window
+        :type hide: bool
+        :param hide: file format for plot
+        :type hide: str
+
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -1248,7 +1255,7 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPloting joblist...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf', not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
 
         Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")
