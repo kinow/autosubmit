@@ -16,6 +16,8 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import fcntl
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -44,6 +46,7 @@ class JobList:
     :param expid: experiment's indentifier
     :type expid: str
     """
+
     def __init__(self, expid):
         self._pkl_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl")
         self._update_file = "updated_list_" + expid + ".txt"
@@ -64,7 +67,7 @@ class JobList:
         """
         return self._expid
 
-    def create(self, date_list, member_list, num_chunks, parameters, date_format):
+    def create(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials):
         """
         Creates all jobs needed for the current workflow
 
@@ -78,6 +81,8 @@ class JobList:
         :type parameters: dict
         :param date_format: option to formate dates
         :type date_format: str
+        :param default_retrials: default retrials for ech job
+        :type default_retrials: int
         """
         self._parameters = parameters
 
@@ -91,7 +96,7 @@ class JobList:
         self._member_list = member_list
         self._chunk_list = chunk_list
 
-        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format)
+        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
 
@@ -397,7 +402,9 @@ class JobList:
         :rtype: JobList
         """
         if os.path.exists(filename):
-            return pickle.load(open(filename, 'r'))
+            fd = open(filename, 'rw')
+            fcntl.flock(fd, fcntl.LOCK_EX)
+            return pickle.load(fd)
         else:
             Log.critical('File {0} does not exist'.format(filename))
             return list()
@@ -419,10 +426,12 @@ class JobList:
         :return: loaded joblist object
         :rtype: JobList
         """
-        setrecursionlimit(50000)
         path = os.path.join(self._pkl_path, self._job_list_file)
+        fd = open(path, 'w')
+        fcntl.flock(fd, fcntl.LOCK_EX)
+        setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
-        pickle.dump(self, open(path, 'w'))
+        pickle.dump(self, fd)
         Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):
@@ -448,20 +457,19 @@ class JobList:
     def update_parameters(self, parameters):
         self._parameters = parameters
 
-    def update_list(self, store_change=True):
+    def update_list(self, as_conf, store_change=True):
         # load updated file list
         self.update_from_file(store_change)
 
-        # reset jobs that has failed less ethan 10 times
-        if 'RETRIALS' in self._parameters:
-            # noinspection PyTypeChecker
-            retrials = int(self._parameters['RETRIALS'])
-        else:
-            retrials = 4
+        # reset jobs that has failed less than 10 times
 
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
+            if hasattr(self, 'retrials'):
+                retrials = self.retrials
+            else:
+                retrials = as_conf.get_retrials()
             if job.fail_count < retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
@@ -686,15 +694,18 @@ class DicJobs:
     :type chunk_list: list
     :param date_format: option to formate dates
     :type date_format: str
+    :param default_retrials: default retrials for ech job
+    :type default_retrials: int
 
     """
-    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format):
+    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format, default_retrials):
         self._date_list = date_list
         self._joblist = joblist
         self._member_list = member_list
         self._chunk_list = chunk_list
         self._parser = parser
         self._date_format = date_format
+        self.default_retrials = default_retrials
         self._dic = dict()
 
     def read_section(self, section, priority):
@@ -879,11 +890,14 @@ class DicJobs:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
         job.set_queue(self.get_option(section, "QUEUE", None))
+        job.check = bool(self.get_option(section, "CHECK", True))
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
         job.threads = self.get_option(section, "THREADS", 1)
         job.tasks = self.get_option(section, "TASKS", 1)
+        job.memory = self.get_option(section, "MEMORY", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
+        job.max_retrials = self.get_option(section, 'RETRIALS', self.default_retrials)
         self._joblist.get_job_list().append(job)
         return job
 

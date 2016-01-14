@@ -166,7 +166,7 @@ def add_hours(date, number_of_hours, cal):
     """
     result = date + relativedelta(hours=number_of_hours)
     if cal == 'noleap':
-        year = date.tyear
+        year = date.year
         if date.month > 2:
             year += 1
 
@@ -274,9 +274,12 @@ def parse_date(string_date):
     :type string_date: str
     :rtype: datetime.datetime
     """
-    if string_date is None:
+    if string_date is None or string_date == '':
         return None
     length = len(string_date)
+    # Date and time can be given as year, year+month, year+month+day, year+month+day+hour or year+month+day+hour+minute
+    if length == 4:
+        return datetime.datetime.strptime(string_date, "%Y")
     if length == 6:
         return datetime.datetime.strptime(string_date, "%Y%m")
     if length == 8:
@@ -285,12 +288,19 @@ def parse_date(string_date):
         return datetime.datetime.strptime(string_date, "%Y%m%d%H")
     elif length == 12:
         return datetime.datetime.strptime(string_date, "%Y%m%d%H%M")
+    elif length == 14:
+        return datetime.datetime.strptime(string_date, "%Y%m%d%H%M%S")
+    else:
+        raise ValueError("String '{0}' can not be converted to date".format(string_date))
 
 
 def date2str(date, date_format=''):
     """
     Converts a datetime object to a str
 
+    :param date_format: specifies format for date time convcersion. It can be H to show hours,
+    M to show hour and minute. Other values will return only the date.
+    :type date_format: str
     :param date: date to convert
     :type date: datetime.datetime
     :rtype: str
@@ -302,22 +312,9 @@ def date2str(date, date_format=''):
         return "{0:04}{1:02}{2:02}{3:02}".format(date.year, date.month, date.day, date.hour)
     elif date_format == 'M':
         return "{0:04}{1:02}{2:02}{3:02}{4:02}".format(date.year, date.month, date.day, date.hour, date.minute)
+    elif date_format == 'S':
+        return "{0:04}{1:02}{2:02}{3:02}{4:02}{5:02}".format(date.year, date.month, date.day, date.hour, date.minute,
+                                                             date.second)
     else:
         return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
 
-
-####################
-# Main Program
-####################
-def main():
-    string_date = datetime.datetime(1800, 5, 1, 15)
-    cal = 'noleap'
-    start_date = chunk_start_date(string_date, 1, 1, 'month', cal)
-    Log.info(date2str(start_date, 'M'))
-    end_date = chunk_end_date(start_date, 1, 'month', cal)
-    Log.info(date2str(end_date))
-    Log.info("yesterday: {0} ", previous_day(string_date, cal))
-
-
-if __name__ == "__main__":
-    main()

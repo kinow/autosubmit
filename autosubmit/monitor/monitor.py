@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import datetime
 import os
 
 import time
@@ -32,6 +33,10 @@ import pydotplus
 import numpy as np
 # noinspection PyPackageRequirements
 import matplotlib.pyplot as plt
+import matplotlib.gridspec as gridspec
+import matplotlib.patches as mpatches
+
+import subprocess
 
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
@@ -142,7 +147,7 @@ class Monitor:
                 if flag:
                     self._add_children(child, exp, node_child)
 
-    def generate_output(self, expid, joblist, output_format="pdf"):
+    def generate_output(self, expid, joblist, output_format="pdf", show=False):
         """
         Plots graph for joblist and stores it in a file
 
@@ -152,6 +157,8 @@ class Monitor:
         :type joblist: JobList
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
+        :param show: if true, will open the new plot with the default viewer
+        :type show: bool
         """
         Log.info('Plotting...')
         now = time.localtime()
@@ -178,8 +185,13 @@ class Monitor:
             Log.error('Format {0} not supported', output_format)
             return
         Log.result('Plot created at {0}', output_file)
+        if show:
+            try:
+                subprocess.check_call(['xdg-open', output_file])
+            except subprocess.CalledProcessError:
+                Log.error('File {0} could not be opened', output_file)
 
-    def generate_output_stats(self, expid, joblist, output_format="pdf"):
+    def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
         """
         Plots stats for joblist and stores it in a file
 
@@ -189,17 +201,28 @@ class Monitor:
         :type joblist: JobList
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
+        :param period_ini: initial datetime of filtered period
+        :type period_ini: datetime
+        :param period_fi: final datetime of filtered period
+        :type period_fi: datetime
+        :param show: if true, will open the new plot with the default viewer
+        :type show: bool
         """
         Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
                                    "." + output_format)
-        self.create_bar_diagram(expid, joblist, output_file)
+        self.create_bar_diagram(expid, joblist, output_file, period_ini, period_fi)
         Log.result('Stats created at {0}', output_file)
+        if show:
+            try:
+                subprocess.check_call(['xdg-open', output_file])
+            except subprocess.CalledProcessError:
+                Log.error('File {0} could not be opened', output_file)
 
     @staticmethod
-    def create_bar_diagram(expid, joblist, output_file):
+    def create_bar_diagram(expid, joblist, output_file, period_ini=None, period_fi=None):
         """
         Function to plot statistics
 
@@ -209,35 +232,34 @@ class Monitor:
         :type joblist: JobList
         :param output_file: path to create file
         :type output_file: str
+        :param period_ini: initial datetime of filtered period
+        :type period_ini: datetime
+        :param period_fi: final datetime of filtered period
+        :type period_fi: datetime
         """
 
-        def autolabel(rects):
-            # attach text labels
-            for rect in rects:
-                height = rect.get_height()
-                if height > max_time:
-                    ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1.05 * max_time, '%d' % int(height),
-                                      ha='center', va='bottom', rotation='vertical', fontsize=9)
+        def timedelta2hours(deltatime):
+            return deltatime.days * 24 + deltatime.seconds / 3600.0
 
-        def failabel(rects):
-            for rect in rects:
-                height = rect.get_height()
-                if height > 0:
-                    ax[plot - 1].text(rect.get_x() + rect.get_width() / 2., 1 + height, '%d' % int(height), ha='center',
-                                      va='bottom', fontsize=9)
-
-        average_run_time = sum([float(job.check_run_time()) / 3600 for job in joblist]) / len(joblist)
-        max_time = max(max([float(job.check_run_time()) / 3600 for job in joblist]),
-                       max([float(job.check_queued_time()) / 3600 for job in joblist]))
-        min_time = min([int(float(job.check_run_time()) / 3600 - average_run_time) for job in joblist])
-        # print average_run_time
-        # l1 = 0
-        # l2 = len(joblist)
-        # print [int(job.check_queued_time())/3600 for job in joblist[l1:l2]]
-        # print [int(job.check_run_time())/3600 for job in joblist[l1:l2]]
-        # print [int(int(job.check_run_time())/3600-average_run_time) for job in joblist[l1:l2]]
-        # print [int(job.check_failed_times()) for job in joblist[l1:l2]]
-
+        total_jobs_submitted = 0
+        cpu_consumption = datetime.timedelta()
+        real_consumption = datetime.timedelta()
+        total_jobs_run = 0
+        total_jobs_failed = 0
+        total_jobs_completed = 0
+        expected_cpu_consumption = 0
+        expected_real_consumption = 0
+        threshold = 0
+        for job in joblist:
+            total_jobs_submitted += len(job.check_retrials_submit_time())
+            if job.wallclock:
+                l = job.wallclock.split(':')
+                hours = float(l[1]) / 60 + float(l[0])
+            else:
+                hours = 0
+            threshold = max(threshold, hours)
+            expected_cpu_consumption += hours * int(job.processors)
+            expected_real_consumption += hours
         # These are constants, so they need to be CAPS. Suppress PyCharm warning
         # noinspection PyPep8Naming
         MAX = 12.0
@@ -249,57 +271,123 @@ class Monitor:
         width = 0.16  # the width of the bars
 
         plt.close('all')
-        fig = plt.figure(figsize=(14, 6 * num_plots))
-        # fig = plt.figure()
+
+        # noinspection PyPep8Naming
+        RATIO = 4
+        fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
+        gs = gridspec.GridSpec(RATIO * num_plots + 2, 1)
+        fig.suptitle('STATS - ' + expid, fontsize=24, fontweight='bold')
+
         ax = []
-        lgd = None
+        ax2 = []
+        max_time = 0
+        max_fail = 0
         for plot in range(1, num_plots + 1):
-            ax.append(fig.add_subplot(num_plots, 1, plot))
+            ax.append(fig.add_subplot(gs[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
+            ax2.append(ax[plot - 1].twinx())
             l1 = int((plot - 1) * MAX)
             l2 = int(plot * MAX)
-            queued = [float(job.check_queued_time()) / 3600 for job in joblist[l1:l2]]
-            run = [float(job.check_run_time()) / 3600 for job in joblist[l1:l2]]
-            excess = [float(job.check_run_time()) / 3600 - average_run_time for job in joblist[l1:l2]]
-            failed_jobs = [int(job.check_failed_times()) for job in joblist[l1:l2]]
-            fail_queued = [float(job.check_fail_queued_time()) / 3600 for job in joblist[l1:l2]]
-            fail_run = [float(job.check_fail_run_time()) / 3600 for job in joblist[l1:l2]]
-            if plot == num_plots:
-                queued = queued + [0] * int(MAX - len(joblist[l1:l2]))
-                run = run + [0] * int(MAX - len(joblist[l1:l2]))
-                excess = excess + [0] * int(MAX - len(joblist[l1:l2]))
-                failed_jobs = failed_jobs + [0] * int(MAX - len(joblist[l1:l2]))
-                fail_queued = fail_queued + [0] * int(MAX - len(joblist[l1:l2]))
-                fail_run = fail_run + [0] * int(MAX - len(joblist[l1:l2]))
-                # ind = np.arange(len([int(job.check_queued_time())/3600 for job in joblist[l1:l2]]))
-            rects1 = ax[plot - 1].bar(ind, queued, width, color='r')
-            rects2 = ax[plot - 1].bar(ind + width, run, width, color='g')
-            rects3 = ax[plot - 1].bar(ind + width * 2, excess, width, color='b')
-            rects4 = ax[plot - 1].bar(ind + width * 3, failed_jobs, width, color='y')
-            rects5 = ax[plot - 1].bar(ind + width * 4, fail_queued, width, color='m')
-            rects6 = ax[plot - 1].bar(ind + width * 5, fail_run, width, color='c')
-            ax[plot - 1].set_ylabel('hours')
-            ax[plot - 1].set_xticks(ind + width)
-            ax[plot - 1].set_xticklabels([job.short_name for job in joblist[l1:l2]], rotation='vertical')
-            box = ax[plot - 1].get_position()
-            ax[plot - 1].set_position([box.x0, box.y0, box.width * 0.8, box.height * 0.8])
-            ax[plot - 1].set_title(expid, fontsize=20, fontweight='bold')
-            lgd = ax[plot - 1].legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0], rects6[0]), (
-                'Queued (h)', 'Run (h)', 'Excess (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)'),
-                loc="upper left", bbox_to_anchor=(1, 1))
-            autolabel(rects1)
-            autolabel(rects2)
-            failabel(rects4)
-            autolabel(rects5)
-            autolabel(rects6)
-            plt.ylim((1.15 * min_time, 1.15 * max_time))
 
-        # fig.set_size_inches(14,num_plots*6)
-        # plt.savefig(output_file, bbox_extra_artists=(lgd), bbox_inches='tight')
-        # plt.savefig(output_file, bbox_inches='tight')
-        # fig.tight_layout()
+            run = [datetime.timedelta()] * (l2 - l1)
+            queued = [datetime.timedelta()] * (l2 - l1)
+            failed_jobs = [0] * (l2 - l1)
+            fail_queued = [datetime.timedelta()] * (l2 - l1)
+            fail_run = [datetime.timedelta()] * (l2 - l1)
+
+            for i, job in enumerate(joblist[l1:l2]):
+                submit_times = job.check_retrials_submit_time()
+                start_times = job.check_retrials_start_time()
+                end_times = job.check_retrials_end_time()
+
+                for j, t in enumerate(submit_times):
+
+                    if j >= len(end_times):
+                        if j < len(start_times):
+                            queued[i] += start_times[j] - submit_times[j]
+                    elif j == (len(submit_times) - 1) and job.status == Status.COMPLETED:
+                        queued[i] += start_times[j] - submit_times[j]
+                        run[i] += end_times[j] - start_times[j]
+                        cpu_consumption += run[i] * int(job.processors)
+                        real_consumption += run[i]
+                    else:
+                        failed_jobs[i] += 1
+                        fail_queued[i] += start_times[j] - submit_times[j]
+                        fail_run[i] += end_times[j] - start_times[j]
+                        cpu_consumption += fail_run[i] * int(job.processors)
+                        real_consumption += fail_run[i]
+                total_jobs_run += len(start_times)
+                total_jobs_failed += failed_jobs[i]
+                total_jobs_completed += len(end_times) - failed_jobs[i]
+            max_timedelta = max(max(max(run, fail_run, queued, fail_queued)), datetime.timedelta(hours=threshold))
+            max_time = max(max_time, max_timedelta.days * 24 + max_timedelta.seconds / 3600.0)
+            max_fail = max(max_fail, max(failed_jobs))
+
+            for i, delta in enumerate(queued):
+                queued[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(run):
+                run[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(fail_queued):
+                fail_queued[i] = timedelta2hours(delta)
+
+            for i, delta in enumerate(fail_run):
+                fail_run[i] = timedelta2hours(delta)
+
+            rects1 = ax[plot - 1].bar(ind, queued, width, color='orchid')
+            rects2 = ax[plot - 1].bar(ind + width, run, width, color='limegreen')
+            rects3 = ax2[plot - 1].bar(ind + width * 2, failed_jobs, width, color='red')
+            rects4 = ax[plot - 1].bar(ind + width * 3, fail_queued, width, color='purple')
+            rects5 = ax[plot - 1].bar(ind + width * 4, fail_run, width, color='tomato')
+            ax[plot - 1].set_ylabel('hours')
+            ax2[plot - 1].set_ylabel('# failed jobs')
+            ax[plot - 1].set_xticks(ind + width)
+            ax[plot - 1].set_xticklabels([job.name for job in joblist[l1:l2]], rotation='vertical')
+            ax[plot - 1].set_title(expid, fontsize=20)
+            # autolabel(rects1)
+            # autolabel(rects2)
+            # autolabel(rects4)
+            # autolabel(rects5)
+
+            rects6 = ax[plot - 1].plot([0., width * 6 * MAX], [threshold, threshold], "k--", label='wallclock sim')
+
+        for plot in range(1, num_plots + 1):
+            ax[plot - 1].set_ylim(0, float(1.10 * max_time))
+            ax2[plot - 1].set_yticks(range(0, max_fail + 2))
+            ax2[plot - 1].set_ylim(0, max_fail + 1)
+
+        percentage_consumption = timedelta2hours(cpu_consumption) / expected_cpu_consumption * 100
+        white = mpatches.Rectangle((0, 0), 0, 0, alpha=0.0)
+        totals = ['Period: ' + str(period_ini) + " ~ " + str(period_fi),
+                  'Submitted (#): ' + str(total_jobs_submitted),
+                  'Run  (#): ' + str(total_jobs_run),
+                  'Failed  (#): ' + str(total_jobs_failed),
+                  'Completed (#): ' + str(total_jobs_completed),
+                  'Expected consumption real (h): ' + str(round(expected_real_consumption, 2)),
+                  'Expected consumption CPU time (h): ' + str(round(expected_cpu_consumption, 2)),
+                  'Consumption real (h): ' + str(round(timedelta2hours(real_consumption), 2)),
+                  'Consumption CPU time (h): ' + str(round(timedelta2hours(cpu_consumption), 2)),
+                  'Consumption (%): ' + str(round(percentage_consumption, 2))]
+        Log.result('\n'.join(totals))
+
+        ax0 = fig.add_subplot(gs[0, 0])
+        ax0.set_frame_on(False)
+        ax0.axes.get_xaxis().set_visible(False)
+        ax0.axes.get_yaxis().set_visible(False)
+        # noinspection PyUnboundLocalVariable
+        first_legend = ax0.legend((rects1[0], rects2[0], rects3[0], rects4[0], rects5[0], rects6[0]),
+                                  ('Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)',
+                                   'Max wallclock (h)'), loc="upper right")
+        plt.gca().add_artist(first_legend)
+
+        ax0.legend([white, white, white, white, white, white, white, white, white, white],
+                   totals,
+                   handlelength=0,
+                   loc="upper left")
+
+        gs.tight_layout(fig, rect=[0, 0.03, 1, 0.97])  # adjust rect parameter while leaving some room for suptitle.
         # plt.show()
-        plt.subplots_adjust(left=0.1, right=0.8, top=0.97, bottom=0.05, wspace=0.2, hspace=0.6)
-        plt.savefig(output_file, bbox_extra_artists=lgd)
+        plt.savefig(output_file)
 
     @staticmethod
     def clean_plot(expid):

@@ -31,14 +31,6 @@ from pyparsing import nestedExpr
 from autosubmit.date.chunk_date_lib import parse_date
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.platforms.psplatform import PsPlatform
-from autosubmit.platforms.lsfplatform import LsfPlatform
-from autosubmit.platforms.pbsplatform import PBSPlatform
-from autosubmit.platforms.sgeplatform import SgePlatform
-from autosubmit.platforms.ecplatform import EcPlatform
-from autosubmit.platforms.slurmplatform import SlurmPlatform
-from autosubmit.platforms.localplatform import LocalPlatform
-from autosubmit.platforms.hpcplatform import HPCPlatformException
 
 
 class AutosubmitConfig:
@@ -68,6 +60,16 @@ class AutosubmitConfig:
         Returns experiment's config file name
         """
         return self._exp_parser_file
+
+    @property
+    def platforms_parser(self):
+        """
+        Returns experiment's platforms parser object
+
+        :return: platforms config parser object
+        :rtype: SafeConfigParser
+        """
+        return self._platforms_parser
 
     @property
     def platforms_file(self):
@@ -105,16 +107,19 @@ class AutosubmitConfig:
         return dir_templates
 
     def get_wallclock(self, section):
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
+        return AutosubmitConfig.get_option(self.jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 1))
+
+    def get_memory(self, section):
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', 0))
 
     def check_conf_files(self):
         """
@@ -173,15 +178,14 @@ class AutosubmitConfig:
             Log.error('There are repeated platforms names')
 
         for section in self._platforms_parser.sections():
-            result = result and AutosubmitConfig.check_is_choice(self._platforms_parser, section, 'TYPE', True,
-                                                                 ['ps', 'pbs', 'sge', 'lsf', 'ecaccess', 'slurm'])
+            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'TYPE')
             platform_type = AutosubmitConfig.get_option(self._platforms_parser, section, 'TYPE', '').lower()
             if platform_type != 'ps':
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'USER')
 
-            if platform_type in ['pbs', 'ecaccess']:
-                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
+            # if platform_type in ['pbs', 'ecaccess']:
+            #     result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
 
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
@@ -205,7 +209,7 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
-        parser = self._jobs_parser
+        parser = self.jobs_parser
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
         platforms.append('LOCAL')
@@ -317,7 +321,7 @@ class AutosubmitConfig:
         """
         self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
         self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
-        self._jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
+        self.jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None
@@ -378,38 +382,11 @@ class AutosubmitConfig:
         :type: list
         """
         Log.info(title)
-        Log.info("----------------------")
-        Log.info("{0:<{col1}}| {1:<{col2}}".format("-- Parameter --", "-- Value --", col1=15, col2=15))
-        for i in parameters:
-            Log.info("{0:<{col1}}| {1:<{col2}}".format(i[0], i[1], col1=15, col2=15))
+        Log.info("---------------------------------------")
+        Log.info("{0:<{col1}}| {1:<{col2}}".format("  -- Parameter --", "  -- Value --", col1=20, col2=20))
+        for key in parameters:
+            Log.info("{0:<{col1}}| {1:<{col2}}".format(key, parameters[key], col1=20, col2=20))
         Log.info("")
-
-    def check_parameters(self):
-        """
-        Function to check configuration of Autosubmit.
-
-        :return: True if all variables are set. If some parameter do not exist, the function returns False.
-        :rtype: bool
-        """
-        result = True
-
-        for section in self._conf_parser.sections():
-            self.print_parameters("AUTOSUBMIT PARAMETERS - " + section, self._conf_parser.items(section))
-            if "" in [item[1] for item in self._conf_parser.items(section)]:
-                result = False
-        for section in self._exp_parser.sections():
-            self.print_parameters("EXPERIMENT PARAMETERS - " + section, self._exp_parser.items(section))
-            if "" in [item[1] for item in self._exp_parser.items(section)]:
-                result = False
-
-        project_type = self.get_project_type()
-        if project_type != "none" and self._proj_parser is not None:
-            for section in self._proj_parser.sections():
-                self.print_parameters("PROJECT PARAMETERS - " + section, self._proj_parser.items(section))
-                if "" in [item[1] for item in self._proj_parser.items(section)]:
-                    result = False
-
-        return result
 
     def get_expid(self):
         """
@@ -739,88 +716,6 @@ class AutosubmitConfig:
         parser.optionxform = str
         parser.read(file_path)
         return parser
-
-    def read_platforms_conf(self):
-        """
-        Read platforms configuration file and create defined platforms. Also adds the local remote_platform to the list
-
-        :return: platforms defined on file and local remote_platform. None if configuration is invalid
-        :rtype: list
-        """
-        parser = self._platforms_parser
-
-        platforms = dict()
-        local_platform = LocalPlatform(self.expid)
-        local_platform.name = 'LOCAL'
-        local_platform.type = 'local'
-        local_platform.version = ''
-        local_platform.queue = ''
-        local_platform.max_waiting_jobs = self.get_max_waiting_jobs()
-        local_platform.total_jobs = self.get_total_jobs()
-        local_platform.set_host('localhost')
-        local_platform.set_scratch(os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR))
-        local_platform.set_project(self.expid)
-        local_platform.set_budget(self.expid)
-        local_platform.set_user('')
-        local_platform.update_cmds()
-
-        platforms['LOCAL'] = local_platform
-        for section in parser.sections():
-            platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
-            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
-            try:
-                if platform_type == 'pbs':
-                    remote_platform = PBSPlatform(self.expid, platform_version)
-                elif platform_type == 'sge':
-                    remote_platform = SgePlatform(self.expid)
-                elif platform_type == 'ps':
-                    remote_platform = PsPlatform(self.expid)
-                elif platform_type == 'lsf':
-                    remote_platform = LsfPlatform(self.expid)
-                elif platform_type == 'ecaccess':
-                    remote_platform = EcPlatform(self.expid, platform_version)
-                elif platform_type == 'slurm':
-                    remote_platform = SlurmPlatform(self.expid)
-                elif platform_type == '':
-                    Log.error("Queue type not specified".format(platform_type))
-                    return None
-                else:
-                    Log.error("Queue type {0} not defined".format(platform_type))
-                    return None
-            except HPCPlatformException as e:
-                Log.error("Queue exception: {0}".format(e.message))
-                return None
-
-            remote_platform.type = platform_type
-            remote_platform.version = platform_version
-            if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
-                host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
-                                        AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
-            else:
-                host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
-
-            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                               self.get_max_waiting_jobs()))
-            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                         self.get_total_jobs()))
-            remote_platform.set_host(host)
-            remote_platform.set_project(AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
-            remote_platform.set_budget(AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project))
-            remote_platform.set_user(AutosubmitConfig.get_option(parser, section, 'USER', None))
-            remote_platform.set_scratch(AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None))
-            remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
-            remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
-            remote_platform.name = section
-            remote_platform.update_cmds()
-            platforms[section] = remote_platform
-
-        for section in parser.sections():
-            if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section].set_serial_platform(platforms[AutosubmitConfig.get_option(parser, section,
-                                                                                             'SERIAL_PLATFORM',
-                                                                                             None)])
-
-        return platforms
 
     @staticmethod
     def get_option(parser, section, option, default):

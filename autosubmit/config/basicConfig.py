@@ -31,10 +31,11 @@ class BasicConfig:
     """
     Class to manage configuration for autosubmit path, database and default values for new experiments
     """
-    DB_DIR = '~/autosubmit'
+
+    DB_DIR = os.path.join(os.path.expanduser('~'), 'debug', 'autosubmit')
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
-    LOCAL_ROOT_DIR = '~/autosubmit'
+    LOCAL_ROOT_DIR = DB_DIR
     LOCAL_TMP_DIR = 'tmp'
     LOCAL_PROJ_DIR = 'proj'
     DEFAULT_PLATFORMS_CONF = ''

@@ -290,11 +290,16 @@ The following command could be adopted to generate the plots for visualizing the
 Options:
 ::
 
-    usage: autosubmit stats [-h] [-o {pdf,png,ps,svg}] expid
+    usage: autosubmit stats [-h] [-ft] [-fp] [-o {pdf,png,ps,svg}] expid
 
       expid                 experiment identifier
 
       -h, --help            show this help message and exit
+      -ft FILTER_TYPE, --filter_type FILTER_TYPE
+                            Select the job type to filter the list of jobs
+      -fp FILTER_PERIOD, --filter_period FILTER_PERIOD
+                            Select the period of time to filter the jobs
+                            from current time to the past in number of hours back
       -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
                             type of output for generated plot
 
