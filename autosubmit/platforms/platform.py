@@ -112,6 +112,7 @@ class Platform:
         else:
             workdir = self.get_workdir(self.get_files_path())
             out.copy(workdir.get_url())
+            workdir.close()
         out.close()
 
     def get_workdir(self, path):
@@ -130,6 +131,7 @@ class Platform:
                 new_directory = os.path.split(path)[1]
                 parent = self.get_workdir(os.path.dirname(path))
                 parent.make_dir(new_directory)
+                parent.close()
                 return saga.filesystem.Directory(sftp_directory, session=self.service.session)
 
     def get_file(self, filename, must_exist=True):
@@ -145,15 +147,8 @@ class Platform:
                     raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                                self.host, self.get_files_path()))
                 return False
-        # noinspection PyBroadException
-        try:
-            if self.type == 'local':
-                directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
-                                                                                       'LOG_' + self.expid)))
-            else:
-                directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
-            directory.list(filename)
-        except:
+
+        if not self.exists_file(filename):
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
@@ -167,6 +162,27 @@ class Platform:
         out.close()
         return True
 
+    def exists_file(self, filename):
+        # noinspection PyBroadException
+        try:
+            if self.type == 'local':
+                directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
+                                                                                       'LOG_' + self.expid)))
+            else:
+                directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
+        except:
+            return False
+
+        # noinspection PyBroadException
+        try:
+            directory.list(filename)
+        except:
+            directory.close()
+            return False
+
+        directory.close()
+        return True
+
     def delete_file(self, filename):
         if self.type == 'ecaccess':
             try:
@@ -175,6 +191,10 @@ class Platform:
                 return True
             except subprocess.CalledProcessError:
                 return True
+
+        if not self.exists_file(filename):
+            return True
+
         try:
             if self.type == 'local':
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,

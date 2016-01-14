@@ -482,10 +482,8 @@ class Job:
         logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
             self._complete = True
-            os.system('touch ' + os.path.join(self._tmp_path, self.name + 'Checked'))
             self.status = Status.COMPLETED
         else:
-            os.system('touch ' + os.path.join(self._tmp_path, self.name + 'Failed'))
             self.status = default_status
 
     def remove_dependencies(self):
@@ -700,7 +698,7 @@ class Job:
         f = open(path, 'a')
         fcntl.flock(f, fcntl.LOCK_EX)
         f.write(' ')
-        if time > 0:
+        if end_time > 0:
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
         else:
