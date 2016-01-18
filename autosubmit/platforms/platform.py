@@ -85,12 +85,15 @@ class Platform:
             prefix = self.name + '_'
 
         parameters['{0}ARCH'.format(prefix)] = self.name
+        parameters['{0}HOST'.format(prefix)] = self.host
+        parameters['{0}QUEUE'.format(prefix)] = self.queue
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project
         parameters['{0}BUDG'.format(prefix)] = self.budget
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
+        parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 
     def send_file(self, filename):
         if self.type == 'ecaccess':
