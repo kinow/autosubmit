@@ -20,7 +20,6 @@
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
-import fcntl
 import os
 import re
 import time
@@ -385,7 +384,6 @@ class Job:
         lst = []
         if os.path.exists(logname):
             f = open(logname)
-            fcntl.flock(f, fcntl.LOCK_EX)
             lines = f.readlines()
             for line in lines:
                 fields = line.split()
@@ -669,11 +667,9 @@ class Job:
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         if os.path.exists(path):
             f = open(path, 'a')
-            fcntl.flock(f, fcntl.LOCK_EX)
             f.write('\n')
         else:
             f = open(path, 'w')
-            fcntl.flock(f, fcntl.LOCK_EX)
         f.write(date2str(datetime.datetime.now(), 'S'))
 
     def write_start_time(self):
@@ -685,7 +681,6 @@ class Job:
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
-        fcntl.flock(f, fcntl.LOCK_EX)
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
@@ -696,7 +691,6 @@ class Job:
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
-        fcntl.flock(f, fcntl.LOCK_EX)
         f.write(' ')
         if end_time > 0:
             # noinspection PyTypeChecker
