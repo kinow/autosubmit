@@ -4,7 +4,8 @@ Defining workflows
 
 
 Simple workflow
----------------
+--------------_
+
 
 .. code-block:: ini
     [One]

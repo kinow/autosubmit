@@ -188,9 +188,15 @@ def _mnscript_generator(jd, queue=None, ):
         mn_params += "#BSUB -q %s \n" % queue
 
     if jd.project is not None:
-        mn_params += "#BSUB -P %s \n" % str(jd.project)
+        if ':' not in jd.project:
+            account = jd.project
+        else:
+            account, reservation = jd.project.split(':')
+            mn_params += "#BSUB -U %s \n" % str(reservation)
+
+        mn_params += "#BSUB -P %s \n" % str(account)
     if jd.job_contact is not None:
-        mn_params += "#BSUB -U %s \n" % str(jd.job_contact)
+        mn_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:

@@ -661,7 +661,7 @@ class Autosubmit:
         :type file_format: str
         :type expid: str
         :param expid: identifier of the experiment to plot
-        :param file_format: plot's file format. It can be pdf, png or ps
+        :param file_format: plot's file format. It can be pdf, png, ps or svg
         :param hide: hides plot window
         :type hide: bool
         """
@@ -690,7 +690,7 @@ class Autosubmit:
         :param expid: identifier of the experiment to plot
         :param filter_type: type of the jobs to plot
         :param filter_period: period to plot
-        :param file_format: plot's file format. It can be pdf, png or ps
+        :param file_format: plot's file format. It can be pdf, png, ps or svg
         :param hide: hides plot window
         :type hide: bool
         """
@@ -1174,7 +1174,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide, output):
+    def create(expid, noplot, hide, output='pdf'):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1189,8 +1189,8 @@ class Autosubmit:
         :type hide: bool
         :param hide: hides plot window
         :type hide: bool
-        :param hide: file format for plot
-        :type hide: str
+        :param output: plot's file format. It can be pdf, png, ps or svg
+        :type output: str
 
         """
         BasicConfig.read()
