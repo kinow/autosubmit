@@ -146,6 +146,7 @@ class Log:
         Log.file_handler.setLevel(Log.file_level)
         Log.file_handler.setFormatter(LogFormatter(True))
         Log.log.addHandler(Log.file_handler)
+        os.chmod(file_path, 0o775)
 
     @staticmethod
     def set_console_level(level):

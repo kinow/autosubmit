@@ -441,7 +441,7 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"))
+        os.mkdir(os.path.join(exp_id_path, "tmp"), 0o775)
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
