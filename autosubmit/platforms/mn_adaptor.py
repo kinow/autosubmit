@@ -26,7 +26,7 @@ MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 # --------------------------------------------------------------------
 #
-# noinspection PyProtectedMember,PyPep8Naming
+# noinspection PyProtectedMember,PyPep8Naming,PyMissingOrEmptyDocstring
 class _job_state_monitor(threading.Thread):
     """ thread that periodically monitors job states
     """
@@ -188,9 +188,15 @@ def _mnscript_generator(jd, queue=None, ):
         mn_params += "#BSUB -q %s \n" % queue
 
     if jd.project is not None:
-        mn_params += "#BSUB -P %s \n" % str(jd.project)
+        if ':' not in jd.project:
+            account = jd.project
+        else:
+            account, reservation = jd.project.split(':')
+            mn_params += "#BSUB -U %s \n" % str(reservation)
+
+        mn_params += "#BSUB -P %s \n" % str(account)
     if jd.job_contact is not None:
-        mn_params += "#BSUB -U %s \n" % str(jd.job_contact)
+        mn_params += "#BSUB -u %s \n" % str(jd.job_contact)
 
     # if total_cpu_count is not defined, we assume 1
     if jd.total_cpu_count is None:
@@ -297,6 +303,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
+# noinspection PyMissingOrEmptyDocstring
 class Adaptor(saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
         the SAGA engine), and which registers the CPI implementation classes
@@ -333,7 +340,7 @@ class Adaptor(saga.adaptors.base.Base):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember
+# noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember, PyMissingOrEmptyDocstring
 class MNJobService(saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
@@ -550,7 +557,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
             mn_job_id = None
             for line in lines:
-                if re.search('Job <.+> is submitted to queue', line):
+                if re.search('Job <.+> is submitted to', line):
                     mn_job_id = re.findall(r'<(.*?)>', line)[0]
                     break
 
@@ -901,7 +908,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding,PyProtectedMember
+# noinspection PyMethodOverriding,PyProtectedMember,PyMissingOrEmptyDocstring
 class MNJob(saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """

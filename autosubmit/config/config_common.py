@@ -107,18 +107,53 @@ class AutosubmitConfig:
         return dir_templates
 
     def get_wallclock(self, section):
+        """
+        Gets wallclock for the given job type
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
         return AutosubmitConfig.get_option(self.jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
+        """
+        Gets processors needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
+        """
+        Gets threads needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: threads needed
+        :rtype: str
+        """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
+        """
+        Gets tasks needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: tasks needed
+        :rtype: str
+        """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 1))
 
     def get_memory(self, section):
+        """
+        Gets memory needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: memory needed
+        :rtype: str
+        """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', 0))
 
     def check_conf_files(self):

@@ -15,6 +15,7 @@ Welcome to autosubmit's documentation!
    tutorial
    installation
    usage
+   workflows
    troubleshoot
    project
    variables

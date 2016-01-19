@@ -72,6 +72,12 @@ from platforms.submitter import Submitter
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
+    """
+    Used to handle interrupt signals, allowing autosubmit to clean before exit
+
+    :param signal_received:
+    :param frame:
+    """
     Log.info('Autosubmit will interrupt at the next safe ocasion')
     Autosubmit.exit = True
 
@@ -190,6 +196,8 @@ class Autosubmit:
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
+                                   help='chooses type of output for generated plot')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -291,7 +299,7 @@ class Autosubmit:
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot, args.hide)
+                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
                 return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
                                             args.platformsconfpath, args.jobsconfpath, args.all, args.local)
@@ -439,7 +447,7 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"))
+        os.mkdir(os.path.join(exp_id_path, "tmp"), 0o775)
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
@@ -492,7 +500,7 @@ class Autosubmit:
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
 
-        joblist.update_parameters(parameters)
+        joblist.parameters = parameters
 
     @staticmethod
     def run_experiment(expid):
@@ -588,16 +596,20 @@ class Autosubmit:
             default_retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", default_retrials)
 
+            save = False
             for platform in platforms_to_test:
                 for job in joblist.get_in_queue(platform):
-                    job.update_status(platform.check_job(job.id))
+                    if job.status != job.update_status(platform.check_job(job.id)):
+                        save = True
 
-            joblist.update_list(as_conf, True)
+            if joblist.update_list(as_conf) or save:
+                joblist.save()
+
             if Autosubmit.exit:
                 return 2
 
-            Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test)
-            joblist.save()
+            if Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test):
+                joblist.save()
             if Autosubmit.exit:
                 return 2
             time.sleep(safetysleeptime)
@@ -612,6 +624,17 @@ class Autosubmit:
 
     @staticmethod
     def submit_ready_jobs(as_conf, joblist, platforms_to_test):
+        """
+        Gets READY jobs and send them to the platforms if there is available space on the queues
+
+        :param as_conf: autosubmit config object
+        :param joblist: job list to check
+        :param platforms_to_test: platforms used
+        :type platforms_to_test: set
+        :return: True if at least one job was submitted, False otherwise
+        :rtype: bool
+        """
+        save = False
         for platform in platforms_to_test:
             jobinqueue = joblist.get_in_queue(platform)
             jobsavail = joblist.get_ready(platform)
@@ -649,6 +672,8 @@ class Autosubmit:
                     # set status to "submitted"
                     job.status = Status.SUBMITTED
                     job.write_submit_time()
+                    save = True
+        return save
 
     @staticmethod
     def monitor(expid, file_format, hide):
@@ -659,7 +684,7 @@ class Autosubmit:
         :type file_format: str
         :type expid: str
         :param expid: identifier of the experiment to plot
-        :param file_format: plot's file format. It can be pdf, png or ps
+        :param file_format: plot's file format. It can be pdf, png, ps or svg
         :param hide: hides plot window
         :type hide: bool
         """
@@ -688,7 +713,7 @@ class Autosubmit:
         :param expid: identifier of the experiment to plot
         :param filter_type: type of the jobs to plot
         :param filter_period: period to plot
-        :param file_format: plot's file format. It can be pdf, png or ps
+        :param file_format: plot's file format. It can be pdf, png, ps or svg
         :param hide: hides plot window
         :type hide: bool
         """
@@ -846,8 +871,7 @@ class Autosubmit:
 
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
-        job_list.update_list(as_conf, False)
-        job_list.update_from_file(False)
+        job_list.update_list(as_conf)
 
         if save:
             job_list.save()
@@ -1172,7 +1196,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide):
+    def create(expid, noplot, hide, output='pdf'):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1185,6 +1209,11 @@ class Autosubmit:
         :rtype: bool
         :param hide: hides plot window
         :type hide: bool
+        :param hide: hides plot window
+        :type hide: bool
+        :param output: plot's file format. It can be pdf, png, ps or svg
+        :type output: str
+
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
@@ -1248,7 +1277,7 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPloting joblist...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), 'pdf', not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
 
         Log.result("\nJob list created succesfully")
         Log.user_warning("Remember to MODIFY the MODEL config files!")

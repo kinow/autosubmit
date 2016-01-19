@@ -16,8 +16,6 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import fcntl
-
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -403,7 +401,6 @@ class JobList:
         """
         if os.path.exists(filename):
             fd = open(filename, 'rw')
-            fcntl.flock(fd, fcntl.LOCK_EX)
             return pickle.load(fd)
         else:
             Log.critical('File {0} does not exist'.format(filename))
@@ -428,13 +425,16 @@ class JobList:
         """
         path = os.path.join(self._pkl_path, self._job_list_file)
         fd = open(path, 'w')
-        fcntl.flock(fd, fcntl.LOCK_EX)
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
         pickle.dump(self, fd)
         Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):
+        """
+        Updates joblist on the fly from and update file
+        :param store_change: if True, renames the update file to avoid reloading it at the next iteration
+        """
         if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
             Log.info("Loading updated list: {0}".format(os.path.join(self._pkl_path, self._update_file)))
             for line in open(os.path.join(self._pkl_path, self._update_file)):
@@ -452,17 +452,32 @@ class JobList:
 
     @property
     def parameters(self):
+        """
+        List of parameters common to all jobs
+        :return: parameters
+        :rtype: dict
+        """
         return self._parameters
 
-    def update_parameters(self, parameters):
-        self._parameters = parameters
+    @parameters.setter
+    def parameters(self, value):
+        self._parameters = value
 
-    def update_list(self, as_conf, store_change=True):
+    def update_list(self, as_conf):
+        """
+        Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
+
+        :param as_conf: autosubmit config object
+        :type as_conf: AutosubmitConfig
+        :return: True if job status were modified, False otherwise
+        :rtype: bool
+        """
         # load updated file list
-        self.update_from_file(store_change)
+        save = False
+        if self.update_from_file():
+            save = True
 
         # reset jobs that has failed less than 10 times
-
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
@@ -474,9 +489,11 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    save = True
                     Log.debug("Resetting job: {0} status to: READY for retrial...".format(job.name))
                 else:
                     job.status = Status.WAITING
+                    save = True
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
@@ -488,10 +505,10 @@ class JobList:
             # break
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
+                save = True
                 Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
         Log.debug('Update finished')
-        if store_change:
-            self.save()
+        return save
 
     def update_shortened_names(self):
         """
@@ -512,7 +529,7 @@ class JobList:
             if job.file is None or job.file == '':
                 self._remove_job(job)
 
-        # Simplifing dependencies: if a parent is alreaday an ancestor of another parent,
+        # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
         for job in self._job_list:
             for parent in list(job.parents):
@@ -573,7 +590,6 @@ class JobList:
 
         :param chunk_list: list of chunks to rerun
         :type chunk_list: str
-        :return:
         """
         parser = SafeConfigParser()
         parser.optionxform = str
@@ -653,10 +669,10 @@ class JobList:
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
                                 parent.status = Status.WAITING
-                                if chunk != previous_chunk + 1:
-                                    job.add_parent(parent)
                                 Log.debug("Parent: " + parent.name)
-                    previous_chunk = chunk
+
+        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
+            self._remove_job(job)
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
             self._remove_job(job)
@@ -723,7 +739,7 @@ class DicJobs:
         frequency = int(self.get_option(section, "FREQUENCY", 1))
         if running == 'once':
             self._create_jobs_once(section, priority)
-        elif running == 'startdate':
+        elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency)
         elif running == 'member':
             self._create_jobs_member(section, priority, frequency)

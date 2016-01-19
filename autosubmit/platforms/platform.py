@@ -12,6 +12,10 @@ from autosubmit.date.chunk_date_lib import date2str
 
 
 class Platform:
+    """
+    Class to manage the connections to the different platforms.
+    """
+
     def __init__(self, expid, name):
         """
 
@@ -38,6 +42,11 @@ class Platform:
 
     @property
     def serial_platform(self):
+        """
+        Platform to use for serial jobs
+        :return: platform's object
+        :rtype: platform
+        """
         if self._serial_platform is None:
             return self
         return self._serial_platform
@@ -48,6 +57,11 @@ class Platform:
 
     @property
     def queue(self):
+        """
+        Queue to use for jobs
+        :return: queue's name
+        :rtype: str
+        """
         if self._default_queue is None:
             return ''
         return self._default_queue
@@ -58,6 +72,11 @@ class Platform:
 
     @property
     def serial_queue(self):
+        """
+        Queue to use for serial jobs
+        :return: queue's name
+        :rtype: str
+        """
         if self._serial_queue is None:
             return self.queue
         return self._serial_queue
@@ -66,18 +85,15 @@ class Platform:
     def serial_queue(self, value):
         self._serial_queue = value
 
-    @property
-    def transfer(self):
-        if self._transfer == 'file':
-            return "file://"
-        return '{0}://{1}'.format(self._transfer, self.host)
-
-    @transfer.setter
-    def transfer(self, value):
-        pass
-
     def add_parameters(self, parameters, main_hpc=False):
+        """
+        Add parameters for the current platform to the given parameters list
 
+        :param parameters: parameters list to update
+        :type parameters: dict
+        :param main_hpc: if it's True, uses HPC instead of NAME_ as prefix for the parameters
+        :type main_hpc: bool
+        """
         if main_hpc:
             prefix = 'HPC'
             parameters['SCRATCH_DIR'.format(prefix)] = self.scratch
@@ -85,14 +101,22 @@ class Platform:
             prefix = self.name + '_'
 
         parameters['{0}ARCH'.format(prefix)] = self.name
+        parameters['{0}HOST'.format(prefix)] = self.host
+        parameters['{0}QUEUE'.format(prefix)] = self.queue
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project
         parameters['{0}BUDG'.format(prefix)] = self.budget
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
+        parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 
     def send_file(self, filename):
+        """
+        Sends a local file to the platform
+        :param filename: name of the file to send
+        :type filename: str
+        """
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-mkdir', '{0}:{1}'.format(self.host, self.root_dir)])
@@ -116,6 +140,14 @@ class Platform:
         out.close()
 
     def get_workdir(self, path):
+        """
+        Creates and returns a DIrectory object for the current workdir
+
+        :param path: path to the workdir
+        :type path: str
+        :return: working directory object
+        :rtype: saga.file.Directory
+        """
         if not path:
             raise Exception("Workdir invalid")
 
@@ -135,6 +167,16 @@ class Platform:
                 return saga.filesystem.Directory(sftp_directory, session=self.service.session)
 
     def get_file(self, filename, must_exist=True):
+        """
+        Copies a file from the current platform to experiment's tmp folder
+
+        :param filename: file name
+        :type filename: str
+        :param must_exist: If True, raises an exception if file can not be copied
+        :type must_exist: bool
+        :return: True if file is copied succesfully, false otherwise
+        :rtype: bool
+        """
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-get', '{0}:{1}'.format(self.host,
@@ -163,6 +205,13 @@ class Platform:
         return True
 
     def exists_file(self, filename):
+        """
+        Checks if a file exists on this platform
+
+        :param filename: file name
+        :type filename: str
+        :return: True if it exists, False otherwise
+        """
         # noinspection PyBroadException
         try:
             if self.type == 'local':
@@ -184,6 +233,14 @@ class Platform:
         return True
 
     def delete_file(self, filename):
+        """
+        Deletes a file from this platform
+
+        :param filename: file name
+        :type filename: str
+        :return: True if succesful or file does no exists
+        :rtype: bool
+        """
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-delete',
@@ -209,6 +266,17 @@ class Platform:
             return True
 
     def get_completed_files(self, job_name, retries=1):
+        """
+        Get the COMPLETED file of the given job
+
+
+        :param job_name: name of the job
+        :type job_name: str
+        :param retries: Max number of tries to get the file
+        :type retries: int
+        :return: True if succesful, false otherwise
+        :rtype: bool
+        """
         while True:
             if self.get_file('{0}_COMPLETED'.format(job_name), False):
                 return True
@@ -277,6 +345,12 @@ class Platform:
         return False
 
     def get_files_path(self):
+        """
+        Get the path to the platform's LOG directory
+
+        :return: platform's LOG directory
+        :rtype: str
+        """
         if self.type == "local":
             path = os.path.join(self.root_dir, BasicConfig.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
@@ -285,10 +359,13 @@ class Platform:
 
     def create_saga_job(self, job, scriptname):
         """
+        Creates a saga job from a given job object.
 
-        :param job:
-        :param scriptname:
-        :return:
+        :param job: job object
+        :type job: autosubmit.job.job.Job
+        :param scriptname: job script's name
+        :rtype scriptname: str
+        :return: saga job object for the given job
         :rtype: saga.job.Job
         """
         jd = saga.job.Description()
@@ -310,7 +387,7 @@ class Platform:
         self.add_atribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
         self.add_atribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
 
-        self.add_atribute(jd, 'TotalCpuCount', job.parameters["NUMPROC"])
+        self.add_atribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
         self.add_atribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_atribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
@@ -320,6 +397,15 @@ class Platform:
         return saga_job
 
     def add_atribute(self, jd, name, value):
+        """
+        Adds an attribute to a given job descriptor, only if it is supported by the adaptor.
+
+        :param jd: job descriptor to use:
+        :type jd: saga.job.Descriptor
+        :param name: attribute's name
+        :type name: str
+        :param value: attribute's value
+        """
         if self._attributes is None:
             # noinspection PyProtectedMember
             self._attributes = self.service._adaptor._adaptor._info['capabilities']['jdes_attributes']
@@ -328,6 +414,16 @@ class Platform:
         jd.set_attribute(name, value)
 
     def check_job(self, jobid, default_status=Status.COMPLETED):
+        """
+        Checks job running status
+
+        :param jobid: job id
+        :type jobid: str
+        :param default_status: status to assign if it can be retrieved from the platform
+        :type default_status: autosubmit.job.job_common.Status
+        :return: current job status
+        :rtype: autosubmit.job.job_common.Status
+        """
         if jobid not in self.service.jobs:
             return Status.COMPLETED
         # noinspection PyBroadException
