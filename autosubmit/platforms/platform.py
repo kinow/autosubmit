@@ -387,7 +387,7 @@ class Platform:
         self.add_atribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
         self.add_atribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
 
-        self.add_atribute(jd, 'TotalCpuCount', job.parameters["NUMPROC"])
+        self.add_atribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
         self.add_atribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_atribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 

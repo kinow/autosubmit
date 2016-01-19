@@ -871,7 +871,7 @@ class Autosubmit:
 
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
-        job_list.update_list(as_conf, False)
+        job_list.update_list(as_conf)
 
         if save:
             job_list.save()

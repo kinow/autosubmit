@@ -557,7 +557,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
             mn_job_id = None
             for line in lines:
-                if re.search('Job <.+> is submitted to queue', line):
+                if re.search('Job <.+> is submitted to', line):
                     mn_job_id = re.findall(r'<(.*?)>', line)[0]
                     break
 
