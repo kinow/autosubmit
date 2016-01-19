@@ -529,7 +529,7 @@ class JobList:
             if job.file is None or job.file == '':
                 self._remove_job(job)
 
-        # Simplifing dependencies: if a parent is alreaday an ancestor of another parent,
+        # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
         for job in self._job_list:
             for parent in list(job.parents):
