@@ -17,7 +17,7 @@ Simple workflow
 
 
 .. figure:: workflows/simple.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot
 
@@ -47,7 +47,7 @@ Running jobs once per startdate, member and chunk
     RUNNING = chunk
 
 .. figure:: workflows/running.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot
 
@@ -73,7 +73,7 @@ Dependencies with previous jobs
     RUNNING = chunk
 
 .. figure:: workflows/dependencies_previous.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot
 
@@ -100,7 +100,7 @@ Dependencies between running levels
     RUNNING = member
 
 .. figure:: workflows/dependencies_running.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot
 
@@ -130,7 +130,7 @@ Job frequency
     RUNNING = member
 
 .. figure:: workflows/frequency.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot
 
@@ -161,6 +161,6 @@ Chunks 2 and 3 of Member2
     RUNNING = member
 
 .. figure:: workflows/rerun.png
-   :width: 70%
+   :width: 85%
    :align: center
    :alt: simple workflow plot

@@ -437,7 +437,12 @@ class Job:
         return self._get_from_total_stats(1)
 
     def update_status(self, new_status):
+        """
+        Updates job status, checking COMPLETED file if needed
 
+        :param new_status: job status retrieved from the platform
+        :type: Status
+        """
         previous_status = self.status
 
         if new_status == Status.COMPLETED:
@@ -469,6 +474,7 @@ class Job:
             self.write_start_time()
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
+        return self.status
 
     def check_completion(self, default_status=Status.FAILED):
         """
@@ -664,6 +670,9 @@ class Job:
         return out
 
     def write_submit_time(self):
+        """
+        Writes submit date and time to TOTAL_STATS file
+        """
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         if os.path.exists(path):
             f = open(path, 'a')
@@ -673,6 +682,11 @@ class Job:
         f.write(date2str(datetime.datetime.now(), 'S'))
 
     def write_start_time(self):
+        """
+        Writes start date and time to TOTAL_STATS file
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
         if self.get_platform().get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
@@ -687,6 +701,11 @@ class Job:
         return True
 
     def write_end_time(self, completed):
+        """
+        Writes ends date and time to TOTAL_STATS file
+        :param completed: True if job was completed succesfuly, False otherwise
+        :type completed: bool
+        """
         self.get_platform().get_stat_file(self.name, retries=5)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -704,12 +723,26 @@ class Job:
             f.write('FAILED')
 
     def check_started_after(self, date_limit):
+        """
+        Checks if the job started after the given date
+        :param date_limit: reference date
+        :type date_limit: datetime.datetime
+        :return: True if job started after the given date, false otherwise
+        :rtype: bool
+        """
         if any(parse_date(str(date_retrial)) > date_limit for date_retrial in self.check_retrials_start_time()):
             return True
         else:
             return False
 
     def check_running_after(self, date_limit):
+        """
+        Checks if the job was running after the given date
+        :param date_limit: reference date
+        :type date_limit: datetime.datetime
+        :return: True if job was running after the given date, false otherwise
+        :rtype: bool
+        """
         if any(parse_date(str(date_end)) > date_limit for date_end in self.check_retrials_end_time()):
             return True
         else:

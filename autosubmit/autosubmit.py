@@ -72,6 +72,12 @@ from platforms.submitter import Submitter
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
+    """
+    Used to handle interrupt signals, allowing autosubmit to clean before exit
+
+    :param signal_received:
+    :param frame:
+    """
     Log.info('Autosubmit will interrupt at the next safe ocasion')
     Autosubmit.exit = True
 
@@ -494,7 +500,7 @@ class Autosubmit:
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
 
-        joblist.update_parameters(parameters)
+        joblist.parameters = parameters
 
     @staticmethod
     def run_experiment(expid):
@@ -590,16 +596,20 @@ class Autosubmit:
             default_retrials = as_conf.get_retrials()
             Log.debug("Number of retrials: {0}", default_retrials)
 
+            save = False
             for platform in platforms_to_test:
                 for job in joblist.get_in_queue(platform):
-                    job.update_status(platform.check_job(job.id))
+                    if job.status != job.update_status(platform.check_job(job.id)):
+                        save = True
 
-            joblist.update_list(as_conf, True)
+            if joblist.update_list(as_conf) or save:
+                joblist.save()
+
             if Autosubmit.exit:
                 return 2
 
-            Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test)
-            joblist.save()
+            if Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test):
+                joblist.save()
             if Autosubmit.exit:
                 return 2
             time.sleep(safetysleeptime)
@@ -614,6 +624,17 @@ class Autosubmit:
 
     @staticmethod
     def submit_ready_jobs(as_conf, joblist, platforms_to_test):
+        """
+        Gets READY jobs and send them to the platforms if there is available space on the queues
+
+        :param as_conf: autosubmit config object
+        :param joblist: job list to check
+        :param platforms_to_test: platforms used
+        :type platforms_to_test: set
+        :return: True if at least one job was submitted, False otherwise
+        :rtype: bool
+        """
+        save = False
         for platform in platforms_to_test:
             jobinqueue = joblist.get_in_queue(platform)
             jobsavail = joblist.get_ready(platform)
@@ -651,6 +672,8 @@ class Autosubmit:
                     # set status to "submitted"
                     job.status = Status.SUBMITTED
                     job.write_submit_time()
+                    save = True
+        return save
 
     @staticmethod
     def monitor(expid, file_format, hide):
@@ -849,7 +872,6 @@ class Autosubmit:
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(as_conf, False)
-        job_list.update_from_file(False)
 
         if save:
             job_list.save()

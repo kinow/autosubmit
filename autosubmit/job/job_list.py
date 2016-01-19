@@ -431,6 +431,10 @@ class JobList:
         Log.debug('Joblist saved')
 
     def update_from_file(self, store_change=True):
+        """
+        Updates joblist on the fly from and update file
+        :param store_change: if True, renames the update file to avoid reloading it at the next iteration
+        """
         if os.path.exists(os.path.join(self._pkl_path, self._update_file)):
             Log.info("Loading updated list: {0}".format(os.path.join(self._pkl_path, self._update_file)))
             for line in open(os.path.join(self._pkl_path, self._update_file)):
@@ -448,17 +452,32 @@ class JobList:
 
     @property
     def parameters(self):
+        """
+        List of parameters common to all jobs
+        :return: parameters
+        :rtype: dict
+        """
         return self._parameters
 
-    def update_parameters(self, parameters):
-        self._parameters = parameters
+    @parameters.setter
+    def parameters(self, value):
+        self._parameters = value
 
-    def update_list(self, as_conf, store_change=True):
+    def update_list(self, as_conf):
+        """
+        Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
+
+        :param as_conf: autosubmit config object
+        :type as_conf: AutosubmitConfig
+        :return: True if job status were modified, False otherwise
+        :rtype: bool
+        """
         # load updated file list
-        self.update_from_file(store_change)
+        save = False
+        if self.update_from_file():
+            save = True
 
         # reset jobs that has failed less than 10 times
-
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
@@ -470,9 +489,11 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    save = True
                     Log.debug("Resetting job: {0} status to: READY for retrial...".format(job.name))
                 else:
                     job.status = Status.WAITING
+                    save = True
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
@@ -484,10 +505,10 @@ class JobList:
             # break
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
+                save = True
                 Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
         Log.debug('Update finished')
-        if store_change:
-            self.save()
+        return save
 
     def update_shortened_names(self):
         """
@@ -569,7 +590,6 @@ class JobList:
 
         :param chunk_list: list of chunks to rerun
         :type chunk_list: str
-        :return:
         """
         parser = SafeConfigParser()
         parser.optionxform = str

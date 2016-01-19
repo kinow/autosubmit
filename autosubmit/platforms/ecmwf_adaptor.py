@@ -27,7 +27,7 @@ MONITOR_UPDATE_INTERVAL = 3  # seconds
 
 # --------------------------------------------------------------------
 #
-# noinspection PyProtectedMember,PyPep8Naming
+# noinspection PyProtectedMember,PyPep8Naming,PyMissingOrEmptyDocstring
 class _job_state_monitor(threading.Thread):
     """ thread that periodically monitors job states
     """
@@ -192,6 +192,7 @@ _ADAPTOR_INFO = {
 
 ###############################################################################
 # The adaptor class
+# noinspection PyMissingOrEmptyDocstring
 class Adaptor(saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
         the SAGA engine), and which registers the CPI implementation classes
@@ -227,7 +228,7 @@ class Adaptor(saga.adaptors.base.Base):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember
+# noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember,PyMissingOrEmptyDocstring
 class ECMWFJobService(saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
@@ -810,7 +811,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
 
 ###############################################################################
 #
-# noinspection PyMethodOverriding,PyProtectedMember
+# noinspection PyMethodOverriding,PyProtectedMember,PyMissingOrEmptyDocstring
 class ECMWFJob(saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """

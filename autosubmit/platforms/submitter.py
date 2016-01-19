@@ -26,11 +26,17 @@ from platform import Platform
 
 
 class Submitter:
+    """
+    Class to manage the experiments platform
+    """
     def load_platforms(self, asconf):
         """
+        Create all the platforms object that will be used by the experiment
 
-        :param asconf:
+        :param asconf: autosubmit config to use
         :type asconf: AutosubmitConfig
+        :return: platforms used by the experiment
+        :rtype: dict
         """
         adaptors_variable = os.environ.get('SAGA_ADAPTOR_PATH')
         if adaptors_variable is None:
