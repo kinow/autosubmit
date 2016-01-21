@@ -862,7 +862,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         """
         ids = []
 
-        ret, out, _ = self.shell.run_sync("%s -a" % 'bjobs')
+        ret, out, _ = self.shell.run_sync("%s -a -noheader" % 'bjobs')
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'bjobs': %s" % out
@@ -876,7 +876,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                 # 112059.svc.uc.futuregrid testjob oweidner 0 Q batch
                 # 112061.svc.uc.futuregrid testjob oweidner 0 Q batch
                 if len(line.split()) > 1:
-                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0].split('.')[0])
+                    jobid = "[%s]-[%s]" % (self.rm, line.split()[0])
                     ids.append(str(jobid))
 
         return ids
