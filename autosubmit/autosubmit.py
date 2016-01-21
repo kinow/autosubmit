@@ -1467,7 +1467,7 @@ class Autosubmit:
             pickle.dump(job_list, open(path, 'w'))
             Log.info("Saving JobList: {0}", path)
         else:
-            job_list.update_list(as_conf, False)
+            job_list.update_list(as_conf)
             Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
         monitor_exp = Monitor()
