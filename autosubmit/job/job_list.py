@@ -898,7 +898,7 @@ class DicJobs:
         job.date_format = self._date_format
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
-        job.wait = self.get_option(section, "WAIT", 'false').lower() == 'true'
+        job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
         job.platform_name = self.get_option(section, "PLATFORM", None)

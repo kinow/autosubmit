@@ -164,8 +164,12 @@ Examples:
     ## If not specified, defaults to once
     # RUNNING = once
     ## Specifies that job has only to be run after X dates, members or chunk. A job will always be created for the last
-    ## If not specified, defaults to once
+    ## If not specified, defaults to 1
     # FREQUENCY = 3
+    ## Specifies if a job with FREQUENCY > 1 has only to wait for all the jobs in the previous chunks on its period or just
+    ## for the ones in the chunk it is going to execute
+    ## If not specified, defaults to True
+    # WAIT = False
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
     # RERUN_ONLY = False
     ## Defines jobs needed to be rerun if this job is going to be rerunned
@@ -185,44 +189,45 @@ Examples:
     ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
     # CHECK = False
 
+
     [LOCAL_SETUP]
-    FILE = templates/common/common.localsetup
+    FILE = LOCAL_SETUP.sh
     PLATFORM = LOCAL
 
     [REMOTE_SETUP]
-    FILE = templates/common/common.remotesetup
+    FILE = REMOTE_SETUP.sh
     DEPENDENCIES = LOCAL_SETUP
-    WALLCLOCK = 03:00
+    WALLCLOCK = 00:05
 
     [INI]
-    FILE = templates/ecearth3/ecearth3.ini
+    FILE = INI.sh
     DEPENDENCIES = REMOTE_SETUP
     RUNNING = member
-    WALLCLOCK = 01:00
+    WALLCLOCK = 00:05
 
     [SIM]
-    FILE = templates/ecearth3/ecearth3.sim
+    FILE = SIM.sh
     DEPENDENCIES = INI SIM-1 CLEAN-2
     RUNNING = chunk
-    WALLCLOCK = 04:00
-    PROCESSORS = 1616
+    WALLCLOCK = 00:05
+    PROCESSORS = 2
     THREADS = 1
     TASKS = 1
 
     [POST]
-    FILE = templates/ecearth3/ecearth3.post
+    FILE = POST.sh
     DEPENDENCIES = SIM
     RUNNING = chunk
-    WALLCLOCK = 06:00
+    WALLCLOCK = 00:05
 
     [CLEAN]
-    FILE = templates/ecearth3/ecearth3.clean
+    FILE = CLEAN.sh
     DEPENDENCIES = POST
     RUNNING = chunk
-    WALLCLOCK = 01:00
+    WALLCLOCK = 00:05
 
     [TRANSFER]
-    FILE = templates/common/common.localtrans
+    FILE = TRANSFER.sh
     PLATFORM = LOCAL
     DEPENDENCIES = CLEAN
     RUNNING = member
