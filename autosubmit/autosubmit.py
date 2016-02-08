@@ -1389,8 +1389,14 @@ class Autosubmit:
         BasicConfig.read()
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'change_pkl.log'))
+                                  'set_status.log'))
         Log.debug('Exp ID: {0}', expid)
+        Log.debug('Save: {0}', save)
+        Log.debug('Final status: {0}', final)
+        Log.debug('List of jobs to change: {0}', lst)
+        Log.debug('Chunks to change: {0}', filter_chunks)
+        Log.debug('Status of jobs to change: {0}', filter_status)
+        Log.debug('Sections to change: {0}', filter_section)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
                                     ".pkl"), 'r'))
         as_conf = AutosubmitConfig(expid)
