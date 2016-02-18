@@ -917,15 +917,22 @@ class Autosubmit:
         Can be configured at system, user or local levels. Local level configuration precedes user level and user level
         precedes system configuration.
         """
+
         home_path = os.path.expanduser('~')
 
-        d = dialog.Dialog(dialog="dialog", autowidgetsize=True)
+        d = dialog.Dialog(dialog="dialog", autowidgetsize=True, screen_color='GREEN')
         d.set_background_title("Autosubmit configure utility")
-        code, level = d.menu("Choose when to apply the configuration:",
-                             choices=[("All", "All users on this machine (may require root privileges)"),
-                                      ("User", "Current user"),
-                                      ("Local", "Only when launching Autosubmit from this path")],
-                             width=60)
+        if os.geteuid() == 0:
+            text = ''
+            choice = [("All", "All users on this machine (may require root privileges)")]
+        else:
+            text = "If you want to configure Autosubmit for all users, you will need to provide root privileges"
+            choice = []
+
+        choice.append(("User", "Current user"))
+        choice.append(("Local", "Only when launching Autosubmit from this path"))
+
+        code, level = d.menu(text, choices=choice, width=60, title="Choose when to apply the configuration")
 
         if code != dialog.Dialog.OK:
             os.system('clear')
@@ -969,9 +976,9 @@ class Autosubmit:
             Log.critical("Can not read config file: {0}".format(e.message))
             return False
 
-        d.msgbox('Select path to database', width=50, height=5)
         while True:
-            code, database_path = d.dselect(database_path, width=80, height=20)
+            code, database_path = d.dselect(database_path, width=80, height=20,
+                                            title='\Zb\Z1Select path to database\Zn', colors='enable')
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
@@ -981,9 +988,9 @@ class Autosubmit:
                 else:
                     break
 
-        d.msgbox('Select path to experiments repository', width=50, height=5)
         while True:
-            code, local_root_path = d.dselect(local_root_path, width=80, height=20)
+            code, local_root_path = d.dselect(local_root_path, width=80, height=20,
+                                              title='\Zb\Z1Select path to experiments repository\Zn', colors='enable')
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
@@ -993,13 +1000,14 @@ class Autosubmit:
                 else:
                     break
         while True:
-            (code, tag) = d.form(text="Just a few more options:",
+            (code, tag) = d.form(text="",
                                  elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
                                            ("Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40, 200),
                                            ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
                                  height=20,
                                  width=80,
-                                 form_height=10)
+                                 form_height=10,
+                                 title='\Zb\Z1Just a few more options:\Zn', colors='enable')
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
