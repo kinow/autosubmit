@@ -919,12 +919,17 @@ class Autosubmit:
         """
         home_path = os.path.expanduser('~')
 
-        d = dialog.Dialog(dialog="dialog")
+        d = dialog.Dialog(dialog="dialog", autowidgetsize=True)
         d.set_background_title("Autosubmit configure utility")
         code, level = d.menu("Choose when to apply the configuration:",
                              choices=[("All", "All users on this machine (may require root privileges)"),
                                       ("User", "Current user"),
-                                      ("Local", "Only when launching Autosubmit from this path")])
+                                      ("Local", "Only when launching Autosubmit from this path")],
+                             width=60)
+
+        if code != dialog.Dialog.OK:
+            os.system('clear')
+            return False
 
         filename = '.autosubmitrc'
         if level == 'All':
@@ -943,7 +948,7 @@ class Autosubmit:
         jobs_conf_path = ''
         platforms_conf_path = ''
 
-        Log.info("Reading configuration file...")
+        d.infobox("Reading configuration file...", width=50, height=5)
         try:
             if os.path.isfile(path):
                 parser = SafeConfigParser()
@@ -964,29 +969,27 @@ class Autosubmit:
             Log.critical("Can not read config file: {0}".format(e.message))
             return False
 
-        d.msgbox('Select path to database')
+        d.msgbox('Select path to database', width=50, height=5)
         while True:
             code, database_path = d.dselect(database_path, width=80, height=20)
-            if code != dialog.Dialog.OK:
-                os.system('clear')
+            if Autosubmit._requested_exit(code, d):
                 return False
-            else:
+            elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
-                    d.msgbox("Database path does not exist.\nPlease, insert the right path", width=40, height=6)
+                    d.msgbox("Database path does not exist.\nPlease, insert the right path", width=50, height=6)
                 else:
                     break
 
-        d.msgbox('Select path to experiments repository')
+        d.msgbox('Select path to experiments repository', width=50, height=5)
         while True:
             code, local_root_path = d.dselect(local_root_path, width=80, height=20)
-            if code != dialog.Dialog.OK:
-                os.system('clear')
+            if Autosubmit._requested_exit(code, d):
                 return False
-            else:
+            elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
-                    d.msgbox("Local root path does not exist.\nPlease, insert the right path", width=40, height=6)
+                    d.msgbox("Local root path does not exist.\nPlease, insert the right path", width=50, height=6)
                 else:
                     break
         while True:
@@ -997,10 +1000,9 @@ class Autosubmit:
                                  height=20,
                                  width=80,
                                  form_height=10)
-            if code != dialog.Dialog.OK:
-                os.system('clear')
+            if Autosubmit._requested_exit(code, d):
                 return False
-            else:
+            elif code == dialog.Dialog.OK:
                 database_filename = tag[0]
                 platforms_conf_path = tag[1]
                 jobs_conf_path = tag[2]
@@ -1009,43 +1011,46 @@ class Autosubmit:
                 jobs_conf_path = jobs_conf_path.replace('~', home_path).strip()
 
                 if platforms_conf_path and not os.path.exists(platforms_conf_path):
-                    d.msgbox("Platforms conf path does not exist.\nPlease, insert the right path", width=40, height=6)
+                    d.msgbox("Platforms conf path does not exist.\nPlease, insert the right path", width=50, height=6)
                 elif jobs_conf_path and not os.path.exists(jobs_conf_path):
-                    d.msgbox("Jobs conf path does not exist.\nPlease, insert the right path", width=40, height=6)
+                    d.msgbox("Jobs conf path does not exist.\nPlease, insert the right path", width=50, height=6)
                 else:
                     break
 
         config_file = open(path, 'w')
-        d.gauge_start("Writing configuration file...", percent=0)
+        d.infobox("Writing configuration file...", width=50, height=5)
         try:
             parser = SafeConfigParser()
             parser.add_section('database')
             parser.set('database', 'path', database_path)
-            d.gauge_update(20)
             if database_filename:
                 parser.set('database', 'filename', database_filename)
-            d.gauge_update(40)
             parser.add_section('local')
             parser.set('local', 'path', local_root_path)
-            d.gauge_update(60)
             if jobs_conf_path or platforms_conf_path:
                 parser.add_section('conf')
                 if jobs_conf_path:
                     parser.set('conf', 'jobs', jobs_conf_path)
-                d.gauge_update(80)
                 if platforms_conf_path:
                     parser.set('conf', 'platforms', platforms_conf_path)
-                d.gauge_update(100)
             parser.write(config_file)
             config_file.close()
-            d.gauge_stop()
-            d.msgbox("Configuration file written successfully")
+            d.msgbox("Configuration file written successfully", width=50, height=5)
             os.system('clear')
         except (IOError, OSError) as e:
             Log.critical("Can not write config file: {0}".format(e.message))
             os.system('clear')
             return False
         return True
+
+    @staticmethod
+    def _requested_exit(code, d):
+        if code != dialog.Dialog.OK:
+            code = d.yesno('Exit configure utility without saving?', width=50, height=5)
+            if code == dialog.Dialog.OK:
+                os.system('clear')
+                return True
+        return False
 
     @staticmethod
     def install():
