@@ -125,7 +125,7 @@ class Monitor:
             self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
-        Log.debug('Graph definition finalished')
+        Log.debug('Graph definition finalized')
         return graph
 
     def _add_children(self, job, exp, node_job):

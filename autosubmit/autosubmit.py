@@ -43,6 +43,7 @@ import re
 import random
 import signal
 import datetime
+import dialog
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 
@@ -78,7 +79,7 @@ def signal_handler(signal_received, frame):
     :param signal_received:
     :param frame:
     """
-    Log.info('Autosubmit will interrupt at the next safe ocasion')
+    Log.info('Autosubmit will interrupt at the next safe occasion')
     Autosubmit.exit = True
 
 
@@ -200,25 +201,8 @@ class Autosubmit:
                                    help='chooses type of output for generated plot')
 
             # Configure
-            subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
-                                                                       "can be done at machine, user or local level "
-                                                                       "(by default at machine level)")
-            subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
-                                                                               'it will prompt for it')
-            subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
-            subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
-                                                                                'supplied, it will prompt for it')
-            subparser.add_argument('-pc', '--platformsconfpath', default=None,
-                                   help='path to platforms.conf file to use by default. If not supplied, it will not'
-                                   ' prompt for it')
-            subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
-                                                                               'default. If not supplied, it will not '
-                                                                               'prompt for it')
-            group = subparser.add_mutually_exclusive_group()
-            group.add_argument('--all', action="store_true", help='configure for all users')
-            group.add_argument('--local', action="store_true", help='configure only for using Autosubmit from '
-                                                                    'this path')
-
+            subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
+                                                           "can be done at machine, user or local level ")
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
@@ -301,8 +285,7 @@ class Autosubmit:
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
-                return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
-                                            args.platformsconfpath, args.jobsconfpath, args.all, args.local)
+                return Autosubmit.configure()
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
@@ -928,86 +911,139 @@ class Autosubmit:
         return joblist.check_scripts(as_conf)
 
     @staticmethod
-    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
-                  machine, local):
+    def configure():
         """
-        Configure several paths for autosubmit: database, local root and others. Can be configured at system,
-        user or local levels. Local level configuration precedes user level and user level precedes system
-        configuration.
-
-        :param database_filename: database filename
-        :type database_filename: str
-        :param database_path: path to autosubmit database
-        :type database_path: str
-        :param database_path: path to autosubmit database
-        :type database_path: str
-        :param local_root_path: path to autosubmit's experiments' directory
-        :type local_root_path: str
-        :param platforms_conf_path: path to platforms conf file to be used as model for new experiments
-        :type platforms_conf_path: str
-        :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
-        :type jobs_conf_path: str
-        :param machine: True if this configuration has to be stored for all the machine users
-        :type machine: bool
-        :param local: True if this configuration has to be stored in the local path
-        :type local: bool
+        Configure several paths for autosubmit interactively: database, local root and others.
+        Can be configured at system, user or local levels. Local level configuration precedes user level and user level
+        precedes system configuration.
         """
         home_path = os.path.expanduser('~')
-        while database_path is None:
-            database_path = input("Introduce Database path: ")
-        database_path = database_path.replace('~', home_path)
-        if not os.path.exists(database_path):
-            Log.error("Database path does not exist.")
-            return False
 
-        while local_root_path is None:
-            local_root_path = input("Introduce Local Root path: ")
-        local_root_path = local_root_path.replace('~', home_path)
-        if not os.path.exists(local_root_path):
-            Log.error("Local Root path does not exist.")
-            return False
+        d = dialog.Dialog(dialog="dialog")
+        d.set_background_title("Autosubmit configure utility")
+        code, level = d.menu("Choose when to apply the configuration:",
+                             choices=[("All", "All users on this machine (may require root privileges)"),
+                                      ("User", "Current user"),
+                                      ("Local", "Only when launching Autosubmit from this path")])
 
-        if platforms_conf_path is not None:
-            platforms_conf_path = platforms_conf_path.replace('~', home_path)
-            if not os.path.exists(platforms_conf_path):
-                Log.error("platforms.conf path does not exist.")
-                return False
-        if jobs_conf_path is not None:
-            jobs_conf_path = jobs_conf_path.replace('~', home_path)
-            if not os.path.exists(jobs_conf_path):
-                Log.error("jobs.conf path does not exist.")
-                return False
-
-        if machine:
+        filename = '.autosubmitrc'
+        if level == 'All':
             path = '/etc'
-        elif local:
-            path = '.'
-        else:
+            filename = 'autosubmitrc'
+        elif level == 'User':
             path = home_path
-        path = os.path.join(path, '.autosubmitrc')
+        else:
+            path = '.'
+        path = os.path.join(path, filename)
+
+        # Setting default values
+        database_path = home_path
+        local_root_path = home_path
+        database_filename = 'autosubmit.db'
+        jobs_conf_path = ''
+        platforms_conf_path = ''
+
+        Log.info("Reading configuration file...")
+        try:
+            if os.path.isfile(path):
+                parser = SafeConfigParser()
+                parser.optionxform = str
+                parser.read(path)
+                if parser.has_option('database', 'path'):
+                    database_path = parser.get('database', 'path')
+                if parser.has_option('database', 'filename'):
+                    database_filename = parser.get('database', 'filename')
+                if parser.has_option('local', 'path'):
+                    local_root_path = parser.get('local', 'path')
+                if parser.has_option('conf', 'platforms'):
+                    platforms_conf_path = parser.get('conf', 'platforms')
+                if parser.has_option('conf', 'jobs'):
+                    jobs_conf_path = parser.get('conf', 'jobs')
+
+        except (IOError, OSError) as e:
+            Log.critical("Can not read config file: {0}".format(e.message))
+            return False
+
+        d.msgbox('Select path to database')
+        while True:
+            code, database_path = d.dselect(database_path, width=80, height=20)
+            if code != dialog.Dialog.OK:
+                os.system('clear')
+                return False
+            else:
+                database_path = database_path.replace('~', home_path)
+                if not os.path.exists(database_path):
+                    d.msgbox("Database path does not exist.\nPlease, insert the right path", width=40, height=6)
+                else:
+                    break
+
+        d.msgbox('Select path to experiments repository')
+        while True:
+            code, local_root_path = d.dselect(local_root_path, width=80, height=20)
+            if code != dialog.Dialog.OK:
+                os.system('clear')
+                return False
+            else:
+                database_path = database_path.replace('~', home_path)
+                if not os.path.exists(database_path):
+                    d.msgbox("Local root path does not exist.\nPlease, insert the right path", width=40, height=6)
+                else:
+                    break
+        while True:
+            (code, tag) = d.form(text="Just a few more options:",
+                                 elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
+                                           ("Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40, 200),
+                                           ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
+                                 height=20,
+                                 width=80,
+                                 form_height=10)
+            if code != dialog.Dialog.OK:
+                os.system('clear')
+                return False
+            else:
+                database_filename = tag[0]
+                platforms_conf_path = tag[1]
+                jobs_conf_path = tag[2]
+
+                platforms_conf_path = platforms_conf_path.replace('~', home_path).strip()
+                jobs_conf_path = jobs_conf_path.replace('~', home_path).strip()
+
+                if platforms_conf_path and not os.path.exists(platforms_conf_path):
+                    d.msgbox("Platforms conf path does not exist.\nPlease, insert the right path", width=40, height=6)
+                elif jobs_conf_path and not os.path.exists(jobs_conf_path):
+                    d.msgbox("Jobs conf path does not exist.\nPlease, insert the right path", width=40, height=6)
+                else:
+                    break
 
         config_file = open(path, 'w')
-        Log.info("Writing configuration file...")
+        d.gauge_start("Writing configuration file...", percent=0)
         try:
             parser = SafeConfigParser()
             parser.add_section('database')
             parser.set('database', 'path', database_path)
-            if database_filename is not None:
+            d.gauge_update(20)
+            if database_filename:
                 parser.set('database', 'filename', database_filename)
+            d.gauge_update(40)
             parser.add_section('local')
             parser.set('local', 'path', local_root_path)
-            if jobs_conf_path is not None or platforms_conf_path is not None:
+            d.gauge_update(60)
+            if jobs_conf_path or platforms_conf_path:
                 parser.add_section('conf')
-                if jobs_conf_path is not None:
+                if jobs_conf_path:
                     parser.set('conf', 'jobs', jobs_conf_path)
-                if platforms_conf_path is not None:
+                d.gauge_update(80)
+                if platforms_conf_path:
                     parser.set('conf', 'platforms', platforms_conf_path)
-
+                d.gauge_update(100)
             parser.write(config_file)
             config_file.close()
-            Log.result("Configuration file written successfully")
+            d.gauge_stop()
+            d.msgbox("Configuration file written successfully")
+            os.system('clear')
         except (IOError, OSError) as e:
             Log.critical("Can not write config file: {0}".format(e.message))
+            os.system('clear')
             return False
         return True
 

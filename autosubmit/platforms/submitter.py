@@ -124,8 +124,9 @@ class Submitter:
 
             remote_platform.host = host
             if remote_platform.type == 'ecaccess':
-                # It has to be fork because we are communciating through commands at the lcoal machine
+                # It has to be fork because we are communicating through commands at the local machine
                 host = 'localhost'
+            # noinspection PyTypeChecker
             remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
             # noinspection PyProtectedMember
             remote_platform.service._adaptor.host = remote_platform.host

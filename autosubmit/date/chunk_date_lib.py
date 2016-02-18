@@ -126,11 +126,11 @@ def sub_days(date, number_of_days, cal):
 
     :param date: base date
     :type date: datetime.datetime
-    :param number_of_days: number of days to substract
+    :param number_of_days: number of days to subtract
     :type number_of_days: int
     :param cal: calendar to use
     :type cal: str
-    :return: base date minus substracted days
+    :return: base date minus subtracted days
     :rtype: datetime.datetime
     """
     result = date - relativedelta(days=number_of_days)

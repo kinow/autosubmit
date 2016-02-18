@@ -41,7 +41,7 @@ class JobList:
     """
     Class to manage the list of jobs to be run by autosubmit
 
-    :param expid: experiment's indentifier
+    :param expid: experiment's identifier
     :type expid: str
     """
 
@@ -77,7 +77,7 @@ class JobList:
         :type num_chunks: int
         :param parameters: parameters for the jobs
         :type parameters: dict
-        :param date_format: option to formate dates
+        :param date_format: option to format dates
         :type date_format: str
         :param default_retrials: default retrials for ech job
         :type default_retrials: int
