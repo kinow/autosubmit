@@ -41,7 +41,7 @@ class Job:
     :type name: str
     :param jobid: job's identifier
     :type jobid: int
-    :param status: job inicial status
+    :param status: job initial status
     :type status: Status
     :param priority: job's priority
     :type priority: int

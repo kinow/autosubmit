@@ -191,7 +191,7 @@ class Log:
         Sends information to the log
 
         :param msg: message to show
-        :param args: arguments for message formating (it will be done using format() method on str)
+        :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.info(msg.format(*args))
 
@@ -221,7 +221,7 @@ class Log:
         Sends program warnings to the log. It will be shown in yellow in the console.
 
         :param msg: message to show
-        :param args: arguments for message formating (it will be done using format() method on str)
+        :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.warning(msg.format(*args))
 
@@ -231,7 +231,7 @@ class Log:
         Sends errors to the log. It will be shown in red in the console.
 
         :param msg: message to show
-        :param args: arguments for message formating (it will be done using format() method on str)
+        :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.error(msg.format(*args))
 
@@ -241,6 +241,6 @@ class Log:
         Sends critical errors to the log. It will be shown in red in the console.
 
         :param msg: message to show
-        :param args: arguments for message formating (it will be done using format() method on str)
+        :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.critical(msg.format(*args))

@@ -58,7 +58,7 @@ class AutosubmitGit:
                     Log.error("Failed to retrieve git info...")
                     return False
                 if output:
-                    Log.info("Changes not commited detected... SKIPPING!")
+                    Log.info("Changes not committed detected... SKIPPING!")
                     Log.user_warning("Commit needed!")
                     return False
                 else:
@@ -88,7 +88,7 @@ class AutosubmitGit:
         :type as_conf: autosubmit.config.AutosubmitConfig
         :param force: if True, it will overwrite any existing clone
         :type force: bool
-        :return: True if clone was succesfull, False otherwise
+        :return: True if clone was successful, False otherwise
         """
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()

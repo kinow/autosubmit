@@ -129,6 +129,7 @@ class Platform:
             except subprocess.CalledProcessError:
                 raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                           self.host, self.get_files_path()))
+        # noinspection PyTypeChecker
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
         if self.type == 'local':
             out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename,)),
@@ -153,9 +154,11 @@ class Platform:
 
         sftp_directory = 'sftp://{0}{1}'.format(self.host, path)
         try:
+            # noinspection PyTypeChecker
             return saga.filesystem.Directory(sftp_directory, session=self.service.session)
         except saga.BadParameter:
             try:
+                # noinspection PyTypeChecker
                 return saga.filesystem.Directory(sftp_directory,
                                                  saga.filesystem.CREATE,
                                                  session=self.service.session)
@@ -164,6 +167,7 @@ class Platform:
                 parent = self.get_workdir(os.path.dirname(path))
                 parent.make_dir(new_directory)
                 parent.close()
+                # noinspection PyTypeChecker
                 return saga.filesystem.Directory(sftp_directory, session=self.service.session)
 
     def get_file(self, filename, must_exist=True):
@@ -196,8 +200,10 @@ class Platform:
             return False
 
         if self.type == 'local':
+            # noinspection PyTypeChecker
             out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
         else:
+            # noinspection PyTypeChecker
             out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(), filename)))
 
         out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
@@ -215,9 +221,11 @@ class Platform:
         # noinspection PyBroadException
         try:
             if self.type == 'local':
+                # noinspection PyTypeChecker
                 directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
                                                                                        'LOG_' + self.expid)))
             else:
+                # noinspection PyTypeChecker
                 directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
         except:
             return False
@@ -254,9 +262,11 @@ class Platform:
 
         try:
             if self.type == 'local':
+                # noinspection PyTypeChecker
                 out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
                                                                             filename)))
             else:
+                # noinspection PyTypeChecker
                 out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
                                                                                           filename)))
             out.remove()
@@ -369,7 +379,7 @@ class Platform:
         :rtype: saga.job.Job
         """
         jd = saga.job.Description()
-        jd.executable = os.path.join(self.get_files_path(), scriptname)
+        jd.executable = 'source ' + os.path.join(self.get_files_path(), scriptname)
         jd.working_directory = self.get_files_path()
         str_datetime = date2str(datetime.datetime.now(), 'S')
         jd.output = "{0}.{1}.out".format(job.name, str_datetime)
