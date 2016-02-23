@@ -379,7 +379,7 @@ class Platform:
         :rtype: saga.job.Job
         """
         jd = saga.job.Description()
-        jd.executable = os.path.join(self.get_files_path(), scriptname)
+        jd.executable = 'source ' + os.path.join(self.get_files_path(), scriptname)
         jd.working_directory = self.get_files_path()
         str_datetime = date2str(datetime.datetime.now(), 'S')
         jd.output = "{0}.{1}.out".format(job.name, str_datetime)
