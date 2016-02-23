@@ -481,10 +481,11 @@ class JobList:
         Log.debug('Updating FAILED jobs')
         for job in self.get_failed():
             job.inc_fail_count()
-            if hasattr(self, 'retrials'):
-                retrials = self.retrials
-            else:
+            if not hasattr(job, 'retrials') or job.retrials is None:
                 retrials = as_conf.get_retrials()
+            else:
+                retrials = job.retrials
+
             if job.fail_count < retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
@@ -913,7 +914,9 @@ class DicJobs:
         job.tasks = self.get_option(section, "TASKS", 1)
         job.memory = self.get_option(section, "MEMORY", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
-        job.max_retrials = self.get_option(section, 'RETRIALS', self.default_retrials)
+        job.retrials = int(self.get_option(section, 'RETRIALS', -1))
+        if job.retrials == -1:
+            job.retrials = None
         self._joblist.get_job_list().append(job)
         return job
 
