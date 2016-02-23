@@ -24,8 +24,8 @@ import os
 import re
 import time
 
-from autosubmit.job.job_common import Status
-from autosubmit.job.job_common import StatisticsSnippet
+from autosubmit.job.job_common import Status, Type
+from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 
@@ -70,6 +70,7 @@ class Job:
         self._short_name = None
         self.short_name = name
         self.date_format = ''
+        self.type = Type.BASH
 
         self.id = jobid
         self.file = None
@@ -611,10 +612,21 @@ class Job:
             template_file = open(os.path.join(project_dir, self.file), 'r')
             template = template_file.read()
         else:
-            template = 'sleep 5'
-        template_content = ''.join([StatisticsSnippet.AS_HEADER,
+            if self.type == Type.BASH:
+                template = 'sleep 5'
+            else:
+                template = 'time.sleep(5)'
+
+        if self.type == Type.BASH:
+            snippet = StatisticsSnippetBash
+        elif self.type == Type.PYTHON:
+            snippet = StatisticsSnippetPython
+        else:
+            raise Exception('Job type {0} not supported'.format(self.type))
+
+        template_content = ''.join([snippet.AS_HEADER,
                                    template,
-                                   StatisticsSnippet.AS_TAILER])
+                                   snippet.AS_TAILER])
 
         return template_content
 

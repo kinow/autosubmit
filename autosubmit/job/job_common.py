@@ -37,8 +37,20 @@ class Status:
         return getattr(self, value)
 
 
+class Type:
+    """
+    Class to handle the status of a job
+    """
+    BASH = 0
+    PYTHON = 1
+    R = 2
+
+    def retval(self, value):
+        return getattr(self, value)
+
+
 # noinspection PyPep8
-class StatisticsSnippet:
+class StatisticsSnippetBash:
     """
     Class to handle the statistics snippet of a job. It contains header and tailer for
     local and remote jobs
@@ -71,3 +83,42 @@ class StatisticsSnippet:
             exit 0
             """)
 
+class StatisticsSnippetPython:
+    """
+    Class to handle the statistics snippet of a job. It contains header and tailer for
+    local and remote jobs
+    """
+
+    AS_HEADER = textwrap.dedent("""\
+
+            ###################
+            # Autosubmit header
+            ###################
+
+            import time
+
+            job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
+            stat_file = open(job_name_ptrn + '_STAT', 'w')
+            stat_file.write('{0:.0f}\\n'.format(time.time()))
+            stat_file.close()
+
+
+            ###################
+            # Autosubmit job
+            ###################
+
+            """)
+
+    # noinspection PyPep8
+    AS_TAILER = textwrap.dedent("""\
+
+            ###################
+            # Autosubmit tailer
+            ###################
+
+            stat_file = open(job_name_ptrn + '_STAT', 'a')
+            stat_file.write('{0:.0f}\\n'.format(time.time()))
+            stat_file.close()
+            open(job_name_ptrn + '_COMPLETED', 'a').close()
+            exit(0)
+            """)
