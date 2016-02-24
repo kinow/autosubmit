@@ -907,6 +907,8 @@ class DicJobs:
             job.type = Type.BASH
         elif type == 'python':
             job.type = Type.PYTHON
+        elif type == 'r':
+            job.type = Type.R
 
         job.platform_name = self.get_option(section, "PLATFORM", None)
         if job.platform_name is not None:

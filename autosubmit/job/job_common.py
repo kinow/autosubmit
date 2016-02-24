@@ -83,6 +83,7 @@ class StatisticsSnippetBash:
             exit 0
             """)
 
+
 class StatisticsSnippetPython:
     """
     Class to handle the statistics snippet of a job. It contains header and tailer for
@@ -121,4 +122,45 @@ class StatisticsSnippetPython:
             stat_file.close()
             open(job_name_ptrn + '_COMPLETED', 'a').close()
             exit(0)
+            """)
+
+
+class StatisticsSnippetR:
+    """
+    Class to handle the statistics snippet of a job. It contains header and tailer for
+    local and remote jobs
+    """
+
+    AS_HEADER = textwrap.dedent("""\
+            ###################
+            # Autosubmit header
+            ###################
+
+            job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'    
+
+            fileConn<-file(paste(job_name_ptrn,"_STAT", sep = ''),"w")
+            writeLines(toString(trunc(as.numeric(Sys.time()))), fileConn)
+            close(fileConn)
+
+            ###################
+            # Autosubmit job
+            ###################
+
+
+            """)
+
+    # noinspection PyPep8
+    AS_TAILER = textwrap.dedent("""\
+
+            ###################
+            # Autosubmit tailer
+            ###################
+
+            fileConn<-file(paste(job_name_ptrn,"_STAT", sep = ''),"a")
+            writeLines(toString(trunc(as.numeric(Sys.time()))), fileConn)
+            close(fileConn)
+
+            fileConn<-file(paste(job_name_ptrn,'_COMPLETED', sep = ''), 'a')
+            close(fileConn)
+            quit(save = 'no', status = 0)
             """)

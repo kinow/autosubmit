@@ -382,7 +382,9 @@ class Platform:
         if job.type == Type.BASH:
             binary = 'source'
         elif job.type == Type.PYTHON:
-            binary = 'python'
+            binary = 'python -m trace --trace'
+        elif job.type == Type.R:
+            binary = 'Rscript'
 
         jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
         jd.working_directory = self.get_files_path()
