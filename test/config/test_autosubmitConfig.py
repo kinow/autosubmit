@@ -64,8 +64,8 @@ class TestAutosubmitConfig(TestCase):
         self.assertDictEqual(self.config.load_parameters(),
                              {'EXPID': 'a000', 'TOTALJOBS': '6', 'PROJECT_REVISION': '', 'RETRIALS': '4',
                               'HPCARCH': 'patata', 'AUTOSUBMIT_VERSION': '3.0.0rc1', 'CALENDAR': 'standard',
-                              'CHUNKLIST': '', 'CHUNKSIZE': '4', 'CHUNKSIZEUNIT': 'month', 'DATELIST': '1956',
-                              'FILE_PROJECT_CONF': '', 'MAXWAITINGJOBS': '3', 'MEMBERS': 'fc0 fc1 fc2 fc3 fc4',
+                              'CHUNKLIST': '', 'CHUNKSIZE': '4', 'CHUNKSIZEUNIT': 'month', 'DATELIST': '1960',
+                              'FILE_PROJECT_CONF': '', 'MAXWAITINGJOBS': '3', 'MEMBERS': 'fc0 fc1',
                               'NUMCHUNKS': '5', 'PROJECT_BRANCH': '', 'PROJECT_COMMIT': '', 'PROJECT_DESTINATION': '',
                               'PROJECT_ORIGIN': '', 'PROJECT_PATH': '', 'PROJECT_TYPE': 'none', 'PROJECT_URL': '',
                               'RERUN': 'FALSE', 'SAFETYSLEEPTIME': '10'})
@@ -117,7 +117,7 @@ class TestAutosubmitConfig(TestCase):
         self.assertEqual(self.config.get_local_project_path(), '')
 
     def test_get_date_list(self):
-        self.assertEqual(self.config.get_date_list(), [datetime.datetime(1956, 1, 1, 0, 0)])
+        self.assertEqual(self.config.get_date_list(), [datetime.datetime(1960, 1, 1, 0, 0)])
 
     def test_get_num_chunks(self):
         self.assertEqual(self.config.get_num_chunks(), 5)
@@ -126,7 +126,7 @@ class TestAutosubmitConfig(TestCase):
         self.assertEqual(self.config.get_chunk_size_unit(), 'month')
 
     def test_get_member_list(self):
-        self.assertEqual(self.config.get_member_list(), ['fc0', 'fc1', 'fc2', 'fc3', 'fc4'])
+        self.assertEqual(self.config.get_member_list(), ['fc0', 'fc1'])
 
     def test_get_rerun(self):
         self.assertEqual(self.config.get_rerun(), 'false')
