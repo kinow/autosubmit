@@ -188,6 +188,8 @@ Examples:
     # RETRIALS = 4
     ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
     # CHECK = False
+    ## Select the interpreter that will run the job. Options: bash, python, r Default: bash
+    # TYPE = bash
 
 
     [LOCAL_SETUP]

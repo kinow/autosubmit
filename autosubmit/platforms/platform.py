@@ -6,7 +6,7 @@ import os
 import datetime
 
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Status, Type
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str
 
@@ -379,7 +379,14 @@ class Platform:
         :rtype: saga.job.Job
         """
         jd = saga.job.Description()
-        jd.executable = 'source ' + os.path.join(self.get_files_path(), scriptname)
+        if job.type == Type.BASH:
+            binary = 'source'
+        elif job.type == Type.PYTHON:
+            binary = 'python -m trace --trace'
+        elif job.type == Type.R:
+            binary = 'Rscript'
+
+        jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
         jd.working_directory = self.get_files_path()
         str_datetime = date2str(datetime.datetime.now(), 'S')
         jd.output = "{0}.{1}.out".format(job.name, str_datetime)

@@ -13,7 +13,7 @@ Autosubmit is currently used at Barcelona Supercomputing Centre (BSC) to run EC-
 
 Autosubmit has been used to manage models running at supercomputers in IC3, BSC, ECMWF, EPCC, PDC and OLCF.
 
-Autosubmit 3.0 version is now available via *PyPi* package under the terms of *GNU General Public License*.
+Autosubmit is now available via *PyPi* package under the terms of *GNU General Public License*.
 
 
 Why is Autosubmit needed ?

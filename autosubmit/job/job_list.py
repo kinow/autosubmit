@@ -30,7 +30,7 @@ from time import localtime, strftime
 from sys import setrecursionlimit
 from shutil import move
 
-from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.log import Log
@@ -901,6 +901,14 @@ class DicJobs:
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
+
+        type = self.get_option(section, "TYPE", 'bash').lower()
+        if type == 'bash':
+            job.type = Type.BASH
+        elif type == 'python':
+            job.type = Type.PYTHON
+        elif type == 'r':
+            job.type = Type.R
 
         job.platform_name = self.get_option(section, "PLATFORM", None)
         if job.platform_name is not None:
