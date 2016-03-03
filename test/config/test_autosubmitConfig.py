@@ -1,12 +1,14 @@
 from unittest import TestCase
 from autosubmit.config.config_common import AutosubmitConfig, BasicConfig
+from config.parser_factory import ConfigParserFactory
 import datetime
 
 
 class TestAutosubmitConfig(TestCase):
 
     def setUp(self):
-        self.config = AutosubmitConfig('a000')
+        BasicConfig.read()
+        self.config = AutosubmitConfig('a000', BasicConfig, ConfigParserFactory())
         self.config.reload()
 
     def getFullPath(self, relativepath):
@@ -159,7 +161,7 @@ class TestAutosubmitConfig(TestCase):
         self.assertEqual(self.config.get_retrials(), 4)
 
     def test_get_parser(self):
-        self.assertIsNotNone(self.config.get_parser(self.config._exp_parser_file))
+        self.assertIsNotNone(self.config.get_parser(ConfigParserFactory(), self.config._exp_parser_file))
 
     def test_read_platforms_conf(self):
         self.assertEqual(self.config.get_local_project_path(), '')

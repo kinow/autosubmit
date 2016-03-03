@@ -55,6 +55,7 @@ sys.path.insert(0, os.path.abspath('.'))
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
+from config.parser_factory import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
@@ -504,7 +505,7 @@ class Autosubmit:
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
             return False
@@ -514,7 +515,6 @@ class Autosubmit:
             # Check proj configuration
             as_conf.check_proj()
 
-        expid = as_conf.get_expid()
         hpcarch = as_conf.get_platform()
 
         safetysleeptime = as_conf.get_safetysleeptime()
@@ -759,7 +759,7 @@ class Autosubmit:
             Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                       'clean_exp.log'))
         if project:
-            autosubmit_config = AutosubmitConfig(expid)
+            autosubmit_config = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             if not autosubmit_config.check_conf_files():
                 Log.critical('Can not clean project with invalid configuration')
                 return False
@@ -811,7 +811,7 @@ class Autosubmit:
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
         job_list = pickle.load(open(path, 'r'))
 
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not recover with invalid configuration')
             return False
@@ -876,7 +876,7 @@ class Autosubmit:
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             return False
         project_type = as_conf.get_project_type()
@@ -1095,7 +1095,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'refresh.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not copy with invalid configuration')
             return False
@@ -1267,7 +1267,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not create with invalid configuration')
             return False
@@ -1448,7 +1448,7 @@ class Autosubmit:
         Log.debug('Sections to change: {0}', filter_section)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
                                     ".pkl"), 'r'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
 
         final_status = Autosubmit._get_status(final)
@@ -1565,7 +1565,7 @@ class Autosubmit:
         :param dummy: if True, creates a dummy experiment adding some dafault values
         :type dummy: bool
         """
-        as_conf = AutosubmitConfig(exp_id)
+        as_conf = AutosubmitConfig(exp_id, BasicConfig, ConfigParserFactory())
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
@@ -1716,8 +1716,8 @@ class Autosubmit:
         if testid == '':
             return False
 
-        as_conf = AutosubmitConfig(testid)
-        exp_parser = as_conf.get_parser(as_conf.experiment_file)
+        as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
+        exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
         if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
             Log.error('Can not test a RERUN experiment')
             Autosubmit.delete(testid, True)
@@ -1725,7 +1725,7 @@ class Autosubmit:
 
         content = open(as_conf.experiment_file).read()
         if hpc is None:
-            platforms_parser = as_conf.get_parser(as_conf.platforms_file)
+            platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
             test_platforms = list()
             for section in platforms_parser.sections():
                 if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':

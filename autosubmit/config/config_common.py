@@ -41,17 +41,22 @@ class AutosubmitConfig:
     :type expid: str
     """
 
-    def __init__(self, expid):
+    def __init__(self, expid, basic_config, parser_factory):
         self.expid = expid
-        self._conf_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+
+        self.basic_config = basic_config
+
+        self.parser_factory = parser_factory
+
+        self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "autosubmit_" + expid + ".conf")
-        self._exp_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._exp_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                              "expdef_" + expid + ".conf")
-        self._platforms_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._platforms_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                                    "platforms_" + expid + ".conf")
-        self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._jobs_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
-        self._proj_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
 
     @property
@@ -102,7 +107,7 @@ class AutosubmitConfig:
         :return: experiment's project directory
         :rtype: str
         """
-        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR,
+        dir_templates = os.path.join(self.basic_config.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_PROJ_DIR,
                                      self.get_project_destination())
         return dir_templates
 
@@ -344,7 +349,7 @@ class AutosubmitConfig:
             if self._proj_parser_file == '':
                 self._proj_parser = None
             else:
-                self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+                self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
             return True
         except Exception as e:
             Log.error('Project conf file error: {0}', e)
@@ -354,14 +359,14 @@ class AutosubmitConfig:
         """
         Creates parser objects for configuration files
         """
-        self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
-        self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
-        self.jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
-        self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
+        self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
+        self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
+        self.jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
+        self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None
         else:
-            self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+            self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
 
     def load_parameters(self):
         """
@@ -738,16 +743,17 @@ class AutosubmitConfig:
         return int(self._conf_parser.get('config', 'RETRIALS'))
 
     @staticmethod
-    def get_parser(file_path):
+    def get_parser(parser_factory, file_path):
         """
         Gets parser for given file
 
+        :param parser_factory:
         :param file_path: path to file to be parsed
         :type file_path: str
         :return: parser
         :rtype: SafeConfigParser
         """
-        parser = SafeConfigParser()
+        parser = parser_factory.create_parser()
         parser.optionxform = str
         parser.read(file_path)
         return parser
