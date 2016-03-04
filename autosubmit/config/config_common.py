@@ -411,32 +411,6 @@ class AutosubmitConfig:
 
         return parameters
 
-    @staticmethod
-    def print_parameters(title, parameters):
-        """
-        Prints the parameters table in a tabular mode
-
-        :param title: table's title
-        :type title: str
-        :param parameters: parameters to print
-        :type: list
-        """
-        Log.info(title)
-        Log.info("---------------------------------------")
-        Log.info("{0:<{col1}}| {1:<{col2}}".format("  -- Parameter --", "  -- Value --", col1=20, col2=20))
-        for key in parameters:
-            Log.info("{0:<{col1}}| {1:<{col2}}".format(key, parameters[key], col1=20, col2=20))
-        Log.info("")
-
-    def get_expid(self):
-        """
-        Returns experiment identifier read from experiment's config file
-
-        :return: experiment identifier
-        :rtype: str
-        """
-        return self._exp_parser.get('DEFAULT', 'EXPID')
-
     def set_expid(self, exp_id):
         """
         Set experiment identifier in autosubmit and experiment config files

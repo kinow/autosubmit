@@ -211,6 +211,135 @@ class TestAutosubmitConfig(TestCase):
         open_mock.assert_any_call(config.experiment_file, 'w')
         open_mock.assert_any_call(getattr(config, '_conf_parser_file'), 'w')
 
+    def test_set_platform(self):
+        # arrange
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+
+        open_mock = mock_open(read_data="HPCARCH = dummy")
+        with patch.object(builtins, "open", open_mock):
+
+            # act
+            config.set_platform('dummy-platform')
+
+        # assert
+        open_mock.assert_any_call(config.experiment_file, 'w')
+
+    def test_set_version(self):
+        # arrange
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+
+        open_mock = mock_open(read_data='AUTOSUBMIT_VERSION = dummy')
+        with patch.object(builtins, "open", open_mock):
+
+            # act
+            config.set_version('dummy-vesion')
+
+        # assert
+        open_mock.assert_any_call(getattr(config, '_conf_parser_file'), 'w')
+
+    def test_set_safetysleeptime(self):
+        # arrange
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+
+        open_mock = mock_open(read_data='SAFETYSLEEPTIME = dummy')
+        with patch.object(builtins, "open", open_mock):
+
+            # act
+            config.set_safetysleeptime(999999)
+
+        # assert
+        open_mock.assert_any_call(getattr(config, '_conf_parser_file'), 'w')
+
+    def test_load_project_parameters(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.sections = Mock(return_value=['DUMMY_SECTION_1', 'DUMMY_SECTION_2'])
+        parser_mock.items = Mock(side_effect=[[['dummy_key1', 'dummy_value1'], ['dummy_key2', 'dummy_value2']],
+                                              [['dummy_key3', 'dummy_value3'], ['dummy_key4', 'dummy_value4']]])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        project_parameters = config.load_project_parameters()
+
+        # assert
+        parser_mock.items.assert_any_call('DUMMY_SECTION_1')
+        parser_mock.items.assert_any_call('DUMMY_SECTION_2')
+        self.assertEquals(4, len(project_parameters))
+        for i in range(1,4):
+            self.assertEquals(project_parameters.get('dummy_key'+str(i)), 'dummy_value'+str(i))
+
+    def test_check_json(self):
+        # arrange
+        valid_json = '[it_is_a_sample", "true]'
+        invalid_json = '{[[dummy]random}'
+
+        # act
+        should_be_true = AutosubmitConfig.check_json('random_key', valid_json)
+        should_be_false = AutosubmitConfig.check_json('random_key', invalid_json)
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertFalse(should_be_false)
+
+    def test_check_is_int(self):
+        # arrange
+        section = 'any-section'
+        option = 'any-option'
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has_option = Mock(side_effect=[False, True, True, False, True, True, True, True])
+        parser_mock.get = Mock(side_effect=['123', 'dummy', '123', 'dummy'])
+
+        # act
+        should_be_true = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
+        should_be_true2 = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
+        should_be_false = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
+
+        should_be_false2 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
+        should_be_true3 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
+        should_be_false3 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertTrue(should_be_true2)
+        self.assertTrue(should_be_true3)
+
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+        self.assertFalse(should_be_false3)
+
+    def test_check_is_boolean(self):
+        # arrange
+        section = 'any-section'
+        option = 'any-option'
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has_option = Mock(side_effect=[False, True, True, False, True, True, True, True])
+        parser_mock.get = Mock(side_effect=['True', 'dummy', 'False', 'dummy'])
+
+        # act
+        should_be_true = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
+        should_be_true2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
+        should_be_false = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
+
+        should_be_false2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
+        should_be_true3 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
+        should_be_false3 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertTrue(should_be_true2)
+        self.assertTrue(should_be_true3)
+
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+        self.assertFalse(should_be_false3)
+
     #############################
     ## Helper functions & classes
 

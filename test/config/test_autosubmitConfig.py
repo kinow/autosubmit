@@ -79,9 +79,6 @@ class TestAutosubmitConfig(TestCase):
     def test_print_parameters(self):
         self.config.print_parameters('title', self.config.load_parameters())
 
-    def test_get_expid(self):
-        self.assertEqual(self.config.get_expid(), 'a000')
-
     def test_set_expid(self):
         self.config.set_expid('a000')
 
