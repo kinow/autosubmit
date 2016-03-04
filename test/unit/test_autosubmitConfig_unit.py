@@ -3,13 +3,24 @@ from unittest import skip
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.parser_factory import ConfigParserFactory
 from mock import Mock
+from mock import patch
+from mock import mock_open
 import os
+
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
+
+# compatibility with both versions (2 & 3)
+from sys import version_info
+if version_info.major == 2:
+    import __builtin__ as builtins
+else:
+    import builtins
+
 
 
 class TestAutosubmitConfig(TestCase):
@@ -22,6 +33,7 @@ class TestAutosubmitConfig(TestCase):
 
     def setUp(self):
         self.config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        self.config.reload()
 
     def test_get_parser(self):
         # arrange
@@ -79,6 +91,9 @@ class TestAutosubmitConfig(TestCase):
         self.assertEqual(self.config.experiment_file,
                          os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, "conf",
                                              "expdef_" + self.any_expid + ".conf"))
+
+    def test_platforms_parser(self):
+        self.assertTrue(isinstance(self.config.platforms_parser, SafeConfigParser))
 
     def test_platforms_file(self):
         self.assertEqual(self.config.platforms_file,
@@ -163,6 +178,41 @@ class TestAutosubmitConfig(TestCase):
         # assert
         parser_mock.has_option.assert_called_once_with(self.section, self.option)
         self.assertFalse(exists)
+
+    def test_that_reload_must_load_parsers(self):
+        # arrange
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        parsers = ['_conf_parser', '_platforms_parser', 'jobs_parser', '_exp_parser', '_proj_parser']
+
+        # pre-act assertions
+        for parser in parsers:
+            self.assertFalse(hasattr(config, parser))
+
+        # act
+        config.reload()
+
+        # assert
+        # TODO: could be improved asserting that the methods are called
+        for parser in parsers:
+            self.assertTrue(hasattr(config, parser))
+            self.assertTrue(isinstance(getattr(config, parser), SafeConfigParser))
+
+    def test_set_expid(self):
+        # arrange
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+
+        open_mock = mock_open(read_data="EXPID = dummy")
+        with patch.object(builtins, "open", open_mock):
+
+            # act
+            config.set_expid('dummy-expid')
+
+        # assert
+        open_mock.assert_any_call(config.experiment_file, 'w')
+        open_mock.assert_any_call(getattr(config, '_conf_parser_file'), 'w')
+
+    #############################
+    ## Helper functions & classes
 
     def _assert_get_option(self, parser_mock, option, expected_value, returned_value, expected_type):
         self.assertTrue(isinstance(returned_value, expected_type))
