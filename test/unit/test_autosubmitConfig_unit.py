@@ -6,6 +6,7 @@ from mock import Mock
 from mock import patch
 from mock import mock_open
 import os
+from datetime import datetime
 
 try:
     # noinspection PyCompatibility
@@ -16,15 +17,14 @@ except ImportError:
 
 # compatibility with both versions (2 & 3)
 from sys import version_info
+
 if version_info.major == 2:
     import __builtin__ as builtins
 else:
     import builtins
 
 
-
 class TestAutosubmitConfig(TestCase):
-
     any_expid = 'a000'
 
     # dummy values for tests
@@ -90,7 +90,7 @@ class TestAutosubmitConfig(TestCase):
     def test_experiment_file(self):
         self.assertEqual(self.config.experiment_file,
                          os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, "conf",
-                                             "expdef_" + self.any_expid + ".conf"))
+                                      "expdef_" + self.any_expid + ".conf"))
 
     def test_platforms_parser(self):
         self.assertTrue(isinstance(self.config.platforms_parser, SafeConfigParser))
@@ -98,23 +98,34 @@ class TestAutosubmitConfig(TestCase):
     def test_platforms_file(self):
         self.assertEqual(self.config.platforms_file,
                          os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, "conf",
-                                             "platforms_" + self.any_expid + ".conf"))
+                                      "platforms_" + self.any_expid + ".conf"))
 
     def test_project_file(self):
         self.assertEqual(self.config.project_file,
                          os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, "conf",
-                                             "proj_" + self.any_expid + ".conf"))
+                                      "proj_" + self.any_expid + ".conf"))
 
     def test_jobs_file(self):
         self.assertEqual(self.config.jobs_file,
                          os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, "conf",
-                                             "jobs_" + self.any_expid + ".conf"))
+                                      "jobs_" + self.any_expid + ".conf"))
 
-    @skip("pending refactor")
     def test_get_project_dir(self):
-        self.assertEqual(self.config.get_project_dir(),
-                         os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, FakeBasicConfig.LOCAL_PROJ_DIR,
-                                     self.config.get_project_destination()))
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.get = Mock(side_effect=['/dummy/path'])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        returned_project_dir = config.get_project_dir()
+
+        # assert
+        self.assertEquals(os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.any_expid, FakeBasicConfig.LOCAL_PROJ_DIR,
+                                       '/dummy/path'), returned_project_dir)
 
     def test_get_wallclock(self):
         # arrange
@@ -203,7 +214,6 @@ class TestAutosubmitConfig(TestCase):
 
         open_mock = mock_open(read_data="EXPID = dummy")
         with patch.object(builtins, "open", open_mock):
-
             # act
             config.set_expid('dummy-expid')
 
@@ -217,7 +227,6 @@ class TestAutosubmitConfig(TestCase):
 
         open_mock = mock_open(read_data="HPCARCH = dummy")
         with patch.object(builtins, "open", open_mock):
-
             # act
             config.set_platform('dummy-platform')
 
@@ -230,7 +239,6 @@ class TestAutosubmitConfig(TestCase):
 
         open_mock = mock_open(read_data='AUTOSUBMIT_VERSION = dummy')
         with patch.object(builtins, "open", open_mock):
-
             # act
             config.set_version('dummy-vesion')
 
@@ -243,7 +251,6 @@ class TestAutosubmitConfig(TestCase):
 
         open_mock = mock_open(read_data='SAFETYSLEEPTIME = dummy')
         with patch.object(builtins, "open", open_mock):
-
             # act
             config.set_safetysleeptime(999999)
 
@@ -270,8 +277,8 @@ class TestAutosubmitConfig(TestCase):
         parser_mock.items.assert_any_call('DUMMY_SECTION_1')
         parser_mock.items.assert_any_call('DUMMY_SECTION_2')
         self.assertEquals(4, len(project_parameters))
-        for i in range(1,4):
-            self.assertEquals(project_parameters.get('dummy_key'+str(i)), 'dummy_value'+str(i))
+        for i in range(1, 4):
+            self.assertEquals(project_parameters.get('dummy_key' + str(i)), 'dummy_value' + str(i))
 
     def test_check_json(self):
         # arrange
@@ -340,6 +347,222 @@ class TestAutosubmitConfig(TestCase):
         self.assertFalse(should_be_false2)
         self.assertFalse(should_be_false3)
 
+    def test_check_regex(self):
+        # arrange
+        section = 'any-section'
+        option = 'any-option'
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has_option = Mock(side_effect=[False, False, True, True, True, True, False, True, True, True, True])
+        parser_mock.get = Mock(side_effect=['dummy-value', '999999', 'dummy-value', 'dummy-value', '999999'])
+
+        # act
+        # TODO: unexpected logic?
+        should_be_false = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
+        should_be_true = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]')
+        should_be_false2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
+        should_be_true2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]*')
+
+        should_be_false3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
+        should_be_false4 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
+        should_be_true3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, '[0-9]*')
+
+        # assert
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+        self.assertFalse(should_be_false3)
+        self.assertFalse(should_be_false4)
+
+        self.assertTrue(should_be_true)
+        self.assertTrue(should_be_true2)
+        self.assertTrue(should_be_true3)
+
+    @skip("pending refactor")
+    def test_check_is_choice(self):
+        # arrange
+        section = 'any-section'
+        option = 'any-option'
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has_option = Mock(side_effect=[False, False, True, True, True, True, False, True, True, True, True])
+        parser_mock.get = Mock(side_effect=['dummy-value', '999999', 'dummy-value', 'dummy-value', '999999'])
+
+        # act
+        # TODO: unexpected logic?
+        should_be_false = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
+        should_be_true = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]')
+        should_be_false2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
+        should_be_true2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]*')
+
+        should_be_false3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
+        should_be_false4 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
+        should_be_true3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, '[0-9]*')
+
+        # assert
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+        self.assertFalse(should_be_false3)
+        self.assertFalse(should_be_false4)
+
+        self.assertTrue(should_be_true)
+        self.assertTrue(should_be_true2)
+        self.assertTrue(should_be_true3)
+
+    def test_get_bool_option(self):
+        # arrange
+        section = 'any-section'
+        option = 'any-option'
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has_option = Mock(side_effect=[True, True, False, False])
+        parser_mock.get = Mock(side_effect=['false', 'true'])
+
+        # act
+        should_be_false = AutosubmitConfig.get_bool_option(parser_mock, section, option, True)
+        should_be_true = AutosubmitConfig.get_bool_option(parser_mock, section, option, False)
+
+        should_be_false2 = AutosubmitConfig.get_bool_option(parser_mock, section, option, False)
+        should_be_true2 = AutosubmitConfig.get_bool_option(parser_mock, section, option, True)
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertTrue(should_be_true2)
+
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+
+    def test_get_startdates_list(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        # TODO: Check if these are all accepted formats
+        parser_mock.get = Mock(return_value='1920 193005 19400909 1950[01 0303]')
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        returned_dates = config.get_date_list()
+
+        # assert
+        self.assertEquals(5, len(returned_dates))
+        self.assertTrue(datetime(1920, 1, 1) in returned_dates)
+        self.assertTrue(datetime(1930, 5, 1) in returned_dates)
+        self.assertTrue(datetime(1940, 9, 9) in returned_dates)
+        self.assertTrue(datetime(1950, 1, 1) in returned_dates)
+        self.assertTrue(datetime(1950, 3, 3) in returned_dates)
+
+    def test_get_project_destination(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.get = Mock(side_effect=['/dummy/path',
+                                            None, 'local', '/dummy/local/local-path',
+                                            None, 'svn', 'svn', '/dummy/svn/svn-path',
+                                            None, 'git', 'git', 'git', '/dummy/git/git-path.git'])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        returned_project_destination = config.get_project_destination()
+        returned_project_destination_local = config.get_project_destination()
+        returned_project_destination_svn = config.get_project_destination()
+        returned_project_destination_git = config.get_project_destination()
+
+        # assert
+        self.assertEquals('/dummy/path', returned_project_destination)
+        self.assertEquals('local-path', returned_project_destination_local)
+        self.assertEquals('svn-path', returned_project_destination_svn)
+        self.assertEquals('git-path', returned_project_destination_git)
+
+    def test_check_project(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.read = Mock(side_effect=Exception)
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        config2 = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        config3 = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+
+        config._proj_parser_file = ''
+
+        # act
+        should_be_true = config.check_proj()
+        should_be_true2 = config2.check_proj()
+        should_be_false = config3.check_proj()
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertEquals(None, config._proj_parser)
+        self.assertTrue(should_be_true2)
+        self.assertFalse(should_be_false)
+
+    def test_get_some_properties(self):
+        # arrange
+        properties = {'RETRIALS': '111', 'SAFETYSLEEPTIME': '222', 'MAXWAITINGJOBS': '333',
+                        'TOTALJOBS': '444', 'FILE_PROJECT_CONF': '/dummy/path', 'FILE_JOBS_CONF': '/dummy/object',
+                        'PROJECT_BRANCH': 'dummy/branch', 'PROJECT_COMMIT': 'dummy/commit',
+                        'PROJECT_REVISION': 'dummy/revision', 'NUMCHUNKS': '999', 'CHUNKSIZEUNIT': '9999',
+                        'MEMBERS': 'MEMBER1 MEMBER2', 'RERUN': 'dummy/rerun', 'CHUNKLIST': 'dummy/chunklist',
+                        'HPCARCH': 'dummy/hpcarch'}
+
+        # TODO: Improve making properties as a dict of dicts (for section)
+        def get_option(section, option):
+            return properties[option]
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.has = Mock(return_value=True)
+        parser_mock.get = Mock(side_effect=get_option)
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        returned_retrials = config.get_retrials()
+        returned_safetysleeptime = config.get_safetysleeptime()
+        returned_max_jobs = config.get_max_waiting_jobs()
+        returned_total_jobs = config.get_total_jobs()
+        returned_file_project = config.get_file_project_conf()
+        returned_file_jobs = config.get_file_jobs_conf()
+        returned_branch = config.get_git_project_branch()
+        returned_commit = config.get_git_project_commit()
+        returned_revision = config.get_svn_project_revision()
+        returned_num_chunks = config.get_num_chunks()
+        returned_chunk_size_unit = config.get_chunk_size_unit()
+        returned_member_list = config.get_member_list()
+        returned_rerun = config.get_rerun()
+        returned_chunk_list = config.get_chunk_list()
+        returned_platform = config.get_platform()
+
+        # assert
+        self.assertEquals(int(properties['RETRIALS']), returned_retrials)
+        self.assertEquals(int(properties['SAFETYSLEEPTIME']), returned_safetysleeptime)
+        self.assertEquals(int(properties['MAXWAITINGJOBS']), returned_max_jobs)
+        self.assertEquals(int(properties['TOTALJOBS']), returned_total_jobs)
+        self.assertEquals(properties['FILE_PROJECT_CONF'], returned_file_project)
+        self.assertEquals(properties['FILE_JOBS_CONF'], returned_file_jobs)
+        self.assertEquals(properties['PROJECT_BRANCH'], returned_branch)
+        self.assertEquals(properties['PROJECT_COMMIT'], returned_commit)
+        self.assertEquals(properties['PROJECT_REVISION'], returned_revision)
+        self.assertEquals(int(properties['NUMCHUNKS']), returned_num_chunks)
+        self.assertEquals(properties['CHUNKSIZEUNIT'], returned_chunk_size_unit)
+        self.assertEquals(properties['MEMBERS'].split(' '), returned_member_list)
+        self.assertEquals(properties['RERUN'], returned_rerun)
+        self.assertEquals(properties['CHUNKLIST'], returned_chunk_list)
+        self.assertEquals(properties['HPCARCH'], returned_platform)
+
+
     #############################
     ## Helper functions & classes
 
@@ -365,12 +588,13 @@ class TestAutosubmitConfig(TestCase):
         parser_mock.get = Mock(return_value=returned_option)
         return parser_mock
 
+
 class FakeBasicConfig:
-            DB_DIR = '/dummy/db/dir'
-            DB_FILE = '/dummy/db/file'
-            DB_PATH = '/dummy/db/path'
-            LOCAL_ROOT_DIR = '/dummy/local/root/dir'
-            LOCAL_TMP_DIR = '/dummy/local/temp/dir'
-            LOCAL_PROJ_DIR = '/dummy/local/proj/dir'
-            DEFAULT_PLATFORMS_CONF = ''
-            DEFAULT_JOBS_CONF = ''
+    DB_DIR = '/dummy/db/dir'
+    DB_FILE = '/dummy/db/file'
+    DB_PATH = '/dummy/db/path'
+    LOCAL_ROOT_DIR = '/dummy/local/root/dir'
+    LOCAL_TMP_DIR = '/dummy/local/temp/dir'
+    LOCAL_PROJ_DIR = '/dummy/local/proj/dir'
+    DEFAULT_PLATFORMS_CONF = ''
+    DEFAULT_JOBS_CONF = ''
