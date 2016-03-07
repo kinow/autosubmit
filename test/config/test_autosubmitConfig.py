@@ -1,6 +1,6 @@
 from unittest import TestCase
 from autosubmit.config.config_common import AutosubmitConfig, BasicConfig
-from config.parser_factory import ConfigParserFactory
+from autosubmit.config.parser_factory import ConfigParserFactory
 import datetime
 
 
