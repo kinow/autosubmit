@@ -6,6 +6,7 @@ from mock import Mock
 from mock import patch
 from mock import mock_open
 import os
+import sys
 from datetime import datetime
 
 try:
@@ -561,6 +562,132 @@ class TestAutosubmitConfig(TestCase):
         self.assertEquals(properties['RERUN'], returned_rerun)
         self.assertEquals(properties['CHUNKLIST'], returned_chunk_list)
         self.assertEquals(properties['HPCARCH'], returned_platform)
+
+    def test_load_parameters(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.sections = Mock(side_effect=[['dummy-section1'], ['dummy-section2'], ['dummy-section3']])
+
+        parser_mock.options = Mock(side_effect=[['dummy-option1', 'dummy-option2'],
+                                                ['dummy-option3', 'dummy-option4']])
+
+        parser_mock.get = Mock(return_value='dummy-value')
+
+        parser_mock.items = Mock(return_value=[['dummy-key1', 'dummy-value1'],
+                                               ['dummy-key2', 'dummy-value2']])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        returned_parameters = config.load_parameters()
+
+        # assert
+        self.assertEquals(6, len(returned_parameters))
+        self.assertTrue(returned_parameters.has_key('dummy-option1'))
+        self.assertTrue(returned_parameters.has_key('dummy-option2'))
+        self.assertTrue(returned_parameters.has_key('dummy-option3'))
+        self.assertTrue(returned_parameters.has_key('dummy-option4'))
+        self.assertTrue(returned_parameters.has_key('dummy-key1'))
+        self.assertTrue(returned_parameters.has_key('dummy-key2'))
+
+    def test_git_project_commit(self):
+        # arrange
+        # noinspection PyPep8Naming
+        sys.modules['subprocess'].CalledProcessError = Exception
+        sys.modules['subprocess'].check_output = Mock(side_effect=[Exception,
+                                                                   'dummy/path/', Exception,
+                                                                   'dummy/path/', 'dummy/sha/'])
+        parser_mock = Mock(spec=SafeConfigParser)
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # TODO: reorganize act & improve the assertions
+        should_be_false = config.set_git_project_commit(config)
+        should_be_false2 = config.set_git_project_commit(config)
+
+        open_mock = mock_open(read_data='PROJECT_BRANCH = dummy \n PROJECT_COMMIT = dummy')
+        with patch.object(builtins, "open", open_mock):
+            # act
+            should_be_true = config.set_git_project_commit(config)
+
+            # assert
+            self.assertTrue(should_be_true)
+
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
+
+    def test_check_autosubmit_conf(self):
+        # arrange
+
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.read = Mock()
+        parser_mock.has = Mock(side_effect=[True,
+                                            True, True, True, True,
+                                            True, True, True, True,
+                                            True,
+                                            True, True, True, True,
+                                            True, True, True, True])
+
+        parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444,
+                                            1111, 2222, 3333, 'no-int'])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        should_be_true = config._check_autosubmit_conf()
+        should_be_false = config._check_autosubmit_conf()
+
+        # arrange
+        self.assertTrue(should_be_true)
+        self.assertFalse(should_be_false)
+
+    # TODO: Test other CVS cases
+    def test_check_expdef_conf(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.read = Mock()
+        parser_mock.has = Mock(side_effect=[True, True, True, True,  # First call
+                                            True, True,
+                                            True, True, True, True,
+                                            True, True,
+                                            True, True,
+                                            True, True, True,
+                                            True, True, True,
+                                            True, True, True, True,  # Second call
+                                            True, True,
+                                            True, True, True, True,
+                                            True, True,
+                                            True, True,
+                                            True, True, True])
+
+        parser_mock.get = Mock(side_effect=['year', 111, 222, 'standard', 'True', 'git', 'git',
+                                            'year', 111, 'not-a-number', 'standard', 'True', 'none', 'none'])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        should_be_true = config._check_expdef_conf()
+        should_be_false = config._check_expdef_conf()
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertFalse(should_be_false)
 
 
     #############################
