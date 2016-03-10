@@ -378,36 +378,27 @@ class TestAutosubmitConfig(TestCase):
         self.assertTrue(should_be_true2)
         self.assertTrue(should_be_true3)
 
-    @skip("pending refactor")
     def test_check_is_choice(self):
         # arrange
         section = 'any-section'
         option = 'any-option'
+        choices = ['dummy-choice1', 'dummy-choice2']
 
         parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, False, True, True, True, True, False, True, True, True, True])
-        parser_mock.get = Mock(side_effect=['dummy-value', '999999', 'dummy-value', 'dummy-value', '999999'])
+        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
+        parser_mock.get = Mock(side_effect=[choices[1], 'not-a-choice'])
 
         # act
-        # TODO: unexpected logic?
-        should_be_false = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
-        should_be_true = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]')
-        should_be_false2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
-        should_be_true2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]*')
-
-        should_be_false3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
-        should_be_false4 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
-        should_be_true3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, '[0-9]*')
+        should_be_true = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
+        should_be_true2 = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
+        should_be_false = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
+        should_be_false2 = AutosubmitConfig.check_is_choice(parser_mock, section, option, True, choices)
 
         # assert
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
-        self.assertFalse(should_be_false3)
-        self.assertFalse(should_be_false4)
-
         self.assertTrue(should_be_true)
         self.assertTrue(should_be_true2)
-        self.assertTrue(should_be_true3)
+        self.assertFalse(should_be_false)
+        self.assertFalse(should_be_false2)
 
     def test_get_bool_option(self):
         # arrange
@@ -672,16 +663,15 @@ class TestAutosubmitConfig(TestCase):
         self.assertTrue(should_be_true)
         self.assertFalse(should_be_false)
 
+    # TODO: Test specific cases
     def test_check_jobs_conf(self):
         # arrange
         parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.read = Mock()
-        parser_mock.append = Mock()
         parser_mock.sections = Mock(side_effect=[['dummy-section1', 'dummy-section2'],
                                                  ['dummy-platform1', 'dummy-platform2']])
         parser_mock.has = Mock(return_value=True)
 
-        parser_mock.get = Mock(side_effect=['true', 'dummy-platform1', 'dependency-1 dependency-2',  # First call
+        parser_mock.get = Mock(side_effect=['true', 'dummy-platform1', 'dependency-1 dependency-2',
                                             'dependency-1 dependency-2', 'once',
                                             'true', 'dummy-platform1', 'dependency-1 dependency-2',
                                             'dependency-1 dependency-2', 'once'])
@@ -697,6 +687,55 @@ class TestAutosubmitConfig(TestCase):
 
         # assert
         self.assertTrue(should_be_true)
+
+    # TODO: Test specific cases
+    def test_check_platforms_conf(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.sections = Mock(side_effect=[[], [], ['dummy-section1'], ['dummy-section1', 'dummy-section2']])
+        parser_mock.has = Mock(return_value=True)
+
+        parser_mock.get = Mock(side_effect=['not-ps', 'true', 'false', 111, 222,
+                                            'not-ps', 'true', 'false', 111, 222])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        should_be_true = config._check_platforms_conf()
+
+        # assert
+        self.assertTrue(should_be_true)
+
+    def test_check_conf_files(self):
+        # arrange
+        truth_mock = Mock(return_value=True)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        config.reload()
+        config._check_autosubmit_conf = truth_mock
+        config._check_platforms_conf = truth_mock
+        config._check_jobs_conf = truth_mock
+        config._check_expdef_conf = truth_mock
+
+        config2 = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
+        config2.reload()
+        config2._check_autosubmit_conf = truth_mock
+        config2._check_platforms_conf = truth_mock
+        config2._check_jobs_conf = truth_mock
+        config2._check_expdef_conf = Mock(return_value=False)
+
+        # act
+        should_be_true = config.check_conf_files()
+        should_be_false = config2.check_conf_files()
+
+        # assert
+        self.assertTrue(should_be_true)
+        self.assertFalse(should_be_false)
+        self.assertEquals(7, truth_mock.call_count)
 
     #############################
     ## Helper functions & classes
