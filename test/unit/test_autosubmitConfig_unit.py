@@ -629,12 +629,7 @@ class TestAutosubmitConfig(TestCase):
 
         parser_mock = Mock(spec=SafeConfigParser)
         parser_mock.read = Mock()
-        parser_mock.has = Mock(side_effect=[True,
-                                            True, True, True, True,
-                                            True, True, True, True,
-                                            True,
-                                            True, True, True, True,
-                                            True, True, True, True])
+        parser_mock.has = Mock(return_value=True)
 
         parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444,
                                             1111, 2222, 3333, 'no-int'])
@@ -658,19 +653,7 @@ class TestAutosubmitConfig(TestCase):
         # arrange
         parser_mock = Mock(spec=SafeConfigParser)
         parser_mock.read = Mock()
-        parser_mock.has = Mock(side_effect=[True, True, True, True,  # First call
-                                            True, True,
-                                            True, True, True, True,
-                                            True, True,
-                                            True, True,
-                                            True, True, True,
-                                            True, True, True,
-                                            True, True, True, True,  # Second call
-                                            True, True,
-                                            True, True, True, True,
-                                            True, True,
-                                            True, True,
-                                            True, True, True])
+        parser_mock.has = Mock(return_value=True)
 
         parser_mock.get = Mock(side_effect=['year', 111, 222, 'standard', 'True', 'git', 'git',
                                             'year', 111, 'not-a-number', 'standard', 'True', 'none', 'none'])
@@ -689,6 +672,31 @@ class TestAutosubmitConfig(TestCase):
         self.assertTrue(should_be_true)
         self.assertFalse(should_be_false)
 
+    def test_check_jobs_conf(self):
+        # arrange
+        parser_mock = Mock(spec=SafeConfigParser)
+        parser_mock.read = Mock()
+        parser_mock.append = Mock()
+        parser_mock.sections = Mock(side_effect=[['dummy-section1', 'dummy-section2'],
+                                                 ['dummy-platform1', 'dummy-platform2']])
+        parser_mock.has = Mock(return_value=True)
+
+        parser_mock.get = Mock(side_effect=['true', 'dummy-platform1', 'dependency-1 dependency-2',  # First call
+                                            'dependency-1 dependency-2', 'once',
+                                            'true', 'dummy-platform1', 'dependency-1 dependency-2',
+                                            'dependency-1 dependency-2', 'once'])
+
+        factory_mock = Mock(spec=ConfigParserFactory)
+        factory_mock.create_parser = Mock(return_value=parser_mock)
+
+        config = AutosubmitConfig(self.any_expid, FakeBasicConfig, factory_mock)
+        config.reload()
+
+        # act
+        should_be_true = config._check_jobs_conf()
+
+        # assert
+        self.assertTrue(should_be_true)
 
     #############################
     ## Helper functions & classes
