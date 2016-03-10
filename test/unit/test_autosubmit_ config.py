@@ -300,26 +300,20 @@ class TestAutosubmitConfig(TestCase):
         option = 'any-option'
 
         parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, True, True, False, True, True, True, True])
-        parser_mock.get = Mock(side_effect=['123', 'dummy', '123', 'dummy'])
+        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
+        parser_mock.get = Mock(side_effect=['123', 'dummy'])
 
         # act
         should_be_true = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
         should_be_true2 = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
         should_be_false = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
-
         should_be_false2 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
-        should_be_true3 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
-        should_be_false3 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
 
         # assert
         self.assertTrue(should_be_true)
         self.assertTrue(should_be_true2)
-        self.assertTrue(should_be_true3)
-
         self.assertFalse(should_be_false)
         self.assertFalse(should_be_false2)
-        self.assertFalse(should_be_false3)
 
     def test_check_is_boolean(self):
         # arrange
@@ -327,26 +321,20 @@ class TestAutosubmitConfig(TestCase):
         option = 'any-option'
 
         parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, True, True, False, True, True, True, True])
-        parser_mock.get = Mock(side_effect=['True', 'dummy', 'False', 'dummy'])
+        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
+        parser_mock.get = Mock(side_effect=['True', 'dummy'])
 
         # act
         should_be_true = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
         should_be_true2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
         should_be_false = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
-
         should_be_false2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
-        should_be_true3 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
-        should_be_false3 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
 
         # assert
         self.assertTrue(should_be_true)
         self.assertTrue(should_be_true2)
-        self.assertTrue(should_be_true3)
-
         self.assertFalse(should_be_false)
         self.assertFalse(should_be_false2)
-        self.assertFalse(should_be_false3)
 
     def test_check_regex(self):
         # arrange
