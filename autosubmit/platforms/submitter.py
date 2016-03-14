@@ -64,7 +64,7 @@ class Submitter:
         parser = asconf.platforms_parser
 
         platforms = dict()
-        local_platform = Platform(asconf.expid, 'local')
+        local_platform = Platform(asconf.expid, 'local', BasicConfig)
         local_platform.service = saga.job.Service("fork://localhost")
         local_platform.type = 'local'
         local_platform.queue = ''
@@ -86,7 +86,7 @@ class Submitter:
 
             platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
 
-            remote_platform = Platform(asconf.expid, section.lower())
+            remote_platform = Platform(asconf.expid, section.lower(), BasicConfig)
             remote_platform.type = platform_type
 
             # platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
