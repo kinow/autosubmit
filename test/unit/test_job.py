@@ -95,7 +95,48 @@ class TestJob(TestCase):
 
         self.assertEquals(dummy_queue, self.job._queue)
 
+    def test_that_the_increment_fails_count_only_adds_one(self):
+        initial_fail_count = self.job.fail_count
+        self.job.inc_fail_count()
+        incremented_fail_count = self.job.fail_count
 
+        self.assertEquals(initial_fail_count+1, incremented_fail_count)
+
+    def test_parents_and_children_management(self):
+
+        random_job1 = Job('dummy-name', 111, Status.WAITING, 0)
+        random_job2 = Job('dummy-name2', 222, Status.WAITING, 0)
+        random_job3 = Job('dummy-name3', 333, Status.WAITING, 0)
+
+        self.job.add_parent(random_job1,
+                            random_job2,
+                            random_job3)
+
+        # assert added
+        self.assertEquals(3, len(self.job.parents))
+        self.assertEquals(1, len(random_job1.children))
+        self.assertEquals(1, len(random_job2.children))
+        self.assertEquals(1, len(random_job3.children))
+
+        # assert contains
+        self.assertTrue(self.job.parents.__contains__(random_job1))
+        self.assertTrue(self.job.parents.__contains__(random_job2))
+        self.assertTrue(self.job.parents.__contains__(random_job3))
+
+        self.assertTrue(random_job1.children.__contains__(self.job))
+        self.assertTrue(random_job2.children.__contains__(self.job))
+        self.assertTrue(random_job3.children.__contains__(self.job))
+
+        # assert has
+        self.assertFalse(self.job.has_children())
+        self.assertTrue(self.job.has_parents())
+
+        # assert deletions
+        self.job.delete_parent(random_job3)
+        self.assertEquals(2, len(self.job.parents))
+
+        random_job1.delete_child(self.job)
+        self.assertEquals(0, len(random_job1.children))
 
 class FakeBasicConfig:
     DB_DIR = '/dummy/db/dir'

@@ -260,6 +260,7 @@ class Job:
         """
         self.fail_count += 1
 
+    # Maybe should be renamed to the plural?
     def add_parent(self, *new_parent):
         """
         Add parents for the job. It also adds current job as a child for all the new parents
