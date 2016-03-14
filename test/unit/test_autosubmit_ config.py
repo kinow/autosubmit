@@ -1,5 +1,4 @@
 from unittest import TestCase
-from unittest import skip
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.parser_factory import ConfigParserFactory
 from mock import Mock
