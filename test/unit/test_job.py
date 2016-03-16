@@ -1,7 +1,21 @@
 from unittest import TestCase
+import os
+import sys
+from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.platforms.platform import Platform
+from mock import Mock
+from mock import patch
+from mock import mock_open
+
+# compatibility with both versions (2 & 3)
+from sys import version_info
+
+if version_info.major == 2:
+    import __builtin__ as builtins
+else:
+    import builtins
 
 
 class TestJob(TestCase):
@@ -137,6 +151,96 @@ class TestJob(TestCase):
 
         random_job1.delete_child(self.job)
         self.assertEquals(0, len(random_job1.children))
+
+    def test_create_script(self):
+        # arrange
+        self.job.parameters = dict()
+        self.job.parameters['NUMPROC'] = 999
+        self.job.parameters['NUMTHREADS'] = 777
+        self.job.parameters['NUMTASK'] = 666
+
+        self.job._tmp_path = '/dummy/tmp/path'
+
+        update_content_mock = Mock(return_value='some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK% %% %%')
+        self.job.update_content = update_content_mock
+
+        config = Mock(spec=AutosubmitConfig)
+        config.get_project_dir = Mock(return_value='/project/dir')
+
+        chmod_mock = Mock()
+        sys.modules['os'].chmod = chmod_mock
+
+        write_mock = Mock().write = Mock()
+        open_mock = Mock(return_value=write_mock)
+        with patch.object(builtins, "open", open_mock):
+
+            # act
+            self.job.create_script(config)
+
+        # assert
+        update_content_mock.assert_called_with('/project/dir')
+        open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name+'.cmd'), 'w')
+        write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
+        chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name+'.cmd'), 0o775)
+
+    def test_that_check_script_returns_true_when_it_is_not_needed(self):
+        # arrange
+        self.job.check = False
+
+        # act
+        result = self.job.check_script(Mock(), dict())
+
+        # assert
+        self.assertTrue(result)
+
+    def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
+        # arrange
+        update_content_mock = Mock(return_value='some-content: %UNBOUND%')
+        self.job.update_content = update_content_mock
+
+        update_parameters_mock = Mock(return_value=self.job.parameters)
+        self.job.update_parameters = update_parameters_mock
+
+        config = Mock(spec=AutosubmitConfig)
+        config.get_project_dir = Mock(return_value='/project/dir')
+
+        # act
+        checked = self.job.check_script(config, self.job.parameters)
+
+        # assert
+        update_parameters_mock.assert_called_with(config, self.job.parameters)
+        update_content_mock.assert_called_with('/project/dir')
+        self.assertFalse(checked)
+
+    def test_check_script(self):
+        # arrange
+        self.job.parameters = dict()
+        self.job.parameters['NUMPROC'] = 999
+        self.job.parameters['NUMTHREADS'] = 777
+        self.job.parameters['NUMTASK'] = 666
+
+        update_content_mock = Mock(return_value='some-content: %NUMPROC%, %NUMTHREADS%, %NUMTASK%')
+        self.job.update_content = update_content_mock
+
+        update_parameters_mock = Mock(return_value=self.job.parameters)
+        self.job.update_parameters = update_parameters_mock
+
+        config = Mock(spec=AutosubmitConfig)
+        config.get_project_dir = Mock(return_value='/project/dir')
+
+        create_script_mock = Mock()
+        self.job.create_script = create_script_mock
+
+        # act
+        checked = self.job.check_script(config, self.job.parameters)
+
+        # assert
+        update_parameters_mock.assert_called_with(config, self.job.parameters)
+        update_content_mock.assert_called_with('/project/dir')
+        create_script_mock.assert_called_with(config)
+        self.assertTrue(checked)
+
+    
 
 class FakeBasicConfig:
     DB_DIR = '/dummy/db/dir'
