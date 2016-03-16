@@ -1317,10 +1317,6 @@ class Autosubmit:
         else:
             job_list.remove_rerun_only_jobs()
 
-        pltfrm = as_conf.get_platform()
-        if pltfrm == 'hector' or pltfrm == 'archer':
-            job_list.update_shortened_names()
-
         Log.info("\nSaving joblist...")
         job_list.save()
         if not noplot:

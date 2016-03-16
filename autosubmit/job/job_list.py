@@ -511,14 +511,6 @@ class JobList:
         Log.debug('Update finished')
         return save
 
-    def update_shortened_names(self):
-        """
-        In some cases the scheduler only can operate with names shorter than 15 characters.
-        Update the job list replacing job names by the corresponding shortened job name
-        """
-        for job in self._job_list:
-            job.name = job.short_name
-
     def update_genealogy(self):
         """
         When we have created the joblist, every type of job is created.

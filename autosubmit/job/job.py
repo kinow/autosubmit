@@ -67,8 +67,6 @@ class Job:
         self.name = name
         self._long_name = None
         self.long_name = name
-        self._short_name = None
-        self.short_name = name
         self.date_format = ''
         self.type = Type.BASH
 
@@ -212,34 +210,6 @@ class Job:
         :type value: str
         """
         self._long_name = value
-
-    @property
-    def short_name(self):
-        """
-        Job short name
-
-        :return: short name
-        :rtype: str
-        """
-        return self._short_name
-
-    @short_name.setter
-    def short_name(self, value):
-        """
-        Sets short name
-
-        :param value: short name
-        :type value: str
-        """
-        n = value.split('_')
-        if len(n) == 5:
-            self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
-        elif len(n) == 4:
-            self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
-        elif len(n) == 2:
-            self._short_name = n[1]
-        else:
-            self._short_name = n[0][:15]
 
     def log_job(self):
         """
