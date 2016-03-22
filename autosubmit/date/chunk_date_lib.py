@@ -143,7 +143,7 @@ def sub_days(start_date, number_of_days, cal):
 
         def leap_handle_backward_28th(end_date):
             if calendar.isleap(start_date.year):
-                if start_date > datetime.datetime(start_date.year, 2, 29) >= end_date:
+                if start_date > datetime.datetime(end_date.year, 2, 29) >= end_date:
                     return end_date - relativedelta(days=1)
             return end_date
 
