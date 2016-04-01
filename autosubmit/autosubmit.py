@@ -885,8 +885,8 @@ class Autosubmit:
                 return False
 
         submitter = Submitter()
-        platforms = submitter.load_platforms(as_conf)
-        if platforms is None:
+        submitter.load_platforms(as_conf)
+        if len(submitter.platforms) == 0:
             return False
 
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
@@ -898,14 +898,14 @@ class Autosubmit:
             Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
             return False
 
-        Autosubmit._load_parameters(as_conf, joblist, platforms)
+        Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(submitter.platforms[job.platform_name])
             job.update_parameters(as_conf, joblist.parameters)
 
         return joblist.check_scripts(as_conf)
