@@ -382,7 +382,7 @@ class Platform:
         if job.type == Type.BASH:
             binary = 'source'
         elif job.type == Type.PYTHON:
-            binary = 'python -m trace --trace'
+            binary = 'python '
         elif job.type == Type.R:
             binary = 'Rscript'
 
