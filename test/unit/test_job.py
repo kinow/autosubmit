@@ -5,9 +5,8 @@ from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job import Job
 from autosubmit.platforms.platform import Platform
-from mock import Mock
+from mock import Mock, MagicMock
 from mock import patch
-from mock import mock_open
 
 # compatibility with both versions (2 & 3)
 from sys import version_info
@@ -19,7 +18,6 @@ else:
 
 
 class TestJob(TestCase):
-
     def setUp(self):
         self.experiment_id = 'random-id'
         self.job_name = 'random-name'
@@ -114,10 +112,9 @@ class TestJob(TestCase):
         self.job.inc_fail_count()
         incremented_fail_count = self.job.fail_count
 
-        self.assertEquals(initial_fail_count+1, incremented_fail_count)
+        self.assertEquals(initial_fail_count + 1, incremented_fail_count)
 
     def test_parents_and_children_management(self):
-
         random_job1 = Job('dummy-name', 111, Status.WAITING, 0)
         random_job2 = Job('dummy-name2', 222, Status.WAITING, 0)
         random_job3 = Job('dummy-name3', 333, Status.WAITING, 0)
@@ -173,15 +170,14 @@ class TestJob(TestCase):
         write_mock = Mock().write = Mock()
         open_mock = Mock(return_value=write_mock)
         with patch.object(builtins, "open", open_mock):
-
             # act
             self.job.create_script(config)
 
         # assert
         update_content_mock.assert_called_with('/project/dir')
-        open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name+'.cmd'), 'w')
+        open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'w')
         write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
-        chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name+'.cmd'), 0o775)
+        chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o775)
 
     def test_that_check_script_returns_true_when_it_is_not_needed(self):
         # arrange
@@ -240,7 +236,30 @@ class TestJob(TestCase):
         create_script_mock.assert_called_with(config)
         self.assertTrue(checked)
 
-    
+    def test_exists_completed_file_then_sets_status_to_completed(self):
+        # arrange
+        exists_mock = Mock(return_value=True)
+        sys.modules['os'].path.exists = exists_mock
+
+        # act
+        self.job.check_completion()
+
+        # assert
+        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
+        self.assertEquals(Status.COMPLETED, self.job.status)
+
+    def test_completed_file_not_exists_then_sets_status_to_failed(self):
+        # arrange
+        exists_mock = Mock(return_value=False)
+        sys.modules['os'].path.exists = exists_mock
+
+        # act
+        self.job.check_completion()
+
+        # assert
+        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
+        self.assertEquals(Status.FAILED, self.job.status)
+
 
 class FakeBasicConfig:
     DB_DIR = '/dummy/db/dir'
@@ -251,3 +270,6 @@ class FakeBasicConfig:
     LOCAL_PROJ_DIR = '/dummy/local/proj/dir'
     DEFAULT_PLATFORMS_CONF = ''
     DEFAULT_JOBS_CONF = ''
+
+
+
