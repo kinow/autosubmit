@@ -154,6 +154,18 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
+            group = subparser.add_mutually_exclusive_group(required=False)
+            group.add_argument('-fl', '--list', type=str,
+                               help='Supply the list of job names to be changed. Default = "Any". '
+                                    'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group.add_argument('-fc', '--filter_chunks', type=str,
+                               help='Supply the list of chunks to change the status. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group.add_argument('-ft', '--filter_type', type=str,
+                               help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
@@ -274,7 +286,8 @@ class Autosubmit:
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
-                return Autosubmit.monitor(args.expid, args.output, args.hide)
+                return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
+                                          args.filter_type, args.hide)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -659,7 +672,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, hide):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -668,6 +681,14 @@ class Autosubmit:
         :type expid: str
         :param expid: identifier of the experiment to plot
         :param file_format: plot's file format. It can be pdf, png, ps or svg
+        :param lst: list of jobs to change status
+        :type lst: str
+        :param filter_chunks: chunks to change status
+        :type filter_chunks: str
+        :param filter_status: current status of the jobs to change status
+        :type filter_status: str
+        :param filter_section: sections to change status
+        :type filter_section: str
         :param hide: hides plot window
         :type hide: bool
         """
@@ -677,9 +698,73 @@ class Autosubmit:
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
-        jobs = pickle.load(open(filename, 'r'))
-        if not isinstance(jobs, type([])):
-            jobs = jobs.get_job_list()
+        job_list = pickle.load(open(filename, 'r'))
+        if not isinstance(job_list, type([])):
+            jobs = []
+            if filter_chunks:
+                fc = filter_chunks
+                Log.debug(fc)
+
+                if fc == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    # noinspection PyTypeChecker
+                    data = json.loads(Autosubmit._create_json(fc))
+                    for datejson in data['sds']:
+                        date = datejson['sd']
+                        jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
+
+                        for memberjson in datejson['ms']:
+                            member = memberjson['m']
+                            jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                            for chunkjson in memberjson['cs']:
+                                chunk = int(chunkjson)
+                                jobs = jobs + [job for job in filter(lambda j: j.chunk == chunk, jobs_member)]
+
+            elif filter_status:
+                Log.debug("Filtering jobs with status {0}", filter_status)
+                if filter_status == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    fs = Autosubmit._get_status(filter_status)
+                    jobs = [job for job in filter(lambda j: j.status == fs, job_list.get_job_list())]
+
+            elif filter_section:
+                ft = filter_section
+                Log.debug(ft)
+
+                if ft == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    for job in job_list.get_job_list():
+                        if job.section == ft:
+                            jobs.append(job)
+
+            elif lst:
+                jobs_lst = lst.split()
+
+                if jobs == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    for job in job_list.get_job_list():
+                        if job.name in jobs_lst:
+                            jobs.append(job)
+            else:
+                jobs = job_list.get_job_list()
+
+        referenced_jobs_to_remove = set()
+        for job in jobs:
+            for child in job.children:
+                if child not in jobs:
+                    referenced_jobs_to_remove.add(child)
+            for parent in job.parents:
+                if parent not in jobs:
+                    referenced_jobs_to_remove.add(parent)
+
+        for job in jobs:
+            job.children = job.children - referenced_jobs_to_remove
+            job.parents = job.parents - referenced_jobs_to_remove
 
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format, not hide)
@@ -1443,7 +1528,7 @@ class Autosubmit:
         Log.debug('Status of jobs to change: {0}', filter_status)
         Log.debug('Sections to change: {0}', filter_section)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
-                                    ".pkl"), 'r'))
+                                                 ".pkl"), 'r'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
 
@@ -1463,7 +1548,7 @@ class Autosubmit:
                     jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
                     for job in filter(lambda j: j.member is None, jobs_date):
-                            Autosubmit.change_status(final, final_status, job)
+                        Autosubmit.change_status(final, final_status, job)
 
                     for memberjson in datejson['ms']:
                         member = memberjson['m']
