@@ -78,7 +78,6 @@ class Job:
         self._children = set()
         self.fail_count = 0
         self.expid = name.split('_')[0]
-        self._complete = True
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self._ancestors = None
@@ -450,29 +449,16 @@ class Job:
 
     def check_completion(self, default_status=Status.FAILED):
         """
-        Check the presence of *COMPLETED* file and touch a Checked or failed file.
-        Change statis to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
+        Check the presence of *COMPLETED* file.
+        Change status to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
         logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
-            self._complete = True
             self.status = Status.COMPLETED
         else:
             self.status = default_status
-
-    def remove_dependencies(self):
-        """
-        Checks if job is completed and then remove dependencies for childs
-        """
-        if self._complete:
-            self.status = Status.COMPLETED
-            for child in self.children:
-                if child.get_parents().__contains__(self):
-                    child.delete_parent(self)
-        else:
-            self.status = Status.FAILED
 
     def update_parameters(self, as_conf, parameters):
         """
