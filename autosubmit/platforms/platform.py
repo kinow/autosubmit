@@ -40,6 +40,7 @@ class Platform:
         self.root_dir = ''
         self.service = None
         self.scheduler = None
+        self.directory = None
 
     @property
     def serial_platform(self):
@@ -133,7 +134,7 @@ class Platform:
         # noinspection PyTypeChecker
         out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
         if self.type == 'local':
-            out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename,)),
+            out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)),
                      saga.filesystem.CREATE_PARENTS)
         else:
             workdir = self.get_workdir(self.get_files_path())
@@ -200,12 +201,7 @@ class Platform:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
 
-        if self.type == 'local':
-            # noinspection PyTypeChecker
-            out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
-        else:
-            # noinspection PyTypeChecker
-            out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(), filename)))
+        out = self.directory.open(os.path.join(str(self.directory.url), filename))
 
         out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
         out.close()
@@ -220,25 +216,24 @@ class Platform:
         :return: True if it exists, False otherwise
         """
         # noinspection PyBroadException
-        try:
-            if self.type == 'local':
-                # noinspection PyTypeChecker
-                directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
-                                                                                       'LOG_' + self.expid)))
-            else:
-                # noinspection PyTypeChecker
-                directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
-        except:
-            return False
+        if not self.directory:
+            try:
+                if self.type == 'local':
+                    # noinspection PyTypeChecker
+                    self.directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
+                                                                                                'LOG_' + self.expid)))
+                else:
+                    # noinspection PyTypeChecker
+                    self.directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
+            except:
+                return False
 
         # noinspection PyBroadException
         try:
-            directory.list(filename)
+            self.directory.list(filename)
         except:
-            directory.close()
             return False
 
-        directory.close()
         return True
 
     def delete_file(self, filename):

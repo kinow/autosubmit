@@ -63,9 +63,11 @@ class Submitter:
         os.environ['SAGA_ADAPTOR_PATH'] = adaptors_variable
         parser = asconf.platforms_parser
 
+        session = None
+
         platforms = dict()
         local_platform = Platform(asconf.expid, 'local', BasicConfig)
-        local_platform.service = saga.job.Service("fork://localhost")
+        local_platform.service = saga.job.Service("fork://localhost", session=session)
         local_platform.type = 'local'
         local_platform.queue = ''
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()

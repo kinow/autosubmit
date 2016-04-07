@@ -923,20 +923,22 @@ class Autosubmit:
             jobs_to_recover = job_list.get_active()
 
         Log.info("Looking for COMPLETED files")
+        start = datetime.datetime.now()
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name.lower()])
 
-            if job.get_platform().get_completed_files(job.name):
+            if job.get_platform().get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
-
+        end = datetime.datetime.now()
+        Log.info("Time spent: '{0}'".format(end - start))
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(as_conf)
