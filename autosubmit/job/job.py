@@ -67,8 +67,6 @@ class Job:
         self.name = name
         self._long_name = None
         self.long_name = name
-        self._short_name = None
-        self.short_name = name
         self.date_format = ''
         self.type = Type.BASH
 
@@ -80,7 +78,6 @@ class Job:
         self._children = set()
         self.fail_count = 0
         self.expid = name.split('_')[0]
-        self._complete = True
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self._ancestors = None
@@ -213,34 +210,6 @@ class Job:
         """
         self._long_name = value
 
-    @property
-    def short_name(self):
-        """
-        Job short name
-
-        :return: short name
-        :rtype: str
-        """
-        return self._short_name
-
-    @short_name.setter
-    def short_name(self, value):
-        """
-        Sets short name
-
-        :param value: short name
-        :type value: str
-        """
-        n = value.split('_')
-        if len(n) == 5:
-            self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3] + n[4][:1]
-        elif len(n) == 4:
-            self._short_name = n[1][:6] + "_" + n[2][2:] + "_" + n[3][:1]
-        elif len(n) == 2:
-            self._short_name = n[1]
-        else:
-            self._short_name = n[0][:15]
-
     def log_job(self):
         """
         Prints job information in log
@@ -260,6 +229,7 @@ class Job:
         """
         self.fail_count += 1
 
+    # Maybe should be renamed to the plural?
     def add_parent(self, *new_parent):
         """
         Add parents for the job. It also adds current job as a child for all the new parents
@@ -464,7 +434,7 @@ class Job:
             Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
             self.get_platform().get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
-            if self.status == Status.UNKNOWN:
+            if self.status is Status.UNKNOWN:
                 Log.warning('Job {0} in UNKNOWN status', self.name)
         elif self.status is Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
@@ -479,29 +449,16 @@ class Job:
 
     def check_completion(self, default_status=Status.FAILED):
         """
-        Check the presence of *COMPLETED* file and touch a Checked or failed file.
-        Change statis to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
+        Check the presence of *COMPLETED* file.
+        Change status to COMPLETED if *COMPLETED* file exists and to FAILED otherwise.
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
         logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
         if os.path.exists(logname):
-            self._complete = True
             self.status = Status.COMPLETED
         else:
             self.status = default_status
-
-    def remove_dependencies(self):
-        """
-        Checks if job is completed and then remove dependencies for childs
-        """
-        if self._complete:
-            self.status = Status.COMPLETED
-            for child in self.children:
-                if child.get_parents().__contains__(self):
-                    child.delete_parent(self)
-        else:
-            self.status = Status.FAILED
 
     def update_parameters(self, as_conf, parameters):
         """

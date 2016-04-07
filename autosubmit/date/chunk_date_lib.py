@@ -120,12 +120,12 @@ def add_days(date, number_of_days, cal):
     return result
 
 
-def sub_days(date, number_of_days, cal):
+def sub_days(start_date, number_of_days, cal):
     """
     Substract days to a date
 
-    :param date: base date
-    :type date: datetime.datetime
+    :param start_date: base date
+    :type start_date: datetime.datetime
     :param number_of_days: number of days to subtract
     :type number_of_days: int
     :param cal: calendar to use
@@ -133,21 +133,32 @@ def sub_days(date, number_of_days, cal):
     :return: base date minus subtracted days
     :rtype: datetime.datetime
     """
-    result = date - relativedelta(days=number_of_days)
+    result = start_date - relativedelta(days=number_of_days)
     if cal == 'noleap':
-        year = date.year
-        if date.month <= 2:
-            year -= 1
+        def leap_handle_forward_28th(end_date):
+            if calendar.isleap(start_date.year):
+                if start_date < datetime.datetime(start_date.year, 2, 29) <= end_date:
+                    return end_date + relativedelta(days=1)
+            return end_date
 
-        while year >= result.year:
-            if calendar.isleap(year):
-                if result.year == year and result > datetime.datetime(year, 2, 29):
-                    year -= 1
-                    continue
-                result -= relativedelta(days=1)
-            year -= 1
-        if result.month == 2 and result.day == 29:
-            result -= relativedelta(days=1)
+        def leap_handle_backward_28th(end_date):
+            if calendar.isleap(start_date.year):
+                if start_date > datetime.datetime(end_date.year, 2, 29) >= end_date:
+                    return end_date - relativedelta(days=1)
+            return end_date
+
+        # checking the current year
+        result = leap_handle_forward_28th(result)
+        result = leap_handle_backward_28th(result)
+
+        # checking years between the start and the end
+        while start_date.year < result.year:
+                start_date += relativedelta(years=1)
+                result = leap_handle_forward_28th(result)
+
+        while start_date.year > result.year:
+                start_date -= relativedelta(years=1)
+                result = leap_handle_backward_28th(result)
     return result
 
 

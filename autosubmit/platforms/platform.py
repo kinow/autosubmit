@@ -5,7 +5,6 @@ import saga
 import os
 import datetime
 
-from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status, Type
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str
@@ -16,15 +15,17 @@ class Platform:
     Class to manage the connections to the different platforms.
     """
 
-    def __init__(self, expid, name):
+    def __init__(self, expid, name, config):
         """
 
+        :param config:
         :param expid:
         :param name:
         """
         self.expid = expid
         self.name = name
-        self.tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
+        self.config = config
+        self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
         self._queue = None
         self._serial_queue = None
@@ -337,7 +338,7 @@ class Platform:
         :rtype: bool
         """
         filename = jobname + '_STAT'
-        stat_local_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR, filename)
+        stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
 
@@ -362,7 +363,7 @@ class Platform:
         :rtype: str
         """
         if self.type == "local":
-            path = os.path.join(self.root_dir, BasicConfig.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
+            path = os.path.join(self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
             path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path
