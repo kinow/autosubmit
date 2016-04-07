@@ -579,7 +579,12 @@ class AutosubmitConfig:
         for split in split_string[0]:
             if type(split) is list:
                 for split_in in split:
-                    date_list.append(parse_date(string_date + split_in))
+                    if split_in.find("-") != -1:
+                        numbers = split_in.split("-")
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                            date_list.append(parse_date(string_date + str(count).zfill(len(numbers[0]))))
+                    else:
+                        date_list.append(parse_date(string_date + split_in))
                 string_date = None
             else:
                 if string_date is not None:
@@ -614,7 +619,29 @@ class AutosubmitConfig:
         :return: experiment's members
         :rtype: list
         """
-        return self._exp_parser.get('experiment', 'MEMBERS').split(' ')
+        member_list = list()
+        string = self._exp_parser.get('experiment', 'MEMBERS')
+        if not string.startswith("["):
+            string = '[{0}]'.format(string)
+        split_string = nestedExpr('[', ']').parseString(string).asList()
+        string_member = None
+        for split in split_string[0]:
+            if type(split) is list:
+                for split_in in split:
+                    if split_in.find("-") != -1:
+                        numbers = split_in.split("-")
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                            member_list.append(string_member + str(count).zfill(len(numbers[0])))
+                    else:
+                        member_list.append(string_member + split_in)
+                string_member = None
+            else:
+                if string_member is not None:
+                    member_list.append(string_member)
+                string_member = split
+        if string_member is not None:
+            member_list.append(string_member)
+        return member_list
 
     def get_rerun(self):
         """
@@ -623,7 +650,9 @@ class AutosubmitConfig:
         :return: rerurn value
         :rtype: list
         """
+
         return self._exp_parser.get('rerun', 'RERUN').lower()
+
 
     def get_chunk_list(self):
         """
