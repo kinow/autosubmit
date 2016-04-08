@@ -166,13 +166,14 @@ Examples:
     ## Specifies that job has only to be run after X dates, members or chunk. A job will always be created for the last
     ## If not specified, defaults to 1
     # FREQUENCY = 3
-    ## Specifies if a job with FREQUENCY > 1 has only to wait for all the jobs in the previous chunks on its period or just
-    ## for the ones in the chunk it is going to execute
+    ## On a job with FREQUENCY > 1, if True, the dependencies are evaluated against all
+    ## jobs in the frequency interval, otherwise only evaluate dependencies against current
+    ## iteration.
     ## If not specified, defaults to True
     # WAIT = False
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
     # RERUN_ONLY = False
-    ## Defines jobs needed to be rerun if this job is going to be rerunned
+    ## Defines jobs needed to be rerun if this job is going to be rerun
     # RERUN_DEPENDENCIES = RERUN INI LOCAL_SETUP REMOTE_SETUP TRANSFER
     ## Wallclock to be submitted to the HPC queue in format HH:MM
     # WALLCLOCK = 00:05
