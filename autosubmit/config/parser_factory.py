@@ -8,5 +8,8 @@ except ImportError:
 
 class ConfigParserFactory:
 
+    def __init__(self):
+        pass
+
     def create_parser(self):
         return SafeConfigParser()
