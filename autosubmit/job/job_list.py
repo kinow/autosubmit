@@ -907,7 +907,10 @@ class DicJobs:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
         job.set_queue(self.get_option(section, "QUEUE", None))
-        job.check = bool(self.get_option(section, "CHECK", True))
+        if self.get_option(section, "CHECK", 'True').lower() == 'true':
+            job.check = True
+        else:
+            job.check = False
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
         job.threads = self.get_option(section, "THREADS", 1)
