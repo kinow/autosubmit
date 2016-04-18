@@ -234,6 +234,167 @@ class TestDicJobs(TestCase):
         self.assertEquals(option, returned_option)
         self.assertEquals(default, returned_default)
 
+    def test_get_member_returns_the_jobs_if_no_member(self):
+        # arrange
+        jobs = 'fake-jobs'
+        dic = {'any-key': 'any-value'}
+
+        # act
+        returned_jobs = self.dictionary._get_member(jobs, dic, 'fake-member', None)  # expected jobs
+
+        # arrange
+        self.assertEquals(jobs, returned_jobs)
+
+    def test_get_member_returns_the_jobs_with_the_member(self):
+        # arrange
+        jobs = ['fake-job']
+        dic = {'fake-job2': 'any-value'}
+        member = 'fake-job2'
+
+        # act
+        returned_jobs = self.dictionary._get_member(jobs, dic, member, None)
+
+        # arrange
+        self.assertEquals(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + member
+
+    def test_get_member_returns_the_jobs_with_the_given_chunk_of_the_member(self):
+        # arrange
+        jobs = ['fake-job']
+        dic = {'fake-job2': {'fake-job3': 'fake'}}
+        member = 'fake-job2'
+
+        # act
+        returned_jobs = self.dictionary._get_member(jobs, dic, member, 'fake-job3')
+
+        # arrange
+        self.assertEquals(['fake-job'] + ['fake'], returned_jobs)  # expected jobs + chunk
+
+    def test_get_member_returns_the_jobs_with_all_the_chunks_of_the_member(self):
+        # arrange
+        jobs = ['fake-job']
+        dic = {'fake-job2': {5: 'fake5', 8: 'fake8', 9: 'fake9'}}
+        member = 'fake-job2'
+
+        # act
+        returned_jobs = self.dictionary._get_member(jobs, dic, member, None)
+
+        # arrange
+        self.assertEquals(['fake-job'] + ['fake5', 'fake8', 'fake9'], returned_jobs)  # expected jobs + all chunks
+
+    def test_get_date_returns_the_jobs_if_no_date(self):
+        # arrange
+        jobs = 'fake-jobs'
+        dic = {'any-key': 'any-value'}
+
+        # act
+        returned_jobs = self.dictionary._get_date(jobs, dic, 'whatever', None, None)
+
+        # arrange
+        self.assertEquals('fake-jobs', returned_jobs)  # expected jobs
+
+    def test_get_date_returns_the_jobs_with_the_date(self):
+        # arrange
+        jobs = ['fake-job']
+        dic = {'fake-job2': 'any-value'}
+        date = 'fake-job2'
+
+        # act
+        returned_jobs = self.dictionary._get_date(jobs, dic, date, None, None)
+
+        # arrange
+        self.assertEquals(['fake-job'] + ['any-value'], returned_jobs)  # expected jobs + date
+
+    def test_get_date_returns_the_jobs_and_calls_get_member_once_with_the_given_member(self):
+        # arrange
+        jobs = ['fake-job']
+        date_dic = {'fake-job3': 'fake'}
+        dic = {'fake-job2': date_dic}
+        date = 'fake-job2'
+        member = 'fake-member'
+        chunk = 'fake-chunk'
+        self.dictionary._get_member = Mock()
+
+        # act
+        returned_jobs = self.dictionary._get_date(jobs, dic, date, member, chunk)
+
+        # arrange
+        self.assertEquals(['fake-job'], returned_jobs)
+        self.dictionary._get_member.assert_called_once_with(jobs, date_dic, member, chunk)
+
+    def test_get_date_returns_the_jobs_and_calls_get_member_for_all_its_members(self):
+        # arrange
+        jobs = ['fake-job']
+        date_dic = {'fake-job3': 'fake'}
+        dic = {'fake-job2': date_dic}
+        date = 'fake-job2'
+        chunk = 'fake-chunk'
+        self.dictionary._get_member = Mock()
+
+        # act
+        returned_jobs = self.dictionary._get_date(jobs, dic, date, None, chunk)
+
+        # arrange
+        self.assertEquals(['fake-job'], returned_jobs)
+        self.assertEquals(len(self.dictionary._member_list), self.dictionary._get_member.call_count)
+        for member in self.dictionary._member_list:
+            self.dictionary._get_member.assert_any_call(jobs, date_dic, member, chunk)
+
+    def test_get_jobs_returns_the_job_of_the_section(self):
+        # arrange
+        section = 'fake-section'
+        self.dictionary._dic = {'fake-section': 'fake-job'}
+
+        # act
+        returned_jobs = self.dictionary.get_jobs(section)
+
+        # arrange
+        self.assertEquals(['fake-job'], returned_jobs)
+
+    def test_get_jobs_calls_get_date_with_given_date(self):
+        # arrange
+        section = 'fake-section'
+        dic = {'fake-job3': 'fake'}
+        date = 'fake-date'
+        member = 'fake-member'
+        chunk = 111
+        self.dictionary._dic = {'fake-section': dic}
+        self.dictionary._get_date = Mock()
+
+        # act
+        returned_jobs = self.dictionary.get_jobs(section, date, member, chunk)
+
+        # arrange
+        self.assertEquals(list(), returned_jobs)
+        self.dictionary._get_date.assert_called_once_with(list(), dic, date, member, chunk)
+
+    def test_get_jobs_calls_get_date_for_all_its_dates(self):
+        # arrange
+        section = 'fake-section'
+        dic = {'fake-job3': 'fake'}
+        member = 'fake-member'
+        chunk = 111
+        self.dictionary._dic = {'fake-section': dic}
+        self.dictionary._get_date = Mock()
+
+        # act
+        returned_jobs = self.dictionary.get_jobs(section, member=member, chunk=chunk)
+
+        # arrange
+        self.assertEquals(list(), returned_jobs)
+        self.assertEquals(len(self.dictionary._date_list), self.dictionary._get_date.call_count)
+        for date in self.dictionary._date_list:
+            self.dictionary._get_date.assert_any_call(list(), dic, date, member, chunk)
+
+    def test_create_jobs_once_calls_create_job_and_assign_correctly_its_return_value(self):
+        section = 'fake-section'
+        priority = 999
+        self.dictionary._create_job = Mock(return_value='fake-return')
+
+        self.dictionary._create_jobs_once(section, priority)
+
+        self.assertEquals('fake-return', self.dictionary._dic[section])
+        self.dictionary._create_job.assert_called_once_with(section, priority, None, None, None)
+
 
 class FakeBasicConfig:
     def __init__(self):
