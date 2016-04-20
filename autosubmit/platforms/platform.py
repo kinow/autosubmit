@@ -392,7 +392,7 @@ class Platform:
         str_datetime = date2str(datetime.datetime.now(), 'S')
         jd.output = "{0}.{1}.out".format(job.name, str_datetime)
         jd.error = "{0}.{1}.err".format(job.name, str_datetime)
-        self.add_atribute(jd, 'Name', job.name)
+        self.add_attribute(jd, 'Name', job.name)
 
         wallclock = job.parameters["WALLCLOCK"]
         if wallclock == '':
@@ -400,21 +400,21 @@ class Platform:
         else:
             wallclock = wallclock.split(':')
             wallclock = int(wallclock[0]) * 60 + int(wallclock[1])
-        self.add_atribute(jd, 'WallTimeLimit', wallclock)
+        self.add_attribute(jd, 'WallTimeLimit', wallclock)
 
-        self.add_atribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
-        self.add_atribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
+        self.add_attribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
+        self.add_attribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
 
-        self.add_atribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
-        self.add_atribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
-        self.add_atribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
+        self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
+        self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
+        self.add_attribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
-        self.add_atribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])
+        self.add_attribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])
 
         saga_job = self.service.create_job(jd)
         return saga_job
 
-    def add_atribute(self, jd, name, value):
+    def add_attribute(self, jd, name, value):
         """
         Adds an attribute to a given job descriptor, only if it is supported by the adaptor.
 
