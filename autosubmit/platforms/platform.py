@@ -285,7 +285,7 @@ class Platform:
         :type job_name: str
         :param retries: Max number of tries to get the file
         :type retries: int
-        :return: True if succesful, false otherwise
+        :return: True if successful, false otherwise
         :rtype: bool
         """
         while True:
