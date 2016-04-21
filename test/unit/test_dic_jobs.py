@@ -2,7 +2,7 @@ from datetime import datetime
 from unittest import TestCase
 
 from mock import Mock
-
+import math
 from autosubmit.config.parser_factory import ConfigParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
@@ -164,6 +164,104 @@ class TestDicJobs(TestCase):
             for member in self.member_list:
                 for chunk in self.chunk_list:
                     self.assertEquals(self.dictionary._dic[section][date][member][chunk], created_job)
+
+    def test_dic_creates_right_jobs_by_chunk_with_frequency_3(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 3
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency)
+
+        # assert
+        self.assertEquals(len(self.date_list) * len(self.member_list) * (len(self.chunk_list) / frequency),
+                          self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
+
+    def test_dic_creates_right_jobs_by_chunk_with_frequency_4(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 4
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency)
+
+        # assert
+        # you have to multiply to the round upwards (ceil) of the next division
+        self.assertEquals(
+            len(self.date_list) * len(self.member_list) * math.ceil(len(self.chunk_list) / float(frequency)),
+            self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
+
+    def test_dic_creates_right_jobs_by_chunk_with_date_synchronize(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 1
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency, 'date')
+
+        # assert
+        self.assertEquals(len(self.chunk_list),
+                          self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.chunk_list))
+
+    def test_dic_creates_right_jobs_by_chunk_with_date_synchronize_and_frequency_4(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 4
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency, 'date')
+
+        # assert
+        self.assertEquals(math.ceil(len(self.chunk_list) / float(frequency)),
+                          self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), math.ceil(len(self.chunk_list) / float(frequency)))
+
+    def test_dic_creates_right_jobs_by_chunk_with_member_synchronize(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 1
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency, 'member')
+
+        # assert
+        self.assertEquals(len(self.date_list) * len(self.chunk_list),
+                          self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.chunk_list))
+
+    def test_dic_creates_right_jobs_by_chunk_with_member_synchronize_and_frequency_4(self):
+        # arrange
+        section = 'fake-section'
+        priority = 999
+        frequency = 4
+        created_job = 'created_job'
+        self.dictionary._create_job = Mock(return_value=created_job)
+
+        # act
+        self.dictionary._create_jobs_chunk(section, priority, frequency, 'member')
+
+        # assert
+        self.assertEquals(len(self.date_list) * math.ceil(len(self.chunk_list) / float(frequency)),
+                          self.dictionary._create_job.call_count)
+        self.assertEquals(len(self.dictionary._dic[section]), math.ceil(len(self.chunk_list) / float(frequency)))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
         # arrange
