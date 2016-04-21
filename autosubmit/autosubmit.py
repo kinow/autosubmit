@@ -1300,7 +1300,7 @@ class Autosubmit:
         rerun = as_conf.get_rerun()
 
         Log.info("\nCreating joblist...")
-        job_list = JobList(expid)
+        job_list = JobList(expid, BasicConfig, ConfigParserFactory())
 
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':

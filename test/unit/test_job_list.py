@@ -1,24 +1,19 @@
 from random import randrange
 from unittest import TestCase
 
-# compatibility with both versions (2 & 3)
-from sys import version_info
+import os
+from mock import Mock
 
-from autosubmit.job.job_common import Status
-
+from autosubmit.config.parser_factory import ConfigParserFactory
 from autosubmit.job.job import Job
+from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
-
-if version_info.major == 2:
-    pass
-else:
-    pass
 
 
 class TestJobList(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.job_list = JobList(self.experiment_id)
+        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory())
 
         # creating jobs for self list
         self.completed_job = self._createDummyJobWithStatus(Status.COMPLETED)
@@ -176,34 +171,86 @@ class TestJobList(TestCase):
     def test_sort_by_name_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_name = self.job_list.sort_by_name()
 
-        for i in xrange(len(sorted_by_name)-1):
-            self.assertTrue(sorted_by_name[i].name <= sorted_by_name[i+1].name)
+        for i in xrange(len(sorted_by_name) - 1):
+            self.assertTrue(sorted_by_name[i].name <= sorted_by_name[i + 1].name)
 
     def test_sort_by_id_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_id = self.job_list.sort_by_id()
 
-        for i in xrange(len(sorted_by_id)-1):
-            self.assertTrue(sorted_by_id[i].id <= sorted_by_id[i+1].id)
+        for i in xrange(len(sorted_by_id) - 1):
+            self.assertTrue(sorted_by_id[i].id <= sorted_by_id[i + 1].id)
 
     def test_sort_by_type_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_type = self.job_list.sort_by_type()
 
-        for i in xrange(len(sorted_by_type)-1):
-            self.assertTrue(sorted_by_type[i].type <= sorted_by_type[i+1].type)
+        for i in xrange(len(sorted_by_type) - 1):
+            self.assertTrue(sorted_by_type[i].type <= sorted_by_type[i + 1].type)
 
     def test_sort_by_status_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_status = self.job_list.sort_by_status()
 
-        for i in xrange(len(sorted_by_status)-1):
-            self.assertTrue(sorted_by_status[i].status <= sorted_by_status[i+1].status)
+        for i in xrange(len(sorted_by_status) - 1):
+            self.assertTrue(sorted_by_status[i].status <= sorted_by_status[i + 1].status)
 
+    def test_that_create_method_makes_the_correct_calls(self):
+        parser_mock = Mock()
+        parser_mock.read = Mock()
 
+        factory = ConfigParserFactory()
+        factory.create_parser = Mock(return_value=parser_mock)
+
+        job_list = JobList(self.experiment_id, FakeBasicConfig, factory)
+        job_list._create_jobs = Mock()
+        job_list._add_dependencies = Mock()
+        job_list.update_genealogy = Mock()
+        job_list._job_list = [Job('random-name', 9999, Status.WAITING, 0),
+                              Job('random-name2', 99999, Status.WAITING, 0)]
+
+        date_list = ['fake-date1', 'fake-date2']
+        member_list = ['fake-member1', 'fake-member2']
+        num_chunks = 999
+        chunk_list = range(1, num_chunks + 1)
+        parameters = {'fake-key': 'fake-value',
+                      'fake-key2': 'fake-value2'}
+
+        # act
+        job_list.create(date_list, member_list, num_chunks, parameters, 'H', 9999)
+
+        # assert
+        self.assertEquals(job_list.parameters, parameters)
+        self.assertEquals(job_list._date_list, date_list)
+        self.assertEquals(job_list._member_list, member_list)
+        self.assertEquals(job_list._chunk_list, range(1, num_chunks + 1))
+        parser_mock.read.assert_called_once_with(os.path.join(FakeBasicConfig.LOCAL_ROOT_DIR, self.experiment_id,
+                                                              'conf', "jobs_" + self.experiment_id + ".conf"))
+        cj_args, cj_kwargs = job_list._create_jobs.call_args
+        self.assertEquals(parser_mock, cj_args[1])
+        self.assertEquals(0, cj_args[2])
+        job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock)
+        job_list.update_genealogy.assert_called_once_with()
+        for job in job_list._job_list:
+            self.assertEquals(parameters, job.parameters)
+
+    def test_that_create_job_method_calls_dic_jobs_method_with_increasing_priority(self):
+        # arrange
+        dic_mock = Mock()
+        dic_mock.read_section = Mock()
+
+        parser_mock = Mock()
+        parser_mock.sections = Mock(return_value=['fake-section-1',
+                                                  'fake-section-2'])
+        # act
+        JobList._create_jobs(dic_mock, parser_mock, 0)
+
+        # arrange
+        dic_mock.read_section.assert_any_call('fake-section-1', 0)
+        dic_mock.read_section.assert_any_call('fake-section-2', 1)
 
     def _createDummyJobWithStatus(self, status):
         job_name = str(randrange(999999, 999999999))
         job_id = randrange(1, 999)
         job = Job(job_name, job_id, status, 0)
-        job.type = randrange(0,2)
+        job.type = randrange(0, 2)
         return job
 
 
