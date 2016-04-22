@@ -763,7 +763,8 @@ class DicJobs:
         elif running == 'member':
             self._create_jobs_member(section, priority, frequency)
         elif running == 'chunk':
-            self._create_jobs_chunk(section, priority, frequency)
+            synchronize = self.get_option(section, "SYNCHRONIZE", None)
+            self._create_jobs_chunk(section, priority, frequency, synchronize)
 
     def _create_jobs_once(self, section, priority):
         """

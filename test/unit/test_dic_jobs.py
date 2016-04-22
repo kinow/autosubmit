@@ -94,9 +94,10 @@ class TestDicJobs(TestCase):
         section = 'fake-section'
         priority = 999
         frequency = 123
+        synchronize = 'date'
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='chunk')
-        self.dictionary.get_option = Mock(return_value=frequency)
+        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize])
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -109,7 +110,7 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
-        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency)
+        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, synchronize)
 
     def test_dic_creates_right_jobs_by_startdate(self):
         # arrange
