@@ -821,6 +821,7 @@ class DicJobs:
         Maybe a good choice could be split this function or ascend the
         conditional decision to the father which makes the call
     '''
+
     def _create_jobs_chunk(self, section, priority, frequency, synchronize=None):
         """
         Create jobs to be run once per chunk
@@ -834,29 +835,36 @@ class DicJobs:
                           for the last
         :type frequency: int
         """
-        self._dic[section] = dict()
+        # Temporally creation for unified jobs in case of synchronize
         if synchronize is not None:
+            tmp_dic = dict()
             count = 0
             for chunk in self._chunk_list:
                 count += 1
                 if count % frequency == 0 or count == len(self._chunk_list):
                     if synchronize == 'date':
-                        self._dic[section][chunk] = self._create_job(section, priority, None, None,
-                                                                     chunk)
-                    else:
-                        self._dic[section][chunk] = dict()
+                        tmp_dic[chunk] = self._create_job(section, priority, None, None,
+                                                          chunk)
+                    elif synchronize == 'member':
+                        tmp_dic[chunk] = dict()
                         for date in self._date_list:
-                            self._dic[section][chunk][date] = self._create_job(section, priority, date, None,
-                                                                               chunk)
-        else:
-            for date in self._date_list:
-                self._dic[section][date] = dict()
-                for member in self._member_list:
-                    self._dic[section][date][member] = dict()
-                    count = 0
-                    for chunk in self._chunk_list:
-                        count += 1
-                        if count % frequency == 0 or count == len(self._chunk_list):
+                            tmp_dic[chunk][date] = self._create_job(section, priority, date, None,
+                                                                    chunk)
+        # Real dic jobs assignment/creation
+        self._dic[section] = dict()
+        for date in self._date_list:
+            self._dic[section][date] = dict()
+            for member in self._member_list:
+                self._dic[section][date][member] = dict()
+                count = 0
+                for chunk in self._chunk_list:
+                    count += 1
+                    if count % frequency == 0 or count == len(self._chunk_list):
+                        if synchronize == 'date':
+                            self._dic[section][date][member][chunk] = tmp_dic[chunk]
+                        elif synchronize == 'member':
+                            self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
+                        else:
                             self._dic[section][date][member][chunk] = self._create_job(section, priority, date, member,
                                                                                        chunk)
 

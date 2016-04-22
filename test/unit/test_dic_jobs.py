@@ -214,7 +214,11 @@ class TestDicJobs(TestCase):
         # assert
         self.assertEquals(len(self.chunk_list),
                           self.dictionary._create_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[section]), len(self.chunk_list))
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
+        for date in self.date_list:
+            for member in self.member_list:
+                for chunk in self.chunk_list:
+                    self.assertEquals(self.dictionary._dic[section][date][member][chunk], created_job)
 
     def test_dic_creates_right_jobs_by_chunk_with_date_synchronize_and_frequency_4(self):
         # arrange
@@ -230,7 +234,7 @@ class TestDicJobs(TestCase):
         # assert
         self.assertEquals(math.ceil(len(self.chunk_list) / float(frequency)),
                           self.dictionary._create_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[section]), math.ceil(len(self.chunk_list) / float(frequency)))
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
 
     def test_dic_creates_right_jobs_by_chunk_with_member_synchronize(self):
         # arrange
@@ -246,7 +250,11 @@ class TestDicJobs(TestCase):
         # assert
         self.assertEquals(len(self.date_list) * len(self.chunk_list),
                           self.dictionary._create_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[section]), len(self.chunk_list))
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
+        for date in self.date_list:
+            for member in self.member_list:
+                for chunk in self.chunk_list:
+                    self.assertEquals(self.dictionary._dic[section][date][member][chunk], created_job)
 
     def test_dic_creates_right_jobs_by_chunk_with_member_synchronize_and_frequency_4(self):
         # arrange
@@ -262,7 +270,7 @@ class TestDicJobs(TestCase):
         # assert
         self.assertEquals(len(self.date_list) * math.ceil(len(self.chunk_list) / float(frequency)),
                           self.dictionary._create_job.call_count)
-        self.assertEquals(len(self.dictionary._dic[section]), math.ceil(len(self.chunk_list) / float(frequency)))
+        self.assertEquals(len(self.dictionary._dic[section]), len(self.date_list))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
         # arrange
