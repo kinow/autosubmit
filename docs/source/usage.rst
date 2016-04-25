@@ -612,7 +612,8 @@ identifier and add this text:
 
 This will create a platform named "new_platform". The options specified are all mandatory:
 
-* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM
+* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM and
+also the options supported by saga-python library.
 
 * HOST: hostname of the platform
 
