@@ -1,3 +1,22 @@
+3.3.0
+    Added filters in monitor
+    Added support for Python jobs
+    Added support for R jobs
+    Added unitary test suite
+    Synchronize job param
+    Fixed recovery issue
+    Other minor bugs fixed
+
+3.2.0
+    Changed WAIT default
+    Recovery without -s
+    Group permissions to log files
+    Reservation support for MN
+    Fixed retrials bug
+    Fixed rerun bug
+    Fixed stats bug
+    Other minor bugs fixed
+
 3.2.0b3
     SAGA related bug fixes
     Minor bug fixes
