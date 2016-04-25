@@ -176,9 +176,9 @@ The resulting workflow can be seen on figure 5.4
 Job frequency
 -------------
 
-Some times you just don need a job to ve run on every chunk or member. For example, you may want to launch the postprocess
+Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
 job after various chunks have completed. This behaviour can be achieved by using the FREQUENCY attribute. You can specify
-an integer I on this attribute an the job will run only once for each I iterations on the running level.
+an integer I on this attribute and the job will run only once for each I iterations on the running level.
 
 .. hint::
    You don't need to adjust the frequency to be a divisor of the total jobs. A job will always execute at the last
@@ -215,6 +215,71 @@ The resulting workflow can be seen on figure 5.5
    :alt: simple workflow plot
 
    Example showing dependencies between jobs running at different frequencies.
+
+
+Job synchronize
+-------------
+
+Some times when you have a job running at chunk level, and this job has dependencies, you could want
+not to run a job for each experiment chunk, but to run once for all member/date dependencies, maintaining
+the chunk granularity, in this cases you can use the SYNCHRONIZE job parameter to determine which kind
+of synchronization do you want. See the below examples with and without this parameter.
+
+.. hint::
+   This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
+
+.. code-block:: ini
+
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = INI SIM-1
+    RUNNING = chunk
+
+    [ASIM]
+    FILE = asim.sh
+    DEPENDENCIES = SIM
+    RUNNING = chunk
+
+The resulting workflow can be seen on figure 5.6
+
+.. figure:: workflows/no-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running without synchronize.
+
+.. code-block:: ini
+
+    [ASIM]
+    SYNCHRONIZE = member
+
+The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen on figure 5.7
+
+.. figure:: workflows/member-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running with member synchronize.
+
+.. code-block:: ini
+
+    [ASIM]
+    SYNCHRONIZE = date
+
+The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen on figure 5.8
+
+.. figure:: workflows/date-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running with date synchronize.
 
 Rerun dependencies
 ------------------
@@ -254,7 +319,7 @@ case, but will appear on the reruns.
     DEPENDENCIES = postprocess
     RUNNING = member
 
-The resulting workflow can be seen on figure 5.6 for a rerun of chunks 2 and 3 of member 2.
+The resulting workflow can be seen on figure 5.9 for a rerun of chunks 2 and 3 of member 2.
 
 .. figure:: workflows/rerun.png
    :width: 100%

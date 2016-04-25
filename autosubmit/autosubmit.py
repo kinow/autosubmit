@@ -55,6 +55,7 @@ sys.path.insert(0, os.path.abspath('.'))
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
+from config.parser_factory import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
@@ -96,7 +97,7 @@ class Autosubmit:
 
     version_path = os.path.join(scriptdir, 'VERSION')
     readme_path = os.path.join(scriptdir, 'README')
-    changes_path = os.path.join(scriptdir, 'CHANGES')
+    changes_path = os.path.join(scriptdir, 'CHANGELOG')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -153,6 +154,18 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
+            group = subparser.add_mutually_exclusive_group(required=False)
+            group.add_argument('-fl', '--list', type=str,
+                               help='Supply the list of job names to be changed. Default = "Any". '
+                                    'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group.add_argument('-fc', '--filter_chunks', type=str,
+                               help='Supply the list of chunks to change the status. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group.add_argument('-ft', '--filter_type', type=str,
+                               help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
@@ -273,7 +286,8 @@ class Autosubmit:
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
-                return Autosubmit.monitor(args.expid, args.output, args.hide)
+                return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
+                                          args.filter_type, args.hide)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -504,7 +518,7 @@ class Autosubmit:
 
         signal.signal(signal.SIGINT, signal_handler)
 
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
             return False
@@ -514,7 +528,6 @@ class Autosubmit:
             # Check proj configuration
             as_conf.check_proj()
 
-        expid = as_conf.get_expid()
         hpcarch = as_conf.get_platform()
 
         safetysleeptime = as_conf.get_safetysleeptime()
@@ -659,7 +672,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, hide):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -668,6 +681,14 @@ class Autosubmit:
         :type expid: str
         :param expid: identifier of the experiment to plot
         :param file_format: plot's file format. It can be pdf, png, ps or svg
+        :param lst: list of jobs to change status
+        :type lst: str
+        :param filter_chunks: chunks to change status
+        :type filter_chunks: str
+        :param filter_status: current status of the jobs to change status
+        :type filter_status: str
+        :param filter_section: sections to change status
+        :type filter_section: str
         :param hide: hides plot window
         :type hide: bool
         """
@@ -677,9 +698,73 @@ class Autosubmit:
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
         Log.debug("JobList: {0}".format(filename))
-        jobs = pickle.load(open(filename, 'r'))
-        if not isinstance(jobs, type([])):
-            jobs = jobs.get_job_list()
+        job_list = pickle.load(open(filename, 'r'))
+        if not isinstance(job_list, type([])):
+            jobs = []
+            if filter_chunks:
+                fc = filter_chunks
+                Log.debug(fc)
+
+                if fc == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    # noinspection PyTypeChecker
+                    data = json.loads(Autosubmit._create_json(fc))
+                    for datejson in data['sds']:
+                        date = datejson['sd']
+                        jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
+
+                        for memberjson in datejson['ms']:
+                            member = memberjson['m']
+                            jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                            for chunkjson in memberjson['cs']:
+                                chunk = int(chunkjson)
+                                jobs = jobs + [job for job in filter(lambda j: j.chunk == chunk, jobs_member)]
+
+            elif filter_status:
+                Log.debug("Filtering jobs with status {0}", filter_status)
+                if filter_status == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    fs = Autosubmit._get_status(filter_status)
+                    jobs = [job for job in filter(lambda j: j.status == fs, job_list.get_job_list())]
+
+            elif filter_section:
+                ft = filter_section
+                Log.debug(ft)
+
+                if ft == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    for job in job_list.get_job_list():
+                        if job.section == ft:
+                            jobs.append(job)
+
+            elif lst:
+                jobs_lst = lst.split()
+
+                if jobs == 'Any':
+                    jobs = job_list.get_job_list()
+                else:
+                    for job in job_list.get_job_list():
+                        if job.name in jobs_lst:
+                            jobs.append(job)
+            else:
+                jobs = job_list.get_job_list()
+
+        referenced_jobs_to_remove = set()
+        for job in jobs:
+            for child in job.children:
+                if child not in jobs:
+                    referenced_jobs_to_remove.add(child)
+            for parent in job.parents:
+                if parent not in jobs:
+                    referenced_jobs_to_remove.add(parent)
+
+        for job in jobs:
+            job.children = job.children - referenced_jobs_to_remove
+            job.parents = job.parents - referenced_jobs_to_remove
 
         monitor_exp = Monitor()
         monitor_exp.generate_output(expid, jobs, file_format, not hide)
@@ -759,7 +844,7 @@ class Autosubmit:
             Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                       'clean_exp.log'))
         if project:
-            autosubmit_config = AutosubmitConfig(expid)
+            autosubmit_config = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             if not autosubmit_config.check_conf_files():
                 Log.critical('Can not clean project with invalid configuration')
                 return False
@@ -811,7 +896,7 @@ class Autosubmit:
         path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
         job_list = pickle.load(open(path, 'r'))
 
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not recover with invalid configuration')
             return False
@@ -838,20 +923,22 @@ class Autosubmit:
             jobs_to_recover = job_list.get_active()
 
         Log.info("Looking for COMPLETED files")
+        start = datetime.datetime.now()
         for job in jobs_to_recover:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
             job.set_platform(platforms[job.platform_name.lower()])
 
-            if job.get_platform().get_completed_files(job.name):
+            if job.get_platform().get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
-
+        end = datetime.datetime.now()
+        Log.info("Time spent: '{0}'".format(end - start))
         Log.info("Updating joblist")
         sys.setrecursionlimit(50000)
         job_list.update_list(as_conf)
@@ -876,7 +963,7 @@ class Autosubmit:
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             return False
         project_type = as_conf.get_project_type()
@@ -885,8 +972,8 @@ class Autosubmit:
                 return False
 
         submitter = Submitter()
-        platforms = submitter.load_platforms(as_conf)
-        if platforms is None:
+        submitter.load_platforms(as_conf)
+        if len(submitter.platforms) == 0:
             return False
 
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
@@ -898,14 +985,14 @@ class Autosubmit:
             Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
             return False
 
-        Autosubmit._load_parameters(as_conf, joblist, platforms)
+        Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name])
+            job.set_platform(submitter.platforms[job.platform_name])
             job.update_parameters(as_conf, joblist.parameters)
 
         return joblist.check_scripts(as_conf)
@@ -1095,7 +1182,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'refresh.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not copy with invalid configuration')
             return False
@@ -1267,7 +1354,7 @@ class Autosubmit:
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'create_exp.log'))
-        as_conf = AutosubmitConfig(expid)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             Log.critical('Can not create with invalid configuration')
             return False
@@ -1300,7 +1387,7 @@ class Autosubmit:
         rerun = as_conf.get_rerun()
 
         Log.info("\nCreating joblist...")
-        job_list = JobList(expid)
+        job_list = JobList(expid, BasicConfig, ConfigParserFactory())
 
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':
@@ -1316,10 +1403,6 @@ class Autosubmit:
             job_list.rerun(chunk_list)
         else:
             job_list.remove_rerun_only_jobs()
-
-        pltfrm = as_conf.get_platform()
-        if pltfrm == 'hector' or pltfrm == 'archer':
-            job_list.update_shortened_names()
 
         Log.info("\nSaving joblist...")
         job_list.save()
@@ -1447,8 +1530,8 @@ class Autosubmit:
         Log.debug('Status of jobs to change: {0}', filter_status)
         Log.debug('Sections to change: {0}', filter_section)
         job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
-                                    ".pkl"), 'r'))
-        as_conf = AutosubmitConfig(expid)
+                                                 ".pkl"), 'r'))
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
 
         final_status = Autosubmit._get_status(final)
@@ -1467,7 +1550,7 @@ class Autosubmit:
                     jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
                     for job in filter(lambda j: j.member is None, jobs_date):
-                            Autosubmit.change_status(final, final_status, job)
+                        Autosubmit.change_status(final, final_status, job)
 
                     for memberjson in datejson['ms']:
                         member = memberjson['m']
@@ -1565,7 +1648,7 @@ class Autosubmit:
         :param dummy: if True, creates a dummy experiment adding some dafault values
         :type dummy: bool
         """
-        as_conf = AutosubmitConfig(exp_id)
+        as_conf = AutosubmitConfig(exp_id, BasicConfig, ConfigParserFactory())
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
@@ -1716,8 +1799,8 @@ class Autosubmit:
         if testid == '':
             return False
 
-        as_conf = AutosubmitConfig(testid)
-        exp_parser = as_conf.get_parser(as_conf.experiment_file)
+        as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
+        exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
         if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
             Log.error('Can not test a RERUN experiment')
             Autosubmit.delete(testid, True)
@@ -1725,7 +1808,7 @@ class Autosubmit:
 
         content = open(as_conf.experiment_file).read()
         if hpc is None:
-            platforms_parser = as_conf.get_parser(as_conf.platforms_file)
+            platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
             test_platforms = list()
             for section in platforms_parser.sections():
                 if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':

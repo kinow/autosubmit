@@ -572,6 +572,10 @@ There are also another, less used features that you can use:
 * FREQUENCY: specifies that a job has only to be run after X dates, members or chunk. A job will always be created for
   the last one. If not specified, defaults to 1
 
+* SYNCHRONIZE: specifies that a job with RUNNING=chunk, has to synchronize its dependencies chunks at a 'date' or
+  'member' level, which means that the jobs will be unified: one per chunk for all members or dates.
+  If not specified, the synchronization is for each chunk of all the experiment.
+
 * RERUN_ONLY: determines if a job is only to be executed in reruns. If not specified, defaults to false.
 
 * RERUN_DEPENDENCIES: defines the jobs to be rerun if this job is going to be rerunned. Syntax is identical to
@@ -608,7 +612,8 @@ identifier and add this text:
 
 This will create a platform named "new_platform". The options specified are all mandatory:
 
-* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM
+* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM and
+also the options supported by saga-python library.
 
 * HOST: hostname of the platform
 

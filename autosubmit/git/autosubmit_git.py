@@ -94,7 +94,7 @@ class AutosubmitGit:
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()
         project_destination = as_conf.get_project_destination()
-        project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.get_expid(), BasicConfig.LOCAL_PROJ_DIR)
+        project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
         git_path = as_conf.get_project_dir()
 
         if os.path.exists(project_path):

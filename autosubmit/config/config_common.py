@@ -41,17 +41,22 @@ class AutosubmitConfig:
     :type expid: str
     """
 
-    def __init__(self, expid):
+    def __init__(self, expid, basic_config, parser_factory):
         self.expid = expid
-        self._conf_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+
+        self.basic_config = basic_config
+
+        self.parser_factory = parser_factory
+
+        self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "autosubmit_" + expid + ".conf")
-        self._exp_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._exp_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                              "expdef_" + expid + ".conf")
-        self._platforms_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._platforms_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                                    "platforms_" + expid + ".conf")
-        self._jobs_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._jobs_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
-        self._proj_parser_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "conf",
+        self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
 
     @property
@@ -102,7 +107,7 @@ class AutosubmitConfig:
         :return: experiment's project directory
         :rtype: str
         """
-        dir_templates = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.get_expid(), BasicConfig.LOCAL_PROJ_DIR,
+        dir_templates = os.path.join(self.basic_config.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_PROJ_DIR,
                                      self.get_project_destination())
         return dir_templates
 
@@ -344,7 +349,7 @@ class AutosubmitConfig:
             if self._proj_parser_file == '':
                 self._proj_parser = None
             else:
-                self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+                self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
             return True
         except Exception as e:
             Log.error('Project conf file error: {0}', e)
@@ -354,14 +359,14 @@ class AutosubmitConfig:
         """
         Creates parser objects for configuration files
         """
-        self._conf_parser = AutosubmitConfig.get_parser(self._conf_parser_file)
-        self._platforms_parser = AutosubmitConfig.get_parser(self._platforms_parser_file)
-        self.jobs_parser = AutosubmitConfig.get_parser(self._jobs_parser_file)
-        self._exp_parser = AutosubmitConfig.get_parser(self._exp_parser_file)
+        self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
+        self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
+        self.jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
+        self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None
         else:
-            self._proj_parser = AutosubmitConfig.get_parser(self._proj_parser_file)
+            self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
 
     def load_parameters(self):
         """
@@ -405,32 +410,6 @@ class AutosubmitConfig:
             parameters[item[0]] = item[1]
 
         return parameters
-
-    @staticmethod
-    def print_parameters(title, parameters):
-        """
-        Prints the parameters table in a tabular mode
-
-        :param title: table's title
-        :type title: str
-        :param parameters: parameters to print
-        :type: list
-        """
-        Log.info(title)
-        Log.info("---------------------------------------")
-        Log.info("{0:<{col1}}| {1:<{col2}}".format("  -- Parameter --", "  -- Value --", col1=20, col2=20))
-        for key in parameters:
-            Log.info("{0:<{col1}}| {1:<{col2}}".format(key, parameters[key], col1=20, col2=20))
-        Log.info("")
-
-    def get_expid(self):
-        """
-        Returns experiment identifier read from experiment's config file
-
-        :return: experiment identifier
-        :rtype: str
-        """
-        return self._exp_parser.get('DEFAULT', 'EXPID')
 
     def set_expid(self, exp_id):
         """
@@ -600,7 +579,12 @@ class AutosubmitConfig:
         for split in split_string[0]:
             if type(split) is list:
                 for split_in in split:
-                    date_list.append(parse_date(string_date + split_in))
+                    if split_in.find("-") != -1:
+                        numbers = split_in.split("-")
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                            date_list.append(parse_date(string_date + str(count).zfill(len(numbers[0]))))
+                    else:
+                        date_list.append(parse_date(string_date + split_in))
                 string_date = None
             else:
                 if string_date is not None:
@@ -635,7 +619,29 @@ class AutosubmitConfig:
         :return: experiment's members
         :rtype: list
         """
-        return self._exp_parser.get('experiment', 'MEMBERS').split(' ')
+        member_list = list()
+        string = self._exp_parser.get('experiment', 'MEMBERS')
+        if not string.startswith("["):
+            string = '[{0}]'.format(string)
+        split_string = nestedExpr('[', ']').parseString(string).asList()
+        string_member = None
+        for split in split_string[0]:
+            if type(split) is list:
+                for split_in in split:
+                    if split_in.find("-") != -1:
+                        numbers = split_in.split("-")
+                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                            member_list.append(string_member + str(count).zfill(len(numbers[0])))
+                    else:
+                        member_list.append(string_member + split_in)
+                string_member = None
+            else:
+                if string_member is not None:
+                    member_list.append(string_member)
+                string_member = split
+        if string_member is not None:
+            member_list.append(string_member)
+        return member_list
 
     def get_rerun(self):
         """
@@ -644,7 +650,9 @@ class AutosubmitConfig:
         :return: rerurn value
         :rtype: list
         """
+
         return self._exp_parser.get('rerun', 'RERUN').lower()
+
 
     def get_chunk_list(self):
         """
@@ -738,16 +746,17 @@ class AutosubmitConfig:
         return int(self._conf_parser.get('config', 'RETRIALS'))
 
     @staticmethod
-    def get_parser(file_path):
+    def get_parser(parser_factory, file_path):
         """
         Gets parser for given file
 
+        :param parser_factory:
         :param file_path: path to file to be parsed
         :type file_path: str
         :return: parser
         :rtype: SafeConfigParser
         """
-        parser = SafeConfigParser()
+        parser = parser_factory.create_parser()
         parser.optionxform = str
         parser.read(file_path)
         return parser
