@@ -216,6 +216,70 @@ The resulting workflow can be seen on figure 5.5
 
    Example showing dependencies between jobs running at different frequencies.
 
+
+Job synchronize
+-------------
+
+Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
+job after various chunks have completed. This behaviour can be achieved by using the FREQUENCY attribute. You can specify
+an integer I on this attribute and the job will run only once for each I iterations on the running level.
+
+.. hint::
+   This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
+
+.. code-block:: ini
+
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = INI SIM-1
+    RUNNING = chunk
+
+    [ASIM]
+    FILE = asim.sh
+    DEPENDENCIES = SIM
+    RUNNING = chunk
+
+The resulting workflow can be seen on figure 5.6
+
+.. figure:: workflows/no-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running without synchronize.
+
+.. code-block:: ini
+
+    [ASIM]
+    SYNCHRONIZE = member
+
+The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen on figure 5.7
+
+.. figure:: workflows/member-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running with member synchronize.
+
+.. code-block:: ini
+
+    [ASIM]
+    SYNCHRONIZE = date
+
+The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen on figure 5.8
+
+.. figure:: workflows/date-synchronize.png
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing dependencies between chunk jobs running with date synchronize.
+
 Rerun dependencies
 ------------------
 
@@ -254,7 +318,7 @@ case, but will appear on the reruns.
     DEPENDENCIES = postprocess
     RUNNING = member
 
-The resulting workflow can be seen on figure 5.6 for a rerun of chunks 2 and 3 of member 2.
+The resulting workflow can be seen on figure 5.9 for a rerun of chunks 2 and 3 of member 2.
 
 .. figure:: workflows/rerun.png
    :width: 100%
