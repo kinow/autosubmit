@@ -176,9 +176,9 @@ The resulting workflow can be seen on figure 5.4
 Job frequency
 -------------
 
-Some times you just don need a job to ve run on every chunk or member. For example, you may want to launch the postprocess
+Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
 job after various chunks have completed. This behaviour can be achieved by using the FREQUENCY attribute. You can specify
-an integer I on this attribute an the job will run only once for each I iterations on the running level.
+an integer I on this attribute and the job will run only once for each I iterations on the running level.
 
 .. hint::
    You don't need to adjust the frequency to be a divisor of the total jobs. A job will always execute at the last
