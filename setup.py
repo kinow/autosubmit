@@ -48,7 +48,7 @@ setup(
         'autosubmit/config/files/expdef.conf',
         'autosubmit/database/data/autosubmit.sql',
         'README',
-        'CHANGES',
+        'CHANGELOG',
         'VERSION',
         'LICENSE',
         'docs/autosubmit.pdf'

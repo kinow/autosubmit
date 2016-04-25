@@ -97,7 +97,7 @@ class Autosubmit:
 
     version_path = os.path.join(scriptdir, 'VERSION')
     readme_path = os.path.join(scriptdir, 'README')
-    changes_path = os.path.join(scriptdir, 'CHANGES')
+    changes_path = os.path.join(scriptdir, 'CHANGELOG')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
