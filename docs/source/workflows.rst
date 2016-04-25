@@ -220,9 +220,10 @@ The resulting workflow can be seen on figure 5.5
 Job synchronize
 -------------
 
-Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
-job after various chunks have completed. This behaviour can be achieved by using the FREQUENCY attribute. You can specify
-an integer I on this attribute and the job will run only once for each I iterations on the running level.
+Some times when you have a job running at chunk level, and this job has dependencies, you could want
+not to run a job for each experiment chunk, but to run once for all member/date dependencies, maintaining
+the chunk granularity, in this cases you can use the SYNCHRONIZE job parameter to determine which kind
+of synchronization do you want. See the below examples with and without this parameter.
 
 .. hint::
    This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
