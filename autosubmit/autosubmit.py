@@ -1112,6 +1112,24 @@ class Autosubmit:
                 else:
                     break
 
+        smtp_hostname = "mail.bsc.es"
+        mail_from = "automail@bsc.es"
+        while True:
+            (code, tag) = d.form(text="",
+                                 elements=[("STMP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
+                                           ("Notifications sender address", 2, 1, mail_from, 2, 40, 40, 200)],
+                                 height=20,
+                                 width=80,
+                                 form_height=10,
+                                 title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
+            if Autosubmit._requested_exit(code, d):
+                return False
+            elif code == dialog.Dialog.OK:
+                smtp_hostname = tag[0]
+                mail_from = tag[1]
+                break
+                # Maybe check that is correct?
+
         config_file = open(path, 'w')
         d.infobox("Writing configuration file...", width=50, height=5)
         try:
@@ -1128,6 +1146,9 @@ class Autosubmit:
                     parser.set('conf', 'jobs', jobs_conf_path)
                 if platforms_conf_path:
                     parser.set('conf', 'platforms', platforms_conf_path)
+            parser.add_section('mail')
+            parser.set('mail', 'smtp_server', smtp_hostname)
+            parser.set('mail', 'mail_from', mail_from)
             parser.write(config_file)
             config_file.close()
             d.msgbox("Configuration file written successfully", width=50, height=5)
