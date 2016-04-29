@@ -32,6 +32,10 @@ class Status:
     FAILED = -1
     UNKNOWN = -2
     SUSPENDED = -3
+    #######
+    # Note: any change on constants must be applied on the dict below!!!
+    VALUE_TO_KEY = {-3: 'SUSPENDED', -2: 'UNKNOWN', -1: 'FAILED', 0: 'WAITING', 1: 'READY',
+                    2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED'}
 
     def retval(self, value):
         return getattr(self, value)
