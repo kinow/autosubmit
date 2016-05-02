@@ -68,7 +68,8 @@ from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
-
+from notifications.mail_notifier import MailNotifier
+from notifications.notifier import Notifier
 from platforms.submitter import Submitter
 
 
@@ -595,7 +596,13 @@ class Autosubmit:
             save = False
             for platform in platforms_to_test:
                 for job in joblist.get_in_queue(platform):
-                    if job.status != job.update_status(platform.check_job(job.id)):
+                    prev_status = job.status
+                    if prev_status != job.update_status(platform.check_job(job.id)):
+                        if as_conf.get_notifications() == 'true':
+                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                          Status.VALUE_TO_KEY[prev_status],
+                                                          Status.VALUE_TO_KEY[job.status],
+                                                          as_conf.get_mail_to())
                         save = True
 
             if joblist.update_list(as_conf) or save:
