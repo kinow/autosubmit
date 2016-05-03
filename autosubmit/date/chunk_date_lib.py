@@ -135,30 +135,28 @@ def sub_days(start_date, number_of_days, cal):
     """
     result = start_date - relativedelta(days=number_of_days)
     if cal == 'noleap':
-        def leap_handle_forward_28th(end_date):
-            if calendar.isleap(start_date.year):
-                if start_date < datetime.datetime(start_date.year, 2, 29) <= end_date:
-                    return end_date + relativedelta(days=1)
-            return end_date
+        # checks if crossing the day 29th
+        if start_date > result:
+            # case subtraction
+            while datetime.datetime(start_date.year, start_date.month, start_date.day) >= \
+                    datetime.datetime(result.year, result.month, result.day):
+                if calendar.isleap(start_date.year):
+                    if start_date.month == 2 and start_date.day == 29:
+                        result -= relativedelta(days=1)
+                    start_date -= relativedelta(days=1)
+                else:
+                    start_date -= relativedelta(months=1)
+        elif start_date < result:
+            # case addition
+            while datetime.datetime(start_date.year, start_date.month, start_date.day) <= \
+                    datetime.datetime(result.year, result.month, result.day):
+                if calendar.isleap(start_date.year):
+                    if start_date.month == 2 and start_date.day == 29:
+                        result += relativedelta(days=1)
+                    start_date += relativedelta(days=1)
+                else:
+                    start_date += relativedelta(months=1)
 
-        def leap_handle_backward_28th(end_date):
-            if calendar.isleap(start_date.year):
-                if start_date > datetime.datetime(end_date.year, 2, 29) >= end_date:
-                    return end_date - relativedelta(days=1)
-            return end_date
-
-        # checking the current year
-        result = leap_handle_forward_28th(result)
-        result = leap_handle_backward_28th(result)
-
-        # checking years between the start and the end
-        while start_date.year < result.year:
-                start_date += relativedelta(years=1)
-                result = leap_handle_forward_28th(result)
-
-        while start_date.year > result.year:
-                start_date -= relativedelta(years=1)
-                result = leap_handle_backward_28th(result)
     return result
 
 
@@ -328,4 +326,3 @@ def date2str(date, date_format=''):
                                                              date.second)
     else:
         return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
-

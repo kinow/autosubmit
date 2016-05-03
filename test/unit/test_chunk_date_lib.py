@@ -58,15 +58,31 @@ class TestChunkDateLib(TestCase):
         self.assertEqual(sub_days(datetime(2000, 1, 2), -1, 'standard'), datetime(2000, 1, 3))
         self.assertEqual(sub_days(datetime(2000, 3, 1), 1, 'standard'), datetime(2000, 2, 29))
         self.assertEqual(sub_days(datetime(2000, 2, 28), -1, 'standard'), datetime(2000, 2, 29))
+        self.assertEqual(sub_days(datetime(2000, 1, 1), 365, 'standard'), datetime(1999, 1, 1))
+        self.assertEqual(sub_days(datetime(1999, 1, 1), -365, 'standard'), datetime(2000, 1, 1))
+        self.assertEqual(sub_days(datetime(2000, 12, 31), 365, 'standard'), datetime(2000, 1, 1))
+        self.assertEqual(sub_days(datetime(2000, 1, 1), -365, 'standard'), datetime(2000, 12, 31))
         self.assertEqual(sub_days(datetime(2000, 2, 28), -2920, 'standard'), datetime(2008, 2, 26))
         self.assertEqual(sub_days(datetime(2008, 2, 26), 2920, 'standard'), datetime(2000, 2, 28))
+        self.assertEqual(sub_days(datetime(2015, 12, 31), -61, 'standard'), datetime(2016, 3, 1))
+        self.assertEqual(sub_days(datetime(2016, 3, 1), 61, 'standard'), datetime(2015, 12, 31))
+        self.assertEqual(sub_days(datetime(2001, 1, 1), 1, 'standard'), datetime(2000, 12, 31))
+        self.assertEqual(sub_days(datetime(1999, 12, 31), -1, 'standard'), datetime(2000, 1, 1))
 
         self.assertEqual(sub_days(datetime(2000, 1, 2), 1, 'noleap'), datetime(2000, 1, 1))
         self.assertEqual(sub_days(datetime(2000, 1, 2), -1, 'noleap'), datetime(2000, 1, 3))
         self.assertEqual(sub_days(datetime(2000, 3, 1), 1, 'noleap'), datetime(2000, 2, 28))
         self.assertEqual(sub_days(datetime(2000, 2, 28), -1, 'noleap'), datetime(2000, 3, 1))
+        self.assertEqual(sub_days(datetime(2000, 1, 1), 365, 'noleap'), datetime(1999, 1, 1))
+        self.assertEqual(sub_days(datetime(1999, 1, 1), -365, 'noleap'), datetime(2000, 1, 1))
+        self.assertEqual(sub_days(datetime(2001, 1, 1), 365, 'noleap'), datetime(2000, 1, 1))
+        self.assertEqual(sub_days(datetime(2000, 1, 1), -365, 'noleap'), datetime(2001, 1, 1))
         self.assertEqual(sub_days(datetime(2000, 2, 28), -2920, 'noleap'), datetime(2008, 2, 28))
         self.assertEqual(sub_days(datetime(2008, 2, 26), 2920, 'noleap'), datetime(2000, 2, 26))
+        self.assertEqual(sub_days(datetime(2015, 12, 31), -61, 'noleap'), datetime(2016, 3, 2))
+        self.assertEqual(sub_days(datetime(2016, 3, 2), 61, 'noleap'), datetime(2015, 12, 31))
+        self.assertEqual(sub_days(datetime(2001, 1, 1), 1, 'noleap'), datetime(2000, 12, 31))
+        self.assertEqual(sub_days(datetime(1999, 12, 31), -1, 'noleap'), datetime(2000, 1, 1))
 
     def test_chunk_start_date(self):
         self.assertEqual(chunk_start_date(datetime(2000, 1, 1), 2, 1, 'year', 'standard'),
@@ -138,6 +154,9 @@ class TestChunkDateLib(TestCase):
 
         self.assertEqual(previous_day(datetime(2000, 1, 2), 'noleap'), datetime(2000, 1, 1))
         self.assertEqual(previous_day(datetime(2000, 3, 1), 'noleap'), datetime(2000, 2, 28))
+
+        self.assertEqual(previous_day(datetime(2000, 1, 1), 'noleap'), datetime(1999, 12, 31))
+        self.assertEqual(previous_day(datetime(2001, 1, 1), 'noleap'), datetime(2000, 12, 31))
 
     def test_parse_date(self):
         self.assertEqual(parse_date(''), None)
