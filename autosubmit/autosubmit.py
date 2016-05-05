@@ -69,7 +69,8 @@ from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
-
+from notifications.mail_notifier import MailNotifier
+from notifications.notifier import Notifier
 from platforms.submitter import Submitter
 
 
@@ -592,8 +593,9 @@ class Autosubmit:
 
                 # variables to be updated on the fly
                 total_jobs = len(joblist.get_job_list())
-                Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
-                                                                      time.strftime("%H:%M")))
+                Log.info(
+                    "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
+                                                                 time.strftime("%H:%M")))
                 safetysleeptime = as_conf.get_safetysleeptime()
                 Log.debug("Sleep: {0}", safetysleeptime)
                 default_retrials = as_conf.get_retrials()
@@ -602,7 +604,13 @@ class Autosubmit:
                 save = False
                 for platform in platforms_to_test:
                     for job in joblist.get_in_queue(platform):
-                        if job.status != job.update_status(platform.check_job(job.id)):
+                        prev_status = job.status
+                        if prev_status != job.update_status(platform.check_job(job.id)):
+                            if as_conf.get_notifications() == 'true':
+                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                              Status.VALUE_TO_KEY[prev_status],
+                                                              Status.VALUE_TO_KEY[job.status],
+                                                              as_conf.get_mail_to())
                             save = True
 
                 if joblist.update_list(as_conf) or save:
@@ -1119,6 +1127,24 @@ class Autosubmit:
                 else:
                     break
 
+        smtp_hostname = "mail.bsc.es"
+        mail_from = "automail@bsc.es"
+        while True:
+            (code, tag) = d.form(text="",
+                                 elements=[("STMP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
+                                           ("Notifications sender address", 2, 1, mail_from, 2, 40, 40, 200)],
+                                 height=20,
+                                 width=80,
+                                 form_height=10,
+                                 title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
+            if Autosubmit._requested_exit(code, d):
+                return False
+            elif code == dialog.Dialog.OK:
+                smtp_hostname = tag[0]
+                mail_from = tag[1]
+                break
+                # TODO: Check that is a valid config?
+
         config_file = open(path, 'w')
         d.infobox("Writing configuration file...", width=50, height=5)
         try:
@@ -1135,6 +1161,9 @@ class Autosubmit:
                     parser.set('conf', 'jobs', jobs_conf_path)
                 if platforms_conf_path:
                     parser.set('conf', 'platforms', platforms_conf_path)
+            parser.add_section('mail')
+            parser.set('mail', 'smtp_server', smtp_hostname)
+            parser.set('mail', 'mail_from', mail_from)
             parser.write(config_file)
             config_file.close()
             d.msgbox("Configuration file written successfully", width=50, height=5)
