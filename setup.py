@@ -40,7 +40,8 @@ setup(
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
-                      'numpy', 'matplotlib', 'saga-python>=0.39', 'python2-pythondialog>=3.3.0', 'mock>=1.3.0'],
+                      'numpy', 'matplotlib', 'saga-python>=0.39', 'python2-pythondialog>=3.3.0', 'mock>=1.3.0',
+                      'portalocker>=0.5.7'],
     packages=find_packages(),
     include_package_data=True,
     package_data={'autosubmit': [
