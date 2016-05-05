@@ -607,10 +607,12 @@ class Autosubmit:
                         prev_status = job.status
                         if prev_status != job.update_status(platform.check_job(job.id)):
                             if as_conf.get_notifications() == 'true':
-                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                              Status.VALUE_TO_KEY[prev_status],
-                                                              Status.VALUE_TO_KEY[job.status],
-                                                              as_conf.get_mail_to())
+                                if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                    Log.info("sending mail")
+                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                  Status.VALUE_TO_KEY[prev_status],
+                                                                  Status.VALUE_TO_KEY[job.status],
+                                                                  as_conf.get_mail_to())
                             save = True
 
                 if joblist.update_list(as_conf) or save:

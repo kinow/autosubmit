@@ -974,6 +974,7 @@ class DicJobs:
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
         if job.retrials == -1:
             job.retrials = None
+        job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         self._joblist.get_job_list().append(job)
         return job
 
