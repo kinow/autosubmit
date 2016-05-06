@@ -759,9 +759,9 @@ class AutosubmitConfig:
         Returns the address where notifications will be sent from autosubmit's config file
 
         :return: mail address
-        :rtype: str
+        :rtype: [str]
         """
-        return str(self._conf_parser.get('mail', 'TO'))
+        return [str(x) for x in self._conf_parser.get('mail', 'TO').split(' ')]
 
     @staticmethod
     def get_parser(parser_factory, file_path):

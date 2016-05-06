@@ -29,17 +29,19 @@ class MailNotifier:
     def notify_status_change(self, exp_id, job_name, prev_status, status, mail_to):
         message_text = self._generate_message_text(exp_id, job_name, prev_status, status)
         message = MIMEText(message_text)
-        message['To'] = email.utils.formataddr((mail_to, mail_to))
         message['From'] = email.utils.formataddr(('Autosubmit', self.config.MAIL_FROM))
         message['Subject'] = '[Autosubmit] The job  ' + job_name + '  status has changed'
-        self._send_mail(self.config.MAIL_FROM, mail_to, message)
+        for mail in mail_to:
+            message['To'] = email.utils.formataddr((mail, mail))
+            self._send_mail(self.config.MAIL_FROM, mail, message)
 
     def _send_mail(self, mail_from, mail_to, message):
         server = smtplib.SMTP_SSL(self.config.SMTP_SERVER)
         server.sendmail(mail_from, mail_to, message.as_string())
         server.quit()
 
-    def _generate_message_text(self, exp_id, job_name, prev_status, status):
+    @staticmethod
+    def _generate_message_text(exp_id, job_name, prev_status, status):
         return 'Autosubmit notification\n' \
                '-------------------------\n\n' \
                 'Experiment id:  ' + str(exp_id) + '\n\n' \
