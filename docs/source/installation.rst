@@ -38,12 +38,17 @@ After installation, you have to configure database and path for Autosubmit.
 It can be done at host, user or local level (by default at host level).
 If it does not exist, create a repository for experiments: Say for example ``/cfu/autosubmit``
 
-Then follow the confiugre instructions after executing:
+Then follow the configure instructions after executing:
 ::
 
     autosubmit configure
 
-and introduce path to experiment storage and database. Folders must exit.
+and introduce path to experiment storage and database. Folders must exist.
+
+As Autosubmit has an email notifications feature, you have also to configure
+a SMTP server and an email account from where the notifications will be sent.
+
+There is the BSC configuration by default, it can helps you as an example.
 
 
 For installing the database for Autosubmit on the configured folder, when no database is created on the given path, execute:
