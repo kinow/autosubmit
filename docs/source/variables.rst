@@ -35,6 +35,7 @@ This variables are relatives to the current job.
 - **NUMTHREADS**: Number of threads that the job will use.
 - **NUMTASK**: Number of tasks that the job will use.
 - **WALLCLOCK**: Number of processors that the job will use.
+- **NOTIFY_ON**: Determine the job statuses you want to be notified.
 
 
 Platform variables

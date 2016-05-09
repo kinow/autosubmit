@@ -17,18 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
-    # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
 
-
-class ConfigParserFactory:
-
+class Notifier:
     def __init__(self):
         pass
 
-    def create_parser(self):
-        return SafeConfigParser()
+    @staticmethod
+    def notify_status_change(implementation, exp_id, job_name, prev_status, status, notify_to):
+        implementation.notify_status_change(exp_id, job_name, prev_status, status, notify_to)
