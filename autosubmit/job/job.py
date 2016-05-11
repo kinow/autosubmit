@@ -458,6 +458,7 @@ class Job:
         if os.path.exists(logname):
             self.status = Status.COMPLETED
         else:
+            Log.warning("Job {0} seemed to be completed but there is no COMPLETED file", self.name)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters):
