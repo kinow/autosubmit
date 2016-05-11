@@ -676,7 +676,10 @@ class Autosubmit:
                     platform.remove_stat_file(job.name)
                     platform.remove_completed_file(job.name)
                     saga_job = platform.create_saga_job(job, scriptname)
-                    saga_job.run()
+                    try:
+                        saga_job.run()
+                    except Exception:
+                        continue
                     job.id = saga_job.id
                     if job.id is None:
                         continue
