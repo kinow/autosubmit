@@ -55,6 +55,9 @@ suite of varables is defined for the current platform where {PLATFORM_NAME} is s
 - **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
 - **{PLATFORM_NAME}_ROOTDIR**: Platform's experiment folder path
 
+.. hint::
+    The variables ``_USER``, ``_PROJ`` and ``_BUDG`` has no value on the LOCAL platform.
+
 It is also defined a suite of variables for the experiment's default platform:
 
 - **HPCARCH**: Default HPC platform name

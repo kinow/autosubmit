@@ -73,8 +73,8 @@ class Submitter:
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
-        local_platform.project = asconf.expid
-        local_platform.budget = asconf.expid
+        local_platform.project = ''
+        local_platform.budget = ''
         local_platform.user = ''
         local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.transfer = "file"
