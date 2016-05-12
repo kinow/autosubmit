@@ -43,6 +43,8 @@ class BasicConfig:
     LOCAL_PROJ_DIR = 'proj'
     DEFAULT_PLATFORMS_CONF = ''
     DEFAULT_JOBS_CONF = ''
+    SMTP_SERVER = ''
+    MAIL_FROM = ''
 
     @staticmethod
     def _update_config():
@@ -78,6 +80,10 @@ class BasicConfig:
             BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get('conf', 'platforms')
         if parser.has_option('conf', 'jobs'):
             BasicConfig.DEFAULT_JOBS_CONF = parser.get('conf', 'jobs')
+        if parser.has_option('mail', 'smtp_server'):
+            BasicConfig.SMTP_SERVER = parser.get('mail', 'smtp_server')
+        if parser.has_option('mail', 'mail_from'):
+            BasicConfig.MAIL_FROM = parser.get('mail', 'mail_from')
 
     @staticmethod
     def read():

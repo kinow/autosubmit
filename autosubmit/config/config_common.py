@@ -196,6 +196,7 @@ class AutosubmitConfig:
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
+        result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', True)
 
         if not result:
             Log.critical("{0} is not a valid config file".format(os.path.basename(self._conf_parser_file)))
@@ -653,7 +654,6 @@ class AutosubmitConfig:
 
         return self._exp_parser.get('rerun', 'RERUN').lower()
 
-
     def get_chunk_list(self):
         """
         Returns chunk list from experiment's config file
@@ -744,6 +744,24 @@ class AutosubmitConfig:
         :rtype: int
         """
         return int(self._conf_parser.get('config', 'RETRIALS'))
+
+    def get_notifications(self):
+        """
+        Returns if the user has enabled the notifications from autosubmit's config file
+
+        :return: if notifications
+        :rtype: bool
+        """
+        return self._conf_parser.get('mail', 'NOTIFICATIONS').lower()
+
+    def get_mail_to(self):
+        """
+        Returns the address where notifications will be sent from autosubmit's config file
+
+        :return: mail address
+        :rtype: [str]
+        """
+        return [str(x) for x in self._conf_parser.get('mail', 'TO').split(' ')]
 
     @staticmethod
     def get_parser(parser_factory, file_path):

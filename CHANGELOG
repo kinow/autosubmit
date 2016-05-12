@@ -1,5 +1,11 @@
+3.4.0
+    Added email notifications support
+    Added mechanisms for incoherence prevention
+    Added mechanisms for SAGA pty errors prevention
+
 3.3.1
     Fixed bug with no-leap experiments
+
 3.3.0
     Added filters in monitor
     Added support for Python jobs

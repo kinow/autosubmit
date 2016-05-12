@@ -609,8 +609,8 @@ class TestAutosubmitConfig(TestCase):
         parser_mock.read = Mock()
         parser_mock.has = Mock(return_value=True)
 
-        parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444,
-                                            1111, 2222, 3333, 'no-int'])
+        parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444, 'True',
+                                            1111, 2222, 3333, 'no-int', 'True'])
 
         factory_mock = Mock(spec=ConfigParserFactory)
         factory_mock.create_parser = Mock(return_value=parser_mock)

@@ -35,6 +35,7 @@ This variables are relatives to the current job.
 - **NUMTHREADS**: Number of threads that the job will use.
 - **NUMTASK**: Number of tasks that the job will use.
 - **WALLCLOCK**: Number of processors that the job will use.
+- **NOTIFY_ON**: Determine the job statuses you want to be notified.
 
 
 Platform variables
@@ -53,6 +54,9 @@ suite of varables is defined for the current platform where {PLATFORM_NAME} is s
 - **{PLATFORM_NAME}_VERSION**: Platform scheduler version
 - **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
 - **{PLATFORM_NAME}_ROOTDIR**: Platform's experiment folder path
+
+.. hint::
+    The variables ``_USER``, ``_PROJ`` and ``_BUDG`` has no value on the LOCAL platform.
 
 It is also defined a suite of variables for the experiment's default platform:
 

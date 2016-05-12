@@ -426,10 +426,11 @@ class Platform:
             return
         jd.set_attribute(name, value)
 
-    def check_job(self, jobid, default_status=Status.COMPLETED):
+    def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):
         """
         Checks job running status
 
+        :param retries: retries
         :param jobid: job id
         :type jobid: str
         :param default_status: status to assign if it can be retrieved from the platform
@@ -440,15 +441,20 @@ class Platform:
         if jobid not in self.service.jobs:
             return Status.COMPLETED
         # noinspection PyBroadException
-        try:
-            saga_status = self.service.get_job(jobid).state
-        except Exception as e:
-            # If SAGA can not get the job state, we change it to completed
-            # It will change to FAILED if not COMPLETED file is present
-            Log.debug('Can not get job state: {0}', e)
-            return default_status
+        saga_status = None
+        while saga_status is None and retries > 0:
+            try:
+                saga_status = self.service.get_job(jobid).state
+            except Exception as e:
+                # If SAGA can not get the job state, we change it to completed
+                # It will change to FAILED if not COMPLETED file is present
+                Log.debug('Can not get job state: {0}', e)
+                retries -= 1
+                sleep(5)
 
-        if saga_status == saga.job.UNKNOWN:
+        if saga_status is None:
+            return default_status
+        elif saga_status == saga.job.UNKNOWN:
             return Status.UNKNOWN
         elif saga_status == saga.job.PENDING:
             return Status.QUEUING
