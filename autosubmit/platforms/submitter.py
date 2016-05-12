@@ -20,6 +20,8 @@
 
 import saga
 import os
+import time
+
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.basicConfig import BasicConfig
 from platform import Platform
@@ -29,10 +31,11 @@ class Submitter:
     """
     Class to manage the experiments platform
     """
-    def load_platforms(self, asconf):
+    def load_platforms(self, asconf, retries=30):
         """
         Create all the platforms object that will be used by the experiment
 
+        :param retries: retries in case creation of service fails
         :param asconf: autosubmit config to use
         :type asconf: AutosubmitConfig
         :return: platforms used by the experiment
@@ -67,7 +70,14 @@ class Submitter:
 
         platforms = dict()
         local_platform = Platform(asconf.expid, 'local', BasicConfig)
-        local_platform.service = saga.job.Service("fork://localhost", session=session)
+        local_platform.service = None
+        retry = retries
+        while local_platform.service is None and retry > 0:
+            try:
+                local_platform.service = saga.job.Service("fork://localhost", session=session)
+            except saga.SagaException:
+                retry -= 1
+                time.sleep(5)
         local_platform.type = 'local'
         local_platform.queue = ''
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
@@ -128,8 +138,16 @@ class Submitter:
             if remote_platform.type == 'ecaccess':
                 # It has to be fork because we are communicating through commands at the local machine
                 host = 'localhost'
-            # noinspection PyTypeChecker
-            remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
+
+            remote_platform.service = None
+            retry = retries
+            while remote_platform.service is None and retry > 0:
+                try:
+                    # noinspection PyTypeChecker
+                    remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)
+                except saga.SagaException:
+                    retry -= 1
+                    time.sleep(5)
             # noinspection PyProtectedMember
             remote_platform.service._adaptor.host = remote_platform.host
             # noinspection PyProtectedMember
