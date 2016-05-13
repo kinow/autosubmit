@@ -352,7 +352,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         ret, out, _ = self.shell.run_sync(cmdline)
         if ret != 0:
             # something went wrong
-            message = "Error sending file job via 'ecaccess-job-put': %s. Commandline was: %s" \
+            message = "Error sending file job via 'ecaccess-file-put': %s. Commandline was: %s" \
                       % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
 
@@ -361,7 +361,7 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         ret, out, _ = self.shell.run_sync(cmdline)
         if ret != 0:
             # something went wrong
-            message = "Error sending file job via 'ecaccess-job-put': %s. Commandline was: %s" \
+            message = "Error submitting job via 'ecaccess-job-submit': %s. Commandline was: %s" \
                       % (out, cmdline)
             log_error_and_raise(message, saga.NoSuccess, self._logger)
         else:
