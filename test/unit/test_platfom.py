@@ -73,7 +73,7 @@ class TestPlatform(TestCase):
         created_job = self.platform.create_saga_job(job, 'scriptname')
 
         # assert
-        self.assertEquals('source LOG_random-id/scriptname', jd.executable)
+        self.assertEquals('LOG_random-id/scriptname', jd.executable)
         self.assertEquals('LOG_random-id', jd.working_directory)
         self.assertIsNotNone(re.match('any-name.[0-9]*.out', jd.output))
         self.assertIsNotNone(re.match('any-name.[0-9]*.err', jd.error))

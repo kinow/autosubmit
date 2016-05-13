@@ -196,7 +196,13 @@ class AutosubmitConfig:
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
-        result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', True)
+        result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', False)
+
+        if self.get_notifications() == 'true':
+            for mail in self.get_mails_to():
+                if not self.is_valid_mail_address(mail):
+                    Log.warning('One or more of the email addresses configured for the mail notifications are wrong')
+                    break
 
         if not result:
             Log.critical("{0} is not a valid config file".format(os.path.basename(self._conf_parser_file)))
@@ -752,16 +758,23 @@ class AutosubmitConfig:
         :return: if notifications
         :rtype: bool
         """
-        return self._conf_parser.get('mail', 'NOTIFICATIONS').lower()
+        return self.get_option(self._conf_parser, 'mail', 'NOTIFICATIONS', 'false').lower()
 
-    def get_mail_to(self):
+    def get_mails_to(self):
         """
         Returns the address where notifications will be sent from autosubmit's config file
 
         :return: mail address
         :rtype: [str]
         """
-        return [str(x) for x in self._conf_parser.get('mail', 'TO').split(' ')]
+        return [str(x) for x in self.get_option(self._conf_parser, 'mail', 'TO', '').split(' ')]
+
+    @staticmethod
+    def is_valid_mail_address(mail_address):
+        if re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail_address):
+            return True
+        else:
+            return False
 
     @staticmethod
     def get_parser(parser_factory, file_path):

@@ -609,8 +609,8 @@ class TestAutosubmitConfig(TestCase):
         parser_mock.read = Mock()
         parser_mock.has = Mock(return_value=True)
 
-        parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444, 'True',
-                                            1111, 2222, 3333, 'no-int', 'True'])
+        parser_mock.get = Mock(side_effect=[1111, 2222, 3333, 4444, 'True', 'True', 'example@test.org',
+                                            1111, 2222, 3333, 'no-int', 'True', 'True', 'example@test.org'])
 
         factory_mock = Mock(spec=ConfigParserFactory)
         factory_mock.create_parser = Mock(return_value=parser_mock)
@@ -723,6 +723,12 @@ class TestAutosubmitConfig(TestCase):
         self.assertTrue(should_be_true)
         self.assertFalse(should_be_false)
         self.assertEquals(7, truth_mock.call_count)
+
+    def test_is_valid_mail_with_non_mail_address_returns_false(self):
+        self.assertFalse(AutosubmitConfig.is_valid_mail_address('12345'))
+
+    def test_is_valid_mail_with_mail_address_returns_true(self):
+        self.assertTrue(AutosubmitConfig.is_valid_mail_address('example@example.org'))
 
     #############################
     ## Helper functions & classes
