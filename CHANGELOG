@@ -1,3 +1,7 @@
+3.4.1
+    Hot-fix ECMWF binary (bash, R, python)
+    Hot-fix Mail Notifications
+
 3.4.0
     Added email notifications support
     Added mechanisms for incoherence prevention

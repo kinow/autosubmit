@@ -611,7 +611,7 @@ class Autosubmit:
                                     Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
                                                                   Status.VALUE_TO_KEY[prev_status],
                                                                   Status.VALUE_TO_KEY[job.status],
-                                                                  as_conf.get_mail_to())
+                                                                  as_conf.get_mails_to())
                             save = True
 
                 if joblist.update_list(as_conf) or save:
