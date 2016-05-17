@@ -31,7 +31,7 @@ class MailNotifier:
         message_text = self._generate_message_text(exp_id, job_name, prev_status, status)
         message = MIMEText(message_text)
         message['From'] = email.utils.formataddr(('Autosubmit', self.config.MAIL_FROM))
-        message['Subject'] = '[Autosubmit] The job {0} status has changed'.format(job_name)
+        message['Subject'] = '[Autosubmit] The job {0} status has changed to {1}'.format(job_name, str(status))
         for mail in mail_to:
             message['To'] = email.utils.formataddr((mail, mail))
             try:
