@@ -127,13 +127,13 @@ class Submitter:
             else:
                 host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
 
-            # if adaptor.endswith('ssh'):
-            #     ctx = saga.Context('ssh')
-            #     ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
-            #     session = saga.Session()
-            #     session.add_context(ctx)
-            # else:
-            session = None
+            if adaptor.endswith('ssh'):
+                ctx = saga.Context('ssh')
+                ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
+                session = saga.Session()
+                session.add_context(ctx)
+            else:
+                session = None
 
             remote_platform.host = host
             if remote_platform.type == 'ecaccess':
