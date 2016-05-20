@@ -90,6 +90,7 @@ class Submitter:
         local_platform.transfer = "file"
         local_platform.host = 'localhost'
         platforms['local'] = local_platform
+        platforms['LOCAL'] = local_platform
 
         for section in parser.sections():
 
