@@ -85,6 +85,8 @@ class Submitter:
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
         local_platform.project = ''
         local_platform.budget = ''
+        local_platform.reservation = ''
+        local_platform.exclusivity = ''
         local_platform.user = ''
         local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.transfer = "file"
@@ -161,6 +163,8 @@ class Submitter:
 
             remote_platform.project = AutosubmitConfig.get_option(parser, section, 'PROJECT', None)
             remote_platform.budget = AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project)
+            remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')
+            remote_platform.exclusivity = AutosubmitConfig.get_option(parser, section, 'EXCLUSIVITY', '').lower()
             remote_platform.user = AutosubmitConfig.get_option(parser, section, 'USER', None)
             remote_platform.scratch = AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None)
             remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)

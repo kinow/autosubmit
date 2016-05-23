@@ -191,8 +191,11 @@ def _mnscript_generator(jd, queue=None, ):
         if ':' not in jd.project:
             account = jd.project
         else:
-            account, reservation = jd.project.split(':')
-            mn_params += "#BSUB -U %s \n" % str(reservation)
+            account, reservation, exclusivity = jd.project.split(':')
+            if reservation != '':
+                mn_params += "#BSUB -U %s \n" % str(reservation)
+            if exclusivity == 'true':
+                mn_params += "#BSUB -x \n"
 
         mn_params += "#BSUB -P %s \n" % str(account)
     if jd.job_contact is not None:

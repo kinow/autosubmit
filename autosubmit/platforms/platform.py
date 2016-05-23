@@ -35,6 +35,8 @@ class Platform:
         self.user = ''
         self.project = ''
         self.budget = ''
+        self.reservation = ''
+        self.exclusivity = ''
         self.type = ''
         self.scratch = ''
         self.root_dir = ''
@@ -108,6 +110,8 @@ class Platform:
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project
         parameters['{0}BUDG'.format(prefix)] = self.budget
+        parameters['{0}RESERVATION'.format(prefix)] = self.reservation
+        parameters['{0}EXCLUSIVITY'.format(prefix)] = self.exclusivity
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
@@ -382,7 +386,7 @@ class Platform:
         elif job.type == Type.R:
             binary = 'Rscript'
 
-        #jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
+        # jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
         jd.executable = os.path.join(self.get_files_path(), scriptname)
         jd.working_directory = self.get_files_path()
         str_datetime = date2str(datetime.datetime.now(), 'S')
@@ -399,7 +403,11 @@ class Platform:
         self.add_attribute(jd, 'WallTimeLimit', wallclock)
 
         self.add_attribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
-        self.add_attribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
+
+        project = job.parameters["CURRENT_BUDG"] + ':' + \
+                  job.parameters["CURRENT_RESERVATION"] + ':' + \
+                  job.parameters["CURRENT_EXCLUSIVITY"]
+        self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
         self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
