@@ -449,12 +449,11 @@ class Platform:
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
-        if jobid not in self.service.jobs:
-            return Status.COMPLETED
-        # noinspection PyBroadException
         saga_status = None
         while saga_status is None and retries > 0:
             try:
+                if jobid not in self.service.jobs:
+                    return Status.COMPLETED
                 saga_status = self.service.get_job(jobid).state
             except Exception as e:
                 # If SAGA can not get the job state, we change it to completed
