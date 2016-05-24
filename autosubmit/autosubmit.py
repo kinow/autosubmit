@@ -221,9 +221,10 @@ class Autosubmit:
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
-            # Set stattus
+            # Set status
             subparser = subparsers.add_parser('setstatus', description="sets job status for an experiment")
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',

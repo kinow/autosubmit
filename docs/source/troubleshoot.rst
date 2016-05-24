@@ -22,16 +22,18 @@ You must execute:
 Options:
 ::
 
-    usage: autosubmit setstatus [-h] [-s] -t
+    usage: autosubmit setstatus [-h] [-np] [-s] -t
         {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN,QUEUING,RUNNING}
         (-fl LIST
         | -fc FILTER_CHUNKS
         | -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
         | -ft FILTER_TYPE)
+        [--hide]
         expid
 
     expid                 experiment identifier
     -h, --help            show this help message and exit
+    -np, --noplot         omit plot
     -s, --save            Save changes to disk
     -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN},
                 --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
