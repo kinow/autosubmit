@@ -404,9 +404,11 @@ class Platform:
 
         self.add_attribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
 
-        project = job.parameters["CURRENT_BUDG"] + ':' + \
-                  job.parameters["CURRENT_RESERVATION"] + ':' + \
-                  job.parameters["CURRENT_EXCLUSIVITY"]
+        project = job.parameters["CURRENT_BUDG"]
+        if job.parameters["CURRENT_RESERVATION"] != '' or job.parameters["CURRENT_EXCLUSIVITY"] == 'true':
+            project += ':' + job.parameters["CURRENT_RESERVATION"] + ':'
+            if job.parameters["CURRENT_EXCLUSIVITY"] == 'true':
+                project += job.parameters["CURRENT_EXCLUSIVITY"]
         self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
