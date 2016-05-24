@@ -61,7 +61,9 @@ class TestPlatform(TestCase):
                       'NUMPROC': 666,
                       'NUMTASK': 777,
                       'NUMTHREADS': 888,
-                      'MEMORY': 999}
+                      'MEMORY': 999,
+                      'CURRENT_RESERVATION': 'dummy',
+                      'CURRENT_EXCLUSIVITY': 'true'}
         job = FakeJob('any-name', saga.job.RUNNING, Type.BASH, parameters)
         jd = FakeJobDescription()
         sys.modules['saga'].job.Description = Mock(return_value=jd)
@@ -80,7 +82,8 @@ class TestPlatform(TestCase):
         self.platform.add_attribute.assert_any_call(jd, 'Name', job.name)
         self.platform.add_attribute.assert_any_call(jd, 'WallTimeLimit', 0)
         self.platform.add_attribute.assert_any_call(jd, 'Queue', parameters["CURRENT_QUEUE"])
-        self.platform.add_attribute.assert_any_call(jd, 'Project', parameters["CURRENT_BUDG"])
+        self.platform.add_attribute.assert_any_call(jd, 'Project', parameters["CURRENT_BUDG"] + ':' + parameters[
+            "CURRENT_RESERVATION"] + ':' + parameters["CURRENT_EXCLUSIVITY"])
         self.platform.add_attribute.assert_any_call(jd, 'TotalCPUCount', parameters["NUMPROC"])
         self.platform.add_attribute.assert_any_call(jd, 'ProcessesPerHost', parameters["NUMTASK"])
         self.platform.add_attribute.assert_any_call(jd, 'ThreadsPerProcess', parameters["NUMTHREADS"])
@@ -126,7 +129,7 @@ class TestPlatform(TestCase):
         self.assertTrue(deleted)
         sys.modules['saga'].filesystem.File.assert_called_once_with(
             "file://{0}".format(os.path.join(self.platform.tmp_path, 'LOG_' + self.platform.expid,
-                                                                            'file/path')))
+                                             'file/path')))
         out_mock.remove.assert_called_once_with()
         out_mock.close.assert_called_once_with()
 
@@ -142,7 +145,7 @@ class TestPlatform(TestCase):
         self.assertTrue(deleted)
         sys.modules['saga'].filesystem.File.assert_called_once_with(
             "sftp://{0}{1}".format(self.platform.host, os.path.join(self.platform.get_files_path(),
-                                                                                          'file/path')))
+                                                                    'file/path')))
         out_mock.remove.assert_called_once_with()
         out_mock.close.assert_called_once_with()
 
@@ -154,7 +157,7 @@ class TestPlatform(TestCase):
         found = self.platform.get_completed_files('any-name', retries)
 
         self.assertFalse(found)
-        self.assertEquals(retries+1, self.platform.get_file.call_count)
+        self.assertEquals(retries + 1, self.platform.get_file.call_count)
 
 
 class FakeService:
