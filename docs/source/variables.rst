@@ -50,6 +50,8 @@ suite of varables is defined for the current platform where {PLATFORM_NAME} is s
 - **{PLATFORM_NAME}_USER**: Platform user
 - **{PLATFORM_NAME}_PROJ**: Platform project
 - **{PLATFORM_NAME}_BUDG**: Platform budget
+- **{PLATFORM_NAME}_RESERVATION**: You can configure your reservation id for the given platform.
+- **{PLATFORM_NAME}_EXCLUSIVITY**: True if you want to request exclusivity nodes.
 - **{PLATFORM_NAME}_TYPE**: Platform scheduler type
 - **{PLATFORM_NAME}_VERSION**: Platform scheduler version
 - **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
@@ -57,6 +59,9 @@ suite of varables is defined for the current platform where {PLATFORM_NAME} is s
 
 .. hint::
     The variables ``_USER``, ``_PROJ`` and ``_BUDG`` has no value on the LOCAL platform.
+
+.. hint::
+    Until now, the variables ``_RESERVATION`` and ``_EXCLUSIVITY`` are only available for MN.
 
 It is also defined a suite of variables for the experiment's default platform:
 
