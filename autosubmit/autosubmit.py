@@ -306,7 +306,7 @@ class Autosubmit:
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
-                return Autosubmit.set_status(args.expid, args.save, args.status_final, args.list,
+                return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type, args.hide)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
@@ -1544,7 +1544,7 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def set_status(expid, save, final, lst, filter_chunks, filter_status, filter_section, hide):
+    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide):
         """
         Set status
 
@@ -1660,8 +1660,11 @@ class Autosubmit:
                 job_list.update_list(as_conf)
                 Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
-            monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+            if not noplot:
+                Log.info("\nPloting joblist...")
+                monitor_exp = Monitor()
+                monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+
             return True
 
     @staticmethod
