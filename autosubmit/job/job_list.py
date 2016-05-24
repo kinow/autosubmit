@@ -327,14 +327,14 @@ class JobList:
 
     def get_in_queue(self, platform=None):
         """
-        Returns a list of jobs in the platforms (Submitted, Running, Queuing)
+        Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown)
 
         :param platform: job platform
         :type platform: HPCPlatform
         :return: jobs in platforms
         :rtype: list
         """
-        return self.get_submitted(platform) + self.get_running(platform) + self.get_queuing(platform)
+        return self.get_submitted(platform) + self.get_running(platform) + self.get_queuing(platform) + self.get_unknown()
 
     def get_not_in_queue(self, platform=None):
         """
@@ -368,7 +368,7 @@ class JobList:
         :return: active jobs
         :rtype: list
         """
-        return self.get_in_queue(platform) + self.get_ready(platform) + self.get_unknown(platform)
+        return self.get_in_queue(platform) + self.get_ready(platform)
 
     def get_job_by_name(self, name):
         """
