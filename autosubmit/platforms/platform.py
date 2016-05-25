@@ -187,16 +187,20 @@ class Platform:
         :return: True if file is copied succesfully, false otherwise
         :rtype: bool
         """
+        local_path = os.path.join(self.tmp_path, filename)
+        if os.path.exists(local_path):
+            os.remove(completed_local_path)
+
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-get', '{0}:{1}'.format(self.host,
                                                                              os.path.join(self.get_files_path(),
                                                                                           filename)),
-                                       os.path.join(self.tmp_path, filename)])
+                                       local_path])
                 return True
             except subprocess.CalledProcessError:
                 if must_exist:
-                    raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
+                    raise Exception("Could't get file {0} from {1}:{2}".format(local_path,
                                                                                self.host, self.get_files_path()))
                 return False
 
@@ -207,7 +211,7 @@ class Platform:
 
         out = self.directory.open(os.path.join(str(self.directory.url), filename))
 
-        out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
+        out.copy("file://{0}".format(local_path))
         out.close()
         return True
 
