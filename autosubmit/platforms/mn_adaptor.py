@@ -63,13 +63,13 @@ class _job_state_monitor(threading.Thread):
                         # terminal state, so we can skip the ones that are
                         # either done, failed or canceled
                         state = jobs[job]['state']
-                        if (state != saga.job.DONE) and (state != saga.job.FAILED) and (state != saga.job.CANCELED):
+                        if state not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
 
                             job_info = self.js._job_get_info(job)
                             self.logger.info(
                                 "Job monitoring thread updating Job %s (state: %s)" % (job, job_info['state']))
 
-                            if job_info['state'] != jobs[job]['state']:
+                            if job_info['state'] != state:
                                 # fire job state callback if 'state' has changed
                                 job._api()._attributes_i_set('state', job_info['state'], job._api()._UP, True)
 
@@ -110,15 +110,13 @@ def _mn_to_saga_jobstate(mnjs):
         return saga.job.FAILED
     elif mnjs in ['USUSP', 'SSUSP', 'PSUSP']:
         return saga.job.SUSPENDED
-    elif mnjs in ['UNKNOWN']:
-        return saga.job.UNKNOWN
     else:
         return saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
 #
-def _mnscript_generator(jd, queue=None, ):
+def _mnscript_generator(jd, queue=None, span=None):
     """ generates an LSF script from a SAGA job description
     """
     mn_params = str()
@@ -207,14 +205,8 @@ def _mnscript_generator(jd, queue=None, ):
 
     mn_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
-    # tcc = int(jd.total_cpu_count)
-    # tbd = float(tcc) / float(ppn)
-    # if float(tbd) > int(tbd):
-    #    mn_params += "#PBS -l nodes=%s:ppn=%s \n" \
-    #        % (str(int(tbd) + 1), ppn)
-    # else:
-    #    mn_params += "#PBS -l nodes=%s:ppn=%s \n" \
-    #        % (str(int(tbd)), ppn)
+    if span:
+        mn_params += '#BSUB -R "span[%s]"\n' % span
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -255,6 +247,7 @@ _ADAPTOR_CAPABILITIES = {
                         saga.job.WALL_TIME_LIMIT,
                         saga.job.WORKING_DIRECTORY,
                         saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
+                        saga.job.PROCESSES_PER_HOST,
                         saga.job.TOTAL_CPU_COUNT],
     "job_attributes": [saga.job.EXIT_CODE,
                        saga.job.EXECUTION_HOSTS,
@@ -279,7 +272,7 @@ _ADAPTOR_DOC = {
 The MN adaptor allows to run and manage jobs on MareNostrum 3
 """,
     "schemas": {"mn": "connect to a local cluster",
-                "mn+ssh": "conenct to a remote cluster via SSH",
+                "mn+ssh": "connect to a remote cluster via SSH",
                 "mn+gsissh": "connect to a remote cluster via GSISSH"}
 }
 
@@ -288,7 +281,7 @@ The MN adaptor allows to run and manage jobs on MareNostrum 3
 #
 _ADAPTOR_INFO = {
     "name": _ADAPTOR_NAME,
-    "version": "v0.1",
+    "version": "v0.2",
     "schemas": _ADAPTOR_SCHEMAS,
     "capabilities": _ADAPTOR_CAPABILITIES,
     "cpis": [
@@ -415,9 +408,11 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         # 'query' component of the job service URL.
         if rm_url.query is not None:
             # noinspection PyDeprecation
-            for key, val in parse_qs(rm_url.query).items():
+            for key, val in parse_qs(rm_url.query).iteritems():
                 if key == 'queue':
                     self.queue = val[0]
+                elif key == 'span':
+                    self.span = val[0]
 
         # we need to extrac the scheme for PTYShell. That's basically the
         # job.Serivce Url withou the mn+ part. We use the PTYShell to execute
@@ -518,8 +513,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            script = _mnscript_generator(jd=jd, queue=self.queue,
-                                         )
+            script = _mnscript_generator(jd=jd, queue=self.queue, span=self.span)
 
             self._logger.info("Generated LSF script: %s" % script)
         except Exception as ex:
@@ -612,11 +606,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
             results = out.split()
             job_info['state'] = _mn_to_saga_jobstate(results[2])
             job_info['exec_hosts'] = results[5]
-            # if results[2] != '-':
-            #     job_info['returncode'] = int(results[2])
             job_info['create_time'] = results[7]
-            # job_info['start_time'] = results[4]
-            # job_info['end_time'] = results[5]
 
             return job_info
 
@@ -665,12 +655,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         ret, out, _ = self.shell.run_sync("%s -noheader %s" % ('bjobs', pid))
 
-        if ret == 0:
-            # parse the result
-            results = out.split()
-            curr_info['state'] = _mn_to_saga_jobstate(results[2])
-            curr_info['exec_hosts'] = results[5]
-        else:
+        if ret != 0:
             if "Illegal job ID" in out or "is not found" in out:
                 # Let's see if the previous job state was running or pending. in
                 # that case, the job is gone now, which can either mean DONE,
@@ -690,6 +675,11 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                 # something went wrong
                 message = "Error retrieving job info via 'bjobs': %s" % out
                 log_error_and_raise(message, saga.NoSuccess, self._logger)
+        else:
+            # parse the result
+            results = out.split()
+            curr_info['state'] = _mn_to_saga_jobstate(results[2])
+            curr_info['exec_hosts'] = results[5]
 
         # return the new job info dict
         return curr_info
@@ -764,13 +754,16 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         """ wait for the job to finish or fail
         """
         time_start = time.time()
+        time_now = time_start
         self._adaptor.parse_id(job_obj._id)
 
         while True:
             # state = self._job_get_state(job_id=job_id, job_obj=job_obj)
             state = self.jobs[job_obj]['state']  # this gets updated in the bg.
 
-            if state == saga.job.DONE or state == saga.job.FAILED or state == saga.job.CANCELED:
+            if state == saga.job.DONE or \
+               state == saga.job.FAILED or \
+               state == saga.job.CANCELED:
                 return True
 
             # avoid busy poll
@@ -941,9 +934,11 @@ class MNJob(saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id = job_info['reconnect_jobid']
+            self._name = self.jd.get(saga.job.NAME)
             self._started = True
         else:
             self._id = None
+            self._name = self.jd.get(saga.job.NAME)
             self._started = False
 
         return self.get_api()
@@ -1012,6 +1007,13 @@ class MNJob(saga.adaptors.cpi.job.Job):
         """ implements saga.adaptors.cpi.job.Job.get_id()
         """
         return self._id
+
+    # ----------------------------------------------------------------
+    #
+    @SYNC_CALL
+    def get_name (self):
+        """ Implements saga.adaptors.cpi.job.Job.get_name() """
+        return self._name
 
     # ----------------------------------------------------------------
     #
