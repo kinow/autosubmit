@@ -206,7 +206,7 @@ def _mnscript_generator(jd, queue=None):
     mn_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
     if jd.processes_per_host:
-        mn_params += '#BSUB -R "span[%s]"\n' % str(jd.processes_per_host)
+        mn_params += '#BSUB -R "span[ptile=%s]"\n' % str(jd.processes_per_host)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
