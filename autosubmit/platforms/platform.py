@@ -189,7 +189,7 @@ class Platform:
         """
         local_path = os.path.join(self.tmp_path, filename)
         if os.path.exists(local_path):
-            os.remove(completed_local_path)
+            os.remove(local_path)
 
         if self.type == 'ecaccess':
             try:
