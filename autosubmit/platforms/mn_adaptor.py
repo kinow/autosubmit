@@ -116,7 +116,7 @@ def _mn_to_saga_jobstate(mnjs):
 
 # --------------------------------------------------------------------
 #
-def _mnscript_generator(jd, queue=None, span=None):
+def _mnscript_generator(jd, queue=None):
     """ generates an LSF script from a SAGA job description
     """
     mn_params = str()
@@ -205,8 +205,8 @@ def _mnscript_generator(jd, queue=None, span=None):
 
     mn_params += "#BSUB -n %s \n" % str(jd.total_cpu_count)
 
-    if span:
-        mn_params += '#BSUB -R "span[%s]"\n' % span
+    if jd.processes_per_host:
+        mn_params += '#BSUB -R "span[%s]"\n' % str(jd.processes_per_host)
 
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
@@ -513,7 +513,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         try:
             # create an LSF job script from SAGA job description
-            script = _mnscript_generator(jd=jd, queue=self.queue, span=self.span)
+            script = _mnscript_generator(jd=jd, queue=self.queue)
 
             self._logger.info("Generated LSF script: %s" % script)
         except Exception as ex:
