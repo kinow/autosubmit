@@ -35,6 +35,8 @@ class Platform:
         self.user = ''
         self.project = ''
         self.budget = ''
+        self.reservation = ''
+        self.exclusivity = ''
         self.type = ''
         self.scratch = ''
         self.root_dir = ''
@@ -108,6 +110,8 @@ class Platform:
         parameters['{0}USER'.format(prefix)] = self.user
         parameters['{0}PROJ'.format(prefix)] = self.project
         parameters['{0}BUDG'.format(prefix)] = self.budget
+        parameters['{0}RESERVATION'.format(prefix)] = self.reservation
+        parameters['{0}EXCLUSIVITY'.format(prefix)] = self.exclusivity
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
@@ -183,16 +187,20 @@ class Platform:
         :return: True if file is copied succesfully, false otherwise
         :rtype: bool
         """
+        local_path = os.path.join(self.tmp_path, filename)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-get', '{0}:{1}'.format(self.host,
                                                                              os.path.join(self.get_files_path(),
                                                                                           filename)),
-                                       os.path.join(self.tmp_path, filename)])
+                                       local_path])
                 return True
             except subprocess.CalledProcessError:
                 if must_exist:
-                    raise Exception("Could't get file {0} from {1}:{2}".format(os.path.join(self.tmp_path, filename),
+                    raise Exception("Could't get file {0} from {1}:{2}".format(local_path,
                                                                                self.host, self.get_files_path()))
                 return False
 
@@ -203,7 +211,7 @@ class Platform:
 
         out = self.directory.open(os.path.join(str(self.directory.url), filename))
 
-        out.copy("file://{0}".format(os.path.join(self.tmp_path, filename)))
+        out.copy("file://{0}".format(local_path))
         out.close()
         return True
 
@@ -382,7 +390,7 @@ class Platform:
         elif job.type == Type.R:
             binary = 'Rscript'
 
-        #jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
+        # jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
         jd.executable = os.path.join(self.get_files_path(), scriptname)
         jd.working_directory = self.get_files_path()
         str_datetime = date2str(datetime.datetime.now(), 'S')
@@ -399,7 +407,13 @@ class Platform:
         self.add_attribute(jd, 'WallTimeLimit', wallclock)
 
         self.add_attribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
-        self.add_attribute(jd, 'Project', job.parameters["CURRENT_BUDG"])
+
+        project = job.parameters["CURRENT_BUDG"]
+        if job.parameters["CURRENT_RESERVATION"] != '' or job.parameters["CURRENT_EXCLUSIVITY"] == 'true':
+            project += ':' + job.parameters["CURRENT_RESERVATION"] + ':'
+            if job.parameters["CURRENT_EXCLUSIVITY"] == 'true':
+                project += job.parameters["CURRENT_EXCLUSIVITY"]
+        self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
         self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
@@ -439,12 +453,11 @@ class Platform:
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
-        if jobid not in self.service.jobs:
-            return Status.COMPLETED
-        # noinspection PyBroadException
         saga_status = None
         while saga_status is None and retries > 0:
             try:
+                if jobid not in self.service.jobs:
+                    return Status.COMPLETED
                 saga_status = self.service.get_job(jobid).state
             except Exception as e:
                 # If SAGA can not get the job state, we change it to completed

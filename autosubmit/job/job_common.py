@@ -61,7 +61,6 @@ class StatisticsSnippetBash:
     """
 
     AS_HEADER = textwrap.dedent("""\
-
             #!/usr/bin/env bash
             ###################
             # Autosubmit header
@@ -96,7 +95,6 @@ class StatisticsSnippetPython:
     """
 
     AS_HEADER = textwrap.dedent("""\
-
             #!/usr/bin/env python
             ###################
             # Autosubmit header
@@ -138,7 +136,6 @@ class StatisticsSnippetR:
     """
 
     AS_HEADER = textwrap.dedent("""\
-
             #!/usr/bin/env Rscript
             ###################
             # Autosubmit header

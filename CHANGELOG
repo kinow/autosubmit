@@ -1,3 +1,10 @@
+3.5.0
+    Added another mechanism for SAGA errors prevention
+    Added no-plot option to setstatus
+    Added exclusivity and processes per host support for MN
+    Check method fixed (not working since 3.2)
+    Other minor bugfixes
+
 3.4.1
     Hot-fix ECMWF binary (bash, R, python)
     Hot-fix Mail Notifications

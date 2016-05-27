@@ -117,13 +117,14 @@ class TestJobList(TestCase):
     def test_get_in_queue_returns_only_which_are_queuing_submitted_and_running(self):
         in_queue = self.job_list.get_in_queue()
 
-        self.assertEquals(6, len(in_queue))
+        self.assertEquals(7, len(in_queue))
         self.assertTrue(self.queuing_job in in_queue)
         self.assertTrue(self.running_job in in_queue)
         self.assertTrue(self.running_job2 in in_queue)
         self.assertTrue(self.submitted_job in in_queue)
         self.assertTrue(self.submitted_job2 in in_queue)
         self.assertTrue(self.submitted_job3 in in_queue)
+        self.assertTrue(self.unknown_job in in_queue)
 
     def test_get_not_in_queue_returns_only_which_are_waiting_and_ready(self):
         not_in_queue = self.job_list.get_not_in_queue()
