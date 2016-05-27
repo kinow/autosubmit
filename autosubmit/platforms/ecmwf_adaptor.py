@@ -340,9 +340,8 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
         local_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, jd.name.split('_')[0], BasicConfig.LOCAL_TMP_DIR,
                                   "{0}.cmd".format(str(jd.name)))
         f = open(local_file, 'r+')
-        shebang = f.readline()
         script = f.read()
-        script = shebang + header + script
+        script = header + script
         f.seek(0)
         f.write(script)
         f.truncate()
