@@ -71,7 +71,7 @@ from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
-from platforms.submitter import Submitter
+from platforms.saga_submitter import SagaSubmitter
 
 
 # noinspection PyUnusedLocal
@@ -542,7 +542,7 @@ class Autosubmit:
             safetysleeptime = as_conf.get_safetysleeptime()
             retrials = as_conf.get_retrials()
 
-            submitter = as_conf.get_submitter()
+            submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
 
             Log.debug("The Experiment name is: {0}", expid)
@@ -922,7 +922,7 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
 
-        submitter = as_conf.get_submitter()
+        submitter = self._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if submitter.platforms is None:
             return False
@@ -991,7 +991,7 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        submitter = as_conf.get_submitter()
+        submitter = self._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if len(submitter.platforms) == 0:
             return False
@@ -1795,6 +1795,22 @@ class Autosubmit:
                 data.append(element)
 
         return data
+
+    def _get_submitter(self, as_conf):
+        """
+        Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+        :return: submitter
+        :rtype: Submitter
+        """
+        communications_library = as_conf.get_communications_library()
+        if communications_library == 'saga':
+            return SagaSubmitter()
+        #elif communications_library == 'paramiko':
+        #   pass
+
+        # communications library not known
+        raise Exception('Communications library not known')
 
     @staticmethod
     def _create_json(text):

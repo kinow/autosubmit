@@ -18,12 +18,13 @@
 # along with Autosubmit.  If not, see <http: www.gnu.org / licenses / >.
 
 
-import saga
-import os
 import time
 
-from autosubmit.config.config_common import AutosubmitConfig
+import os
+import saga
+
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.config.config_common import AutosubmitConfig
 from saga_platform import SagaPlatform
 
 
