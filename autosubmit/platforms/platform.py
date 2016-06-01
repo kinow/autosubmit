@@ -23,10 +23,7 @@ class Platform:
         self.config = config
         self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
-        self._queue = None
         self._serial_queue = None
-        self._transfer = "sftp"
-        self._attributes = None
         self.host = ''
         self.user = ''
         self.project = ''
@@ -119,7 +116,7 @@ class Platform:
         :param filename: name of the file to send
         :type filename: str
         """
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError
 
     def get_file(self, filename, must_exist=True):
         """
@@ -132,7 +129,7 @@ class Platform:
         :return: True if file is copied succesfully, false otherwise
         :rtype: bool
         """
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError
 
     def exists_file(self, filename):
         """
@@ -142,7 +139,7 @@ class Platform:
         :type filename: str
         :return: True if it exists, False otherwise
         """
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError
 
     def delete_file(self, filename):
         """
@@ -153,7 +150,7 @@ class Platform:
         :return: True if succesful or file does no exists
         :rtype: bool
         """
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError
 
     def get_completed_files(self, job_name, retries=1):
         """
@@ -259,7 +256,7 @@ class Platform:
         :rtype: saga.job.Job
         """
         # TODO-R: Update docstring
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError
 
     def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):
         """
@@ -273,4 +270,4 @@ class Platform:
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
-        raise Exception('Method Not Implemented')
+        raise NotImplementedError

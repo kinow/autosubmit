@@ -24,51 +24,7 @@ class SagaPlatform(Platform):
         :param name:
         """
         Platform.__init__(self, expid, name, config)
-
-    @property
-    def serial_platform(self):
-        """
-        Platform to use for serial jobs
-        :return: platform's object
-        :rtype: platform
-        """
-        if self._serial_platform is None:
-            return self
-        return self._serial_platform
-
-    @serial_platform.setter
-    def serial_platform(self, value):
-        self._serial_platform = value
-
-    @property
-    def queue(self):
-        """
-        Queue to use for jobs
-        :return: queue's name
-        :rtype: str
-        """
-        if self._default_queue is None:
-            return ''
-        return self._default_queue
-
-    @queue.setter
-    def queue(self, value):
-        self._default_queue = value
-
-    @property
-    def serial_queue(self):
-        """
-        Queue to use for serial jobs
-        :return: queue's name
-        :rtype: str
-        """
-        if self._serial_queue is None:
-            return self.queue
-        return self._serial_queue
-
-    @serial_queue.setter
-    def serial_queue(self, value):
-        self._serial_queue = value
+        self._attributes = None
 
     def send_file(self, filename):
         """
