@@ -26,6 +26,7 @@ import saga
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from saga_platform import SagaPlatform
+from submitter import Submitter
 
 
 class SagaSubmitter(Submitter):

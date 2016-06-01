@@ -542,7 +542,7 @@ class Autosubmit:
             safetysleeptime = as_conf.get_safetysleeptime()
             retrials = as_conf.get_retrials()
 
-            submitter = self._get_submitter(as_conf)
+            submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
 
             Log.debug("The Experiment name is: {0}", expid)
@@ -922,7 +922,7 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
 
-        submitter = self._get_submitter(as_conf)
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if submitter.platforms is None:
             return False
@@ -991,7 +991,7 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        submitter = self._get_submitter(as_conf)
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if len(submitter.platforms) == 0:
             return False
@@ -1796,7 +1796,8 @@ class Autosubmit:
 
         return data
 
-    def _get_submitter(self, as_conf):
+    @staticmethod
+    def _get_submitter(as_conf):
         """
         Returns the submitter corresponding to the communication defined on autosubmit's config file
 
@@ -1810,6 +1811,7 @@ class Autosubmit:
         #   pass
 
         # communications library not known
+        Log.error('You have defined a not valid communications library on the configuration file')
         raise Exception('Communications library not known')
 
     @staticmethod
