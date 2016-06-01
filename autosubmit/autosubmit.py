@@ -677,12 +677,10 @@ class Autosubmit:
                         platform.send_file(scriptname)
                         platform.remove_stat_file(job.name)
                         platform.remove_completed_file(job.name)
-                        saga_job = platform.create_saga_job(job, scriptname)
-                        saga_job.run()
+                        job.id = platform.submit_job(job, scriptname)
                     except Exception:
                         Log.error("{0} submission failed", job.name)
                         continue
-                    job.id = saga_job.id
                     if job.id is None:
                         continue
                     Log.info("{0} submitted", job.name)
