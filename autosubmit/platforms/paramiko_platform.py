@@ -1,13 +1,10 @@
-import datetime
-import subprocess
 from time import sleep
 
 import os
 import paramiko
 
 from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str
-from autosubmit.job.job_common import Status, Type
+from autosubmit.job.job_common import Status
 from autosubmit.platforms.platform import Platform
 
 
@@ -24,7 +21,6 @@ class ParamikoPlatform(Platform):
         :param name:
         """
         Platform.__init__(self, expid, name, config)
-        self.expid = None
         self._default_queue = None
         self.job_status = None
         self._ssh = None
@@ -280,3 +276,12 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+
+
+class ParamikoPlatformException(Exception):
+    """
+    Exception raised from HPC queues
+    """
+
+    def __init__(self, msg):
+        self.message = msg
