@@ -10,15 +10,15 @@ from cgi import parse_qs
 
 # noinspection PyPackageRequirements
 import radical.utils.threads as sut
-import saga.url as surl
-import saga.utils.pty_shell
-import saga.adaptors.base
-import saga.adaptors.cpi.job
-import saga
-import saga.adaptors.cpi.decorators
+import autosubmit.platforms.saga.url as surl
+import autosubmit.platforms.saga.utils.pty_shell
+import autosubmit.platforms.saga.adaptors.base
+import autosubmit.platforms.saga.adaptors.cpi.job
+import autosubmit.platforms.saga
+import autosubmit.platforms.saga.adaptors.cpi.decorators
 
-SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
-ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
+SYNC_CALL = autosubmit.platforms.saga.adaptors.cpi.decorators.SYNC_CALL
+ASYNC_CALL = autosubmit.platforms.saga.adaptors.cpi.decorators.ASYNC_CALL
 
 SYNC_WAIT_UPDATE_INTERVAL = 1  # seconds
 MONITOR_UPDATE_INTERVAL = 3  # seconds
@@ -63,7 +63,7 @@ class _job_state_monitor(threading.Thread):
                         # terminal state, so we can skip the ones that are
                         # either done, failed or canceled
                         state = jobs[job]['state']
-                        if state not in [saga.job.DONE, saga.job.FAILED, saga.job.CANCELED]:
+                        if state not in [autosubmit.platforms.saga.job.DONE, autosubmit.platforms.saga.job.FAILED, autosubmit.platforms.saga.job.CANCELED]:
 
                             job_info = self.js._job_get_info(job)
                             self.logger.info(
@@ -101,17 +101,17 @@ def _mn_to_saga_jobstate(mnjs):
     """ translates a mn one-letter state to saga
     """
     if mnjs in ['RUN']:
-        return saga.job.RUNNING
+        return autosubmit.platforms.saga.job.RUNNING
     elif mnjs in ['WAIT', 'PEND']:
-        return saga.job.PENDING
+        return autosubmit.platforms.saga.job.PENDING
     elif mnjs in ['DONE']:
-        return saga.job.DONE
+        return autosubmit.platforms.saga.job.DONE
     elif mnjs in ['ZOMBI', 'EXIT']:
-        return saga.job.FAILED
+        return autosubmit.platforms.saga.job.FAILED
     elif mnjs in ['USUSP', 'SSUSP', 'PSUSP']:
-        return saga.job.SUSPENDED
+        return autosubmit.platforms.saga.job.SUSPENDED
     else:
-        return saga.job.UNKNOWN
+        return autosubmit.platforms.saga.job.UNKNOWN
 
 
 # --------------------------------------------------------------------
@@ -235,27 +235,27 @@ _ADAPTOR_OPTIONS = []
 # the adaptor capabilities & supported attributes
 #
 _ADAPTOR_CAPABILITIES = {
-    "jdes_attributes": [saga.job.NAME,
-                        saga.job.EXECUTABLE,
-                        saga.job.ARGUMENTS,
-                        saga.job.ENVIRONMENT,
-                        saga.job.INPUT,
-                        saga.job.OUTPUT,
-                        saga.job.ERROR,
-                        saga.job.QUEUE,
-                        saga.job.PROJECT,
-                        saga.job.WALL_TIME_LIMIT,
-                        saga.job.WORKING_DIRECTORY,
-                        saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
-                        saga.job.PROCESSES_PER_HOST,
-                        saga.job.TOTAL_CPU_COUNT],
-    "job_attributes": [saga.job.EXIT_CODE,
-                       saga.job.EXECUTION_HOSTS,
-                       saga.job.CREATED,
-                       saga.job.STARTED,
-                       saga.job.FINISHED],
-    "metrics": [saga.job.STATE],
-    "callbacks": [saga.job.STATE],
+    "jdes_attributes": [autosubmit.platforms.saga.job.NAME,
+                        autosubmit.platforms.saga.job.EXECUTABLE,
+                        autosubmit.platforms.saga.job.ARGUMENTS,
+                        autosubmit.platforms.saga.job.ENVIRONMENT,
+                        autosubmit.platforms.saga.job.INPUT,
+                        autosubmit.platforms.saga.job.OUTPUT,
+                        autosubmit.platforms.saga.job.ERROR,
+                        autosubmit.platforms.saga.job.QUEUE,
+                        autosubmit.platforms.saga.job.PROJECT,
+                        autosubmit.platforms.saga.job.WALL_TIME_LIMIT,
+                        autosubmit.platforms.saga.job.WORKING_DIRECTORY,
+                        autosubmit.platforms.saga.job.SPMD_VARIATION,  # TODO: 'hot'-fix for BigJob
+                        autosubmit.platforms.saga.job.PROCESSES_PER_HOST,
+                        autosubmit.platforms.saga.job.TOTAL_CPU_COUNT],
+    "job_attributes": [autosubmit.platforms.saga.job.EXIT_CODE,
+                       autosubmit.platforms.saga.job.EXECUTION_HOSTS,
+                       autosubmit.platforms.saga.job.CREATED,
+                       autosubmit.platforms.saga.job.STARTED,
+                       autosubmit.platforms.saga.job.FINISHED],
+    "metrics": [autosubmit.platforms.saga.job.STATE],
+    "callbacks": [autosubmit.platforms.saga.job.STATE],
     "contexts": {"ssh": "SSH public/private keypair",
                  "x509": "GSISSH X509 proxy context",
                  "userpass": "username/password pair (ssh)"}
@@ -300,7 +300,7 @@ _ADAPTOR_INFO = {
 ###############################################################################
 # The adaptor class
 # noinspection PyMissingOrEmptyDocstring
-class Adaptor(saga.adaptors.base.Base):
+class Adaptor(autosubmit.platforms.saga.adaptors.base.Base):
     """ this is the actual adaptor class, which gets loaded by SAGA (i.e. by
         the SAGA engine), and which registers the CPI implementation classes
         which provide the adaptor's functionality.
@@ -310,7 +310,7 @@ class Adaptor(saga.adaptors.base.Base):
     #
     def __init__(self):
         # noinspection PyCallByClass,PyTypeChecker
-        saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
+        autosubmit.platforms.saga.adaptors.base.Base.__init__(self, _ADAPTOR_INFO, _ADAPTOR_OPTIONS)
 
         self.id_re = re.compile('^\[(.*)\]-\[(.*?)\]$')
         self.opts = self.get_config(_ADAPTOR_NAME)
@@ -329,7 +329,7 @@ class Adaptor(saga.adaptors.base.Base):
         match = self.id_re.match(job_id)
 
         if not match or len(match.groups()) != 2:
-            raise saga.BadParameter("Cannot parse job id '%s'" % job_id)
+            raise autosubmit.platforms.saga.BadParameter("Cannot parse job id '%s'" % job_id)
 
         return match.group(1), match.group(2)
 
@@ -337,7 +337,7 @@ class Adaptor(saga.adaptors.base.Base):
 ###############################################################################
 #
 # noinspection PyMethodOverriding,PyMethodOverriding,PyProtectedMember, PyMissingOrEmptyDocstring
-class MNJobService(saga.adaptors.cpi.job.Service):
+class MNJobService(autosubmit.platforms.saga.adaptors.cpi.job.Service):
     """ implements saga.adaptors.cpi.job.Service
     """
 
@@ -432,7 +432,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                           'bsub': '9.1.2.0',
                           'bkill': '9.1.2.0'}
 
-        self.shell = saga.utils.pty_shell.PTYShell(pty_url, self.session)
+        self.shell = autosubmit.platforms.saga.utils.pty_shell.PTYShell(pty_url, self.session)
 
         # self.shell.set_initialize_hook(self.initialize)
         # self.shell.set_finalize_hook(self.finalize)
@@ -518,7 +518,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
             self._logger.info("Generated LSF script: %s" % script)
         except Exception as ex:
             script = ''
-            log_error_and_raise(str(ex), saga.BadParameter, self._logger)
+            log_error_and_raise(str(ex), autosubmit.platforms.saga.BadParameter, self._logger)
 
         # try to create the working directory (if defined)
         # WARNING: this assumes a shared filesystem between login node and
@@ -529,7 +529,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
             if ret != 0:
                 # something went wrong
                 message = "Couldn't create working directory - %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+                log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
 
         # Now we want to execute the script. This process consists of two steps:
         # (1) we create a temporary file with 'mktemp' and write the contents of
@@ -543,7 +543,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
             # something went wrong
             message = "Error running job via 'bsub': %s. Commandline was: %s" \
                       % (out, cmdline)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
         else:
             # parse the job id. bsub's output looks like this:
             # Job <901545> is submitted to queue <regular>
@@ -589,12 +589,12 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             message = "Couldn't reconnect to job '%s': %s" % (job_id, out)
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
 
         else:
             # the job seems to exist on the backend. let's gather some data
             job_info = {
-                'state': saga.job.UNKNOWN,
+                'state': autosubmit.platforms.saga.job.UNKNOWN,
                 'exec_hosts': None,
                 'returncode': None,
                 'create_time': None,
@@ -619,7 +619,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         # if we don't have the job in our dictionary, we don't want it
         if job_obj not in self.jobs:
             message = "Unknown job object: %s. Can't update state." % job_obj._id
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
 
         # prev. info contains the info collect when _job_get_info
         # was called the last time
@@ -667,14 +667,14 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                                      "store informations about finished jobs." +
                                      "Setting state to 'DONE'.")
 
-                if prev_info['state'] in [saga.job.RUNNING, saga.job.PENDING]:
-                    curr_info['state'] = saga.job.DONE
+                if prev_info['state'] in [autosubmit.platforms.saga.job.RUNNING, autosubmit.platforms.saga.job.PENDING]:
+                    curr_info['state'] = autosubmit.platforms.saga.job.DONE
                 else:
-                    curr_info['state'] = saga.job.FAILED
+                    curr_info['state'] = autosubmit.platforms.saga.job.FAILED
             else:
                 # something went wrong
                 message = "Error retrieving job info via 'bjobs': %s" % out
-                log_error_and_raise(message, saga.NoSuccess, self._logger)
+                log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
         else:
             # parse the result
             results = out.split()
@@ -743,10 +743,10 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         if ret != 0:
             message = "Error canceling job via 'qdel': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
 
         # assume the job was succesfully canceled
-        self.jobs[job_obj]['state'] = saga.job.CANCELED
+        self.jobs[job_obj]['state'] = autosubmit.platforms.saga.job.CANCELED
 
     # ----------------------------------------------------------------
     #
@@ -761,9 +761,9 @@ class MNJobService(saga.adaptors.cpi.job.Service):
             # state = self._job_get_state(job_id=job_id, job_obj=job_obj)
             state = self.jobs[job_obj]['state']  # this gets updated in the bg.
 
-            if state == saga.job.DONE or \
-               state == saga.job.FAILED or \
-               state == saga.job.CANCELED:
+            if state == autosubmit.platforms.saga.job.DONE or \
+               state == autosubmit.platforms.saga.job.FAILED or \
+               state == autosubmit.platforms.saga.job.CANCELED:
                 return True
 
             # avoid busy poll
@@ -793,12 +793,12 @@ class MNJobService(saga.adaptors.cpi.job.Service):
                          }
 
         # create a new job object
-        job_obj = saga.job.Job(_adaptor=self._adaptor,
-                               _adaptor_state=adaptor_state)
+        job_obj = autosubmit.platforms.saga.job.Job(_adaptor=self._adaptor,
+                                                    _adaptor_state=adaptor_state)
 
         # add job to internal list of known jobs.
         self.jobs[job_obj._adaptor] = {
-            'state': saga.job.NEW,
+            'state': autosubmit.platforms.saga.job.NEW,
             'job_id': None,
             'exec_hosts': None,
             'returncode': None,
@@ -829,14 +829,14 @@ class MNJobService(saga.adaptors.cpi.job.Service):
         # state information you need there.
         adaptor_state = {"job_service": self,
                          # TODO: fill job description
-                         "job_description": saga.job.Description(),
+                         "job_description": autosubmit.platforms.saga.job.Description(),
                          "job_schema": self.rm.schema,
                          "reconnect": True,
                          "reconnect_jobid": jobid
                          }
 
-        job = saga.job.Job(_adaptor=self._adaptor,
-                           _adaptor_state=adaptor_state)
+        job = autosubmit.platforms.saga.job.Job(_adaptor=self._adaptor,
+                                                _adaptor_state=adaptor_state)
 
         # throw it into our job dictionary.
         self.jobs[job._adaptor] = job_info
@@ -862,7 +862,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 
         if ret != 0 and len(out) > 0:
             message = "failed to list jobs via 'bjobs': %s" % out
-            log_error_and_raise(message, saga.NoSuccess, self._logger)
+            log_error_and_raise(message, autosubmit.platforms.saga.NoSuccess, self._logger)
         elif ret != 0 and len(out) == 0:
 
             pass
@@ -905,7 +905,7 @@ class MNJobService(saga.adaptors.cpi.job.Service):
 ###############################################################################
 #
 # noinspection PyMethodOverriding,PyProtectedMember,PyMissingOrEmptyDocstring
-class MNJob(saga.adaptors.cpi.job.Job):
+class MNJob(autosubmit.platforms.saga.adaptors.cpi.job.Job):
     """ implements saga.adaptors.cpi.job.Job
     """
 
@@ -934,11 +934,11 @@ class MNJob(saga.adaptors.cpi.job.Job):
 
         if job_info['reconnect'] is True:
             self._id = job_info['reconnect_jobid']
-            self._name = self.jd.get(saga.job.NAME)
+            self._name = self.jd.get(autosubmit.platforms.saga.job.NAME)
             self._started = True
         else:
             self._id = None
-            self._name = self.jd.get(saga.job.NAME)
+            self._name = self.jd.get(autosubmit.platforms.saga.job.NAME)
             self._started = False
 
         return self.get_api()
@@ -963,7 +963,7 @@ class MNJob(saga.adaptors.cpi.job.Job):
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                                saga.IncorrectState, self._logger)
+                                autosubmit.platforms.saga.IncorrectState, self._logger)
         else:
             self.js._job_wait(job_obj=self, timeout=timeout)
 
@@ -979,7 +979,7 @@ class MNJob(saga.adaptors.cpi.job.Job):
         """
         if self._started is False:
             log_error_and_raise("Can't wait for job that hasn't been started",
-                                saga.IncorrectState, self._logger)
+                                autosubmit.platforms.saga.IncorrectState, self._logger)
         else:
             self.js._job_cancel(self)
 
