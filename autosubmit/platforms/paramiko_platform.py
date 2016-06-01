@@ -26,8 +26,10 @@ class ParamikoPlatform(Platform):
         Platform.__init__(self, expid, name, config)
         self.expid = None
         self._default_queue = None
+        self.job_status = None
         self._ssh = None
         self._ssh_config = None
+        self._ssh_output = None
         self._user_config_file = None
         self._host_config = None
         self._host_config_id = None
@@ -109,35 +111,6 @@ class ParamikoPlatform(Platform):
                 Log.error('Can not get file from {0} to {1}: {2}', remote_path, local_path, e.message)
             return False
 
-    def exists_file(self, filename):
-        """
-        Checks if a file exists on this platform
-
-        :param filename: file name
-        :type filename: str
-        :return: True if it exists, False otherwise
-        """
-        # noinspection PyBroadException
-        if not self.directory:
-            try:
-                if self.type == 'local':
-                    # noinspection PyTypeChecker
-                    self.directory = saga.filesystem.Directory("file://{0}".format(os.path.join(self.tmp_path,
-                                                                                                'LOG_' + self.expid)))
-                else:
-                    # noinspection PyTypeChecker
-                    self.directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
-            except:
-                return False
-
-        # noinspection PyBroadException
-        try:
-            self.directory.list(filename)
-        except:
-            return False
-
-        return True
-
     def delete_file(self, filename):
         """
         Deletes a file from this platform
@@ -147,31 +120,19 @@ class ParamikoPlatform(Platform):
         :return: True if succesful or file does no exists
         :rtype: bool
         """
-        if self.type == 'ecaccess':
-            try:
-                subprocess.check_call(['ecaccess-file-delete',
-                                       '{0}:{1}'.format(self.host, os.path.join(self.get_files_path(), filename))])
-                return True
-            except subprocess.CalledProcessError:
-                return True
-
-        if not self.exists_file(filename):
-            return True
+        if self._ssh is None:
+            if not self.connect():
+                return None
 
         try:
-            if self.type == 'local':
-                # noinspection PyTypeChecker
-                out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid,
-                                                                            filename)))
-            else:
-                # noinspection PyTypeChecker
-                out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
-                                                                                          filename)))
-            out.remove()
-            out.close()
+            ftp = self._ssh.open_sftp()
+            ftp.remove(filename)
+            ftp.close()
             return True
-        except saga.DoesNotExist:
-            return True
+        except BaseException as e:
+            if not omit_error:
+                Log.error('Can not remove file from {0} to {1}: {2}', remote_path, local_path, e.message)
+            return False
 
     def submit_job(self, job, scriptname):
         """
@@ -184,10 +145,13 @@ class ParamikoPlatform(Platform):
         :return: saga job object for the given job
         :rtype: saga.job.Job
         """
-
-        saga_job = self.create_saga_job(job, scriptname)
-        saga_job.run()
-        return saga_job.id
+        # TODO-R: Update docstring
+        if self.send_command(self.get_submit_cmd(job_script)):
+            job_id = self.get_submitted_job_id(self.get_ssh_output())
+            Log.debug("Job ID: {0}", job_id)
+            return int(job_id)
+        else:
+            return None
 
     def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):
         """
@@ -234,3 +198,85 @@ class ParamikoPlatform(Platform):
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         return job_status
+
+    def get_checkjob_cmd(self, job_id):
+        """
+        Returns command to check job status on remote platforms
+
+        :param job_id: id of job to check
+        :param job_id: int
+        :return: command to check job status
+        :rtype: str
+        """
+        raise NotImplementedError
+
+    def send_command(self, command):
+        """
+        Sends given command to HPC
+
+        :param command: command to send
+        :type command: str
+        :return: True if executed, False if failed
+        :rtype: bool
+        """
+        if self._ssh is None:
+            if not self.connect():
+                return None
+        try:
+            stdin, stdout, stderr = self._ssh.exec_command(command)
+            stderr_readlines = stderr.readlines()
+            self._ssh_output = stdout.read().rstrip()
+            if stdout.channel.recv_exit_status() == 0:
+                if len(stderr_readlines) > 0:
+                    Log.warning('Command {0} in {1} warning: {2}', command, self._host, '\n'.join(stderr_readlines))
+                Log.debug('Command {0} in {1} successful with out message: {2}', command, self._host, self._ssh_output)
+                return True
+            else:
+                Log.error('Command {0} in {1} failed with error message: {2}',
+                          command, self._host, '\n'.join(stderr_readlines))
+                return False
+        except BaseException as e:
+            Log.error('Can not send command {0} to {1}: {2}', command, self._host, e.message)
+            return False
+
+    def parse_job_output(self, output):
+        """
+        Parses check job command output so it can be interpreted by autosubmit
+
+        :param output: output to parse
+        :type output: str
+        :return: job status
+        :rtype: str
+        """
+        raise NotImplementedError
+
+    def get_submit_cmd(self, job_script):
+        """
+        Get command to add job to scheduler
+
+        :param job_script: path to job script
+        :param job_script: str
+        :return: command to submit job to platforms
+        :rtype: str
+        """
+        raise NotImplementedError
+
+    def get_ssh_output(self):
+        """
+        Gets output from last command executed
+
+        :return: output from last command
+        :rtype: str
+        """
+        Log.debug('Output {0}', self._ssh_output)
+        return self._ssh_output
+
+    def get_submitted_job_id(self, output):
+        """
+        Parses submit command output to extract job id
+        :param output: output to parse
+        :type output: str
+        :return: job id
+        :rtype: str
+        """
+        raise NotImplementedError

@@ -131,16 +131,6 @@ class Platform:
         """
         raise NotImplementedError
 
-    def exists_file(self, filename):
-        """
-        Checks if a file exists on this platform
-
-        :param filename: file name
-        :type filename: str
-        :return: True if it exists, False otherwise
-        """
-        raise NotImplementedError
-
     def delete_file(self, filename):
         """
         Deletes a file from this platform
