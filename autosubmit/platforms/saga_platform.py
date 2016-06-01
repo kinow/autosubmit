@@ -23,7 +23,7 @@ class SagaPlatform(Platform):
         :param expid:
         :param name:
         """
-        super(SagaPlatform, self).__init__(expid, name, config)
+        Platform.__init__(self, expid, name, config)
 
     @property
     def serial_platform(self):
