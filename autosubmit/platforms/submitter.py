@@ -24,7 +24,7 @@ import time
 
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.basicConfig import BasicConfig
-from platform import Platform
+from saga_platform import SagaPlatform
 
 
 class Submitter:
@@ -69,7 +69,7 @@ class Submitter:
         session = None
 
         platforms = dict()
-        local_platform = Platform(asconf.expid, 'local', BasicConfig)
+        local_platform = SagaPlatform(asconf.expid, 'local', BasicConfig)
         local_platform.service = None
         retry = retries
         while local_platform.service is None and retry > 0:
@@ -101,7 +101,7 @@ class Submitter:
 
             platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
 
-            remote_platform = Platform(asconf.expid, section.lower(), BasicConfig)
+            remote_platform = SagaPlatform(asconf.expid, section.lower(), BasicConfig)
             remote_platform.type = platform_type
 
             # platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')

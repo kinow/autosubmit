@@ -8,6 +8,7 @@ import saga
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str
 from autosubmit.job.job_common import Status, Type
+from autosubmit.platforms.platform import Platform
 
 
 class SagaPlatform(Platform):
@@ -22,7 +23,7 @@ class SagaPlatform(Platform):
         :param expid:
         :param name:
         """
-        super(SagaPlatform, self).__init__(self, expid, name, config)
+        super(SagaPlatform, self).__init__(expid, name, config)
 
     @property
     def serial_platform(self):
