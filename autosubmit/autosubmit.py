@@ -542,7 +542,7 @@ class Autosubmit:
             safetysleeptime = as_conf.get_safetysleeptime()
             retrials = as_conf.get_retrials()
 
-            submitter = Submitter()
+            submitter = as_conf.get_submitter()
             submitter.load_platforms(as_conf)
 
             Log.debug("The Experiment name is: {0}", expid)
@@ -921,7 +921,8 @@ class Autosubmit:
             return False
 
         hpcarch = as_conf.get_platform()
-        submitter = Submitter()
+
+        submitter = as_conf.get_submitter()
         submitter.load_platforms(as_conf)
         if submitter.platforms is None:
             return False
@@ -990,7 +991,7 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        submitter = Submitter()
+        submitter = as_conf.get_submitter()
         submitter.load_platforms(as_conf)
         if len(submitter.platforms) == 0:
             return False

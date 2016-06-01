@@ -31,6 +31,7 @@ from pyparsing import nestedExpr
 from autosubmit.date.chunk_date_lib import parse_date
 from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.platforms.saga_submitter import SagaSubmitter
 
 
 class AutosubmitConfig:
@@ -768,6 +769,31 @@ class AutosubmitConfig:
         :rtype: [str]
         """
         return [str(x) for x in self.get_option(self._conf_parser, 'mail', 'TO', '').split(' ')]
+
+    def get_communications_library(self):
+        """
+        Returns the communications library from autosubmit's config file. Paramiko by default.
+
+        :return: communications library
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
+
+    def get_submitter(self):
+        """
+        Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+        :return: submitter
+        :rtype: Submitter
+        """
+        communications_library = self.get_communications_library()
+        if communications_library == 'saga':
+            return SagaSubmitter()
+        #elif communications_library == 'paramiko':
+        #   pass
+
+        # communications library not known
+        raise Exception('Communications library not known')
 
     @staticmethod
     def is_valid_mail_address(mail_address):
