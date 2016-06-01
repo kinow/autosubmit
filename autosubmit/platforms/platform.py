@@ -1,13 +1,9 @@
-import subprocess
 from time import sleep
 
-import saga
 import os
-import datetime
 
-from autosubmit.job.job_common import Status, Type
 from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str
+from autosubmit.job.job_common import Status
 
 
 class Platform:

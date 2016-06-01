@@ -1,18 +1,18 @@
+import datetime
 import subprocess
 from time import sleep
 
-import saga
 import os
-import datetime
+import saga
 
-from autosubmit.job.job_common import Status, Type
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str
+from autosubmit.job.job_common import Status, Type
 
 
 class SagaPlatform(Platform):
     """
-    Class to manage the connections to the different platforms.
+    Class to manage the connections to the different platforms with the SAGA library.
     """
 
     def __init__(self, expid, name, config):
@@ -22,27 +22,7 @@ class SagaPlatform(Platform):
         :param expid:
         :param name:
         """
-        self.expid = expid
-        self.name = name
-        self.config = config
-        self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
-        self._serial_platform = None
-        self._queue = None
-        self._serial_queue = None
-        self._transfer = "sftp"
-        self._attributes = None
-        self.host = ''
-        self.user = ''
-        self.project = ''
-        self.budget = ''
-        self.reservation = ''
-        self.exclusivity = ''
-        self.type = ''
-        self.scratch = ''
-        self.root_dir = ''
-        self.service = None
-        self.scheduler = None
-        self.directory = None
+        super(SagaPlatform, self).__init__(self, expid, name, config)
 
     @property
     def serial_platform(self):
@@ -88,34 +68,6 @@ class SagaPlatform(Platform):
     @serial_queue.setter
     def serial_queue(self, value):
         self._serial_queue = value
-
-    def add_parameters(self, parameters, main_hpc=False):
-        """
-        Add parameters for the current platform to the given parameters list
-
-        :param parameters: parameters list to update
-        :type parameters: dict
-        :param main_hpc: if it's True, uses HPC instead of NAME_ as prefix for the parameters
-        :type main_hpc: bool
-        """
-        if main_hpc:
-            prefix = 'HPC'
-            parameters['SCRATCH_DIR'.format(prefix)] = self.scratch
-        else:
-            prefix = self.name + '_'
-
-        parameters['{0}ARCH'.format(prefix)] = self.name
-        parameters['{0}HOST'.format(prefix)] = self.host
-        parameters['{0}QUEUE'.format(prefix)] = self.queue
-        parameters['{0}USER'.format(prefix)] = self.user
-        parameters['{0}PROJ'.format(prefix)] = self.project
-        parameters['{0}BUDG'.format(prefix)] = self.budget
-        parameters['{0}RESERVATION'.format(prefix)] = self.reservation
-        parameters['{0}EXCLUSIVITY'.format(prefix)] = self.exclusivity
-        parameters['{0}TYPE'.format(prefix)] = self.type
-        parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
-        parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
-        parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 
     def send_file(self, filename):
         """
@@ -279,97 +231,21 @@ class SagaPlatform(Platform):
         except saga.DoesNotExist:
             return True
 
-    def get_completed_files(self, job_name, retries=1):
+    def submit_job(self, job, scriptname):
         """
-        Get the COMPLETED file of the given job
+        Creates a saga job from a given job object.
 
-
-        :param job_name: name of the job
-        :type job_name: str
-        :param retries: Max number of tries to get the file
-        :type retries: int
-        :return: True if successful, false otherwise
-        :rtype: bool
+        :param job: job object
+        :type job: autosubmit.job.job.Job
+        :param scriptname: job script's name
+        :rtype scriptname: str
+        :return: saga job object for the given job
+        :rtype: saga.job.Job
         """
-        while True:
-            if self.get_file('{0}_COMPLETED'.format(job_name), False):
-                return True
-            if retries == 0:
-                return False
-            retries -= 1
-            sleep(5)
 
-    def remove_stat_file(self, jobname):
-        """
-        Removes *STAT* files from remote
-
-        :param jobname: name of job to check
-        :type jobname: str
-        :return: True if succesful, False otherwise
-        :rtype: bool
-        """
-        filename = jobname + '_STAT'
-        if self.delete_file(filename):
-            Log.debug('{0}_STAT have been removed', jobname)
-            return True
-        return False
-
-    def remove_completed_file(self, jobname):
-        """
-        Removes *COMPLETED* files from remote
-
-        :param jobname: name of job to check
-        :type jobname: str
-        :return: True if succesful, False otherwise
-        :rtype: bool
-        """
-        filename = jobname + '_COMPLETED'
-        if self.delete_file(filename):
-            Log.debug('{0} been removed', filename)
-            return True
-        return False
-
-    def get_stat_file(self, jobname, retries=1):
-        """
-        Copies *STAT* files from remote to local
-
-        :param retries: number of intents to get the completed files
-        :type retries: int
-        :param jobname: name of job to check
-        :type jobname: str
-        :return: True if succesful, False otherwise
-        :rtype: bool
-        """
-        filename = jobname + '_STAT'
-        stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
-        if os.path.exists(stat_local_path):
-            os.remove(stat_local_path)
-
-        while True:
-            if self.get_file(filename, False):
-                Log.debug('{0}_STAT file have been transfered', jobname)
-                return True
-            if retries == 0:
-                break
-            retries -= 1
-            # wait five seconds to check get file
-            sleep(5)
-
-        Log.debug('Something did not work well when transferring the STAT file')
-        return False
-
-    def get_files_path(self):
-        """
-        Get the path to the platform's LOG directory
-
-        :return: platform's LOG directory
-        :rtype: str
-        """
-        if self.type == "local":
-            path = os.path.join(self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
-        else:
-            path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
-        return path
+        saga_job = self.create_saga_job(job, scriptname)
+        saga_job.run()
+        return saga_job.id
 
     def create_saga_job(self, job, scriptname):
         """
