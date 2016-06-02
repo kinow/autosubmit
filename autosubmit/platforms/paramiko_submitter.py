@@ -81,17 +81,17 @@ class ParamikoSubmitter(Submitter):
             platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
             try:
                 if platform_type == 'pbs':
-                    remote_platform = PBSPlatform(self.expid, BasicConfig, platform_version)
+                    remote_platform = PBSPlatform(asconf.expid, BasicConfig, platform_version)
                 elif platform_type == 'sge':
-                    remote_platform = SgePlatform(self.expid, BasicConfig)
+                    remote_platform = SgePlatform(asconf.expid, BasicConfig)
                 elif platform_type == 'ps':
-                    remote_platform = PsPlatform(self.expid, BasicConfig)
+                    remote_platform = PsPlatform(asconf.expid, BasicConfig)
                 elif platform_type == 'lsf':
-                    remote_platform = LsfPlatform(self.expid, BasicConfig)
+                    remote_platform = LsfPlatform(asconf.expid, BasicConfig)
                 elif platform_type == 'ecaccess':
-                    remote_platform = EcPlatform(self.expid, BasicConfig, platform_version)
+                    remote_platform = EcPlatform(asconf.expid, BasicConfig, platform_version)
                 elif platform_type == 'slurm':
-                    remote_platform = SlurmPlatform(self.expid, BasicConfig)
+                    remote_platform = SlurmPlatform(asconf.expid, BasicConfig)
                 else:
                     raise Exception("Queue type not specified on platform {0}".format(section))
 

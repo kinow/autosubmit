@@ -121,7 +121,7 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     def delete_file(self, filename):
-        command = '{0} {1}'.format(self.put_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
+        command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
