@@ -32,8 +32,8 @@ class SgePlatform(ParamikoPlatform):
     :param expid: experiment's identifier
     :type expid: str
     """
-    def __init__(self, expid):
-        ParamikoPlatform.__init__(self, expid, 'sge', None)
+    def __init__(self, expid, config):
+        ParamikoPlatform.__init__(self, expid, 'sge', config)
         self._header = SgeHeader()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['c']
