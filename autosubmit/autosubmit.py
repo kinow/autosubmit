@@ -72,6 +72,7 @@ from date.chunk_date_lib import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
 from platforms.saga_submitter import SagaSubmitter
+from platforms.paramiko_submitter import ParamikoSubmitter
 
 
 # noinspection PyUnusedLocal
@@ -1807,8 +1808,8 @@ class Autosubmit:
         communications_library = as_conf.get_communications_library()
         if communications_library == 'saga':
             return SagaSubmitter()
-        #elif communications_library == 'paramiko':
-        #   pass
+        elif communications_library == 'paramiko':
+            return ParamikoSubmitter()
 
         # communications library not known
         Log.error('You have defined a not valid communications library on the configuration file')
