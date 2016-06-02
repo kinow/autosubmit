@@ -58,6 +58,7 @@ class EcPlatform(ParamikoPlatform):
                             self.remote_log_dir + "/")
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
+        self.del_cmd = "ecaccess-file-delete"
         self.mkdir_cmd = ("ecaccess-file-mkdir " + self.host + ":" + self.scratch + "/" + self.project + "/" +
                           self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self.host + ":" +
                           self.remote_log_dir)
@@ -139,6 +140,15 @@ class EcPlatform(ParamikoPlatform):
             if not omit_error:
                 Log.error(
                     'Could not get file {0} from {1}'.format(local_path, os.path.join(self.get_files_path(), filename)))
+            return False
+        return True
+
+    def delete_file(self, filename):
+        command = '{0} {1}:{2}'.format(self.del_cmd, self.host, os.path.join(self.get_files_path(), filename))
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
+            Log.error('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
         return True
 

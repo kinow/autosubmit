@@ -49,6 +49,7 @@ class LocalPlatform(ParamikoPlatform):
         self._checkhost_cmd = "echo 1"
         self.put_cmd = "cp -p"
         self.get_cmd = "cp"
+        self.del_cmd = "rm"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):
@@ -112,6 +113,15 @@ class LocalPlatform(ParamikoPlatform):
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
             Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+            return False
+        return True
+
+    def delete_file(self, filename):
+        command = '{0} {1}'.format(self.put_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
+        try:
+            subprocess.check_call(command, shell=True)
+        except subprocess.CalledProcessError:
+            Log.error('Could not remove file {0}'.format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
             return False
         return True
 
