@@ -44,6 +44,12 @@ class LocalPlatform(ParamikoPlatform):
         self.job_status['RUNNING'] = ['0']
         self.job_status['QUEUING'] = []
         self.job_status['FAILED'] = []
+        self.update_cmds()
+
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "tmp", 'LOG_' + self.expid)
         self.cancel_cmd = "kill -SIGINT"
@@ -104,7 +110,7 @@ class LocalPlatform(ParamikoPlatform):
             return False
         return True
 
-    def get_file(self, filename, **kwargs):
+    def get_file(self, filename, must_exist=True):
         local_path = os.path.join(self.tmp_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
@@ -114,9 +120,8 @@ class LocalPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not get file {0} from {1}'.format(local_path,
-                                                               os.path.join(self.tmp_path, 'LOG_' + self.expid,
-                                                                            filename)))
+            if must_exist:
+                raise Exception('File {0} does not exists'.format(filename))
             return False
         return True
 
@@ -125,7 +130,7 @@ class LocalPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not remove file {0}'.format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
+            Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
             return False
         return True
 

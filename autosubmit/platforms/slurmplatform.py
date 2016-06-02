@@ -55,11 +55,17 @@ class SlurmPlatform(ParamikoPlatform):
         self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
         self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self.update_cmds()
+
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
-        self._submit_cmd = 'sbatch -D {1} {1}/'.format(self._host, self.remote_log_dir)
+        self._submit_cmd = 'sbatch -D {1} {1}/'.format(self.host, self.remote_log_dir)
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
@@ -88,7 +94,7 @@ class SlurmPlatform(ParamikoPlatform):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
-        return 'sacct -n -j {1} -o "State"'.format(self._host, job_id)
+        return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
 
 
 class SlurmHeader:

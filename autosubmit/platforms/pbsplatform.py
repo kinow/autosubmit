@@ -52,6 +52,12 @@ class PBSPlatform(ParamikoPlatform):
         self.job_status['RUNNING'] = ['R']
         self.job_status['QUEUING'] = ['Q', 'H', 'S', 'T', 'W', 'U', 'M']
         self.job_status['FAILED'] = ['Failed', 'Node_fail', 'Timeout']
+        self.update_cmds()
+
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "ssh " + self.host + " qdel"

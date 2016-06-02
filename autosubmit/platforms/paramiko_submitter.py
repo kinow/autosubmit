@@ -123,6 +123,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
+            remote_platform.update_cmds()
             platforms[section.lower()] = remote_platform
 
         for section in parser.sections():

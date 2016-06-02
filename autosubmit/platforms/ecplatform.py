@@ -48,7 +48,12 @@ class EcPlatform(ParamikoPlatform):
         self.job_status['QUEUING'] = ['INIT', 'RETR', 'STDBY', 'WAIT']
         self.job_status['FAILED'] = ['STOP']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self.update_cmds()
 
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "eceaccess-job-delete"
@@ -127,7 +132,7 @@ class EcPlatform(ParamikoPlatform):
             return False
         return True
 
-    def get_file(self, filename, **kwargs):
+    def get_file(self, filename, must_exist=True):
         local_path = os.path.join(self.tmp_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
@@ -137,9 +142,8 @@ class EcPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            if not omit_error:
-                Log.error(
-                    'Could not get file {0} from {1}'.format(local_path, os.path.join(self.get_files_path(), filename)))
+            if not must_exist:
+                raise Exception('File {0} does not exists'.format(filename))
             return False
         return True
 
@@ -148,7 +152,7 @@ class EcPlatform(ParamikoPlatform):
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
+            Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
         return True
 

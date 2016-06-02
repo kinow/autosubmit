@@ -46,7 +46,7 @@ class ParamikoPlatform(Platform):
                 with open(self._user_config_file) as f:
                     # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
-            self._host_config = self._ssh_config.lookup(self._host)
+            self._host_config = self._ssh_config.lookup(self.host)
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             if 'proxycommand' in self._host_config:
@@ -58,7 +58,7 @@ class ParamikoPlatform(Platform):
                                   key_filename=self._host_config_id)
             return True
         except IOError as e:
-            Log.error('Can not create ssh connection to {0}: {1}', self._host, e.strerror)
+            Log.error('Can not create ssh connection to {0}: {1}', self.host, e.strerror)
             return False
 
     def send_file(self, filename):
@@ -81,11 +81,10 @@ class ParamikoPlatform(Platform):
             Log.error('Can not send file {0} to {1}: {2}', local_path, root_path, e.message)
             return False
 
-    def get_file(self, filename, must_exist=True, omit_error=False):
+    def get_file(self, filename, must_exist=True):
         """
         Copies a file from the current platform to experiment's tmp folder
 
-        :param omit_error:
         :param filename: file name
         :type filename: str
         :param must_exist: If True, raises an exception if file can not be copied
@@ -108,8 +107,8 @@ class ParamikoPlatform(Platform):
             ftp.close()
             return True
         except BaseException as e:
-            if not omit_error:
-                Log.error('Can not get file from {0} to {1}: {2}', remote_path, local_path, e.message)
+            if must_exist:
+                raise Exception('File {0} does not exists'.format(filename))
             return False
 
     def delete_file(self, filename):
@@ -127,12 +126,11 @@ class ParamikoPlatform(Platform):
 
         try:
             ftp = self._ssh.open_sftp()
-            ftp.remove(filename)
+            ftp.remove(os.path.join(self.get_files_path(), filename))
             ftp.close()
             return True
         except BaseException as e:
-            if not omit_error:
-                Log.error('Can not remove file from {0} to {1}: {2}', remote_path, local_path, e.message)
+            Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
     def submit_job(self, job, scriptname):
@@ -147,20 +145,20 @@ class ParamikoPlatform(Platform):
         :rtype: saga.job.Job
         """
         # TODO-R: Update docstring
-        if self.send_command(self.get_submit_cmd(job_script)):
+        if self.send_command(self.get_submit_cmd(scriptname)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug("Job ID: {0}", job_id)
             return int(job_id)
         else:
             return None
 
-    def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):
+    def check_job(self, job_id, default_status=Status.COMPLETED, retries=30):
         """
         Checks job running status
 
         :param retries: retries
-        :param jobid: job id
-        :type jobid: str
+        :param job_id: job id
+        :type job_id: str
         :param default_status: status to assign if it can be retrieved from the platform
         :type default_status: autosubmit.job.job_common.Status
         :return: current job status
@@ -271,6 +269,30 @@ class ParamikoPlatform(Platform):
         """
         Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
+
+    def get_shcall(self, job_script):
+        """
+        Gets execution command for given job
+
+        :param job_script: script to run
+        :type job_script: str
+        :return: command to execute script
+        :rtype: str
+        """
+        return 'nohup bash {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
+                                                                                   job_script))
+
+    @staticmethod
+    def get_pscall(job_id):
+        """
+        Gets command to check if a job is running given process identifier
+
+        :param job_id: process indentifier
+        :type job_id: int
+        :return: command to check job status script
+        :rtype: str
+        """
+        return 'nohup kill -0 {0}; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """

@@ -39,6 +39,12 @@ class PsPlatform(ParamikoPlatform):
         self.job_status['RUNNING'] = ['0']
         self.job_status['QUEUING'] = []
         self.job_status['FAILED'] = []
+        self.update_cmds()
+
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "kill -SIGINT"

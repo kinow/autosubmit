@@ -37,6 +37,12 @@ class LsfPlatform(ParamikoPlatform):
         self.job_status['RUNNING'] = ['RUN']
         self.job_status['QUEUING'] = ['PEND', 'FW_PEND']
         self.job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
+        self.update_cmds()
+
+    def update_cmds(self):
+        """
+        Updates commands for platforms
+        """
         self.root_dir = os.path.join(self.scratch, self.project, self.user, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "LOG_" + self.expid)
         self.cancel_cmd = "bkill"
