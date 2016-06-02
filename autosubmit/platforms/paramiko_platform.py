@@ -30,6 +30,16 @@ class ParamikoPlatform(Platform):
         self._host_config = None
         self._host_config_id = None
 
+    @property
+    def header(self):
+        """
+        Header to add to jobs for scheduler configuration
+
+        :return: header
+        :rtype: object
+        """
+        return self._header
+
     def connect(self):
         """
         Creates ssh connection to host
@@ -182,7 +192,7 @@ class ParamikoPlatform(Platform):
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output())
             # URi: define status list in HPC Queue Class
-            if job_status in self.job_status['COMPLETED'] or retry == 0:
+            if job_status in self.job_status['COMPLETED'] or retries == 0:
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
@@ -303,6 +313,23 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+
+    def get_header(self, job):
+        """
+        Gets header to be used by the job
+
+        :param job: job
+        :type job: Job
+        :return: header to use
+        :rtype: str
+        """
+        if job.processors > 1:
+            header = self.header.PARALLEL
+        else:
+            header = self.header.SERIAL
+
+        header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        return header
 
 
 class ParamikoPlatformException(Exception):
