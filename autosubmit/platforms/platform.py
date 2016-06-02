@@ -416,7 +416,8 @@ class Platform:
         self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
-        self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
+        if job.parameters["NUMTASK"] != 0:
+            self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_attribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
         self.add_attribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])

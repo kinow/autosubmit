@@ -149,7 +149,7 @@ class AutosubmitConfig:
         :return: tasks needed
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 0))
 
     def get_memory(self, section):
         """
