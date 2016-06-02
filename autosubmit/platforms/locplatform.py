@@ -108,11 +108,14 @@ class LocalPlatform(ParamikoPlatform):
         if os.path.exists(local_path):
             os.remove(local_path)
 
-        command = '{0} {1} {2}'.format(self.get_cmd, remote_path, local_path)
+        command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
+                                       local_path)
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+            Log.error('Could not get file {0} from {1}'.format(local_path,
+                                                               os.path.join(self.tmp_path, 'LOG_' + self.expid,
+                                                                            filename)))
             return False
         return True
 
