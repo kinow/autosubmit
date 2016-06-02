@@ -34,6 +34,7 @@ class LocalPlatform(ParamikoPlatform):
     :param expid: experiment's identifier
     :type expid: str
     """
+
     def __init__(self, expid):
         ParamikoPlatform.__init__(self, expid, 'local', None)
         self._header = LocalHeader()
@@ -42,9 +43,6 @@ class LocalPlatform(ParamikoPlatform):
         self.job_status['RUNNING'] = ['0']
         self.job_status['QUEUING'] = []
         self.job_status['FAILED'] = []
-        self.update_cmds()
-
-    def update_cmds(self):
         self.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         self.remote_log_dir = os.path.join(self.root_dir, "tmp", 'LOG_' + self.expid)
         self.cancel_cmd = "kill -SIGINT"
@@ -92,12 +90,15 @@ class LocalPlatform(ParamikoPlatform):
         self._ssh_output = output
         return True
 
-    def send_file(self, local_path, remote_path):
-        command = '{0} {1} {2}'.format(self.put_cmd, local_path, remote_path)
+    def send_file(self, filename):
+        command = '{0} {1} {2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
+                                       os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not send file {0} to {1}'.format(local_path, remote_path))
+            Log.error('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),
+                                                              os.path.join(self.tmp_path, 'LOG_' + self.expid,
+                                                                           filename)))
             return False
         return True
 

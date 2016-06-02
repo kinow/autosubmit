@@ -115,12 +115,14 @@ class EcPlatform(ParamikoPlatform):
         self._ssh_output = output
         return True
 
-    def send_file(self, local_path, remote_path):
-        command = '{0} {1} {3}:{2}'.format(self.put_cmd, local_path, remote_path, self.host)
+    def send_file(self, filename):
+        command = '{0} {1} {3}:{2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
+                                           os.path.join(self.get_files_path(), filename), self.host)
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.error('Could not send file {0} to {1}'.format(local_path, remote_path))
+            Log.error('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),
+                                                              os.path.join(self.get_files_path(), filename)))
             return False
         return True
 
