@@ -224,15 +224,15 @@ class ParamikoPlatform(Platform):
             self._ssh_output = stdout.read().rstrip()
             if stdout.channel.recv_exit_status() == 0:
                 if len(stderr_readlines) > 0:
-                    Log.warning('Command {0} in {1} warning: {2}', command, self._host, '\n'.join(stderr_readlines))
-                Log.debug('Command {0} in {1} successful with out message: {2}', command, self._host, self._ssh_output)
+                    Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+                Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
                 return True
             else:
                 Log.error('Command {0} in {1} failed with error message: {2}',
-                          command, self._host, '\n'.join(stderr_readlines))
+                          command, self.host, '\n'.join(stderr_readlines))
                 return False
         except BaseException as e:
-            Log.error('Can not send command {0} to {1}: {2}', command, self._host, e.message)
+            Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)
             return False
 
     def parse_job_output(self, output):

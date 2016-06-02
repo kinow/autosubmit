@@ -36,7 +36,6 @@ class EcPlatform(ParamikoPlatform):
 
     def __init__(self, expid, scheduler):
         ParamikoPlatform.__init__(self)
-        self._host = ""
         if scheduler == 'pbs':
             self._header = EcCcaHeader()
         elif scheduler == 'loadleveler':
@@ -55,12 +54,12 @@ class EcPlatform(ParamikoPlatform):
         self.cancel_cmd = "eceaccess-job-delete"
         self._checkjob_cmd = "ecaccess-job-list "
         self._checkhost_cmd = "ecaccess-certificate-list"
-        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self._host + " " + self._host + ":" +
+        self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.host + " " + self.host + ":" +
                             self.remote_log_dir + "/")
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
-        self.mkdir_cmd = ("ecaccess-file-mkdir " + self._host + ":" + self.scratch + "/" + self.project + "/" +
-                          self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self._host + ":" +
+        self.mkdir_cmd = ("ecaccess-file-mkdir " + self.host + ":" + self.scratch + "/" + self.project + "/" +
+                          self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self.host + ":" +
                           self.remote_log_dir)
 
     def get_checkhost_cmd(self):
@@ -111,13 +110,13 @@ class EcPlatform(ParamikoPlatform):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
-            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self._host))
+            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
         self._ssh_output = output
         return True
 
     def send_file(self, local_path, remote_path):
-        command = '{0} {1} {3}:{2}'.format(self.put_cmd, local_path, remote_path, self._host)
+        command = '{0} {1} {3}:{2}'.format(self.put_cmd, local_path, remote_path, self.host)
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
@@ -126,7 +125,7 @@ class EcPlatform(ParamikoPlatform):
         return True
 
     def get_file(self, remote_path, local_path, omit_error=False):
-        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, remote_path, self._host)
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, remote_path, self.host)
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
