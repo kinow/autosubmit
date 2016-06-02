@@ -93,13 +93,18 @@ class ParamikoPlatform(Platform):
         :return: True if file is copied succesfully, false otherwise
         :rtype: bool
         """
+
+        local_path = os.path.join(self.tmp_path, filename)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+
         if self._ssh is None:
             if not self.connect():
                 return None
 
         try:
             ftp = self._ssh.open_sftp()
-            ftp.get(remote_path, local_path)
+            ftp.get(os.path.join(self.get_files_path(), filename), local_path)
             ftp.close()
             return True
         except BaseException as e:

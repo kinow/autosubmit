@@ -126,13 +126,19 @@ class EcPlatform(ParamikoPlatform):
             return False
         return True
 
-    def get_file(self, remote_path, local_path, omit_error=False):
-        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, remote_path, self.host)
+    def get_file(self, filename, **kwargs):
+        local_path = os.path.join(self.tmp_path, filename)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, os.path.join(self.get_files_path(), filename),
+                                           self.host)
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
             if not omit_error:
-                Log.error('Could not get file {0} from {1}'.format(local_path, remote_path))
+                Log.error(
+                    'Could not get file {0} from {1}'.format(local_path, os.path.join(self.get_files_path(), filename)))
             return False
         return True
 

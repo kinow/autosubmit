@@ -102,7 +102,11 @@ class LocalPlatform(ParamikoPlatform):
             return False
         return True
 
-    def get_file(self, remote_path, local_path, omit_error=False):
+    def get_file(self, filename, **kwargs):
+        local_path = os.path.join(self.tmp_path, filename)
+        if os.path.exists(local_path):
+            os.remove(local_path)
+
         command = '{0} {1} {2}'.format(self.get_cmd, remote_path, local_path)
         try:
             subprocess.check_call(command, shell=True)
