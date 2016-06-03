@@ -31,8 +31,8 @@ class PsPlatform(ParamikoPlatform):
     :type expid: str
     """
 
-    def __init__(self, expid, config):
-        ParamikoPlatform.__init__(self, expid, 'ps', config)
+    def __init__(self, expid, name, config):
+        ParamikoPlatform.__init__(self, expid, name, config)
         self._header = PsHeader()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['1']

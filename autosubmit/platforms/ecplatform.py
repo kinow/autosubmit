@@ -34,8 +34,8 @@ class EcPlatform(ParamikoPlatform):
     :type scheduler: str (pbs, loadleveler)
     """
 
-    def __init__(self, expid, config, scheduler):
-        ParamikoPlatform.__init__(self, expid, 'ecaccess', config)
+    def __init__(self, expid, name, config, scheduler):
+        ParamikoPlatform.__init__(self, expid, name, config)
         if scheduler == 'pbs':
             self._header = EcCcaHeader()
         elif scheduler == 'loadleveler':

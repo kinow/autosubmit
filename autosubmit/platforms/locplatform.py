@@ -35,8 +35,8 @@ class LocalPlatform(ParamikoPlatform):
     :type expid: str
     """
 
-    def __init__(self, expid, config):
-        ParamikoPlatform.__init__(self, expid, 'local', config)
+    def __init__(self, expid, name, config):
+        ParamikoPlatform.__init__(self, expid, name, config)
         self.type = 'local'
         self._header = LocalHeader()
         self.job_status = dict()
@@ -56,7 +56,7 @@ class LocalPlatform(ParamikoPlatform):
         self._checkhost_cmd = "echo 1"
         self.put_cmd = "cp -p"
         self.get_cmd = "cp"
-        self.del_cmd = "rm"
+        self.del_cmd = "rm -f"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
     def get_checkhost_cmd(self):

@@ -63,7 +63,7 @@ class ParamikoSubmitter(Submitter):
         parser = asconf.platforms_parser
 
         platforms = dict()
-        local_platform = LocalPlatform(asconf.expid, BasicConfig)
+        local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
@@ -81,17 +81,17 @@ class ParamikoSubmitter(Submitter):
             platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
             try:
                 if platform_type == 'pbs':
-                    remote_platform = PBSPlatform(asconf.expid, BasicConfig, platform_version)
+                    remote_platform = PBSPlatform(asconf.expid, section.lower(), BasicConfig, platform_version)
                 elif platform_type == 'sge':
-                    remote_platform = SgePlatform(asconf.expid, BasicConfig)
+                    remote_platform = SgePlatform(asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'ps':
-                    remote_platform = PsPlatform(asconf.expid, BasicConfig)
+                    remote_platform = PsPlatform(asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'lsf':
-                    remote_platform = LsfPlatform(asconf.expid, BasicConfig)
+                    remote_platform = LsfPlatform(asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'ecaccess':
-                    remote_platform = EcPlatform(asconf.expid, BasicConfig, platform_version)
+                    remote_platform = EcPlatform(asconf.expid, section.lower(), BasicConfig, platform_version)
                 elif platform_type == 'slurm':
-                    remote_platform = SlurmPlatform(asconf.expid, BasicConfig)
+                    remote_platform = SlurmPlatform(asconf.expid, section.lower(), BasicConfig)
                 else:
                     raise Exception("Queue type not specified on platform {0}".format(section))
 

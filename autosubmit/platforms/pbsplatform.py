@@ -33,8 +33,8 @@ class PBSPlatform(ParamikoPlatform):
     :type version: str
     """
 
-    def __init__(self, expid, config, version):
-        ParamikoPlatform.__init__(self, expid, 'pbs', config)
+    def __init__(self, expid, name, config, version):
+        ParamikoPlatform.__init__(self, expid, name, config)
         self._version = version
 
         if str.startswith(version, '10'):

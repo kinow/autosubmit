@@ -45,8 +45,8 @@ class SlurmPlatform(ParamikoPlatform):
         # There is no queue, so directive is empty
         return "#"
 
-    def __init__(self, expid, config):
-        ParamikoPlatform.__init__(self, expid, 'slurm', config)
+    def __init__(self, expid, name, config):
+        ParamikoPlatform.__init__(self, expid, name, config)
         self._header = SlurmHeader()
         self.job_status = dict()
 
