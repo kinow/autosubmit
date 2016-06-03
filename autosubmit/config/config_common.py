@@ -769,6 +769,15 @@ class AutosubmitConfig:
         """
         return [str(x) for x in self.get_option(self._conf_parser, 'mail', 'TO', '').split(' ')]
 
+    def get_communications_library(self):
+        """
+        Returns the communications library from autosubmit's config file. Paramiko by default.
+
+        :return: communications library
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
+
     @staticmethod
     def is_valid_mail_address(mail_address):
         if re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail_address):

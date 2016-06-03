@@ -71,7 +71,8 @@ from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
-from platforms.submitter import Submitter
+from platforms.saga_submitter import SagaSubmitter
+from platforms.paramiko_submitter import ParamikoSubmitter
 
 
 # noinspection PyUnusedLocal
@@ -542,7 +543,7 @@ class Autosubmit:
             safetysleeptime = as_conf.get_safetysleeptime()
             retrials = as_conf.get_retrials()
 
-            submitter = Submitter()
+            submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
 
             Log.debug("The Experiment name is: {0}", expid)
@@ -677,12 +678,10 @@ class Autosubmit:
                         platform.send_file(scriptname)
                         platform.remove_stat_file(job.name)
                         platform.remove_completed_file(job.name)
-                        saga_job = platform.create_saga_job(job, scriptname)
-                        saga_job.run()
+                        job.id = platform.submit_job(job, scriptname)
                     except Exception:
                         Log.error("{0} submission failed", job.name)
                         continue
-                    job.id = saga_job.id
                     if job.id is None:
                         continue
                     Log.info("{0} submitted", job.name)
@@ -923,7 +922,8 @@ class Autosubmit:
             return False
 
         hpcarch = as_conf.get_platform()
-        submitter = Submitter()
+
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if submitter.platforms is None:
             return False
@@ -992,7 +992,7 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        submitter = Submitter()
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if len(submitter.platforms) == 0:
             return False
@@ -1796,6 +1796,24 @@ class Autosubmit:
                 data.append(element)
 
         return data
+
+    @staticmethod
+    def _get_submitter(as_conf):
+        """
+        Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+        :return: submitter
+        :rtype: Submitter
+        """
+        communications_library = as_conf.get_communications_library()
+        if communications_library == 'saga':
+            return SagaSubmitter()
+        elif communications_library == 'paramiko':
+            return ParamikoSubmitter()
+
+        # communications library not known
+        Log.error('You have defined a not valid communications library on the configuration file')
+        raise Exception('Communications library not known')
 
     @staticmethod
     def _create_json(text):

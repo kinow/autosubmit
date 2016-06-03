@@ -174,7 +174,7 @@ class TestJob(TestCase):
             self.job.create_script(config)
 
         # assert
-        update_content_mock.assert_called_with('/project/dir')
+        update_content_mock.assert_called_with(config)
         open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'w')
         write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o775)
@@ -205,7 +205,7 @@ class TestJob(TestCase):
 
         # assert
         update_parameters_mock.assert_called_with(config, self.job.parameters)
-        update_content_mock.assert_called_with('/project/dir')
+        update_content_mock.assert_called_with(config)
         self.assertFalse(checked)
 
     def test_check_script(self):
@@ -232,7 +232,7 @@ class TestJob(TestCase):
 
         # assert
         update_parameters_mock.assert_called_with(config, self.job.parameters)
-        update_content_mock.assert_called_with('/project/dir')
+        update_content_mock.assert_called_with(config)
         create_script_mock.assert_called_with(config)
         self.assertTrue(checked)
 
