@@ -32,6 +32,7 @@ class SagaPlatform(Platform):
         :param filename: name of the file to send
         :type filename: str
         """
+        self.delete_file(filename)
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-mkdir', '{0}:{1}'.format(self.host, self.root_dir)])

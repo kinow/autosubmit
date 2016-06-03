@@ -83,6 +83,7 @@ class ParamikoPlatform(Platform):
                 return None
 
         self.check_remote_log_dir()
+        self.delete_file(filename)
 
         try:
             ftp = self._ssh.open_sftp()

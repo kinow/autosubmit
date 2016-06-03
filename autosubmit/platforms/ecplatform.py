@@ -122,6 +122,7 @@ class EcPlatform(ParamikoPlatform):
         return True
 
     def send_file(self, filename):
+        self.delete_file(filename)
         command = '{0} {1} {3}:{2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
                                            os.path.join(self.get_files_path(), filename), self.host)
         try:
