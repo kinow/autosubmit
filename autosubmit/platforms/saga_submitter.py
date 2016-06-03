@@ -134,7 +134,7 @@ class SagaSubmitter(Submitter):
             if adaptor.endswith('ssh'):
                 ctx = saga.Context('ssh')
                 ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
-                session = saga.Session()
+                session = saga.Session(False)
                 session.add_context(ctx)
             else:
                 session = None

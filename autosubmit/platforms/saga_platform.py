@@ -191,16 +191,15 @@ class SagaPlatform(Platform):
 
     def submit_job(self, job, scriptname):
         """
-        Creates a saga job from a given job object.
+        Submit a job from a given job object.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
         :param scriptname: job script's name
         :rtype scriptname: str
-        :return: saga job object for the given job
-        :rtype: saga.job.Job
+        :return: job id for the submitted job
+        :rtype: int
         """
-        # TODO-R: Update docstring
         saga_job = self.create_saga_job(job, scriptname)
         saga_job.run()
         return saga_job.id
@@ -250,7 +249,8 @@ class SagaPlatform(Platform):
         self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
-        self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
+        if job.parameters["NUMTASK"] != 0:
+            self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_attribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 
         self.add_attribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])

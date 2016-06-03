@@ -236,16 +236,15 @@ class Platform:
 
     def submit_job(self, job, scriptname):
         """
-        Creates a saga job from a given job object.
+        Submit a job from a given job object.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
         :param scriptname: job script's name
         :rtype scriptname: str
-        :return: saga job object for the given job
-        :rtype: saga.job.Job
+        :return: job id for the submitted job
+        :rtype: int
         """
-        # TODO-R: Update docstring
         raise NotImplementedError
 
     def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):

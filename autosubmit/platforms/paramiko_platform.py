@@ -149,16 +149,15 @@ class ParamikoPlatform(Platform):
 
     def submit_job(self, job, scriptname):
         """
-        Creates a saga job from a given job object.
+        Submit a job from a given job object.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
         :param scriptname: job script's name
         :rtype scriptname: str
-        :return: saga job object for the given job
-        :rtype: saga.job.Job
+        :return: job id for the submitted job
+        :rtype: int
         """
-        # TODO-R: Update docstring
         if self.send_command(self.get_submit_cmd(scriptname)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug("Job ID: {0}", job_id)
