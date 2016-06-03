@@ -1,6 +1,6 @@
 
 Autosubmit is a tool to create, manage and monitor experiments using
-Computing Clusters, HPC's and Supercomputers remotely via ssh.
+computing clusters, HPC platforms and supercomputers remotely via ssh.
 
 
 HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
@@ -11,7 +11,7 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
   with the following Operating Systems:
    * Linux Debian
 
-  on the following HPC's/Clusters:
+  on the following HPC platforms:
    * Ithaca (IC3 machine)
    * Stargate (IC3 machine)
    * MareNostrum (BSC machine)
@@ -22,9 +22,10 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * CCA (ECMWF machine)
    * ARCHER (EPCC machine)
 
-- Pre-requisties: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion) must be available at local
-  machine. These packages (argparse, dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko) must be available for
-  python runtime. And the machine is also able to access HPC's/Clusters via password-less ssh.
+- Pre-requisites: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion) must be available at local
+  machine. These packages (argparse, dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, saga-python,
+  pythondialog, mock, portalocker) must be available for python runtime. And the machine is also able to access
+  HPC platforms via password-less ssh.
 
 - Install Autosubmit
    > pip install autosubmit
@@ -54,11 +55,11 @@ First character is a letter, the other three alfa-numeric characters allow to id
 
 > autosubmit create cxxx
 
-> nohup autosubmit run cxxx
+> nohup autosubmit run cxxx &
 
 Cautions: 
 - Before launching autosubmit check the following stuff:
-> ssh ithaca # (for example) check other HPC's where password-less ssh is feasible.
+> ssh ithaca # (for example) check other HPC platforms where password-less ssh is feasible.
 - After launching autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC)
 and renew the login access accordingly (by using token/key etc) before expiry.
 
@@ -85,7 +86,7 @@ HOW TO RESTART EXPERIMENT
 
 > autosubmit recovery  cxxx -s # saving the pickle file
 
-> nohup autosubmit run cxxx
+> nohup autosubmit run cxxx &
 
 
 FULL DOCUMENTATION AND HOW TOs
