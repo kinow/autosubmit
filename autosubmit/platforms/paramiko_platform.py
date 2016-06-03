@@ -82,13 +82,16 @@ class ParamikoPlatform(Platform):
             if not self.connect():
                 return None
 
+        self.check_remote_log_dir()
+
         try:
             ftp = self._ssh.open_sftp()
             ftp.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
             ftp.close()
             return True
         except BaseException as e:
-            Log.error('Can not send file {0} to {1}: {2}', local_path, root_path, e.message)
+            Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
+                      os.path.join(self.get_files_path(), filename))
             return False
 
     def get_file(self, filename, must_exist=True):
@@ -270,6 +273,15 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
+    def get_mkdir_cmd(self):
+        """
+        Gets command to create directories on HPC
+
+        :return: command to create directories on HPC
+        :rtype: str
+        """
+        raise NotImplementedError
+
     def get_ssh_output(self):
         """
         Gets output from last command executed
@@ -330,6 +342,15 @@ class ParamikoPlatform(Platform):
 
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
         return header
+
+    def check_remote_log_dir(self):
+        """
+        Creates log dir on remote host
+        """
+        if self.send_command(self.get_mkdir_cmd()):
+            Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+        else:
+            Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
 
 
 class ParamikoPlatformException(Exception):
