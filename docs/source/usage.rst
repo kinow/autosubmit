@@ -597,6 +597,9 @@ Example:
 How to add a new platform
 =========================
 
+.. hint::
+    If you are interested in changing the communications library, go to the section below.
+
 To add a new platform, open the <experiments_directory>/cxxx/conf/platforms_cxxx.conf file where cxxx is the experiment
 identifier and add this text:
 
@@ -660,6 +663,26 @@ Example:
     USER = my_user
     SCRATCH_DIR = /scratch
     TEST_SUITE = True
+
+How change the communications library
+=====================================
+
+In order to handle the remote communications with the different platforms, Autosubmit uses an implementation
+of a communications library. There are multiple implementations, so you can choose any of them.
+
+.. hint::
+    At this moment there are two available communications libraries which are ``saga`` and ``paramiko``.
+
+To change the communications library, open the <experiments_directory>/cxxx/conf/autosubmit_cxxx.conf file
+where cxxx is the experiment identifier and change the value of the API configuration variable in the communications
+section:
+
+.. code-block::
+
+    [communications]
+    # Communications library used to connect with platforms: paramiko or saga.
+    # Default = paramiko
+    API = saga
 
 
 How to archive an experiment
