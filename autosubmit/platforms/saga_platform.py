@@ -275,7 +275,7 @@ class SagaPlatform(Platform):
             return
         jd.set_attribute(name, value)
 
-    def check_job(self, jobid, default_status=Status.COMPLETED, retries=30):
+    def check_job(self, jobid, default_status=Status.COMPLETED, retries=10):
         """
         Checks job running status
 

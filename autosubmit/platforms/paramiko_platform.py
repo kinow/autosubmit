@@ -165,7 +165,7 @@ class ParamikoPlatform(Platform):
         else:
             return None
 
-    def check_job(self, job_id, default_status=Status.COMPLETED, retries=30):
+    def check_job(self, job_id, default_status=Status.COMPLETED, retries=5):
         """
         Checks job running status
 
