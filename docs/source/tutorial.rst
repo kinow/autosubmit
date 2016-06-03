@@ -55,6 +55,10 @@ To configure the experiment, edit ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` and `
 
 .. note:: *platforms_cxxx.conf* is usually provided by technicians, users will only have to change login and accounting options for HPCs.
 
+.. note::
+    There are multiple implementations of the communication with the platforms, so if you are interested in changing
+    the default implementation, you can see how to do it on the 'Usage' section.
+
 You may want to configure Autosubmit parameters for the experiment. Just edit ``autosubmit_cxxx.conf``.
 
 *autosubmit_cxxx.conf* contains:
