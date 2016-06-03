@@ -142,7 +142,7 @@ class Platform:
         """
         raise NotImplementedError
 
-    def get_completed_files(self, job_name, retries=1):
+    def get_completed_files(self, job_name, retries=5):
         """
         Get the COMPLETED file of the given job
 
