@@ -109,7 +109,7 @@ class LocalPlatform(ParamikoPlatform):
             Log.error('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),
                                                               os.path.join(self.tmp_path, 'LOG_' + self.expid,
                                                                            filename)))
-            return False
+            raise
         return True
 
     def get_file(self, filename, must_exist=True):

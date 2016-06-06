@@ -93,7 +93,7 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
                       os.path.join(self.get_files_path(), filename))
-            return False
+            raise
 
     def get_file(self, filename, must_exist=True):
         """
