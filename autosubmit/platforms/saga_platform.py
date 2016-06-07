@@ -288,7 +288,7 @@ class SagaPlatform(Platform):
         :rtype: autosubmit.job.job_common.Status
         """
         saga_status = None
-        while saga_status is None and retries > 0:
+        while saga_status is None and retries >= 0:
             try:
                 if jobid not in self.service.jobs:
                     return Status.COMPLETED

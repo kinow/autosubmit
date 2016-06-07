@@ -74,7 +74,7 @@ class SagaSubmitter(Submitter):
         local_platform = SagaPlatform(asconf.expid, 'local', BasicConfig)
         local_platform.service = None
         retry = retries
-        while local_platform.service is None and retry > 0:
+        while local_platform.service is None and retry >= 0:
             try:
                 local_platform.service = saga.job.Service("fork://localhost", session=session)
             except saga.SagaException:
@@ -146,7 +146,7 @@ class SagaSubmitter(Submitter):
 
             remote_platform.service = None
             retry = retries
-            while remote_platform.service is None and retry > 0:
+            while remote_platform.service is None and retry >= 0:
                 try:
                     # noinspection PyTypeChecker
                     remote_platform.service = saga.job.Service("{0}://{1}".format(adaptor, host), session=session)

@@ -185,13 +185,13 @@ class ParamikoPlatform(Platform):
             # URi: value ?
             return job_status
 
-        while not self.send_command(self.get_checkjob_cmd(job_id)) and retries > 0:
+        while not self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0:
             retries -= 1
             Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
             sleep(10)
 
-        if retries > 0:
+        if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output())
             # URi: define status list in HPC Queue Class
@@ -338,7 +338,7 @@ class ParamikoPlatform(Platform):
         if job.processors > 1:
             header = self.header.PARALLEL
         else:
-            header = self.header.SERIAL
+            header = self.header.SERIALwebwlwe
 
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
         return header
