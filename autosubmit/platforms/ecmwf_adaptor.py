@@ -18,8 +18,6 @@ import saga.adaptors.pbs.pbsjob
 import saga.adaptors.cpi.decorators
 from autosubmit.config.basicConfig import BasicConfig
 
-ECMWF_TASKS_PER_NODE = 24
-
 SYNC_CALL = saga.adaptors.cpi.decorators.SYNC_CALL
 ASYNC_CALL = saga.adaptors.cpi.decorators.ASYNC_CALL
 
@@ -479,8 +477,6 @@ class ECMWFJobService(saga.adaptors.cpi.job.Service):
             pbs_params += "#PBS -l EC_threads_per_task=%s \n" % str(jd.threads_per_process)
         if jd.processes_per_host:
             pbs_params += "#PBS -l EC_tasks_per_node=%s \n" % str(jd.processes_per_host)
-        else:
-            pbs_params += "#PBS -l EC_tasks_per_node=%s \n" % str(ECMWF_TASKS_PER_NODE)
 
         pbscript = pbs_params
 

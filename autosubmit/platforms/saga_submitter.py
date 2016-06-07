@@ -171,6 +171,8 @@ class SagaSubmitter(Submitter):
             remote_platform.scratch = AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None)
             remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
             remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
+            remote_platform.processors_per_node = AutosubmitConfig.get_option(parser, section, 'PROCESSORS_PER_NODE',
+                                                                              None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
             platforms[section.lower()] = remote_platform

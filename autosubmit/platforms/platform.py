@@ -24,6 +24,7 @@ class Platform:
         self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
         self._serial_queue = None
+        self.processors_per_node = None
         self.host = ''
         self.user = ''
         self.project = ''

@@ -249,7 +249,7 @@ class SagaPlatform(Platform):
         self.add_attribute(jd, 'Project', project)
 
         self.add_attribute(jd, 'TotalCPUCount', job.parameters["NUMPROC"])
-        if job.parameters["NUMTASK"] != 0:
+        if job.parameters["NUMTASK"] is not None:
             self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_attribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
 

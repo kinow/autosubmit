@@ -524,9 +524,12 @@ class Job:
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
+        job_platform = self.get_platform()
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
+        if self.tasks == 0:
+            self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
 
@@ -538,7 +541,6 @@ class Job:
         parameters['TASKTYPE'] = self.section
         parameters['MEMORY'] = self.memory
 
-        job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host
         parameters['CURRENT_QUEUE'] = self.get_queue()
