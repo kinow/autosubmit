@@ -185,8 +185,8 @@ Examples:
     # PROCESSORS = 1
     ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
     # THREADS = 1
-    ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
-    # TASKS = 1
+    ## Tasks number to be submitted to the HPC. If not specified, defaults to empty.
+    # TASKS =
     ## Memory requirements for the job in MB
     # MEMORY = 4096
     ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.conf
@@ -274,6 +274,8 @@ Examples:
     ## If specified, autosubmit will run jobs with only one processor in the specified queue.
     ## Autosubmit will ignore this configuration if SERIAL_PLATFORM is provided
     # SERIAL_QUEUE = SERIAL_QUEUE_NAME
+    ## Default number of processors per node to be used in jobs
+    # PROCESSORS_PER_NODE =
     ## Default Maximum number of jobs to be waiting in any platform queue
     ## Default = 3
     # MAX_WAITING_JOBS = 3
