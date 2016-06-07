@@ -338,7 +338,7 @@ class ParamikoPlatform(Platform):
         if job.processors > 1:
             header = self.header.PARALLEL
         else:
-            header = self.header.SERIALwebwlwe
+            header = self.header.SERIAL
 
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
         return header
