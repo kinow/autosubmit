@@ -71,7 +71,8 @@ from monitor.monitor import Monitor
 from date.chunk_date_lib import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
-from platforms.submitter import Submitter
+from platforms.saga_submitter import SagaSubmitter
+from platforms.paramiko_submitter import ParamikoSubmitter
 
 
 # noinspection PyUnusedLocal
@@ -516,7 +517,12 @@ class Autosubmit:
             Log.critical("Missing expid.")
 
         BasicConfig.read()
-        tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR)
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -542,7 +548,7 @@ class Autosubmit:
             safetysleeptime = as_conf.get_safetysleeptime()
             retrials = as_conf.get_retrials()
 
-            submitter = Submitter()
+            submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
 
             Log.debug("The Experiment name is: {0}", expid)
@@ -677,12 +683,10 @@ class Autosubmit:
                         platform.send_file(scriptname)
                         platform.remove_stat_file(job.name)
                         platform.remove_completed_file(job.name)
-                        saga_job = platform.create_saga_job(job, scriptname)
-                        saga_job.run()
+                        job.id = platform.submit_job(job, scriptname)
                     except Exception:
                         Log.error("{0} submission failed", job.name)
                         continue
-                    job.id = saga_job.id
                     if job.id is None:
                         continue
                     Log.info("{0} submitted", job.name)
@@ -715,6 +719,13 @@ class Autosubmit:
         """
         root_name = 'job_list'
         BasicConfig.read()
+
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
         filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
@@ -808,6 +819,12 @@ class Autosubmit:
         """
         root_name = 'job_list'
         BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'statistics.log'))
         Log.info("Loading jobs...")
@@ -861,6 +878,12 @@ class Autosubmit:
         :param stats: set True to delete outdated stats
         """
         BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
         if create_log_file:
             Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                       'clean_exp.log'))
@@ -908,6 +931,11 @@ class Autosubmit:
         """
         root_name = 'job_list'
         BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'recovery.log'))
@@ -923,7 +951,8 @@ class Autosubmit:
             return False
 
         hpcarch = as_conf.get_platform()
-        submitter = Submitter()
+
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if submitter.platforms is None:
             return False
@@ -983,6 +1012,12 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -992,7 +1027,7 @@ class Autosubmit:
             if not as_conf.check_proj():
                 return False
 
-        submitter = Submitter()
+        submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         if len(submitter.platforms) == 0:
             return False
@@ -1244,6 +1279,12 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
@@ -1301,8 +1342,13 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        if not os.path.exists(exp_folder):
+            Log.critical("The directory %s is needed and does not exist." % exp_folder)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(expid)))
 
         if os.path.exists(exp_folder):
             Log.error("Experiment {0} is not archived", expid)
@@ -1394,7 +1440,13 @@ class Autosubmit:
 
         """
         BasicConfig.read()
-        tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR)
+
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -1567,7 +1619,12 @@ class Autosubmit:
         """
         root_name = 'job_list'
         BasicConfig.read()
-        tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR)
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -1796,6 +1853,24 @@ class Autosubmit:
                 data.append(element)
 
         return data
+
+    @staticmethod
+    def _get_submitter(as_conf):
+        """
+        Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+        :return: submitter
+        :rtype: Submitter
+        """
+        communications_library = as_conf.get_communications_library()
+        if communications_library == 'saga':
+            return SagaSubmitter()
+        elif communications_library == 'paramiko':
+            return ParamikoSubmitter()
+
+        # communications library not known
+        Log.error('You have defined a not valid communications library on the configuration file')
+        raise Exception('Communications library not known')
 
     @staticmethod
     def _create_json(text):

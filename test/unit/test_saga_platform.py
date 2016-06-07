@@ -10,13 +10,13 @@ from mock import patch
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
-from autosubmit.platforms.platform import Platform
+from autosubmit.platforms.saga_platform import SagaPlatform
 
 
-class TestPlatform(TestCase):
+class TestSagaPlatform(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.platform = Platform(self.experiment_id, 'test', FakeBasicConfig)
+        self.platform = SagaPlatform(self.experiment_id, 'test', FakeBasicConfig)
 
     def test_check_status_returns_completed_if_job_id_not_exists(self):
         # arrange

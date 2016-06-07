@@ -149,7 +149,7 @@ class AutosubmitConfig:
         :return: tasks needed
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 1))
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 0))
 
     def get_memory(self, section):
         """
@@ -768,6 +768,15 @@ class AutosubmitConfig:
         :rtype: [str]
         """
         return [str(x) for x in self.get_option(self._conf_parser, 'mail', 'TO', '').split(' ')]
+
+    def get_communications_library(self):
+        """
+        Returns the communications library from autosubmit's config file. Paramiko by default.
+
+        :return: communications library
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
 
     @staticmethod
     def is_valid_mail_address(mail_address):

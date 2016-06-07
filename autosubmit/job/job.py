@@ -88,8 +88,8 @@ class Job:
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
-            odict = odict.copy()    # copy the dict since we change it
-            del odict['_platform']              # remove filehandle entry
+            odict = odict.copy()  # copy the dict since we change it
+            del odict['_platform']  # remove filehandle entry
         return odict
 
     def print_job(self):
@@ -524,9 +524,12 @@ class Job:
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
+        job_platform = self.get_platform()
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
+        if self.tasks == 0:
+            self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
 
@@ -538,7 +541,6 @@ class Job:
         parameters['TASKTYPE'] = self.section
         parameters['MEMORY'] = self.memory
 
-        job_platform = self.get_platform()
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host
         parameters['CURRENT_QUEUE'] = self.get_queue()
@@ -559,17 +561,17 @@ class Job:
 
         return parameters
 
-    def update_content(self, project_dir):
+    def update_content(self, as_conf):
         """
         Create the script content to be run for the job
 
-        :param project_dir: project directory
-        :type project_dir: str
+        :param as_conf: config
+        :type as_conf: config
         :return: script code
         :rtype: str
         """
         if self.parameters['PROJECT_TYPE'].lower() != "none":
-            template_file = open(os.path.join(project_dir, self.file), 'r')
+            template_file = open(os.path.join(as_conf.get_project_dir(), self.file), 'r')
             template = template_file.read()
         else:
             if self.type == Type.BASH:
@@ -590,11 +592,31 @@ class Job:
         else:
             raise Exception('Job type {0} not supported'.format(self.type))
 
-        template_content = ''.join([snippet.AS_HEADER,
-                                   template,
-                                   snippet.AS_TAILER])
+        template_content = self._get_template_content(as_conf, snippet, template)
 
         return template_content
+
+    def _get_template_content(self, as_conf, snippet, template):
+        communications_library = as_conf.get_communications_library()
+        if communications_library == 'saga':
+            return self._get_saga_template(snippet, template)
+        elif communications_library == 'paramiko':
+            return self._get_paramiko_template(snippet, template)
+        else:
+            Log.error('You have to define a template on Job class')
+            raise Exception('Job template content not found')
+
+    def _get_saga_template(self, snippet, template):
+        return ''.join([snippet.AS_HEADER,
+                        template,
+                        snippet.AS_TAILER])
+
+    def _get_paramiko_template(self, snippet, template):
+        current_platform = self.get_platform()
+        return ''.join([current_platform.get_header(self),
+                                   snippet.AS_HEADER,
+                                   template,
+                                   snippet.AS_TAILER])
 
     def create_script(self, as_conf):
         """
@@ -606,7 +628,7 @@ class Job:
         :rtype: str
         """
         parameters = self.parameters
-        template_content = self.update_content(as_conf.get_project_dir())
+        template_content = self.update_content(as_conf)
         for key, value in parameters.items():
             template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
                                       flags=re.IGNORECASE)
@@ -633,7 +655,7 @@ class Job:
             Log.info('Template {0} will not be checked'.format(self.section))
             return True
         parameters = self.update_parameters(as_conf, parameters)
-        template_content = self.update_content(as_conf.get_project_dir())
+        template_content = self.update_content(as_conf)
 
         variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
         variables = [variable[1:-1] for variable in variables]

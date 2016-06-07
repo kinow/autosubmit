@@ -55,6 +55,10 @@ To configure the experiment, edit ``expdef_cxxx.conf``, ``jobs_cxxx.conf`` and `
 
 .. note:: *platforms_cxxx.conf* is usually provided by technicians, users will only have to change login and accounting options for HPCs.
 
+.. note::
+    There are multiple implementations of the communication with the platforms, so if you are interested in changing
+    the default implementation, you can see how to do it on the 'Usage' section.
+
 You may want to configure Autosubmit parameters for the experiment. Just edit ``autosubmit_cxxx.conf``.
 
 *autosubmit_cxxx.conf* contains:
@@ -181,8 +185,8 @@ Examples:
     # PROCESSORS = 1
     ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
     # THREADS = 1
-    ## Tasks number to be submitted to the HPC. If not specified, defaults to 1.
-    # TASKS = 1
+    ## Tasks number to be submitted to the HPC. If not specified, defaults to empty.
+    # TASKS =
     ## Memory requirements for the job in MB
     # MEMORY = 4096
     ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.conf
@@ -270,6 +274,8 @@ Examples:
     ## If specified, autosubmit will run jobs with only one processor in the specified queue.
     ## Autosubmit will ignore this configuration if SERIAL_PLATFORM is provided
     # SERIAL_QUEUE = SERIAL_QUEUE_NAME
+    ## Default number of processors per node to be used in jobs
+    # PROCESSORS_PER_NODE =
     ## Default Maximum number of jobs to be waiting in any platform queue
     ## Default = 3
     # MAX_WAITING_JOBS = 3
