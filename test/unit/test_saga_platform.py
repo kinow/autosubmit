@@ -4,14 +4,23 @@ from unittest import TestCase
 
 import os
 import re
-import saga
+
 from mock import Mock
 from mock import patch
 
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
+
+###############################################
+# Special SAGA import to prevent logging/atfork errors
+
+
+os.environ['RADICAL_UTILS_NOATFORK'] = 'True'
+import saga
 from autosubmit.platforms.saga_platform import SagaPlatform
 
+
+###############################################
 
 class TestSagaPlatform(TestCase):
     def setUp(self):
