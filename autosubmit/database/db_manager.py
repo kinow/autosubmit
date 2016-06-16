@@ -1,0 +1,100 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Earth Sciences Department, BSC-CNS
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
+import sqlite3
+import os
+
+
+class DbManager(object):
+    """
+    Class to manage an SQLite database.
+    """
+
+    def __init__(self, root_path, db_name, db_version):
+        self.root_path = root_path
+        self.db_name = db_name
+        self.db_version = db_version
+        self.connection = None
+
+    def connect(self):
+        self.connection = sqlite3.connect(self._get_db_filepath())
+
+    def disconnect(self):
+        self.connection.close()
+
+    def create_table(self, table_name, fields):
+        cursor = self.connection.cursor()
+        create_command = self.generate_create_table_command(table_name, fields[:])
+        cursor.execute(create_command)
+        self.connection.commit()
+
+    def drop_table(self, table_name):
+        cursor = self.connection.cursor()
+        drop_command = self.generate_drop_table_command(table_name)
+        cursor.execute(drop_command)
+        self.connection.commit()
+
+    def insert(self, table_name, columns, values):
+        cursor = self.connection.cursor()
+        insert_command = self.generate_insert_command(table_name, columns[:], values[:])
+        cursor.execute(insert_command)
+        self.connection.commit()
+
+    def count(self, table_name):
+        cursor = self.connection.cursor()
+        count_command = self.generate_count_command(table_name)
+        cursor.execute(count_command)
+        return cursor.fetchone()[0]
+
+    def drop(self):
+        self.connection.close()
+        if os.path.exists(self._get_db_filepath()):
+            os.remove(self._get_db_filepath())
+
+    def _get_db_filepath(self):
+        return os.path.join(self.root_path, self.db_name) + '.db'
+
+    @staticmethod
+    def generate_create_table_command(table_name, fields):
+        create_command = 'CREATE TABLE ' + table_name + ' (' + fields.pop(0)
+        for field in fields:
+            create_command += (', ' + field)
+        create_command += ')'
+        return create_command
+
+    @staticmethod
+    def generate_drop_table_command(table_name):
+        drop_command = 'DROP TABLE ' + table_name
+        return drop_command
+
+    @staticmethod
+    def generate_insert_command(table_name, columns, values):
+        insert_command = 'INSERT INTO ' + table_name + '(' + columns.pop(0)
+        for column in columns:
+            insert_command += (', ' + column)
+        insert_command += (') VALUES ("' + values.pop(0) + '"')
+        for value in values:
+            insert_command += (', "' + value + '"')
+        insert_command += ')'
+        return insert_command
+
+    @staticmethod
+    def generate_count_command(table_name):
+        count_command = 'SELECT count(*) FROM ' + table_name
+        return count_command
