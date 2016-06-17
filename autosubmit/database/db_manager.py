@@ -78,6 +78,18 @@ class DbManager(object):
         cursor.execute(insert_command)
         self.connection.commit()
 
+    def insertMany(self, table_name, data):
+        """
+        Inserts multiple new rows on the given table
+        :param table_name: str
+        :param data: [()]
+
+        """
+        cursor = self.connection.cursor()
+        insert_many_command = self.generate_insert_many_command(table_name, len(data[0]))
+        cursor.executemany(insert_many_command, data)
+        self.connection.commit()
+
     def select_first(self, table_name):
         """
         Returns the first row of the given table
@@ -182,7 +194,7 @@ class DbManager(object):
 
     @staticmethod
     def generate_drop_table_command(table_name):
-        drop_command = 'DROP TABLE ' + table_name
+        drop_command = 'DROP TABLE IF EXISTS ' + table_name
         return drop_command
 
     @staticmethod
@@ -193,6 +205,16 @@ class DbManager(object):
         insert_command += (') VALUES ("' + str(values.pop(0)) + '"')
         for value in values:
             insert_command += (', "' + str(value) + '"')
+        insert_command += ')'
+        return insert_command
+
+    @staticmethod
+    def generate_insert_many_command(table_name, num_of_values):
+        insert_command = 'INSERT INTO ' + table_name + ' VALUES (?'
+        num_of_values -= 1
+        while num_of_values > 0:
+            insert_command += ',?'
+            num_of_values -= 1
         insert_command += ')'
         return insert_command
 

@@ -13,7 +13,6 @@ class TestDbManager(TestCase):
         table_name = 'tests'
         table_fields = ['dummy1', 'dummy2', 'dummy3']
         expected_command = 'CREATE TABLE IF NOT EXISTS tests (dummy1, dummy2, dummy3)'
-
         # act
         command = DbManager.generate_create_table_command(table_name, table_fields)
         # assert
@@ -25,9 +24,18 @@ class TestDbManager(TestCase):
         columns = ['col1, col2, col3']
         values = ['dummy1', 'dummy2', 'dummy3']
         expected_command = 'INSERT INTO tests(col1, col2, col3) VALUES ("dummy1", "dummy2", "dummy3")'
-
         # act
         command = DbManager.generate_insert_command(table_name, columns, values)
+        # assert
+        self.assertEquals(expected_command, command)
+
+    def test_insert_many_command_returns_a_valid_command(self):
+        # arrange
+        table_name = 'tests'
+        num_of_values = 3
+        expected_command = 'INSERT INTO tests VALUES (?,?,?)'
+        # act
+        command = DbManager.generate_insert_many_command(table_name, num_of_values)
         # assert
         self.assertEquals(expected_command, command)
 
@@ -36,7 +44,6 @@ class TestDbManager(TestCase):
         table_name = 'tests'
         where = ['test=True', 'debug=True']
         expected_command = 'SELECT * FROM tests WHERE test=True AND debug=True'
-
         # act
         command = DbManager.generate_select_command(table_name, where)
         # assert
