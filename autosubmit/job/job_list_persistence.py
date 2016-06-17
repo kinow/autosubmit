@@ -23,6 +23,11 @@ import os
 
 
 class JobListPersistence(object):
+    """
+    Class to manage the persistence of the job lists
+
+    """
+
     def save(self, persistence_path, persistence_file, job_list):
         """
         Persists a job list
@@ -44,6 +49,10 @@ class JobListPersistence(object):
 
 
 class JobListPersistencePkl(JobListPersistence):
+    """
+    Class to manage the pickle persistence of the job lists
+
+    """
 
     EXT = '.pkl'
 
@@ -79,6 +88,10 @@ class JobListPersistencePkl(JobListPersistence):
 
 
 class JobListPersistenceDb(JobListPersistence):
+    """
+    Class to manage the database persistence of the job lists
+
+    """
 
     VERSION = 1
     JOB_LIST_TABLE = 'job_list'
