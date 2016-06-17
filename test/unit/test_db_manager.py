@@ -12,7 +12,7 @@ class TestDbManager(TestCase):
         # arrange
         table_name = 'tests'
         table_fields = ['dummy1', 'dummy2', 'dummy3']
-        expected_command = 'CREATE TABLE tests (dummy1, dummy2, dummy3)'
+        expected_command = 'CREATE TABLE IF NOT EXISTS tests (dummy1, dummy2, dummy3)'
 
         # act
         command = DbManager.generate_create_table_command(table_name, table_fields)

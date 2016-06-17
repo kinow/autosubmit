@@ -107,7 +107,7 @@ class DbManager(object):
 
     @staticmethod
     def generate_create_table_command(table_name, fields):
-        create_command = 'CREATE TABLE ' + table_name + ' (' + fields.pop(0)
+        create_command = 'CREATE TABLE IF NOT EXISTS ' + table_name + ' (' + fields.pop(0)
         for field in fields:
             create_command += (', ' + field)
         create_command += ')'
