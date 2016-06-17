@@ -35,64 +35,121 @@ class DbManager(object):
         if is_new:
             self._initialize_database()
 
-    def get_version(self):
-        cursor = self.connection.cursor()
-        count_command = self.generate_count_command(table_name)
-        cursor.execute(count_command)
-        return cursor.fetchone()[0]
-
     def disconnect(self):
+        """
+        Closes the manager connection
+
+        """
         self.connection.close()
 
     def create_table(self, table_name, fields):
+        """
+        Creates a new table with the given fields
+        :param table_name: str
+        :param fields: [str]
+
+        """
         cursor = self.connection.cursor()
         create_command = self.generate_create_table_command(table_name, fields[:])
         cursor.execute(create_command)
         self.connection.commit()
 
     def drop_table(self, table_name):
+        """
+        Drops the given table
+        :param table_name: str
+
+        """
         cursor = self.connection.cursor()
         drop_command = self.generate_drop_table_command(table_name)
         cursor.execute(drop_command)
         self.connection.commit()
 
     def insert(self, table_name, columns, values):
+        """
+        Inserts a new row on the given table
+        :param table_name: str
+        :param columns: [str]
+        :param values: [str]
+
+        """
         cursor = self.connection.cursor()
         insert_command = self.generate_insert_command(table_name, columns[:], values[:])
         cursor.execute(insert_command)
         self.connection.commit()
 
     def select_first(self, table_name):
+        """
+        Returns the first row of the given table
+        :param table_name: str
+        :return row: []
+        """
         cursor = self._select_with_all_fields(table_name)
         return cursor.fetchone()
 
     def select_first_where(self, table_name, where):
+        """
+        Returns the first row of the given table that matches the given where conditions
+        :param table_name: str
+        :param where: [str]
+        :return row: []
+        """
         cursor = self._select_with_all_fields(table_name, where)
         return cursor.fetchone()
 
     def select_all(self, table_name):
+        """
+        Returns all the rows of the given table
+        :param table_name: str
+        :return rows: [[]]
+        """
         cursor = self._select_with_all_fields(table_name)
         return cursor.fetchall()
 
     def select_all_where(self, table_name, where):
+        """
+        Returns all the rows of the given table that matches the given where conditions
+        :param table_name: str
+        :param where: [str]
+        :return rows: [[]]
+        """
         cursor = self._select_with_all_fields(table_name, where)
         return cursor.fetchall()
 
     def count(self, table_name):
+        """
+        Returns the number of rows of the given table
+        :param table_name: str
+        :return int
+        """
         cursor = self.connection.cursor()
         count_command = self.generate_count_command(table_name)
         cursor.execute(count_command)
         return cursor.fetchone()[0]
 
     def drop(self):
+        """
+        Drops the database (deletes the .db file)
+
+        """
         self.connection.close()
         if os.path.exists(self._get_db_filepath()):
             os.remove(self._get_db_filepath())
 
     def _get_db_filepath(self):
+        """
+        Returns the path of the .db file
+        :return path: int
+
+        """
         return os.path.join(self.root_path, self.db_name) + '.db'
 
     def _initialize_database(self):
+        """
+        Initialize the database with an options table
+        with the name and the version of the DB
+
+        """
         options_table_name = 'db_options'
         columns = ['option_name', 'option_value']
         self.create_table(options_table_name, columns)
@@ -100,10 +157,20 @@ class DbManager(object):
         self.insert(options_table_name, columns, ['version', self.db_version])
 
     def _select_with_all_fields(self, table_name, where=[]):
+        """
+        Returns the cursor of the select command with the given parameters
+        :param table_name: str
+        :param where: [str]
+        :return cursor: Cursor
+        """
         cursor = self.connection.cursor()
         count_command = self.generate_select_command(table_name, where[:])
         cursor.execute(count_command)
         return cursor
+
+    """
+    Static methods that generates the SQLite commands to make the queries
+    """
 
     @staticmethod
     def generate_create_table_command(table_name, fields):

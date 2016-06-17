@@ -26,19 +26,19 @@ class JobListPersistence(object):
     def save(self, persistence_path, persistence_file, job_list):
         """
         Persists a job list
-
         :param job_list: JobList
         :param persistence_file: str
         :param persistence_path: str
+
         """
         raise NotImplementedError
 
     def load(self, persistence_path, persistence_file):
         """
         Loads a job list from persistence
-
         :param persistence_file: str
         :param persistence_path: str
+
         """
         raise NotImplementedError
 
@@ -50,9 +50,9 @@ class JobListPersistencePkl(JobListPersistence):
     def load(self, persistence_path, persistence_file):
         """
         Loads a job list from a pkl file
-
         :param persistence_file: str
         :param persistence_path: str
+
         """
         path = os.path.join(persistence_path, persistence_file + EXT)
         if os.path.exists(path):
@@ -65,10 +65,10 @@ class JobListPersistencePkl(JobListPersistence):
     def save(self, persistence_path, persistence_file, job_list):
         """
         Persists a job list in a pkl file
-
         :param job_list: JobList
         :param persistence_file: str
         :param persistence_path: str
+
         """
         path = os.path.join(persistence_path, persistence_file + EXT)
         fd = open(path, 'w')
@@ -89,9 +89,9 @@ class JobListPersistenceDb(JobListPersistence):
     def load(self, persistence_path, persistence_file):
         """
         Loads a job list from a database
-
         :param persistence_file: str
         :param persistence_path: str
+
         """
         job_list = list()
         rows = self.db_manager.select_all(self.JOB_LIST_TABLE)
@@ -102,10 +102,10 @@ class JobListPersistenceDb(JobListPersistence):
     def save(self, persistence_path, persistence_file, job_list):
         """
         Persists a job list in a database
-
         :param job_list: JobList
         :param persistence_file: str
         :param persistence_path: str
+
         """
         self._reset_table()
         for job in job_list:
@@ -114,6 +114,7 @@ class JobListPersistenceDb(JobListPersistence):
     def _reset_table(self):
         """
         Drops and recreates the database
+
         """
         self.db_manager.drop_table(self.JOB_LIST_TABLE)
         self.db_manager.create_table(self.JOB_LIST_TABLE, ['name', 'id', 'status', 'priority'])
