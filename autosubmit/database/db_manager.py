@@ -30,10 +30,16 @@ class DbManager(object):
         self.root_path = root_path
         self.db_name = db_name
         self.db_version = db_version
-        self.connection = None
-
-    def connect(self):
+        is_new = not os.path.exists(self._get_db_filepath())
         self.connection = sqlite3.connect(self._get_db_filepath())
+        if is_new:
+            self._initialize_database()
+
+    def get_version(self):
+        cursor = self.connection.cursor()
+        count_command = self.generate_count_command(table_name)
+        cursor.execute(count_command)
+        return cursor.fetchone()[0]
 
     def disconnect(self):
         self.connection.close()
@@ -56,6 +62,22 @@ class DbManager(object):
         cursor.execute(insert_command)
         self.connection.commit()
 
+    def select_first(self, table_name):
+        cursor = self._select_with_all_fields(table_name)
+        return cursor.fetchone()
+
+    def select_first_where(self, table_name, where):
+        cursor = self._select_with_all_fields(table_name, where)
+        return cursor.fetchone()
+
+    def select_all(self, table_name):
+        cursor = self._select_with_all_fields(table_name)
+        return cursor.fetchall()
+
+    def select_all_where(self, table_name, where):
+        cursor = self._select_with_all_fields(table_name, where)
+        return cursor.fetchall()
+
     def count(self, table_name):
         cursor = self.connection.cursor()
         count_command = self.generate_count_command(table_name)
@@ -69,6 +91,19 @@ class DbManager(object):
 
     def _get_db_filepath(self):
         return os.path.join(self.root_path, self.db_name) + '.db'
+
+    def _initialize_database(self):
+        options_table_name = 'db_options'
+        columns = ['option_name', 'option_value']
+        self.create_table(options_table_name, columns)
+        self.insert(options_table_name, columns, ['name', self.db_name])
+        self.insert(options_table_name, columns, ['version', self.db_version])
+
+    def _select_with_all_fields(self, table_name, where=[]):
+        cursor = self.connection.cursor()
+        count_command = self.generate_select_command(table_name, where[:])
+        cursor.execute(count_command)
+        return cursor
 
     @staticmethod
     def generate_create_table_command(table_name, fields):
@@ -88,9 +123,9 @@ class DbManager(object):
         insert_command = 'INSERT INTO ' + table_name + '(' + columns.pop(0)
         for column in columns:
             insert_command += (', ' + column)
-        insert_command += (') VALUES ("' + values.pop(0) + '"')
+        insert_command += (') VALUES ("' + str(values.pop(0)) + '"')
         for value in values:
-            insert_command += (', "' + value + '"')
+            insert_command += (', "' + str(value) + '"')
         insert_command += ')'
         return insert_command
 
@@ -98,3 +133,11 @@ class DbManager(object):
     def generate_count_command(table_name):
         count_command = 'SELECT count(*) FROM ' + table_name
         return count_command
+
+    @staticmethod
+    def generate_select_command(table_name, where=[]):
+        basic_select = 'SELECT * FROM ' + table_name
+        select_command = basic_select if len(where) == 0 else basic_select + ' WHERE ' + where.pop(0)
+        for condition in where:
+            select_command += ' AND ' + condition
+        return select_command

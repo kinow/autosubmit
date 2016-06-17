@@ -7,13 +7,17 @@ from autosubmit.database.db_manager import DbManager
 
 
 class TestDbManager(TestCase):
-
     def setUp(self):
         self.db_manager = DbManager('', 'test-db', 1)
-        self.db_manager.connect()
 
     def tearDown(self):
         self.db_manager.drop()
+
+    def test_db_manager_has_made_correct_initialization(self):
+        name = self.db_manager.select_first_where('db_options', ['option_name="name"'])[1]
+        version = self.db_manager.select_first_where('db_options', ['option_name="version"'])[1]
+        self.assertEquals(self.db_manager.db_name, name)
+        self.assertEquals(self.db_manager.db_version, int(version))
 
     def test_after_create_table_command_then_it_returns_0_rows(self):
         table_name = 'test'
