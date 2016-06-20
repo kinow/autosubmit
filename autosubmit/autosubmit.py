@@ -60,6 +60,7 @@ from config.parser_factory import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
+from job.job_list_persistence import JobListPersistenceDb
 # noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
@@ -561,21 +562,21 @@ class Autosubmit:
 
             # the experiment should be loaded as well
             if os.path.exists(filename):
-                joblist = JobList.load_file(filename)
+                job_list = Autosubmit.load_job_list(expid, as_conf)
                 Log.debug("Starting from joblist pickled in {0}", filename)
             else:
                 Log.error("The necessary pickle file {0} does not exist.", filename)
                 return False
 
-            Log.debug("Length of joblist: {0}", len(joblist))
+            Log.debug("Length of joblist: {0}", len(job_list))
 
-            Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
+            Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
             # check the job list script creation
             Log.debug("Checking experiment templates...")
 
             platforms_to_test = set()
-            for job in joblist.get_job_list():
+            for job in job_list.get_job_list():
                 if job.platform_name is None:
                     job.platform_name = hpcarch
                 # noinspection PyTypeChecker
@@ -583,25 +584,25 @@ class Autosubmit:
                 # noinspection PyTypeChecker
                 platforms_to_test.add(job.get_platform())
 
-            joblist.check_scripts(as_conf)
+            job_list.check_scripts(as_conf)
 
             #########################
             # AUTOSUBMIT - MAIN LOOP
             #########################
             # Main loop. Finishing when all jobs have been submitted
-            while joblist.get_active():
+            while job_list.get_active():
                 if Autosubmit.exit:
                     return 2
 
                 # reload parameters changes
                 Log.debug("Reloading parameters...")
                 as_conf.reload()
-                Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
+                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
                 # variables to be updated on the fly
-                total_jobs = len(joblist.get_job_list())
+                total_jobs = len(job_list.get_job_list())
                 Log.info(
-                    "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(joblist.get_completed()), total_jobs,
+                    "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()), total_jobs,
                                                                  time.strftime("%H:%M")))
                 safetysleeptime = as_conf.get_safetysleeptime()
                 Log.debug("Sleep: {0}", safetysleeptime)
@@ -610,7 +611,7 @@ class Autosubmit:
 
                 save = False
                 for platform in platforms_to_test:
-                    for job in joblist.get_in_queue(platform):
+                    for job in job_list.get_in_queue(platform):
                         prev_status = job.status
                         if prev_status != job.update_status(platform.check_job(job.id)):
                             if as_conf.get_notifications() == 'true':
@@ -621,20 +622,20 @@ class Autosubmit:
                                                                   as_conf.get_mails_to())
                             save = True
 
-                if joblist.update_list(as_conf) or save:
-                    joblist.save()
+                if job_list.update_list(as_conf) or save:
+                    job_list.save()
 
                 if Autosubmit.exit:
                     return 2
 
-                if Autosubmit.submit_ready_jobs(as_conf, joblist, platforms_to_test):
-                    joblist.save()
+                if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test):
+                    job_list.save()
                 if Autosubmit.exit:
                     return 2
                 time.sleep(safetysleeptime)
 
             Log.info("No more jobs to run.")
-            if len(joblist.get_failed()) > 0:
+            if len(job_list.get_failed()) > 0:
                 Log.info("Some jobs have failed and reached maximun retrials")
                 return False
             else:
@@ -1487,7 +1488,9 @@ class Autosubmit:
             rerun = as_conf.get_rerun()
 
             Log.info("\nCreating joblist...")
-            job_list = JobList(expid, BasicConfig, ConfigParserFactory())
+            job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                               JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                    "job_list_" + expid))
 
             date_format = ''
             if as_conf.get_chunk_size_unit() is 'hour':
@@ -1497,7 +1500,7 @@ class Autosubmit:
                     date_format = 'H'
                 if date.minute > 1:
                     date_format = 'M'
-            job_list.create(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
+            job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
             if rerun == "true":
                 chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                 job_list.rerun(chunk_list)
@@ -1975,3 +1978,21 @@ class Autosubmit:
         if not Autosubmit.run_experiment(testid):
             return False
         return Autosubmit.delete(testid, True)
+
+    @staticmethod
+    def load_job_list(expid, as_conf):
+        job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                           JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                "job_list_" + expid))
+        date_list = as_conf.get_date_list()
+        date_format = ''
+        if as_conf.get_chunk_size_unit() is 'hour':
+            date_format = 'H'
+        for date in date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.load_parameters(),
+                          date_format, as_conf.get_retrials(), False)
+        return job_list
