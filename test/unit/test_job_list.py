@@ -8,12 +8,14 @@ from autosubmit.config.parser_factory import ConfigParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
+from autosubmit.job.job_list_persistence import JobListPersistenceDb
 
 
 class TestJobList(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
-        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory())
+        self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory(),
+                                JobListPersistenceDb('.', '.'))
 
         # creating jobs for self list
         self.completed_job = self._createDummyJobWithStatus(Status.COMPLETED)
@@ -200,7 +202,7 @@ class TestJobList(TestCase):
         factory = ConfigParserFactory()
         factory.create_parser = Mock(return_value=parser_mock)
 
-        job_list = JobList(self.experiment_id, FakeBasicConfig, factory)
+        job_list = JobList(self.experiment_id, FakeBasicConfig, factory, JobListPersistenceDb('.', '.'))
         job_list._create_jobs = Mock()
         job_list._add_dependencies = Mock()
         job_list.update_genealogy = Mock()
@@ -215,7 +217,7 @@ class TestJobList(TestCase):
                       'fake-key2': 'fake-value2'}
 
         # act
-        job_list.create(date_list, member_list, num_chunks, parameters, 'H', 9999)
+        job_list.generate(date_list, member_list, num_chunks, parameters, 'H', 9999)
 
         # assert
         self.assertEquals(job_list.parameters, parameters)
@@ -244,8 +246,8 @@ class TestJobList(TestCase):
         JobList._create_jobs(dic_mock, parser_mock, 0)
 
         # arrange
-        dic_mock.read_section.assert_any_call('fake-section-1', 0)
-        dic_mock.read_section.assert_any_call('fake-section-2', 1)
+        dic_mock.read_section.assert_any_call('fake-section-1', 0, dict())
+        dic_mock.read_section.assert_any_call('fake-section-2', 1, dict())
 
     def _createDummyJobWithStatus(self, status):
         job_name = str(randrange(999999, 999999999))
