@@ -20,6 +20,7 @@ import pickle
 from sys import setrecursionlimit
 from autosubmit.job.job import Job
 from autosubmit.database.db_manager import DbManager
+
 import os
 
 
@@ -96,7 +97,7 @@ class JobListPersistenceDb(JobListPersistence):
 
     VERSION = 1
     JOB_LIST_TABLE = 'job_list'
-    TABLE_FIELDS = ['name', 'id', 'status', 'priority']
+    TABLE_FIELDS = ['name', 'id', 'status', 'priority', 'section', 'date', 'member', 'chunk']
 
     def __init__(self, persistence_path, persistence_file):
         self.db_manager = DbManager(persistence_path, persistence_file, self.VERSION)
@@ -108,11 +109,7 @@ class JobListPersistenceDb(JobListPersistence):
         :param persistence_path: str
 
         """
-        job_list = list()
-        rows = self.db_manager.select_all(self.JOB_LIST_TABLE)
-        for row in rows:
-            job_list.append(Job(row[0], row[1], row[2], row[3]))
-        return job_list
+        return self.db_manager.select_all(self.JOB_LIST_TABLE)
 
     def save(self, persistence_path, persistence_file, job_list):
         """
@@ -123,7 +120,8 @@ class JobListPersistenceDb(JobListPersistence):
 
         """
         self._reset_table()
-        jobs_data = [(job.name, job.id, job.status, job.priority) for job in job_list]
+        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
+                     in job_list]
         self.db_manager.insertMany(self.JOB_LIST_TABLE, jobs_data)
 
     def _reset_table(self):
