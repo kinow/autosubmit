@@ -61,6 +61,7 @@ from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
 from job.job_list_persistence import JobListPersistenceDb
+from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
@@ -1876,6 +1877,25 @@ class Autosubmit:
         raise Exception('Communications library not known')
 
     @staticmethod
+    def _get_job_list_persistence(as_conf):
+        """
+        Returns the JobListPersistence corresponding to the storage type defined on autosubmit's config file
+
+        :return: job_list_persistence
+        :rtype: JobListPersistence
+        """
+        storage_type = as_conf.get_storage_type()
+        if storage_type == 'pkl':
+            return JobListPersistencePkl()
+        elif storage_type == 'db':
+            return JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                        "job_list_" + expid)
+
+        # communications library not known
+        Log.error('You have defined a not valid storage type on the configuration file')
+        raise Exception('Storage type not known')
+
+    @staticmethod
     def _create_json(text):
         """
         Function to parse rerun specification from json format
@@ -1981,9 +2001,7 @@ class Autosubmit:
 
     @staticmethod
     def load_job_list(expid, as_conf):
-        job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                           JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                "job_list_" + expid))
+        job_list = JobList(expid, BasicConfig, ConfigParserFactory(), Autosubmit._get_job_list_persistence())
         date_list = as_conf.get_date_list()
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':
