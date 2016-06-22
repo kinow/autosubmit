@@ -160,6 +160,23 @@ class Job:
         """
         self._queue = value
 
+    def update_ancestors(self, job_list):
+        """
+        Sets the queue to be used by the job.
+
+        :param job_list: queue to set
+        :type job_list: JobList
+        """
+        if self._ancestors is None:
+            self._ancestors = set()
+            if self.has_parents():
+                for parent in self.parents:
+                    parent = job_list.get_job_by_name(parent)
+                    self._ancestors.add(parent.name)
+                    parent.update_ancestors(job_list)
+                    for ancestor in parent.ancestors:
+                        self._ancestors.add(ancestor)
+
     @property
     def ancestors(self):
         """
@@ -168,13 +185,6 @@ class Job:
         :return: job ancestors
         :rtype: set
         """
-        if self._ancestors is None:
-            self._ancestors = set()
-            if self.has_parents():
-                for parent in self.parents:
-                    self._ancestors.add(parent)
-                    for ancestor in parent.ancestors:
-                        self._ancestors.add(ancestor)
         return self._ancestors
 
     @property
@@ -239,8 +249,8 @@ class Job:
         """
         self._ancestors = None
         for parent in new_parent:
-            self._parents.add(parent)
-            parent.__add_child(self)
+            self._parents.add(parent.name)
+            parent.__add_child(self.name)
 
     def __add_child(self, new_child):
         """

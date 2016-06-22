@@ -518,7 +518,7 @@ class JobList:
                 retrials = job.retrials
 
             if job.fail_count < retrials:
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [parent for parent in job.parents if self.get_job_by_name(parent).status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     save = True
@@ -531,7 +531,7 @@ class JobList:
         # if waiting jobs has all parents completed change its State to READY
         Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
-            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+            tmp = [parent for parent in job.parents if self.get_job_by_name(parent).status == Status.COMPLETED]
             # for parent in job.parents:
             # if parent.status != Status.COMPLETED:
             # break
@@ -553,18 +553,27 @@ class JobList:
             if job.file is None or job.file == '':
                 self._remove_job(job)
 
+        for job in self._job_list:
+            job.update_ancestors(self)
+
         # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
         for job in self._job_list:
             for parent in list(job.parents):
+                parent = self.get_job_by_name(parent)
                 for ancestor in parent.ancestors:
                     if ancestor in job.parents:
                         job.parents.remove(ancestor)
-                        ancestor.children.remove(job)
+                        self.get_job_by_name(ancestor).children.remove(job.name)
 
         for job in self._job_list:
             if not job.has_parents():
                 job.status = Status.READY
+            job._ancestors = None
+            #job._parents = None
+            #job._children = None
+
+        #self._dic_jobs = None
 
     def check_scripts(self, as_conf):
         """
@@ -599,12 +608,14 @@ class JobList:
         :type job: Job
         """
         for child in job.children:
+            child = self.get_job_by_name(child)
             for parent in job.parents:
-                child.add_parent(parent)
-            child.delete_parent(job)
+                child.add_parent(self.get_job_by_name(parent))
+            child.delete_parent(job.name)
 
         for parent in job.parents:
-            parent.children.remove(job)
+            parent = self.get_job_by_name(parent)
+            parent.children.remove(job.name)
 
         self._job_list.remove(job)
 

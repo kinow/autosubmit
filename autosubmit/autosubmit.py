@@ -788,9 +788,11 @@ class Autosubmit:
         referenced_jobs_to_remove = set()
         for job in jobs:
             for child in job.children:
+                child = job_list.get_job_by_name(child)
                 if child not in jobs:
                     referenced_jobs_to_remove.add(child)
             for parent in job.parents:
+                parent = job_list.get_job_by_name(parent)
                 if parent not in jobs:
                     referenced_jobs_to_remove.add(parent)
 
