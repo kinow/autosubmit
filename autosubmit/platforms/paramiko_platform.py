@@ -1,11 +1,13 @@
 from time import sleep
 
+import datetime
 import os
 import paramiko
 
 from autosubmit.config.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.platforms.platform import Platform
+from autosubmit.date.chunk_date_lib import date2str
 
 
 class ParamikoPlatform(Platform):
@@ -340,7 +342,10 @@ class ParamikoPlatform(Platform):
         else:
             header = self.header.SERIAL
 
+        str_datetime = date2str(datetime.datetime.now(), 'S')
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        header = header.replace('%ERR_LOG_DIRECTIVE%', "{0}.{1}.out".format(job.name, str_datetime))
+        header = header.replace('%OUT_LOG_DIRECTIVE%', "{0}.{1}.err".format(job.name, str_datetime))
         return header
 
     def check_remote_log_dir(self):
