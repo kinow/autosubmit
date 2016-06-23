@@ -450,7 +450,7 @@ class JobList:
         :rtype: JobList
         """
         Log.info("Loading JobList")
-        return self._persistence.load(self._persistence_path, self._persistence_path)
+        return self._persistence.load(self._persistence_path, self._persistence_file)
 
     def save(self):
         """
