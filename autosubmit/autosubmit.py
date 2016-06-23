@@ -492,7 +492,7 @@ class Autosubmit:
             return True
 
     @staticmethod
-    def _load_parameters(as_conf, joblist, platforms):
+    def _load_parameters(as_conf, job_list, platforms):
         # Load parameters
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
@@ -503,7 +503,7 @@ class Autosubmit:
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
 
-        joblist.parameters = parameters
+        job_list.parameters = parameters
 
     @staticmethod
     def run_experiment(expid):
@@ -558,16 +558,9 @@ class Autosubmit:
             Log.debug("Default retrials: {0}", retrials)
             Log.info("Starting job submission...")
 
-            filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
-            Log.debug(filename)
-
-            # the experiment should be loaded as well
-            if os.path.exists(filename):
-                job_list = Autosubmit.load_job_list(expid, as_conf)
-                Log.debug("Starting from joblist pickled in {0}", filename)
-            else:
-                Log.error("The necessary pickle file {0} does not exist.", filename)
-                return False
+            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+            job_list = Autosubmit.load_job_list(expid, as_conf)
+            Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
             Log.debug("Length of joblist: {0}", len(job_list))
 
@@ -644,12 +637,12 @@ class Autosubmit:
                 return True
 
     @staticmethod
-    def submit_ready_jobs(as_conf, joblist, platforms_to_test):
+    def submit_ready_jobs(as_conf, job_list, platforms_to_test):
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
         :param as_conf: autosubmit config object
-        :param joblist: job list to check
+        :param job_list: job list to check
         :param platforms_to_test: platforms used
         :type platforms_to_test: set
         :return: True if at least one job was submitted, False otherwise
@@ -657,35 +650,35 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            jobinqueue = joblist.get_in_queue(platform)
-            jobsavail = joblist.get_ready(platform)
-            if len(jobsavail) == 0:
+            jobs_in_queue = job_list.get_in_queue(platform)
+            jobs_available = job_list.get_ready(platform)
+            if len(jobs_available) == 0:
                 continue
 
-            Log.info("\nJobs ready for {1}: {0}", len(jobsavail), platform.name)
+            Log.info("\nJobs ready for {1}: {0}", len(jobs_available), platform.name)
 
             max_jobs = platform.total_jobs
             max_waiting_jobs = platform.max_waiting_jobs
-            waiting = len(joblist.get_submitted(platform) + joblist.get_queuing(platform))
+            waiting = len(job_list.get_submitted(platform) + job_list.get_queuing(platform))
             available = max_waiting_jobs - waiting
 
-            if min(available, len(jobsavail)) == 0:
-                Log.debug("Number of jobs ready: {0}", len(jobsavail))
+            if min(available, len(jobs_available)) == 0:
+                Log.debug("Number of jobs ready: {0}", len(jobs_available))
                 Log.debug("Number of jobs available: {0}", available)
-            elif min(available, len(jobsavail)) > 0 and len(joblist.get_in_queue(platform)) <= max_jobs:
-                Log.info("Jobs to submit: {0}", min(available, len(jobsavail)))
+            elif min(available, len(jobs_available)) > 0 and len(job_list.get_in_queue(platform)) <= max_jobs:
+                Log.info("Jobs to submit: {0}", min(available, len(jobs_available)))
 
-                s = sorted(jobsavail, key=lambda k: k.long_name.split('_')[1][:6])
+                s = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
                 list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
 
-                for job in list_of_jobs_avail[0:min(available, len(jobsavail), max_jobs - len(jobinqueue))]:
-                    job.update_parameters(as_conf, joblist.parameters)
-                    scriptname = job.create_script(as_conf)
+                for job in list_of_jobs_avail[0:min(available, len(jobs_available), max_jobs - len(jobs_in_queue))]:
+                    job.update_parameters(as_conf, job_list.parameters)
+                    script_name = job.create_script(as_conf)
                     try:
-                        platform.send_file(scriptname)
+                        platform.send_file(script_name)
                         platform.remove_stat_file(job.name)
                         platform.remove_completed_file(job.name)
-                        job.id = platform.submit_job(job, scriptname)
+                        job.id = platform.submit_job(job, script_name)
                     except Exception:
                         Log.error("{0} submission failed", job.name)
                         continue
@@ -719,7 +712,6 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        root_name = 'job_list'
         BasicConfig.read()
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
@@ -729,10 +721,14 @@ class Autosubmit:
             return 1
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
-        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
         Log.info("Getting job list...")
-        Log.debug("JobList: {0}".format(filename))
-        job_list = pickle.load(open(filename, 'r'))
+
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf.reload()
+
+        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+        job_list = Autosubmit.load_job_list(expid, as_conf)
+        Log.debug("Job list restored from {0} files", pkl_dir)
         if not isinstance(job_list, type([])):
             jobs = []
             if filter_chunks:
@@ -744,16 +740,16 @@ class Autosubmit:
                 else:
                     # noinspection PyTypeChecker
                     data = json.loads(Autosubmit._create_json(fc))
-                    for datejson in data['sds']:
-                        date = datejson['sd']
+                    for date_json in data['sds']:
+                        date = date_json['sd']
                         jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
-                        for memberjson in datejson['ms']:
-                            member = memberjson['m']
+                        for member_json in date_json['ms']:
+                            member = member_json['m']
                             jobs_member = filter(lambda j: j.member == member, jobs_date)
 
-                            for chunkjson in memberjson['cs']:
-                                chunk = int(chunkjson)
+                            for chunk_json in member_json['cs']:
+                                chunk = int(chunk_json)
                                 jobs = jobs + [job for job in filter(lambda j: j.chunk == chunk, jobs_member)]
 
             elif filter_status:
@@ -819,7 +815,6 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        root_name = 'job_list'
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         if not os.path.exists(exp_path):
@@ -830,33 +825,39 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'statistics.log'))
         Log.info("Loading jobs...")
-        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + '_' + expid + '.pkl')
-        jobs = pickle.load(open(filename, 'r'))
+
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf.reload()
+
+        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+        job_list = Autosubmit.load_job_list(expid, as_conf)
+        Log.debug("Job list restored from {0} files", pkl_dir)
 
         if filter_type:
             ft = filter_type
             Log.debug(ft)
             if ft == 'Any':
-                jobs = jobs.get_job_list()
+                job_list = job_list.get_job_list()
             else:
-                jobs = [job for job in jobs.get_job_list() if job.section == ft]
+                job_list = [job for job in job_list.get_job_list() if job.section == ft]
         else:
             ft = 'Any'
-            jobs = jobs.get_job_list()
+            job_list = job_list.get_job_list()
 
         period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
         if filter_period:
             period_ini = period_fi - datetime.timedelta(hours=filter_period)
             Log.debug(str(period_ini))
-            jobs = [job for job in jobs if job.check_started_after(period_ini) or job.check_running_after(period_ini)]
+            job_list = [job for job in job_list if
+                        job.check_started_after(period_ini) or job.check_running_after(period_ini)]
         else:
             period_ini = None
 
-        if len(jobs) > 0:
+        if len(job_list) > 0:
             Log.info("Plotting stats...")
             monitor_exp = Monitor()
             # noinspection PyTypeChecker
-            monitor_exp.generate_output_stats(expid, jobs, file_format, period_ini, period_fi, not hide)
+            monitor_exp.generate_output_stats(expid, job_list, file_format, period_ini, period_fi, not hide)
             Log.result("Stats plot ready")
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, period_ini, period_fi))
@@ -931,7 +932,6 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        root_name = 'job_list'
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         if not os.path.exists(exp_path):
@@ -942,12 +942,13 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'recovery.log'))
 
-        Log.info('Recovering experiment {0}'.format(expid))
-
-        path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-        job_list = pickle.load(open(path, 'r'))
-
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+
+        Log.info('Recovering experiment {0}'.format(expid))
+        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+        job_list = Autosubmit.load_job_list(expid, as_conf)
+        Log.debug("Job list restored from {0} files", pkl_dir)
+
         if not as_conf.check_conf_files():
             Log.critical('Can not recover with invalid configuration')
             return False
@@ -1034,16 +1035,11 @@ class Autosubmit:
         if len(submitter.platforms) == 0:
             return False
 
-        filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', 'job_list_' + expid + '.pkl')
-        # the experiment should be loaded as well
-        if os.path.exists(filename):
-            joblist = pickle.load(open(filename, 'rw'))
-            Log.debug("Starting from joblist pickled in {0}", filename)
-        else:
-            Log.error("The necessary pickle file {0} does not exist. Can not check templates!", filename)
-            return False
+        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+        job_list = Autosubmit.load_job_list(expid, as_conf)
+        Log.debug("Job list restored from {0} files", pkl_dir)
 
-        Autosubmit._load_parameters(as_conf, joblist, submitter.platforms)
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
         hpcarch = as_conf.get_platform()
         for job in joblist.get_job_list():
@@ -1490,8 +1486,7 @@ class Autosubmit:
 
             Log.info("\nCreating joblist...")
             job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                               JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                    "job_list_" + expid))
+                               Autosubmit._get_job_list_persistence(expid, as_conf))
 
             date_format = ''
             if as_conf.get_chunk_size_unit() is 'hour':
@@ -1642,10 +1637,11 @@ class Autosubmit:
             Log.debug('Chunks to change: {0}', filter_chunks)
             Log.debug('Status of jobs to change: {0}', filter_status)
             Log.debug('Sections to change: {0}', filter_section)
-            job_list = pickle.load(open(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl', root_name + "_" + expid +
-                                                     ".pkl"), 'r'))
+
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
+
+            job_list = Autosubmit.load_job_list(expid, as_conf)
 
             final_status = Autosubmit._get_status(final)
             if filter_chunks:
@@ -1658,22 +1654,22 @@ class Autosubmit:
                 else:
                     # noinspection PyTypeChecker
                     data = json.loads(Autosubmit._create_json(fc))
-                    for datejson in data['sds']:
-                        date = datejson['sd']
+                    for date_json in data['sds']:
+                        date = date_json['sd']
                         jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
                         for job in filter(lambda j: j.member is None, jobs_date):
                             Autosubmit.change_status(final, final_status, job)
 
-                        for memberjson in datejson['ms']:
-                            member = memberjson['m']
+                        for member_json in date_json['ms']:
+                            member = member_json['m']
                             jobs_member = filter(lambda j: j.member == member, jobs_date)
 
                             for job in filter(lambda j: j.chunk is None, jobs_member):
                                 Autosubmit.change_status(final, final_status, job)
 
-                            for chunkjson in memberjson['cs']:
-                                chunk = int(chunkjson)
+                            for chunk_json in member_json['cs']:
+                                chunk = int(chunk_json)
                                 for job in filter(lambda j: j.chunk == chunk, jobs_member):
                                     Autosubmit.change_status(final, final_status, job)
 
@@ -1877,7 +1873,7 @@ class Autosubmit:
         raise Exception('Communications library not known')
 
     @staticmethod
-    def _get_job_list_persistence(as_conf):
+    def _get_job_list_persistence(expid, as_conf):
         """
         Returns the JobListPersistence corresponding to the storage type defined on autosubmit's config file
 
@@ -1924,7 +1920,7 @@ class Autosubmit:
         return result
 
     @staticmethod
-    def test(expid, chunks, member=None, stardate=None, hpc=None, branch=None):
+    def test(expid, chunks, member=None, start_date=None, hpc=None, branch=None):
         """
         Method to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
         given number of chunks with a random start date and a random member to be run on a random HPC.
@@ -1937,9 +1933,9 @@ class Autosubmit:
         :param member: member to be used by the test. If None, it uses a random one from which are defined on
                        the experiment.
         :type member: str
-        :param stardate: start date to be used by the test. If None, it uses a random one from which are defined on
+        :param start_date: start date to be used by the test. If None, it uses a random one from which are defined on
                          the experiment.
-        :type stardate: str
+        :type start_date: str
         :param hpc: HPC to be used by the test. If None, it uses a random one from which are defined on
                     the experiment.
         :type hpc: str
@@ -1972,11 +1968,11 @@ class Autosubmit:
             hpc = random.choice(test_platforms)
         if member is None:
             member = random.choice(exp_parser.get('experiment', 'MEMBERS').split(' '))
-        if stardate is None:
-            stardate = random.choice(exp_parser.get('experiment', 'DATELIST').split(' '))
+        if start_date is None:
+            start_date = random.choice(exp_parser.get('experiment', 'DATELIST').split(' '))
         # Experiment
         content = content.replace(re.search('DATELIST =.*', content).group(0),
-                                  "DATELIST = " + stardate)
+                                  "DATELIST = " + start_date)
         content = content.replace(re.search('MEMBERS =.*', content).group(0),
                                   "MEMBERS = " + member)
         # noinspection PyTypeChecker
@@ -2001,7 +1997,8 @@ class Autosubmit:
 
     @staticmethod
     def load_job_list(expid, as_conf):
-        job_list = JobList(expid, BasicConfig, ConfigParserFactory(), Autosubmit._get_job_list_persistence())
+        job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                           Autosubmit._get_job_list_persistence(expid, as_conf))
         date_list = as_conf.get_date_list()
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':
