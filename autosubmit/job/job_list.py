@@ -339,7 +339,7 @@ class JobList:
         :rtype: list
         """
         return self.get_submitted(platform) + self.get_running(platform) + self.get_queuing(
-            platform) + self.get_unknown()
+            platform) + self.get_unknown(platform)
 
     def get_not_in_queue(self, platform=None):
         """
