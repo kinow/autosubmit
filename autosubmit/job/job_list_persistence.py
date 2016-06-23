@@ -18,10 +18,11 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import pickle
 from sys import setrecursionlimit
-from autosubmit.job.job import Job
-from autosubmit.database.db_manager import DbManager
 
 import os
+
+from autosubmit.config.log import Log
+from autosubmit.database.db_manager import DbManager
 
 
 class JobListPersistence(object):
@@ -65,12 +66,12 @@ class JobListPersistencePkl(JobListPersistence):
         :param persistence_path: str
 
         """
-        path = os.path.join(persistence_path, persistence_file + EXT)
+        path = os.path.join(persistence_path, persistence_file + '.pkl')
         if os.path.exists(path):
             fd = open(path, 'r')
             return pickle.load(fd)
         else:
-            Log.critical('File {0} does not exist'.format(filename))
+            Log.critical('File {0} does not exist'.format(path))
             return list()
 
     def save(self, persistence_path, persistence_file, job_list):
@@ -81,12 +82,14 @@ class JobListPersistencePkl(JobListPersistence):
         :param persistence_path: str
 
         """
-        path = os.path.join(persistence_path, persistence_file + EXT)
+        path = os.path.join(persistence_path, persistence_file + '.pkl')
         fd = open(path, 'w')
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
-        pickle.dump(job_list, fd)
-        Log.debug('Joblist saved')
+        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
+                     in job_list]
+        pickle.dump(jobs_data, fd)
+        Log.debug('Job list saved')
 
 
 class JobListPersistenceDb(JobListPersistence):
