@@ -199,6 +199,7 @@ class Autosubmit:
             # Recovery
             subparser = subparsers.add_parser('recovery', description="recover specified experiment")
             subparser.add_argument('expid', type=str, help='experiment identifier')
+            subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('-all', action="store_true", default=False,
                                    help='Get completed files to synchronize pkl')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
@@ -299,7 +300,7 @@ class Autosubmit:
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
-                return Autosubmit.recovery(args.expid, args.save, args.all, args.hide)
+                return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'create':
@@ -922,7 +923,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, save, all_jobs, hide):
+    def recovery(expid, noplot, save, all_jobs, hide):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the joblist.
@@ -1009,8 +1010,12 @@ class Autosubmit:
             Log.warning('Changes NOT saved to the jobList. Use -s option to save')
 
         Log.result("Recovery finalized")
-        monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+
+        if not noplot:
+            Log.info("\nPloting joblist...")
+            monitor_exp = Monitor()
+            monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+
         return True
 
     @staticmethod

@@ -352,11 +352,12 @@ You must execute:
 Options:
 ::
 
-    usage: autosubmit recovery [-h] [-all] [-s] expid
+    usage: autosubmit recovery [-h] [-np] [-all] [-s] expid
 
         expid       experiment identifier
 
         -h, --help  show this help message and exit
+        -np, --noplot  omit plot
         -all        Get all completed files to synchronize pkl
         -s, --save  Save changes to disk
 
