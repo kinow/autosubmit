@@ -787,7 +787,7 @@ class AutosubmitConfig:
         :return: communications library
         :rtype: str
         """
-        return self.get_option(self._conf_parser, 'storage', 'TYPE', 'db').lower()
+        return self.get_option(self._conf_parser, 'storage', 'TYPE', 'pkl').lower()
 
     @staticmethod
     def is_valid_mail_address(mail_address):
