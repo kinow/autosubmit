@@ -724,7 +724,9 @@ class Autosubmit:
         Log.info("Getting job list...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.reload()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
         job_list = Autosubmit.load_job_list(expid, as_conf)
@@ -827,7 +829,9 @@ class Autosubmit:
         Log.info("Loading jobs...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.reload()
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
         job_list = Autosubmit.load_job_list(expid, as_conf)
@@ -943,6 +947,9 @@ class Autosubmit:
                                   'recovery.log'))
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -1639,7 +1646,9 @@ class Autosubmit:
             Log.debug('Sections to change: {0}', filter_section)
 
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-            as_conf.reload()
+            if not as_conf.check_conf_files():
+                Log.critical('Can not run with invalid configuration')
+                return False
 
             job_list = Autosubmit.load_job_list(expid, as_conf)
 
