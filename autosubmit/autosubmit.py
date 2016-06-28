@@ -1553,17 +1553,19 @@ class Autosubmit:
                 if not force:
                     Log.debug("The project folder exists. SKIPPING...")
                     return True
-            else:
-                Log.debug("The project folder {0} has been created.", project_path)
-            shutil.rmtree(project_path)
+                else:
+                    shutil.rmtree(project_path, ignore_errors=True)
+            os.mkdir(project_path)
+            Log.debug("The project folder {0} has been created.", project_path)
             Log.info("Checking out revision {0} into {1}", svn_project_revision + " " + svn_project_url, project_path)
             try:
-                output = subprocess.check_output("cd " + project_path + "; svn checkout -r " + svn_project_revision +
-                                                 " " + svn_project_url + " " + project_destination, shell=True)
+                output = subprocess.check_output("cd " + project_path + "; svn --force-interactive checkout -r " +
+                                                 svn_project_revision + " " + svn_project_url + " " +
+                                                 project_destination, shell=True)
             except subprocess.CalledProcessError:
                 Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
                           project_path)
-                shutil.rmtree(project_path)
+                shutil.rmtree(project_path, ignore_errors=True)
                 return False
             Log.debug("{0}" % output)
 
