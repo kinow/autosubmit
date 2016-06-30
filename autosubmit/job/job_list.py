@@ -554,11 +554,7 @@ class JobList:
         # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
         for job in self._job_list:
-            for parent in list(job.parents):
-                for ancestor in parent.ancestors:
-                    if ancestor in job.parents:
-                        job.parents.remove(ancestor)
-                        ancestor.children.remove(job)
+            job.remove_redundant_parents()
 
         for job in self._job_list:
             if not job.has_parents():

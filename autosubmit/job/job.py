@@ -614,9 +614,9 @@ class Job:
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.get_platform()
         return ''.join([current_platform.get_header(self),
-                                   snippet.AS_HEADER,
-                                   template,
-                                   snippet.AS_TAILER])
+                        snippet.AS_HEADER,
+                        template,
+                        snippet.AS_TAILER])
 
     def create_script(self, as_conf):
         """
@@ -747,3 +747,22 @@ class Job:
             return True
         else:
             return False
+
+    def is_parent(self, job):
+        return job in self.parents
+
+    def is_ancestor(self, job):
+        # tmp_parents = set(self._parents)
+        # tmp_parents.remove(job)
+        for parent in list(self.parents):
+            if parent.is_parent(job):
+                return True
+            elif parent.is_ancestor(job):
+                return True
+        return False
+
+    def remove_redundant_parents(self):
+        for parent in list(self.parents):
+            if self.is_ancestor(parent):
+                parent.children.remove(self)
+                self.parents.remove(parent)
