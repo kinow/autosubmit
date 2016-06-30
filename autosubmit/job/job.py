@@ -749,11 +749,21 @@ class Job:
             return False
 
     def is_parent(self, job):
+        """
+        Check if the given job is a parent
+        :param job: job to be checked if is a parent
+        :return: True if job is a parent, false otherwise
+        :rtype bool
+        """
         return job in self.parents
 
     def is_ancestor(self, job):
-        # tmp_parents = set(self._parents)
-        # tmp_parents.remove(job)
+        """
+        Check if the given job is an ancestor
+        :param job: job to be checked if is an ancestor
+        :return: True if job is an ancestor, false otherwise
+        :rtype bool
+        """
         for parent in list(self.parents):
             if parent.is_parent(job):
                 return True
@@ -762,6 +772,10 @@ class Job:
         return False
 
     def remove_redundant_parents(self):
+        """
+        Checks if a parent is also an ancestor, if true, removes the link in both directions.
+        Useful to remove redundant dependencies.
+        """
         for parent in list(self.parents):
             if self.is_ancestor(parent):
                 parent.children.remove(self)
