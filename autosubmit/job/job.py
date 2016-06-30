@@ -80,7 +80,6 @@ class Job:
         self.expid = name.split('_')[0]
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
-        self._ancestors = None
         self.write_start = False
         self._platform = None
         self.check = True
@@ -161,23 +160,6 @@ class Job:
         self._queue = value
 
     @property
-    def ancestors(self):
-        """
-        Returns all job's ancestors
-
-        :return: job ancestors
-        :rtype: set
-        """
-        if self._ancestors is None:
-            self._ancestors = set()
-            if self.has_parents():
-                for parent in self.parents:
-                    self._ancestors.add(parent)
-                    for ancestor in parent.ancestors:
-                        self._ancestors.add(ancestor)
-        return self._ancestors
-
-    @property
     def children(self):
         """
         Returns a list containing all children of the job
@@ -237,7 +219,6 @@ class Job:
         :param new_parent: job's parents to add
         :type new_parent: *Job
         """
-        self._ancestors = None
         for parent in new_parent:
             self._parents.add(parent)
             parent.__add_child(self)
@@ -258,8 +239,6 @@ class Job:
         :param parent: parent to remove
         :type parent: Job
         """
-        self._ancestors = None
-        # careful, it is only possible to remove one parent at a time
         self.parents.remove(parent)
 
     def delete_child(self, child):

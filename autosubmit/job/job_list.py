@@ -559,7 +559,6 @@ class JobList:
         for job in self._job_list:
             if not job.has_parents():
                 job.status = Status.READY
-            del job._ancestors
 
     def check_scripts(self, as_conf):
         """
