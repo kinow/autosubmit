@@ -197,6 +197,8 @@ class AutosubmitConfig:
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
         result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', False)
+        result = result and self.is_valid_communications_library()
+        result = result and self.is_valid_storage_type()
 
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
@@ -778,12 +780,29 @@ class AutosubmitConfig:
         """
         return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
 
+    def get_storage_type(self):
+        """
+        Returns the communications library from autosubmit's config file. Paramiko by default.
+
+        :return: communications library
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'storage', 'TYPE', 'pkl').lower()
+
     @staticmethod
     def is_valid_mail_address(mail_address):
         if re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail_address):
             return True
         else:
             return False
+
+    def is_valid_communications_library(self):
+        library = self.get_communications_library()
+        return library in ['paramiko', 'saga']
+
+    def is_valid_storage_type(self):
+        storage_type = self.get_storage_type()
+        return storage_type in ['pkl', 'db']
 
     @staticmethod
     def get_parser(parser_factory, file_path):

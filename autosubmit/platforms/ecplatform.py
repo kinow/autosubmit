@@ -261,8 +261,6 @@ class EcCcaHeader:
              ###############################################################################
              #
              #PBS -N %JOBNAME%
-             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
              #PBS -q np
              #PBS -l EC_total_tasks=%NUMPROC%
              #PBS -l EC_threads_per_task=%NUMTHREADS%
