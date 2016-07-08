@@ -79,6 +79,7 @@ It is also defined a suite of variables for the experiment's default platform:
 Project variables
 =================
 
+- **NUMMEMBERS**: number of members of the experiment
 - **NUMCHUNKS**: number of chunks of the experiment
 - **CHUNKSIZE**: size of each chunk
 - **CHUNKSIZEUNIT**: unit of the chuk size. Can be hour, day, month or year.
