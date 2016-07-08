@@ -528,114 +528,119 @@ class Autosubmit:
             return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
-        with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-            Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+        try:
+            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
+                Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
-            Log.set_file(os.path.join(tmp_path, 'run.log'))
-            os.system('clear')
+                Log.set_file(os.path.join(tmp_path, 'run.log'))
+                os.system('clear')
 
-            signal.signal(signal.SIGINT, signal_handler)
+                signal.signal(signal.SIGINT, signal_handler)
 
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-            if not as_conf.check_conf_files():
-                Log.critical('Can not run with invalid configuration')
-                return False
+                as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                if not as_conf.check_conf_files():
+                    Log.critical('Can not run with invalid configuration')
+                    return False
 
-            project_type = as_conf.get_project_type()
-            if project_type != "none":
-                # Check proj configuration
-                as_conf.check_proj()
+                project_type = as_conf.get_project_type()
+                if project_type != "none":
+                    # Check proj configuration
+                    as_conf.check_proj()
 
-            hpcarch = as_conf.get_platform()
+                hpcarch = as_conf.get_platform()
 
-            safetysleeptime = as_conf.get_safetysleeptime()
-            retrials = as_conf.get_retrials()
+                safetysleeptime = as_conf.get_safetysleeptime()
+                retrials = as_conf.get_retrials()
 
-            submitter = Autosubmit._get_submitter(as_conf)
-            submitter.load_platforms(as_conf)
+                submitter = Autosubmit._get_submitter(as_conf)
+                submitter.load_platforms(as_conf)
 
-            Log.debug("The Experiment name is: {0}", expid)
-            Log.debug("Sleep: {0}", safetysleeptime)
-            Log.debug("Default retrials: {0}", retrials)
-            Log.info("Starting job submission...")
+                Log.debug("The Experiment name is: {0}", expid)
+                Log.debug("Sleep: {0}", safetysleeptime)
+                Log.debug("Default retrials: {0}", retrials)
+                Log.info("Starting job submission...")
 
-            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-            job_list = Autosubmit.load_job_list(expid, as_conf)
-            Log.debug("Starting from job list restored from {0} files", pkl_dir)
+                pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
+                job_list = Autosubmit.load_job_list(expid, as_conf)
+                Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
-            Log.debug("Length of joblist: {0}", len(job_list))
+                Log.debug("Length of joblist: {0}", len(job_list))
 
-            Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-
-            # check the job list script creation
-            Log.debug("Checking experiment templates...")
-
-            platforms_to_test = set()
-            for job in job_list.get_job_list():
-                if job.platform_name is None:
-                    job.platform_name = hpcarch
-                # noinspection PyTypeChecker
-                job.set_platform(submitter.platforms[job.platform_name.lower()])
-                # noinspection PyTypeChecker
-                platforms_to_test.add(job.get_platform())
-
-            job_list.check_scripts(as_conf)
-
-            #########################
-            # AUTOSUBMIT - MAIN LOOP
-            #########################
-            # Main loop. Finishing when all jobs have been submitted
-            while job_list.get_active():
-                if Autosubmit.exit:
-                    return 2
-
-                # reload parameters changes
-                Log.debug("Reloading parameters...")
-                as_conf.reload()
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
-                # variables to be updated on the fly
-                total_jobs = len(job_list.get_job_list())
-                Log.info(
-                    "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()), total_jobs,
-                                                                 time.strftime("%H:%M")))
-                safetysleeptime = as_conf.get_safetysleeptime()
-                Log.debug("Sleep: {0}", safetysleeptime)
-                default_retrials = as_conf.get_retrials()
-                Log.debug("Number of retrials: {0}", default_retrials)
+                # check the job list script creation
+                Log.debug("Checking experiment templates...")
 
-                save = False
-                for platform in platforms_to_test:
-                    for job in job_list.get_in_queue(platform):
-                        prev_status = job.status
-                        if prev_status != job.update_status(platform.check_job(job.id)):
-                            if as_conf.get_notifications() == 'true':
-                                if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                  Status.VALUE_TO_KEY[prev_status],
-                                                                  Status.VALUE_TO_KEY[job.status],
-                                                                  as_conf.get_mails_to())
-                            save = True
+                platforms_to_test = set()
+                for job in job_list.get_job_list():
+                    if job.platform_name is None:
+                        job.platform_name = hpcarch
+                    # noinspection PyTypeChecker
+                    job.set_platform(submitter.platforms[job.platform_name.lower()])
+                    # noinspection PyTypeChecker
+                    platforms_to_test.add(job.get_platform())
 
-                if job_list.update_list(as_conf) or save:
-                    job_list.save()
+                job_list.check_scripts(as_conf)
 
-                if Autosubmit.exit:
-                    return 2
+                #########################
+                # AUTOSUBMIT - MAIN LOOP
+                #########################
+                # Main loop. Finishing when all jobs have been submitted
+                while job_list.get_active():
+                    if Autosubmit.exit:
+                        return 2
 
-                if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test):
-                    job_list.save()
-                if Autosubmit.exit:
-                    return 2
-                time.sleep(safetysleeptime)
+                    # reload parameters changes
+                    Log.debug("Reloading parameters...")
+                    as_conf.reload()
+                    Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
-            Log.info("No more jobs to run.")
-            if len(job_list.get_failed()) > 0:
-                Log.info("Some jobs have failed and reached maximun retrials")
-                return False
-            else:
-                Log.result("Run successful")
-                return True
+                    # variables to be updated on the fly
+                    total_jobs = len(job_list.get_job_list())
+                    Log.info(
+                        "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()),
+                                                                     total_jobs,
+                                                                     time.strftime("%H:%M")))
+                    safetysleeptime = as_conf.get_safetysleeptime()
+                    Log.debug("Sleep: {0}", safetysleeptime)
+                    default_retrials = as_conf.get_retrials()
+                    Log.debug("Number of retrials: {0}", default_retrials)
+
+                    save = False
+                    for platform in platforms_to_test:
+                        for job in job_list.get_in_queue(platform):
+                            prev_status = job.status
+                            if prev_status != job.update_status(platform.check_job(job.id)):
+                                if as_conf.get_notifications() == 'true':
+                                    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                      Status.VALUE_TO_KEY[prev_status],
+                                                                      Status.VALUE_TO_KEY[job.status],
+                                                                      as_conf.get_mails_to())
+                                save = True
+
+                    if job_list.update_list(as_conf) or save:
+                        job_list.save()
+
+                    if Autosubmit.exit:
+                        return 2
+
+                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test):
+                        job_list.save()
+                    if Autosubmit.exit:
+                        return 2
+                    time.sleep(safetysleeptime)
+
+                Log.info("No more jobs to run.")
+                if len(job_list.get_failed()) > 0:
+                    Log.info("Some jobs have failed and reached maximun retrials")
+                    return False
+                else:
+                    Log.result("Run successful")
+                    return True
+
+        except portalocker.AlreadyLocked:
+            Autosubmit.show_lock_warning(expid)
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test):
@@ -1459,72 +1464,76 @@ class Autosubmit:
             return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
-        with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-            Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+        try:
+            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
+                Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
-            Log.set_file(os.path.join(tmp_path, 'create_exp.log'))
+                Log.set_file(os.path.join(tmp_path, 'create_exp.log'))
 
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-            if not as_conf.check_conf_files():
-                Log.critical('Can not create with invalid configuration')
-                return False
+                as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                if not as_conf.check_conf_files():
+                    Log.critical('Can not create with invalid configuration')
+                    return False
 
-            project_type = as_conf.get_project_type()
+                project_type = as_conf.get_project_type()
 
-            if not Autosubmit._copy_code(as_conf, expid, project_type, False):
-                return False
-            update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
-                                                         "job_list_" + expid + ".pkl"))
-            Autosubmit._create_project_associated_conf(as_conf, False, update_job)
+                if not Autosubmit._copy_code(as_conf, expid, project_type, False):
+                    return False
+                update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                             "job_list_" + expid + ".pkl"))
+                Autosubmit._create_project_associated_conf(as_conf, False, update_job)
 
-            if project_type != "none":
-                # Check project configuration
-                as_conf.check_proj()
+                if project_type != "none":
+                    # Check project configuration
+                    as_conf.check_proj()
 
-            # Load parameters
-            Log.info("Loading parameters...")
-            parameters = as_conf.load_parameters()
+                # Load parameters
+                Log.info("Loading parameters...")
+                parameters = as_conf.load_parameters()
 
-            date_list = as_conf.get_date_list()
-            if len(date_list) != len(set(date_list)):
-                Log.error('There are repeated start dates!')
-                return False
-            num_chunks = as_conf.get_num_chunks()
-            member_list = as_conf.get_member_list()
-            if len(member_list) != len(set(member_list)):
-                Log.error('There are repeated member names!')
-                return False
-            rerun = as_conf.get_rerun()
+                date_list = as_conf.get_date_list()
+                if len(date_list) != len(set(date_list)):
+                    Log.error('There are repeated start dates!')
+                    return False
+                num_chunks = as_conf.get_num_chunks()
+                member_list = as_conf.get_member_list()
+                if len(member_list) != len(set(member_list)):
+                    Log.error('There are repeated member names!')
+                    return False
+                rerun = as_conf.get_rerun()
 
-            Log.info("\nCreating joblist...")
-            job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                               Autosubmit._get_job_list_persistence(expid, as_conf))
+                Log.info("\nCreating joblist...")
+                job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                                   Autosubmit._get_job_list_persistence(expid, as_conf))
 
-            date_format = ''
-            if as_conf.get_chunk_size_unit() is 'hour':
-                date_format = 'H'
-            for date in date_list:
-                if date.hour > 1:
+                date_format = ''
+                if as_conf.get_chunk_size_unit() is 'hour':
                     date_format = 'H'
-                if date.minute > 1:
-                    date_format = 'M'
-            job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
-            if rerun == "true":
-                chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-                job_list.rerun(chunk_list)
-            else:
-                job_list.remove_rerun_only_jobs()
+                for date in date_list:
+                    if date.hour > 1:
+                        date_format = 'H'
+                    if date.minute > 1:
+                        date_format = 'M'
+                job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
+                if rerun == "true":
+                    chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+                    job_list.rerun(chunk_list)
+                else:
+                    job_list.remove_rerun_only_jobs()
 
-            Log.info("\nSaving joblist...")
-            job_list.save()
-            if not noplot:
-                Log.info("\nPloting joblist...")
-                monitor_exp = Monitor()
-                monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
+                Log.info("\nSaving joblist...")
+                job_list.save()
+                if not noplot:
+                    Log.info("\nPloting joblist...")
+                    monitor_exp = Monitor()
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
 
-            Log.result("\nJob list created succesfully")
-            Log.user_warning("Remember to MODIFY the MODEL config files!")
-            return True
+                Log.result("\nJob list created succesfully")
+                Log.user_warning("Remember to MODIFY the MODEL config files!")
+                return True
+
+        except portalocker.AlreadyLocked:
+            Autosubmit.show_lock_warning(expid)
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
@@ -1638,105 +1647,109 @@ class Autosubmit:
             return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
-        with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-            Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+        try:
+            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
+                Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
-            Log.set_file(os.path.join(tmp_path, 'set_status.log'))
-            Log.debug('Exp ID: {0}', expid)
-            Log.debug('Save: {0}', save)
-            Log.debug('Final status: {0}', final)
-            Log.debug('List of jobs to change: {0}', lst)
-            Log.debug('Chunks to change: {0}', filter_chunks)
-            Log.debug('Status of jobs to change: {0}', filter_status)
-            Log.debug('Sections to change: {0}', filter_section)
+                Log.set_file(os.path.join(tmp_path, 'set_status.log'))
+                Log.debug('Exp ID: {0}', expid)
+                Log.debug('Save: {0}', save)
+                Log.debug('Final status: {0}', final)
+                Log.debug('List of jobs to change: {0}', lst)
+                Log.debug('Chunks to change: {0}', filter_chunks)
+                Log.debug('Status of jobs to change: {0}', filter_status)
+                Log.debug('Sections to change: {0}', filter_section)
 
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-            if not as_conf.check_conf_files():
-                Log.critical('Can not run with invalid configuration')
-                return False
+                as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                if not as_conf.check_conf_files():
+                    Log.critical('Can not run with invalid configuration')
+                    return False
 
-            job_list = Autosubmit.load_job_list(expid, as_conf)
+                job_list = Autosubmit.load_job_list(expid, as_conf)
 
-            final_status = Autosubmit._get_status(final)
-            if filter_chunks:
-                fc = filter_chunks
-                Log.debug(fc)
+                final_status = Autosubmit._get_status(final)
+                if filter_chunks:
+                    fc = filter_chunks
+                    Log.debug(fc)
 
-                if fc == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    # noinspection PyTypeChecker
-                    data = json.loads(Autosubmit._create_json(fc))
-                    for date_json in data['sds']:
-                        date = date_json['sd']
-                        jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
-
-                        for job in filter(lambda j: j.member is None, jobs_date):
+                    if fc == 'Any':
+                        for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
+                    else:
+                        # noinspection PyTypeChecker
+                        data = json.loads(Autosubmit._create_json(fc))
+                        for date_json in data['sds']:
+                            date = date_json['sd']
+                            jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
-                        for member_json in date_json['ms']:
-                            member = member_json['m']
-                            jobs_member = filter(lambda j: j.member == member, jobs_date)
-
-                            for job in filter(lambda j: j.chunk is None, jobs_member):
+                            for job in filter(lambda j: j.member is None, jobs_date):
                                 Autosubmit.change_status(final, final_status, job)
 
-                            for chunk_json in member_json['cs']:
-                                chunk = int(chunk_json)
-                                for job in filter(lambda j: j.chunk == chunk, jobs_member):
+                            for member_json in date_json['ms']:
+                                member = member_json['m']
+                                jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                                for job in filter(lambda j: j.chunk is None, jobs_member):
                                     Autosubmit.change_status(final, final_status, job)
 
-            if filter_status:
-                Log.debug("Filtering jobs with status {0}", filter_status)
-                if filter_status == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    fs = Autosubmit._get_status(filter_status)
-                    for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                        Autosubmit.change_status(final, final_status, job)
+                                for chunk_json in member_json['cs']:
+                                    chunk = int(chunk_json)
+                                    for job in filter(lambda j: j.chunk == chunk, jobs_member):
+                                        Autosubmit.change_status(final, final_status, job)
 
-            if filter_section:
-                ft = filter_section
-                Log.debug(ft)
-
-                if ft == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    for job in job_list.get_job_list():
-                        if job.section == ft:
+                if filter_status:
+                    Log.debug("Filtering jobs with status {0}", filter_status)
+                    if filter_status == 'Any':
+                        for job in job_list.get_job_list():
+                            Autosubmit.change_status(final, final_status, job)
+                    else:
+                        fs = Autosubmit._get_status(filter_status)
+                        for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
                             Autosubmit.change_status(final, final_status, job)
 
-            if lst:
-                jobs = lst.split()
+                if filter_section:
+                    ft = filter_section
+                    Log.debug(ft)
 
-                if jobs == 'Any':
-                    for job in job_list.get_job_list():
-                        Autosubmit.change_status(final, final_status, job)
-                else:
-                    for job in job_list.get_job_list():
-                        if job.name in jobs:
+                    if ft == 'Any':
+                        for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.section == ft:
+                                Autosubmit.change_status(final, final_status, job)
 
-            sys.setrecursionlimit(50000)
+                if lst:
+                    jobs = lst.split()
 
-            if save:
-                job_list.update_list(as_conf)
-                path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-                pickle.dump(job_list, open(path, 'w'))
-                Log.info("Saving JobList: {0}", path)
-            else:
-                job_list.update_list(as_conf)
-                Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
+                    if jobs == 'Any':
+                        for job in job_list.get_job_list():
+                            Autosubmit.change_status(final, final_status, job)
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.name in jobs:
+                                Autosubmit.change_status(final, final_status, job)
 
-            if not noplot:
-                Log.info("\nPloting joblist...")
-                monitor_exp = Monitor()
-                monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+                sys.setrecursionlimit(50000)
 
-            return True
+                if save:
+                    job_list.update_list(as_conf)
+                    path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
+                    pickle.dump(job_list, open(path, 'w'))
+                    Log.info("Saving JobList: {0}", path)
+                else:
+                    job_list.update_list(as_conf)
+                    Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
+
+                if not noplot:
+                    Log.info("\nPloting joblist...")
+                    monitor_exp = Monitor()
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+
+                return True
+
+        except portalocker.AlreadyLocked:
+            Autosubmit.show_lock_warning(expid)
 
     @staticmethod
     def _user_yes_no_query(question):
@@ -1763,7 +1776,7 @@ class Autosubmit:
     @staticmethod
     def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):
         """
-        Changes default configuration files to match new experminet values
+        Changes default configuration files to match new experiment values
 
         :param exp_id: experiment identifier
         :type exp_id: str
@@ -1771,7 +1784,7 @@ class Autosubmit:
         :type hpc: str
         :param autosubmit_version: current autosubmit's version
         :type autosubmit_version: str
-        :param dummy: if True, creates a dummy experiment adding some dafault values
+        :param dummy: if True, creates a dummy experiment adding some default values
         :type dummy: bool
         """
         as_conf = AutosubmitConfig(exp_id, BasicConfig, ConfigParserFactory())
@@ -2025,3 +2038,9 @@ class Autosubmit:
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.load_parameters(),
                           date_format, as_conf.get_retrials(), False)
         return job_list
+
+    @staticmethod
+    def show_lock_warning(expid):
+        Log.warning("We have detected that there is another Autosubmit instance using the experiment {0}.", expid)
+        Log.warning("We have stopped this execution in order to prevent incoherency errors.")
+        Log.warning("Stop other Autosubmit instances that are using the experiment {0} and try it again.", expid)
