@@ -536,6 +536,8 @@ class Job:
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
 
+        parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
+
         self.parameters = parameters
 
         return parameters
