@@ -1059,14 +1059,14 @@ class Autosubmit:
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
         hpcarch = as_conf.get_platform()
-        for job in joblist.get_job_list():
+        for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(submitter.platforms[job.platform_name])
-            job.update_parameters(as_conf, joblist.parameters)
+            job.set_platform(submitter.platforms[job.platform_name.lower()])
+            job.update_parameters(as_conf, job_list.parameters)
 
-        return joblist.check_scripts(as_conf)
+        return job_list.check_scripts(as_conf)
 
     @staticmethod
     def configure():
