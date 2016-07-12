@@ -59,6 +59,8 @@ class AutosubmitConfig:
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
 
+        self.check_proj_file()
+
     @property
     def experiment_file(self):
         """
@@ -92,6 +94,18 @@ class AutosubmitConfig:
         Returns project's config file name
         """
         return self._proj_parser_file
+
+    def check_proj_file(self):
+        """
+        Add a section header to the project's configuration file (if not exists)
+        """
+        if os.path.exists(self._proj_parser_file):
+            with open(self._proj_parser_file, 'r+') as f:
+                first_line = f.readline()
+                if not re.match('[[a-zA-Z0-9]*]', first_line):
+                    content = f.read()
+                    f.seek(0, 0)
+                    f.write('[DEFAULT]'.rstrip('\r\n') + '\n' + first_line + content)
 
     @property
     def jobs_file(self):
