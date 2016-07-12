@@ -351,6 +351,8 @@ Example:
 
     vi <experiments_directory>/cxxx/conf/proj_cxxx.conf
 
+.. warning:: The ``proj_xxxx.conf`` has to be defined in INI style so it should has section headers. At least one like: [DEFAULT].
+
 .. code-block:: ini
 
     [common]
