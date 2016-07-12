@@ -1076,6 +1076,9 @@ class Autosubmit:
         precedes system configuration.
         """
 
+        not_enough_screen_size_msg = 'The size of your terminal is not enough to draw the configuration wizard,\n' \
+                                     'so we\'ve closed it to prevent errors. Resize it and then try it again.'
+
         home_path = os.path.expanduser('~')
 
         d = dialog.Dialog(dialog="dialog", autowidgetsize=True, screen_color='GREEN')
@@ -1090,10 +1093,13 @@ class Autosubmit:
         choice.append(("User", "Current user"))
         choice.append(("Local", "Only when launching Autosubmit from this path"))
 
-        code, level = d.menu(text, choices=choice, width=60, title="Choose when to apply the configuration")
-
-        if code != dialog.Dialog.OK:
-            os.system('clear')
+        try:
+            code, level = d.menu(text, choices=choice, width=60, title="Choose when to apply the configuration")
+            if code != dialog.Dialog.OK:
+                os.system('clear')
+                return False
+        except dialog.DialogError:
+            Log.critical(not_enough_screen_size_msg)
             return False
 
         filename = '.autosubmitrc'
@@ -1135,8 +1141,13 @@ class Autosubmit:
             return False
 
         while True:
-            code, database_path = d.dselect(database_path, width=80, height=20,
-                                            title='\Zb\Z1Select path to database\Zn', colors='enable')
+            try:
+                code, database_path = d.dselect(database_path, width=80, height=20,
+                                                title='\Zb\Z1Select path to database\Zn', colors='enable')
+            except dialog.DialogError:
+                Log.critical(not_enough_screen_size_msg)
+                return False
+
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
@@ -1147,8 +1158,14 @@ class Autosubmit:
                     break
 
         while True:
-            code, local_root_path = d.dselect(local_root_path, width=80, height=20,
-                                              title='\Zb\Z1Select path to experiments repository\Zn', colors='enable')
+            try:
+                code, local_root_path = d.dselect(local_root_path, width=80, height=20,
+                                                  title='\Zb\Z1Select path to experiments repository\Zn',
+                                                  colors='enable')
+            except dialog.DialogError:
+                Log.critical(not_enough_screen_size_msg)
+                return False
+
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
@@ -1158,14 +1175,20 @@ class Autosubmit:
                 else:
                     break
         while True:
-            (code, tag) = d.form(text="",
-                                 elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
-                                           ("Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40, 200),
-                                           ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
-                                 height=20,
-                                 width=80,
-                                 form_height=10,
-                                 title='\Zb\Z1Just a few more options:\Zn', colors='enable')
+            try:
+                (code, tag) = d.form(text="",
+                                     elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
+                                               (
+                                               "Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40, 200),
+                                               ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
+                                     height=20,
+                                     width=80,
+                                     form_height=10,
+                                     title='\Zb\Z1Just a few more options:\Zn', colors='enable')
+            except dialog.DialogError:
+                Log.critical(not_enough_screen_size_msg)
+                return False
+
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
@@ -1186,13 +1209,18 @@ class Autosubmit:
         smtp_hostname = "mail.bsc.es"
         mail_from = "automail@bsc.es"
         while True:
-            (code, tag) = d.form(text="",
-                                 elements=[("STMP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
-                                           ("Notifications sender address", 2, 1, mail_from, 2, 40, 40, 200)],
-                                 height=20,
-                                 width=80,
-                                 form_height=10,
-                                 title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
+            try:
+                (code, tag) = d.form(text="",
+                                     elements=[("STMP server hostname", 1, 1, smtp_hostname, 1, 40, 20, 20),
+                                               ("Notifications sender address", 2, 1, mail_from, 2, 40, 40, 200)],
+                                     height=20,
+                                     width=80,
+                                     form_height=10,
+                                     title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
+            except dialog.DialogError:
+                Log.critical(not_enough_screen_size_msg)
+                return False
+
             if Autosubmit._requested_exit(code, d):
                 return False
             elif code == dialog.Dialog.OK:
