@@ -26,7 +26,7 @@ from autosubmit.config.log import Log
 
 class EcPlatform(ParamikoPlatform):
     """
-    Class to manage queues with eceacces
+    Class to manage queues with ecacces
 
     :param expid: experiment's identifier
     :type expid: str
@@ -152,7 +152,7 @@ class EcPlatform(ParamikoPlatform):
     def delete_file(self, filename):
         command = '{0} {1}:{2}'.format(self.del_cmd, self.host, os.path.join(self.get_files_path(), filename))
         try:
-            subprocess.check_call(command, shell=True)
+            subprocess.check_call(command, stdout=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
