@@ -106,7 +106,7 @@ class SagaSubmitter(Submitter):
             remote_platform = SagaPlatform(asconf.expid, section.lower(), BasicConfig)
             remote_platform.type = platform_type
 
-            # platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
+            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
             if platform_type == 'pbs':
                 adaptor = 'pbs+ssh'
             elif platform_type == 'sge':
@@ -114,7 +114,10 @@ class SagaSubmitter(Submitter):
             elif platform_type == 'ps':
                 adaptor = 'ssh'
             elif platform_type == 'lsf':
-                adaptor = 'mn+ssh'
+                if platform_version == 'mn':
+                    adaptor = 'mn+ssh'
+                else:
+                    adaptor = 'lsf+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
                 remote_platform.scheduler = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
