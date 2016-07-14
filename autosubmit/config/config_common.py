@@ -737,6 +737,15 @@ class AutosubmitConfig:
         """
         return int(self._conf_parser.get('config', 'MAXWAITINGJOBS'))
 
+    def get_default_job_type(self):
+        """
+        Returns the default job type from experiment's config file
+
+        :return: default type such as bash, python, r..
+        :rtype: str
+        """
+        return self.get_option(self._exp_parser, 'project_files', 'JOB_SCRIPTS_TYPE', 'bash')
+
     def get_safetysleeptime(self):
         """
         Returns safety sleep time from autosubmit's config file
