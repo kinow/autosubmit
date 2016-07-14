@@ -1,7 +1,10 @@
-
 Autosubmit is a tool to create, manage and monitor experiments using
 computing clusters, HPC platforms and supercomputers remotely via ssh.
 
+Get involved or contact us:
+
+    Autosubmit GitLab:	        https://earth.bsc.es/gitlab/es/autosubmit
+    Autosubmit Mailing List:	autosubmit@bsc.es
 
 HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
 ========================================
@@ -94,4 +97,3 @@ FULL DOCUMENTATION AND HOW TOs
 
 Check the Autosubmit documentation provided in the docs/ folder of the package, in PDF format.
 Check the online documentation in the following web page: http://www.bsc.es/projects/earthscience/autosubmit/
-
