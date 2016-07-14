@@ -69,10 +69,13 @@ class JobList:
         """
         return self._expid
 
-    def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, new=True):
+    def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, default_job_type,
+                 new=True):
         """
         Creates all jobs needed for the current workflow
 
+        :param default_job_type: default type for jobs
+        :type default_job_type: str
         :param date_list: start dates
         :type date_list: list
         :param member_list: members
@@ -107,7 +110,7 @@ class JobList:
         jobs_data = dict()
         if not new:
             jobs_data = {str(row[0]): row for row in self.load()}
-        self._create_jobs(dic_jobs, parser, priority, jobs_data)
+        self._create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data)
 
         Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, parser)
@@ -218,7 +221,7 @@ class JobList:
     def _create_jobs(dic_jobs, parser, priority, jobs_data=dict()):
         for section in parser.sections():
             Log.debug("Creating {0} jobs".format(section))
-            dic_jobs.read_section(section, priority, jobs_data)
+            dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 
     def __len__(self):
@@ -737,10 +740,14 @@ class DicJobs:
         self.default_retrials = default_retrials
         self._dic = dict()
 
-    def read_section(self, section, priority, jobs_data=dict()):
+    def read_section(self, section, priority, default_job_type, jobs_data=dict()):
         """
         Read a section from jobs conf and creates all jobs for it
 
+        :param default_job_type: default type for jobs
+        :type default_job_type: str
+        :param jobs_data: dictionary containing the plain data from jobs
+        :type jobs_data: dict
         :param section: section to read
         :type section: str
         :param priority: priority for the jobs
@@ -751,16 +758,16 @@ class DicJobs:
             running = self._parser.get(section, 'RUNNING').lower()
         frequency = int(self.get_option(section, "FREQUENCY", 1))
         if running == 'once':
-            self._create_jobs_once(section, priority, jobs_data)
+            self._create_jobs_once(section, priority, default_job_type, jobs_data)
         elif running == 'date':
-            self._create_jobs_startdate(section, priority, frequency, jobs_data)
+            self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, jobs_data)
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data)
         elif running == 'chunk':
             synchronize = self.get_option(section, "SYNCHRONIZE", None)
-            self._create_jobs_chunk(section, priority, frequency, synchronize, jobs_data)
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, jobs_data)
 
-    def _create_jobs_once(self, section, priority, jobs_data=dict()):
+    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
         """
         Create jobs to be run once
 
@@ -769,9 +776,9 @@ class DicJobs:
         :param priority: priority for the jobs
         :type priority: int
         """
-        self._dic[section] = self.build_job(section, priority, None, None, None, jobs_data)
+        self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
 
-    def _create_jobs_startdate(self, section, priority, frequency, jobs_data=dict()):
+    def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
         Create jobs to be run once per startdate
 
@@ -788,9 +795,10 @@ class DicJobs:
         for date in self._date_list:
             count += 1
             if count % frequency == 0 or count == len(self._date_list):
-                self._dic[section][date] = self.build_job(section, priority, date, None, None, jobs_data)
+                self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
+                                                          jobs_data)
 
-    def _create_jobs_member(self, section, priority, frequency, jobs_data=dict()):
+    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
         Create jobs to be run once per member
 
@@ -809,14 +817,15 @@ class DicJobs:
             for member in self._member_list:
                 count += 1
                 if count % frequency == 0 or count == len(self._member_list):
-                    self._dic[section][date][member] = self.build_job(section, priority, date, member, None, jobs_data)
+                    self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
+                                                                      default_job_type, jobs_data)
 
     '''
         Maybe a good choice could be split this function or ascend the
         conditional decision to the father which makes the call
     '''
 
-    def _create_jobs_chunk(self, section, priority, frequency, synchronize=None, jobs_data=dict()):
+    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, jobs_data=dict()):
         """
         Create jobs to be run once per chunk
 
@@ -838,12 +847,12 @@ class DicJobs:
                 if count % frequency == 0 or count == len(self._chunk_list):
                     if synchronize == 'date':
                         tmp_dic[chunk] = self.build_job(section, priority, None, None,
-                                                        chunk, jobs_data)
+                                                        chunk, default_job_type, jobs_data)
                     elif synchronize == 'member':
                         tmp_dic[chunk] = dict()
                         for date in self._date_list:
                             tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
-                                                                  chunk, jobs_data)
+                                                                  chunk, default_job_type, jobs_data)
         # Real dic jobs assignment/creation
         self._dic[section] = dict()
         for date in self._date_list:
@@ -860,7 +869,7 @@ class DicJobs:
                             self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
                         else:
                             self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
-                                                                                     chunk, jobs_data)
+                                                                                     chunk, default_job_type, jobs_data)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
@@ -922,7 +931,7 @@ class DicJobs:
                     jobs.append(dic[c])
         return jobs
 
-    def build_job(self, section, priority, date, member, chunk, jobs_data=dict()):
+    def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict()):
         name = self._joblist.expid
         if date is not None:
             name += "_" + date2str(date, self._date_format)
@@ -945,7 +954,7 @@ class DicJobs:
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
-        type = self.get_option(section, "TYPE", 'bash').lower()
+        type = self.get_option(section, "TYPE", default_job_type).lower()
         if type == 'bash':
             job.type = Type.BASH
         elif type == 'python':

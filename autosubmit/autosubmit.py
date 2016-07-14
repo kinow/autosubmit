@@ -1179,7 +1179,8 @@ class Autosubmit:
                 (code, tag) = d.form(text="",
                                      elements=[("Database filename", 1, 1, database_filename, 1, 40, 20, 20),
                                                (
-                                               "Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40, 200),
+                                                   "Default platform.conf path", 2, 1, platforms_conf_path, 2, 40, 40,
+                                                   200),
                                                ("Default jobs.conf path", 3, 1, jobs_conf_path, 3, 40, 40, 200)],
                                      height=20,
                                      width=80,
@@ -1542,7 +1543,8 @@ class Autosubmit:
                         date_format = 'H'
                     if date.minute > 1:
                         date_format = 'M'
-                job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials())
+                job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials(),
+                                  as_conf.get_default_job_type())
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list)
@@ -2066,7 +2068,7 @@ class Autosubmit:
             if date.minute > 1:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.load_parameters(),
-                          date_format, as_conf.get_retrials(), False)
+                          date_format, as_conf.get_retrials(), as_conf.get_default_job_type(), False)
         return job_list
 
     @staticmethod

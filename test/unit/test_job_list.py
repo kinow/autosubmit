@@ -217,7 +217,7 @@ class TestJobList(TestCase):
                       'fake-key2': 'fake-value2'}
 
         # act
-        job_list.generate(date_list, member_list, num_chunks, parameters, 'H', 9999)
+        job_list.generate(date_list, member_list, num_chunks, parameters, 'H', 9999, Type.BASH)
 
         # assert
         self.assertEquals(job_list.parameters, parameters)
