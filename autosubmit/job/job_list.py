@@ -218,7 +218,7 @@ class JobList:
             dep_section[dependency] = dependency
 
     @staticmethod
-    def _create_jobs(dic_jobs, parser, priority, jobs_data=dict()):
+    def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
         for section in parser.sections():
             Log.debug("Creating {0} jobs".format(section))
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
