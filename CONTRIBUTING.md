@@ -1,6 +1,8 @@
-#Autosubmit contribution guide
+# Autosubmit contribution guide
 
 **Documentation:** http://autosubmit.readthedocs.io/en/latest/
+
+**GitLab:** https://earth.bsc.es/gitlab/es/autosubmit
 
 **Mailinglists:** 
 
