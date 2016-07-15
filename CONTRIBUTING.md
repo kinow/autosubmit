@@ -4,7 +4,7 @@
 
 **GitLab:** https://earth.bsc.es/gitlab/es/autosubmit
 
-**Mailinglists:** 
+**Mailinglist:** autosubmit@bsc.es
 
 The porduction branch generally reflects the Autosubmit release on Pypi, and is considered stable: it should work 'out of the box' for the supported backends. For a list of supported backends, please refer to the documentation.
 
