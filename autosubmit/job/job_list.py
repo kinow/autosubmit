@@ -116,7 +116,7 @@ class JobList:
         self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, parser)
 
         Log.info("Removing redundant dependencies...")
-        self.update_genealogy()
+        self.update_genealogy(new)
         for job in self._job_list:
             job.parameters = parameters
 
@@ -543,10 +543,12 @@ class JobList:
         Log.debug('Update finished')
         return save
 
-    def update_genealogy(self):
+    def update_genealogy(self, new):
         """
-        When we have created the joblist, every type of job is created.
+        When we have created the job list, every type of job is created.
         Update genealogy remove jobs that have no templates
+        :param new: if it is a new job list or not
+        :type new: bool
         """
 
         # Use a copy of job_list because original is modified along iterations
@@ -560,7 +562,7 @@ class JobList:
             job.remove_redundant_parents()
 
         for job in self._job_list:
-            if not job.has_parents():
+            if not job.has_parents() and new:
                 job.status = Status.READY
 
     def check_scripts(self, as_conf):
@@ -607,7 +609,7 @@ class JobList:
 
     def rerun(self, chunk_list):
         """
-        Updates joblist to rerun the jobs specified by chunk_list
+        Updates job list to rerun the jobs specified by chunk_list
 
         :param chunk_list: list of chunks to rerun
         :type chunk_list: str

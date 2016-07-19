@@ -415,6 +415,8 @@ class Job:
             self.check_completion(Status.UNKNOWN)
             if self.status is Status.UNKNOWN:
                 Log.warning('Job {0} in UNKNOWN status', self.name)
+            elif self.status is Status.COMPLETED:
+                Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
@@ -588,16 +590,15 @@ class Job:
             raise Exception('Job template content not found')
 
     def _get_saga_template(self, snippet, template):
-        return ''.join([snippet.AS_HEADER,
+        return ''.join([snippet.as_header(''),
                         template,
-                        snippet.AS_TAILER])
+                        snippet.as_tailer()])
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.get_platform()
-        return ''.join([current_platform.get_header(self),
-                        snippet.AS_HEADER,
+        return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
-                        snippet.AS_TAILER])
+                        snippet.as_tailer()])
 
     def create_script(self, as_conf):
         """

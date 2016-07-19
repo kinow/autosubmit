@@ -81,7 +81,7 @@ class LsfPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script):
+    def get_submit_cmd(self, job_script, job_type):
         return self._submit_cmd + job_script
 
 
@@ -104,7 +104,6 @@ class LsfHeader:
             return "BSUB -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
     SERIAL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -120,7 +119,6 @@ class LsfHeader:
             """)
 
     PARALLEL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################

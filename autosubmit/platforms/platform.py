@@ -163,55 +163,55 @@ class Platform:
             retries -= 1
             sleep(5)
 
-    def remove_stat_file(self, jobname):
+    def remove_stat_file(self, job_name):
         """
         Removes *STAT* files from remote
 
-        :param jobname: name of job to check
-        :type jobname: str
+        :param job_name: name of job to check
+        :type job_name: str
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        filename = jobname + '_STAT'
+        filename = job_name + '_STAT'
         if self.delete_file(filename):
-            Log.debug('{0}_STAT have been removed', jobname)
+            Log.debug('{0}_STAT have been removed', job_name)
             return True
         return False
 
-    def remove_completed_file(self, jobname):
+    def remove_completed_file(self, job_name):
         """
         Removes *COMPLETED* files from remote
 
-        :param jobname: name of job to check
-        :type jobname: str
+        :param job_name: name of job to check
+        :type job_name: str
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        filename = jobname + '_COMPLETED'
+        filename = job_name + '_COMPLETED'
         if self.delete_file(filename):
             Log.debug('{0} been removed', filename)
             return True
         return False
 
-    def get_stat_file(self, jobname, retries=1):
+    def get_stat_file(self, job_name, retries=1):
         """
         Copies *STAT* files from remote to local
 
         :param retries: number of intents to get the completed files
         :type retries: int
-        :param jobname: name of job to check
-        :type jobname: str
+        :param job_name: name of job to check
+        :type job_name: str
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        filename = jobname + '_STAT'
+        filename = job_name + '_STAT'
         stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
 
         while True:
             if self.get_file(filename, False):
-                Log.debug('{0}_STAT file have been transfered', jobname)
+                Log.debug('{0}_STAT file have been transfered', job_name)
                 return True
             if retries == 0:
                 break

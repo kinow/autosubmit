@@ -2,10 +2,13 @@ from time import sleep
 
 import os
 import paramiko
+import datetime
 
 from autosubmit.config.log import Log
 from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
+from autosubmit.date.chunk_date_lib import date2str
 
 
 class ParamikoPlatform(Platform):
@@ -158,7 +161,7 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.send_command(self.get_submit_cmd(scriptname)):
+        if self.send_command(self.get_submit_cmd(scriptname, job.type)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug("Job ID: {0}", job_id)
             return int(job_id)
@@ -262,10 +265,11 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def get_submit_cmd(self, job_script):
+    def get_submit_cmd(self, job_script, job_type):
         """
         Get command to add job to scheduler
 
+        :param job_type:
         :param job_script: path to job script
         :param job_script: str
         :return: command to submit job to platforms
@@ -292,17 +296,27 @@ class ParamikoPlatform(Platform):
         Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
 
-    def get_shcall(self, job_script):
+    def get_call(self, job_script, job_type):
         """
         Gets execution command for given job
 
+        :param job_type:
         :param job_script: script to run
         :type job_script: str
         :return: command to execute script
         :rtype: str
         """
-        return 'nohup bash {0} > {0}.out 2> {0}.err & echo $!'.format(os.path.join(self.remote_log_dir,
-                                                                                   job_script))
+        executable = ''
+        if job_type == Type.BASH:
+            executable = 'bash'
+        elif job_type == Type.PYTHON:
+            executable = 'python'
+        elif job_type == Type.R:
+            executable = 'Rscript'
+        return 'nohup ' + executable + ' {0} > {0}.{1}.out 2> {0}.{1}.err & echo $!'.format(
+            os.path.join(self.remote_log_dir,
+                         job_script),
+            date2str(datetime.datetime.now(), 'S'))
 
     @staticmethod
     def get_pscall(job_id):
@@ -340,7 +354,10 @@ class ParamikoPlatform(Platform):
         else:
             header = self.header.SERIAL
 
+        str_datetime = date2str(datetime.datetime.now(), 'S')
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
+        header = header.replace('%ERR_LOG_DIRECTIVE%', "{0}.{1}.out".format(job.name, str_datetime))
+        header = header.replace('%OUT_LOG_DIRECTIVE%', "{0}.{1}.err".format(job.name, str_datetime))
         return header
 
     def check_remote_log_dir(self):

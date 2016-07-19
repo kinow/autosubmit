@@ -60,8 +60,14 @@ class StatisticsSnippetBash:
     local and remote jobs
     """
 
-    AS_HEADER = textwrap.dedent("""\
+    @staticmethod
+    def as_header(scheduler_header):
+        return textwrap.dedent("""\
             #!/usr/bin/env bash
+
+            """) + \
+            scheduler_header + \
+            textwrap.dedent("""\
             ###################
             # Autosubmit header
             ###################
@@ -75,17 +81,20 @@ class StatisticsSnippetBash:
 
             """)
 
+
     # noinspection PyPep8
-    AS_TAILER = textwrap.dedent("""\
+    @staticmethod
+    def as_tailer():
+        return textwrap.dedent("""\
 
-            ###################
-            # Autosubmit tailer
-            ###################
+                ###################
+                # Autosubmit tailer
+                ###################
 
-            echo $(date +%s) >> ${job_name_ptrn}_STAT
-            touch ${job_name_ptrn}_COMPLETED
-            exit 0
-            """)
+                echo $(date +%s) >> ${job_name_ptrn}_STAT
+                touch ${job_name_ptrn}_COMPLETED
+                exit 0
+                """)
 
 
 class StatisticsSnippetPython:
@@ -94,8 +103,14 @@ class StatisticsSnippetPython:
     local and remote jobs
     """
 
-    AS_HEADER = textwrap.dedent("""\
+    @staticmethod
+    def as_header(scheduler_header):
+        return textwrap.dedent("""\
             #!/usr/bin/env python
+
+            """) + \
+            scheduler_header + \
+            textwrap.dedent("""\
             ###################
             # Autosubmit header
             ###################
@@ -114,19 +129,22 @@ class StatisticsSnippetPython:
 
             """)
 
+
     # noinspection PyPep8
-    AS_TAILER = textwrap.dedent("""\
+    @staticmethod
+    def as_tailer():
+        return textwrap.dedent("""\
 
-            ###################
-            # Autosubmit tailer
-            ###################
+                ###################
+                # Autosubmit tailer
+                ###################
 
-            stat_file = open(job_name_ptrn + '_STAT', 'a')
-            stat_file.write('{0:.0f}\\n'.format(time.time()))
-            stat_file.close()
-            open(job_name_ptrn + '_COMPLETED', 'a').close()
-            exit(0)
-            """)
+                stat_file = open(job_name_ptrn + '_STAT', 'a')
+                stat_file.write('{0:.0f}\\n'.format(time.time()))
+                stat_file.close()
+                open(job_name_ptrn + '_COMPLETED', 'a').close()
+                exit(0)
+                """)
 
 
 class StatisticsSnippetR:
@@ -135,8 +153,14 @@ class StatisticsSnippetR:
     local and remote jobs
     """
 
-    AS_HEADER = textwrap.dedent("""\
+    @staticmethod
+    def as_header(scheduler_header):
+        return textwrap.dedent("""\
             #!/usr/bin/env Rscript
+
+            """) + \
+            scheduler_header + \
+            textwrap.dedent("""\
             ###################
             # Autosubmit header
             ###################
@@ -154,7 +178,9 @@ class StatisticsSnippetR:
             """)
 
     # noinspection PyPep8
-    AS_TAILER = textwrap.dedent("""\
+    @staticmethod
+    def as_tailer():
+        return textwrap.dedent("""\
 
             ###################
             # Autosubmit tailer

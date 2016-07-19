@@ -73,8 +73,8 @@ class PsPlatform(ParamikoPlatform):
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
-    def get_submit_cmd(self, job_script):
-        return self.get_shcall(job_script)
+    def get_submit_cmd(self, job_script, job_type):
+        return self.get_call(job_script, job_type)
 
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
@@ -97,14 +97,12 @@ class PsHeader:
         return ""
 
     SERIAL = textwrap.dedent("""\
-            #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             """)
 
     PARALLEL = textwrap.dedent("""\
-            #!/bin/bash
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
