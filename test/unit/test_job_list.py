@@ -8,6 +8,7 @@ from autosubmit.config.parser_factory import ConfigParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
+from autosubmit.job.job_common import Type
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 
 
@@ -230,7 +231,7 @@ class TestJobList(TestCase):
         self.assertEquals(parser_mock, cj_args[1])
         self.assertEquals(0, cj_args[2])
         job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock)
-        job_list.update_genealogy.assert_called_once_with()
+        job_list.update_genealogy.assert_called_once_with(True)
         for job in job_list._job_list:
             self.assertEquals(parameters, job.parameters)
 
@@ -243,11 +244,11 @@ class TestJobList(TestCase):
         parser_mock.sections = Mock(return_value=['fake-section-1',
                                                   'fake-section-2'])
         # act
-        JobList._create_jobs(dic_mock, parser_mock, 0)
+        JobList._create_jobs(dic_mock, parser_mock, 0, Type.BASH)
 
         # arrange
-        dic_mock.read_section.assert_any_call('fake-section-1', 0, dict())
-        dic_mock.read_section.assert_any_call('fake-section-2', 1, dict())
+        dic_mock.read_section.assert_any_call('fake-section-1', 0, Type.BASH, dict())
+        dic_mock.read_section.assert_any_call('fake-section-2', 1, Type.BASH, dict())
 
     def _createDummyJobWithStatus(self, status):
         job_name = str(randrange(999999, 999999999))
