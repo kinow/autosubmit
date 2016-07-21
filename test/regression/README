@@ -1,0 +1,42 @@
+###############################
+How to run the regression tests
+###############################
+
+1) Create a new file named: '.autosubmitrc'
+
+2) The '.autosubmitrc' file should contain:
+
+    [database]
+    path = $PATH_TO_PROJECT/test/regression/db
+    filename = autosubmit.db
+
+    [local]
+    path = $PATH_TO_PROJECT/test/regression/db
+
+3) Review the credentials on the platforms config file of each test
+
+4) Run the 'tests_runner.py' file:
+
+python tests_runner.py
+
+NOTE: Remember that you need to have the Autosubmit installed before running these tests
+
+
+##############################
+How to enable the verbose mode
+##############################
+
+If you want to get all the outputs from the tests, you have to define an environment variable:
+
+export AS_TEST_VERBOSE=DEBUG
+
+
+##############################
+How to disable the verbose mode
+##############################
+
+The regression test suite is check if there is an environment variable named 'AS_TEST_VERBOSE', so:
+
+unset AS_TEST_VERBOSE
+
+should be enough.
