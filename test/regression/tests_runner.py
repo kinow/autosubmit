@@ -1,5 +1,6 @@
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.parser_factory import ConfigParserFactory
+from autosubmit.config.log import Log
 from tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
 from tests_commands import *
 from threading import Thread
@@ -17,7 +18,7 @@ initial_experiment_id = 'a000'
 
 def run_test_case(experiment_id, hpc_arch, description, src_path):
     if not check_cmd(generate_experiment_cmd(hpc_arch, description)):
-        print('Error while generating the experiment')
+        Log.critical('Error while generating the experiment')
         return False
 
     copy_experiment_conf_files(db_path, src_path, experiment_id)
@@ -25,15 +26,15 @@ def run_test_case(experiment_id, hpc_arch, description, src_path):
     sleep(5)  # Avoiding synchronization problems while copying
 
     if not check_cmd(create_experiment_cmd(experiment_id)):
-        print('Error while creating the experiment')
+        Log.critical('Error while creating the experiment')
         return False
 
     if not check_cmd(run_experiment_cmd(experiment_id)):
-        print('Error while running the experiment')
+        Log.critical('Error while running the experiment')
         return False
 
     # Everything was OK
-    print('Test ' + experiment_id + ' passed successfully')
+    Log.result('Test ' + experiment_id + ' passed successfully')
 
 
 def run(current_experiment_id):
