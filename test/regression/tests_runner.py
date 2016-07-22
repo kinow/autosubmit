@@ -16,9 +16,9 @@ db_path = './db'
 initial_experiment_id = 'a000'
 
 
-def run_test_case(experiment_id, hpc_arch, description, src_path):
+def run_test_case(experiment_id, name, hpc_arch, description, src_path):
     if not check_cmd(generate_experiment_cmd(hpc_arch, description)):
-        Log.critical('Error while generating the experiment')
+        Log.critical('Error while generating the experiment {0}({1})', name, experiment_id)
         return False
 
     copy_experiment_conf_files(db_path, src_path, experiment_id)
@@ -26,15 +26,15 @@ def run_test_case(experiment_id, hpc_arch, description, src_path):
     sleep(5)  # Avoiding synchronization problems while copying
 
     if not check_cmd(create_experiment_cmd(experiment_id)):
-        Log.critical('Error while creating the experiment')
+        Log.critical('Error while creating the experiment {0}({1})', name, experiment_id)
         return False
 
     if not check_cmd(run_experiment_cmd(experiment_id)):
-        Log.critical('Error while running the experiment')
+        Log.critical('Error while running the experiment {0}({1})', name, experiment_id)
         return False
 
     # Everything was OK
-    Log.result('Test ' + experiment_id + ' passed successfully')
+    Log.result('Test {0}({1}) passed successfully', name, experiment_id)
 
 
 def run(current_experiment_id):
@@ -52,7 +52,7 @@ def run(current_experiment_id):
         description, hpc_arch, src_path = get_test_settings(section, tests_parser)
 
         # Running the test as a new thread
-        test_threads.append(create_test_thread(current_experiment_id, description, hpc_arch, src_path))
+        test_threads.append(create_test_thread(current_experiment_id, section, description, hpc_arch, src_path))
 
         # Updating current experiment id
         current_experiment_id = next_experiment_id(current_experiment_id)
@@ -65,8 +65,8 @@ def run(current_experiment_id):
         test_thread.join()
 
 
-def create_test_thread(current_experiment_id, description, hpc_arch, src_path):
-    thr = Thread(target=run_test_case, args=(current_experiment_id, hpc_arch, description, src_path), kwargs={})
+def create_test_thread(current_experiment_id, name, description, hpc_arch, src_path):
+    thr = Thread(target=run_test_case, args=(current_experiment_id, name, hpc_arch, description, src_path), kwargs={})
     thr.start()
     return thr
 
