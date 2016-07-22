@@ -16,7 +16,7 @@ def check_cmd(command, path=BIN_PATH, verbose='AS_TEST_VERBOSE' in os.environ):
         if verbose:
             print output
 
-        if 'CRITICAL' in output:
+        if 'CRITICAL' in output or 'ERROR' in output:
             return False
 
         return True
