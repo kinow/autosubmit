@@ -5,6 +5,7 @@ from tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_file
 from tests_commands import *
 from threading import Thread
 from time import sleep
+import argparse
 
 # Configuration file where the regression tests are defined with INI style
 tests_parser_file = 'tests.conf'
@@ -34,10 +35,10 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path):
         return False
 
     # Everything was OK
-    Log.result('[OK] Test {0}({1}) passed successfully', name, experiment_id)
+    Log.result('[OK] Test {0}({1}) has been passed successfully', name, experiment_id)
 
 
-def run(current_experiment_id):
+def run(current_experiment_id, filter_list):
     # Local variables for testing
     test_threads = []
     tests_parser = AutosubmitConfig.get_parser(ConfigParserFactory(), tests_parser_file)
@@ -48,6 +49,11 @@ def run(current_experiment_id):
 
     # Main loop to run all the tests
     for section in tests_parser.sections():
+        # Skipping filtered experiments
+        if filter_list is not None and section not in filter_list:
+            Log.warning('Test {0} has been skipped', section)
+            continue
+
         # Getting test settings
         description, hpc_arch, src_path = get_test_settings(section, tests_parser)
 
@@ -79,4 +85,8 @@ def get_test_settings(section, tests_parser):
 
 
 if __name__ == "__main__":
-    run(initial_experiment_id)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--filter", type=str,
+                        help="filter the experiments to be tested, list of test names separated by white spaces")
+    args = parser.parse_args()
+    run(initial_experiment_id, args.filter.split())
