@@ -18,7 +18,7 @@ initial_experiment_id = 'a000'
 
 def run_test_case(experiment_id, name, hpc_arch, description, src_path):
     if not check_cmd(generate_experiment_cmd(hpc_arch, description)):
-        Log.critical('Error while generating the experiment {0}({1})', name, experiment_id)
+        Log.error('Error while generating the experiment {0}({1})', name, experiment_id)
         return False
 
     copy_experiment_conf_files(db_path, src_path, experiment_id)
@@ -26,15 +26,15 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path):
     sleep(5)  # Avoiding synchronization problems while copying
 
     if not check_cmd(create_experiment_cmd(experiment_id)):
-        Log.critical('Error while creating the experiment {0}({1})', name, experiment_id)
+        Log.error('Error while creating the experiment {0}({1})', name, experiment_id)
         return False
 
     if not check_cmd(run_experiment_cmd(experiment_id)):
-        Log.critical('Error while running the experiment {0}({1})', name, experiment_id)
+        Log.error('Error while running the experiment {0}({1})', name, experiment_id)
         return False
 
     # Everything was OK
-    Log.result('Test {0}({1}) passed successfully', name, experiment_id)
+    Log.result('[OK] Test {0}({1}) passed successfully', name, experiment_id)
 
 
 def run(current_experiment_id):
