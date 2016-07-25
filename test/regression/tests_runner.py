@@ -38,7 +38,7 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path):
     Log.result('[OK] Test {0}({1}) has been passed successfully', name, experiment_id)
 
 
-def run(current_experiment_id, filter_list):
+def run(current_experiment_id, only_list=None, exclude_list=None):
     # Local variables for testing
     test_threads = []
     tests_parser = AutosubmitConfig.get_parser(ConfigParserFactory(), tests_parser_file)
@@ -50,7 +50,11 @@ def run(current_experiment_id, filter_list):
     # Main loop to run all the tests
     for section in tests_parser.sections():
         # Skipping filtered experiments
-        if filter_list is not None and section not in filter_list:
+        if only_list is not None and section not in only_list:
+            Log.warning('Test {0} has been skipped', section)
+            continue
+
+        if exclude_list is not None and section in exclude_list:
             Log.warning('Test {0} has been skipped', section)
             continue
 
@@ -86,7 +90,9 @@ def get_test_settings(section, tests_parser):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--filter", type=str,
-                        help="filter the experiments to be tested, list of test names separated by white spaces")
+    parser.add_argument("--only", type=str,
+                        help="List of experiments to be run, test names separated by white spaces")
+    parser.add_argument("--exclude", type=str,
+                        help="List of experiments to be avoided, test names separated by white spaces")
     args = parser.parse_args()
-    run(initial_experiment_id, args.filter.split())
+    run(initial_experiment_id, args.only.split(), args.exclude.split())
