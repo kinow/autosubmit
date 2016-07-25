@@ -49,7 +49,8 @@ def get_replace_exp_id(experiment_id):
 
 
 def get_copy_cmd(db_path, src_path, filename, experiment_id):
-    return 'cp ' + os.path.join(src_path, filename + '.conf') + ' ' + get_conf_path(db_path, experiment_id, filename)
+    return 'cp ' + os.path.join(src_path, 'conf', filename + '.conf') + ' ' + get_conf_path(db_path, experiment_id,
+                                                                                            filename)
 
 
 def get_conf_path(db_path, experiment_id, filename):
