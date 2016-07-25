@@ -34,6 +34,7 @@ def copy_experiment_conf_files(db_path, src_path, experiment_id):
     check_cmd(get_copy_cmd(db_path, src_path, 'platforms', experiment_id), '')
     check_cmd(get_copy_cmd(db_path, src_path, 'proj', experiment_id), '')
     check_cmd(get_replace_exp_id(experiment_id) + os.path.join(db_path, experiment_id, 'conf', '*'), '', )
+    check_cmd(get_replace_project_path(src_path) + os.path.join(db_path, experiment_id, 'conf', '*'), '', )
 
 
 def clean_database(db_path):
@@ -46,6 +47,11 @@ def create_database():
 
 def get_replace_exp_id(experiment_id):
     return "sed -i -- 's/EXPID-HERE/" + experiment_id + "/g' "
+
+
+def get_replace_project_path(src_path):
+    current_path = os.getcwd()
+    return "sed -i -- 's/PROJECT-PATH-HERE/" + os.path.join(current_path, src_path, 'src') + "/g' "
 
 
 def get_copy_cmd(db_path, src_path, filename, experiment_id):
