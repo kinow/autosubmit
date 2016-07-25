@@ -88,11 +88,19 @@ def get_test_settings(section, tests_parser):
     return description, hpc_arch, src_path
 
 
-if __name__ == "__main__":
+def create_args_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--only", type=str,
                         help="List of experiments to be run, test names separated by white spaces")
     parser.add_argument("--exclude", type=str,
                         help="List of experiments to be avoided, test names separated by white spaces")
-    args = parser.parse_args()
-    run(initial_experiment_id, args.only.split(), args.exclude.split())
+    return parser
+
+
+if __name__ == "__main__":
+    args_parser = create_args_parser()
+
+    only = None if args_parser.parse_args().only is None else args_parser.parse_args().only.split()
+    exclude = None if args_parser.parse_args().exclude is None else args_parser.parse_args().exclude.split()
+
+    run(initial_experiment_id, only, exclude)
