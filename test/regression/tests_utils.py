@@ -31,7 +31,10 @@ def copy_experiment_conf_files(db_path, src_path, experiment_id):
     check_cmd(get_copy_cmd(db_path, src_path, 'autosubmit', experiment_id), '')
     check_cmd(get_copy_cmd(db_path, src_path, 'expdef', experiment_id), '')
     check_cmd(get_copy_cmd(db_path, src_path, 'jobs', experiment_id), '')
-    check_cmd(get_copy_cmd(db_path, src_path, 'platforms', experiment_id), '')
+    if os.path.exists(get_conf_file_path(src_path, 'platforms')):
+        check_cmd(get_copy_cmd(db_path, src_path, 'platforms', experiment_id), '')
+    else:
+        check_cmd(get_default_copy_cmd(db_path, 'platforms', experiment_id), '')
     check_cmd(get_copy_cmd(db_path, src_path, 'proj', experiment_id), '')
     check_cmd(get_replace_exp_id(experiment_id) + os.path.join(db_path, experiment_id, 'conf', '*'), '', )
     check_cmd(get_replace_project_path(src_path) + os.path.join(db_path, experiment_id, 'conf', '*'), '', )
@@ -56,9 +59,14 @@ def get_replace_project_path(src_path):
 
 
 def get_copy_cmd(db_path, src_path, filename, experiment_id):
-    return 'cp ' + os.path.join(src_path, 'conf', filename + '.conf') + ' ' + get_conf_path(db_path, experiment_id,
-                                                                                            filename)
+    return 'cp ' + get_conf_file_path(src_path, filename) + ' ' + \
+           get_conf_file_path(os.path.join(db_path, experiment_id), filename + '_' + experiment_id)
 
 
-def get_conf_path(db_path, experiment_id, filename):
-    return os.path.join(db_path, experiment_id, 'conf', filename + '_' + experiment_id + '.conf')
+def get_default_copy_cmd(db_path, filename, experiment_id):
+    return 'cp ' + os.path.join('default_conf', filename + '.conf') + ' ' + \
+           get_conf_file_path(os.path.join(db_path, experiment_id), filename + '_' + experiment_id)
+
+
+def get_conf_file_path(base_path, filename):
+    return os.path.join(base_path, 'conf', filename + '.conf')
