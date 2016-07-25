@@ -50,8 +50,9 @@ def get_replace_exp_id(experiment_id):
 
 
 def get_replace_project_path(src_path):
-    current_path = os.getcwd()
-    return "sed -i -- 's/PROJECT-PATH-HERE/" + os.path.join(current_path, src_path, 'src') + "/g' "
+    current_path = os.getcwd().replace('/', '\/')
+    src_path = src_path.replace('/', '\/')
+    return "sed -i -- 's/PROJECT-PATH-HERE/" + current_path + '\/' + src_path + '\/' + 'src' + "/g' "
 
 
 def get_copy_cmd(db_path, src_path, filename, experiment_id):
