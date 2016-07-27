@@ -220,8 +220,26 @@ class Autosubmit:
                                    help='chooses type of output for generated plot')
 
             # Configure
-            subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
-                                                           "can be done at machine, user or local level ")
+            subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
+                                                                       "can be done at machine, user or local level."
+                                                                       "If no arguments specified configure will "
+                                                                       "display dialog boxes (if installed)")
+            subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
+                                                                               'it will prompt for it')
+            subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
+            subparser.add_argument('-lr', '--localrootpath', default=None, help='path to store experiments. If not '
+                                                                                'supplied, it will prompt for it')
+            subparser.add_argument('-pc', '--platformsconfpath', default=None, help='path to platforms.conf file to '
+                                                                                    'use by default. Optional')
+            subparser.add_argument('-jc', '--jobsconfpath', default=None, help='path to jobs.conf file to use by '
+                                                                               'default. Optional')
+            subparser.add_argument('-sm', '--smtphostname', default=None, help='STMP server hostname. Optional')
+            subparser.add_argument('-mf', '--mailfrom', default=None, help='Notifications sender address. Optional')
+            group = subparser.add_mutually_exclusive_group()
+            group.add_argument('--all', action="store_true", help='configure for all users')
+            group.add_argument('--local', action="store_true", help='configure only for using Autosubmit from this '
+                                                                    'path')
+
             # Install
             subparsers.add_parser('install', description='install database for autosubmit on the configured folder')
 
@@ -306,7 +324,20 @@ class Autosubmit:
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
-                return Autosubmit.configure()
+                if args.databasepath or args.databasefilename or args.localrootpath or args.platformsconfpath or\
+                        args.jobsconfpath or args.smtphostname or args.mailfrom or args.all or args.local:
+                    return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
+                                                args.platformsconfpath, args.jobsconfpath,
+                                                args.smtphostname, args.mailfrom, args.all, args.local)
+                else:
+                    try:
+                        Autosubmit.configure_dialog()
+                    except dialog.DialogError:
+                        Log.critical("Configure arguments not provided. Display dialog boxes could not be opened. "
+                                     "Missing package 'dialog', please install it: 'apt-get install dialog' or provide"
+                                     "configure arguments")
+                        return False
+                return True
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
@@ -1069,7 +1100,96 @@ class Autosubmit:
         return job_list.check_scripts(as_conf)
 
     @staticmethod
-    def configure():
+    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
+                  smtp_hostname, mail_from, machine, local):
+        """
+        Configure several paths for autosubmit: database, local root and others. Can be configured at system,
+        user or local levels. Local level configuration precedes user level and user level precedes system
+        configuration.
+
+        :param database_path: path to autosubmit database
+        :type database_path: str
+        :param database_filename: database filename
+        :type database_filename: str
+        :param local_root_path: path to autosubmit's experiments' directory
+        :type local_root_path: str
+        :param platforms_conf_path: path to platforms conf file to be used as model for new experiments
+        :type platforms_conf_path: str
+        :param jobs_conf_path: path to jobs conf file to be used as model for new experiments
+        :type jobs_conf_path: str
+        :param machine: True if this configuration has to be stored for all the machine users
+        :type machine: bool
+        :param local: True if this configuration has to be stored in the local path
+        :type local: bool
+        :param mail_from:
+        :type mail_from: str
+        :param smtp_hostname:
+        :type smtp_hostname: str
+        """
+        home_path = os.path.expanduser('~')
+        while database_path is None:
+            database_path = input("Introduce Database path: ")
+        database_path = database_path.replace('~', home_path)
+        if not os.path.exists(database_path):
+            Log.error("Database path does not exist.")
+            return False
+
+        while local_root_path is None:
+            local_root_path = input("Introduce Local Root path: ")
+        local_root_path = local_root_path.replace('~', home_path)
+        if not os.path.exists(local_root_path):
+            Log.error("Local Root path does not exist.")
+            return False
+
+        if platforms_conf_path is not None:
+            platforms_conf_path = platforms_conf_path.replace('~', home_path)
+            if not os.path.exists(platforms_conf_path):
+                Log.error("platforms.conf path does not exist.")
+                return False
+        if jobs_conf_path is not None:
+            jobs_conf_path = jobs_conf_path.replace('~', home_path)
+            if not os.path.exists(jobs_conf_path):
+                Log.error("jobs.conf path does not exist.")
+                return False
+
+        if machine:
+            path = '/etc'
+        elif local:
+            path = '.'
+        else:
+            path = home_path
+        path = os.path.join(path, '.autosubmitrc')
+
+        config_file = open(path, 'w')
+        Log.info("Writing configuration file...")
+        try:
+            parser = SafeConfigParser()
+            parser.add_section('database')
+            parser.set('database', 'path', database_path)
+            if database_filename is not None:
+                parser.set('database', 'filename', database_filename)
+            parser.add_section('local')
+            parser.set('local', 'path', local_root_path)
+            if jobs_conf_path is not None or platforms_conf_path is not None:
+                parser.add_section('conf')
+                if jobs_conf_path is not None:
+                    parser.set('conf', 'jobs', jobs_conf_path)
+                if platforms_conf_path is not None:
+                    parser.set('conf', 'platforms', platforms_conf_path)
+            if smtp_hostname is not None or mail_from is not None:
+                parser.add_section('mail')
+                parser.set('mail', 'smtp_server', smtp_hostname)
+                parser.set('mail', 'mail_from', mail_from)
+            parser.write(config_file)
+            config_file.close()
+            Log.result("Configuration file written successfully")
+        except (IOError, OSError) as e:
+            Log.critical("Can not write config file: {0}".format(e.message))
+            return False
+        return True
+
+    @staticmethod
+    def configure_dialog():
         """
         Configure several paths for autosubmit interactively: database, local root and others.
         Can be configured at system, user or local levels. Local level configuration precedes user level and user level
