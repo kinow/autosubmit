@@ -1201,7 +1201,11 @@ class Autosubmit:
 
         home_path = os.path.expanduser('~')
 
-        d = dialog.Dialog(dialog="dialog", autowidgetsize=True, screen_color='GREEN')
+        try:
+            d = dialog.Dialog(dialog="dialog", autowidgetsize=True, screen_color='GREEN')
+        except dialog.DialogError:
+            Log.critical("Missing package dialog")
+            raise
         d.set_background_title("Autosubmit configure utility")
         if os.geteuid() == 0:
             text = ''
