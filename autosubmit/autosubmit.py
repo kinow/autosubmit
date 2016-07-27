@@ -30,6 +30,12 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 
+# It is Python dialog available?
+try:
+    import dialog
+except Exception:
+    dialog = None
+
 import argparse
 import subprocess
 import json
@@ -43,7 +49,6 @@ import re
 import random
 import signal
 import datetime
-import dialog
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
@@ -324,8 +329,7 @@ class Autosubmit:
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
-                if args.databasepath or args.databasefilename or args.localrootpath or args.platformsconfpath or\
-                        args.jobsconfpath or args.smtphostname or args.mailfrom or args.all or args.local:
+                if dialog is None:
                     return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
                                                 args.platformsconfpath, args.jobsconfpath,
                                                 args.smtphostname, args.mailfrom, args.all, args.local)
