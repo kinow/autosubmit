@@ -30,7 +30,7 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 
-# It is Python dialog available?
+# It is Python dialog available? (optional dependency)
 try:
     import dialog
 except Exception:
@@ -1139,7 +1139,7 @@ class Autosubmit:
             return False
 
         while local_root_path is None:
-            local_root_path = raw_input("Introduce Local Root path: ")
+            local_root_path = raw_input("Introduce path to experiments: ")
         local_root_path = local_root_path.replace('~', home_path)
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
