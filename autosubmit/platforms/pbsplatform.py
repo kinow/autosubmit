@@ -90,7 +90,7 @@ class PBSPlatform(ParamikoPlatform):
     def jobs_in_queue(self):
         return ''.split()
 
-    def get_submit_cmd(self, job_script):
+    def get_submit_cmd(self, job_script, job_type):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
@@ -117,7 +117,6 @@ class Pbs12Header:
         return ""
 
     SERIAL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -131,7 +130,6 @@ class Pbs12Header:
             """)
 
     PARALLEL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -162,7 +160,6 @@ class Pbs10Header:
         return ""
 
     SERIAL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -176,7 +173,6 @@ class Pbs10Header:
             """)
 
     PARALLEL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -208,7 +204,6 @@ class Pbs11Header:
         return ""
 
     SERIAL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                         %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -225,7 +220,6 @@ class Pbs11Header:
             """)
 
     PARALLEL = textwrap.dedent("""\
-            #!/bin/sh
             ###############################################################################
             #                         %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################

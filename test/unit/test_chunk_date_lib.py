@@ -166,6 +166,7 @@ class TestChunkDateLib(TestCase):
         self.assertEqual(parse_date('2000010100'), datetime(2000, 1, 1))
         self.assertEqual(parse_date('200001010000'), datetime(2000, 1, 1))
         self.assertEqual(parse_date('20000101000000'), datetime(2000, 1, 1))
+        self.assertEqual(parse_date('2000-01-01 00:00:00'), datetime(2000, 1, 1))
 
         with self.assertRaises(ValueError):
             parse_date('200')

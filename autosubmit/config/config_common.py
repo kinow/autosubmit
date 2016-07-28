@@ -59,6 +59,8 @@ class AutosubmitConfig:
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
 
+        self.check_proj_file()
+
     @property
     def experiment_file(self):
         """
@@ -92,6 +94,18 @@ class AutosubmitConfig:
         Returns project's config file name
         """
         return self._proj_parser_file
+
+    def check_proj_file(self):
+        """
+        Add a section header to the project's configuration file (if not exists)
+        """
+        if os.path.exists(self._proj_parser_file):
+            with open(self._proj_parser_file, 'r+') as f:
+                first_line = f.readline()
+                if not re.match('[[a-zA-Z0-9]*]', first_line):
+                    content = f.read()
+                    f.seek(0, 0)
+                    f.write('[DEFAULT]'.rstrip('\r\n') + '\n' + first_line + content)
 
     @property
     def jobs_file(self):
@@ -197,6 +211,8 @@ class AutosubmitConfig:
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
         result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
         result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', False)
+        result = result and self.is_valid_communications_library()
+        result = result and self.is_valid_storage_type()
 
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
@@ -721,6 +737,15 @@ class AutosubmitConfig:
         """
         return int(self._conf_parser.get('config', 'MAXWAITINGJOBS'))
 
+    def get_default_job_type(self):
+        """
+        Returns the default job type from experiment's config file
+
+        :return: default type such as bash, python, r..
+        :rtype: str
+        """
+        return self.get_option(self._exp_parser, 'project_files', 'JOB_SCRIPTS_TYPE', 'bash')
+
     def get_safetysleeptime(self):
         """
         Returns safety sleep time from autosubmit's config file
@@ -778,12 +803,29 @@ class AutosubmitConfig:
         """
         return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
 
+    def get_storage_type(self):
+        """
+        Returns the communications library from autosubmit's config file. Paramiko by default.
+
+        :return: communications library
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'storage', 'TYPE', 'pkl').lower()
+
     @staticmethod
     def is_valid_mail_address(mail_address):
         if re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail_address):
             return True
         else:
             return False
+
+    def is_valid_communications_library(self):
+        library = self.get_communications_library()
+        return library in ['paramiko', 'saga']
+
+    def is_valid_storage_type(self):
+        storage_type = self.get_storage_type()
+        return storage_type in ['pkl', 'db']
 
     @staticmethod
     def get_parser(parser_factory, file_path):

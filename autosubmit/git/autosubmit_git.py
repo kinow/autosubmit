@@ -107,22 +107,27 @@ class AutosubmitGit:
         os.mkdir(project_path)
         Log.debug("The project folder {0} has been created.", project_path)
 
-        Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-        try:
-            command = "cd {0}; git clone --recursive -b {1} {2} {3}".format(project_path, git_project_branch,
-                                                                            git_project_origin, project_destination)
-            output = subprocess.check_output(command, shell=True)
-            Log.debug('{0}:{1}', command, output)
-        except subprocess.CalledProcessError:
-            Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
-            shutil.rmtree(project_path)
-            return False
         if git_project_commit:
+            Log.info("Fetching {0} into {1}", git_project_commit + " " + git_project_origin, project_path)
             try:
-                output = subprocess.check_call("cd {0}; git checkout {1} ".format(git_path, git_project_commit),
-                                               shell=True)
+                command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3}; " \
+                          "git submodule update --init --recursive".format(project_path, git_project_origin, git_path,
+                                                                           git_project_commit, project_destination)
+                output = subprocess.check_output(command, shell=True)
             except subprocess.CalledProcessError:
                 Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
+                shutil.rmtree(project_path)
+                return False
+
+        else:
+            Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+            try:
+                command = "cd {0}; git clone --recursive -b {1} {2} {3}".format(project_path, git_project_branch,
+                                                                                git_project_origin, project_destination)
+                output = subprocess.check_output(command, shell=True)
+                Log.debug('{0}:{1}', command, output)
+            except subprocess.CalledProcessError:
+                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
                 return False
 

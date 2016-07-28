@@ -26,7 +26,7 @@ from autosubmit.config.log import Log
 
 class EcPlatform(ParamikoPlatform):
     """
-    Class to manage queues with eceacces
+    Class to manage queues with ecacces
 
     :param expid: experiment's identifier
     :type expid: str
@@ -100,7 +100,7 @@ class EcPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script):
+    def get_submit_cmd(self, job_script, job_type):
         return self._submit_cmd + job_script
 
     def connect(self):
@@ -142,9 +142,9 @@ class EcPlatform(ParamikoPlatform):
         command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, os.path.join(self.get_files_path(), filename),
                                            self.host)
         try:
-            subprocess.check_call(command, shell=True)
+            subprocess.check_call(command, stdout=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
-            if not must_exist:
+            if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
         return True
@@ -152,7 +152,7 @@ class EcPlatform(ParamikoPlatform):
     def delete_file(self, filename):
         command = '{0} {1}:{2}'.format(self.del_cmd, self.host, os.path.join(self.get_files_path(), filename))
         try:
-            subprocess.check_call(command, shell=True)
+            subprocess.check_call(command, stdout=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
@@ -180,7 +180,6 @@ class EcHeader:
 
     # noinspection PyPep8
     SERIAL = textwrap.dedent("""\
-            #!/bin/ksh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -201,7 +200,6 @@ class EcHeader:
 
     # noinspection PyPep8
     PARALLEL = textwrap.dedent("""\
-            #!/bin/ksh
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
@@ -240,12 +238,13 @@ class EcCcaHeader:
         return ""
 
     SERIAL = textwrap.dedent("""\
-             #!/bin/bash
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
              #PBS -N %JOBNAME%
+             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
              #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
@@ -255,12 +254,13 @@ class EcCcaHeader:
             """)
 
     PARALLEL = textwrap.dedent("""\
-             #!/bin/bash
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
              #PBS -N %JOBNAME%
+             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
              #PBS -q np
              #PBS -l EC_total_tasks=%NUMPROC%
              #PBS -l EC_threads_per_task=%NUMTHREADS%

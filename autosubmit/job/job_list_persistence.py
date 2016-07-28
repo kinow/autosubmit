@@ -1,0 +1,136 @@
+#!/usr/bin/env python
+
+# Copyright 2015 Earth Sciences Department, BSC-CNS
+
+# This file is part of Autosubmit.
+
+# Autosubmit is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
+# Autosubmit is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License
+# along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+import pickle
+from sys import setrecursionlimit
+
+import os
+
+from autosubmit.config.log import Log
+from autosubmit.database.db_manager import DbManager
+
+
+class JobListPersistence(object):
+    """
+    Class to manage the persistence of the job lists
+
+    """
+
+    def save(self, persistence_path, persistence_file, job_list):
+        """
+        Persists a job list
+        :param job_list: JobList
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        raise NotImplementedError
+
+    def load(self, persistence_path, persistence_file):
+        """
+        Loads a job list from persistence
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        raise NotImplementedError
+
+
+class JobListPersistencePkl(JobListPersistence):
+    """
+    Class to manage the pickle persistence of the job lists
+
+    """
+
+    EXT = '.pkl'
+
+    def load(self, persistence_path, persistence_file):
+        """
+        Loads a job list from a pkl file
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        path = os.path.join(persistence_path, persistence_file + '.pkl')
+        if os.path.exists(path):
+            fd = open(path, 'r')
+            return pickle.load(fd)
+        else:
+            Log.critical('File {0} does not exist'.format(path))
+            return list()
+
+    def save(self, persistence_path, persistence_file, job_list):
+        """
+        Persists a job list in a pkl file
+        :param job_list: JobList
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        path = os.path.join(persistence_path, persistence_file + '.pkl')
+        fd = open(path, 'w')
+        setrecursionlimit(50000)
+        Log.debug("Saving JobList: " + path)
+        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
+                     in job_list]
+        pickle.dump(jobs_data, fd)
+        Log.debug('Job list saved')
+
+
+class JobListPersistenceDb(JobListPersistence):
+    """
+    Class to manage the database persistence of the job lists
+
+    """
+
+    VERSION = 1
+    JOB_LIST_TABLE = 'job_list'
+    TABLE_FIELDS = ['name', 'id', 'status', 'priority', 'section', 'date', 'member', 'chunk']
+
+    def __init__(self, persistence_path, persistence_file):
+        self.db_manager = DbManager(persistence_path, persistence_file, self.VERSION)
+
+    def load(self, persistence_path, persistence_file):
+        """
+        Loads a job list from a database
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        return self.db_manager.select_all(self.JOB_LIST_TABLE)
+
+    def save(self, persistence_path, persistence_file, job_list):
+        """
+        Persists a job list in a database
+        :param job_list: JobList
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        self._reset_table()
+        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
+                     in job_list]
+        self.db_manager.insertMany(self.JOB_LIST_TABLE, jobs_data)
+
+    def _reset_table(self):
+        """
+        Drops and recreates the database
+
+        """
+        self.db_manager.drop_table(self.JOB_LIST_TABLE)
+        self.db_manager.create_table(self.JOB_LIST_TABLE, self.TABLE_FIELDS)

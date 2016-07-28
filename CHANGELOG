@@ -1,3 +1,14 @@
+3.7.0
+    Big improvements on memory consumption
+    Added new configuration variables (default job's type, number of members..)
+    Added an alternative method to configure autosubmit without dialog library
+    UX improved (logs fixed, exceptions handled)
+    Fixed error with COMPLETED jobs shown as FAILED
+    Fixed error with LSF schedulers by default
+    Fixed bug on stats feature
+    Fixed some bugs with Git and SVN
+    Other minor bugfixes
+
 3.6.1
     Fixed an incompatibility with recent versions of radical.utils (saga)
 

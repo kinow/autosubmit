@@ -80,7 +80,6 @@ class Job:
         self.expid = name.split('_')[0]
         self.parameters = dict()
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
-        self._ancestors = None
         self.write_start = False
         self._platform = None
         self.check = True
@@ -161,23 +160,6 @@ class Job:
         self._queue = value
 
     @property
-    def ancestors(self):
-        """
-        Returns all job's ancestors
-
-        :return: job ancestors
-        :rtype: set
-        """
-        if self._ancestors is None:
-            self._ancestors = set()
-            if self.has_parents():
-                for parent in self.parents:
-                    self._ancestors.add(parent)
-                    for ancestor in parent.ancestors:
-                        self._ancestors.add(ancestor)
-        return self._ancestors
-
-    @property
     def children(self):
         """
         Returns a list containing all children of the job
@@ -237,7 +219,6 @@ class Job:
         :param new_parent: job's parents to add
         :type new_parent: *Job
         """
-        self._ancestors = None
         for parent in new_parent:
             self._parents.add(parent)
             parent.__add_child(self)
@@ -258,8 +239,6 @@ class Job:
         :param parent: parent to remove
         :type parent: Job
         """
-        self._ancestors = None
-        # careful, it is only possible to remove one parent at a time
         self.parents.remove(parent)
 
     def delete_child(self, child):
@@ -436,6 +415,8 @@ class Job:
             self.check_completion(Status.UNKNOWN)
             if self.status is Status.UNKNOWN:
                 Log.warning('Job {0} in UNKNOWN status', self.name)
+            elif self.status is Status.COMPLETED:
+                Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
@@ -557,6 +538,8 @@ class Job:
         parameters['ROOTDIR'] = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         parameters['PROJDIR'] = as_conf.get_project_dir()
 
+        parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
+
         self.parameters = parameters
 
         return parameters
@@ -607,16 +590,15 @@ class Job:
             raise Exception('Job template content not found')
 
     def _get_saga_template(self, snippet, template):
-        return ''.join([snippet.AS_HEADER,
+        return ''.join([snippet.as_header(''),
                         template,
-                        snippet.AS_TAILER])
+                        snippet.as_tailer()])
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.get_platform()
-        return ''.join([current_platform.get_header(self),
-                                   snippet.AS_HEADER,
-                                   template,
-                                   snippet.AS_TAILER])
+        return ''.join([snippet.as_header(current_platform.get_header(self)),
+                        template,
+                        snippet.as_tailer()])
 
     def create_script(self, as_conf):
         """
@@ -747,3 +729,36 @@ class Job:
             return True
         else:
             return False
+
+    def is_parent(self, job):
+        """
+        Check if the given job is a parent
+        :param job: job to be checked if is a parent
+        :return: True if job is a parent, false otherwise
+        :rtype bool
+        """
+        return job in self.parents
+
+    def is_ancestor(self, job):
+        """
+        Check if the given job is an ancestor
+        :param job: job to be checked if is an ancestor
+        :return: True if job is an ancestor, false otherwise
+        :rtype bool
+        """
+        for parent in list(self.parents):
+            if parent.is_parent(job):
+                return True
+            elif parent.is_ancestor(job):
+                return True
+        return False
+
+    def remove_redundant_parents(self):
+        """
+        Checks if a parent is also an ancestor, if true, removes the link in both directions.
+        Useful to remove redundant dependencies.
+        """
+        for parent in list(self.parents):
+            if self.is_ancestor(parent):
+                parent.children.remove(self)
+                self.parents.remove(parent)
