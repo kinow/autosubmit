@@ -1204,7 +1204,7 @@ class Autosubmit:
             Log.critical(not_enough_screen_size_msg)
             return False
         except Exception:
-            Log.critical("Missing package 'dialog', please install it: 'apt-get install dialog'\n"
+            Log.critical("Missing package 'dialog', please install it with: 'apt-get install dialog'"
                          "or uninstall the python-dialog runtime library")
             return False
 
