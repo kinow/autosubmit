@@ -329,7 +329,7 @@ class Autosubmit:
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
-                if dialog is None:
+                if dialog is None or (args.databasepath is not None and args.localrootpath is not None):
                     return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
                                                 args.platformsconfpath, args.jobsconfpath,
                                                 args.smtphostname, args.mailfrom, args.all, args.local)
@@ -1205,7 +1205,7 @@ class Autosubmit:
             return False
         except Exception:
             Log.critical("Missing package 'dialog', please install it with: 'apt-get install dialog'"
-                         "or uninstall the python-dialog runtime library")
+                         "or provide configure arguments")
             return False
 
         d.set_background_title("Autosubmit configure utility")
