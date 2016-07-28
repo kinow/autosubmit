@@ -230,7 +230,7 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'autosubmit.tex', u'autosubmit Documentation',
-     u'Domingo Manubens - Javier Vegas', 'manual'),
+     u'Domingo Manubens - Joan López', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
