@@ -334,14 +334,7 @@ class Autosubmit:
                                                 args.platformsconfpath, args.jobsconfpath,
                                                 args.smtphostname, args.mailfrom, args.all, args.local)
                 else:
-                    try:
-                        Autosubmit.configure_dialog()
-                    except dialog.DialogError:
-                        Log.critical("Configure arguments not provided. Display dialog boxes could not be opened. "
-                                     "Missing package 'dialog', please install it: 'apt-get install dialog' or provide"
-                                     "configure arguments")
-                        return False
-                return True
+                    return Autosubmit.configure_dialog()
             elif args.command == 'install':
                 return Autosubmit.install()
             elif args.command == 'setstatus':
@@ -1208,8 +1201,12 @@ class Autosubmit:
         try:
             d = dialog.Dialog(dialog="dialog", autowidgetsize=True, screen_color='GREEN')
         except dialog.DialogError:
+            Log.critical(not_enough_screen_size_msg)
+            return False
+        except Exception:
             Log.critical("Missing package dialog")
-            raise
+            return False
+
         d.set_background_title("Autosubmit configure utility")
         if os.geteuid() == 0:
             text = ''
