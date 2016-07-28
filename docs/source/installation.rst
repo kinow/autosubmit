@@ -45,6 +45,10 @@ Then follow the configure instructions after executing:
 
 and introduce path to experiment storage and database. Folders must exist.
 
+.. hint::
+    The ``dialog`` (GUI) library is optional. Otherwise the configuration parameters
+    will be prompted (CLI). Use ``autosubmit configure -h`` to see all the allowed options.
+
 As Autosubmit has an email notifications feature, you have also to configure
 a SMTP server and an email account from where the notifications will be sent.
 
