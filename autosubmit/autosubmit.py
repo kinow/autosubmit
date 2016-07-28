@@ -1132,14 +1132,14 @@ class Autosubmit:
         """
         home_path = os.path.expanduser('~')
         while database_path is None:
-            database_path = input("Introduce Database path: ")
+            database_path = raw_input("Introduce Database path: ")
         database_path = database_path.replace('~', home_path)
         if not os.path.exists(database_path):
             Log.error("Database path does not exist.")
             return False
 
         while local_root_path is None:
-            local_root_path = input("Introduce Local Root path: ")
+            local_root_path = raw_input("Introduce Local Root path: ")
         local_root_path = local_root_path.replace('~', home_path)
         if not os.path.exists(local_root_path):
             Log.error("Local Root path does not exist.")
@@ -1925,7 +1925,7 @@ class Autosubmit:
         while True:
             try:
                 if sys.version_info[0] == 3:
-                    answer = input()
+                    answer = raw_input()
                 else:
                     # noinspection PyCompatibility
                     answer = raw_input()
