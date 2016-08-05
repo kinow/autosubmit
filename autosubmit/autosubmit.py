@@ -1892,9 +1892,7 @@ class Autosubmit:
 
                 if save:
                     job_list.update_list(as_conf)
-                    path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", root_name + "_" + expid + ".pkl")
-                    pickle.dump(job_list, open(path, 'w'))
-                    Log.info("Saving JobList: {0}", path)
+                    job_list.save()
                 else:
                     job_list.update_list(as_conf)
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
