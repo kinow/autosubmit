@@ -273,6 +273,16 @@ class Autosubmit:
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
+            # Test Case
+            subparser = subparsers.add_parser('testcase', description='create test case experiment')
+            subparser.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
+            subparser.add_argument('-d', '--description', required=True, help='description of the test case')
+            subparser.add_argument('-c', '--chunks', help='chunks to run')
+            subparser.add_argument('-m', '--member', help='member to run')
+            subparser.add_argument('-s', '--stardate', help='stardate to run')
+            subparser.add_argument('-H', '--HPC', help='HPC to run experiment on it')
+            subparser.add_argument('-b', '--branch', help='branch of git to run (or revision from subversion)')
+
             # Test
             subparser = subparsers.add_parser('test', description='test experiment')
             subparser.add_argument('expid', help='experiment identifier')
@@ -340,6 +350,9 @@ class Autosubmit:
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type, args.hide)
+            elif args.command == 'testcase':
+                return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
+                                           args.HPC, args.branch)
             elif args.command == 'test':
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
@@ -374,7 +387,8 @@ class Autosubmit:
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
         """
-        if not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)):
+        if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                                                                          expid_delete)):
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
@@ -421,7 +435,7 @@ class Autosubmit:
             Log.error("Missing HPC.")
             return ''
         if not copy_id:
-            exp_id = new_experiment(description, Autosubmit.autosubmit_version)
+            exp_id = new_experiment(description, Autosubmit.autosubmit_version, test)
             if exp_id == '':
                 return ''
             try:
@@ -2103,6 +2117,19 @@ class Autosubmit:
         return result
 
     @staticmethod
+    def testcase(copy_id, description, chunks=None, member=None, start_date=None, hpc=None, branch=None):
+        """
+        Method to create a test case. It creates a new experiment whose id starts by 't'.
+        """
+        testcaseid = Autosubmit.expid(hpc, description, copy_id, False, True)
+        if testcaseid == '':
+            return False
+
+        Autosubmit._change_conf(testcaseid, hpc, start_date, member, chunks, branch, False)
+
+        return testcaseid
+
+    @staticmethod
     def test(expid, chunks, member=None, start_date=None, hpc=None, branch=None):
         """
         Method to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
@@ -2131,52 +2158,63 @@ class Autosubmit:
         if testid == '':
             return False
 
-        as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
-        exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
-        if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
-            Log.error('Can not test a RERUN experiment')
-            Autosubmit.delete(testid, True)
-            return False
-
-        content = open(as_conf.experiment_file).read()
-        if hpc is None:
-            platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
-            test_platforms = list()
-            for section in platforms_parser.sections():
-                if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
-                    test_platforms.append(section)
-            if len(test_platforms) == 0:
-                Log.critical('No test HPC defined')
-                return False
-            hpc = random.choice(test_platforms)
-        if member is None:
-            member = random.choice(exp_parser.get('experiment', 'MEMBERS').split(' '))
-        if start_date is None:
-            start_date = random.choice(exp_parser.get('experiment', 'DATELIST').split(' '))
-        # Experiment
-        content = content.replace(re.search('DATELIST =.*', content).group(0),
-                                  "DATELIST = " + start_date)
-        content = content.replace(re.search('MEMBERS =.*', content).group(0),
-                                  "MEMBERS = " + member)
-        # noinspection PyTypeChecker
-        content = content.replace(re.search('NUMCHUNKS =.*', content).group(0),
-                                  "NUMCHUNKS = " + chunks)
-        content = content.replace(re.search('HPCARCH =.*', content).group(0),
-                                  "HPCARCH = " + hpc)
-        content = content.replace(re.search('EXPID =.*', content).group(0),
-                                  "EXPID = " + testid)
-        if branch is not None:
-            content = content.replace(re.search('PROJECT_BRANCH =.*', content).group(0),
-                                      "PROJECT_BRANCH = " + branch)
-            content = content.replace(re.search('PROJECT_REVISION =.*', content).group(0),
-                                      "PROJECT_REVISION = " + branch)
-
-        open(as_conf.experiment_file, 'w').write(content)
+        Autosubmit._change_conf(testid, hpc, start_date, member, chunks, branch, True)
 
         Autosubmit.create(testid, False, True)
         if not Autosubmit.run_experiment(testid):
             return False
-        return Autosubmit.delete(testid, True)
+        return True
+
+    @staticmethod
+    def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
+        as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
+        exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
+        if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
+            Log.error('Can not test a RERUN experiment')
+            return False
+
+        content = open(as_conf.experiment_file).read()
+        if random_select:
+            if hpc is None:
+                platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
+                test_platforms = list()
+                for section in platforms_parser.sections():
+                    if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
+                        test_platforms.append(section)
+                if len(test_platforms) == 0:
+                    Log.critical('No test HPC defined')
+                    return False
+                hpc = random.choice(test_platforms)
+            if member is None:
+                member = random.choice(exp_parser.get('experiment', 'MEMBERS').split(' '))
+            if start_date is None:
+                start_date = random.choice(exp_parser.get('experiment', 'DATELIST').split(' '))
+            if chunks is None:
+                chunks = 1
+
+        # Experiment
+        content = content.replace(re.search('^EXPID =.*', content, re.MULTILINE).group(0),
+                                  "EXPID = " + testid)
+        if start_date is not None:
+            content = content.replace(re.search('^DATELIST =.*', content, re.MULTILINE).group(0),
+                                      "DATELIST = " + start_date)
+        if member is not None:
+            content = content.replace(re.search('^MEMBERS =.*', content, re.MULTILINE).group(0),
+                                      "MEMBERS = " + member)
+        if chunks is not None:
+            # noinspection PyTypeChecker
+            content = content.replace(re.search('^NUMCHUNKS =.*', content, re.MULTILINE).group(0),
+                                      "NUMCHUNKS = " + chunks)
+        if hpc is not None:
+            content = content.replace(re.search('^HPCARCH =.*', content, re.MULTILINE).group(0),
+                                      "HPCARCH = " + hpc)
+        if branch is not None:
+            content = content.replace(re.search('^PROJECT_BRANCH =.*', content, re.MULTILINE).group(0),
+                                      "PROJECT_BRANCH = " + branch)
+            content = content.replace(re.search('^PROJECT_REVISION =.*', content, re.MULTILINE).group(0),
+                                      "PROJECT_REVISION = " + branch)
+
+        open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
     def load_job_list(expid, as_conf):
