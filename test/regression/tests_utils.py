@@ -1,5 +1,5 @@
 from autosubmit.database.db_common import base36decode, base36encode
-from rtests_commands import *
+from tests_commands import *
 import os
 import subprocess
 
