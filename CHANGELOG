@@ -1,3 +1,7 @@
+3.7.1
+    Fixed issue in setstatus
+    Added new testcase command
+
 3.7.0
     Big improvements on memory consumption
     Added new configuration variables (default job's type, number of members..)

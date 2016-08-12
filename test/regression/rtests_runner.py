@@ -1,8 +1,8 @@
 from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.config.parser_factory import ConfigParserFactory
 from autosubmit.config.log import Log
-from tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
-from tests_commands import *
+from rtests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
+from rtests_commands import *
 from threading import Thread
 from time import sleep
 import argparse

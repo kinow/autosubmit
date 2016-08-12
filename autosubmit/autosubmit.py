@@ -2120,7 +2120,26 @@ class Autosubmit:
     def testcase(copy_id, description, chunks=None, member=None, start_date=None, hpc=None, branch=None):
         """
         Method to create a test case. It creates a new experiment whose id starts by 't'.
+
+
+        :param copy_id: experiment identifier
+        :type copy_id: str
+        :param description: test case experiment description
+        :type description: str
+        :param chunks: number of chunks to be run by the experiment. If None, it uses configured chunk(s).
+        :type chunks: int
+        :param member: member to be used by the test. If None, it uses configured member(s).
+        :type member: str
+        :param start_date: start date to be used by the test. If None, it uses configured start date(s).
+        :type start_date: str
+        :param hpc: HPC to be used by the test. If None, it uses configured HPC.
+        :type hpc: str
+        :param branch: branch or revision to be used by the test. If None, it uses configured branch.
+        :type branch: str
+        :return: test case id
+        :rtype: str
         """
+
         testcaseid = Autosubmit.expid(hpc, description, copy_id, False, True)
         if testcaseid == '':
             return False
