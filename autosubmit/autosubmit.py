@@ -280,7 +280,7 @@ class Autosubmit:
             subparser.add_argument('-c', '--chunks', help='chunks to run')
             subparser.add_argument('-m', '--member', help='member to run')
             subparser.add_argument('-s', '--stardate', help='stardate to run')
-            subparser.add_argument('-H', '--HPC', help='HPC to run experiment on it')
+            subparser.add_argument('-H', '--HPC', required=True, help='HPC to run experiment on it')
             subparser.add_argument('-b', '--branch', help='branch of git to run (or revision from subversion)')
 
             # Test
