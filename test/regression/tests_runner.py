@@ -17,7 +17,7 @@ db_path = './db'
 initial_experiment_id = 'a000'
 
 
-def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials=4):
+def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials=2):
     if not check_cmd(generate_experiment_cmd(hpc_arch, description)):
         Log.error('Error while generating the experiment {0}({1})', name, experiment_id)
         return False
@@ -42,7 +42,7 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials
         Log.error('[KO] Test {0}({1}) has not been passed successfully', name, experiment_id)
 
 
-def run(current_experiment_id, only_list=None, exclude_list=None):
+def run(current_experiment_id, only_list=None, exclude_list=None, max_threads=5):
     # Local variables for testing
     test_threads = []
     tests_parser = AutosubmitConfig.get_parser(ConfigParserFactory(), tests_parser_file)
@@ -61,6 +61,10 @@ def run(current_experiment_id, only_list=None, exclude_list=None):
         if exclude_list is not None and section in exclude_list:
             Log.warning('Test {0} has been skipped', section)
             continue
+
+        # Prevents too many concurrent threads
+        if len(test_threads) >= max_threads:
+            test_threads.pop(0).join()
 
         # Getting test settings
         description, hpc_arch, src_path = get_test_settings(section, tests_parser)
