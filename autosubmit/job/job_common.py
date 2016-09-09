@@ -63,7 +63,7 @@ class StatisticsSnippetBash:
     @staticmethod
     def as_header(scheduler_header):
         return textwrap.dedent("""\
-            #!/usr/bin/env bash
+            #!/bin/bash
 
             """) + \
             scheduler_header + \

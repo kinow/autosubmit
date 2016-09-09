@@ -260,6 +260,35 @@ class TestJob(TestCase):
         exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
         self.assertEquals(Status.FAILED, self.job.status)
 
+    def test_job_script_checking_contains_the_right_default_variables(self):
+        # This test (and feature) was implemented in order to avoid
+        # false positives on the checking process with auto-ecearth3
+        # Arrange
+        as_conf = Mock()
+        as_conf.get_processors = Mock(return_value=80)
+        as_conf.get_threads = Mock(return_value=1)
+        as_conf.get_tasks = Mock(return_value=16)
+        as_conf.get_memory = Mock(return_value=80)
+        as_conf.get_wallclock = Mock(return_value='00:30')
+        as_conf.get_member_list = Mock(return_value=[])
+
+        dummy_serial_platform = Mock()
+        dummy_serial_platform.name = 'serial'
+        dummy_platform = Mock()
+        dummy_platform.serial_platform = dummy_serial_platform
+        self.job._platform = dummy_platform
+        # Act
+        parameters = self.job.update_parameters(as_conf, dict())
+        # Assert
+        self.assertTrue('d' in parameters)
+        self.assertTrue('d_' in parameters)
+        self.assertTrue('Y' in parameters)
+        self.assertTrue('Y_' in parameters)
+        self.assertEquals('%d%', parameters['d'])
+        self.assertEquals('%d_%', parameters['d_'])
+        self.assertEquals('%Y%', parameters['Y'])
+        self.assertEquals('%Y_%', parameters['Y_'])
+
 
 class FakeBasicConfig:
     DB_DIR = '/dummy/db/dir'

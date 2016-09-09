@@ -1,3 +1,8 @@
+3.7.2
+    Minor bugfixes
+    Regression test suite improved
+    Solved some problems with paramiko & ECMWF platform
+
 3.7.1
     Fixed issue in setstatus
     Added new testcase command

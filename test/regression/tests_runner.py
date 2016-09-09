@@ -17,28 +17,32 @@ db_path = './db'
 initial_experiment_id = 'a000'
 
 
-def run_test_case(experiment_id, name, hpc_arch, description, src_path):
+def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials=2):
     if not check_cmd(generate_experiment_cmd(hpc_arch, description)):
         Log.error('Error while generating the experiment {0}({1})', name, experiment_id)
         return False
-
     copy_experiment_conf_files(db_path, src_path, experiment_id)
-
     sleep(5)  # Avoiding synchronization problems while copying
 
-    if not check_cmd(create_experiment_cmd(experiment_id)):
-        Log.error('Error while creating the experiment {0}({1})', name, experiment_id)
-        return False
+    run_ok = False
+    for attempt in range(retrials):
+        if not check_cmd(create_experiment_cmd(experiment_id)):
+            Log.warning('Error while creating the experiment {0}({1})', name, experiment_id)
+            continue
 
-    if not check_cmd(run_experiment_cmd(experiment_id)):
-        Log.error('Error while running the experiment {0}({1})', name, experiment_id)
-        return False
+        if not check_cmd(run_experiment_cmd(experiment_id)):
+            Log.warning('Error while running the experiment {0}({1})', name, experiment_id)
+            continue
 
-    # Everything was OK
-    Log.result('[OK] Test {0}({1}) has been passed successfully', name, experiment_id)
+        run_ok = True
+        break
+    if run_ok:
+        Log.result('[OK] Test {0}({1}) has been passed successfully', name, experiment_id)
+    else:
+        Log.error('[KO] Test {0}({1}) has not been passed successfully', name, experiment_id)
 
 
-def run(current_experiment_id, only_list=None, exclude_list=None):
+def run(current_experiment_id, only_list=None, exclude_list=None, max_threads=5):
     # Local variables for testing
     test_threads = []
     tests_parser = AutosubmitConfig.get_parser(ConfigParserFactory(), tests_parser_file)
@@ -57,6 +61,10 @@ def run(current_experiment_id, only_list=None, exclude_list=None):
         if exclude_list is not None and section in exclude_list:
             Log.warning('Test {0} has been skipped', section)
             continue
+
+        # Prevents too many concurrent threads
+        if len(test_threads) >= max_threads:
+            test_threads.pop(0).join()
 
         # Getting test settings
         description, hpc_arch, src_path = get_test_settings(section, tests_parser)

@@ -442,16 +442,21 @@ class Job:
             Log.warning("Job {0} seemed to be completed but there is no COMPLETED file", self.name)
             self.status = default_status
 
-    def update_parameters(self, as_conf, parameters):
+    def update_parameters(self, as_conf, parameters,
+                          default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%'}):
         """
         Refresh parameters value
 
+        :param default_parameters:
+        :type default_parameters: dict
         :param as_conf:
         :type as_conf: AutosubmitConfig
         :param parameters:
         :type parameters: dict
         """
+
         parameters = parameters.copy()
+        parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
 
