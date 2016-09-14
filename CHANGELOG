@@ -1,3 +1,9 @@
+3.7.3
+    Fixed error with logs directives (err & out were swapped)
+    Added new option for MN3: SCRATCH_FREE_SPACE
+    PROCESSORS_PER_NODE/TASKS now available with Paramiko
+    Other minor bugfixes
+
 3.7.2
     Minor bugfixes
     Regression test suite improved

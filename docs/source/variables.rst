@@ -35,6 +35,7 @@ This variables are relatives to the current job.
 - **NUMTHREADS**: Number of threads that the job will use.
 - **NUMTASK**: Number of tasks that the job will use.
 - **WALLCLOCK**: Number of processors that the job will use.
+- **SCRATCH_FREE_SPACE**: Percentage of free space required on the ``scratch``.
 - **NOTIFY_ON**: Determine the job statuses you want to be notified.
 
 
@@ -43,7 +44,7 @@ Platform variables
 
 This variables are relative to the platoforms defined on the jobs conf. A full set of the next variables are defined for
 each platform defined on the platforms configuration file, substituting {PLATFORM_NAME} for each platform's name. Also, a
-suite of varables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.
+suite of variables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.
 
 - **{PLATFORM_NAME}_ARCH**: Platform name
 - **{PLATFORM_NAME}_HOST**: Platform url
