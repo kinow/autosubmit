@@ -90,6 +90,8 @@ class AutosubmitGit:
         :type force: bool
         :return: True if clone was successful, False otherwise
         """
+        if not as_conf.is_valid_git_repository():
+            Log.error("There isn't a correct Git configuration. Check that there's an origin and a commit or a branch")
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()
