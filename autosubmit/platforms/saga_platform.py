@@ -255,6 +255,9 @@ class SagaPlatform(Platform):
 
         self.add_attribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])
 
+        if job.parameters["SCRATCH_FREE_SPACE"] is not None:
+            self.add_attribute(jd, 'ScratchFreeSpace', job.parameters["SCRATCH_FREE_SPACE"])
+
         saga_job = self.service.create_job(jd)
         return saga_job
 

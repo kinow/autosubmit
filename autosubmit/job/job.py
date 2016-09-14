@@ -69,6 +69,7 @@ class Job:
         self.long_name = name
         self.date_format = ''
         self.type = Type.BASH
+        self.scratch_free_space = None
 
         self.id = jobid
         self.file = None
@@ -518,6 +519,9 @@ class Job:
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
+        self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
+        if self.scratch_free_space == 0:
+            self.tasks = job_platform.scratch_free_space
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
@@ -526,6 +530,7 @@ class Job:
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
         parameters['MEMORY'] = self.memory
+        parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
 
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host

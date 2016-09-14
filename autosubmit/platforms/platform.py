@@ -25,6 +25,7 @@ class Platform:
         self._serial_platform = None
         self._serial_queue = None
         self.processors_per_node = None
+        self.scratch_free_space = None
         self.host = ''
         self.user = ''
         self.project = ''

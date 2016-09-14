@@ -160,10 +160,20 @@ class AutosubmitConfig:
         Gets tasks needed for the given job type
         :param section: job type
         :type section: str
-        :return: tasks needed
-        :rtype: str
+        :return: tasks (processes) per host
+        :rtype: int
         """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 0))
+
+    def get_scratch_free_space(self, section):
+        """
+        Gets scratch free space needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: percentage of scratch free space needed
+        :rtype: int
+        """
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'SCRATCH_FREE_SPACE', 0))
 
     def get_memory(self, section):
         """

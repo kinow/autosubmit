@@ -103,6 +103,13 @@ class LsfHeader:
         else:
             return "BSUB -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
+    # noinspection PyMethodMayBeStatic
+    def get_scratch_free_space(self, job):
+        if job.scratch_free_space is None:
+            return ""
+        else:
+            return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -130,6 +137,7 @@ class LsfHeader:
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             #BSUB -R "span[ptile=%NUMTASK%]"
+            %SCRATCH_FREE_SPACE_DIRECTIVE%
             #
             ###############################################################################
             """)
