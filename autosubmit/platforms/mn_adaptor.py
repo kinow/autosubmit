@@ -208,9 +208,6 @@ def _mnscript_generator(jd, queue=None):
     if jd.processes_per_host:
         mn_params += '#BSUB -R "span[ptile=%s]"\n' % str(jd.processes_per_host)
 
-    if jd.scratch_free_space:
-        mn_params += '#BSUB -R "select[(scratch<%s)]"\n' % str(jd.scratch_free_space)
-
     # escape all double quotes and dollarsigns, otherwise 'echo |'
     # further down won't work
     # only escape '$' in args and exe. not in the params
