@@ -129,7 +129,7 @@ class LsfHeader:
             #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=16]"
+            #BSUB -R "span[ptile=%NUMTASK%]"
             #
             ###############################################################################
             """)
