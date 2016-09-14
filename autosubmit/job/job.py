@@ -521,7 +521,7 @@ class Job:
         self.wallclock = as_conf.get_wallclock(self.section)
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
-            self.tasks = job_platform.scratch_free_space
+            self.scratch_free_space = job_platform.scratch_free_space
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
