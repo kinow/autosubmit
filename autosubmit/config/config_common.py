@@ -160,10 +160,20 @@ class AutosubmitConfig:
         Gets tasks needed for the given job type
         :param section: job type
         :type section: str
-        :return: tasks needed
-        :rtype: str
+        :return: tasks (processes) per host
+        :rtype: int
         """
         return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 0))
+
+    def get_scratch_free_space(self, section):
+        """
+        Gets scratch free space needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: percentage of scratch free space needed
+        :rtype: int
+        """
+        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'SCRATCH_FREE_SPACE', 0))
 
     def get_memory(self, section):
         """
@@ -495,7 +505,7 @@ class AutosubmitConfig:
         :return: git branch
         :rtype: str
         """
-        return self._exp_parser.get('git', 'PROJECT_BRANCH')
+        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_BRANCH', None)
 
     def get_git_project_commit(self):
         """
@@ -504,7 +514,7 @@ class AutosubmitConfig:
         :return: git commit
         :rtype: str
         """
-        return self._exp_parser.get('git', 'PROJECT_COMMIT')
+        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_COMMIT', None)
 
     def get_project_destination(self):
         """
@@ -826,6 +836,12 @@ class AutosubmitConfig:
     def is_valid_storage_type(self):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
+
+    def is_valid_git_repository(self):
+        origin_exists = self.check_exists(self._exp_parser, 'git', 'PROJECT_ORIGIN')
+        branch = self.get_git_project_branch()
+        commit = self.get_git_project_commit()
+        return origin_exists and (branch is not None or commit is not None)
 
     @staticmethod
     def get_parser(parser_factory, file_path):

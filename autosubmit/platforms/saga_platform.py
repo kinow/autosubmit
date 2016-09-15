@@ -252,9 +252,7 @@ class SagaPlatform(Platform):
         if job.parameters["NUMTASK"] is not None:
             self.add_attribute(jd, 'ProcessesPerHost', job.parameters["NUMTASK"])
         self.add_attribute(jd, 'ThreadsPerProcess', job.parameters["NUMTHREADS"])
-
         self.add_attribute(jd, 'TotalPhysicalMemory', job.parameters["MEMORY"])
-
         saga_job = self.service.create_job(jd)
         return saga_job
 

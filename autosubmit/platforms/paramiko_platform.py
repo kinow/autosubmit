@@ -356,8 +356,10 @@ class ParamikoPlatform(Platform):
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
         header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
-        header = header.replace('%ERR_LOG_DIRECTIVE%', "{0}.{1}.out".format(job.name, str_datetime))
-        header = header.replace('%OUT_LOG_DIRECTIVE%', "{0}.{1}.err".format(job.name, str_datetime))
+        header = header.replace('%ERR_LOG_DIRECTIVE%', "{0}.{1}.err".format(job.name, str_datetime))
+        header = header.replace('%OUT_LOG_DIRECTIVE%', "{0}.{1}.out".format(job.name, str_datetime))
+        if hasattr(self.header, 'get_scratch_free_space'):
+            header = header.replace('%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
         return header
 
     def check_remote_log_dir(self):
