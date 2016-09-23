@@ -1,5 +1,4 @@
 test:
   script:
-  - pip install -e .
-  - pip install nose
+  - source /home/gitlab-runner/VirtualEnv/bin/activate
   - nosetests test/unit
