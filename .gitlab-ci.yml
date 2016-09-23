@@ -1,7 +1,12 @@
 test:
+  cache:
+    paths:
+      - venv/
   script:
+  - virtualenv -q venv
+  - source venv/bin/activate
   - export http_proxy=http://127.0.0.1:6666
   - export https_proxy=http://127.0.0.1:6666
-  - pip install --proxy 127.0.0.1:6666 -e .
-  - pip install --proxy 127.0.0.1:6666 nose
+  - pip install -e .
+  - pip install nose
   - nosetests test/unit
