@@ -1,5 +1,7 @@
 test:
   script:
+  - export http_proxy=http://127.0.0.1:6666
+  - export https_proxy=http://127.0.0.1:6666
   - pip install --proxy 127.0.0.1:6666 -e .
   - pip install --proxy 127.0.0.1:6666 nose
   - nosetests test/unit
