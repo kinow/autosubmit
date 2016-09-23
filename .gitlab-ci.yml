@@ -1,4 +1,3 @@
 test:
   script:
-  - source /home/gitlab-runner/VirtualEnv/bin/activate
-  - nosetests test/unit
+  - /home/gitlab-runner/VirtualEnv/bin/nosetests test/unit
