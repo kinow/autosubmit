@@ -1,0 +1,5 @@
+test:
+  script:
+  - pip install -e .
+  - pip install nose
+  - nosetests test/unit
