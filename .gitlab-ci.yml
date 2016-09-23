@@ -5,7 +5,4 @@ test:
   script:
   - virtualenv -q venv
   - source venv/bin/activate
-  - export http_proxy=http://127.0.0.1:6666
-  - pip install --index-url=http://pypi.python.org/simple/ -e .
-  - pip install --index-url=http://pypi.python.org/simple/ nose
   - nosetests test/unit
