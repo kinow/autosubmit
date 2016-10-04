@@ -193,8 +193,14 @@ class JobList:
                 chunk_index = chunk_list.index(chunk)
                 if (chunk_index + dependency.distance) < len(chunk_list):
                     chunk = chunk_list[chunk_index + dependency.distance]
-                else:
-                    skip = True
+                else:  # calculating the next one possible
+                    temp_distance = dependency.distance
+                    while temp_distance > 0:
+                        temp_distance -= 1
+                        if (chunk_index + temp_distance) < len(chunk_list):
+                            chunk = chunk_list[chunk_index + temp_distance]
+                            break
+
             elif member is not None and dependency.running in ['chunk', 'member']:
                 member_index = member_list.index(member)
                 if (member_index + dependency.distance) < len(member_list):
