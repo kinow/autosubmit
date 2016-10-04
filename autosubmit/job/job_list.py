@@ -138,20 +138,24 @@ class JobList:
     def _manage_dependencies(dependencies_keys, dic_jobs):
         dependencies = dict()
         for key in dependencies_keys:
-            if '-' in key:
-                key_split = key.split('-')
-                dependency_running_type = dic_jobs.get_option(key_split[0], 'RUNNING', 'once').lower()
-                dependency = Dependency(key_split[0], int(key_split[1]), dependency_running_type)
-                dependencies[key] = dependency
-            else:
+            if '-' not in key and '+' not in key:
                 dependencies[key] = Dependency(key)
+            else:
+                sign = '-' if '-' in key else '+'
+                key_split = key.split(sign)
+                dependency_running_type = dic_jobs.get_option(key_split[0], 'RUNNING', 'once').lower()
+                dependency = Dependency(key_split[0], int(key_split[1]), dependency_running_type, sign)
+                dependencies[key] = dependency
         return dependencies
 
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies):
         for key in dependencies_keys:
-            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, job.member, job.date,
-                                                                                 dependencies[key])
+            dependency = dependencies[key]
+            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
+                                                                                 job.member, member_list,
+                                                                                 job.date, date_list,
+                                                                                 dependency)
             if skip:
                 continue
 
@@ -162,9 +166,9 @@ class JobList:
                                                            member_list, dependency.section)
 
     @staticmethod
-    def _calculate_dependency_metadata(chunk, member, date, dependency):
+    def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
         skip = False
-        if '-' in key:
+        if dependency.sign is '-':
             if chunk is not None and dependency.running == 'chunk':
                 chunk_index = chunk_list.index(chunk)
                 if chunk_index >= dependency.distance:
@@ -180,6 +184,26 @@ class JobList:
             elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
                 date_index = date_list.index(date)
                 if date_index >= dependency.distance:
+                    date = date_list[date_index - dependency.distance]
+                else:
+                    skip = True
+
+        if dependency.sign is '+':
+            if chunk is not None and dependency.running == 'chunk':
+                chunk_index = chunk_list.index(chunk)
+                if (chunk_index + dependency.distance) < len(chunk_list):
+                    chunk = chunk_list[chunk_index + dependency.distance]
+                else:
+                    skip = True
+            elif member is not None and dependency.running in ['chunk', 'member']:
+                member_index = member_list.index(member)
+                if (member_index + dependency.distance) < len(member_list):
+                    member = member_list[member_index + dependency.distance]
+                else:
+                    skip = True
+            elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
+                date_index = date_list.index(date)
+                if (date_index + dependency.distance) < len(date_list):
                     date = date_list[date_index - dependency.distance]
                 else:
                     skip = True
@@ -990,7 +1014,8 @@ class Dependency(object):
 
     """
 
-    def __init__(self, section, distance=None, running=None):
+    def __init__(self, section, distance=None, running=None, sign=None):
         self.section = section
         self.distance = distance
         self.running = running
+        self.sign = sign
