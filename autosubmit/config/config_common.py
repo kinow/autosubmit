@@ -303,6 +303,8 @@ class AutosubmitConfig:
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
+                    if '+' in dependency:
+                        dependency = dependency.split('+')[0]
                     if dependency not in sections:
                         Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
 
