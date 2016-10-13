@@ -1448,7 +1448,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'refresh.log'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
+        if not as_conf.check_expdef_conf():
             Log.critical('Can not copy with invalid configuration')
             return False
         project_type = as_conf.get_project_type()

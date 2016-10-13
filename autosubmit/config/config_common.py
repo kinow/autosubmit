@@ -195,17 +195,17 @@ class AutosubmitConfig:
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        result = self._check_autosubmit_conf()
-        result = result and self._check_platforms_conf()
-        result = result and self._check_jobs_conf()
-        result = result and self._check_expdef_conf()
+        result = self.check_autosubmit_conf()
+        result = result and self.check_platforms_conf()
+        result = result and self.check_jobs_conf()
+        result = result and self.check_expdef_conf()
         if result:
             Log.result("Configuration files OK\n")
         else:
             Log.error("Configuration files invalid\n")
         return result
 
-    def _check_autosubmit_conf(self):
+    def check_autosubmit_conf(self):
         """
         Checks experiment's autosubmit configuration file.
 
@@ -236,7 +236,7 @@ class AutosubmitConfig:
             Log.info('{0} OK'.format(os.path.basename(self._conf_parser_file)))
         return result
 
-    def _check_platforms_conf(self):
+    def check_platforms_conf(self):
         """
         Checks experiment's queues configuration file.
 
@@ -274,7 +274,7 @@ class AutosubmitConfig:
             Log.info('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
         return result
 
-    def _check_jobs_conf(self):
+    def check_jobs_conf(self):
         """
         Checks experiment's jobs configuration file.
 
@@ -325,7 +325,7 @@ class AutosubmitConfig:
 
         return result
 
-    def _check_expdef_conf(self):
+    def check_expdef_conf(self):
         """
         Checks experiment's experiment configuration file.
 
