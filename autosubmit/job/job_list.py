@@ -546,7 +546,7 @@ class JobList:
             else:
                 retrials = job.retrials
 
-            if job.fail_count < retrials:
+            if job.fail_count <= retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
@@ -561,9 +561,6 @@ class JobList:
         Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
             tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-            # for parent in job.parents:
-            # if parent.status != Status.COMPLETED:
-            # break
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
                 save = True
