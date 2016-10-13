@@ -5,3 +5,4 @@ test:
   script:
   - source ~/venv/autosubmit/bin/activate
   - nosetests test/unit
+  - nosetests test/integration
