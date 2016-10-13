@@ -410,6 +410,8 @@ class Autosubmit:
         """
         Creates a new experiment for given HPC
 
+        :param operational: if true, creates an operational experiment
+        :type operational: bool
         :type hpc: str
         :type description: str
         :type copy_id: str
