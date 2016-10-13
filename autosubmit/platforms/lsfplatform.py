@@ -110,6 +110,13 @@ class LsfHeader:
         else:
             return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
 
+    # noinspection PyMethodMayBeStatic
+    def get_exclusivity(self, job):
+        if job.get_platform().exclusivity is '':
+            return ""
+        else:
+            return "#BSUB -x"
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -121,6 +128,7 @@ class LsfHeader:
             #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
+            %EXCLUSIVITY_DIRECTIVE%
             #
             ###############################################################################
             """)
