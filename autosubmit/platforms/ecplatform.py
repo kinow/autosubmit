@@ -237,6 +237,13 @@ class EcCcaHeader:
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic
+    def get_tasks_per_node(self, job):
+        if job.tasks is None:
+            return ""
+        else:
+            return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -264,7 +271,7 @@ class EcCcaHeader:
              #PBS -q np
              #PBS -l EC_total_tasks=%NUMPROC%
              #PBS -l EC_threads_per_task=%NUMTHREADS%
-             #PBS -l EC_tasks_per_node=%NUMTASK%
+             %TASKS_PER_NODE_DIRECTIVE%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
              #

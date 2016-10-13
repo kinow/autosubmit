@@ -111,6 +111,13 @@ class LsfHeader:
             return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
 
     # noinspection PyMethodMayBeStatic
+    def get_tasks_per_node(self, job):
+        if job.tasks is None:
+            return ""
+        else:
+            return '#BSUB -R "span[ptile={0}]"'.format(job.tasks)
+
+    # noinspection PyMethodMayBeStatic
     def get_exclusivity(self, job):
         if job.get_platform().exclusivity is '':
             return ""
@@ -144,7 +151,7 @@ class LsfHeader:
             #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=%NUMTASK%]"
+            %TASKS_PER_NODE_DIRECTIVE%
             %SCRATCH_FREE_SPACE_DIRECTIVE%
             #
             ###############################################################################
