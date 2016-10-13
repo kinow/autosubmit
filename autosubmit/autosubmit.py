@@ -148,7 +148,8 @@ class Autosubmit:
             group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
             group.add_argument('-dm', '--dummy', action='store_true',
                                help='creates a new experiment with default values, usually for testing')
-
+            group.add_argument('-op', '--operational', action='store_true',
+                               help='creates a new experiment with operational experiment id')
             subparser.add_argument('-H', '--HPC', required=True,
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
@@ -322,7 +323,8 @@ class Autosubmit:
             if args.command == 'run':
                 return Autosubmit.run_experiment(args.expid)
             elif args.command == 'expid':
-                return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy) != ''
+                return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
+                                        args.operational) != ''
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
@@ -404,7 +406,7 @@ class Autosubmit:
         return ret
 
     @staticmethod
-    def expid(hpc, description, copy_id='', dummy=False, test=False):
+    def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
         Creates a new experiment for given HPC
 
@@ -435,7 +437,7 @@ class Autosubmit:
             Log.error("Missing HPC.")
             return ''
         if not copy_id:
-            exp_id = new_experiment(description, Autosubmit.autosubmit_version, test)
+            exp_id = new_experiment(description, Autosubmit.autosubmit_version, test, operational)
             if exp_id == '':
                 return ''
             try:

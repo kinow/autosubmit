@@ -156,7 +156,7 @@ def get_autosubmit_version(expid):
     return row[0]
 
 
-def new_experiment(description, version, test=False):
+def new_experiment(description, version, test=False, operational=False):
     """
     Stores a new experiment on the database and generates its identifier
 
@@ -164,6 +164,8 @@ def new_experiment(description, version, test=False):
     :type version: str
     :param test: flag for test experiments
     :type test: bool
+    :param operational: flag for operational experiments
+    :type operational: bool
     :param description: experiment's description
     :type description: str
     :return: experiment id for the new experiment
@@ -171,6 +173,8 @@ def new_experiment(description, version, test=False):
     """
     if test:
         last_exp_name = last_name_used(True)
+    elif operational:
+        last_exp_name = last_name_used(False, True)
     else:
         last_exp_name = last_name_used()
     if last_exp_name == '':
@@ -179,6 +183,9 @@ def new_experiment(description, version, test=False):
         if test:
             # test identifier restricted also to 4 characters.
             new_name = 't000'
+        elif operational:
+            # operational identifier restricted also to 4 characters.
+            new_name = 'o000'
         else:
             new_name = 'a000'
     else:
@@ -277,11 +284,13 @@ def _next_name(name):
     return base36encode(base36decode(name) + 1)
 
 
-def last_name_used(test=False):
+def last_name_used(test=False, operational=False):
     """
     Gets last experiment identifier used
 
     :param test: flag for test experiments
+    :type test: bool
+    :param operational: flag for operational experiments
     :type test: bool
     :return: last experiment identifier used, 'empty' if there is none
     :rtype: str
@@ -298,6 +307,12 @@ def last_name_used(test=False):
         cursor.execute('SELECT name '
                        'FROM experiment '
                        'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "t%" AND '
+                       'autosubmit_version IS NOT NULL AND '
+                       'NOT (autosubmit_version LIKE "%3.0.0b%"))')
+    elif operational:
+        cursor.execute('SELECT name '
+                       'FROM experiment '
+                       'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name LIKE "o%" AND '
                        'autosubmit_version IS NOT NULL AND '
                        'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     else:
