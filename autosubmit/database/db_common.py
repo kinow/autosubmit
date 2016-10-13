@@ -319,7 +319,7 @@ def last_name_used(test=False, operational=False):
         cursor.execute('SELECT name '
                        'FROM experiment '
                        'WHERE rowid=(SELECT max(rowid) FROM experiment WHERE name NOT LIKE "t%" AND '
-                       'autosubmit_version IS NOT NULL AND '
+                       'name NOT LIKE "o%" AND autosubmit_version IS NOT NULL AND '
                        'NOT (autosubmit_version LIKE "%3.0.0b%"))')
     row = cursor.fetchone()
     close_conn(conn, cursor)
