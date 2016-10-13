@@ -70,8 +70,8 @@ from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
-from database.db_common import new_experiment
-from database.db_common import copy_experiment
+from experiment.experiment_common import new_experiment
+from experiment.experiment_common import copy_experiment
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -472,7 +472,7 @@ class Autosubmit:
         else:
             try:
                 if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
-                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test)
+                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
                     if exp_id == '':
                         return ''
                     dir_exp_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
