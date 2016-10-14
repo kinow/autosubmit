@@ -119,10 +119,10 @@ class LsfHeader:
 
     # noinspection PyMethodMayBeStatic
     def get_exclusivity(self, job):
-        if job.get_platform().exclusivity is '':
-            return ""
-        else:
+        if job.get_platform().exclusivity == 'true':
             return "#BSUB -x"
+        else:
+            return ""
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
