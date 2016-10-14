@@ -983,7 +983,7 @@ class DicJobs:
             job.check = False
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
-        job.threads = self.get_option(section, "THREADS", 1)
+        job.threads = self.get_option(section, "THREADS", '')
         job.tasks = self.get_option(section, "TASKS", '')
         job.memory = self.get_option(section, "MEMORY", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')

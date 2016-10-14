@@ -105,14 +105,14 @@ class LsfHeader:
 
     # noinspection PyMethodMayBeStatic
     def get_scratch_free_space(self, job):
-        if job.scratch_free_space is None:
+        if not isinstance(job.scratch_free_space, int):
             return ""
         else:
             return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
 
     # noinspection PyMethodMayBeStatic
     def get_tasks_per_node(self, job):
-        if job.tasks is None:
+        if not isinstance(job.tasks, int):
             return ""
         else:
             return '#BSUB -R "span[ptile={0}]"'.format(job.tasks)
