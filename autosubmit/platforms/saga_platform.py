@@ -204,14 +204,14 @@ class SagaPlatform(Platform):
         saga_job.run()
         return saga_job.id
 
-    def create_saga_job(self, job, scriptname):
+    def create_saga_job(self, job, script_name):
         """
         Creates a saga job from a given job object.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
-        :param scriptname: job script's name
-        :rtype scriptname: str
+        :param script_name: job script's name
+        :type script_name: str
         :return: saga job object for the given job
         :rtype: saga.job.Job
         """
@@ -223,21 +223,25 @@ class SagaPlatform(Platform):
         elif job.type == Type.R:
             binary = 'Rscript'
 
-        # jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), scriptname))
-        jd.executable = os.path.join(self.get_files_path(), scriptname)
+        # jd.executable = '{0} {1}'.format(binary, os.path.join(self.get_files_path(), script_name))
+        jd.executable = os.path.join(self.get_files_path(), script_name)
         jd.working_directory = self.get_files_path()
+
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        jd.output = "{0}.{1}.out".format(job.name, str_datetime)
-        jd.error = "{0}.{1}.err".format(job.name, str_datetime)
+        job.out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        job.err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        jd.output = job.out_filename
+        jd.error = job.err_filename
+
         self.add_attribute(jd, 'Name', job.name)
 
-        wallclock = job.parameters["WALLCLOCK"]
-        if wallclock == '':
-            wallclock = 0
+        wall_clock = job.parameters["WALLCLOCK"]
+        if wall_clock == '':
+            wall_clock = 0
         else:
-            wallclock = wallclock.split(':')
-            wallclock = int(wallclock[0]) * 60 + int(wallclock[1])
-        self.add_attribute(jd, 'WallTimeLimit', wallclock)
+            wall_clock = wall_clock.split(':')
+            wall_clock = int(wall_clock[0]) * 60 + int(wall_clock[1])
+        self.add_attribute(jd, 'WallTimeLimit', wall_clock)
 
         self.add_attribute(jd, 'Queue', job.parameters["CURRENT_QUEUE"])
 
@@ -273,13 +277,13 @@ class SagaPlatform(Platform):
             return
         jd.set_attribute(name, value)
 
-    def check_job(self, jobid, default_status=Status.COMPLETED, retries=10):
+    def check_job(self, job_id, default_status=Status.COMPLETED, retries=10):
         """
         Checks job running status
 
         :param retries: retries
-        :param jobid: job id
-        :type jobid: str
+        :param job_id: job id
+        :type job_id: str
         :param default_status: status to assign if it can be retrieved from the platform
         :type default_status: autosubmit.job.job_common.Status
         :return: current job status
@@ -288,9 +292,9 @@ class SagaPlatform(Platform):
         saga_status = None
         while saga_status is None and retries >= 0:
             try:
-                if jobid not in self.service.jobs:
+                if job_id not in self.service.jobs:
                     return Status.COMPLETED
-                saga_status = self.service.get_job(jobid).state
+                saga_status = self.service.get_job(job_id).state
             except Exception as e:
                 # If SAGA can not get the job state, we change it to completed
                 # It will change to FAILED if not COMPLETED file is present

@@ -133,6 +133,20 @@ class Platform:
         """
         raise NotImplementedError
 
+    def get_files(self, files, must_exist=True):
+        """
+        Copies some files from the current platform to experiment's tmp folder
+
+        :param files: file names
+        :type files: [str]
+        :param must_exist: If True, raises an exception if file can not be copied
+        :type must_exist: bool
+        :return: True if file is copied succesfully, false otherwise
+        :rtype: bool
+        """
+        for filename in files:
+            self.get_file(filename, must_exist)
+
     def delete_file(self, filename):
         """
         Deletes a file from this platform
@@ -143,6 +157,17 @@ class Platform:
         :rtype: bool
         """
         raise NotImplementedError
+
+    def get_logs_files(self, job_out_filename, job_err_filename):
+        """
+        Get the given LOGS files
+
+        :param job_out_filename: name of the out file
+        :type job_out_filename: str
+        :param job_err_filename: name of the err file
+        :type job_err_filename: str
+        """
+        self.get_files([job_out_filename, job_err_filename], False)
 
     def get_completed_files(self, job_name, retries=5):
         """

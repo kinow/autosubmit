@@ -355,10 +355,13 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
+        job.out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        job.err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        header = header.replace('%OUT_LOG_DIRECTIVE%', job.out_filename)
+        header = header.replace('%ERR_LOG_DIRECTIVE%', job.err_filename)
+
         if hasattr(self.header, 'get_queue_directive'):
             header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
-        header = header.replace('%ERR_LOG_DIRECTIVE%', "{0}.{1}.err".format(job.name, str_datetime))
-        header = header.replace('%OUT_LOG_DIRECTIVE%', "{0}.{1}.out".format(job.name, str_datetime))
         if hasattr(self.header, 'get_tasks_per_node'):
             header = header.replace('%TASKS_PER_NODE_DIRECTIVE%', self.header.get_tasks_per_node(job))
         if hasattr(self.header, 'get_scratch_free_space'):
