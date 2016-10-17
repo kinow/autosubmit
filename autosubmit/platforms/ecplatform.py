@@ -134,8 +134,8 @@ class EcPlatform(ParamikoPlatform):
             raise
         return True
 
-    def get_file(self, filename, must_exist=True):
-        local_path = os.path.join(self.tmp_path, filename)
+    def get_file(self, filename, must_exist=True, relative_path=''):
+        local_path = os.path.join(self.tmp_path, relative_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
 

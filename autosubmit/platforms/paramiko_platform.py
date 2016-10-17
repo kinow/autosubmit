@@ -98,7 +98,7 @@ class ParamikoPlatform(Platform):
                       os.path.join(self.get_files_path(), filename))
             raise
 
-    def get_file(self, filename, must_exist=True):
+    def get_file(self, filename, must_exist=True, relative_path=''):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -106,11 +106,13 @@ class ParamikoPlatform(Platform):
         :type filename: str
         :param must_exist: If True, raises an exception if file can not be copied
         :type must_exist: bool
-        :return: True if file is copied succesfully, false otherwise
+        :param relative_path: path inside the tmp folder
+        :type relative_path: str
+        :return: True if file is copied successfully, false otherwise
         :rtype: bool
         """
 
-        local_path = os.path.join(self.tmp_path, filename)
+        local_path = os.path.join(self.tmp_path, relative_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
 
@@ -123,7 +125,7 @@ class ParamikoPlatform(Platform):
             ftp.get(os.path.join(self.get_files_path(), filename), local_path)
             ftp.close()
             return True
-        except BaseException as e:
+        except BaseException:
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
@@ -150,18 +152,18 @@ class ParamikoPlatform(Platform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
-    def submit_job(self, job, scriptname):
+    def submit_job(self, job, script_name):
         """
         Submit a job from a given job object.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
-        :param scriptname: job script's name
+        :param script_name: job script's name
         :rtype scriptname: str
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.send_command(self.get_submit_cmd(scriptname, job.type)):
+        if self.send_command(self.get_submit_cmd(script_name, job.type)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug("Job ID: {0}", job_id)
             return int(job_id)

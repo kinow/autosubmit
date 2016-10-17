@@ -86,7 +86,7 @@ class SagaPlatform(Platform):
                 # noinspection PyTypeChecker
                 return saga.filesystem.Directory(sftp_directory, session=self.service.session)
 
-    def get_file(self, filename, must_exist=True):
+    def get_file(self, filename, must_exist=True, relative_path=''):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -94,6 +94,8 @@ class SagaPlatform(Platform):
         :type filename: str
         :param must_exist: If True, raises an exception if file can not be copied
         :type must_exist: bool
+        :param relative_path: relative path inside tmp folder
+        :type relative_path: str
         :return: True if file is copied succesfully, false otherwise
         :rtype: bool
         """
