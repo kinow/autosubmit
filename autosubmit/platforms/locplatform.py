@@ -139,6 +139,18 @@ class LocalPlatform(ParamikoPlatform):
     def get_ssh_output(self):
         return self._ssh_output
 
+    def get_logs_files(self, job_out_filename, job_err_filename):
+        """
+        Overriding the parent's implementation.
+        Do nothing because the log files are already in the local platform (redundancy).
+
+        :param job_out_filename: name of the out file
+        :type job_out_filename: str
+        :param job_err_filename: name of the err file
+        :type job_err_filename: str
+        """
+        return
+
 
 class LocalHeader:
     """Class to handle the Ps headers of a job"""
