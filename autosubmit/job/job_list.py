@@ -35,6 +35,9 @@ from autosubmit.job.job import Job
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
+from networkx import DiGraph
+from autosubmit.job.job_utils import transitive_reduction
+
 
 class JobList:
     """
@@ -58,16 +61,31 @@ class JobList:
         self._chunk_list = []
         self._dic_jobs = dict()
         self._persistence = job_list_persistence
+        self._graph = DiGraph()
 
     @property
     def expid(self):
         """
-        Returns experiment identifier
+        Returns the experiment identifier
 
         :return: experiment's identifier
         :rtype: str
         """
         return self._expid
+
+    @property
+    def graph(self):
+        """
+        Returns the graph
+
+        :return: graph
+        :rtype: networkx graph
+        """
+        return self._graph
+
+    @graph.setter
+    def graph(self, value):
+        self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, default_job_type,
                  new=True):
@@ -111,7 +129,7 @@ class JobList:
         self._create_jobs(dic_jobs, jobs_parser, priority, default_job_type, jobs_data)
 
         Log.info("Adding dependencies...")
-        self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser)
+        self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, self.graph)
 
         Log.info("Removing redundant dependencies...")
         self.update_genealogy(new)
@@ -119,7 +137,7 @@ class JobList:
             job.parameters = parameters
 
     @staticmethod
-    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, option="DEPENDENCIES"):
+    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
         for job_section in jobs_parser.sections():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
 
@@ -132,7 +150,7 @@ class JobList:
 
             for job in dic_jobs.get_jobs(job_section):
                 JobList._manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys,
-                                                 dependencies)
+                                                 dependencies, graph)
 
     @staticmethod
     def _manage_dependencies(dependencies_keys, dic_jobs):
@@ -149,7 +167,7 @@ class JobList:
         return dependencies
 
     @staticmethod
-    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies):
+    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies, graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
@@ -161,9 +179,10 @@ class JobList:
 
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
                 job.add_parent(parent)
+                graph.add_edge(parent.name, job.name)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
-                                                           member_list, dependency.section)
+                                                           member_list, dependency.section, graph)
 
     @staticmethod
     def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
@@ -217,7 +236,7 @@ class JobList:
 
     @staticmethod
     def handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member, member_list,
-                                               section_name):
+                                               section_name, graph):
         if job.wait and job.frequency > 1:
             if job.chunk is not None:
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
@@ -226,6 +245,7 @@ class JobList:
                 for distance in range(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         job.add_parent(parent)
+                        graph.add_edge(parent.name, job.name)
             elif job.member is not None:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
@@ -235,6 +255,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         job.add_parent(parent)
+                        graph.add_edge(parent.name, job.name)
             elif job.date is not None:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
@@ -244,6 +265,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         job.add_parent(parent)
+                        graph.add_edge(parent.name, job.name)
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
@@ -583,8 +605,12 @@ class JobList:
 
         # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
+        self.graph = transitive_reduction(self.graph)
         for job in self._job_list:
-            job.remove_redundant_parents()
+            children_to_remove = [child for child in job.children if child.name not in self.graph.neighbors(job.name)]
+            for child in children_to_remove:
+                job.children.remove(child)
+                child.parents.remove(job)
 
         for job in self._job_list:
             if not job.has_parents() and new:
@@ -787,6 +813,7 @@ class DicJobs:
         :type priority: int
         """
         self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
+        self._joblist.graph.add_node(self._dic[section].name)
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -807,6 +834,7 @@ class DicJobs:
             if count % frequency == 0 or count == len(self._date_list):
                 self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
                                                           jobs_data)
+                self._joblist.graph.add_node(self._dic[section][date].name)
 
     def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -829,6 +857,7 @@ class DicJobs:
                 if count % frequency == 0 or count == len(self._member_list):
                     self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
                                                                       default_job_type, jobs_data)
+                    self._joblist.graph.add_node(self._dic[section][date][member].name)
 
     '''
         Maybe a good choice could be split this function or ascend the
@@ -880,6 +909,7 @@ class DicJobs:
                         else:
                             self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
                                                                                      chunk, default_job_type, jobs_data)
+                        self._joblist.graph.add_node(self._dic[section][date][member][chunk].name)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
