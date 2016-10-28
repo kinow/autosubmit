@@ -306,7 +306,9 @@ class AutosubmitConfig:
                     elif '+' in dependency:
                         dependency = dependency.split('+')[0]
                     if dependency not in sections:
-                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+                        Log.error(
+                            'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
+                                                                                                         dependency))
 
             if parser.has_option(section, 'RERUN_DEPENDENCIES'):
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'RERUN_DEPENDENCIES',
@@ -314,7 +316,9 @@ class AutosubmitConfig:
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if dependency not in sections:
-                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+                        Log.error(
+                            'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
+                                                                                                         dependency))
             result = result and AutosubmitConfig.check_is_choice(parser, section, 'RUNNING', False,
                                                                  ['once', 'date', 'member', 'chunk'])
 

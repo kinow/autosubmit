@@ -14,6 +14,7 @@ How to run the regression tests
     path = $PATH_TO_PROJECT/test/regression/db
 
 3) Review the credentials on the platforms config file of each test
+or in the 'default_conf' directory
 
 4) Run the 'tests_runner.py' file:
 

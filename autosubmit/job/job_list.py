@@ -929,6 +929,10 @@ class DicJobs:
         :rtype: list
         """
         jobs = list()
+
+        if section not in self._dic:
+            return jobs
+
         dic = self._dic[section]
         if type(dic) is not dict:
             jobs.append(dic)
