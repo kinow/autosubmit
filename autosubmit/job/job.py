@@ -73,6 +73,8 @@ class Job:
 
         self.id = jobid
         self.file = None
+        self.out_filename = ''
+        self.err_filename = ''
         self.status = status
         self.priority = priority
         self._parents = set()
@@ -427,6 +429,7 @@ class Job:
             self.write_start_time()
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
+            self.get_platform().get_logs_files(self.expid, self.out_filename, self.err_filename)
         return self.status
 
     def check_completion(self, default_status=Status.FAILED):

@@ -209,14 +209,14 @@ class TestJobList(TestCase):
         job_list.update_genealogy = Mock()
         job_list._job_list = [Job('random-name', 9999, Status.WAITING, 0),
                               Job('random-name2', 99999, Status.WAITING, 0)]
-
         date_list = ['fake-date1', 'fake-date2']
         member_list = ['fake-member1', 'fake-member2']
         num_chunks = 999
         chunk_list = range(1, num_chunks + 1)
         parameters = {'fake-key': 'fake-value',
                       'fake-key2': 'fake-value2'}
-
+        graph_mock = Mock()
+        job_list.graph = graph_mock
         # act
         job_list.generate(date_list, member_list, num_chunks, parameters, 'H', 9999, Type.BASH)
 
@@ -230,7 +230,8 @@ class TestJobList(TestCase):
         cj_args, cj_kwargs = job_list._create_jobs.call_args
         self.assertEquals(parser_mock, cj_args[1])
         self.assertEquals(0, cj_args[2])
-        job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock)
+        job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock,
+                                                           graph_mock)
         job_list.update_genealogy.assert_called_once_with(True)
         for job in job_list._job_list:
             self.assertEquals(parameters, job.parameters)

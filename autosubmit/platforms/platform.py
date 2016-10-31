@@ -120,7 +120,7 @@ class Platform:
         """
         raise NotImplementedError
 
-    def get_file(self, filename, must_exist=True):
+    def get_file(self, filename, must_exist=True, relative_path=''):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -128,10 +128,28 @@ class Platform:
         :type filename: str
         :param must_exist: If True, raises an exception if file can not be copied
         :type must_exist: bool
-        :return: True if file is copied succesfully, false otherwise
+        :param relative_path: relative path inside tmp folder
+        :type relative_path: str
+        :return: True if file is copied successfully, false otherwise
         :rtype: bool
         """
         raise NotImplementedError
+
+    def get_files(self, files, must_exist=True, relative_path=''):
+        """
+        Copies some files from the current platform to experiment's tmp folder
+
+        :param files: file names
+        :type files: [str]
+        :param must_exist: If True, raises an exception if file can not be copied
+        :type must_exist: bool
+        :param relative_path: relative path inside tmp folder
+        :type relative_path: str
+        :return: True if file is copied successfully, false otherwise
+        :rtype: bool
+        """
+        for filename in files:
+            self.get_file(filename, must_exist, relative_path)
 
     def delete_file(self, filename):
         """
@@ -143,6 +161,19 @@ class Platform:
         :rtype: bool
         """
         raise NotImplementedError
+
+    def get_logs_files(self, exp_id, job_out_filename, job_err_filename):
+        """
+        Get the given LOGS files
+
+        :param exp_id: experiment id
+        :type exp_id: str
+        :param job_out_filename: name of the out file
+        :type job_out_filename: str
+        :param job_err_filename: name of the err file
+        :type job_err_filename: str
+        """
+        self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
     def get_completed_files(self, job_name, retries=5):
         """

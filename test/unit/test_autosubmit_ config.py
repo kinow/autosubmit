@@ -619,8 +619,8 @@ class TestAutosubmitConfig(TestCase):
         config.reload()
 
         # act
-        should_be_true = config._check_autosubmit_conf()
-        should_be_false = config._check_autosubmit_conf()
+        should_be_true = config.check_autosubmit_conf()
+        should_be_false = config.check_autosubmit_conf()
 
         # arrange
         self.assertTrue(should_be_true)
@@ -643,8 +643,8 @@ class TestAutosubmitConfig(TestCase):
         config.reload()
 
         # act
-        should_be_true = config._check_expdef_conf()
-        should_be_false = config._check_expdef_conf()
+        should_be_true = config.check_expdef_conf()
+        should_be_false = config.check_expdef_conf()
 
         # assert
         self.assertTrue(should_be_true)
@@ -670,7 +670,7 @@ class TestAutosubmitConfig(TestCase):
         config.reload()
 
         # act
-        should_be_true = config._check_jobs_conf()
+        should_be_true = config.check_jobs_conf()
 
         # assert
         self.assertTrue(should_be_true)
@@ -692,7 +692,7 @@ class TestAutosubmitConfig(TestCase):
         config.reload()
 
         # act
-        should_be_true = config._check_platforms_conf()
+        should_be_true = config.check_platforms_conf()
 
         # assert
         self.assertTrue(should_be_true)
@@ -703,17 +703,17 @@ class TestAutosubmitConfig(TestCase):
 
         config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
         config.reload()
-        config._check_autosubmit_conf = truth_mock
-        config._check_platforms_conf = truth_mock
-        config._check_jobs_conf = truth_mock
-        config._check_expdef_conf = truth_mock
+        config.check_autosubmit_conf = truth_mock
+        config.check_platforms_conf = truth_mock
+        config.check_jobs_conf = truth_mock
+        config.check_expdef_conf = truth_mock
 
         config2 = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
         config2.reload()
-        config2._check_autosubmit_conf = truth_mock
-        config2._check_platforms_conf = truth_mock
-        config2._check_jobs_conf = truth_mock
-        config2._check_expdef_conf = Mock(return_value=False)
+        config2.check_autosubmit_conf = truth_mock
+        config2.check_platforms_conf = truth_mock
+        config2.check_jobs_conf = truth_mock
+        config2.check_expdef_conf = Mock(return_value=False)
 
         # act
         should_be_true = config.check_conf_files()

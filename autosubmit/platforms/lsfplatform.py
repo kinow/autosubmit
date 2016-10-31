@@ -105,10 +105,24 @@ class LsfHeader:
 
     # noinspection PyMethodMayBeStatic
     def get_scratch_free_space(self, job):
-        if job.scratch_free_space is None:
+        if not isinstance(job.scratch_free_space, int):
             return ""
         else:
             return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
+
+    # noinspection PyMethodMayBeStatic
+    def get_tasks_per_node(self, job):
+        if not isinstance(job.tasks, int):
+            return ""
+        else:
+            return '#BSUB -R "span[ptile={0}]"'.format(job.tasks)
+
+    # noinspection PyMethodMayBeStatic
+    def get_exclusivity(self, job):
+        if job.get_platform().exclusivity == 'true':
+            return "#BSUB -x"
+        else:
+            return ""
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
@@ -117,10 +131,11 @@ class LsfHeader:
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
+            %EXCLUSIVITY_DIRECTIVE%
             #
             ###############################################################################
             """)
@@ -132,11 +147,11 @@ class LsfHeader:
             #
             #%QUEUE_DIRECTIVE%
             #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.out
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%_%J.err
+            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
-            #BSUB -R "span[ptile=%NUMTASK%]"
+            %TASKS_PER_NODE_DIRECTIVE%
             %SCRATCH_FREE_SPACE_DIRECTIVE%
             #
             ###############################################################################

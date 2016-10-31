@@ -35,6 +35,9 @@ from autosubmit.job.job import Job
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
+from networkx import DiGraph
+from autosubmit.job.job_utils import transitive_reduction
+
 
 class JobList:
     """
@@ -58,16 +61,31 @@ class JobList:
         self._chunk_list = []
         self._dic_jobs = dict()
         self._persistence = job_list_persistence
+        self._graph = DiGraph()
 
     @property
     def expid(self):
         """
-        Returns experiment identifier
+        Returns the experiment identifier
 
         :return: experiment's identifier
         :rtype: str
         """
         return self._expid
+
+    @property
+    def graph(self):
+        """
+        Returns the graph
+
+        :return: graph
+        :rtype: networkx graph
+        """
+        return self._graph
+
+    @graph.setter
+    def graph(self, value):
+        self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, default_job_type,
                  new=True):
@@ -98,11 +116,9 @@ class JobList:
         chunk_list = range(1, num_chunks + 1)
         self._chunk_list = chunk_list
 
-        parser = self._parser_factory.create_parser()
-        parser.optionxform = str
-        parser.read(os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
+        jobs_parser = self._get_jobs_parser()
 
-        dic_jobs = DicJobs(self, parser, date_list, member_list, chunk_list, date_format, default_retrials)
+        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list, chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
 
@@ -110,10 +126,10 @@ class JobList:
         jobs_data = dict()
         if not new:
             jobs_data = {str(row[0]): row for row in self.load()}
-        self._create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data)
+        self._create_jobs(dic_jobs, jobs_parser, priority, default_job_type, jobs_data)
 
         Log.info("Adding dependencies...")
-        self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, parser)
+        self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, self.graph)
 
         Log.info("Removing redundant dependencies...")
         self.update_genealogy(new)
@@ -121,65 +137,106 @@ class JobList:
             job.parameters = parameters
 
     @staticmethod
-    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, parser):
-        for section in parser.sections():
-            Log.debug("Adding dependencies for {0} jobs".format(section))
-            if not parser.has_option(section, "DEPENDENCIES"):
+    def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
+        for job_section in jobs_parser.sections():
+            Log.debug("Adding dependencies for {0} jobs".format(job_section))
+
+            # If does not has dependencies, do nothing
+            if not jobs_parser.has_option(job_section, option):
                 continue
-            dependencies = parser.get(section, "DEPENDENCIES").split()
-            dep_section = dict()
-            dep_distance = dict()
-            dep_running = dict()
 
-            for dependency in dependencies:
-                JobList._treat_dependency(dep_distance, dep_running, dep_section, dependency, dic_jobs)
+            dependencies_keys = jobs_parser.get(job_section, option).split()
+            dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs)
 
-            for job in dic_jobs.get_jobs(section):
-                JobList._treat_job(dic_jobs, job, date_list, member_list, chunk_list, dependencies, dep_distance,
-                                   dep_running, dep_section)
+            for job in dic_jobs.get_jobs(job_section):
+                JobList._manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys,
+                                                 dependencies, graph)
 
     @staticmethod
-    def _treat_job(dic_jobs, job, date_list, member_list, chunk_list, dependencies, dep_distance, dep_running,
-                   dep_section):
-        for dependency in dependencies:
-            chunk = job.chunk
-            member = job.member
-            date = job.date
+    def _manage_dependencies(dependencies_keys, dic_jobs):
+        dependencies = dict()
+        for key in dependencies_keys:
+            if '-' not in key and '+' not in key:
+                dependencies[key] = Dependency(key)
+            else:
+                sign = '-' if '-' in key else '+'
+                key_split = key.split(sign)
+                dependency_running_type = dic_jobs.get_option(key_split[0], 'RUNNING', 'once').lower()
+                dependency = Dependency(key_split[0], int(key_split[1]), dependency_running_type, sign)
+                dependencies[key] = dependency
+        return dependencies
 
-            section_name = dep_section[dependency]
+    @staticmethod
+    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies, graph):
+        for key in dependencies_keys:
+            dependency = dependencies[key]
+            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
+                                                                                 job.member, member_list,
+                                                                                 job.date, date_list,
+                                                                                 dependency)
+            if skip:
+                continue
 
-            # Case dependency with previous execution of same job
-            if '-' in dependency:
-                distance = dep_distance[dependency]
-                if chunk is not None and dep_running[dependency] == 'chunk':
-                    chunk_index = chunk_list.index(chunk)
-                    if chunk_index >= distance:
-                        chunk = chunk_list[chunk_index - distance]
-                    else:
-                        continue
-                elif member is not None and dep_running[dependency] in ['chunk', 'member']:
-                    member_index = member_list.index(member)
-                    if member_index >= distance:
-                        member = member_list[member_index - distance]
-                    else:
-                        continue
-                elif date is not None and dep_running[dependency] in ['chunk', 'member', 'startdate']:
-                    date_index = date_list.index(date)
-                    if date_index >= distance:
-                        date = date_list[date_index - distance]
-                    else:
-                        continue
-
-            # Adding the dependencies (parents) calculated above
-            for parent in dic_jobs.get_jobs(section_name, date, member, chunk):
+            for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
                 job.add_parent(parent)
+                graph.add_edge(parent.name, job.name)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
-                                                           member_list, section_name)
+                                                           member_list, dependency.section, graph)
+
+    @staticmethod
+    def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
+        skip = False
+        if dependency.sign is '-':
+            if chunk is not None and dependency.running == 'chunk':
+                chunk_index = chunk_list.index(chunk)
+                if chunk_index >= dependency.distance:
+                    chunk = chunk_list[chunk_index - dependency.distance]
+                else:
+                    skip = True
+            elif member is not None and dependency.running in ['chunk', 'member']:
+                member_index = member_list.index(member)
+                if member_index >= dependency.distance:
+                    member = member_list[member_index - dependency.distance]
+                else:
+                    skip = True
+            elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
+                date_index = date_list.index(date)
+                if date_index >= dependency.distance:
+                    date = date_list[date_index - dependency.distance]
+                else:
+                    skip = True
+
+        if dependency.sign is '+':
+            if chunk is not None and dependency.running == 'chunk':
+                chunk_index = chunk_list.index(chunk)
+                if (chunk_index + dependency.distance) < len(chunk_list):
+                    chunk = chunk_list[chunk_index + dependency.distance]
+                else:  # calculating the next one possible
+                    temp_distance = dependency.distance
+                    while temp_distance > 0:
+                        temp_distance -= 1
+                        if (chunk_index + temp_distance) < len(chunk_list):
+                            chunk = chunk_list[chunk_index + temp_distance]
+                            break
+
+            elif member is not None and dependency.running in ['chunk', 'member']:
+                member_index = member_list.index(member)
+                if (member_index + dependency.distance) < len(member_list):
+                    member = member_list[member_index + dependency.distance]
+                else:
+                    skip = True
+            elif date is not None and dependency.running in ['chunk', 'member', 'startdate']:
+                date_index = date_list.index(date)
+                if (date_index + dependency.distance) < len(date_list):
+                    date = date_list[date_index - dependency.distance]
+                else:
+                    skip = True
+        return skip, (chunk, member, date)
 
     @staticmethod
     def handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member, member_list,
-                                               section_name):
+                                               section_name, graph):
         if job.wait and job.frequency > 1:
             if job.chunk is not None:
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
@@ -188,6 +245,7 @@ class JobList:
                 for distance in range(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         job.add_parent(parent)
+                        graph.add_edge(parent.name, job.name)
             elif job.member is not None:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
@@ -197,6 +255,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         job.add_parent(parent)
+                        graph.add_edge(parent.name, job.name)
             elif job.date is not None:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
@@ -206,16 +265,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         job.add_parent(parent)
-
-    @staticmethod
-    def _treat_dependency(dep_distance, dep_running, dep_section, dependency, dic_jobs):
-        if '-' in dependency:
-            dependency_split = dependency.split('-')
-            dep_section[dependency] = dependency_split[0]
-            dep_distance[dependency] = int(dependency_split[1])
-            dep_running[dependency] = dic_jobs.get_option(dependency_split[0], 'RUNNING', 'once').lower()
-        else:
-            dep_section[dependency] = dependency
+                        graph.add_edge(parent.name, job.name)
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
@@ -518,7 +568,7 @@ class JobList:
             else:
                 retrials = job.retrials
 
-            if job.fail_count < retrials:
+            if job.fail_count <= retrials:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
@@ -533,9 +583,6 @@ class JobList:
         Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
             tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-            # for parent in job.parents:
-            # if parent.status != Status.COMPLETED:
-            # break
             if len(tmp) == len(job.parents):
                 job.status = Status.READY
                 save = True
@@ -543,7 +590,7 @@ class JobList:
         Log.debug('Update finished')
         return save
 
-    def update_genealogy(self, new):
+    def update_genealogy(self, new=True):
         """
         When we have created the job list, every type of job is created.
         Update genealogy remove jobs that have no templates
@@ -558,8 +605,12 @@ class JobList:
 
         # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
+        self.graph = transitive_reduction(self.graph)
         for job in self._job_list:
-            job.remove_redundant_parents()
+            children_to_remove = [child for child in job.children if child.name not in self.graph.neighbors(job.name)]
+            for child in children_to_remove:
+                job.children.remove(child)
+                child.parents.remove(job)
 
         for job in self._job_list:
             if not job.has_parents() and new:
@@ -614,26 +665,18 @@ class JobList:
         :param chunk_list: list of chunks to rerun
         :type chunk_list: str
         """
-        parser = self._parser_factory.create_parser()
-        parser.optionxform = str
-        parser.read(os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
+        jobs_parser = self._get_jobs_parser()
 
         Log.info("Adding dependencies...")
-        dep_section = dict()
-        dep_distance = dict()
-        dependencies = dict()
-        dep_running = dict()
-        for section in parser.sections():
-            Log.debug("Reading rerun dependencies for {0} jobs".format(section))
-            if not parser.has_option(section, "RERUN_DEPENDENCIES"):
+        for job_section in jobs_parser.sections():
+            Log.debug("Reading rerun dependencies for {0} jobs".format(job_section))
+
+            # If does not has rerun dependencies, do nothing
+            if not jobs_parser.has_option(job_section, "RERUN_DEPENDENCIES"):
                 continue
-            dependencies[section] = parser.get(section, "RERUN_DEPENDENCIES").split()
-            dep_section[section] = dict()
-            dep_distance[section] = dict()
-            dep_running[section] = dict()
-            for dependency in dependencies[section]:
-                JobList._treat_dependency(dep_distance[section], dep_running[section], dep_section[section], dependency,
-                                          self._dic_jobs)
+
+            dependencies_keys = jobs_parser.get(job_section, "RERUN_DEPENDENCIES").split()
+            dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs)
 
         for job in self._job_list:
             job.status = Status.COMPLETED
@@ -651,38 +694,22 @@ class JobList:
                     chunk = int(c)
                     for job in [i for i in self._job_list if i.date == date and i.member == member and
                                     i.chunk == chunk]:
+
                         if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
                             Log.debug("Job: " + job.name)
-                        section = job.section
-                        if section not in dependencies:
+
+                        job_section = job.section
+                        if job_section not in dependencies:
                             continue
-                        for dependency in dependencies[section]:
-                            current_chunk = chunk
-                            current_member = member
-                            current_date = date
-                            if '-' in dependency:
-                                distance = dep_distance[section][dependency]
-                                running = dep_running[section][dependency]
-                                if current_chunk is not None and running == 'chunk':
-                                    chunk_index = self._chunk_list.index(current_chunk)
-                                    if chunk_index >= distance:
-                                        current_chunk = self._chunk_list[chunk_index - distance]
-                                    else:
-                                        continue
-                                elif current_member is not None and running in ['chunk', 'member']:
-                                    member_index = self._member_list.index(current_member)
-                                    if member_index >= distance:
-                                        current_member = self._member_list[member_index - distance]
-                                    else:
-                                        continue
-                                elif current_date is not None and running in ['chunk', 'member', 'startdate']:
-                                    date_index = self._date_list.index(current_date)
-                                    if date_index >= distance:
-                                        current_date = self._date_list[date_index - distance]
-                                    else:
-                                        continue
-                            section_name = dep_section[section][dependency]
+
+                        for key in dependencies_keys:
+                            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(chunk, member, date,
+                                                                                                 dependencies[key])
+                            if skip:
+                                continue
+
+                            section_name = dependencies[key].section
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
                                 parent.status = Status.WAITING
@@ -696,9 +723,16 @@ class JobList:
 
         self.update_genealogy()
 
+    def _get_jobs_parser(self):
+        jobs_parser = self._parser_factory.create_parser()
+        jobs_parser.optionxform = str
+        jobs_parser.read(
+            os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
+        return jobs_parser
+
     def remove_rerun_only_jobs(self):
         """
-        Removes all jobs to be runned only in reruns
+        Removes all jobs to be run only in reruns
         """
         flag = False
         for job in set(self._job_list):
@@ -779,6 +813,7 @@ class DicJobs:
         :type priority: int
         """
         self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
+        self._joblist.graph.add_node(self._dic[section].name)
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -799,6 +834,7 @@ class DicJobs:
             if count % frequency == 0 or count == len(self._date_list):
                 self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
                                                           jobs_data)
+                self._joblist.graph.add_node(self._dic[section][date].name)
 
     def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -821,6 +857,7 @@ class DicJobs:
                 if count % frequency == 0 or count == len(self._member_list):
                     self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
                                                                       default_job_type, jobs_data)
+                    self._joblist.graph.add_node(self._dic[section][date][member].name)
 
     '''
         Maybe a good choice could be split this function or ascend the
@@ -872,6 +909,7 @@ class DicJobs:
                         else:
                             self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
                                                                                      chunk, default_job_type, jobs_data)
+                        self._joblist.graph.add_node(self._dic[section][date][member][chunk].name)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
@@ -891,6 +929,10 @@ class DicJobs:
         :rtype: list
         """
         jobs = list()
+
+        if section not in self._dic:
+            return jobs
+
         dic = self._dic[section]
         if type(dic) is not dict:
             jobs.append(dic)
@@ -975,7 +1017,7 @@ class DicJobs:
             job.check = False
 
         job.processors = self.get_option(section, "PROCESSORS", 1)
-        job.threads = self.get_option(section, "THREADS", 1)
+        job.threads = self.get_option(section, "THREADS", '')
         job.tasks = self.get_option(section, "TASKS", '')
         job.memory = self.get_option(section, "MEMORY", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
@@ -1001,3 +1043,16 @@ class DicJobs:
             return self._parser.get(section, option)
         else:
             return default
+
+
+class Dependency(object):
+    """
+    Class to manage the metadata related with a dependency
+
+    """
+
+    def __init__(self, section, distance=None, running=None, sign=None):
+        self.section = section
+        self.distance = distance
+        self.running = running
+        self.sign = sign

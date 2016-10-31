@@ -112,8 +112,8 @@ class LocalPlatform(ParamikoPlatform):
             raise
         return True
 
-    def get_file(self, filename, must_exist=True):
-        local_path = os.path.join(self.tmp_path, filename)
+    def get_file(self, filename, must_exist=True, relative_path=''):
+        local_path = os.path.join(self.tmp_path, relative_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
 
@@ -138,6 +138,20 @@ class LocalPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
+
+    def get_logs_files(self, exp_id, job_out_filename, job_err_filename):
+        """
+        Overriding the parent's implementation.
+        Do nothing because the log files are already in the local platform (redundancy).
+
+        :param exp_id: experiment id
+        :type exp_id: str
+        :param job_out_filename: name of the out file
+        :type job_out_filename: str
+        :param job_err_filename: name of the err file
+        :type job_err_filename: str
+        """
+        return
 
 
 class LocalHeader:

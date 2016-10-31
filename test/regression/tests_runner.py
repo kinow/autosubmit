@@ -1,11 +1,15 @@
-from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.config.parser_factory import ConfigParserFactory
-from autosubmit.config.log import Log
+from tests_log import Log
 from tests_utils import check_cmd, next_experiment_id, copy_experiment_conf_files, create_database, clean_database
 from tests_commands import *
 from threading import Thread
 from time import sleep
 import argparse
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 
 # Configuration file where the regression tests are defined with INI style
 tests_parser_file = 'tests.conf'
@@ -45,7 +49,11 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials
 def run(current_experiment_id, only_list=None, exclude_list=None, max_threads=5):
     # Local variables for testing
     test_threads = []
-    tests_parser = AutosubmitConfig.get_parser(ConfigParserFactory(), tests_parser_file)
+
+    # Building tests parser
+    tests_parser = SafeConfigParser()
+    tests_parser.optionxform = str
+    tests_parser.read(tests_parser_file)
 
     # Resetting the database
     clean_database(db_path)

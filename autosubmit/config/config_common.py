@@ -195,17 +195,17 @@ class AutosubmitConfig:
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        result = self._check_autosubmit_conf()
-        result = result and self._check_platforms_conf()
-        result = result and self._check_jobs_conf()
-        result = result and self._check_expdef_conf()
+        result = self.check_autosubmit_conf()
+        result = result and self.check_platforms_conf()
+        result = result and self.check_jobs_conf()
+        result = result and self.check_expdef_conf()
         if result:
             Log.result("Configuration files OK\n")
         else:
             Log.error("Configuration files invalid\n")
         return result
 
-    def _check_autosubmit_conf(self):
+    def check_autosubmit_conf(self):
         """
         Checks experiment's autosubmit configuration file.
 
@@ -236,7 +236,7 @@ class AutosubmitConfig:
             Log.info('{0} OK'.format(os.path.basename(self._conf_parser_file)))
         return result
 
-    def _check_platforms_conf(self):
+    def check_platforms_conf(self):
         """
         Checks experiment's queues configuration file.
 
@@ -274,7 +274,7 @@ class AutosubmitConfig:
             Log.info('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
         return result
 
-    def _check_jobs_conf(self):
+    def check_jobs_conf(self):
         """
         Checks experiment's jobs configuration file.
 
@@ -303,8 +303,12 @@ class AutosubmitConfig:
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
+                    elif '+' in dependency:
+                        dependency = dependency.split('+')[0]
                     if dependency not in sections:
-                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+                        Log.error(
+                            'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
+                                                                                                         dependency))
 
             if parser.has_option(section, 'RERUN_DEPENDENCIES'):
                 for dependency in str(AutosubmitConfig.get_option(parser, section, 'RERUN_DEPENDENCIES',
@@ -312,7 +316,9 @@ class AutosubmitConfig:
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if dependency not in sections:
-                        Log.error('Job {0} depends on job {1} that is not defined'.format(section, dependency))
+                        Log.error(
+                            'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
+                                                                                                         dependency))
             result = result and AutosubmitConfig.check_is_choice(parser, section, 'RUNNING', False,
                                                                  ['once', 'date', 'member', 'chunk'])
 
@@ -323,7 +329,7 @@ class AutosubmitConfig:
 
         return result
 
-    def _check_expdef_conf(self):
+    def check_expdef_conf(self):
         """
         Checks experiment's experiment configuration file.
 

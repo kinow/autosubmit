@@ -70,8 +70,8 @@ from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
 from config.log import Log
 from database.db_common import create_db
-from database.db_common import new_experiment
-from database.db_common import copy_experiment
+from experiment.experiment_common import new_experiment
+from experiment.experiment_common import copy_experiment
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -148,7 +148,8 @@ class Autosubmit:
             group.add_argument('-y', '--copy', help='makes a copy of the specified experiment')
             group.add_argument('-dm', '--dummy', action='store_true',
                                help='creates a new experiment with default values, usually for testing')
-
+            group.add_argument('-op', '--operational', action='store_true',
+                               help='creates a new experiment with operational experiment id')
             subparser.add_argument('-H', '--HPC', required=True,
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
@@ -322,7 +323,8 @@ class Autosubmit:
             if args.command == 'run':
                 return Autosubmit.run_experiment(args.expid)
             elif args.command == 'expid':
-                return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy) != ''
+                return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
+                                        args.operational) != ''
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
@@ -404,10 +406,12 @@ class Autosubmit:
         return ret
 
     @staticmethod
-    def expid(hpc, description, copy_id='', dummy=False, test=False):
+    def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
         Creates a new experiment for given HPC
 
+        :param operational: if true, creates an operational experiment
+        :type operational: bool
         :type hpc: str
         :type description: str
         :type copy_id: str
@@ -435,7 +439,7 @@ class Autosubmit:
             Log.error("Missing HPC.")
             return ''
         if not copy_id:
-            exp_id = new_experiment(description, Autosubmit.autosubmit_version, test)
+            exp_id = new_experiment(description, Autosubmit.autosubmit_version, test, operational)
             if exp_id == '':
                 return ''
             try:
@@ -468,7 +472,7 @@ class Autosubmit:
         else:
             try:
                 if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
-                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test)
+                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
                     if exp_id == '':
                         return ''
                     dir_exp_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
@@ -1444,7 +1448,7 @@ class Autosubmit:
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
                                   'refresh.log'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
+        if not as_conf.check_expdef_conf():
             Log.critical('Can not copy with invalid configuration')
             return False
         project_type = as_conf.get_project_type()

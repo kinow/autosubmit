@@ -134,8 +134,8 @@ class EcPlatform(ParamikoPlatform):
             raise
         return True
 
-    def get_file(self, filename, must_exist=True):
-        local_path = os.path.join(self.tmp_path, filename)
+    def get_file(self, filename, must_exist=True, relative_path=''):
+        local_path = os.path.join(self.tmp_path, relative_path, filename)
         if os.path.exists(local_path):
             os.remove(local_path)
 
@@ -237,6 +237,20 @@ class EcCcaHeader:
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic
+    def get_tasks_per_node(self, job):
+        if not isinstance(job.tasks, int):
+            return ""
+        else:
+            return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
+
+    # noinspection PyMethodMayBeStatic
+    def get_threads_per_task(self, job):
+        if not isinstance(job.threads, int):
+            return ""
+        else:
+            return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -263,8 +277,8 @@ class EcCcaHeader:
              #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
              #PBS -q np
              #PBS -l EC_total_tasks=%NUMPROC%
-             #PBS -l EC_threads_per_task=%NUMTHREADS%
-             #PBS -l EC_tasks_per_node=%NUMTASK%
+             %THREADS_PER_TASK_DIRECTIVE%
+             %TASKS_PER_NODE_DIRECTIVE%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
              #
