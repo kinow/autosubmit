@@ -261,6 +261,7 @@ class AutosubmitConfig:
             #     result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
 
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
+            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'SCRATCH_DIR')
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
                                                                   'ADD_PROJECT_TO_HOST', False)
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section, 'TEST_SUITE', False)
