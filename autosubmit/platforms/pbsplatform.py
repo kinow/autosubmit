@@ -90,7 +90,7 @@ class PBSPlatform(ParamikoPlatform):
     def jobs_in_queue(self):
         return ''.split()
 
-    def get_submit_cmd(self, job_script, job_type):
+    def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):
