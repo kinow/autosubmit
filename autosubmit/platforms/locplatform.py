@@ -120,7 +120,7 @@ class LocalPlatform(ParamikoPlatform):
         command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
                                        local_path)
         try:
-            subprocess.check_call(command, shell=True)
+            subprocess.check_call(command, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
