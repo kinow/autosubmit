@@ -656,8 +656,11 @@ class Autosubmit:
                     for platform in platforms_to_test:
                         for job in job_list.get_in_queue(platform):
                             prev_status = job.status
-                            if prev_status != job.update_status(platform.check_job(job.id)):
+                            if prev_status != job.update_status(platform.check_job(job.id),
+                                                                as_conf.get_copy_remote_logs() == 'true'):
+
                                 if as_conf.get_notifications() == 'true':
+
                                     if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                         Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
                                                                       Status.VALUE_TO_KEY[prev_status],

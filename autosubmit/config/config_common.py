@@ -802,6 +802,15 @@ class AutosubmitConfig:
         """
         return self.get_option(self._conf_parser, 'mail', 'NOTIFICATIONS', 'false').lower()
 
+    def get_copy_remote_logs(self):
+        """
+        Returns if the user has enabled the logs local copy from autosubmit's config file
+
+        :return: if logs local copy
+        :rtype: bool
+        """
+        return self.get_option(self._conf_parser, 'storage', 'COPY_REMOTE_LOGS', 'true').lower()
+
     def get_mails_to(self):
         """
         Returns the address where notifications will be sent from autosubmit's config file
