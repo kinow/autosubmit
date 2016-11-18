@@ -6,7 +6,7 @@ from autosubmit.config.log import Log
 from autosubmit.job.job_common import Status
 
 
-class Platform:
+class Platform(object):
     """
     Class to manage the connections to the different platforms.
     """
@@ -24,6 +24,7 @@ class Platform:
         self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
         self._serial_queue = None
+        self._default_queue = None
         self.processors_per_node = None
         self.scratch_free_space = None
         self.host = ''

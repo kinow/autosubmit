@@ -295,7 +295,7 @@ class JobList:
         :return: completed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.COMPLETED]
 
     def get_submitted(self, platform=None):
@@ -307,7 +307,7 @@ class JobList:
         :return: submitted jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.SUBMITTED]
 
     def get_running(self, platform=None):
@@ -319,7 +319,7 @@ class JobList:
         :return: running jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.RUNNING]
 
     def get_queuing(self, platform=None):
@@ -331,7 +331,7 @@ class JobList:
         :return: queuedjobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.QUEUING]
 
     def get_failed(self, platform=None):
@@ -343,7 +343,7 @@ class JobList:
         :return: failed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.FAILED]
 
     def get_ready(self, platform=None):
@@ -355,7 +355,7 @@ class JobList:
         :return: ready jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.READY]
 
     def get_waiting(self, platform=None):
@@ -367,7 +367,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.WAITING]
 
     def get_unknown(self, platform=None):
@@ -379,7 +379,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.UNKNOWN]
 
     def get_in_queue(self, platform=None):
@@ -1010,7 +1010,7 @@ class DicJobs:
         if job.platform_name is not None:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
-        job.set_queue(self.get_option(section, "QUEUE", None))
+        job.queue = self.get_option(section, "QUEUE", None)
         if self.get_option(section, "CHECK", 'True').lower() == 'true':
             job.check = True
         else:

@@ -30,7 +30,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.date.chunk_date_lib import *
 
 
-class Job:
+class Job(object):
     """
     Class to handle all the tasks with Jobs at HPC.
     A job is created by default with a name, a jobid, a status and a type.
@@ -107,20 +107,20 @@ class Job:
         Log.debug('FAIL_COUNT: {0}', self.fail_count)
         Log.debug('EXPID: {0}', self.expid)
 
-    # Properties
     @property
     def parents(self):
         """
-        Return parent jobs list
+        Returns parent jobs list
 
         :return: parent jobs
         :rtype: set
         """
         return self._parents
 
-    def get_platform(self):
+    @property
+    def platform(self):
         """
-        Returns the platforms to be used by the job. Chooses between serial and parallel platforms
+        Returns the platform to be used by the job. Chooses between serial and parallel platforms
 
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
@@ -130,7 +130,8 @@ class Job:
         else:
             return self._platform.serial_platform
 
-    def set_platform(self, value):
+    @platform.setter
+    def platform(self, value):
         """
         Sets the HPC platforms to be used by the job.
 
@@ -139,7 +140,8 @@ class Job:
         """
         self._platform = value
 
-    def get_queue(self):
+    @property
+    def queue(self):
         """
         Returns the queue to be used by the job. Chooses between serial and parallel platforms
 
@@ -153,7 +155,8 @@ class Job:
         else:
             return self._platform.serial_platform.serial_queue
 
-    def set_queue(self, value):
+    @queue.setter
+    def queue(self, value):
         """
         Sets the queue to be used by the job.
 
@@ -401,7 +404,7 @@ class Job:
 
         if new_status == Status.COMPLETED:
             Log.debug("This job seems to have completed...checking")
-            self.get_platform().get_completed_files(self.name)
+            self.platform.get_completed_files(self.name)
             self.check_completion()
         else:
             self.status = new_status
@@ -415,7 +418,7 @@ class Job:
             Log.user_warning("Job {0} is FAILED", self.name)
         elif self.status is Status.UNKNOWN:
             Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
-            self.get_platform().get_completed_files(self.name)
+            self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status is Status.UNKNOWN:
                 Log.warning('Job {0} in UNKNOWN status', self.name)
@@ -431,7 +434,7 @@ class Job:
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
             if copy_remote_logs:
-                self.get_platform().get_logs_files(self.expid, self.out_filename, self.err_filename)
+                self.platform.get_logs_files(self.expid, self.out_filename, self.err_filename)
         return self.status
 
     def check_completion(self, default_status=Status.FAILED):
@@ -516,7 +519,7 @@ class Job:
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
-        job_platform = self.get_platform()
+        job_platform = self.platform
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
@@ -539,7 +542,7 @@ class Job:
 
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host
-        parameters['CURRENT_QUEUE'] = self.get_queue()
+        parameters['CURRENT_QUEUE'] = self.queue
         parameters['CURRENT_USER'] = job_platform.user
         parameters['CURRENT_PROJ'] = job_platform.project
         parameters['CURRENT_BUDG'] = job_platform.budget
@@ -610,7 +613,7 @@ class Job:
                         snippet.as_tailer()])
 
     def _get_paramiko_template(self, snippet, template):
-        current_platform = self.get_platform()
+        current_platform = self.platform
         return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
                         snippet.as_tailer()])
@@ -684,7 +687,7 @@ class Job:
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.get_platform().get_stat_file(self.name, retries=5):
+        if self.platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
             Log.warning('Could not get start time for {0}. Using current time as an aproximation', self.name)
@@ -703,7 +706,7 @@ class Job:
         :param completed: True if job was completed succesfuly, False otherwise
         :type completed: bool
         """
-        self.get_platform().get_stat_file(self.name, retries=5)
+        self.platform.get_stat_file(self.name, retries=5)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
