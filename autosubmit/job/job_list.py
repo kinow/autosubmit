@@ -32,6 +32,7 @@ from shutil import move
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
+from autosubmit.job.job_package import JobPackage
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
@@ -743,6 +744,33 @@ class JobList:
         if flag:
             self.update_genealogy()
         del self._dic_jobs
+
+    def get_ready_packages(self, platform):
+        # Check there are ready jobs
+        jobs_available = self.get_ready(platform)
+        if len(jobs_available) == 0:
+            return list()
+        Log.info("\nJobs ready for {1}: {0}", len(jobs_available), platform.name)
+        # Checking available submission slots
+        max_waiting_jobs = platform.max_waiting_jobs
+        waiting_jobs = len(self.get_submitted(platform) + self.get_queuing(platform))
+        max_wait_jobs_to_submit = max_waiting_jobs - waiting_jobs
+        max_jobs_to_submit = platform.total_jobs - len(self.get_in_queue(platform))
+        # Logging obtained data
+        Log.debug("Number of jobs ready: {0}", len(jobs_available))
+        Log.debug("Number of jobs available: {0}", max_wait_jobs_to_submit)
+        Log.info("Jobs to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
+        # If can submit jobs
+        if max_wait_jobs_to_submit > 0 and max_jobs_to_submit > 0:
+            available_sorted = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
+            list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
+            num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
+            jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+            packages_to_submit = list()
+            for job in jobs_to_submit:
+                packages_to_submit.append(JobPackage([job]))
+            return packages_to_submit
+        return list()  # no packages to submit
 
 
 class DicJobs:
