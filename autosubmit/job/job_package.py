@@ -70,9 +70,9 @@ class JobPackage(object):
     def submit(self, configuration, parameters):
         for job in self.jobs:
             job.update_parameters(configuration, parameters)
-            self._create_scripts(configuration)
-            self._send_files()
-            self._do_submission()
+        self._create_scripts(configuration)
+        self._send_files()
+        self._do_submission()
 
     def _create_scripts(self, configuration):
         for job in self.jobs:
