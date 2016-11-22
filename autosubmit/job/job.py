@@ -117,6 +117,13 @@ class Job(object):
         """
         return self._parents
 
+    @parents.setter
+    def parents(self, parents):
+        """
+        Sets the parents job list
+        """
+        self._parents = parents
+
     @property
     def platform(self):
         """
@@ -174,6 +181,13 @@ class Job(object):
         :rtype: set
         """
         return self._children
+
+    @children.setter
+    def children(self, children):
+        """
+        Sets the children job list
+        """
+        self._children = children
 
     @property
     def long_name(self):
