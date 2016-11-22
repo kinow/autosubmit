@@ -65,7 +65,6 @@ from config.parser_factory import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
-from job.job_package import JobPackage
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements

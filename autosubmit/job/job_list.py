@@ -32,7 +32,7 @@ from shutil import move
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
-from autosubmit.job.job_package import JobPackage
+from autosubmit.job.job_package import JobPackageSimple
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
@@ -768,7 +768,7 @@ class JobList:
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
             packages_to_submit = list()
             for job in jobs_to_submit:
-                packages_to_submit.append(JobPackage([job]))
+                packages_to_submit.append(JobPackageSimple([job]))
             return packages_to_submit
         return list()  # no packages to submit
 

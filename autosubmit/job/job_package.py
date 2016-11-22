@@ -27,15 +27,13 @@ from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
 
 
-class JobPackage(object):
+class JobPackageBase(object):
     """
     Class to manage the package of jobs to be submitted by autosubmit
-
     """
 
     def __init__(self, jobs):
         self._jobs = jobs
-        self._job_scripts = {}
         try:
             self._platform = jobs[0].platform
             for job in jobs:
@@ -73,6 +71,25 @@ class JobPackage(object):
         self._create_scripts(configuration)
         self._send_files()
         self._do_submission()
+
+    def _create_scripts(self, configuration):
+        raise Exception('Not implemented')
+
+    def _send_files(self):
+        raise Exception('Not implemented')
+
+    def _do_submission(self):
+        raise Exception('Not implemented')
+
+
+class JobPackageSimple(JobPackageBase):
+    """
+    Class to manage the package of jobs to be submitted by autosubmit
+    """
+
+    def __init__(self, jobs):
+        self._job_scripts = {}
+        super(JobPackageSimple, self).__init__(jobs)
 
     def _create_scripts(self, configuration):
         for job in self.jobs:

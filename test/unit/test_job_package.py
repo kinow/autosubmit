@@ -4,7 +4,7 @@ import os
 from mock import Mock
 from mock import patch
 
-from autosubmit.job.job_package import JobPackage
+from autosubmit.job.job_package import JobPackageSimple
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 
@@ -16,23 +16,23 @@ class TestJobPackage(TestCase):
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
         self.jobs[0].platform = self.jobs[1].platform = self.platform
-        self.job_package = JobPackage(self.jobs)
+        self.job_package = JobPackageSimple(self.jobs)
 
     def test_job_package_default_init(self):
         with self.assertRaises(Exception):
-            JobPackage([])
+            JobPackageSimple([])
 
     def test_job_package_different_platforms_init(self):
         self.jobs[0].platform = Mock()
         self.jobs[1].platform = Mock()
         with self.assertRaises(Exception):
-            JobPackage(this.jobs)
+            JobPackageSimple(this.jobs)
 
     def test_job_package_none_platforms_init(self):
         self.jobs[0].platform = None
         self.jobs[1].platform = None
         with self.assertRaises(Exception):
-            JobPackage(this.jobs)
+            JobPackageSimple(this.jobs)
 
     def test_job_package_length(self):
         self.assertEquals(2, len(self.job_package))
