@@ -33,6 +33,7 @@ from shutil import move
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
 from autosubmit.job.job_package import JobPackageSimple
+from autosubmit.job.job_package import JobPackageArray
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
@@ -767,6 +768,9 @@ class JobList:
             num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
             packages_to_submit = list()
+            if platform.name == 'marenostrum3':
+                packages_to_submit.append(JobPackageArray(jobs_to_submit))
+                return packages_to_submit
             for job in jobs_to_submit:
                 packages_to_submit.append(JobPackageSimple([job]))
             return packages_to_submit

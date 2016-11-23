@@ -23,6 +23,8 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 
+import time
+import os
 from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
 
@@ -35,6 +37,7 @@ class JobPackageBase(object):
     def __init__(self, jobs):
         self._jobs = jobs
         try:
+            self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0].platform
             for job in jobs:
                 if job.platform != self._platform or job.platform is None:
@@ -109,3 +112,58 @@ class JobPackageSimple(JobPackageBase):
             Log.info("{0} submitted", job.name)
             job.status = Status.SUBMITTED
             job.write_submit_time()
+
+
+class JobPackageArray(JobPackageBase):
+    """
+    Class to manage the package of jobs to be submitted by autosubmit
+    """
+
+    def __init__(self, jobs):
+        self._job_inputs = {}
+        self._job_scripts = {}
+        self._common_script = None
+        super(JobPackageArray, self).__init__(jobs)
+
+    def _create_scripts(self, configuration):
+        timestamp = str(int(time.time()))
+        for i in range(1, len(self.jobs) + 1):
+            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
+            self._job_inputs[self.jobs[i - 1].name] = self._create_i_input(timestamp, i)
+        self._common_script = self._create_common_script(timestamp)
+
+    def _create_i_input(self, filename, index):
+        filename += '.{0}'.format(index)
+        input_content = self._job_scripts[self.jobs[index - 1].name]
+        open(os.path.join(self._tmp_path, filename), 'w').write(input_content)
+        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
+        return filename
+
+    def _create_common_script(self, filename):
+        filename += '.cmd'
+        script_content = ''
+        open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
+        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
+        return filename
+
+    def _send_files(self):
+        for job in self.jobs:
+            self.platform.send_file(self._job_scripts[job.name])
+            self.platform.send_file(self._job_inputs[job.name])
+        self.platform.send_file(self._common_script)
+
+    def _do_submission(self):
+        for job in self.jobs:
+            self.platform.remove_stat_file(job.name)
+            self.platform.remove_completed_file(job.name)
+
+        package_id = self.platform.submit_job(None, self._common_script)
+
+        if package_id is None:
+            raise Exception('Submission failed')
+
+        for i in range(1, len(self.jobs) + 1):
+            Log.info("{0} submitted", self.jobs[i - 1].name)
+            self.jobs[i - 1].id = str(package_id) + '[{0}]'.format(index)
+            self.jobs[i - 1].job.status = Status.SUBMITTED
+            self.jobs[i - 1].job.write_submit_time()
