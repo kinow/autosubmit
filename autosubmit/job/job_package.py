@@ -123,6 +123,14 @@ class JobPackageArray(JobPackageBase):
         self._job_inputs = {}
         self._job_scripts = {}
         self._common_script = None
+        self._array_size_id = "[1-" + str(len(jobs)) + "]"
+        self._wallclock = '00:00'
+        self._num_processors = 1
+        for job in jobs:
+            if job.wallclock > self._wallclock:
+                self._wallclock = job.wallclock
+            if job.processors > self._num_processors:
+                self._num_processors = job.processors
         super(JobPackageArray, self).__init__(jobs)
 
     def _create_scripts(self, configuration):
@@ -140,8 +148,9 @@ class JobPackageArray(JobPackageBase):
         return filename
 
     def _create_common_script(self, filename):
+        script_content = self.platform.header.array_header(filename, self._array_size_id, self._wallclock,
+                                                           self._num_processors)
         filename += '.cmd'
-        script_content = ''
         open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o775)
         return filename
@@ -164,6 +173,6 @@ class JobPackageArray(JobPackageBase):
 
         for i in range(1, len(self.jobs) + 1):
             Log.info("{0} submitted", self.jobs[i - 1].name)
-            self.jobs[i - 1].id = str(package_id) + '[{0}]'.format(index)
-            self.jobs[i - 1].job.status = Status.SUBMITTED
-            self.jobs[i - 1].job.write_submit_time()
+            self.jobs[i - 1].id = str(package_id) + '[{0}]'.format(i)
+            self.jobs[i - 1].status = Status.SUBMITTED
+            self.jobs[i - 1].write_submit_time()
