@@ -39,6 +39,7 @@ class Platform(object):
         self.service = None
         self.scheduler = None
         self.directory = None
+        self._allow_arrays = False
 
     @property
     def serial_platform(self):
@@ -84,6 +85,10 @@ class Platform(object):
     @serial_queue.setter
     def serial_queue(self, value):
         self._serial_queue = value
+
+    @property
+    def allow_arrays(self):
+        return self._allow_arrays is True
 
     def add_parameters(self, parameters, main_hpc=False):
         """

@@ -767,8 +767,10 @@ class JobList:
             list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
             num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+
+            # Generating Job Packages
             packages_to_submit = list()
-            if platform.name == 'marenostrum3':
+            if platform.allow_arrays:
                 packages_to_submit.append(JobPackageArray(jobs_to_submit))
                 return packages_to_submit
             for job in jobs_to_submit:
