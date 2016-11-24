@@ -125,6 +125,27 @@ class LsfHeader:
         else:
             return ""
 
+    @classmethod
+    def array_header(cls, filename, array_id, wallclock, num_processors):
+        return textwrap.dedent("""\
+            ###############################################################################
+            #              {0}
+            ###############################################################################
+            #
+            #
+            #BSUB -J {0}{1}
+            #BSUB -oo {0}.%I.out
+            #BSUB -eo {0}.%I.err
+            #BSUB -W {2}
+            #BSUB -n {3}
+            #
+            ###############################################################################
+
+            SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
+            chmod +x $SCRIPT
+            ./$SCRIPT
+            """.format(filename, array_id, wallclock, num_processors))
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
