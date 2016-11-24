@@ -318,8 +318,8 @@ class ParamikoPlatform(Platform):
             executable = 'Rscript'
         return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
             os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, job.out_filename),
-            os.path.join(self.remote_log_dir, job.err_filename)
+            os.path.join(self.remote_log_dir, job.remote_logs[0]),
+            os.path.join(self.remote_log_dir, job.remote_logs[1])
         )
 
     @staticmethod
@@ -359,10 +359,11 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        job.out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        job.err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        header = header.replace('%OUT_LOG_DIRECTIVE%', job.out_filename)
-        header = header.replace('%ERR_LOG_DIRECTIVE%', job.err_filename)
+        out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        job.remote_logs = (out_filename, err_filename)
+        header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
+        header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 
         if hasattr(self.header, 'get_queue_directive'):
             header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))

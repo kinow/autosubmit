@@ -73,8 +73,8 @@ class Job(object):
 
         self.id = jobid
         self.file = None
-        self.out_filename = ''
-        self.err_filename = ''
+        self._local_logs = ('', '')
+        self._remote_logs = ('', '')
         self.status = status
         self.priority = priority
         self._parents = set()
@@ -211,6 +211,22 @@ class Job(object):
         :type value: str
         """
         self._long_name = value
+
+    @property
+    def local_logs(self):
+        return self._local_logs
+
+    @local_logs.setter
+    def local_logs(self, value):
+        self.local_logs = value
+
+    @property
+    def remote_logs(self):
+        return self._remote_logs
+
+    @remote_logs.setter
+    def remote_logs(self, value):
+        self._remote_logs = value
 
     def log_job(self):
         """
@@ -350,10 +366,10 @@ class Job(object):
         :return: list of values in column index position
         :rtype: list[datetime.datetime]
         """
-        logname = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         lst = []
-        if os.path.exists(logname):
-            f = open(logname)
+        if os.path.exists(log_name):
+            f = open(log_name)
             lines = f.readlines()
             for line in lines:
                 fields = line.split()
@@ -448,7 +464,7 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
             if copy_remote_logs:
-                self.platform.get_logs_files(self.expid, self.out_filename, self.err_filename)
+                self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
 
     def check_completion(self, default_status=Status.FAILED):
@@ -458,8 +474,8 @@ class Job(object):
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
-        logname = os.path.join(self._tmp_path, self.name + '_COMPLETED')
-        if os.path.exists(logname):
+        log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
+        if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
             Log.warning("Job {0} seemed to be completed but there is no COMPLETED file", self.name)

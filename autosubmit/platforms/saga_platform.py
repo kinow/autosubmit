@@ -230,10 +230,11 @@ class SagaPlatform(Platform):
         jd.working_directory = self.get_files_path()
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        job.out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        job.err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        jd.output = job.out_filename
-        jd.error = job.err_filename
+        out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        job.remote_logs = (out_filename, err_filename)
+        jd.output = out_filename
+        jd.error = err_filename
 
         self.add_attribute(jd, 'Name', job.name)
 
