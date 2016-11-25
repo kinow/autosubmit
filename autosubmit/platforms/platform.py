@@ -126,6 +126,16 @@ class Platform(object):
         """
         raise NotImplementedError
 
+    def move_file(self, src, dest):
+        """
+        Moves a file on the platform
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :type dest: str
+        """
+        raise NotImplementedError
+
     def get_file(self, filename, must_exist=True, relative_path=''):
         """
         Copies a file from the current platform to experiment's tmp folder

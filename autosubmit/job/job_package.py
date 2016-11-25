@@ -138,6 +138,7 @@ class JobPackageArray(JobPackageBase):
         for i in range(1, len(self.jobs) + 1):
             self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
             self._job_inputs[self.jobs[i - 1].name] = self._create_i_input(timestamp, i)
+            self.jobs[i - 1].remote_logs = (filename + ".{0}.out".format(i), filename + ".{0}.err".format(i))
         self._common_script = self._create_common_script(timestamp)
 
     def _create_i_input(self, filename, index):

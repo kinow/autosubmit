@@ -232,7 +232,7 @@ class SagaPlatform(Platform):
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.{1}.out".format(job.name, str_datetime)
         err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        job.remote_logs = (out_filename, err_filename)
+        job.local_logs = (out_filename, err_filename)
         jd.output = out_filename
         jd.error = err_filename
 

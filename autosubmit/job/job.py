@@ -218,7 +218,8 @@ class Job(object):
 
     @local_logs.setter
     def local_logs(self, value):
-        self.local_logs = value
+        self._local_logs = value
+        self._remote_logs = value
 
     @property
     def remote_logs(self):
@@ -463,6 +464,8 @@ class Job(object):
             self.write_start_time()
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
+            if self.local_logs != self.remote_logs:
+                self.synchronize_logs()  # unifying names for log files
             if copy_remote_logs:
                 self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
@@ -810,3 +813,7 @@ class Job(object):
             if self.is_ancestor(parent):
                 parent.children.remove(self)
                 self.parents.remove(parent)
+
+    def synchronize_logs(self):
+        self.platform.move_file(self.remote_logs[0], self.local_logs[0])  # .out
+        self.platform.move_file(self.remote_logs[1], self.local_logs[1])  # .err

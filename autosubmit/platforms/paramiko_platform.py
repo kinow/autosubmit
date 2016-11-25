@@ -136,7 +136,7 @@ class ParamikoPlatform(Platform):
 
         :param filename: file name
         :type filename: str
-        :return: True if succesful or file does no exists
+        :return: True if successful or file does no exists
         :rtype: bool
         """
         if self._ssh is None:
@@ -150,6 +150,28 @@ class ParamikoPlatform(Platform):
             return True
         except BaseException as e:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
+            return False
+
+    def move_file(self, src, dest):
+        """
+        Moves a file on the platform
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :type dest: str
+        """
+        if self._ssh is None:
+            if not self.connect():
+                return None
+
+        try:
+            ftp = self._ssh.open_sftp()
+            ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
+            ftp.close()
+            return True
+        except BaseException:
+            Log.debug('Could not move (rename) file {0} to {1}'.format(os.path.join(self.get_files_path(), src),
+                                                                       os.path.join(self.get_files_path(), dest)))
             return False
 
     def submit_job(self, job, script_name):
@@ -361,7 +383,7 @@ class ParamikoPlatform(Platform):
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.{1}.out".format(job.name, str_datetime)
         err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        job.remote_logs = (out_filename, err_filename)
+        job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 
