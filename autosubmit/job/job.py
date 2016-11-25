@@ -817,3 +817,4 @@ class Job(object):
     def synchronize_logs(self):
         self.platform.move_file(self.remote_logs[0], self.local_logs[0])  # .out
         self.platform.move_file(self.remote_logs[1], self.local_logs[1])  # .err
+        self.remote_logs = self.local_logs
