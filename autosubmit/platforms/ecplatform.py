@@ -100,7 +100,7 @@ class EcPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script, job_type):
+    def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
 
     def connect(self):
@@ -142,12 +142,15 @@ class EcPlatform(ParamikoPlatform):
         command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, os.path.join(self.get_files_path(), filename),
                                            self.host)
         try:
-            subprocess.check_call(command, stdout=open(os.devnull, 'w'), shell=True)
-        except subprocess.CalledProcessError:
-            if must_exist:
-                raise Exception('File {0} does not exists'.format(filename))
-            return False
-        return True
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+            out, _ = process.communicate()
+            process_ok = False if 'No such file' in out or process.returncode != 0 else True
+        except Exception:
+            process_ok = False
+
+        if not process_ok and must_exist:
+            raise Exception('File {0} does not exists'.format(filename))
+        return process_ok
 
     def delete_file(self, filename):
         command = '{0} {1}:{2}'.format(self.del_cmd, self.host, os.path.join(self.get_files_path(), filename))

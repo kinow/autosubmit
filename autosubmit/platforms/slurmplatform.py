@@ -90,7 +90,7 @@ class SlurmPlatform(ParamikoPlatform):
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
-    def get_submit_cmd(self, job_script, job_type):
+    def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
 
     def get_checkjob_cmd(self, job_id):

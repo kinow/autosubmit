@@ -261,6 +261,7 @@ class AutosubmitConfig:
             #     result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
 
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
+            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'SCRATCH_DIR')
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
                                                                   'ADD_PROJECT_TO_HOST', False)
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section, 'TEST_SUITE', False)
@@ -800,6 +801,15 @@ class AutosubmitConfig:
         :rtype: bool
         """
         return self.get_option(self._conf_parser, 'mail', 'NOTIFICATIONS', 'false').lower()
+
+    def get_copy_remote_logs(self):
+        """
+        Returns if the user has enabled the logs local copy from autosubmit's config file
+
+        :return: if logs local copy
+        :rtype: bool
+        """
+        return self.get_option(self._conf_parser, 'storage', 'COPY_REMOTE_LOGS', 'true').lower()
 
     def get_mails_to(self):
         """

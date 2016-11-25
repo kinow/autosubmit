@@ -1,3 +1,10 @@
+3.7.6
+    Fixed refresh
+    Fixed recovery for ECMWF
+    Local logs copy can be disabled
+    Some UX improvements
+    Other minor bugfixes
+
 3.7.5
     Fixed minor with LSF's logs
 

@@ -389,11 +389,12 @@ class Job:
         """
         return self._get_from_total_stats(1)
 
-    def update_status(self, new_status):
+    def update_status(self, new_status, copy_remote_logs):
         """
         Updates job status, checking COMPLETED file if needed
 
         :param new_status: job status retrieved from the platform
+        :param copy_remote_logs: should copy remote logs when finished?
         :type: Status
         """
         previous_status = self.status
@@ -429,7 +430,8 @@ class Job:
             self.write_start_time()
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             self.write_end_time(self.status == Status.COMPLETED)
-            self.get_platform().get_logs_files(self.expid, self.out_filename, self.err_filename)
+            if copy_remote_logs:
+                self.get_platform().get_logs_files(self.expid, self.out_filename, self.err_filename)
         return self.status
 
     def check_completion(self, default_status=Status.FAILED):

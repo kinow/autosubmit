@@ -163,7 +163,7 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.send_command(self.get_submit_cmd(script_name, job.type)):
+        if self.send_command(self.get_submit_cmd(script_name, job)):
             job_id = self.get_submitted_job_id(self.get_ssh_output())
             Log.debug("Job ID: {0}", job_id)
             return int(job_id)
@@ -298,27 +298,29 @@ class ParamikoPlatform(Platform):
         Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
 
-    def get_call(self, job_script, job_type):
+    def get_call(self, job_script, job):
         """
         Gets execution command for given job
 
-        :param job_type:
+        :param job: job
+        :type job: Job
         :param job_script: script to run
         :type job_script: str
         :return: command to execute script
         :rtype: str
         """
         executable = ''
-        if job_type == Type.BASH:
+        if job.type == Type.BASH:
             executable = 'bash'
-        elif job_type == Type.PYTHON:
+        elif job.type == Type.PYTHON:
             executable = 'python'
-        elif job_type == Type.R:
+        elif job.type == Type.R:
             executable = 'Rscript'
-        return 'nohup ' + executable + ' {0} > {0}.{1}.out 2> {0}.{1}.err & echo $!'.format(
-            os.path.join(self.remote_log_dir,
-                         job_script),
-            date2str(datetime.datetime.now(), 'S'))
+        return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+            os.path.join(self.remote_log_dir, job_script),
+            os.path.join(self.remote_log_dir, job.out_filename),
+            os.path.join(self.remote_log_dir, job.err_filename)
+        )
 
     @staticmethod
     def get_pscall(job_id):

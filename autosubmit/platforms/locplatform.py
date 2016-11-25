@@ -79,8 +79,8 @@ class LocalPlatform(ParamikoPlatform):
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
-    def get_submit_cmd(self, job_script, job_type):
-        return self.get_call(job_script, job_type)
+    def get_submit_cmd(self, job_script, job):
+        return self.get_call(job_script, job)
 
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
@@ -120,7 +120,7 @@ class LocalPlatform(ParamikoPlatform):
         command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
                                        local_path)
         try:
-            subprocess.check_call(command, shell=True)
+            subprocess.check_call(command, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
