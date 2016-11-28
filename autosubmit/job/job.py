@@ -50,7 +50,7 @@ class Job(object):
     def __str__(self):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
-    def __init__(self, name, jobid, status, priority):
+    def __init__(self, name, job_id, status, priority):
         self._platform = None
         self._queue = None
         self.platform_name = None
@@ -71,7 +71,7 @@ class Job(object):
         self.type = Type.BASH
         self.scratch_free_space = None
 
-        self.id = jobid
+        self.id = job_id
         self.file = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')

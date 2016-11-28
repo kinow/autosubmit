@@ -86,8 +86,9 @@ class JobListPersistencePkl(JobListPersistence):
         fd = open(path, 'w')
         setrecursionlimit(50000)
         Log.debug("Saving JobList: " + path)
-        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
-                     in job_list]
+        jobs_data = [(job.name, job.id, job.status,
+                      job.priority, job.section, job.date,
+                      job.member, job.chunk, job.local_logs[0], job.local_logs[1]) for job in job_list]
         pickle.dump(jobs_data, fd)
         Log.debug('Job list saved')
 
@@ -98,9 +99,11 @@ class JobListPersistenceDb(JobListPersistence):
 
     """
 
-    VERSION = 1
+    VERSION = 2
     JOB_LIST_TABLE = 'job_list'
-    TABLE_FIELDS = ['name', 'id', 'status', 'priority', 'section', 'date', 'member', 'chunk']
+    TABLE_FIELDS = ['name', 'id', 'status', 'priority',
+                    'section', 'date', 'member', 'chunk',
+                    'out_filename', 'err_filename']
 
     def __init__(self, persistence_path, persistence_file):
         self.db_manager = DbManager(persistence_path, persistence_file, self.VERSION)
@@ -123,8 +126,9 @@ class JobListPersistenceDb(JobListPersistence):
 
         """
         self._reset_table()
-        jobs_data = [(job.name, job.id, job.status, job.priority, job.section, job.date, job.member, job.chunk) for job
-                     in job_list]
+        jobs_data = [(job.name, job.id, job.status,
+                      job.priority, job.section, job.date,
+                      job.member, job.chunk, job.local_logs[0], job.local_logs[1]) for job in job_list]
         self.db_manager.insertMany(self.JOB_LIST_TABLE, jobs_data)
 
     def _reset_table(self):

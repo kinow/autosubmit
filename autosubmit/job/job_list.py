@@ -1020,6 +1020,8 @@ class DicJobs:
         name += "_" + section
         if name in jobs_data:
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
+            job.local_logs = jobs_data[name][8]
+            job.remote_logs = jobs_data[name][9]
         else:
             job = Job(name, 0, Status.WAITING, priority)
         job.section = section
