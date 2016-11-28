@@ -767,16 +767,32 @@ class JobList:
             list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
             num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
-
-            # Generating Job Packages
+            jobs_to_submit_by_section = self.divide_list_by_section(jobs_to_submit)
             packages_to_submit = list()
             if platform.allow_arrays:
-                packages_to_submit.append(JobPackageArray(jobs_to_submit))
+                for section_list in jobs_to_submit_by_section.values():
+                    packages_to_submit.append(JobPackageArray(section_list))
                 return packages_to_submit
             for job in jobs_to_submit:
                 packages_to_submit.append(JobPackageSimple([job]))
             return packages_to_submit
         return list()  # no packages to submit
+
+    @staticmethod
+    def divide_list_by_section(jobs_list):
+        """
+        Returns a dict() with as many keys as 'jobs_list' different sections.
+        The value for each key is a list() with all the jobs with the key section.
+
+        :param jobs_list: list of jobs to be divided
+        :rtype: dict
+        """
+        by_section = dict()
+        for job in jobs_list:
+            if job.section not in by_section:
+                by_section[job.section] = list()
+            by_section[job.section].append(job)
+        return by_section
 
 
 class DicJobs:
