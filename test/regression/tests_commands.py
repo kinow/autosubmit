@@ -14,7 +14,7 @@ def run_experiment_cmd(experiment_id):
 
 
 def monitor_experiment_cmd(experiment_id):
-    return 'autosubmit -lf EVERYTHING -lc EVERYTHING monitor {0}'.format(experiment_id)
+    return 'autosubmit -lf EVERYTHING -lc EVERYTHING monitor {0} --hide'.format(experiment_id)
 
 
 def refresh_experiment_cmd(experiment_id):
@@ -31,6 +31,7 @@ def check_experiment_cmd(experiment_id):
 
 def stats_experiment_cmd(experiment_id):
     return 'autosubmit -lf EVERYTHING -lc EVERYTHING stats {0} --hide'.format(experiment_id)
+
 
 def create_database_cmd():
     return 'autosubmit install'
