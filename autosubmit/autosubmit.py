@@ -622,9 +622,9 @@ class Autosubmit:
                     if job.platform_name is None:
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
-                    job.set_platform(submitter.platforms[job.platform_name.lower()])
+                    job.platform = submitter.platforms[job.platform_name.lower()]
                     # noinspection PyTypeChecker
-                    platforms_to_test.add(job.get_platform())
+                    platforms_to_test.add(job.platform)
 
                 job_list.check_scripts(as_conf)
 
@@ -705,45 +705,13 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            jobs_in_queue = job_list.get_in_queue(platform)
-            jobs_available = job_list.get_ready(platform)
-            if len(jobs_available) == 0:
-                continue
-
-            Log.info("\nJobs ready for {1}: {0}", len(jobs_available), platform.name)
-
-            max_jobs = platform.total_jobs
-            max_waiting_jobs = platform.max_waiting_jobs
-            waiting = len(job_list.get_submitted(platform) + job_list.get_queuing(platform))
-            available = max_waiting_jobs - waiting
-
-            if min(available, len(jobs_available)) == 0:
-                Log.debug("Number of jobs ready: {0}", len(jobs_available))
-                Log.debug("Number of jobs available: {0}", available)
-            elif min(available, len(jobs_available)) > 0 and len(job_list.get_in_queue(platform)) <= max_jobs:
-                Log.info("Jobs to submit: {0}", min(available, len(jobs_available)))
-
-                s = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
-                list_of_jobs_avail = sorted(s, key=lambda k: k.priority, reverse=True)
-
-                for job in list_of_jobs_avail[0:min(available, len(jobs_available), max_jobs - len(jobs_in_queue))]:
-                    job.update_parameters(as_conf, job_list.parameters)
-                    script_name = job.create_script(as_conf)
+            for job_package in job_list.get_ready_packages(platform):
                     try:
-                        platform.send_file(script_name)
-                        platform.remove_stat_file(job.name)
-                        platform.remove_completed_file(job.name)
-                        job.id = platform.submit_job(job, script_name)
+                        job_package.submit(as_conf, job_list.parameters)
+                        save = True
                     except Exception:
-                        Log.error("{0} submission failed", job.name)
+                        Log.error("{0} submission failed", platform.name)
                         continue
-                    if job.id is None:
-                        continue
-                    Log.info("{0} submitted", job.name)
-                    # set status to "submitted"
-                    job.status = Status.SUBMITTED
-                    job.write_submit_time()
-                    save = True
         return save
 
     @staticmethod
@@ -1028,7 +996,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name.lower()])
+            job.platform = platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name.lower()])
 
@@ -1043,9 +1011,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(platforms[job.platform_name.lower()])
+            job.platform = platforms[job.platform_name.lower()]
 
-            if job.get_platform().get_completed_files(job.name, 0):
+            if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
             elif job.status != Status.SUSPENDED:
@@ -1112,7 +1080,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job.set_platform(submitter.platforms[job.platform_name.lower()])
+            job.platform = submitter.platforms[job.platform_name.lower()]
             job.update_parameters(as_conf, job_list.parameters)
 
         return job_list.check_scripts(as_conf)
