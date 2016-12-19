@@ -3,3 +3,5 @@
 .*.sw*
 .*.pyc*
 .*.log*
+/cover/
+/.coverage

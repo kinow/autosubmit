@@ -32,6 +32,8 @@ from shutil import move
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
+from autosubmit.job.job_package import JobPackageSimple
+from autosubmit.job.job_package import JobPackageArray
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
@@ -295,7 +297,7 @@ class JobList:
         :return: completed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.COMPLETED]
 
     def get_submitted(self, platform=None):
@@ -307,7 +309,7 @@ class JobList:
         :return: submitted jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.SUBMITTED]
 
     def get_running(self, platform=None):
@@ -319,7 +321,7 @@ class JobList:
         :return: running jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.RUNNING]
 
     def get_queuing(self, platform=None):
@@ -331,7 +333,7 @@ class JobList:
         :return: queuedjobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.QUEUING]
 
     def get_failed(self, platform=None):
@@ -343,7 +345,7 @@ class JobList:
         :return: failed jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.FAILED]
 
     def get_ready(self, platform=None):
@@ -355,7 +357,7 @@ class JobList:
         :return: ready jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.READY]
 
     def get_waiting(self, platform=None):
@@ -367,7 +369,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.WAITING]
 
     def get_unknown(self, platform=None):
@@ -379,7 +381,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.get_platform() is platform) and
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.UNKNOWN]
 
     def get_in_queue(self, platform=None):
@@ -744,6 +746,54 @@ class JobList:
             self.update_genealogy()
         del self._dic_jobs
 
+    def get_ready_packages(self, platform):
+        # Check there are ready jobs
+        jobs_available = self.get_ready(platform)
+        if len(jobs_available) == 0:
+            return list()
+        Log.info("\nJobs ready for {1}: {0}", len(jobs_available), platform.name)
+        # Checking available submission slots
+        max_waiting_jobs = platform.max_waiting_jobs
+        waiting_jobs = len(self.get_submitted(platform) + self.get_queuing(platform))
+        max_wait_jobs_to_submit = max_waiting_jobs - waiting_jobs
+        max_jobs_to_submit = platform.total_jobs - len(self.get_in_queue(platform))
+        # Logging obtained data
+        Log.debug("Number of jobs ready: {0}", len(jobs_available))
+        Log.debug("Number of jobs available: {0}", max_wait_jobs_to_submit)
+        Log.info("Jobs to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
+        # If can submit jobs
+        if max_wait_jobs_to_submit > 0 and max_jobs_to_submit > 0:
+            available_sorted = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
+            list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
+            num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
+            jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+            jobs_to_submit_by_section = self.divide_list_by_section(jobs_to_submit)
+            packages_to_submit = list()
+            if platform.allow_arrays:
+                for section_list in jobs_to_submit_by_section.values():
+                    packages_to_submit.append(JobPackageArray(section_list))
+                return packages_to_submit
+            for job in jobs_to_submit:
+                packages_to_submit.append(JobPackageSimple([job]))
+            return packages_to_submit
+        return list()  # no packages to submit
+
+    @staticmethod
+    def divide_list_by_section(jobs_list):
+        """
+        Returns a dict() with as many keys as 'jobs_list' different sections.
+        The value for each key is a list() with all the jobs with the key section.
+
+        :param jobs_list: list of jobs to be divided
+        :rtype: dict
+        """
+        by_section = dict()
+        for job in jobs_list:
+            if job.section not in by_section:
+                by_section[job.section] = list()
+            by_section[job.section].append(job)
+        return by_section
+
 
 class DicJobs:
     """
@@ -986,6 +1036,8 @@ class DicJobs:
         name += "_" + section
         if name in jobs_data:
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
+            job.local_logs = (jobs_data[name][8], jobs_data[name][9])
+            job.remote_logs = (jobs_data[name][10], jobs_data[name][11])
         else:
             job = Job(name, 0, Status.WAITING, priority)
         job.section = section
@@ -1010,7 +1062,7 @@ class DicJobs:
         if job.platform_name is not None:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
-        job.set_queue(self.get_option(section, "QUEUE", None))
+        job.queue = self.get_option(section, "QUEUE", None)
         if self.get_option(section, "CHECK", 'True').lower() == 'true':
             job.check = True
         else:

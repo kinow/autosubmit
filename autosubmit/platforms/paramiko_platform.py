@@ -136,7 +136,7 @@ class ParamikoPlatform(Platform):
 
         :param filename: file name
         :type filename: str
-        :return: True if succesful or file does no exists
+        :return: True if successful or file does no exists
         :rtype: bool
         """
         if self._ssh is None:
@@ -150,6 +150,28 @@ class ParamikoPlatform(Platform):
             return True
         except BaseException as e:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
+            return False
+
+    def move_file(self, src, dest):
+        """
+        Moves a file on the platform
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :type dest: str
+        """
+        if self._ssh is None:
+            if not self.connect():
+                return None
+
+        try:
+            ftp = self._ssh.open_sftp()
+            ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
+            ftp.close()
+            return True
+        except BaseException:
+            Log.debug('Could not move (rename) file {0} to {1}'.format(os.path.join(self.get_files_path(), src),
+                                                                       os.path.join(self.get_files_path(), dest)))
             return False
 
     def submit_job(self, job, script_name):
@@ -184,9 +206,9 @@ class ParamikoPlatform(Platform):
         """
         job_status = Status.UNKNOWN
 
-        if type(job_id) is not int:
+        if type(job_id) is not int and type(job_id) is not str:
             # URi: logger
-            Log.error('check_job() The job id ({0}) is not an integer.', job_id)
+            Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
             # URi: value ?
             return job_status
 
@@ -318,8 +340,8 @@ class ParamikoPlatform(Platform):
             executable = 'Rscript'
         return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
             os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, job.out_filename),
-            os.path.join(self.remote_log_dir, job.err_filename)
+            os.path.join(self.remote_log_dir, job.remote_logs[0]),
+            os.path.join(self.remote_log_dir, job.remote_logs[1])
         )
 
     @staticmethod
@@ -359,10 +381,11 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        job.out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        job.err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        header = header.replace('%OUT_LOG_DIRECTIVE%', job.out_filename)
-        header = header.replace('%ERR_LOG_DIRECTIVE%', job.err_filename)
+        out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        job.local_logs = (out_filename, err_filename)
+        header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
+        header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 
         if hasattr(self.header, 'get_queue_directive'):
             header = header.replace('%QUEUE_DIRECTIVE%', self.header.get_queue_directive(job))
