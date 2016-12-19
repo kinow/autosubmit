@@ -6,7 +6,7 @@ def generate_experiment_cmd(hpc, description):
 
 
 def create_experiment_cmd(experiment_id):
-    return 'autosubmit -lf EVERYTHING -lc EVERYTHING create {0} -np'.format(experiment_id)
+    return 'autosubmit -lf EVERYTHING -lc EVERYTHING create {0} --hide'.format(experiment_id)
 
 
 def run_experiment_cmd(experiment_id):
@@ -22,7 +22,7 @@ def refresh_experiment_cmd(experiment_id):
 
 
 def recovery_experiment_cmd(experiment_id):
-    return 'autosubmit -lf EVERYTHING -lc EVERYTHING recovery {0} -all -s'.format(experiment_id)
+    return 'autosubmit -lf EVERYTHING -lc EVERYTHING recovery {0} -all --hide -s'.format(experiment_id)
 
 
 def check_experiment_cmd(experiment_id):
