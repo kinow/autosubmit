@@ -318,7 +318,7 @@ class TestDicJobs(TestCase):
         self.assertEquals(Type.BASH, created_job.type)
         self.assertEquals(platform_name, created_job.platform_name)
         self.assertEquals(filename, created_job.file)
-        self.assertEquals(queue, created_job._queue)
+        self.assertEquals(queue, created_job.queue)
         self.assertTrue(created_job.check)
         self.assertEquals(processors, created_job.processors)
         self.assertEquals(threads, created_job.threads)

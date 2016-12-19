@@ -34,8 +34,32 @@ def run_test_case(experiment_id, name, hpc_arch, description, src_path, retrials
             Log.warning('Error while creating the experiment {0}({1})', name, experiment_id)
             continue
 
+        if not check_cmd(check_experiment_cmd(experiment_id)):
+            Log.warning('Error while checking the experiment {0}({1})', name, experiment_id)
+            continue
+
+        if not check_cmd(monitor_experiment_cmd(experiment_id)):
+            Log.warning('Error while monitoring the experiment {0}({1})', name, experiment_id)
+            continue
+
+        if not check_cmd(refresh_experiment_cmd(experiment_id)):
+            Log.warning('Error while refreshing the experiment {0}({1})', name, experiment_id)
+            continue
+
         if not check_cmd(run_experiment_cmd(experiment_id)):
             Log.warning('Error while running the experiment {0}({1})', name, experiment_id)
+            continue
+
+        if not check_cmd(monitor_experiment_cmd(experiment_id)):
+            Log.warning('Error while monitoring the experiment {0}({1})', name, experiment_id)
+            continue
+
+        if not check_cmd(stats_experiment_cmd(experiment_id)):
+            Log.warning('Error while getting stats of the experiment {0}({1})', name, experiment_id)
+            continue
+
+        if not check_cmd(recovery_experiment_cmd(experiment_id)):
+            Log.warning('Error while recovering the experiment {0}({1})', name, experiment_id)
             continue
 
         run_ok = True
