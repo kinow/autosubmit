@@ -89,8 +89,8 @@ class JobList:
     def graph(self, value):
         self._graph = value
 
-    def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, default_job_type,
-                 new=True):
+    def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
+                 default_job_type, new=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -102,6 +102,8 @@ class JobList:
         :type member_list: list
         :param num_chunks: number of chunks to run
         :type num_chunks: int
+        :param chunk_ini: the experiment will start by the given chunk
+        :type chunk_ini: int
         :param parameters: parameters for the jobs
         :type parameters: dict
         :param date_format: option to format dates
@@ -115,7 +117,7 @@ class JobList:
         self._date_list = date_list
         self._member_list = member_list
 
-        chunk_list = range(1, num_chunks + 1)
+        chunk_list = range(chunk_ini, num_chunks + 1)
         self._chunk_list = chunk_list
 
         jobs_parser = self._get_jobs_parser()
@@ -169,7 +171,8 @@ class JobList:
         return dependencies
 
     @staticmethod
-    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies, graph):
+    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
+                                 graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
@@ -670,6 +673,7 @@ class JobList:
         jobs_parser = self._get_jobs_parser()
 
         Log.info("Adding dependencies...")
+        dependencies = dict()
         for job_section in jobs_parser.sections():
             Log.debug("Reading rerun dependencies for {0} jobs".format(job_section))
 
@@ -816,9 +820,9 @@ class DicJobs:
 
     """
 
-    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format, default_retrials):
+    def __init__(self, jobs_list, parser, date_list, member_list, chunk_list, date_format, default_retrials):
         self._date_list = date_list
-        self._joblist = joblist
+        self._jobs_list = jobs_list
         self._member_list = member_list
         self._chunk_list = chunk_list
         self._parser = parser
@@ -863,7 +867,7 @@ class DicJobs:
         :type priority: int
         """
         self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
-        self._joblist.graph.add_node(self._dic[section].name)
+        self._jobs_list.graph.add_node(self._dic[section].name)
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -884,7 +888,7 @@ class DicJobs:
             if count % frequency == 0 or count == len(self._date_list):
                 self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
                                                           jobs_data)
-                self._joblist.graph.add_node(self._dic[section][date].name)
+                self._jobs_list.graph.add_node(self._dic[section][date].name)
 
     def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
@@ -907,7 +911,7 @@ class DicJobs:
                 if count % frequency == 0 or count == len(self._member_list):
                     self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
                                                                       default_job_type, jobs_data)
-                    self._joblist.graph.add_node(self._dic[section][date][member].name)
+                    self._jobs_list.graph.add_node(self._dic[section][date][member].name)
 
     '''
         Maybe a good choice could be split this function or ascend the
@@ -959,7 +963,7 @@ class DicJobs:
                         else:
                             self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
                                                                                      chunk, default_job_type, jobs_data)
-                        self._joblist.graph.add_node(self._dic[section][date][member][chunk].name)
+                        self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
@@ -1026,7 +1030,7 @@ class DicJobs:
         return jobs
 
     def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict()):
-        name = self._joblist.expid
+        name = self._jobs_list.expid
         if date is not None:
             name += "_" + date2str(date, self._date_format)
         if member is not None:
@@ -1077,7 +1081,7 @@ class DicJobs:
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
-        self._joblist.get_job_list().append(job)
+        self._jobs_list.get_job_list().append(job)
         return job
 
     def get_option(self, section, option, default):

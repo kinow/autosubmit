@@ -643,6 +643,15 @@ class AutosubmitConfig:
         """
         return int(self._exp_parser.get('experiment', 'NUMCHUNKS'))
 
+    def get_chunk_ini(self):
+        """
+        Returns the first chunk from where the experiment will start
+
+        :return: initial chunk
+        :rtype: int
+        """
+        return int(self.get_option(self._exp_parser, 'experiment', 'CHUNKINI', 1))
+
     def get_chunk_size_unit(self):
         """
         Unit for the chunk length

@@ -298,7 +298,7 @@ class TestDicJobs(TestCase):
                                                  'True', processors, threads, tasks, memory, wallclock, notify_on])
         job_list_mock = Mock()
         job_list_mock.append = Mock()
-        self.dictionary._joblist.get_job_list = Mock(return_value=job_list_mock)
+        self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)
 
         # act
         created_job = self.dictionary.build_job(section, priority, date, member, chunk, dict())

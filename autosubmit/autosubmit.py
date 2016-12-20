@@ -706,12 +706,12 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             for job_package in job_list.get_ready_packages(platform):
-                    try:
-                        job_package.submit(as_conf, job_list.parameters)
-                        save = True
-                    except Exception:
-                        Log.error("{0} submission failed", platform.name)
-                        continue
+                try:
+                    job_package.submit(as_conf, job_list.parameters)
+                    save = True
+                except Exception:
+                    Log.error("{0} submission failed", platform.name)
+                    continue
         return save
 
     @staticmethod
@@ -1641,6 +1641,7 @@ class Autosubmit:
                     Log.error('There are repeated start dates!')
                     return False
                 num_chunks = as_conf.get_num_chunks()
+                chunk_ini = as_conf.get_chunk_ini()
                 member_list = as_conf.get_member_list()
                 if len(member_list) != len(set(member_list)):
                     Log.error('There are repeated member names!')
@@ -1659,7 +1660,7 @@ class Autosubmit:
                         date_format = 'H'
                     if date.minute > 1:
                         date_format = 'M'
-                job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials(),
+                job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format, as_conf.get_retrials(),
                                   as_conf.get_default_job_type())
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
@@ -2224,8 +2225,9 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.load_parameters(),
-                          date_format, as_conf.get_retrials(), as_conf.get_default_job_type(), False)
+        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
+                          as_conf.load_parameters(), date_format, as_conf.get_retrials(),
+                          as_conf.get_default_job_type(), False)
         return job_list
 
     @staticmethod
