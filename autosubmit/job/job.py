@@ -59,11 +59,11 @@ class Job(object):
         self.tasks = None
         self.threads = None
         self.processors = None
-        self.memory = None
+        self.memory = ''
+        self.memory_per_task = ''
         self.chunk = None
         self.member = None
         self.date = None
-        self.memory = None
         self.name = name
         self._long_name = None
         self.long_name = name
@@ -559,6 +559,7 @@ class Job(object):
         if self.tasks == 0:
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
+        self.memory_per_task = as_conf.get_memory_per_task(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
@@ -566,11 +567,11 @@ class Job(object):
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
+        parameters['MEMORY_PER_TASK'] = self.memory_per_task
         parameters['NUMTHREADS'] = self.threads
         parameters['NUMTASK'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
-        parameters['MEMORY'] = self.memory
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
 
         parameters['CURRENT_ARCH'] = job_platform.name

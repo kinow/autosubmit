@@ -254,6 +254,21 @@ class EcCcaHeader:
         else:
             return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_memory_per_task_directive(self, job):
+        """
+        Returns memory per task directive for the specified job
+
+        :param job: job to create memory per task directive for
+        :type job: Job
+        :return: memory per task directive
+        :rtype: str
+        """
+        # There is no memory per task, so directive is empty
+        if job.parameters['MEMORY_PER_TASK'] != '':
+            return "#PBS -l EC_memory_per_task={0}mb".format(job.parameters['MEMORY_PER_TASK'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -282,6 +297,7 @@ class EcCcaHeader:
              #PBS -l EC_total_tasks=%NUMPROC%
              %THREADS_PER_TASK_DIRECTIVE%
              %TASKS_PER_NODE_DIRECTIVE%
+             %MEMORY_PER_TASK_DIRECTIVE%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
              #

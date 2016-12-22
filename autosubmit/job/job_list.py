@@ -1076,6 +1076,7 @@ class DicJobs:
         job.threads = self.get_option(section, "THREADS", '')
         job.tasks = self.get_option(section, "TASKS", '')
         job.memory = self.get_option(section, "MEMORY", '')
+        job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
         if job.retrials == -1:

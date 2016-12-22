@@ -141,9 +141,39 @@ class SlurmHeader:
         :return: partition directive
         :rtype: str
         """
-        # There is no account, so directive is empty
+        # There is no partition, so directive is empty
         if job.parameters['CURRENT_PARTITION'] != '':
             return "SBATCH -p {0}".format(job.parameters['CURRENT_PARTITION'])
+        return ""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_memory_directive(self, job):
+        """
+        Returns memory directive for the specified job
+
+        :param job: job to create memory directive for
+        :type job: Job
+        :return: memory directive
+        :rtype: str
+        """
+        # There is no memory, so directive is empty
+        if job.parameters['MEMORY'] != '':
+            return "SBATCH --mem {0}".format(job.parameters['MEMORY'])
+        return ""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_memory_per_task_directive(self, job):
+        """
+        Returns memory per task directive for the specified job
+
+        :param job: job to create memory per task directive for
+        :type job: Job
+        :return: memory per task directive
+        :rtype: str
+        """
+        # There is no memory per task, so directive is empty
+        if job.parameters['MEMORY_PER_TASK'] != '':
+            return "SBATCH --mem-per-cpu {0}".format(job.parameters['MEMORY_PER_TASK'])
         return ""
 
     SERIAL = textwrap.dedent("""\
@@ -154,6 +184,8 @@ class SlurmHeader:
             #%QUEUE_DIRECTIVE%
             #%ACCOUNT_DIRECTIVE%
             #%PARTITION_DIRECTIVE%
+            #%MEMORY_DIRECTIVE%
+            #%MEMORY_PER_TASK_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
@@ -171,6 +203,8 @@ class SlurmHeader:
             #%QUEUE_DIRECTIVE%
             #%ACCOUNT_DIRECTIVE%
             #%PARTITION_DIRECTIVE%
+            #%MEMORY_DIRECTIVE%
+            #%MEMORY_PER_TASK_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%

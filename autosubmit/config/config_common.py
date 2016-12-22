@@ -183,7 +183,17 @@ class AutosubmitConfig:
         :return: memory needed
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', 0))
+        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', ''))
+
+    def get_memory_per_task(self, section):
+        """
+        Gets memory per task needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: memory per task needed
+        :rtype: str
+        """
+        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY_PER_TASK', ''))
 
     def check_conf_files(self):
         """
