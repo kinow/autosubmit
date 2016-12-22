@@ -58,7 +58,7 @@ class Job(object):
         self.wallclock = None
         self.tasks = None
         self.threads = None
-        self.processors = None
+        self.processors = '1'
         self.memory = ''
         self.memory_per_task = ''
         self.chunk = None
@@ -132,10 +132,10 @@ class Job(object):
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
         """
-        if self.processors > 1:
-            return self._platform
-        else:
+        if str(self.processors) == '1':
             return self._platform.serial_platform
+        else:
+            return self._platform
 
     @platform.setter
     def platform(self, value):
@@ -157,10 +157,10 @@ class Job(object):
         """
         if self._queue is not None:
             return self._queue
-        if self.processors > 1:
-            return self._platform.queue
-        else:
+        if str(self.processors) == '1':
             return self._platform.serial_platform.serial_queue
+        else:
+            return self._platform.queue
 
     @queue.setter
     def queue(self, value):

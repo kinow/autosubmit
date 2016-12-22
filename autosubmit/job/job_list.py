@@ -1072,7 +1072,7 @@ class DicJobs:
         else:
             job.check = False
 
-        job.processors = self.get_option(section, "PROCESSORS", 1)
+        job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = self.get_option(section, "THREADS", '')
         job.tasks = self.get_option(section, "TASKS", '')
         job.memory = self.get_option(section, "MEMORY", '')

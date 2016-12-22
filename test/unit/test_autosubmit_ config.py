@@ -138,12 +138,12 @@ class TestAutosubmitConfig(TestCase):
 
     def test_get_processors(self):
         # arrange
-        expected_value = 99999
+        expected_value = '99999'
         config, parser_mock = self._arrange_config(expected_value)
         # act
         returned_value = config.get_processors(self.section)
         # assert
-        self._assert_get_option(parser_mock, 'PROCESSORS', expected_value, returned_value, int)
+        self._assert_get_option(parser_mock, 'PROCESSORS', expected_value, returned_value, str)
 
     def test_get_threads(self):
         # arrange

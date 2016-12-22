@@ -258,7 +258,11 @@ class Monitor:
             else:
                 hours = 0
             threshold = max(threshold, hours)
-            expected_cpu_consumption += hours * int(job.processors)
+            if ':' in job.processors:
+                processors = reduce(lambda x, y: int(x) + int(y), job.processors.split(':'))
+            else:
+                processors = job.processors
+            expected_cpu_consumption += hours * int(processors)
             expected_real_consumption += hours
         # These are constants, so they need to be CAPS. Suppress PyCharm warning
         # noinspection PyPep8Naming
@@ -299,6 +303,11 @@ class Monitor:
                 start_times = job.check_retrials_start_time()
                 end_times = job.check_retrials_end_time()
 
+                if ':' in job.processors:
+                    processors = reduce(lambda x, y: int(x) + int(y), job.processors.split(':'))
+                else:
+                    processors = job.processors
+
                 for j, t in enumerate(submit_times):
 
                     if j >= len(end_times):
@@ -307,13 +316,13 @@ class Monitor:
                     elif j == (len(submit_times) - 1) and job.status == Status.COMPLETED:
                         queued[i] += start_times[j] - submit_times[j]
                         run[i] += end_times[j] - start_times[j]
-                        cpu_consumption += run[i] * int(job.processors)
+                        cpu_consumption += run[i] * int(processors)
                         real_consumption += run[i]
                     else:
                         failed_jobs[i] += 1
                         fail_queued[i] += start_times[j] - submit_times[j]
                         fail_run[i] += end_times[j] - start_times[j]
-                        cpu_consumption += fail_run[i] * int(job.processors)
+                        cpu_consumption += fail_run[i] * int(processors)
                         real_consumption += fail_run[i]
                 total_jobs_run += len(start_times)
                 total_jobs_failed += failed_jobs[i]

@@ -375,10 +375,10 @@ class ParamikoPlatform(Platform):
         :return: header to use
         :rtype: str
         """
-        if job.processors > 1:
-            header = self.header.PARALLEL
-        else:
+        if str(job.processors) == '1':
             header = self.header.SERIAL
+        else:
+            header = self.header.PARALLEL
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.{1}.out".format(job.name, str_datetime)

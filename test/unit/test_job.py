@@ -43,7 +43,7 @@ class TestJob(TestCase):
         platform.serial_platform = 'serial-platform'
 
         self.job._platform = platform
-        self.job.processors = 1
+        self.job.processors = '1'
 
         returned_platform = self.job.platform
 
@@ -90,7 +90,7 @@ class TestJob(TestCase):
         dummy_platform.queue = parallel_queue
 
         self.job.platform = dummy_platform
-        self.job.processors = 1
+        self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)
 

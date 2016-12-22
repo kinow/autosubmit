@@ -125,7 +125,7 @@ class JobPackageArray(JobPackageBase):
         self._common_script = None
         self._array_size_id = "[1-" + str(len(jobs)) + "]"
         self._wallclock = '00:00'
-        self._num_processors = 1
+        self._num_processors = '1'
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock

@@ -143,7 +143,7 @@ class AutosubmitConfig:
         :return: wallclock time
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
+        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
         """

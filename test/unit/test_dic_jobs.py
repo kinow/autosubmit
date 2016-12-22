@@ -286,7 +286,7 @@ class TestDicJobs(TestCase):
         platform_name = 'fake-platform'
         filename = 'fake-fike'
         queue = 'fake-queue'
-        processors = 111
+        processors = '111'
         threads = 222
         tasks = 333
         memory = memory_per_task = 444
