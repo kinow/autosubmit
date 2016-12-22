@@ -41,6 +41,7 @@ class Platform(object):
         self.service = None
         self.scheduler = None
         self.directory = None
+        self.hyperthreading = 'false'
         self._allow_arrays = False
 
     @property

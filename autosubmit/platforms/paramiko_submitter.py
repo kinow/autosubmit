@@ -113,6 +113,8 @@ class ParamikoSubmitter(Submitter):
                                                                                asconf.get_max_waiting_jobs()))
             remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
                                                                          asconf.get_total_jobs()))
+            remote_platform.hyperthreading = AutosubmitConfig.get_option(parser, section, 'HYPERTHREADING',
+                                                                         'false').lower()
             remote_platform.project = AutosubmitConfig.get_option(parser, section, 'PROJECT', None)
             remote_platform.budget = AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project)
             remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')

@@ -584,6 +584,7 @@ class Job(object):
         parameters['CURRENT_BUDG'] = job_platform.budget
         parameters['CURRENT_RESERVATION'] = job_platform.reservation
         parameters['CURRENT_EXCLUSIVITY'] = job_platform.exclusivity
+        parameters['CURRENT_HYPERTHREADING'] = job_platform.hyperthreading
         parameters['CURRENT_TYPE'] = job_platform.type
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir

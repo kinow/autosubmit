@@ -405,6 +405,8 @@ class ParamikoPlatform(Platform):
             header = header.replace('%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
         if hasattr(self.header, 'get_memory_per_task_directive'):
             header = header.replace('%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
+        if hasattr(self.header, 'get_hyperthreading_directive'):
+            header = header.replace('%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
 
     def check_remote_log_dir(self):

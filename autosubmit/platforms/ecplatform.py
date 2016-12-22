@@ -269,6 +269,21 @@ class EcCcaHeader:
             return "#PBS -l EC_memory_per_task={0}mb".format(job.parameters['MEMORY_PER_TASK'])
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_hyperthreading_directive(self, job):
+        """
+        Returns hyperthreading directive for the specified job
+
+        :param job: job to create hyperthreading directive for
+        :type job: Job
+        :return: hyperthreading per task directive
+        :rtype: str
+        """
+        # There is no memory per task, so directive is empty
+        if job.parameters['CURRENT_HYPERTHREADING'] == 'true':
+            return "#PBS -l EC_hyperthreads=2"
+        return "#PBS -l EC_hyperthreads=1"
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -298,6 +313,7 @@ class EcCcaHeader:
              %THREADS_PER_TASK_DIRECTIVE%
              %TASKS_PER_NODE_DIRECTIVE%
              %MEMORY_PER_TASK_DIRECTIVE%
+             %HYPERTHREADING_DIRECTIVE%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
              #
