@@ -118,6 +118,8 @@ class ParamikoSubmitter(Submitter):
             remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')
             remote_platform.exclusivity = AutosubmitConfig.get_option(parser, section, 'EXCLUSIVITY', '').lower()
             remote_platform.user = AutosubmitConfig.get_option(parser, section, 'USER', None)
+            remote_platform.account = AutosubmitConfig.get_option(parser, section, 'ACCOUNT', '')
+            remote_platform.partition = AutosubmitConfig.get_option(parser, section, 'PARTITION', '')
             remote_platform.scratch = AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None)
             remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
             remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)

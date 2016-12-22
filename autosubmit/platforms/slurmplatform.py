@@ -105,7 +105,7 @@ class SlurmHeader:
         """
         Returns queue directive for the specified job
 
-        :param job: job to create queue directibve for
+        :param job: job to create queue directive for
         :type job: Job
         :return: queue directive
         :rtype: str
@@ -116,12 +116,44 @@ class SlurmHeader:
         else:
             return "SBATCH --qos {0}".format(job.parameters['CURRENT_QUEUE'])
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_account_directive(self, job):
+        """
+        Returns account directive for the specified job
+
+        :param job: job to create account directive for
+        :type job: Job
+        :return: account directive
+        :rtype: str
+        """
+        # There is no account, so directive is empty
+        if job.parameters['CURRENT_ACCOUNT'] != '':
+            return "SBATCH -A {0}".format(job.parameters['CURRENT_ACCOUNT'])
+        return ""
+
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_partition_directive(self, job):
+        """
+        Returns partition directive for the specified job
+
+        :param job: job to create partition directive for
+        :type job: Job
+        :return: partition directive
+        :rtype: str
+        """
+        # There is no account, so directive is empty
+        if job.parameters['CURRENT_PARTITION'] != '':
+            return "SBATCH -p {0}".format(job.parameters['CURRENT_PARTITION'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
             ###############################################################################
             #
             #%QUEUE_DIRECTIVE%
+            #%ACCOUNT_DIRECTIVE%
+            #%PARTITION_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
@@ -137,6 +169,8 @@ class SlurmHeader:
             ###############################################################################
             #
             #%QUEUE_DIRECTIVE%
+            #%ACCOUNT_DIRECTIVE%
+            #%PARTITION_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%

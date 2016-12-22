@@ -397,6 +397,10 @@ class ParamikoPlatform(Platform):
             header = header.replace('%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
         if hasattr(self.header, 'get_exclusivity'):
             header = header.replace('%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
+        if hasattr(self.header, 'get_account_directive'):
+            header = header.replace('%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+        if hasattr(self.header, 'get_partition_directive'):
+            header = header.replace('%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
         return header
 
     def check_remote_log_dir(self):
