@@ -93,7 +93,7 @@ class SgeHeader:
         """
         Returns queue directive for the specified job
 
-        :param job: job to create queue directibve for
+        :param job: job to create queue directive for
         :type job: Job
         :return: queue directive
         :rtype: str

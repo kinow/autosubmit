@@ -578,8 +578,6 @@ class Job(object):
         parameters['CURRENT_HOST'] = job_platform.host
         parameters['CURRENT_QUEUE'] = self.queue
         parameters['CURRENT_USER'] = job_platform.user
-        parameters['CURRENT_ACCOUNT'] = job_platform.account
-        parameters['CURRENT_PARTITION'] = job_platform.partition
         parameters['CURRENT_PROJ'] = job_platform.project
         parameters['CURRENT_BUDG'] = job_platform.budget
         parameters['CURRENT_RESERVATION'] = job_platform.reservation

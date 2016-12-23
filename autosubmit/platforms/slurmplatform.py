@@ -37,7 +37,7 @@ class SlurmPlatform(ParamikoPlatform):
         """
         Returns queue directive for the specified job
 
-        :param job: job to create queue directibve for
+        :param job: job to create queue directive for
         :type job: Job
         :return: queue directive
         :rtype: str
@@ -114,7 +114,7 @@ class SlurmHeader:
         if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
-            return "SBATCH --qos {0}".format(job.parameters['CURRENT_QUEUE'])
+            return "SBATCH -p {0}".format(job.parameters['CURRENT_QUEUE'])
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_account_directive(self, job):
@@ -127,23 +127,8 @@ class SlurmHeader:
         :rtype: str
         """
         # There is no account, so directive is empty
-        if job.parameters['CURRENT_ACCOUNT'] != '':
-            return "SBATCH -A {0}".format(job.parameters['CURRENT_ACCOUNT'])
-        return ""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_partition_directive(self, job):
-        """
-        Returns partition directive for the specified job
-
-        :param job: job to create partition directive for
-        :type job: Job
-        :return: partition directive
-        :rtype: str
-        """
-        # There is no partition, so directive is empty
-        if job.parameters['CURRENT_PARTITION'] != '':
-            return "SBATCH -p {0}".format(job.parameters['CURRENT_PARTITION'])
+        if job.parameters['CURRENT_PROJ'] != '':
+            return "SBATCH -A {0}".format(job.parameters['CURRENT_PROJ'])
         return ""
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
@@ -183,7 +168,6 @@ class SlurmHeader:
             #
             #%QUEUE_DIRECTIVE%
             #%ACCOUNT_DIRECTIVE%
-            #%PARTITION_DIRECTIVE%
             #%MEMORY_DIRECTIVE%
             #%MEMORY_PER_TASK_DIRECTIVE%
             #SBATCH -n %NUMPROC%
@@ -202,7 +186,6 @@ class SlurmHeader:
             #
             #%QUEUE_DIRECTIVE%
             #%ACCOUNT_DIRECTIVE%
-            #%PARTITION_DIRECTIVE%
             #%MEMORY_DIRECTIVE%
             #%MEMORY_PER_TASK_DIRECTIVE%
             #SBATCH -n %NUMPROC%

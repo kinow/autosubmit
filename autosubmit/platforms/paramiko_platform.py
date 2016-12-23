@@ -399,8 +399,6 @@ class ParamikoPlatform(Platform):
             header = header.replace('%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
         if hasattr(self.header, 'get_account_directive'):
             header = header.replace('%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
-        if hasattr(self.header, 'get_partition_directive'):
-            header = header.replace('%PARTITION_DIRECTIVE%', self.header.get_partition_directive(job))
         if hasattr(self.header, 'get_memory_directive'):
             header = header.replace('%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
         if hasattr(self.header, 'get_memory_per_task_directive'):
