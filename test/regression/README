@@ -69,3 +69,13 @@ python tests_runner.py --only "test1 test2 test3"
 As you can see on the example above, the list should be passed between quotes (") and the items
 should be separated by a whitespace. Just to remind, the name of the tests should be the same as the
 section on the 'tests.conf' file.
+
+
+#####################
+How to add a new test
+#####################
+
+1) Create a folder with the test files (configuration and sources) following the same structure
+as the other test folders.
+
+2) Add the new test configuration in the `tests.conf` file following the same INI style.
