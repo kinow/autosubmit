@@ -46,7 +46,8 @@ class SagaPlatform(Platform):
                 raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
                                                                           self.host, self.get_files_path()))
         # noinspection PyTypeChecker
-        out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)))
+        out = saga.filesystem.File("file://{0}".format(os.path.join(self.tmp_path, filename)),
+                                   session=self.service.session)
         if self.type == 'local':
             out.copy("file://{0}".format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)),
                      saga.filesystem.CREATE_PARENTS)
@@ -144,7 +145,8 @@ class SagaPlatform(Platform):
                                                                                                 'LOG_' + self.expid)))
                 else:
                     # noinspection PyTypeChecker
-                    self.directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()))
+                    self.directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()),
+                                                               session=self.session)
             except:
                 return False
 
@@ -184,7 +186,8 @@ class SagaPlatform(Platform):
             else:
                 # noinspection PyTypeChecker
                 out = saga.filesystem.File("sftp://{0}{1}".format(self.host, os.path.join(self.get_files_path(),
-                                                                                          filename)))
+                                                                                          filename)),
+                                           session=self.service.session)
             out.remove()
             out.close()
             return True
