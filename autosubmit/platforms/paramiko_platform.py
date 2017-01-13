@@ -91,6 +91,8 @@ class ParamikoPlatform(Platform):
         try:
             ftp = self._ssh.open_sftp()
             ftp.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
+            ftp.chmod(os.path.join(self.get_files_path(), filename),
+                      os.stat(os.path.join(self.tmp_path, filename)).st_mode)
             ftp.close()
             return True
         except BaseException as e:
