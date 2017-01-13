@@ -177,3 +177,63 @@ class JobPackageArray(JobPackageBase):
             self.jobs[i - 1].id = str(package_id) + '[{0}]'.format(i)
             self.jobs[i - 1].status = Status.SUBMITTED
             self.jobs[i - 1].write_submit_time()
+
+
+class JobPackageThread(JobPackageBase):
+    """
+    Class to manage the package of jobs to be submitted by autosubmit
+    """
+    FILE_PREFIX = 'ASThread'
+
+    def __init__(self, jobs):
+        self._job_scripts = {}
+        self._common_script = None
+        self._wallclock = '00:00'
+        self._num_processors = '0'
+        for job in jobs:
+            if job.wallclock > self._wallclock:
+                self._wallclock = job.wallclock
+                self._num_processors = str(int(self._num_processors) + int(job.processors))
+        super(JobPackageThread, self).__init__(jobs)
+
+    def _create_scripts(self, configuration):
+        timestamp = str(int(time.time()))
+        filename = self.FILE_PREFIX + "_{0}_{1}_{2}".format(timestamp, self._num_processors, len(self.jobs))
+        for i in range(1, len(self.jobs) + 1):
+            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
+            self.jobs[i - 1].remote_logs = (
+                self._job_scripts[self.jobs[i - 1].name] + ".{0}.out".format(i - 1),
+                self._job_scripts[self.jobs[i - 1].name] + ".{0}.err".format(i - 1)
+            )
+        self._common_script = self._create_common_script(filename)
+
+    def _create_common_script(self, filename):
+
+        script_content = self.platform.header.thread_header(filename, self._wallclock,
+                                                            self._num_processors, len(self.jobs),
+                                                            self._job_scripts.values())
+        filename += '.cmd'
+        open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
+        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
+        return filename
+
+    def _send_files(self):
+        for job in self.jobs:
+            self.platform.send_file(self._job_scripts[job.name])
+        self.platform.send_file(self._common_script)
+
+    def _do_submission(self):
+        for job in self.jobs:
+            self.platform.remove_stat_file(job.name)
+            self.platform.remove_completed_file(job.name)
+
+        package_id = self.platform.submit_job(None, self._common_script)
+
+        if package_id is None:
+            raise Exception('Submission failed')
+
+        for i in range(1, len(self.jobs) + 1):
+            Log.info("{0} submitted", self.jobs[i - 1].name)
+            self.jobs[i - 1].id = str(package_id)
+            self.jobs[i - 1].status = Status.SUBMITTED
+            self.jobs[i - 1].write_submit_time()

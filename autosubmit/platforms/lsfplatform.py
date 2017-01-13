@@ -146,6 +146,56 @@ class LsfHeader:
             ./$SCRIPT
             """.format(filename, array_id, wallclock, num_processors))
 
+    @classmethod
+    def thread_header(cls, filename, wallclock, num_processors, num_jobs, job_scripts):
+        return textwrap.dedent("""\
+            #!/usr/bin/env python
+            ###############################################################################
+            #              {0}
+            ###############################################################################
+            #
+            #BSUB -J {0}
+            #BSUB -o {0}.out
+            #BSUB -e {0}.err
+            #BSUB -W {1}
+            #BSUB -n {2}
+            #
+            ###############################################################################
+
+            import os
+            import sys
+            from threading import Thread
+            from commands import getstatusoutput
+
+            class JobThread(Thread):
+                def __init__ (self, template, id_run):
+                    Thread.__init__(self)
+                    self.template = template
+                    self.id_run = id_run
+
+                def run(self):
+                    out = str(self.template) + "." + str(self.id_run) + ".out"
+                    err = str(self.template) + "." + str(self.id_run) + ".err"
+                    command = str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                    (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+
+            # Splitting the original hosts file
+            os.system("cat {5} | split -a 2 -d -l {3} - mlist-{6}-")
+
+            pid_list = []
+            scripts = {4}
+
+            for i in range(len(scripts)):
+                current = JobThread(scripts[i], i)
+                pid_list.append(current)
+                current.start()
+
+            for pid in pid_list:
+                pid.join()
+                print "Status from ", pid.template,"is", pid.status
+            """.format(filename, wallclock, num_processors, (int(num_processors) / num_jobs), str(job_scripts),
+                       "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT

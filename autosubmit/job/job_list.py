@@ -32,8 +32,7 @@ from shutil import move
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
-from autosubmit.job.job_package import JobPackageSimple
-from autosubmit.job.job_package import JobPackageArray
+from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageThread
 from autosubmit.config.log import Log
 from autosubmit.date.chunk_date_lib import date2str, parse_date
 
@@ -775,7 +774,7 @@ class JobList:
             packages_to_submit = list()
             if platform.allow_arrays:
                 for section_list in jobs_to_submit_by_section.values():
-                    packages_to_submit.append(JobPackageArray(section_list))
+                    packages_to_submit.append(JobPackageThread(section_list))
                 return packages_to_submit
             for job in jobs_to_submit:
                 packages_to_submit.append(JobPackageSimple([job]))
