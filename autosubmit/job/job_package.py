@@ -193,7 +193,7 @@ class JobPackageThread(JobPackageBase):
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
-                self._num_processors = str(int(self._num_processors) + int(job.processors))
+            self._num_processors = str(int(self._num_processors) + int(job.processors))
         super(JobPackageThread, self).__init__(jobs)
 
     def _create_scripts(self, configuration):
