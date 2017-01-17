@@ -128,6 +128,9 @@ class ParamikoPlatform(Platform):
             ftp.close()
             return True
         except BaseException:
+            # ftp.get creates a local file anyway
+            if os.path.exists(local_path):
+                os.remove(local_path)
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
