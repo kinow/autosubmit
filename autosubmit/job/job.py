@@ -699,9 +699,6 @@ class Job(object):
         if not out:
             Log.warning("The following set of variables to be substituted in template script is not part of "
                         "parameters set: {0}", str(set(variables) - set(parameters)))
-        else:
-            self.create_script(as_conf)
-
         return out
 
     def write_submit_time(self):
