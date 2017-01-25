@@ -225,16 +225,12 @@ class TestJob(TestCase):
         config = Mock(spec=AutosubmitConfig)
         config.get_project_dir = Mock(return_value='/project/dir')
 
-        create_script_mock = Mock()
-        self.job.create_script = create_script_mock
-
         # act
         checked = self.job.check_script(config, self.job.parameters)
 
         # assert
         update_parameters_mock.assert_called_with(config, self.job.parameters)
         update_content_mock.assert_called_with(config)
-        create_script_mock.assert_called_with(config)
         self.assertTrue(checked)
 
     def test_exists_completed_file_then_sets_status_to_completed(self):
