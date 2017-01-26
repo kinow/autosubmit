@@ -180,16 +180,6 @@ class TestJob(TestCase):
         write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o775)
 
-    def test_that_check_script_returns_true_when_it_is_not_needed(self):
-        # arrange
-        self.job.check = False
-
-        # act
-        result = self.job.check_script(Mock(), dict())
-
-        # assert
-        self.assertTrue(result)
-
     def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
         # arrange
         update_content_mock = Mock(return_value='some-content: %UNBOUND%')

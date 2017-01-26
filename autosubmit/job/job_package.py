@@ -27,6 +27,8 @@ import time
 import os
 from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
+from autosubmit.job.job_exceptions import WrongTemplateException
+from autosubmit.job.job import Job
 
 
 class JobPackageBase(object):
@@ -70,6 +72,9 @@ class JobPackageBase(object):
 
     def submit(self, configuration, parameters):
         for job in self.jobs:
+            if job.check.lower() == Job.CHECK_ON_SUBMISSION:
+                if not job.check_script(configuration, parameters):
+                    raise WrongTemplateException(job.name)
             job.update_parameters(configuration, parameters)
         self._create_scripts(configuration)
         self._send_files()

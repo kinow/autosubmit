@@ -33,7 +33,7 @@ from autosubmit.config.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 
-class AutosubmitConfig:
+class AutosubmitConfig(object):
     """
     Class to handle experiment configuration coming from file or database
 
@@ -48,18 +48,27 @@ class AutosubmitConfig:
 
         self.parser_factory = parser_factory
 
+        self._conf_parser = None
         self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "autosubmit_" + expid + ".conf")
+        self._exp_parser = None
         self._exp_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                              "expdef_" + expid + ".conf")
+        self._platforms_parser = None
         self._platforms_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                                    "platforms_" + expid + ".conf")
+        self._jobs_parser = None
         self._jobs_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "jobs_" + expid + ".conf")
+        self._proj_parser = None
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
 
         self.check_proj_file()
+
+    @property
+    def jobs_parser(self):
+        return self._jobs_parser
 
     @property
     def experiment_file(self):
@@ -133,7 +142,7 @@ class AutosubmitConfig:
         :return: wallclock time
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self.jobs_parser, section, 'WALLCLOCK', '')
+        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
         """
@@ -143,7 +152,7 @@ class AutosubmitConfig:
         :return: wallclock time
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'PROCESSORS', 1))
+        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
         """
@@ -153,7 +162,7 @@ class AutosubmitConfig:
         :return: threads needed
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'THREADS', 1))
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
 
     def get_tasks(self, section):
         """
@@ -163,7 +172,7 @@ class AutosubmitConfig:
         :return: tasks (processes) per host
         :rtype: int
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'TASKS', 0))
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 0))
 
     def get_scratch_free_space(self, section):
         """
@@ -173,7 +182,7 @@ class AutosubmitConfig:
         :return: percentage of scratch free space needed
         :rtype: int
         """
-        return int(AutosubmitConfig.get_option(self.jobs_parser, section, 'SCRATCH_FREE_SPACE', 0))
+        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'SCRATCH_FREE_SPACE', 0))
 
     def get_memory(self, section):
         """
@@ -183,7 +192,7 @@ class AutosubmitConfig:
         :return: memory needed
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY', ''))
+        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', ''))
 
     def get_memory_per_task(self, section):
         """
@@ -193,7 +202,7 @@ class AutosubmitConfig:
         :return: memory per task needed
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self.jobs_parser, section, 'MEMORY_PER_TASK', ''))
+        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY_PER_TASK', ''))
 
     def check_conf_files(self):
         """
@@ -267,9 +276,6 @@ class AutosubmitConfig:
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
                 result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'USER')
 
-            # if platform_type in ['pbs', 'ecaccess']:
-            #     result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'VERSION')
-
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
             result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'SCRATCH_DIR')
             result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
@@ -293,7 +299,7 @@ class AutosubmitConfig:
         :rtype: bool
         """
         result = True
-        parser = self.jobs_parser
+        parser = self._jobs_parser
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
         platforms.append('LOCAL')
@@ -411,7 +417,7 @@ class AutosubmitConfig:
         """
         self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
         self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
-        self.jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
+        self._jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
         self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None

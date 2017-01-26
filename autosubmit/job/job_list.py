@@ -634,9 +634,12 @@ class JobList:
         for job in self._job_list:
             if job.section in sections_checked:
                 continue
+            if job.check.lower() != 'true':
+                Log.warning('Template {0} will not be checked'.format(job.section))
+                continue
             if not job.check_script(as_conf, self.parameters):
                 out = False
-                Log.warning("Invalid parameter substitution in {0} template!!!", job.section)
+                Log.warning("Invalid parameter substitution in {0} template", job.section)
             sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
@@ -1066,11 +1069,7 @@ class DicJobs:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
         job.queue = self.get_option(section, "QUEUE", None)
-        if self.get_option(section, "CHECK", 'True').lower() == 'true':
-            job.check = True
-        else:
-            job.check = False
-
+        job.check = self.get_option(section, "CHECK", 'True').lower()
         job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = self.get_option(section, "THREADS", '')
         job.tasks = self.get_option(section, "TASKS", '')

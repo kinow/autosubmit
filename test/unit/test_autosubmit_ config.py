@@ -193,11 +193,12 @@ class TestAutosubmitConfig(TestCase):
     def test_that_reload_must_load_parsers(self):
         # arrange
         config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
-        parsers = ['_conf_parser', '_platforms_parser', 'jobs_parser', '_exp_parser', '_proj_parser']
+        parsers = ['_conf_parser', '_platforms_parser', '_jobs_parser', '_exp_parser', '_proj_parser']
 
         # pre-act assertions
         for parser in parsers:
-            self.assertFalse(hasattr(config, parser))
+            self.assertTrue(hasattr(config, parser))
+            self.assertIsNone(getattr(config, parser))
 
         # act
         config.reload()

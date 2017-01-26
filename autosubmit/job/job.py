@@ -47,6 +47,8 @@ class Job(object):
     :type priority: int
     """
 
+    CHECK_ON_SUBMISSION = 'on_submission'
+
     def __str__(self):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
@@ -85,7 +87,7 @@ class Job(object):
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self.write_start = False
         self._platform = None
-        self.check = True
+        self.check = 'True'
 
     def __getstate__(self):
         odict = self.__dict__
@@ -669,11 +671,11 @@ class Job(object):
                                       flags=re.IGNORECASE)
         template_content = template_content.replace("%%", "%")
 
-        scriptname = self.name + '.cmd'
-        open(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
-        os.chmod(os.path.join(self._tmp_path, scriptname), 0o775)
+        script_name = self.name + '.cmd'
+        open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
 
-        return scriptname
+        return script_name
 
     def check_script(self, as_conf, parameters):
         """
@@ -686,9 +688,6 @@ class Job(object):
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
-        if not self.check:
-            Log.info('Template {0} will not be checked'.format(self.section))
-            return True
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
 
