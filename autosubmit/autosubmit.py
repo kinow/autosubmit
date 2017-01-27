@@ -80,7 +80,7 @@ from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
 from platforms.saga_submitter import SagaSubmitter
 from platforms.paramiko_submitter import ParamikoSubmitter
-from autosubmit.job.job_exceptions import WrongTemplateException
+from job.job_exceptions import WrongTemplateException
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
