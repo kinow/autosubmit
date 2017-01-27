@@ -1495,35 +1495,30 @@ class Autosubmit:
             Autosubmit.unarchive(expid)
             return False
 
-        Log.result("Experiment archived succesfully")
+        Log.result("Experiment archived successfully")
         return True
 
     @staticmethod
-    def unarchive(expid):
+    def unarchive(experiment_id):
         """
         Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
-        :param expid: experiment identifier
-        :type expid: str
+        :param experiment_id: experiment identifier
+        :type experiment_id: str
         """
         BasicConfig.read()
-        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-        if not os.path.exists(exp_folder):
-            Log.critical("The directory %s is needed and does not exist." % exp_folder)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
-
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(experiment_id)))
+        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         if os.path.exists(exp_folder):
-            Log.error("Experiment {0} is not archived", expid)
+            Log.error("Experiment {0} is not archived", experiment_id)
             return False
 
         # Searching by year. We will store it on database
         year = datetime.datetime.today().year
         archive_path = None
         while year > 2000:
-            archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
+            archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(experiment_id))
             if os.path.exists(archive_path):
                 break
             year -= 1
@@ -1545,7 +1540,7 @@ class Autosubmit:
             Log.critical("Can not extract tar file: {0}".format(e))
             return False
 
-        Log.info("Unpacking finished.")
+        Log.info("Unpacking finished")
 
         try:
             os.remove(archive_path)
@@ -1553,7 +1548,7 @@ class Autosubmit:
             Log.error("Can not remove archived file folder: {0}".format(e))
             return False
 
-        Log.result("Experiment {0} unarchived succesfully", expid)
+        Log.result("Experiment {0} unarchived successfully", experiment_id)
         return True
 
     @staticmethod
