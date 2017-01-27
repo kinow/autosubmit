@@ -636,10 +636,10 @@ class JobList:
                 continue
             if job.check.lower() != 'true':
                 Log.warning('Template {0} will not be checked'.format(job.section))
-                continue
-            if not job.check_script(as_conf, self.parameters):
-                out = False
-                Log.warning("Invalid parameter substitution in {0} template", job.section)
+            else:
+                if not job.check_script(as_conf, self.parameters):
+                    out = False
+                    Log.warning("Invalid parameter substitution in {0} template", job.section)
             sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
