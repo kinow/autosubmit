@@ -436,7 +436,7 @@ class Job(object):
         previous_status = self.status
 
         if new_status == Status.COMPLETED:
-            Log.debug("This job seems to have completed...checking")
+            Log.debug("This job seems to have completed: checking...")
             self.platform.get_completed_files(self.name)
             self.check_completion()
         else:
@@ -448,9 +448,14 @@ class Job(object):
         elif self.status is Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.FAILED:
-            Log.user_warning("Job {0} is FAILED", self.name)
+            Log.user_warning("Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
+            self.platform.get_completed_files(self.name)
+            self.check_completion()
+            if self.status is Status.COMPLETED:
+                Log.warning('Job {0} seems to have failed but there is a COMPLETED file', self.name)
+                Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.UNKNOWN:
-            Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
+            Log.debug("Job {0} in UNKNOWN status. Checking completed files...", self.name)
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status is Status.UNKNOWN:
@@ -483,7 +488,7 @@ class Job(object):
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.warning("Job {0} seemed to be completed but there is no COMPLETED file", self.name)
+            Log.warning("Job {0} completion check failed. There is no COMPLETED file", self.name)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
