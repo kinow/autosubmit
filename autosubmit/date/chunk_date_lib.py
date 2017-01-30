@@ -328,3 +328,17 @@ def date2str(date, date_format=''):
                                                              date.second)
     else:
         return "{0:04}{1:02}{2:02}".format(date.year, date.month, date.day)
+
+
+def sum_str_hours(str_hour1, str_hour2):
+    hours1, minutes1 = split_str_hours(str_hour1)
+    hours2, minutes2 = split_str_hours(str_hour2)
+    total_minutes = minutes1 + minutes2 + (hours1 * 60) + (hours2 * 60)
+    return "%02d:%02d" % (total_minutes / 60, total_minutes % 60)
+
+
+def split_str_hours(str_hour):
+    str_splitted = str_hour.split(':')
+    if len(str_splitted) == 2:
+        return int(str_splitted[0]), int(str_splitted[1])
+    raise Exception('Incorrect input. Usage: \'HH:MM\'')

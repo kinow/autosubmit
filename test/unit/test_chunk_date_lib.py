@@ -198,3 +198,15 @@ class TestChunkDateLib(TestCase):
         self.assertEqual(date2str(datetime(2000, 1, 1), 'H'), '2000010100')
         self.assertEqual(date2str(datetime(2000, 1, 1), 'M'), '200001010000')
         self.assertEqual(date2str(datetime(2000, 1, 1), 'S'), '20000101000000')
+
+    def test_sum_str_hours(self):
+        self.assertEqual(sum_str_hours('00:30', '00:30'), '01:00')
+        self.assertEqual(sum_str_hours('14:30', '14:30'), '29:00')
+        self.assertEqual(sum_str_hours('50:45', '50:30'), '101:15')
+
+    def test_split_str_hours(self):
+        self.assertEqual(split_str_hours('00:30'), (0, 30))
+        self.assertEqual(split_str_hours('12:55'), (12, 55))
+        with self.assertRaises(Exception):
+            parse_date('30')
+
