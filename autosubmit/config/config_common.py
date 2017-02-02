@@ -774,6 +774,14 @@ class AutosubmitConfig(object):
         """
         return int(self._conf_parser.get('config', 'TOTALJOBS'))
 
+    def get_max_wallclock(self):
+        """
+        Returns max wallclock from autosubmit's config file
+
+        :rtype: str
+        """
+        return self.get_option(self._conf_parser, 'config', 'MAX_WALLCLOCK', '')
+
     def get_max_waiting_jobs(self):
         """
         Returns max number of waitng jobs from autosubmit's config file

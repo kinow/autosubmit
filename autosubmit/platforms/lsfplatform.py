@@ -174,27 +174,25 @@ class LsfHeader:
                     self.id_run = id_run
 
                 def run(self):
-                    out = str(self.template) + "." + str(self.id_run) + ".out"
-                    err = str(self.template) + "." + str(self.id_run) + ".err"
-                    command = str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
-                    (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+                    out = str(self.template) + '.' + str(self.id_run) + '.out'
+                    err = str(self.template) + '.' + str(self.id_run) + '.err'
+                    command = str(self.template) + ' ' + str(self.id_run) + ' ' + os.getcwd()
+                    (self.status) = getstatusoutput(command + ' > ' + out + ' 2> ' + err)
 
-            # Splitting the original hosts file
-            os.system("cat {5} | split -a 2 -d -l {3} - mlist-{6}-")
-
-            pid_list = []
-            scripts = {4}
+            scripts = {3}
 
             for i in range(len(scripts)):
                 current = JobThread(scripts[i], i)
-                pid_list.append(current)
                 current.start()
-
-            for pid in pid_list:
-                pid.join()
-                print "Status from ", pid.template,"is", pid.status
-            """.format(filename, wallclock, num_processors, (int(num_processors) / num_jobs), str(job_scripts),
-                       "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
+                current.join()
+                completed_filename = scripts[i].replace('.cmd', '_COMPLETED')
+                completed_path = os.path.join(os.getcwd(), completed_filename)
+                if os.path.exists(completed_path):
+                    print "The job ", current.template," has been COMPLETED"
+                else:
+                    print "The job ", current.template," has FAILED"
+                    os._exit(1)
+            """.format(filename, wallclock, num_processors, str(job_scripts)))
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################

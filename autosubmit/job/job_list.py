@@ -34,7 +34,7 @@ from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
 from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageThread
 from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str, parse_date
+from autosubmit.date.chunk_date_lib import date2str, parse_date, sum_str_hours
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
@@ -766,7 +766,7 @@ class JobList:
         # Logging obtained data
         Log.debug("Number of jobs ready: {0}", len(jobs_available))
         Log.debug("Number of jobs available: {0}", max_wait_jobs_to_submit)
-        Log.info("Jobs to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
+        Log.info("Jobs READY to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
         # If can submit jobs
         if max_wait_jobs_to_submit > 0 and max_jobs_to_submit > 0:
             available_sorted = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
@@ -775,10 +775,16 @@ class JobList:
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
             jobs_to_submit_by_section = self.divide_list_by_section(jobs_to_submit)
             packages_to_submit = list()
+
             if platform.allow_arrays:
+                max_jobs = min(max_wait_jobs_to_submit, max_jobs_to_submit)
                 for section_list in jobs_to_submit_by_section.values():
-                    packages_to_submit.append(JobPackageThread(section_list))
+                    built_packages, max_jobs = JobList.build_vertical_packages(section_list,
+                                                                               max_jobs,
+                                                                               platform.max_wallclock)
+                    packages_to_submit += built_packages
                 return packages_to_submit
+
             for job in jobs_to_submit:
                 packages_to_submit.append(JobPackageSimple([job]))
             return packages_to_submit
@@ -800,22 +806,50 @@ class JobList:
             by_section[job.section].append(job)
         return by_section
 
+    @staticmethod
+    def build_vertical_packages(section_list, max_jobs, max_wallclock):
+        packages = []
+        for job in section_list:
+            if max_jobs > 0:
+                jobs_list = JobList.build_vertical_package(job, [job], job.wallclock, max_jobs, max_wallclock)
+                packages.append(JobPackageThread(jobs_list))
+                max_jobs -= len(jobs_list)
+            else:
+                break
+        return packages, max_jobs
+
+    @staticmethod
+    def build_vertical_package(job, jobs_list, total_wallclock, max_jobs, max_wallclock):
+        if len(jobs_list) >= max_jobs:
+            return jobs_list
+        for child in job.children:
+            if child.section != job.section:
+                continue
+            if len(child.parents) > 1:
+                continue
+            total_wallclock = sum_str_hours(total_wallclock, child.wallclock)
+            if total_wallclock > max_wallclock:
+                return jobs_list
+            jobs_list.append(child)
+            return JobList.build_vertical_package(child, jobs_list, total_wallclock, max_jobs, max_wallclock)
+        return jobs_list
+
 
 class DicJobs:
     """
-    Class to create jobs from conf file and to find jobs by stardate, member and chunk
+    Class to create jobs from conf file and to find jobs by start date, member and chunk
 
-    :param joblist: joblist to use
-    :type joblist: JobList
+    :param jobs_list: jobs list to use
+    :type job_list: JobList
     :param parser: jobs conf file parser
     :type parser: SafeConfigParser
-    :param date_list: startdates
+    :param date_list: start dates
     :type date_list: list
     :param member_list: member
     :type member_list: list
     :param chunk_list: chunks
     :type chunk_list: list
-    :param date_format: option to formate dates
+    :param date_format: option to format dates
     :type date_format: str
     :param default_retrials: default retrials for ech job
     :type default_retrials: int

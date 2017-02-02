@@ -29,6 +29,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
+from autosubmit.date.chunk_date_lib import sum_str_hours
 
 
 class JobPackageBase(object):
@@ -196,9 +197,9 @@ class JobPackageThread(JobPackageBase):
         self._wallclock = '00:00'
         self._num_processors = '0'
         for job in jobs:
-            if job.wallclock > self._wallclock:
-                self._wallclock = job.wallclock
-            self._num_processors = str(int(self._num_processors) + int(job.processors))
+            if job.processors > self._num_processors:
+                self._num_processors = job.processors
+            self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
         super(JobPackageThread, self).__init__(jobs)
 
     def _create_scripts(self, configuration):
@@ -216,7 +217,7 @@ class JobPackageThread(JobPackageBase):
 
         script_content = self.platform.header.thread_header(filename, self._wallclock,
                                                             self._num_processors, len(self.jobs),
-                                                            self._job_scripts.values())
+                                                            self.jobs_scripts)
         filename += '.cmd'
         open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o775)
@@ -242,3 +243,10 @@ class JobPackageThread(JobPackageBase):
             self.jobs[i - 1].id = str(package_id)
             self.jobs[i - 1].status = Status.SUBMITTED
             self.jobs[i - 1].write_submit_time()
+
+    @property
+    def jobs_scripts(self):
+        jobs_scripts = []
+        for job in self.jobs:
+            jobs_scripts.append(self._job_scripts[job.name])
+        return jobs_scripts

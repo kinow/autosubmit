@@ -82,6 +82,7 @@ class SagaSubmitter(Submitter):
                 time.sleep(5)
         local_platform.type = 'local'
         local_platform.queue = ''
+        local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
@@ -160,12 +161,12 @@ class SagaSubmitter(Submitter):
             remote_platform.service._adaptor.host = remote_platform.host
             # noinspection PyProtectedMember
             remote_platform.service._adaptor.scheduler = remote_platform.scheduler
-
+            remote_platform.max_wallclock = AutosubmitConfig.get_option(parser, section, 'MAX_WALLCLOCK',
+                                                                        asconf.get_max_wallclock())
             remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
                                                                                asconf.get_max_waiting_jobs()))
             remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
                                                                          asconf.get_total_jobs()))
-
             remote_platform.project = AutosubmitConfig.get_option(parser, section, 'PROJECT', None)
             remote_platform.budget = AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project)
             remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')

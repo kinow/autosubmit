@@ -40,6 +40,7 @@ class Platform(object):
         self.scheduler = None
         self.directory = None
         self.hyperthreading = 'false'
+        self.max_wallclock = ''
         self._allow_arrays = False
 
     @property
