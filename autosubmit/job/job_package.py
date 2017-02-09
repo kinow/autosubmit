@@ -23,8 +23,9 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 
-import time
 import os
+import time
+import random
 from autosubmit.job.job_common import Status
 from autosubmit.config.log import Log
 from autosubmit.job.job_exceptions import WrongTemplateException
@@ -191,8 +192,10 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs):
+    def __init__(self, jobs, dependency=None):
+        super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
+        self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
@@ -200,28 +203,27 @@ class JobPackageThread(JobPackageBase):
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        super(JobPackageThread, self).__init__(jobs)
+        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+                                                              self._num_processors,
+                                                              len(self._jobs))
 
     def _create_scripts(self, configuration):
-        timestamp = str(int(time.time()))
-        filename = self.FILE_PREFIX + "_{0}_{1}_{2}".format(timestamp, self._num_processors, len(self.jobs))
         for i in range(1, len(self.jobs) + 1):
             self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
             self.jobs[i - 1].remote_logs = (
                 self._job_scripts[self.jobs[i - 1].name] + ".{0}.out".format(i - 1),
                 self._job_scripts[self.jobs[i - 1].name] + ".{0}.err".format(i - 1)
             )
-        self._common_script = self._create_common_script(filename)
+        self._common_script = self._create_common_script()
 
-    def _create_common_script(self, filename):
-
-        script_content = self.platform.header.thread_header(filename, self._wallclock,
-                                                            self._num_processors, len(self.jobs),
-                                                            self.jobs_scripts)
-        filename += '.cmd'
-        open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
-        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
-        return filename
+    def _create_common_script(self):
+        script_content = self.platform.header.thread_header(self._name, self._wallclock,
+                                                            self._num_processors, self.jobs_scripts,
+                                                            self._dependency_directive())
+        script_file = self.name + '.cmd'
+        open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
+        os.chmod(os.path.join(self._tmp_path, script_file), 0o775)
+        return script_file
 
     def _send_files(self):
         for job in self.jobs:
@@ -243,6 +245,13 @@ class JobPackageThread(JobPackageBase):
             self.jobs[i - 1].id = str(package_id)
             self.jobs[i - 1].status = Status.SUBMITTED
             self.jobs[i - 1].write_submit_time()
+
+    def _dependency_directive(self):
+        return '#' if self._job_dependency is None else '#BSUB -w \'done("{0}")\' [-ti]'.format(self._job_dependency)
+
+    @property
+    def name(self):
+        return self._name
 
     @property
     def jobs_scripts(self):

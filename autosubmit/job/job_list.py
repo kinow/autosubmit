@@ -517,7 +517,7 @@ class JobList:
 
     def update_from_file(self, store_change=True):
         """
-        Updates joblist on the fly from and update file
+        Updates jobs list on the fly from and update file
         :param store_change: if True, renames the update file to avoid reloading it at the next iteration
         """
         if os.path.exists(os.path.join(self._persistence_path, self._update_file)):
@@ -809,11 +809,20 @@ class JobList:
     @staticmethod
     def build_vertical_packages(section_list, max_jobs, max_wallclock):
         packages = []
+        potential_dependency = None
         for job in section_list:
             if max_jobs > 0:
                 jobs_list = JobList.build_vertical_package(job, [job], job.wallclock, max_jobs, max_wallclock)
-                packages.append(JobPackageThread(jobs_list))
                 max_jobs -= len(jobs_list)
+                if job.status is Status.READY:
+                    packages.append(JobPackageThread(jobs_list))
+                else:
+                    packages.append(JobPackageThread(jobs_list, potential_dependency))
+                if True:  # not true, should be a config param
+                    child = JobList.get_wrappable_child(jobs_list[-1], JobList.is_wrappable)
+                    if child is not None:
+                        section_list.insert(section_list.index(job) + 1, child)
+                        potential_dependency = packages[-1].name
             else:
                 break
         return packages, max_jobs
@@ -822,17 +831,29 @@ class JobList:
     def build_vertical_package(job, jobs_list, total_wallclock, max_jobs, max_wallclock):
         if len(jobs_list) >= max_jobs:
             return jobs_list
-        for child in job.children:
-            if child.section != job.section:
-                continue
-            if len(child.parents) > 1:
-                continue
+        child = JobList.get_wrappable_child(job, JobList.is_wrappable)
+        if child is not None:
             total_wallclock = sum_str_hours(total_wallclock, child.wallclock)
-            if total_wallclock > max_wallclock:
-                return jobs_list
-            jobs_list.append(child)
-            return JobList.build_vertical_package(child, jobs_list, total_wallclock, max_jobs, max_wallclock)
+            if total_wallclock <= max_wallclock:
+                jobs_list.append(child)
+                return JobList.build_vertical_package(child, jobs_list, total_wallclock, max_jobs, max_wallclock)
         return jobs_list
+
+    @staticmethod
+    def get_wrappable_child(job, check_function):
+        for child in job.children:
+            if check_function(job, child):
+                return child
+            continue
+        return None
+
+    @staticmethod
+    def is_wrappable(parent, child):
+        if child.section != parent.section:
+            return False
+        if len(child.parents) > 1:
+            return False
+        return True
 
 
 class DicJobs:

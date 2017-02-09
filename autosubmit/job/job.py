@@ -425,7 +425,7 @@ class Job(object):
         """
         return self._get_from_total_stats(1)
 
-    def update_status(self, new_status, copy_remote_logs):
+    def update_status(self, new_status, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -454,6 +454,8 @@ class Job(object):
             if self.status is Status.COMPLETED:
                 Log.warning('Job {0} seems to have failed but there is a COMPLETED file', self.name)
                 Log.result("Job {0} is COMPLETED", self.name)
+            else:
+                self.update_children_status()
         elif self.status is Status.UNKNOWN:
             Log.debug("Job {0} in UNKNOWN status. Checking completed files...", self.name)
             self.platform.get_completed_files(self.name)
@@ -476,6 +478,13 @@ class Job(object):
             if copy_remote_logs:
                 self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
+
+    def update_children_status(self):
+        children = list(self.children)
+        for child in children:
+            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
+                child.status = Status.FAILED
+                children += list(child.children)
 
     def check_completion(self, default_status=Status.FAILED):
         """
@@ -723,10 +732,10 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.platform.get_stat_file(self.name, retries=5):
+        if self.platform.get_stat_file(self.name, retries=0):
             start_time = self.check_start_time()
         else:
-            Log.warning('Could not get start time for {0}. Using current time as an aproximation', self.name)
+            Log.warning('Could not get start time for {0}. Using current time as an approximation', self.name)
             start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -742,7 +751,7 @@ class Job(object):
         :param completed: True if job was completed succesfuly, False otherwise
         :type completed: bool
         """
-        self.platform.get_stat_file(self.name, retries=5)
+        self.platform.get_stat_file(self.name, retries=0)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')

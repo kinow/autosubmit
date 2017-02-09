@@ -656,6 +656,8 @@ class Autosubmit:
                     for platform in platforms_to_test:
                         for job in job_list.get_in_queue(platform):
                             prev_status = job.status
+                            if job.status == Status.FAILED:
+                                continue
                             if prev_status != job.update_status(platform.check_job(job.id),
                                                                 as_conf.get_copy_remote_logs() == 'true'):
 

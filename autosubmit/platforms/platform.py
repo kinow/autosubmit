@@ -192,7 +192,7 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=5):
+    def get_completed_files(self, job_name, retries=0):
         """
         Get the COMPLETED file of the given job
 
@@ -242,7 +242,7 @@ class Platform(object):
             return True
         return False
 
-    def get_stat_file(self, job_name, retries=1):
+    def get_stat_file(self, job_name, retries=0):
         """
         Copies *STAT* files from remote to local
 

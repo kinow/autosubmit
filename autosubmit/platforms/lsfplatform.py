@@ -147,7 +147,7 @@ class LsfHeader:
             """.format(filename, array_id, wallclock, num_processors))
 
     @classmethod
-    def thread_header(cls, filename, wallclock, num_processors, num_jobs, job_scripts):
+    def thread_header(cls, filename, wallclock, num_processors, job_scripts, dependency_directive):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -159,6 +159,7 @@ class LsfHeader:
             #BSUB -e {0}.err
             #BSUB -W {1}
             #BSUB -n {2}
+            {4}
             #
             ###############################################################################
 
@@ -192,7 +193,7 @@ class LsfHeader:
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, wallclock, num_processors, str(job_scripts)))
+            """.format(filename, wallclock, num_processors, str(job_scripts), dependency_directive))
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
