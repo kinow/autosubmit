@@ -1,5 +1,5 @@
 from unittest import TestCase
-from autosubmit.date.chunk_date_lib import *
+from bscearth.utils.date import *
 from datetime import datetime
 
 

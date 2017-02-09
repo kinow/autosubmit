@@ -68,14 +68,14 @@ from job.job_list import JobList
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
-from config.log import Log
+from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
-from date.chunk_date_lib import date2str
+from bscearth.utils.date import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
 from platforms.saga_submitter import SagaSubmitter

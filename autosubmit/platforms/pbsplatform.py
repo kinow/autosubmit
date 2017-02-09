@@ -20,7 +20,7 @@ import textwrap
 import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class PBSPlatform(ParamikoPlatform):

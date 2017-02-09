@@ -33,8 +33,8 @@ from shutil import move
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
 from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageThread
-from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str, parse_date, sum_str_hours
+from bscearth.utils.log import Log
+from bscearth.utils.date import date2str, parse_date, sum_str_hours
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction

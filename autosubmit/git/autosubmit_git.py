@@ -24,7 +24,7 @@ import subprocess
 import shutil
 
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class AutosubmitGit:

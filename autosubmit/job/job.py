@@ -27,7 +27,7 @@ import time
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython, StatisticsSnippetR
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.date.chunk_date_lib import *
+from bscearth.utils.date import *
 
 
 class Job(object):

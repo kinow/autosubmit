@@ -20,7 +20,7 @@
 import smtplib
 import email.utils
 from email.mime.text import MIMEText
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class MailNotifier:

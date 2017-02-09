@@ -23,7 +23,7 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 CURRENT_DATABASE_VERSION = 1

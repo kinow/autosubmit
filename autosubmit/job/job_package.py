@@ -27,10 +27,10 @@ import os
 import time
 import random
 from autosubmit.job.job_common import Status
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
-from autosubmit.date.chunk_date_lib import sum_str_hours
+from bscearth.utils.date import sum_str_hours
 
 
 class JobPackageBase(object):

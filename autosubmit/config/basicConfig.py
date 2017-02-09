@@ -24,7 +24,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 import os
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class BasicConfig:

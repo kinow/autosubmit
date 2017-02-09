@@ -5,8 +5,8 @@ from time import sleep
 import os
 import saga
 
-from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str
+from bscearth.utils.log import Log
+from bscearth.utils.date import date2str
 from autosubmit.job.job_common import Status, Type
 from autosubmit.platforms.platform import Platform
 

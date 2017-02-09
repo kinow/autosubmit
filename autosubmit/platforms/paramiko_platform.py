@@ -4,11 +4,11 @@ import os
 import paramiko
 import datetime
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
-from autosubmit.date.chunk_date_lib import date2str
+from bscearth.utils.date import date2str
 
 
 class ParamikoPlatform(Platform):

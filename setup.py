@@ -41,7 +41,7 @@ setup(
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
                       'numpy', 'matplotlib', 'saga-python>=0.40', 'paramiko==1.15',
-                      'mock>=1.3.0', 'portalocker>=0.5.7', 'networkx'],
+                      'mock>=1.3.0', 'portalocker>=0.5.7', 'networkx', 'bscearth.utils'],
     extras_require={
         'dialog': ["python2-pythondialog>=3.3.0"]
     },
@@ -58,9 +58,5 @@ setup(
         'docs/autosubmit.pdf'
     ]
     },
-    scripts=['bin/autosubmit'],  # data_files = [
-    # ('', ['VERSION']),
-    # ('conf', ['lib/autosubmit/config/files/autosubmit.conf','lib/autosubmit/config/files/expdef.conf']),
-    # ('data', ['lib/autosubmit/database/data/autosubmit.sql'])  #	]		  #entry_points = {
-    # 'console_scripts' : ['check_exp = bin/check_exp.py']  #	'gui_scripts' : ['monitor = monitor.py']  #	}
+    scripts=['bin/autosubmit']
 )

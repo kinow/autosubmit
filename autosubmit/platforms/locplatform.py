@@ -24,7 +24,7 @@ import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class LocalPlatform(ParamikoPlatform):

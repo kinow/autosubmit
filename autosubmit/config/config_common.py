@@ -28,8 +28,8 @@ import subprocess
 
 from pyparsing import nestedExpr
 
-from autosubmit.date.chunk_date_lib import parse_date
-from autosubmit.config.log import Log
+from bscearth.utils.date import parse_date
+from bscearth.utils.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 

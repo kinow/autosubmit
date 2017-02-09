@@ -21,7 +21,7 @@ import os
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class EcPlatform(ParamikoPlatform):

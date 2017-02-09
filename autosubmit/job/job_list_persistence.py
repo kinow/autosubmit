@@ -21,7 +21,7 @@ from sys import setrecursionlimit
 
 import os
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.database.db_manager import DbManager
 
 

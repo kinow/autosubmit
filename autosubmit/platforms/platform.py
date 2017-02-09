@@ -2,7 +2,7 @@ from time import sleep
 
 import os
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 
 
