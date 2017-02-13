@@ -33,6 +33,7 @@ class SagaSubmitter(Submitter):
     """
     Class to manage the experiments platform
     """
+
     def load_platforms(self, asconf, retries=10):
         """
         Create all the platforms object that will be used by the experiment
@@ -61,7 +62,7 @@ class SagaSubmitter(Submitter):
 
         job_parser = asconf.jobs_parser
         for job in job_parser.sections():
-            hpc = AutosubmitConfig.get_option(job_parser, job, 'PLATFORM', hpcarch).lower()
+            hpc = job_parser.get_option(job, 'PLATFORM', hpcarch).lower()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
@@ -102,12 +103,12 @@ class SagaSubmitter(Submitter):
             if section.lower() not in platforms_used:
                 continue
 
-            platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
+            platform_type = parser.get_option(section, 'TYPE', '').lower()
 
             remote_platform = SagaPlatform(asconf.expid, section.lower(), BasicConfig)
             remote_platform.type = platform_type
 
-            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
+            platform_version = parser.get_option(section, 'VERSION', '')
             if platform_type == 'pbs':
                 adaptor = 'pbs+ssh'
             elif platform_type == 'sge':
@@ -121,7 +122,7 @@ class SagaSubmitter(Submitter):
                     adaptor = 'lsf+ssh'
             elif platform_type == 'ecaccess':
                 adaptor = 'ecaccess'
-                remote_platform.scheduler = AutosubmitConfig.get_option(parser, section, 'SCHEDULER', 'pbs').lower()
+                remote_platform.scheduler = parser.get_option(section, 'SCHEDULER', 'pbs').lower()
             elif platform_type == 'slurm':
                 adaptor = 'slurm+ssh'
             elif platform_type == '':
@@ -129,15 +130,15 @@ class SagaSubmitter(Submitter):
             else:
                 adaptor = platform_type
 
-            if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
-                host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
-                                        AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            if parser.get_option(section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
+                host = '{0}-{1}'.format(parser.get_option(section, 'HOST', None),
+                                        parser.get_option(section, 'PROJECT', None))
             else:
-                host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
+                host = parser.get_option(section, 'HOST', None)
 
             if adaptor.endswith('ssh'):
                 ctx = saga.Context('ssh')
-                ctx.user_id = AutosubmitConfig.get_option(parser, section, 'USER', None)
+                ctx.user_id = parser.get_option(section, 'USER', None)
                 session = saga.Session(False)
                 session.add_context(ctx)
             else:
@@ -161,34 +162,32 @@ class SagaSubmitter(Submitter):
             remote_platform.service._adaptor.host = remote_platform.host
             # noinspection PyProtectedMember
             remote_platform.service._adaptor.scheduler = remote_platform.scheduler
-            remote_platform.max_wallclock = AutosubmitConfig.get_option(parser, section, 'MAX_WALLCLOCK',
-                                                                        asconf.get_max_wallclock())
-            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                               asconf.get_max_waiting_jobs()))
-            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                         asconf.get_total_jobs()))
-            remote_platform.project = AutosubmitConfig.get_option(parser, section, 'PROJECT', None)
-            remote_platform.budget = AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project)
-            remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')
-            remote_platform.exclusivity = AutosubmitConfig.get_option(parser, section, 'EXCLUSIVITY', '').lower()
-            remote_platform.user = AutosubmitConfig.get_option(parser, section, 'USER', None)
-            remote_platform.scratch = AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None)
-            remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
-            remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
-            remote_platform.processors_per_node = AutosubmitConfig.get_option(parser, section, 'PROCESSORS_PER_NODE',
-                                                                              None)
-            remote_platform.scratch_free_space = AutosubmitConfig.get_option(parser, section, 'SCRATCH_FREE_SPACE',
-                                                                             None)
+            remote_platform.max_wallclock = parser.get_option(section, 'MAX_WALLCLOCK',
+                                                              asconf.get_max_wallclock())
+            remote_platform.max_waiting_jobs = int(parser.get_option(section, 'MAX_WAITING_JOBS',
+                                                                     asconf.get_max_waiting_jobs()))
+            remote_platform.total_jobs = int(parser.get_option(section, 'TOTAL_JOBS',
+                                                               asconf.get_total_jobs()))
+            remote_platform.project = parser.get_option(section, 'PROJECT', None)
+            remote_platform.budget = parser.get_option(section, 'BUDGET', remote_platform.project)
+            remote_platform.reservation = parser.get_option(section, 'RESERVATION', '')
+            remote_platform.exclusivity = parser.get_option(section, 'EXCLUSIVITY', '').lower()
+            remote_platform.user = parser.get_option(section, 'USER', None)
+            remote_platform.scratch = parser.get_option(section, 'SCRATCH_DIR', None)
+            remote_platform._default_queue = parser.get_option(section, 'QUEUE', None)
+            remote_platform._serial_queue = parser.get_option(section, 'SERIAL_QUEUE', None)
+            remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
+                                                                    None)
+            remote_platform.scratch_free_space = parser.get_option(section, 'SCRATCH_FREE_SPACE',
+                                                                   None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
             platforms[section.lower()] = remote_platform
 
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section.lower()].serial_platform = platforms[AutosubmitConfig.get_option(parser, section,
-                                                                                                   'SERIAL_PLATFORM',
-                                                                                                   None).lower()]
+                platforms[section.lower()].serial_platform = platforms[parser.get_option(section,
+                                                                                         'SERIAL_PLATFORM',
+                                                                                         None).lower()]
 
         self.platforms = platforms
-
-

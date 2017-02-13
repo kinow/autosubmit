@@ -4,7 +4,7 @@ from unittest import TestCase
 import os
 from mock import Mock
 
-from autosubmit.config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList

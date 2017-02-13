@@ -56,7 +56,7 @@ class ParamikoSubmitter(Submitter):
 
         job_parser = asconf.jobs_parser
         for job in job_parser.sections():
-            hpc = AutosubmitConfig.get_option(job_parser, job, 'PLATFORM', hpcarch).lower()
+            hpc = job_parser.get_option(job, 'PLATFORM', hpcarch).lower()
             if hpc not in platforms_used:
                 platforms_used.append(hpc)
 
@@ -78,8 +78,8 @@ class ParamikoSubmitter(Submitter):
             if section.lower() not in platforms_used:
                 continue
 
-            platform_type = AutosubmitConfig.get_option(parser, section, 'TYPE', '').lower()
-            platform_version = AutosubmitConfig.get_option(parser, section, 'VERSION', '')
+            platform_type = parser.get_option(section, 'TYPE', '').lower()
+            platform_version = parser.get_option(section, 'VERSION', '')
             try:
                 if platform_type == 'pbs':
                     remote_platform = PBSPlatform(asconf.expid, section.lower(), BasicConfig, platform_version)
@@ -103,33 +103,33 @@ class ParamikoSubmitter(Submitter):
             remote_platform.type = platform_type
             remote_platform._version = platform_version
 
-            if AutosubmitConfig.get_option(parser, section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
-                host = '{0}-{1}'.format(AutosubmitConfig.get_option(parser, section, 'HOST', None),
-                                        AutosubmitConfig.get_option(parser, section, 'PROJECT', None))
+            if parser.get_option(section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
+                host = '{0}-{1}'.format(parser.get_option(section, 'HOST', None),
+                                        parser.get_option(section, 'PROJECT', None))
             else:
-                host = AutosubmitConfig.get_option(parser, section, 'HOST', None)
+                host = parser.get_option(section, 'HOST', None)
 
             remote_platform.host = host
-            remote_platform.max_wallclock = AutosubmitConfig.get_option(parser, section, 'MAX_WALLCLOCK',
-                                                                        asconf.get_max_wallclock())
-            remote_platform.max_waiting_jobs = int(AutosubmitConfig.get_option(parser, section, 'MAX_WAITING_JOBS',
-                                                                               asconf.get_max_waiting_jobs()))
-            remote_platform.total_jobs = int(AutosubmitConfig.get_option(parser, section, 'TOTAL_JOBS',
-                                                                         asconf.get_total_jobs()))
-            remote_platform.hyperthreading = AutosubmitConfig.get_option(parser, section, 'HYPERTHREADING',
-                                                                         'false').lower()
-            remote_platform.project = AutosubmitConfig.get_option(parser, section, 'PROJECT', None)
-            remote_platform.budget = AutosubmitConfig.get_option(parser, section, 'BUDGET', remote_platform.project)
-            remote_platform.reservation = AutosubmitConfig.get_option(parser, section, 'RESERVATION', '')
-            remote_platform.exclusivity = AutosubmitConfig.get_option(parser, section, 'EXCLUSIVITY', '').lower()
-            remote_platform.user = AutosubmitConfig.get_option(parser, section, 'USER', None)
-            remote_platform.scratch = AutosubmitConfig.get_option(parser, section, 'SCRATCH_DIR', None)
-            remote_platform._default_queue = AutosubmitConfig.get_option(parser, section, 'QUEUE', None)
-            remote_platform._serial_queue = AutosubmitConfig.get_option(parser, section, 'SERIAL_QUEUE', None)
-            remote_platform.processors_per_node = AutosubmitConfig.get_option(parser, section, 'PROCESSORS_PER_NODE',
-                                                                              None)
-            remote_platform.scratch_free_space = AutosubmitConfig.get_option(parser, section, 'SCRATCH_FREE_SPACE',
-                                                                             None)
+            remote_platform.max_wallclock = parser.get_option(section, 'MAX_WALLCLOCK',
+                                                              asconf.get_max_wallclock())
+            remote_platform.max_waiting_jobs = int(parser.get_option(section, 'MAX_WAITING_JOBS',
+                                                                     asconf.get_max_waiting_jobs()))
+            remote_platform.total_jobs = int(parser.get_option(section, 'TOTAL_JOBS',
+                                                               asconf.get_total_jobs()))
+            remote_platform.hyperthreading = parser.get_option(section, 'HYPERTHREADING',
+                                                               'false').lower()
+            remote_platform.project = parser.get_option(section, 'PROJECT', None)
+            remote_platform.budget = parser.get_option(section, 'BUDGET', remote_platform.project)
+            remote_platform.reservation = parser.get_option(section, 'RESERVATION', '')
+            remote_platform.exclusivity = parser.get_option(section, 'EXCLUSIVITY', '').lower()
+            remote_platform.user = parser.get_option(section, 'USER', None)
+            remote_platform.scratch = parser.get_option(section, 'SCRATCH_DIR', None)
+            remote_platform._default_queue = parser.get_option(section, 'QUEUE', None)
+            remote_platform._serial_queue = parser.get_option(section, 'SERIAL_QUEUE', None)
+            remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
+                                                                    None)
+            remote_platform.scratch_free_space = parser.get_option(section, 'SCRATCH_FREE_SPACE',
+                                                                   None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
             remote_platform.update_cmds()
@@ -137,8 +137,8 @@ class ParamikoSubmitter(Submitter):
 
         for section in parser.sections():
             if parser.has_option(section, 'SERIAL_PLATFORM'):
-                platforms[section.lower()].serial_platform = platforms[AutosubmitConfig.get_option(parser, section,
-                                                                                                   'SERIAL_PLATFORM',
-                                                                                                   None).lower()]
+                platforms[section.lower()].serial_platform = platforms[parser.get_option(section,
+                                                                                         'SERIAL_PLATFORM',
+                                                                                         None).lower()]
 
         self.platforms = platforms

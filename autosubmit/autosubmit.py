@@ -61,7 +61,7 @@ import saga
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
-from config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
@@ -2168,7 +2168,7 @@ class Autosubmit:
     def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
         as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
         exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
-        if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
+        if exp_parser.get_bool_option('rerun', "RERUN", True):
             Log.error('Can not test a RERUN experiment')
             return False
 
@@ -2178,7 +2178,7 @@ class Autosubmit:
                 platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
                 test_platforms = list()
                 for section in platforms_parser.sections():
-                    if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
+                    if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
                         test_platforms.append(section)
                 if len(test_platforms) == 0:
                     Log.critical('No test HPC defined')

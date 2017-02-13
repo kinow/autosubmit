@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from mock import Mock
 import math
-from autosubmit.config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.job.job_list import DicJobs

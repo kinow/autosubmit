@@ -1,6 +1,6 @@
 from unittest import TestCase
 from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from mock import Mock
 from mock import patch
 from mock import mock_open
@@ -52,40 +52,6 @@ class TestAutosubmitConfig(TestCase):
         self.assertTrue(isinstance(returned_parser, SafeConfigParser))
         factory_mock.create_parser.assert_called_with()
         parser_mock.read.assert_called_with(file_path)
-
-    def test_get_option(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-        default = 'dummy-default'
-        option_value = 'dummy-value'
-
-        parser_mock = self._create_parser_mock(True, option_value)
-
-        # act
-        returned_option = AutosubmitConfig.get_option(parser_mock, section, option, default)
-
-        # assert
-        parser_mock.has_option.assert_called_once_with(section, option)
-        self.assertTrue(isinstance(returned_option, str))
-        self.assertNotEqual(default, returned_option)
-        self.assertEqual(option_value, returned_option)
-
-    def test_get_option_case_default(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-        default = 'dummy-default'
-
-        parser_mock = self._create_parser_mock(False)
-
-        # act
-        returned_option = AutosubmitConfig.get_option(parser_mock, section, option, default)
-
-        # assert
-        parser_mock.has_option.assert_called_once_with(section, option)
-        self.assertTrue(isinstance(returned_option, str))
-        self.assertEqual(default, returned_option)
 
     def test_experiment_file(self):
         self.assertEqual(self.config.experiment_file,
@@ -176,7 +142,7 @@ class TestAutosubmitConfig(TestCase):
         # arrange
         parser_mock = self._create_parser_mock(True)
         # act
-        exists = AutosubmitConfig.check_exists(parser_mock, self.section, self.option)
+        exists = parser_mock.check_exists(self.section, self.option)
         # assert
         parser_mock.has_option.assert_called_once_with(self.section, self.option)
         self.assertTrue(exists)
@@ -185,7 +151,7 @@ class TestAutosubmitConfig(TestCase):
         # arrange
         parser_mock = self._create_parser_mock(False)
         # act
-        exists = AutosubmitConfig.check_exists(parser_mock, self.section, self.option)
+        exists = parser_mock.check_exists(self.section, self.option)
         # assert
         parser_mock.has_option.assert_called_once_with(self.section, self.option)
         self.assertFalse(exists)
@@ -280,136 +246,6 @@ class TestAutosubmitConfig(TestCase):
         self.assertEquals(4, len(project_parameters))
         for i in range(1, 4):
             self.assertEquals(project_parameters.get('dummy_key' + str(i)), 'dummy_value' + str(i))
-
-    def test_check_json(self):
-        # arrange
-        valid_json = '[it_is_a_sample", "true]'
-        invalid_json = '{[[dummy]random}'
-
-        # act
-        should_be_true = AutosubmitConfig.check_json('random_key', valid_json)
-        should_be_false = AutosubmitConfig.check_json('random_key', invalid_json)
-
-        # assert
-        self.assertTrue(should_be_true)
-        self.assertFalse(should_be_false)
-
-    def test_check_is_int(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-
-        parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
-        parser_mock.get = Mock(side_effect=['123', 'dummy'])
-
-        # act
-        should_be_true = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
-        should_be_true2 = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
-        should_be_false = AutosubmitConfig.check_is_int(parser_mock, section, option, False)
-        should_be_false2 = AutosubmitConfig.check_is_int(parser_mock, section, option, True)
-
-        # assert
-        self.assertTrue(should_be_true)
-        self.assertTrue(should_be_true2)
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
-
-    def test_check_is_boolean(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-
-        parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
-        parser_mock.get = Mock(side_effect=['True', 'dummy'])
-
-        # act
-        should_be_true = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
-        should_be_true2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
-        should_be_false = AutosubmitConfig.check_is_boolean(parser_mock, section, option, False)
-        should_be_false2 = AutosubmitConfig.check_is_boolean(parser_mock, section, option, True)
-
-        # assert
-        self.assertTrue(should_be_true)
-        self.assertTrue(should_be_true2)
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
-
-    def test_check_regex(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-
-        parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, False, True, True, True, True, False, True, True, True, True])
-        parser_mock.get = Mock(side_effect=['dummy-value', '999999', 'dummy-value', 'dummy-value', '999999'])
-
-        # act
-        # TODO: unexpected logic?
-        should_be_false = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
-        should_be_true = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]')
-        should_be_false2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, 'dummy-regex')
-        should_be_true2 = AutosubmitConfig.check_regex(parser_mock, section, option, False, '[0-9]*')
-
-        should_be_false3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
-        should_be_false4 = AutosubmitConfig.check_regex(parser_mock, section, option, True, 'dummy-regex')
-        should_be_true3 = AutosubmitConfig.check_regex(parser_mock, section, option, True, '[0-9]*')
-
-        # assert
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
-        self.assertFalse(should_be_false3)
-        self.assertFalse(should_be_false4)
-
-        self.assertTrue(should_be_true)
-        self.assertTrue(should_be_true2)
-        self.assertTrue(should_be_true3)
-
-    def test_check_is_choice(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-        choices = ['dummy-choice1', 'dummy-choice2']
-
-        parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[False, True, True, False])
-        parser_mock.get = Mock(side_effect=[choices[1], 'not-a-choice'])
-
-        # act
-        should_be_true = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
-        should_be_true2 = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
-        should_be_false = AutosubmitConfig.check_is_choice(parser_mock, section, option, False, choices)
-        should_be_false2 = AutosubmitConfig.check_is_choice(parser_mock, section, option, True, choices)
-
-        # assert
-        self.assertTrue(should_be_true)
-        self.assertTrue(should_be_true2)
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
-
-    def test_get_bool_option(self):
-        # arrange
-        section = 'any-section'
-        option = 'any-option'
-
-        parser_mock = Mock(spec=SafeConfigParser)
-        parser_mock.has_option = Mock(side_effect=[True, True, False, False])
-        parser_mock.get = Mock(side_effect=['false', 'true'])
-
-        # act
-        should_be_false = AutosubmitConfig.get_bool_option(parser_mock, section, option, True)
-        should_be_true = AutosubmitConfig.get_bool_option(parser_mock, section, option, False)
-
-        should_be_false2 = AutosubmitConfig.get_bool_option(parser_mock, section, option, False)
-        should_be_true2 = AutosubmitConfig.get_bool_option(parser_mock, section, option, True)
-
-        # assert
-        self.assertTrue(should_be_true)
-        self.assertTrue(should_be_true2)
-
-        self.assertFalse(should_be_false)
-        self.assertFalse(should_be_false2)
 
     def test_get_startdates_list(self):
         # arrange

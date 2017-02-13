@@ -142,7 +142,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._jobs_parser, section, 'WALLCLOCK', '')
+        return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
     def get_processors(self, section):
         """
@@ -152,7 +152,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'PROCESSORS', 1))
+        return str(self._jobs_parser.get_option(section, 'PROCESSORS', 1))
 
     def get_threads(self, section):
         """
@@ -162,7 +162,7 @@ class AutosubmitConfig(object):
         :return: threads needed
         :rtype: str
         """
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'THREADS', 1))
+        return int(self._jobs_parser.get_option(section, 'THREADS', 1))
 
     def get_tasks(self, section):
         """
@@ -172,7 +172,7 @@ class AutosubmitConfig(object):
         :return: tasks (processes) per host
         :rtype: int
         """
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'TASKS', 0))
+        return int(self._jobs_parser.get_option(section, 'TASKS', 0))
 
     def get_scratch_free_space(self, section):
         """
@@ -182,7 +182,7 @@ class AutosubmitConfig(object):
         :return: percentage of scratch free space needed
         :rtype: int
         """
-        return int(AutosubmitConfig.get_option(self._jobs_parser, section, 'SCRATCH_FREE_SPACE', 0))
+        return int(self._jobs_parser.get_option(section, 'SCRATCH_FREE_SPACE', 0))
 
     def get_memory(self, section):
         """
@@ -192,7 +192,7 @@ class AutosubmitConfig(object):
         :return: memory needed
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY', ''))
+        return str(self._jobs_parser.get_option(section, 'MEMORY', ''))
 
     def get_memory_per_task(self, section):
         """
@@ -202,7 +202,7 @@ class AutosubmitConfig(object):
         :return: memory per task needed
         :rtype: str
         """
-        return str(AutosubmitConfig.get_option(self._jobs_parser, section, 'MEMORY_PER_TASK', ''))
+        return str(self._jobs_parser.get_option(section, 'MEMORY_PER_TASK', ''))
 
     def check_conf_files(self):
         """
@@ -234,12 +234,12 @@ class AutosubmitConfig(object):
         result = True
 
         self._conf_parser.read(self._conf_parser_file)
-        result = result and AutosubmitConfig.check_exists(self._conf_parser, 'config', 'AUTOSUBMIT_VERSION')
-        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'MAXWAITINGJOBS', True)
-        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'TOTALJOBS', True)
-        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'SAFETYSLEEPTIME', True)
-        result = result and AutosubmitConfig.check_is_int(self._conf_parser, 'config', 'RETRIALS', True)
-        result = result and AutosubmitConfig.check_is_boolean(self._conf_parser, 'mail', 'NOTIFICATIONS', False)
+        result = result and self._conf_parser.check_exists('config', 'AUTOSUBMIT_VERSION')
+        result = result and self._conf_parser.check_is_int('config', 'MAXWAITINGJOBS', True)
+        result = result and self._conf_parser.check_is_int('config', 'TOTALJOBS', True)
+        result = result and self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True)
+        result = result and self._conf_parser.check_is_int('config', 'RETRIALS', True)
+        result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
 
@@ -270,20 +270,20 @@ class AutosubmitConfig(object):
             Log.error('There are repeated platforms names')
 
         for section in self._platforms_parser.sections():
-            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'TYPE')
-            platform_type = AutosubmitConfig.get_option(self._platforms_parser, section, 'TYPE', '').lower()
+            result = result and self._platforms_parser.check_exists(section, 'TYPE')
+            platform_type = self._platforms_parser.get_option(section, 'TYPE', '').lower()
             if platform_type != 'ps':
-                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'PROJECT')
-                result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'USER')
+                result = result and self._platforms_parser.check_exists(section, 'PROJECT')
+                result = result and self._platforms_parser.check_exists(section, 'USER')
 
-            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'HOST')
-            result = result and AutosubmitConfig.check_exists(self._platforms_parser, section, 'SCRATCH_DIR')
-            result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section,
-                                                                  'ADD_PROJECT_TO_HOST', False)
-            result = result and AutosubmitConfig.check_is_boolean(self._platforms_parser, section, 'TEST_SUITE', False)
-            result = result and AutosubmitConfig.check_is_int(self._platforms_parser, section, 'MAX_WAITING_JOBS',
-                                                              False)
-            result = result and AutosubmitConfig.check_is_int(self._platforms_parser, section, 'TOTAL_JOBS', False)
+            result = result and self._platforms_parser.check_exists(section, 'HOST')
+            result = result and self._platforms_parser.check_exists(section, 'SCRATCH_DIR')
+            result = result and self._platforms_parser.check_is_boolean(section,
+                                                                        'ADD_PROJECT_TO_HOST', False)
+            result = result and self._platforms_parser.check_is_boolean(section, 'TEST_SUITE', False)
+            result = result and self._platforms_parser.check_is_int(section, 'MAX_WAITING_JOBS',
+                                                                    False)
+            result = result and self._platforms_parser.check_is_int(section, 'TOTAL_JOBS', False)
 
         if not result:
             Log.critical("{0} is not a valid config file".format(os.path.basename(self._platforms_parser_file)))
@@ -310,14 +310,14 @@ class AutosubmitConfig(object):
             Log.error('There are repeated job names')
 
         for section in sections:
-            result = result and AutosubmitConfig.check_exists(parser, section, 'FILE')
-            result = result and AutosubmitConfig.check_is_boolean(parser, section, 'RERUN_ONLY', False)
+            result = result and parser.check_exists(section, 'FILE')
+            result = result and parser.check_is_boolean(section, 'RERUN_ONLY', False)
 
             if parser.has_option(section, 'PLATFORM'):
-                result = result and AutosubmitConfig.check_is_choice(parser, section, 'PLATFORM', False, platforms)
+                result = result and parser.check_is_choice(section, 'PLATFORM', False, platforms)
 
             if parser.has_option(section, 'DEPENDENCIES'):
-                for dependency in str(AutosubmitConfig.get_option(parser, section, 'DEPENDENCIES', '')).split(' '):
+                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
@@ -328,15 +328,15 @@ class AutosubmitConfig(object):
                                                                                                          dependency))
 
             if parser.has_option(section, 'RERUN_DEPENDENCIES'):
-                for dependency in str(AutosubmitConfig.get_option(parser, section, 'RERUN_DEPENDENCIES',
-                                                                  '')).split(' '):
+                for dependency in str(parser.get_option(section, 'RERUN_DEPENDENCIES',
+                                                        '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     if dependency not in sections:
                         Log.error(
                             'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
                                                                                                          dependency))
-            result = result and AutosubmitConfig.check_is_choice(parser, section, 'RUNNING', False,
+            result = result and parser.check_is_choice(section, 'RUNNING', False,
                                                                  ['once', 'date', 'member', 'chunk'])
 
         if not result:
@@ -356,35 +356,35 @@ class AutosubmitConfig(object):
         result = True
         parser = self._exp_parser
 
-        result = result and AutosubmitConfig.check_exists(parser, 'DEFAULT', 'EXPID')
-        result = result and AutosubmitConfig.check_exists(parser, 'DEFAULT', 'HPCARCH')
+        result = result and parser.check_exists('DEFAULT', 'EXPID')
+        result = result and parser.check_exists('DEFAULT', 'HPCARCH')
 
-        result = result and AutosubmitConfig.check_exists(parser, 'experiment', 'DATELIST')
-        result = result and AutosubmitConfig.check_exists(parser, 'experiment', 'MEMBERS')
-        result = result and AutosubmitConfig.check_is_choice(parser, 'experiment', 'CHUNKSIZEUNIT', True,
-                                                             ['year', 'month', 'day', 'hour'])
-        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'CHUNKSIZE', True)
-        result = result and AutosubmitConfig.check_is_int(parser, 'experiment', 'NUMCHUNKS', True)
-        result = result and AutosubmitConfig.check_is_choice(parser, 'experiment', 'CALENDAR', True,
-                                                             ['standard', 'noleap'])
+        result = result and parser.check_exists('experiment', 'DATELIST')
+        result = result and parser.check_exists('experiment', 'MEMBERS')
+        result = result and parser.check_is_choice('experiment', 'CHUNKSIZEUNIT', True,
+                                                   ['year', 'month', 'day', 'hour'])
+        result = result and parser.check_is_int('experiment', 'CHUNKSIZE', True)
+        result = result and parser.check_is_int('experiment', 'NUMCHUNKS', True)
+        result = result and parser.check_is_choice('experiment', 'CALENDAR', True,
+                                                   ['standard', 'noleap'])
 
-        result = result and AutosubmitConfig.check_is_boolean(parser, 'rerun', 'RERUN', True)
+        result = result and parser.check_is_boolean('rerun', 'RERUN', True)
 
-        if AutosubmitConfig.check_is_choice(parser, 'project', 'PROJECT_TYPE', True,
-                                            ['none', 'git', 'svn', 'local']):
-            project_type = AutosubmitConfig.get_option(parser, 'project', 'PROJECT_TYPE', '')
+        if parser.check_is_choice('project', 'PROJECT_TYPE', True,
+                                  ['none', 'git', 'svn', 'local']):
+            project_type = parser.get_option('project', 'PROJECT_TYPE', '')
 
             if project_type == 'git':
-                result = result and AutosubmitConfig.check_exists(parser, 'git', 'PROJECT_ORIGIN')
-                result = result and AutosubmitConfig.check_exists(parser, 'git', 'PROJECT_BRANCH')
+                result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
+                result = result and parser.check_exists('git', 'PROJECT_BRANCH')
             elif project_type == 'svn':
-                result = result and AutosubmitConfig.check_exists(parser, 'svn', 'PROJECT_URL')
-                result = result and AutosubmitConfig.check_exists(parser, 'svn', 'PROJECT_REVISION')
+                result = result and parser.check_exists('svn', 'PROJECT_URL')
+                result = result and parser.check_exists('svn', 'PROJECT_REVISION')
             elif project_type == 'local':
-                result = result and AutosubmitConfig.check_exists(parser, 'local', 'PROJECT_PATH')
+                result = result and parser.check_exists('local', 'PROJECT_PATH')
 
             if project_type != 'none':
-                result = result and AutosubmitConfig.check_exists(parser, 'project_files', 'FILE_PROJECT_CONF')
+                result = result and parser.check_exists('project_files', 'FILE_PROJECT_CONF')
         else:
             result = False
 
@@ -510,7 +510,7 @@ class AutosubmitConfig(object):
         :return: path to project config file
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._exp_parser, 'project_files', 'FILE_JOBS_CONF', '')
+        return self._exp_parser.get_option('project_files', 'FILE_JOBS_CONF', '')
 
     def get_git_project_origin(self):
         """
@@ -519,7 +519,7 @@ class AutosubmitConfig(object):
         :return: git origin
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_ORIGIN', '')
+        return self._exp_parser.get_option('git', 'PROJECT_ORIGIN', '')
 
     def get_git_project_branch(self):
         """
@@ -528,7 +528,7 @@ class AutosubmitConfig(object):
         :return: git branch
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_BRANCH', None)
+        return self._exp_parser.get_option('git', 'PROJECT_BRANCH', None)
 
     def get_git_project_commit(self):
         """
@@ -537,7 +537,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return AutosubmitConfig.get_option(self._exp_parser, 'git', 'PROJECT_COMMIT', None)
+        return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
 
     def get_project_destination(self):
         """
@@ -667,7 +667,7 @@ class AutosubmitConfig(object):
         :return: initial chunk
         :rtype: int
         """
-        chunk_ini = self.get_option(self._exp_parser, 'experiment', 'CHUNKINI', default)
+        chunk_ini = self._exp_parser.get_option('experiment', 'CHUNKINI', default)
         if chunk_ini == '':
             return default
         return int(chunk_ini)
@@ -780,7 +780,7 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        return self.get_option(self._conf_parser, 'config', 'MAX_WALLCLOCK', '')
+        return self._conf_parser.get_option('config', 'MAX_WALLCLOCK', '')
 
     def get_max_waiting_jobs(self):
         """
@@ -798,7 +798,7 @@ class AutosubmitConfig(object):
         :return: default type such as bash, python, r..
         :rtype: str
         """
-        return self.get_option(self._exp_parser, 'project_files', 'JOB_SCRIPTS_TYPE', 'bash')
+        return self._exp_parser.get_option('project_files', 'JOB_SCRIPTS_TYPE', 'bash')
 
     def get_safetysleeptime(self):
         """
@@ -837,7 +837,7 @@ class AutosubmitConfig(object):
         :return: if notifications
         :rtype: bool
         """
-        return self.get_option(self._conf_parser, 'mail', 'NOTIFICATIONS', 'false').lower()
+        return self._conf_parser.get_option('mail', 'NOTIFICATIONS', 'false').lower()
 
     def get_copy_remote_logs(self):
         """
@@ -846,7 +846,7 @@ class AutosubmitConfig(object):
         :return: if logs local copy
         :rtype: bool
         """
-        return self.get_option(self._conf_parser, 'storage', 'COPY_REMOTE_LOGS', 'true').lower()
+        return self._conf_parser.get_option('storage', 'COPY_REMOTE_LOGS', 'true').lower()
 
     def get_mails_to(self):
         """
@@ -855,7 +855,7 @@ class AutosubmitConfig(object):
         :return: mail address
         :rtype: [str]
         """
-        return [str(x) for x in self.get_option(self._conf_parser, 'mail', 'TO', '').split(' ')]
+        return [str(x) for x in self._conf_parser.get_option('mail', 'TO', '').split(' ')]
 
     def get_communications_library(self):
         """
@@ -864,7 +864,7 @@ class AutosubmitConfig(object):
         :return: communications library
         :rtype: str
         """
-        return self.get_option(self._conf_parser, 'communications', 'API', 'paramiko').lower()
+        return self._conf_parser.get_option('communications', 'API', 'paramiko').lower()
 
     def get_storage_type(self):
         """
@@ -873,7 +873,7 @@ class AutosubmitConfig(object):
         :return: communications library
         :rtype: str
         """
-        return self.get_option(self._conf_parser, 'storage', 'TYPE', 'pkl').lower()
+        return self._conf_parser.get_option('storage', 'TYPE', 'pkl').lower()
 
     @staticmethod
     def is_valid_mail_address(mail_address):
@@ -891,7 +891,7 @@ class AutosubmitConfig(object):
         return storage_type in ['pkl', 'db']
 
     def is_valid_git_repository(self):
-        origin_exists = self.check_exists(self._exp_parser, 'git', 'PROJECT_ORIGIN')
+        origin_exists = self._exp_parser.check_exists('git', 'PROJECT_ORIGIN')
         branch = self.get_git_project_branch()
         commit = self.get_git_project_commit()
         return origin_exists and (branch is not None or commit is not None)
@@ -911,188 +911,3 @@ class AutosubmitConfig(object):
         parser.optionxform = str
         parser.read(file_path)
         return parser
-
-    @staticmethod
-    def get_option(parser, section, option, default):
-        """
-        Gets an option from given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to get
-        :type option: str
-        :param default: value to be returned if option is not present
-        :type default: object
-        :return: option value
-        :rtype: str
-        """
-        if parser.has_option(section, option):
-            return parser.get(section, option)
-        else:
-            return default
-
-    @staticmethod
-    def get_bool_option(parser, section, option, default):
-        """
-        Gets a boolean option from given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to get
-        :type option: str
-        :param default: value to be returned if option is not present
-        :type default: bool
-        :return: option value
-        :rtype: bool
-        """
-        if parser.has_option(section, option):
-            return parser.get(section, option).lower().strip() == 'true'
-        else:
-            return default
-
-    @staticmethod
-    def check_exists(parser, section, option):
-        """
-        Checks if an option exists in given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to check
-        :type option: str
-        :return: True if option exists, False otherwise
-        :rtype: bool
-        """
-        if parser.has_option(section, option):
-            return True
-        else:
-            Log.error('Option {0} in section {1} not found'.format(option, section))
-            return False
-
-    @staticmethod
-    def check_is_boolean(parser, section, option, must_exist):
-        """
-        Checks if an option is a boolean value in given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to check
-        :type option: str
-        :param must_exist: if True, option must exist
-        :type must_exist: bool
-        :return: True if option value is boolean, False otherwise
-        :rtype: bool
-        """
-        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
-            Log.error('Option {0} in section {1} must exist'.format(option, section))
-            return False
-        if AutosubmitConfig.get_option(parser, section, option, 'false').lower() not in ['false', 'true']:
-            Log.error('Option {0} in section {1} must be true or false'.format(option, section))
-            return False
-        return True
-
-    @staticmethod
-    def check_is_choice(parser, section, option, must_exist, choices):
-        """
-        Checks if an option is a valid choice in given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to check
-        :type option: str
-        :param must_exist: if True, option must exist
-        :type must_exist: bool
-        :param choices: valid choices
-        :type choices: list
-        :return: True if option value is a valid choice, False otherwise
-        :rtype: bool
-        """
-        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
-            return False
-        value = AutosubmitConfig.get_option(parser, section, option, choices[0])
-        if value not in choices:
-            Log.error('Value {2} in option {0} in section {1} is not a valid choice'.format(option, section, value))
-            return False
-        return True
-
-    @staticmethod
-    def check_is_int(parser, section, option, must_exist):
-        """
-        Checks if an option is an integer value in given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to check
-        :type option: str
-        :param must_exist: if True, option must exist
-        :type must_exist: bool
-        :return: True if option value is integer, False otherwise
-        :rtype: bool
-        """
-        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
-            return False
-        value = AutosubmitConfig.get_option(parser, section, option, '1')
-        try:
-            int(value)
-        except ValueError:
-            Log.error('Option {0} in section {1} is not valid an integer'.format(option, section))
-            return False
-        return True
-
-    @staticmethod
-    def check_regex(parser, section, option, must_exist, regex):
-        """
-        Checks if an option complies with a regular expression in given parser
-
-        :param parser: parser to use
-        :type parser: SafeConfigParser
-        :param section: section that contains the option
-        :type section: str
-        :param option: option to check
-        :type option: str
-        :param must_exist: if True, option must exist
-        :type must_exist: bool
-        :param regex: regular expression to check
-        :type regex: str
-        :return: True if option complies with regex, False otherwise
-        :rtype: bool
-        """
-        if must_exist and not AutosubmitConfig.check_exists(parser, section, option):
-            return False
-        prog = re.compile(regex)
-        value = AutosubmitConfig.get_option(parser, section, option, '1')
-        if not prog.match(value):
-            Log.error('Option {0} in section {1} is not valid: {2}'.format(option, section, value))
-            return False
-        return True
-
-    @staticmethod
-    def check_json(key, value):
-        """
-        Checks if value is a valid json
-
-        :param key: key to check
-        :type key: str
-        :param value: value
-        :type value: str
-        :return: True if value is a valid json, False otherwise
-        :rtype: bool
-        """
-        # noinspection PyBroadException
-        try:
-            nestedExpr('[', ']').parseString(value).asList()
-            return True
-        except:
-            Log.error("Invalid value {0}: {1}", key, value)
-            return False
