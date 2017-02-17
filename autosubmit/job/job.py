@@ -231,6 +231,19 @@ class Job(object):
     def remote_logs(self, value):
         self._remote_logs = value
 
+    @property
+    def total_processors(self):
+        if ':' in self.processors:
+            return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
+        return self.processors
+
+    @property
+    def total_wallclock(self):
+        if self.wallclock:
+            hours, minutes = self.wallclock.split(':')
+            return float(minutes) / 60 + float(hours)
+        return 0
+
     def log_job(self):
         """
         Prints job information in log
@@ -424,6 +437,22 @@ class Job(object):
         :rtype: list[int]
         """
         return self._get_from_total_stats(1)
+
+    def get_last_retrials(self):
+        log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        retrials_list = []
+        if os.path.exists(log_name):
+            already_completed = False
+            for retrial in reversed(open(log_name).readlines()):
+                retrial_fields = retrial.split()
+                if Job.is_a_completed_retrial(retrial_fields):
+                    if already_completed:
+                        break
+                    already_completed = True
+                retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
+                                    retrial_fields)
+                retrials_list.insert(0, retrial_dates)
+        return retrials_list
 
     def update_status(self, new_status, copy_remote_logs=False):
         """
@@ -668,6 +697,13 @@ class Job(object):
         return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
                         snippet.as_tailer()])
+
+    @staticmethod
+    def is_a_completed_retrial(fields):
+        if len(fields) == 4:
+            if fields[3] == 'COMPLETED':
+                return True
+        return False
 
     def create_script(self, as_conf):
         """
