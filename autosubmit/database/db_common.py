@@ -284,7 +284,7 @@ def delete_experiment(experiment_id):
     """
     if not check_db():
         return False
-    if check_experiment_exists(experiment_id, False):
+    if not check_experiment_exists(experiment_id, False):
         return True
     try:
         (conn, cursor) = open_conn()
