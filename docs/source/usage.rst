@@ -204,6 +204,25 @@ More info on password-less ssh can be found at: http://www.linuxproblem.org/art_
 
 .. caution:: After launching Autosubmit, one must be aware of login expiry limit and policy (if applicable for any HPC) and renew the login access accordingly (by using token/key etc) before expiry.
 
+How to run an experiment that was created with another version
+==============================================================
+
+.. important:: First of all you have to stop your Autosubmit instance related with the experiment
+
+Once you've already loaded / installed the Autosubmit version do you want:
+::
+
+    autosubmit create EXPID
+    autosubmit recovery EXPID -s -all
+    autosubmit run EXPID
+
+*EXPID* is the experiment identifier.
+
+The most common problem when you change your Autosubmit version is the apparition of several Python errors.
+This is due to how Autosubmit saves internally the data, which can be incompatible between versions.
+The steps above represent the process to re-create (1) these internal data structures and to recover (2) the previous status of your experiment.
+
+
 How to test the experiment
 ==========================
 This method is to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
@@ -351,6 +370,25 @@ The location where user can find the generated plots with date and timestamp can
 
     <experiments_directory>/cxxx/plot/cxxx_statistics_<date>_<time>.pdf
 
+
+How to add your particular statistics
+=====================================
+Although Autosubmit saves several statistics about your experiment, as the queueing time for each job, how many failures per job, etc.
+The user also might be interested in adding his particular statistics to the Autosubmit stats report (```autosubmit stats EXPID```).
+The allowed format for this feature is the same as the Autosubmit configuration files: INI style. For example:
+::
+
+    [COUPLING]
+    LOAD_BALANCE = 0.44
+    RECOMMEDED_PROCS_MODEL_A = 522
+    RECOMMEDED_PROCS_MODEL_B = 418
+
+The location where user can put this stats is in the file:
+::
+
+    <experiments_directory>/cxxx/tmp/cxxx_GENERAL_STATS
+
+.. hint:: If it is not yet created, you can manually create the file: ```expid_GENERAL_STATS``` inside the ```tmp``` folder.
 
 How to stop the experiment
 ==========================
