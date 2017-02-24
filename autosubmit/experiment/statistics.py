@@ -42,6 +42,7 @@ class ExperimentStats(object):
         self._total_jobs_run = 0
         self._total_jobs_failed = 0
         self._total_jobs_completed = 0
+        self._total_queueing_time = datetime.timedelta()
         self._cpu_consumption = datetime.timedelta()
         self._real_consumption = datetime.timedelta()
         self._expected_cpu_consumption = 0
@@ -121,6 +122,7 @@ class ExperimentStats(object):
             self._threshold = max(self._threshold, job.total_wallclock)
             self._expected_cpu_consumption += job.total_wallclock * int(job.total_processors)
             self._expected_real_consumption += job.total_wallclock
+            self._total_queueing_time += self._queued[i]
 
     def _calculate_maxs(self):
         max_run = max(max(self._run), max(self._fail_run))
@@ -136,6 +138,7 @@ class ExperimentStats(object):
                         'Run  (#): ' + str(self._total_jobs_run),
                         'Failed  (#): ' + str(self._total_jobs_failed),
                         'Completed (#): ' + str(self._total_jobs_completed),
+                        'Queueing time (h): ' + str(round(timedelta2hours(self._total_queueing_time), 2)),
                         'Expected consumption real (h): ' + str(round(self._expected_real_consumption, 2)),
                         'Expected consumption CPU time (h): ' + str(round(self._expected_cpu_consumption, 2)),
                         'Consumption real (h): ' + str(round(timedelta2hours(self._real_consumption), 2)),
