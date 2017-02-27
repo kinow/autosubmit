@@ -146,7 +146,7 @@ class SagaPlatform(Platform):
                 else:
                     # noinspection PyTypeChecker
                     self.directory = saga.filesystem.Directory("sftp://{0}{1}".format(self.host, self.get_files_path()),
-                                                               session=self.session)
+                                                               session=self.service.session)
             except:
                 return False
 
