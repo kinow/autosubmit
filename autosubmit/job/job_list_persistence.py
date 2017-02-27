@@ -105,7 +105,7 @@ class JobListPersistenceDb(JobListPersistence):
     JOB_LIST_TABLE = 'job_list'
     TABLE_FIELDS = ['name', 'id', 'status', 'priority',
                     'section', 'date', 'member', 'chunk',
-                    'local_out', 'local_err'
+                    'local_out', 'local_err',
                     'remote_out', 'remote_err']
 
     def __init__(self, persistence_path, persistence_file):
