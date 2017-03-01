@@ -1,12 +1,32 @@
 3.8.0
     First version with LSF arrays
 
+3.7.8
+    Some bug fixes:
+    - Database persistence
+    - Delete command
+    - Unarchive command
+    - CHUNKINI option
+    - Paramiko permissions
+    - Paramiko non-existing remote copy
+    - Saga sessions
+
+3.7.7
+    Some improvements for Slurm platforms
+    Geo-definition of processors
+    New configuration variables:
+    - CHUNKINI
+    - MEMORY
+    - MEMORY_PER_TASK
+    - HYPERTHREADING
+    Other minor bug fixes
+
 3.7.6
     Fixed refresh
     Fixed recovery for ECMWF
     Local logs copy can be disabled
     Some UX improvements
-    Other minor bugfixes
+    Other minor bug fixes
 
 3.7.5
     Fixed minor with LSF's logs
@@ -18,22 +38,22 @@
     PROCESSORS_PER_NODE/TASKS now optional
     Exclusivity for MN3 (with Paramiko)
     THREADS optional for ECMWF
-    Minor bugfixes
+    Minor bug fixes
 
 3.7.3
     Fixed error with logs directives (err & out were swapped)
     Added new option for MN3: SCRATCH_FREE_SPACE
     PROCESSORS_PER_NODE/TASKS now available with Paramiko
-    Other minor bugfixes
+    Other minor bug fixes
 
 3.7.2
-    Minor bugfixes
+    Minor bug fixes
     Regression test suite improved
     Solved some problems with paramiko & ECMWF platform
 
 3.7.1
     Fixed issue in setstatus
-    Added new testcase command
+    Added new 'testcase' command
 
 3.7.0
     Big improvements on memory consumption
@@ -44,7 +64,7 @@
     Fixed error with LSF schedulers by default
     Fixed bug on stats feature
     Fixed some bugs with Git and SVN
-    Other minor bugfixes
+    Other minor bug fixes
 
 3.6.1
     Fixed an incompatibility with recent versions of radical.utils (saga)
@@ -54,14 +74,14 @@
     UX improved on some error cases
     Fixed permission backwards incompatibility
     Fixed authorization problems on SAGA implementation
-    Other minor bugfixes
+    Other minor bug fixes
 
 3.5.0
     Added another mechanism for SAGA errors prevention
     Added no-plot option to setstatus
     Added exclusivity and processes per host support for MN
     Check method fixed (not working since 3.2)
-    Other minor bugfixes
+    Other minor bug fixes
 
 3.4.1
     Hot-fix ECMWF binary (bash, R, python)
@@ -135,7 +155,7 @@
     Minor bug fixes
 
 3.1.1
-    Hotfix for issue with noleap calendar
+    Fix for issue with 'noleap' calendar
 
 3.1.0
     Added archive and unarchive commands
@@ -152,13 +172,13 @@
     Fixed bug in delete.
     Added readme and changelog commands.
     MAX_WAITING_JOBS and TOTAL_JOBS now defined by platform.
-    Simplified console output of run subcommand.
+    Simplified console output of run sub command.
 
 3.0.3
     Fixed bug in expid test.
 
 3.0.2
-    Fixed bug in localplatform.
+    Fixed bug in the local platform.
 
 3.0.1
     Fixed bug in config.
