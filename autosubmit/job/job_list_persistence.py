@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,6 +16,7 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
 import pickle
 from sys import setrecursionlimit
 

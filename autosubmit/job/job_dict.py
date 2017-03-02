@@ -17,6 +17,10 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
+from autosubmit.job.job import Job
+from bscearth.utils.date import date2str
+from autosubmit.job.job_common import Status, Type
+
 
 class DicJobs:
     """
@@ -90,7 +94,7 @@ class DicJobs:
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
-        Create jobs to be run once per startdate
+        Create jobs to be run once per start date
 
         :param section: section to read
         :type section: str
@@ -273,12 +277,12 @@ class DicJobs:
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
-        type = self.get_option(section, "TYPE", default_job_type).lower()
-        if type == 'bash':
+        job_type = self.get_option(section, "TYPE", default_job_type).lower()
+        if job_type == 'bash':
             job.type = Type.BASH
-        elif type == 'python':
+        elif job_type == 'python':
             job.type = Type.PYTHON
-        elif type == 'r':
+        elif job_type == 'r':
             job.type = Type.R
 
         job.platform_name = self.get_option(section, "PLATFORM", None)
