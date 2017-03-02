@@ -6,7 +6,7 @@ import math
 from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
-from autosubmit.job.job_list import DicJobs
+from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 

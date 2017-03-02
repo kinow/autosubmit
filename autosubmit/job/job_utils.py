@@ -17,3 +17,17 @@ def transitive_reduction(graph):
             u_edges -= {y for x, y in dfs_edges(graph, v)}
         reduced_graph.add_edges_from((u, v) for v in u_edges)
     return reduced_graph
+
+
+class Dependency(object):
+    """
+    Class to manage the metadata related with a dependency
+
+    """
+
+    def __init__(self, section, distance=None, running=None, sign=None):
+        self.section = section
+        self.distance = distance
+        self.running = running
+        self.sign = sign
+

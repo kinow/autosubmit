@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -81,6 +81,8 @@ from notifications.notifier import Notifier
 from platforms.saga_submitter import SagaSubmitter
 from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
+from job.job_packager import JobPackager
+
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
@@ -707,9 +709,11 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            for job_package in job_list.get_ready_packages(platform):
+            Log.info("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
+            packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages()
+            for package in packages_to_submit:
                 try:
-                    job_package.submit(as_conf, job_list.parameters)
+                    package.submit(as_conf, job_list.parameters)
                     save = True
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
