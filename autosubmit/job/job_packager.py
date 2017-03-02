@@ -37,9 +37,9 @@ class JobPackager(object):
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_available))
-        Log.debug("Number of jobs available: {0}", max_wait_jobs_to_submit)
-        Log.info("Jobs READY to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform)))
+        Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
+        Log.info("Jobs READY to submit: {0}", min(self._max_wait_jobs_to_submit, len(jobs_list.get_ready(platform))))
 
     def build_packages(self):
         """
