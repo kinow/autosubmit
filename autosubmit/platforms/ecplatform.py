@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,12 +16,15 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
 from bscearth.utils.log import Log
+
+from autosubmit.platforms.headers.ec_header import EcHeader
+from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 
 
 class EcPlatform(ParamikoPlatform):
@@ -163,159 +166,3 @@ class EcPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
-
-
-class EcHeader:
-    """Class to handle the ECMWF headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    # noinspection PyPep8
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = ns
-            #@ job_type         = serial
-            #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ platforms
-            #
-            ###############################################################################
-            """)
-
-    # noinspection PyPep8
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = np
-            #@ job_type         = parallel
-            #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ ec_smt           = no
-            #@ total_tasks      = %NUMPROC%
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ platforms
-            #
-            ###############################################################################
-            """)
-
-
-class EcCcaHeader:
-    """Class to handle the ECMWF headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    # noinspection PyMethodMayBeStatic
-    def get_tasks_per_node(self, job):
-        if not isinstance(job.tasks, int):
-            return ""
-        else:
-            return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
-
-    # noinspection PyMethodMayBeStatic
-    def get_threads_per_task(self, job):
-        if not isinstance(job.threads, int):
-            return ""
-        else:
-            return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_memory_per_task_directive(self, job):
-        """
-        Returns memory per task directive for the specified job
-
-        :param job: job to create memory per task directive for
-        :type job: Job
-        :return: memory per task directive
-        :rtype: str
-        """
-        # There is no memory per task, so directive is empty
-        if job.parameters['MEMORY_PER_TASK'] != '':
-            return "#PBS -l EC_memory_per_task={0}mb".format(job.parameters['MEMORY_PER_TASK'])
-        return ""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_hyperthreading_directive(self, job):
-        """
-        Returns hyperthreading directive for the specified job
-
-        :param job: job to create hyperthreading directive for
-        :type job: Job
-        :return: hyperthreading per task directive
-        :rtype: str
-        """
-        # There is no memory per task, so directive is empty
-        if job.parameters['CURRENT_HYPERTHREADING'] == 'true':
-            return "#PBS -l EC_hyperthreads=2"
-        return "#PBS -l EC_hyperthreads=1"
-
-    SERIAL = textwrap.dedent("""\
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%CURRENT_BUDG%
-             #
-             ###############################################################################
-
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q np
-             #PBS -l EC_total_tasks=%NUMPROC%
-             %THREADS_PER_TASK_DIRECTIVE%
-             %TASKS_PER_NODE_DIRECTIVE%
-             %MEMORY_PER_TASK_DIRECTIVE%
-             %HYPERTHREADING_DIRECTIVE%
-             #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%CURRENT_BUDG%
-             #
-             ###############################################################################
-            """)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -18,11 +18,12 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import textwrap
 from xml.dom.minidom import parseString
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.local_header import LocalHeader
+
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.log import Log
 
@@ -150,32 +151,3 @@ class LocalPlatform(ParamikoPlatform):
         :type remote_logs: (str, str)
         """
         return
-
-
-class LocalHeader:
-    """Class to handle the Ps headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)

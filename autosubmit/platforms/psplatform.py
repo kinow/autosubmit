@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,11 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.ps_header import PsHeader
 
 
 class PsPlatform(ParamikoPlatform):
@@ -78,32 +79,3 @@ class PsPlatform(ParamikoPlatform):
 
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)
-
-
-class PsHeader:
-    """Class to handle the Ps headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,13 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 import subprocess
 
 from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.sge_header import SgeHeader
 
 
 class SgePlatform(ParamikoPlatform):
@@ -83,58 +84,3 @@ class SgePlatform(ParamikoPlatform):
 
     def get_checkjob_cmd(self, job_id):
         return self.get_qstatjob(job_id)
-
-
-class SgeHeader:
-    """Class to handle the Ithaca headers of a job"""
-
-    # noinspection PyMethodMayBeStatic
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        if job.parameters['CURRENT_QUEUE'] == '':
-            return ""
-        else:
-            return "$ -q {0}".format(job.parameters['CURRENT_QUEUE'])
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #$ -S /bin/sh
-            #$ -N %JOBNAME%
-            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -V
-            #$ -l h_rt=%WALLCLOCK%:00
-            #$ -l s_rt=%WALLCLOCK%:00
-            #%QUEUE_DIRECTIVE%
-            #
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #$ -S /bin/sh
-            #$ -N %JOBNAME%
-            #$ -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/
-            #$ -V
-            #$ -l h_rt=%WALLCLOCK%:00
-            #$ -l s_rt=%WALLCLOCK%:00
-            #$ -pe orte %NUMPROC%
-            #%QUEUE_DIRECTIVE%
-            #
-            ###############################################################################
-            """)
