@@ -42,6 +42,7 @@ class Platform(object):
         self.hyperthreading = 'false'
         self.max_wallclock = ''
         self._allow_arrays = False
+        self._allow_wrappers = False
 
     @property
     def serial_platform(self):
@@ -91,6 +92,10 @@ class Platform(object):
     @property
     def allow_arrays(self):
         return self._allow_arrays is True
+
+    @property
+    def allow_wrappers(self):
+        return self._allow_wrappers is True
 
     def add_parameters(self, parameters, main_hpc=False):
         """

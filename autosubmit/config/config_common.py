@@ -835,9 +835,27 @@ class AutosubmitConfig(object):
         Returns if the user has enabled the notifications from autosubmit's config file
 
         :return: if notifications
-        :rtype: bool
+        :rtype: string
         """
         return self._conf_parser.get_option('mail', 'NOTIFICATIONS', 'false').lower()
+
+    def get_remote_dependencies(self):
+        """
+        Returns if the user has enabled the remote dependencies from autosubmit's config file
+
+        :return: if remote dependencies
+        :rtype: bool
+        """
+        return self._conf_parser.get_option('wrapper', 'DEPENDENCIES', 'false').lower() == 'true'
+
+    def get_wrapper_type(self):
+        """
+        Returns what kind of wrapper (VERTICAL, HORIZONTAL, NONE) the user has configured in the autosubmit's config
+
+        :return: wrapper type (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
 
     def get_copy_remote_logs(self):
         """

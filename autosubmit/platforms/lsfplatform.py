@@ -38,6 +38,7 @@ class LsfPlatform(ParamikoPlatform):
         self.job_status['QUEUING'] = ['PEND', 'FW_PEND']
         self.job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
         self._allow_arrays = True
+        self._allow_wrappers = True
         self.update_cmds()
 
     def update_cmds(self):
