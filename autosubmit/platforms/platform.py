@@ -41,6 +41,7 @@ class Platform(object):
         self.directory = None
         self.hyperthreading = 'false'
         self.max_wallclock = ''
+        self.max_processors = None
         self._allow_arrays = False
         self._allow_wrappers = False
 

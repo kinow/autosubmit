@@ -84,6 +84,7 @@ class SagaSubmitter(Submitter):
         local_platform.type = 'local'
         local_platform.queue = ''
         local_platform.max_wallclock = asconf.get_max_wallclock()
+        local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
@@ -164,6 +165,8 @@ class SagaSubmitter(Submitter):
             remote_platform.service._adaptor.scheduler = remote_platform.scheduler
             remote_platform.max_wallclock = parser.get_option(section, 'MAX_WALLCLOCK',
                                                               asconf.get_max_wallclock())
+            remote_platform.max_processors = parser.get_option(section, 'MAX_PROCESSORS',
+                                                               asconf.get_max_processors())
             remote_platform.max_waiting_jobs = int(parser.get_option(section, 'MAX_WAITING_JOBS',
                                                                      asconf.get_max_waiting_jobs()))
             remote_platform.total_jobs = int(parser.get_option(section, 'TOTAL_JOBS',

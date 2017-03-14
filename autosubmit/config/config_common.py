@@ -782,9 +782,18 @@ class AutosubmitConfig(object):
         """
         return self._conf_parser.get_option('config', 'MAX_WALLCLOCK', '')
 
+    def get_max_processors(self):
+        """
+        Returns max processors from autosubmit's config file
+
+        :rtype: str
+        """
+        config_value = self._conf_parser.get_option('config', 'MAX_PROCESSORS', None)
+        return int(config_value) if config_value is not None else config_value
+
     def get_max_waiting_jobs(self):
         """
-        Returns max number of waitng jobs from autosubmit's config file
+        Returns max number of waiting jobs from autosubmit's config file
 
         :return: main platforms
         :rtype: int
