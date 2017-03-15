@@ -235,7 +235,7 @@ class Job(object):
     def total_processors(self):
         if ':' in self.processors:
             return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
-        return self.processors
+        return int(self.processors)
 
     @property
     def total_wallclock(self):

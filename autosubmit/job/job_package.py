@@ -200,13 +200,24 @@ class JobPackageThread(JobPackageBase):
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
-        for job in jobs:
-            if job.processors > self._num_processors:
-                self._num_processors = job.processors
-            self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
-                                                              self._num_processors,
-                                                              len(self._jobs))
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def _jobs_scripts(self):
+        jobs_scripts = []
+        for job in self.jobs:
+            jobs_scripts.append(self._job_scripts[job.name])
+        return jobs_scripts
+
+    @property
+    def _queue(self):
+        if str(self._num_processors) == '1':
+            return self.platform.serial_platform.serial_queue
+        else:
+            return self.platform.queue
 
     def _create_scripts(self, configuration):
         for i in range(1, len(self.jobs) + 1):
@@ -218,9 +229,7 @@ class JobPackageThread(JobPackageBase):
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):
-        script_content = self.platform.header.thread_header(self._name, self._wallclock,
-                                                            self._num_processors, self.jobs_scripts,
-                                                            self._dependency_directive())
+        script_content = self._common_script_content()
         script_file = self.name + '.cmd'
         open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
         os.chmod(os.path.join(self._tmp_path, script_file), 0o775)
@@ -247,16 +256,44 @@ class JobPackageThread(JobPackageBase):
             self.jobs[i - 1].status = Status.SUBMITTED
             self.jobs[i - 1].write_submit_time()
 
-    def _dependency_directive(self):
-        return '#' if self._job_dependency is None else '#BSUB -w \'done("{0}")\' [-ti]'.format(self._job_dependency)
 
-    @property
-    def name(self):
-        return self._name
+class JobPackageVertical(JobPackageThread):
+    """
+    Class to manage the package of jobs to be submitted by autosubmit
+    """
 
-    @property
-    def jobs_scripts(self):
-        jobs_scripts = []
-        for job in self.jobs:
-            jobs_scripts.append(self._job_scripts[job.name])
-        return jobs_scripts
+    def __init__(self, jobs, dependency=None):
+        super(JobPackageVertical, self).__init__(jobs, dependency)
+        for job in jobs:
+            if job.processors > self._num_processors:
+                self._num_processors = job.processors
+            self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
+        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+                                                              self._num_processors,
+                                                              len(self._jobs))
+
+    def _common_script_content(self):
+        return self.platform.wrapper.vertical(self._name, self._queue, self._wallclock,
+                                              self._num_processors, self._jobs_scripts,
+                                              self._job_dependency)
+
+
+class JobPackageHorizontal(JobPackageThread):
+    """
+    Class to manage the package of jobs to be submitted by autosubmit
+    """
+
+    def __init__(self, jobs, dependency=None):
+        super(JobPackageHorizontal, self).__init__(jobs, dependency)
+        for job in jobs:
+            if job.wallclock > self._wallclock:
+                self._wallclock = job.wallclock
+            self._num_processors = str(int(self._num_processors) + int(job.processors))
+        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+                                                              self._num_processors,
+                                                              len(self._jobs))
+
+    def _common_script_content(self):
+        return self.platform.wrapper.horizontal(self._name, self._queue, self._wallclock,
+                                                self._num_processors, len(self.jobs),
+                                                self._jobs_scripts, self._job_dependency)

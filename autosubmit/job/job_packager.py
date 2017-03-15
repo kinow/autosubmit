@@ -20,7 +20,7 @@
 from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageThread
+from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageVertical, JobPackageHorizontal
 
 
 class JobPackager(object):
@@ -61,15 +61,28 @@ class JobPackager(object):
         jobs_to_submit = list_of_available[0:num_jobs_to_submit]
         jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
 
-        if self._platform.allow_arrays:
+        # If wrapper allowed / well-configured
+        wrapper_type = self._as_config.get_wrapper_type()
+        if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical']:
+            remote_dependencies = self._as_config.get_remote_dependencies()
             max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
-            for section_list in jobs_to_submit_by_section.values():
-                built_packages, max_jobs = JobPackager._build_vertical_packages(section_list,
-                                                                                max_jobs,
-                                                                                platform.max_wallclock)
-                packages_to_submit += built_packages
-            return packages_to_submit
+            if wrapper_type == 'vertical':
+                for section_list in jobs_to_submit_by_section.values():
+                    built_packages, max_jobs = JobPackager._build_vertical_packages(section_list,
+                                                                                    max_jobs,
+                                                                                    self._platform.max_wallclock,
+                                                                                    remote_dependencies)
+                    packages_to_submit += built_packages
+                return packages_to_submit
+            elif wrapper_type == 'horizontal':
+                for section_list in jobs_to_submit_by_section.values():
+                    built_packages, max_jobs = JobPackager._build_horizontal_packages(section_list,
+                                                                                      max_jobs,
+                                                                                      self._platform.max_processors,
+                                                                                      remote_dependencies)
+                    packages_to_submit += built_packages
 
+        # No wrapper allowed / well-configured
         for job in jobs_to_submit:
             packages_to_submit.append(JobPackageSimple([job]))
         return packages_to_submit
@@ -91,7 +104,29 @@ class JobPackager(object):
         return by_section
 
     @staticmethod
-    def _build_vertical_packages(section_list, max_jobs, max_wallclock):
+    def _build_horizontal_packages(section_list, max_jobs, max_processors, remote_dependencies=False):
+        # TODO: Implement remote dependencies for horizontal wrapper
+        packages = []
+        current_package = []
+        current_processors = 0
+        for job in section_list:
+            if max_jobs > 0:
+                max_jobs -= 1
+                if (current_processors + job.total_processors) <= int(max_processors):
+                    current_package.append(job)
+                    current_processors += job.total_processors
+                else:
+                    packages.append(JobPackageHorizontal(current_package))
+                    current_package = [job]
+                    current_processors = job.total_processors
+            else:
+                break
+        if len(current_package) > 0:
+            packages.append(JobPackageHorizontal(current_package))
+        return packages, max_jobs
+
+    @staticmethod
+    def _build_vertical_packages(section_list, max_jobs, max_wallclock, remote_dependencies=False):
         packages = []
         potential_dependency = None
         for job in section_list:
@@ -99,10 +134,10 @@ class JobPackager(object):
                 jobs_list = JobPackager._build_vertical_package(job, [job], job.wallclock, max_jobs, max_wallclock)
                 max_jobs -= len(jobs_list)
                 if job.status is Status.READY:
-                    packages.append(JobPackageThread(jobs_list))
+                    packages.append(JobPackageVertical(jobs_list))
                 else:
-                    packages.append(JobPackageThread(jobs_list, potential_dependency))
-                if True:  # not true, should be a config param
+                    packages.append(JobPackageVertical(jobs_list, potential_dependency))
+                if remote_dependencies:
                     child = JobPackager._get_wrappable_child(jobs_list[-1], JobPackager._is_wrappable)
                     if child is not None:
                         section_list.insert(section_list.index(job) + 1, child)

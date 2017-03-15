@@ -43,6 +43,16 @@ class ParamikoPlatform(Platform):
         """
         return self._header
 
+    @property
+    def wrapper(self):
+        """
+        Handler to manage wrappers
+
+        :return: wrapper-handler
+        :rtype: object
+        """
+        return self._wrapper
+
     def connect(self):
         """
         Creates ssh connection to host

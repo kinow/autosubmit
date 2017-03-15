@@ -21,6 +21,7 @@ import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.lsf_header import LsfHeader
+from autosubmit.platforms.wrappers.lsf_wrapper import LsfWrapper
 
 
 class LsfPlatform(ParamikoPlatform):
@@ -33,6 +34,7 @@ class LsfPlatform(ParamikoPlatform):
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = LsfHeader()
+        self._wrapper = LsfWrapper()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['RUN']
