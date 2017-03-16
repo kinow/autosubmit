@@ -93,22 +93,24 @@ class Monitor:
 
         Log.debug('Creating legend...')
         legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
+        legend.add_node(pydotplus.Node(name='UNKNOWN', shape='box', style="",
+                                       fillcolor=self._table[Status.UNKNOWN]))
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
                                        fillcolor=self._table[Status.WAITING]))
         legend.add_node(pydotplus.Node(name='READY', shape='box', style="filled",
                                        fillcolor=self._table[Status.READY]))
-        legend.add_node(
-            pydotplus.Node(name='SUBMITTED', shape='box', style="filled", fillcolor=self._table[Status.SUBMITTED]))
+        legend.add_node(pydotplus.Node(name='SUBMITTED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.SUBMITTED]))
         legend.add_node(pydotplus.Node(name='QUEUING', shape='box', style="filled",
                                        fillcolor=self._table[Status.QUEUING]))
         legend.add_node(pydotplus.Node(name='RUNNING', shape='box', style="filled",
                                        fillcolor=self._table[Status.RUNNING]))
-        legend.add_node(
-            pydotplus.Node(name='COMPLETED', shape='box', style="filled", fillcolor=self._table[Status.COMPLETED]))
+        legend.add_node(pydotplus.Node(name='COMPLETED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.COMPLETED]))
         legend.add_node(pydotplus.Node(name='FAILED', shape='box', style="filled",
                                        fillcolor=self._table[Status.FAILED]))
-        legend.add_node(
-            pydotplus.Node(name='SUSPENDED', shape='box', style="filled", fillcolor=self._table[Status.SUSPENDED]))
+        legend.add_node(pydotplus.Node(name='SUSPENDED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.SUSPENDED]))
         graph.add_subgraph(legend)
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
