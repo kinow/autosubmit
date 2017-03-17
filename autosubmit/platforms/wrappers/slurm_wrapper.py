@@ -20,46 +20,24 @@
 import textwrap
 
 
-class LsfWrapper(object):
-    """Class to handle wrappers on LSF platforms"""
+class SlurmWrapper(object):
+    """Class to handle wrappers on SLURM platforms"""
 
     @classmethod
-    def array(cls, filename, array_id, wallclock, num_processors):
-        return textwrap.dedent("""\
-            ###############################################################################
-            #              {0}
-            ###############################################################################
-            #
-            #
-            #BSUB -J {0}{1}
-            #BSUB -oo {0}.%I.out
-            #BSUB -eo {0}.%I.err
-            #BSUB -W {2}
-            #BSUB -n {3}
-            #
-            ###############################################################################
-
-            SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
-            chmod +x $SCRIPT
-            ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_processors))
-
-    @classmethod
-    def vertical(cls, filename, queue, project, wallclock, num_processors, job_scripts, dependency):
+    def vertical(cls, filename, queue, project, wallclock, num_processors, job_scripts, _):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
             #              {0}
             ###############################################################################
             #
-            #BSUB -J {0}
-            #BSUB -q {1}
-            #BSUB -P {2}
-            #BSUB -oo {0}.out
-            #BSUB -eo {0}.err
-            #BSUB -W {3}
-            #BSUB -n {4}
-            {6}
+            #SBATCH -J {0}
+            #SBATCH -p {1}
+            #SBATCH -A {2}
+            #SBATCH -o {0}.out
+            #SBATCH -e {0}.err
+            #SBATCH -t {3}
+            #SBATCH -n {4}
             #
             ###############################################################################
 
@@ -93,25 +71,23 @@ class LsfWrapper(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, queue, project, wallclock, num_processors, str(job_scripts),
-                       cls.dependency_directive(dependency)))
+            """.format(filename, queue, project, wallclock, num_processors, str(job_scripts)))
 
     @classmethod
-    def horizontal(cls, filename, queue, project, wallclock, num_processors, num_jobs, job_scripts, dependency):
+    def horizontal(cls, filename, queue, project, wallclock, num_processors, num_jobs, job_scripts, _):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
             #              {0}
             ###############################################################################
             #
-            #BSUB -J {0}
-            #BSUB -q {1}
-            #BSUB -P {2}
-            #BSUB -oo {0}.out
-            #BSUB -eo {0}.err
-            #BSUB -W {3}
-            #BSUB -n {4}
-            {5}
+            #SBATCH -J {0}
+            #SBATCH -p {1}
+            #SBATCH -A {2}
+            #SBATCH -o {0}.out
+            #SBATCH -e {0}.err
+            #SBATCH -t {3}
+            #SBATCH -n {4}
             #
             ###############################################################################
 
@@ -133,7 +109,7 @@ class LsfWrapper(object):
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
 
             # Splitting the original hosts file
-            os.system("cat {8} | split -a 2 -d -l {5} - mlist-{9}-")
+            os.system("cat {7} | split -a 2 -d -l {5} - mlist-{8}-")
 
             # Defining scripts to be run
             scripts = {6}
@@ -157,8 +133,4 @@ class LsfWrapper(object):
                 else:
                     print "The job ", pid.template," has FAILED"
             """.format(filename, queue, project, wallclock, num_processors, (int(num_processors) / num_jobs), str(job_scripts),
-                       cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
-
-    @classmethod
-    def dependency_directive(cls, dependency):
-        return '#' if dependency is None else '#BSUB -w \'done("{0}")\' [-ti]'.format(dependency)
+                       "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))

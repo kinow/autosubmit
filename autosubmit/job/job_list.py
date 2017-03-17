@@ -36,7 +36,7 @@ from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageThread
+from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageThread
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction

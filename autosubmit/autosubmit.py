@@ -1778,7 +1778,7 @@ class Autosubmit:
 
         :param expid: experiment identifier
         :type expid: str
-        :param save: if true, saves the new joblist
+        :param save: if true, saves the new jobs list
         :type save: bool
         :param final: status to set on jobs
         :type final: str

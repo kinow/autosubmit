@@ -20,7 +20,7 @@
 from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_package import JobPackageSimple, JobPackageArray, JobPackageVertical, JobPackageHorizontal
+from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageVertical, JobPackageHorizontal
 
 
 class JobPackager(object):

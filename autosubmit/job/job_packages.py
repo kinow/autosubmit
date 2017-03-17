@@ -219,6 +219,10 @@ class JobPackageThread(JobPackageBase):
         else:
             return self.platform.queue
 
+    @property
+    def _project(self):
+        return self._platform.project
+
     def _create_scripts(self, configuration):
         for i in range(1, len(self.jobs) + 1):
             self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
@@ -273,9 +277,9 @@ class JobPackageVertical(JobPackageThread):
                                                               len(self._jobs))
 
     def _common_script_content(self):
-        return self.platform.wrapper.vertical(self._name, self._queue, self._wallclock,
-                                              self._num_processors, self._jobs_scripts,
-                                              self._job_dependency)
+        return self.platform.wrapper.vertical(self._name, self._queue, self._project,
+                                              self._wallclock, self._num_processors,
+                                              self._jobs_scripts, self._job_dependency)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -294,6 +298,6 @@ class JobPackageHorizontal(JobPackageThread):
                                                               len(self._jobs))
 
     def _common_script_content(self):
-        return self.platform.wrapper.horizontal(self._name, self._queue, self._wallclock,
-                                                self._num_processors, len(self.jobs),
-                                                self._jobs_scripts, self._job_dependency)
+        return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
+                                                self._num_processors, len(self.jobs), self._jobs_scripts,
+                                                self._job_dependency)

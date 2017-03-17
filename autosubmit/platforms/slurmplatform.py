@@ -23,6 +23,7 @@ from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
+from autosubmit.platforms.wrappers.slurm_wrapper import SlurmWrapper
 
 
 class SlurmPlatform(ParamikoPlatform):
@@ -33,29 +34,18 @@ class SlurmPlatform(ParamikoPlatform):
     :type expid: str
     """
 
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directive for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return "#"
-
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = SlurmHeader()
+        self._wrapper = SlurmWrapper()
         self.job_status = dict()
-
         self.job_status['COMPLETED'] = ['COMPLETED']
         self.job_status['RUNNING'] = ['RUNNING']
         self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
         self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self._allow_arrays = False
+        self._allow_wrappers = True
         self.update_cmds()
 
     def update_cmds(self):

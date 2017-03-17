@@ -4,7 +4,7 @@ import os
 from mock import Mock
 from mock import patch
 
-from autosubmit.job.job_package import JobPackageSimple
+from autosubmit.job.job_packages import JobPackageSimple
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 
