@@ -81,7 +81,7 @@ class JobPackager(object):
                                                                                       self._platform.max_processors,
                                                                                       remote_dependencies)
                     packages_to_submit += built_packages
-
+                return packages_to_submit
         # No wrapper allowed / well-configured
         for job in jobs_to_submit:
             packages_to_submit.append(JobPackageSimple([job]))
