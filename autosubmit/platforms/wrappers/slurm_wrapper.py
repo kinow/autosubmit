@@ -108,9 +108,6 @@ class SlurmWrapper(object):
                     command = str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
 
-            # Splitting the original hosts file
-            os.system("cat {7} | split -a 2 -d -l {5} - mlist-{8}-")
-
             # Defining scripts to be run
             scripts = {6}
 
