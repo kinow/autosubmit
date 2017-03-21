@@ -1730,7 +1730,7 @@ class Autosubmit:
                           project_path)
                 shutil.rmtree(project_path, ignore_errors=True)
                 return False
-            Log.debug("{0}" % output)
+            Log.debug("{0}", output)
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
