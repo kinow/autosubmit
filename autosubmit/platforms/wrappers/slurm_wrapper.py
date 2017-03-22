@@ -36,7 +36,7 @@ class SlurmWrapper(object):
             #SBATCH -A {2}
             #SBATCH -o {0}.out
             #SBATCH -e {0}.err
-            #SBATCH -t {3}
+            #SBATCH -t {3}:00
             #SBATCH -n {4}
             #
             ###############################################################################
@@ -55,7 +55,7 @@ class SlurmWrapper(object):
                 def run(self):
                     out = str(self.template) + '.' + str(self.id_run) + '.out'
                     err = str(self.template) + '.' + str(self.id_run) + '.err'
-                    command = str(self.template) + ' ' + str(self.id_run) + ' ' + os.getcwd()
+                    command = "bash " + str(self.template) + ' ' + str(self.id_run) + ' ' + os.getcwd()
                     (self.status) = getstatusoutput(command + ' > ' + out + ' 2> ' + err)
 
             scripts = {5}
@@ -86,7 +86,7 @@ class SlurmWrapper(object):
             #SBATCH -A {2}
             #SBATCH -o {0}.out
             #SBATCH -e {0}.err
-            #SBATCH -t {3}
+            #SBATCH -t {3}:00
             #SBATCH -n {4}
             #
             ###############################################################################
@@ -105,7 +105,7 @@ class SlurmWrapper(object):
                 def run(self):
                     out = str(self.template) + "." + str(self.id_run) + ".out"
                     err = str(self.template) + "." + str(self.id_run) + ".err"
-                    command = str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                    command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
 
             # Defining scripts to be run
