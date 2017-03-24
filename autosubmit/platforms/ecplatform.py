@@ -138,11 +138,15 @@ class EcPlatform(ParamikoPlatform):
         return True
 
     def get_file(self, filename, must_exist=True, relative_path=''):
-        local_path = os.path.join(self.tmp_path, relative_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
 
-        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, os.path.join(self.get_files_path(), filename),
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, file_path, os.path.join(self.get_files_path(), filename),
                                            self.host)
         try:
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)

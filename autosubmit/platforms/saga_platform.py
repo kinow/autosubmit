@@ -97,23 +97,28 @@ class SagaPlatform(Platform):
         :type must_exist: bool
         :param relative_path: relative path inside tmp folder
         :type relative_path: str
-        :return: True if file is copied succesfully, false otherwise
+        :return: True if file is copied successfully, false otherwise
         :rtype: bool
         """
-        local_path = os.path.join(self.tmp_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
         if self.type == 'ecaccess':
             try:
                 subprocess.check_call(['ecaccess-file-get', '{0}:{1}'.format(self.host,
                                                                              os.path.join(self.get_files_path(),
                                                                                           filename)),
-                                       local_path])
+                                       file_path])
                 return True
             except subprocess.CalledProcessError:
                 if must_exist:
-                    raise Exception("Could't get file {0} from {1}:{2}".format(local_path,
+                    raise Exception("Could't get file {0} from {1}:{2}".format(file_path,
                                                                                self.host, self.get_files_path()))
                 return False
 
@@ -124,7 +129,7 @@ class SagaPlatform(Platform):
 
         out = self.directory.open(os.path.join(str(self.directory.url), filename))
 
-        out.copy("file://{0}".format(local_path))
+        out.copy("file://{0}".format(file_path))
         out.close()
         return True
 

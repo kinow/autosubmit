@@ -124,9 +124,13 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
 
-        local_path = os.path.join(self.tmp_path, relative_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
         if self._ssh is None:
             if not self.connect():
@@ -134,13 +138,13 @@ class ParamikoPlatform(Platform):
 
         try:
             ftp = self._ssh.open_sftp()
-            ftp.get(os.path.join(self.get_files_path(), filename), local_path)
+            ftp.get(os.path.join(self.get_files_path(), filename), file_path)
             ftp.close()
             return True
         except BaseException:
             # ftp.get creates a local file anyway
-            if os.path.exists(local_path):
-                os.remove(local_path)
+            if os.path.exists(file_path):
+                os.remove(file_path)
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
