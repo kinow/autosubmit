@@ -449,7 +449,7 @@ class Autosubmit:
 
                 os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
                 Log.info("Copying config files...")
-                # autosubmit config and experiment copyed from AS.
+                # autosubmit config and experiment copied from AS.
                 files = resource_listdir('autosubmit.config', 'files')
                 for filename in files:
                     if resource_exists('autosubmit.config', 'files/' + filename):
@@ -519,7 +519,7 @@ class Autosubmit:
         :type force: bool
         :type expid: str
         :param expid: identifier of the experiment to delete
-        :param force: if True, does not ask for confrmation
+        :param force: if True, does not ask for confirmation
 
         :returns: True if succesful, False if not
         :rtype: bool
@@ -1793,7 +1793,6 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        root_name = 'job_list'
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)

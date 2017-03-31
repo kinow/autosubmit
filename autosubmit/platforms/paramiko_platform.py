@@ -373,7 +373,7 @@ class ParamikoPlatform(Platform):
         :return: command to check job status script
         :rtype: str
         """
-        return 'nohup kill -0 {0}; echo $?'.format(job_id)
+        return 'nohup kill -0 {0} >& /dev/null; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """
