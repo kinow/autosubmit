@@ -20,11 +20,12 @@
 import textwrap
 
 
+# TODO: Refactor with kwargs
 class LsfWrapper(object):
     """Class to handle wrappers on LSF platforms"""
 
     @classmethod
-    def array(cls, filename, array_id, wallclock, num_processors):
+    def array(cls, filename, array_id, wallclock, num_procs):
         return textwrap.dedent("""\
             ###############################################################################
             #              {0}
@@ -42,10 +43,10 @@ class LsfWrapper(object):
             SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
             chmod +x $SCRIPT
             ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_processors))
+            """.format(filename, array_id, wallclock, num_procs))
 
     @classmethod
-    def vertical(cls, filename, queue, project, wallclock, num_processors, job_scripts, dependency):
+    def vertical(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -93,11 +94,11 @@ class LsfWrapper(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, queue, project, wallclock, num_processors, str(job_scripts),
+            """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
                        cls.dependency_directive(dependency)))
 
     @classmethod
-    def horizontal(cls, filename, queue, project, wallclock, num_processors, num_jobs, job_scripts, dependency):
+    def horizontal(cls, filename, queue, project, wallclock, num_procs, num_jobs, job_scripts, dependency, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -111,7 +112,7 @@ class LsfWrapper(object):
             #BSUB -eo {0}.err
             #BSUB -W {3}
             #BSUB -n {4}
-            {5}
+            {7}
             #
             ###############################################################################
 
@@ -156,8 +157,8 @@ class LsfWrapper(object):
                     print "The job ", pid.template," has been COMPLETED"
                 else:
                     print "The job ", pid.template," has FAILED"
-            """.format(filename, queue, project, wallclock, num_processors, (int(num_processors) / num_jobs), str(job_scripts),
-                       cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
+            """.format(filename, queue, project, wallclock, num_procs, (int(num_procs) / num_jobs),
+                       str(job_scripts), cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
 
     @classmethod
     def dependency_directive(cls, dependency):
