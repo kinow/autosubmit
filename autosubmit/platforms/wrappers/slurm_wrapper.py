@@ -20,11 +20,12 @@
 import textwrap
 
 
+# TODO: Refactor with kwargs
 class SlurmWrapper(object):
     """Class to handle wrappers on SLURM platforms"""
 
     @classmethod
-    def vertical(cls, filename, queue, project, wallclock, num_processors, job_scripts, _):
+    def vertical(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -38,6 +39,7 @@ class SlurmWrapper(object):
             #SBATCH -e {0}.err
             #SBATCH -t {3}:00
             #SBATCH -n {4}
+            {6}
             #
             ###############################################################################
 
@@ -71,10 +73,11 @@ class SlurmWrapper(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, queue, project, wallclock, num_processors, str(job_scripts)))
+            """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
+                       cls.dependency_directive(dependency)))
 
     @classmethod
-    def horizontal(cls, filename, queue, project, wallclock, num_processors, num_jobs, job_scripts, _):
+    def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -88,6 +91,7 @@ class SlurmWrapper(object):
             #SBATCH -e {0}.err
             #SBATCH -t {3}:00
             #SBATCH -n {4}
+            {6}
             #
             ###############################################################################
 
@@ -109,7 +113,7 @@ class SlurmWrapper(object):
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
 
             # Defining scripts to be run
-            scripts = {6}
+            scripts = {5}
 
             # Initializing PIDs container
             pid_list = []
@@ -129,5 +133,9 @@ class SlurmWrapper(object):
                     print "The job ", pid.template," has been COMPLETED"
                 else:
                     print "The job ", pid.template," has FAILED"
-            """.format(filename, queue, project, wallclock, num_processors, (int(num_processors) / num_jobs), str(job_scripts),
-                       "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
+            """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
+                       cls.dependency_directive(dependency)))
+
+    @classmethod
+    def dependency_directive(cls, dependency):
+        return '#' if dependency is None else '#SBATCH --dependency=afterok:{0}'.format(dependency)
