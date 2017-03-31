@@ -41,6 +41,7 @@ class JobPackageBase(object):
 
     def __init__(self, jobs):
         self._jobs = jobs
+        self._expid = jobs[0].expid
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0].platform
@@ -95,12 +96,12 @@ class JobPackageBase(object):
 
 class JobPackageSimple(JobPackageBase):
     """
-    Class to manage the package of jobs to be submitted by autosubmit
+    Class to manage a group of simple jobs, not packaged, to be submitted by autosubmit
     """
 
     def __init__(self, jobs):
-        self._job_scripts = {}
         super(JobPackageSimple, self).__init__(jobs)
+        self._job_scripts = {}
 
     def _create_scripts(self, configuration):
         for job in self.jobs:
@@ -110,11 +111,13 @@ class JobPackageSimple(JobPackageBase):
         for job in self.jobs:
             self.platform.send_file(self._job_scripts[job.name])
 
-    def _do_submission(self):
+    def _do_submission(self, job_scripts=None):
+        if job_scripts is None:
+            job_scripts = self._job_scripts
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.id = self.platform.submit_job(job, self._job_scripts[job.name])
+            job.id = self.platform.submit_job(job, job_scripts[job.name])
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
@@ -122,9 +125,34 @@ class JobPackageSimple(JobPackageBase):
             job.write_submit_time()
 
 
+class JobPackageSimpleWrapped(JobPackageSimple):
+    """
+    Class to manage a group of simple wrapped jobs, not packaged, to be submitted by autosubmit
+    """
+
+    def __init__(self, jobs):
+        super(JobPackageSimpleWrapped, self).__init__(jobs)
+        self._job_wrapped_scripts = {}
+
+    def _create_scripts(self, configuration):
+        super(JobPackageSimpleWrapped, self)._create_scripts(configuration)
+        for job in self.jobs:
+            self._job_wrapped_scripts[job.name] = job.create_wrapped_script(configuration)
+
+    def _send_files(self):
+        super(JobPackageSimpleWrapped, self)._send_files()
+        for job in self.jobs:
+            self.platform.send_file(self._job_wrapped_scripts[job.name])
+
+    def _do_submission(self, job_scripts=None):
+        if job_scripts is None:
+            job_scripts = self._job_wrapped_scripts
+        super(JobPackageSimpleWrapped, self)._do_submission(job_scripts)
+
+
 class JobPackageArray(JobPackageBase):
     """
-    Class to manage the package of jobs to be submitted by autosubmit
+    Class to manage an array-based package of jobs to be submitted by autosubmit
     """
 
     def __init__(self, jobs):
@@ -189,7 +217,7 @@ class JobPackageArray(JobPackageBase):
 
 class JobPackageThread(JobPackageBase):
     """
-    Class to manage the package of jobs to be submitted by autosubmit
+    Class to manage a thread-based package of jobs to be submitted by autosubmit
     """
     FILE_PREFIX = 'ASThread'
 
@@ -261,9 +289,83 @@ class JobPackageThread(JobPackageBase):
             self.jobs[i - 1].write_submit_time()
 
 
+class JobPackageThreadWrapped(JobPackageThread):
+    """
+    Class to manage a thread-based package of jobs to be submitted by autosubmit
+    """
+    FILE_PREFIX = 'ASThread'
+
+    def __init__(self, jobs, dependency=None):
+        super(JobPackageThreadWrapped, self).__init__(jobs)
+        self._job_scripts = {}
+        self._job_dependency = dependency
+        self._common_script = None
+        self._wallclock = '00:00'
+        self._num_processors = '0'
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def _jobs_scripts(self):
+        jobs_scripts = []
+        for job in self.jobs:
+            jobs_scripts.append(self._job_scripts[job.name])
+        return jobs_scripts
+
+    @property
+    def _queue(self):
+        if str(self._num_processors) == '1':
+            return self.platform.serial_platform.serial_queue
+        else:
+            return self.platform.queue
+
+    @property
+    def _project(self):
+        return self._platform.project
+
+    def _create_scripts(self, configuration):
+        for i in range(1, len(self.jobs) + 1):
+            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
+            self.jobs[i - 1].remote_logs = (
+                self._job_scripts[self.jobs[i - 1].name] + ".{0}.out".format(i - 1),
+                self._job_scripts[self.jobs[i - 1].name] + ".{0}.err".format(i - 1)
+            )
+        self._common_script = self._create_common_script()
+
+    def _create_common_script(self):
+        script_content = self._common_script_content()
+        script_file = self.name + '.cmd'
+        open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
+        os.chmod(os.path.join(self._tmp_path, script_file), 0o775)
+        return script_file
+
+    def _send_files(self):
+        for job in self.jobs:
+            self.platform.send_file(self._job_scripts[job.name])
+        self.platform.send_file(self._common_script)
+
+    def _do_submission(self):
+        for job in self.jobs:
+            self.platform.remove_stat_file(job.name)
+            self.platform.remove_completed_file(job.name)
+
+        package_id = self.platform.submit_job(None, self._common_script)
+
+        if package_id is None:
+            raise Exception('Submission failed')
+
+        for i in range(1, len(self.jobs) + 1):
+            Log.info("{0} submitted", self.jobs[i - 1].name)
+            self.jobs[i - 1].id = str(package_id)
+            self.jobs[i - 1].status = Status.SUBMITTED
+            self.jobs[i - 1].write_submit_time()
+
+
 class JobPackageVertical(JobPackageThread):
     """
-    Class to manage the package of jobs to be submitted by autosubmit
+    Class to manage a vertical thread-based package of jobs to be submitted by autosubmit
     """
 
     def __init__(self, jobs, dependency=None):
@@ -279,12 +381,12 @@ class JobPackageVertical(JobPackageThread):
     def _common_script_content(self):
         return self.platform.wrapper.vertical(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency)
+                                              self._jobs_scripts, self._job_dependency, expid=self._expid)
 
 
 class JobPackageHorizontal(JobPackageThread):
     """
-    Class to manage the package of jobs to be submitted by autosubmit
+    Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
     def __init__(self, jobs, dependency=None):
@@ -300,4 +402,4 @@ class JobPackageHorizontal(JobPackageThread):
     def _common_script_content(self):
         return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
                                                 self._num_processors, len(self.jobs), self._jobs_scripts,
-                                                self._job_dependency)
+                                                self._job_dependency, expid=self._expid)

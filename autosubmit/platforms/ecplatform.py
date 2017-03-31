@@ -25,11 +25,12 @@ from bscearth.utils.log import Log
 
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
+from autosubmit.platforms.wrappers.ec_wrapper import EcWrapper
 
 
 class EcPlatform(ParamikoPlatform):
     """
-    Class to manage queues with ecacces
+    Class to manage queues with ecaccess
 
     :param expid: experiment's identifier
     :type expid: str
@@ -45,12 +46,16 @@ class EcPlatform(ParamikoPlatform):
             self._header = EcHeader()
         else:
             raise ParamikoPlatformException('ecaccess scheduler {0} not supported'.format(scheduler))
+        self._wrapper = EcWrapper()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['EXEC']
         self.job_status['QUEUING'] = ['INIT', 'RETR', 'STDBY', 'WAIT']
         self.job_status['FAILED'] = ['STOP']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self._allow_arrays = False
+        self._allow_wrappers = True
+        self._allow_python_jobs = False
         self.update_cmds()
 
     def update_cmds(self):

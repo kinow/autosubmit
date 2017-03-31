@@ -44,6 +44,7 @@ class Platform(object):
         self.max_processors = None
         self._allow_arrays = False
         self._allow_wrappers = False
+        self._allow_python_jobs = True
 
     @property
     def serial_platform(self):
@@ -97,6 +98,10 @@ class Platform(object):
     @property
     def allow_wrappers(self):
         return self._allow_wrappers is True
+
+    @property
+    def allow_python_jobs(self):
+        return self._allow_python_jobs is True
 
     def add_parameters(self, parameters, main_hpc=False):
         """

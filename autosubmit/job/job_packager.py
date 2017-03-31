@@ -20,7 +20,8 @@
 from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageVertical, JobPackageHorizontal
+from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageVertical, JobPackageHorizontal, \
+    JobPackageSimpleWrapped
 
 
 class JobPackager(object):
@@ -39,7 +40,8 @@ class JobPackager(object):
 
         Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
-        Log.info("Jobs READY to submit: {0}", min(self._max_wait_jobs_to_submit, len(jobs_list.get_ready(platform))))
+        if len(jobs_list.get_ready(platform)) > 0:
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform)))
 
     def build_packages(self):
         """
@@ -84,7 +86,11 @@ class JobPackager(object):
                 return packages_to_submit
         # No wrapper allowed / well-configured
         for job in jobs_to_submit:
-            packages_to_submit.append(JobPackageSimple([job]))
+            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                package = JobPackageSimpleWrapped([job])
+            else:
+                package = JobPackageSimple([job])
+            packages_to_submit.append(package)
         return packages_to_submit
 
     @staticmethod

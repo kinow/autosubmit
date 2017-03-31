@@ -25,7 +25,8 @@ import re
 import time
 
 from autosubmit.job.job_common import Status, Type
-from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython, StatisticsSnippetR
+from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
+from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import *
 
@@ -677,6 +678,12 @@ class Job(object):
 
         return template_content
 
+    def get_wrapped_content(self, as_conf):
+        snippet = StatisticsSnippetEmpty
+        template = 'python $SCRATCH/{1}/LOG_{1}/{0}.cmd'.format(self.name, self.expid)
+        template_content = self._get_template_content(as_conf, snippet, template)
+        return template_content
+
     def _get_template_content(self, as_conf, snippet, template):
         communications_library = as_conf.get_communications_library()
         if communications_library == 'saga':
@@ -720,11 +727,21 @@ class Job(object):
             template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
                                       flags=re.IGNORECASE)
         template_content = template_content.replace("%%", "%")
-
-        script_name = self.name + '.cmd'
+        script_name = '{0}.cmd'.format(self.name)
         open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
+        return script_name
 
+    def create_wrapped_script(self, as_conf, wrapper_tag='wrapped'):
+        parameters = self.parameters
+        template_content = self.get_wrapped_content(as_conf)
+        for key, value in parameters.items():
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
+                                      flags=re.IGNORECASE)
+        template_content = template_content.replace("%%", "%")
+        script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
+        open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
         return script_name
 
     def check_script(self, as_conf, parameters):
@@ -784,7 +801,7 @@ class Job(object):
     def write_end_time(self, completed):
         """
         Writes ends date and time to TOTAL_STATS file
-        :param completed: True if job was completed succesfuly, False otherwise
+        :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
         self.platform.get_stat_file(self.name, retries=0)
