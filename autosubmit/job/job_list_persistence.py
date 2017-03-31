@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,12 +16,13 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
+
 import pickle
 from sys import setrecursionlimit
 
 import os
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.database.db_manager import DbManager
 
 
@@ -105,7 +106,7 @@ class JobListPersistenceDb(JobListPersistence):
     JOB_LIST_TABLE = 'job_list'
     TABLE_FIELDS = ['name', 'id', 'status', 'priority',
                     'section', 'date', 'member', 'chunk',
-                    'local_out', 'local_err'
+                    'local_out', 'local_err',
                     'remote_out', 'remote_err']
 
     def __init__(self, persistence_path, persistence_file):

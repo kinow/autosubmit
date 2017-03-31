@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -25,9 +25,10 @@ import re
 import time
 
 from autosubmit.job.job_common import Status, Type
-from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython, StatisticsSnippetR
+from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
+from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.date.chunk_date_lib import *
+from bscearth.utils.date import *
 
 
 class Job(object):
@@ -47,6 +48,8 @@ class Job(object):
     :type priority: int
     """
 
+    CHECK_ON_SUBMISSION = 'on_submission'
+
     def __str__(self):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
@@ -58,12 +61,12 @@ class Job(object):
         self.wallclock = None
         self.tasks = None
         self.threads = None
-        self.processors = None
-        self.memory = None
+        self.processors = '1'
+        self.memory = ''
+        self.memory_per_task = ''
         self.chunk = None
         self.member = None
         self.date = None
-        self.memory = None
         self.name = name
         self._long_name = None
         self.long_name = name
@@ -85,7 +88,7 @@ class Job(object):
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self.write_start = False
         self._platform = None
-        self.check = True
+        self.check = 'True'
 
     def __getstate__(self):
         odict = self.__dict__
@@ -132,10 +135,10 @@ class Job(object):
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
         """
-        if self.processors > 1:
-            return self._platform
-        else:
+        if str(self.processors) == '1':
             return self._platform.serial_platform
+        else:
+            return self._platform
 
     @platform.setter
     def platform(self, value):
@@ -157,10 +160,10 @@ class Job(object):
         """
         if self._queue is not None:
             return self._queue
-        if self.processors > 1:
-            return self._platform.queue
-        else:
+        if str(self.processors) == '1':
             return self._platform.serial_platform.serial_queue
+        else:
+            return self._platform.queue
 
     @queue.setter
     def queue(self, value):
@@ -228,6 +231,19 @@ class Job(object):
     @remote_logs.setter
     def remote_logs(self, value):
         self._remote_logs = value
+
+    @property
+    def total_processors(self):
+        if ':' in self.processors:
+            return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
+        return int(self.processors)
+
+    @property
+    def total_wallclock(self):
+        if self.wallclock:
+            hours, minutes = self.wallclock.split(':')
+            return float(minutes) / 60 + float(hours)
+        return 0
 
     def log_job(self):
         """
@@ -423,7 +439,23 @@ class Job(object):
         """
         return self._get_from_total_stats(1)
 
-    def update_status(self, new_status, copy_remote_logs):
+    def get_last_retrials(self):
+        log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        retrials_list = []
+        if os.path.exists(log_name):
+            already_completed = False
+            for retrial in reversed(open(log_name).readlines()):
+                retrial_fields = retrial.split()
+                if Job.is_a_completed_retrial(retrial_fields):
+                    if already_completed:
+                        break
+                    already_completed = True
+                retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
+                                    retrial_fields)
+                retrials_list.insert(0, retrial_dates)
+        return retrials_list
+
+    def update_status(self, new_status, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -434,7 +466,7 @@ class Job(object):
         previous_status = self.status
 
         if new_status == Status.COMPLETED:
-            Log.debug("This job seems to have completed...checking")
+            Log.debug("This job seems to have completed: checking...")
             self.platform.get_completed_files(self.name)
             self.check_completion()
         else:
@@ -446,9 +478,16 @@ class Job(object):
         elif self.status is Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.FAILED:
-            Log.user_warning("Job {0} is FAILED", self.name)
+            Log.user_warning("Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
+            self.platform.get_completed_files(self.name)
+            self.check_completion()
+            if self.status is Status.COMPLETED:
+                Log.warning('Job {0} seems to have failed but there is a COMPLETED file', self.name)
+                Log.result("Job {0} is COMPLETED", self.name)
+            else:
+                self.update_children_status()
         elif self.status is Status.UNKNOWN:
-            Log.debug("Job {0} in UNKNOWN status. Checking completed files", self.name)
+            Log.debug("Job {0} in UNKNOWN status. Checking completed files...", self.name)
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status is Status.UNKNOWN:
@@ -470,6 +509,13 @@ class Job(object):
                 self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
 
+    def update_children_status(self):
+        children = list(self.children)
+        for child in children:
+            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
+                child.status = Status.FAILED
+                children += list(child.children)
+
     def check_completion(self, default_status=Status.FAILED):
         """
         Check the presence of *COMPLETED* file.
@@ -481,7 +527,7 @@ class Job(object):
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.warning("Job {0} seemed to be completed but there is no COMPLETED file", self.name)
+            Log.warning("Job {0} completion check failed. There is no COMPLETED file", self.name)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
@@ -559,6 +605,7 @@ class Job(object):
         if self.tasks == 0:
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
+        self.memory_per_task = as_conf.get_memory_per_task(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
@@ -566,11 +613,11 @@ class Job(object):
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
+        parameters['MEMORY_PER_TASK'] = self.memory_per_task
         parameters['NUMTHREADS'] = self.threads
         parameters['NUMTASK'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
-        parameters['MEMORY'] = self.memory
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
 
         parameters['CURRENT_ARCH'] = job_platform.name
@@ -581,6 +628,7 @@ class Job(object):
         parameters['CURRENT_BUDG'] = job_platform.budget
         parameters['CURRENT_RESERVATION'] = job_platform.reservation
         parameters['CURRENT_EXCLUSIVITY'] = job_platform.exclusivity
+        parameters['CURRENT_HYPERTHREADING'] = job_platform.hyperthreading
         parameters['CURRENT_TYPE'] = job_platform.type
         parameters['CURRENT_SCRATCH_DIR'] = job_platform.scratch
         parameters['CURRENT_ROOTDIR'] = job_platform.root_dir
@@ -630,6 +678,12 @@ class Job(object):
 
         return template_content
 
+    def get_wrapped_content(self, as_conf):
+        snippet = StatisticsSnippetEmpty
+        template = 'python $SCRATCH/{1}/LOG_{1}/{0}.cmd'.format(self.name, self.expid)
+        template_content = self._get_template_content(as_conf, snippet, template)
+        return template_content
+
     def _get_template_content(self, as_conf, snippet, template):
         communications_library = as_conf.get_communications_library()
         if communications_library == 'saga':
@@ -651,6 +705,13 @@ class Job(object):
                         template,
                         snippet.as_tailer()])
 
+    @staticmethod
+    def is_a_completed_retrial(fields):
+        if len(fields) == 4:
+            if fields[3] == 'COMPLETED':
+                return True
+        return False
+
     def create_script(self, as_conf):
         """
         Creates script file to be run for the job
@@ -666,12 +727,22 @@ class Job(object):
             template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
                                       flags=re.IGNORECASE)
         template_content = template_content.replace("%%", "%")
+        script_name = '{0}.cmd'.format(self.name)
+        open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
+        return script_name
 
-        scriptname = self.name + '.cmd'
-        open(os.path.join(self._tmp_path, scriptname), 'w').write(template_content)
-        os.chmod(os.path.join(self._tmp_path, scriptname), 0o775)
-
-        return scriptname
+    def create_wrapped_script(self, as_conf, wrapper_tag='wrapped'):
+        parameters = self.parameters
+        template_content = self.get_wrapped_content(as_conf)
+        for key, value in parameters.items():
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
+                                      flags=re.IGNORECASE)
+        template_content = template_content.replace("%%", "%")
+        script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
+        open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
+        os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
+        return script_name
 
     def check_script(self, as_conf, parameters):
         """
@@ -684,9 +755,6 @@ class Job(object):
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
-        if not self.check:
-            Log.info('Template {0} will not be checked'.format(self.section))
-            return True
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
 
@@ -697,9 +765,6 @@ class Job(object):
         if not out:
             Log.warning("The following set of variables to be substituted in template script is not part of "
                         "parameters set: {0}", str(set(variables) - set(parameters)))
-        else:
-            self.create_script(as_conf)
-
         return out
 
     def write_submit_time(self):
@@ -720,10 +785,10 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.platform.get_stat_file(self.name, retries=5):
+        if self.platform.get_stat_file(self.name, retries=0):
             start_time = self.check_start_time()
         else:
-            Log.warning('Could not get start time for {0}. Using current time as an aproximation', self.name)
+            Log.warning('Could not get start time for {0}. Using current time as an approximation', self.name)
             start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -736,10 +801,10 @@ class Job(object):
     def write_end_time(self, completed):
         """
         Writes ends date and time to TOTAL_STATS file
-        :param completed: True if job was completed succesfuly, False otherwise
+        :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
-        self.platform.get_stat_file(self.name, retries=5)
+        self.platform.get_stat_file(self.name, retries=0)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -18,13 +18,14 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
-import textwrap
 from xml.dom.minidom import parseString
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.local_header import LocalHeader
+
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 
 
 class LocalPlatform(ParamikoPlatform):
@@ -113,12 +114,16 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     def get_file(self, filename, must_exist=True, relative_path=''):
-        local_path = os.path.join(self.tmp_path, relative_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
         command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
-                                       local_path)
+                                       file_path)
         try:
             subprocess.check_call(command, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'), shell=True)
         except subprocess.CalledProcessError:
@@ -150,32 +155,3 @@ class LocalPlatform(ParamikoPlatform):
         :type remote_logs: (str, str)
         """
         return
-
-
-class LocalHeader:
-    """Class to handle the Ps headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            """)

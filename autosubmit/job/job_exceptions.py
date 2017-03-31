@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -17,18 +17,13 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-try:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
-    # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
 
+class WrongTemplateException(Exception):
+    """
+    Class to alert when the template checking fails for a given job
+    """
 
-class ConfigParserFactory:
+    def __init__(self, job_name):
+        super(WrongTemplateException, self).__init__()
+        self.job_name = job_name
 
-    def __init__(self):
-        pass
-
-    def create_parser(self):
-        return SafeConfigParser()

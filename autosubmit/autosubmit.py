@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -61,25 +61,27 @@ import saga
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
 from config.config_common import AutosubmitConfig
-from config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
-from config.log import Log
+from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
-from date.chunk_date_lib import date2str
+from bscearth.utils.date import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
 from platforms.saga_submitter import SagaSubmitter
 from platforms.paramiko_submitter import ParamikoSubmitter
+from job.job_exceptions import WrongTemplateException
+from job.job_packager import JobPackager
 
 
 # noinspection PyUnusedLocal
@@ -447,7 +449,7 @@ class Autosubmit:
 
                 os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
                 Log.info("Copying config files...")
-                # autosubmit config and experiment copyed from AS.
+                # autosubmit config and experiment copied from AS.
                 files = resource_listdir('autosubmit.config', 'files')
                 for filename in files:
                     if resource_exists('autosubmit.config', 'files/' + filename):
@@ -517,7 +519,7 @@ class Autosubmit:
         :type force: bool
         :type expid: str
         :param expid: identifier of the experiment to delete
-        :param force: if True, does not ask for confrmation
+        :param force: if True, does not ask for confirmation
 
         :returns: True if succesful, False if not
         :rtype: bool
@@ -563,20 +565,20 @@ class Autosubmit:
         :rtype: bool
         """
         if expid is None:
-            Log.critical("Missing expid.")
+            Log.critical("Missing experiment id")
 
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if not os.path.exists(exp_path):
-            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.critical("The directory %s is needed and does not exist" % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-                Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+                Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
 
                 Log.set_file(os.path.join(tmp_path, 'run.log'))
                 os.system('clear')
@@ -610,7 +612,7 @@ class Autosubmit:
                 job_list = Autosubmit.load_job_list(expid, as_conf)
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
-                Log.debug("Length of joblist: {0}", len(job_list))
+                Log.debug("Length of the jobs list: {0}", len(job_list))
 
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
@@ -656,6 +658,8 @@ class Autosubmit:
                     for platform in platforms_to_test:
                         for job in job_list.get_in_queue(platform):
                             prev_status = job.status
+                            if job.status == Status.FAILED:
+                                continue
                             if prev_status != job.update_status(platform.check_job(job.id),
                                                                 as_conf.get_copy_remote_logs() == 'true'):
 
@@ -682,7 +686,7 @@ class Autosubmit:
 
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
-                    Log.info("Some jobs have failed and reached maximun retrials")
+                    Log.info("Some jobs have failed and reached maximum retrials")
                     return False
                 else:
                     Log.result("Run successful")
@@ -690,6 +694,9 @@ class Autosubmit:
 
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
+
+        except WrongTemplateException:
+            return False
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test):
@@ -705,13 +712,18 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            for job_package in job_list.get_ready_packages(platform):
-                    try:
-                        job_package.submit(as_conf, job_list.parameters)
-                        save = True
-                    except Exception:
-                        Log.error("{0} submission failed", platform.name)
-                        continue
+            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
+            packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages()
+            for package in packages_to_submit:
+                try:
+                    package.submit(as_conf, job_list.parameters)
+                    save = True
+                except WrongTemplateException as e:
+                    Log.error("Invalid parameter substitution in {0} template", e.job_name)
+                    raise
+                except Exception:
+                    Log.error("{0} submission failed", platform.name)
+                    raise
         return save
 
     @staticmethod
@@ -948,11 +960,11 @@ class Autosubmit:
     def recovery(expid, noplot, save, all_jobs, hide):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
-        otherwise it will be set to WAITING. It will also update the joblist.
+        otherwise it will be set to WAITING. It will also update the jobs list.
 
         :param expid: identifier of the experiment to recover
         :type expid: str
-        :param save: If true, recovery saves changes to joblist
+        :param save: If true, recovery saves changes to the jobs list
         :type save: bool
         :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
         :type all_jobs: bool
@@ -1022,7 +1034,7 @@ class Autosubmit:
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
         end = datetime.datetime.now()
         Log.info("Time spent: '{0}'".format(end - start))
-        Log.info("Updating joblist")
+        Log.info("Updating the jobs list")
         sys.setrecursionlimit(50000)
         job_list.update_list(as_conf)
 
@@ -1034,31 +1046,34 @@ class Autosubmit:
         Log.result("Recovery finalized")
 
         if not noplot:
-            Log.info("\nPloting joblist...")
+            Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
             monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
 
         return True
 
     @staticmethod
-    def check(expid):
+    def check(experiment_id):
         """
         Checks experiment configuration and warns about any detected error or inconsistency.
 
-        :param expid: experiment identifier:
-        :type expid: str
+        :param experiment_id: experiment identifier:
+        :type experiment_id: str
         """
         BasicConfig.read()
-        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
         if not os.path.exists(exp_path):
-            Log.critical("The directory %s is needed and does not exist." % exp_path)
+            Log.critical("The directory {0} is needed and does not exist.", exp_path)
             Log.warning("Does an experiment with the given id exist?")
-            return 1
+            return False
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log'))
-        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log')
+        Log.set_file(log_file)
+
+        as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             return False
+
         project_type = as_conf.get_project_type()
         if project_type != "none":
             if not as_conf.check_proj():
@@ -1069,17 +1084,16 @@ class Autosubmit:
         if len(submitter.platforms) == 0:
             return False
 
-        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf)
+        pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
+        job_list = Autosubmit.load_job_list(experiment_id, as_conf)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
 
-        hpcarch = as_conf.get_platform()
+        hpc_architecture = as_conf.get_platform()
         for job in job_list.get_job_list():
             if job.platform_name is None:
-                job.platform_name = hpcarch
-            # noinspection PyTypeChecker
+                job.platform_name = hpc_architecture
             job.platform = submitter.platforms[job.platform_name.lower()]
             job.update_parameters(as_conf, job_list.parameters)
 
@@ -1490,35 +1504,30 @@ class Autosubmit:
             Autosubmit.unarchive(expid)
             return False
 
-        Log.result("Experiment archived succesfully")
+        Log.result("Experiment archived successfully")
         return True
 
     @staticmethod
-    def unarchive(expid):
+    def unarchive(experiment_id):
         """
         Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
-        :param expid: experiment identifier
-        :type expid: str
+        :param experiment_id: experiment identifier
+        :type experiment_id: str
         """
         BasicConfig.read()
-        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-        if not os.path.exists(exp_folder):
-            Log.critical("The directory %s is needed and does not exist." % exp_folder)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
-
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(experiment_id)))
+        exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         if os.path.exists(exp_folder):
-            Log.error("Experiment {0} is not archived", expid)
+            Log.error("Experiment {0} is not archived", experiment_id)
             return False
 
         # Searching by year. We will store it on database
         year = datetime.datetime.today().year
         archive_path = None
         while year > 2000:
-            archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(expid))
+            archive_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year), '{0}.tar.gz'.format(experiment_id))
             if os.path.exists(archive_path):
                 break
             year -= 1
@@ -1540,7 +1549,7 @@ class Autosubmit:
             Log.critical("Can not extract tar file: {0}".format(e))
             return False
 
-        Log.info("Unpacking finished.")
+        Log.info("Unpacking finished")
 
         try:
             os.remove(archive_path)
@@ -1548,7 +1557,7 @@ class Autosubmit:
             Log.error("Can not remove archived file folder: {0}".format(e))
             return False
 
-        Log.result("Experiment {0} unarchived succesfully", expid)
+        Log.result("Experiment {0} unarchived successfully", experiment_id)
         return True
 
     @staticmethod
@@ -1586,10 +1595,10 @@ class Autosubmit:
 
         :param expid: experiment identifier
         :type expid: str
-        :param noplot: if True, method omits final ploting of joblist. Only needed on large experiments when plotting
-                       time can be much larger than creation time.
+        :param noplot: if True, method omits final plotting of the jobs list. Only needed on large experiments when
+        plotting time can be much larger than creation time.
         :type noplot: bool
-        :return: True if succesful, False if not
+        :return: True if successful, False if not
         :rtype: bool
         :param hide: hides plot window
         :type hide: bool
@@ -1641,13 +1650,14 @@ class Autosubmit:
                     Log.error('There are repeated start dates!')
                     return False
                 num_chunks = as_conf.get_num_chunks()
+                chunk_ini = as_conf.get_chunk_ini()
                 member_list = as_conf.get_member_list()
                 if len(member_list) != len(set(member_list)):
                     Log.error('There are repeated member names!')
                     return False
                 rerun = as_conf.get_rerun()
 
-                Log.info("\nCreating joblist...")
+                Log.info("\nCreating the jobs list...")
                 job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                                    Autosubmit._get_job_list_persistence(expid, as_conf))
 
@@ -1659,7 +1669,8 @@ class Autosubmit:
                         date_format = 'H'
                     if date.minute > 1:
                         date_format = 'M'
-                job_list.generate(date_list, member_list, num_chunks, parameters, date_format, as_conf.get_retrials(),
+                job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                                  as_conf.get_retrials(),
                                   as_conf.get_default_job_type())
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
@@ -1667,14 +1678,14 @@ class Autosubmit:
                 else:
                     job_list.remove_rerun_only_jobs()
 
-                Log.info("\nSaving joblist...")
+                Log.info("\nSaving the jobs list...")
                 job_list.save()
                 if not noplot:
-                    Log.info("\nPloting joblist...")
+                    Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
                     monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
 
-                Log.result("\nJob list created succesfully")
+                Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
                 return True
 
@@ -1722,7 +1733,7 @@ class Autosubmit:
                           project_path)
                 shutil.rmtree(project_path, ignore_errors=True)
                 return False
-            Log.debug("{0}" % output)
+            Log.debug("{0}", output)
 
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
@@ -1770,7 +1781,7 @@ class Autosubmit:
 
         :param expid: experiment identifier
         :type expid: str
-        :param save: if true, saves the new joblist
+        :param save: if true, saves the new jobs list
         :type save: bool
         :param final: status to set on jobs
         :type final: str
@@ -1785,7 +1796,6 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        root_name = 'job_list'
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
@@ -2164,7 +2174,7 @@ class Autosubmit:
     def _change_conf(testid, hpc, start_date, member, chunks, branch, random_select=False):
         as_conf = AutosubmitConfig(testid, BasicConfig, ConfigParserFactory())
         exp_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.experiment_file)
-        if AutosubmitConfig.get_bool_option(exp_parser, 'rerun', "RERUN", True):
+        if exp_parser.get_bool_option('rerun', "RERUN", True):
             Log.error('Can not test a RERUN experiment')
             return False
 
@@ -2174,7 +2184,7 @@ class Autosubmit:
                 platforms_parser = as_conf.get_parser(ConfigParserFactory(), as_conf.platforms_file)
                 test_platforms = list()
                 for section in platforms_parser.sections():
-                    if AutosubmitConfig.get_option(platforms_parser, section, 'TEST_SUITE', 'false').lower() == 'true':
+                    if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
                         test_platforms.append(section)
                 if len(test_platforms) == 0:
                     Log.critical('No test HPC defined')
@@ -2224,8 +2234,9 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.load_parameters(),
-                          date_format, as_conf.get_retrials(), as_conf.get_default_job_type(), False)
+        job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
+                          as_conf.load_parameters(), date_format, as_conf.get_retrials(),
+                          as_conf.get_default_job_type(), False)
         return job_list
 
     @staticmethod

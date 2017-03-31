@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,12 +16,14 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 
 from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.slurm_header import SlurmHeader
+from autosubmit.platforms.wrappers.slurm_wrapper import SlurmWrapper
 
 
 class SlurmPlatform(ParamikoPlatform):
@@ -32,29 +34,18 @@ class SlurmPlatform(ParamikoPlatform):
     :type expid: str
     """
 
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return "#"
-
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = SlurmHeader()
+        self._wrapper = SlurmWrapper()
         self.job_status = dict()
-
         self.job_status['COMPLETED'] = ['COMPLETED']
         self.job_status['RUNNING'] = ['RUNNING']
         self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
         self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self._allow_arrays = False
+        self._allow_wrappers = True
         self.update_cmds()
 
     def update_cmds(self):
@@ -95,53 +86,3 @@ class SlurmPlatform(ParamikoPlatform):
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
-
-
-class SlurmHeader:
-    """Class to handle the SLURM headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        if job.parameters['CURRENT_QUEUE'] == '':
-            return ""
-        else:
-            return "SBATCH --qos {0}".format(job.parameters['CURRENT_QUEUE'])
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #SBATCH -n %NUMPROC%
-            #SBATCH -t %WALLCLOCK%:00
-            #SBATCH -J %JOBNAME%
-            #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
-            #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
-            #
-            ###############################################################################
-           """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #SBATCH -n %NUMPROC%
-            #SBATCH -t %WALLCLOCK%:00
-            #SBATCH -J %JOBNAME%
-            #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.out
-            #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%JOBNAME%-%j.err
-            #
-            ###############################################################################
-            """)

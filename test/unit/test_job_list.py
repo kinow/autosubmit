@@ -4,7 +4,7 @@ from unittest import TestCase
 import os
 from mock import Mock
 
-from autosubmit.config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.job.job import Job
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_list import JobList
@@ -218,7 +218,7 @@ class TestJobList(TestCase):
         graph_mock = Mock()
         job_list.graph = graph_mock
         # act
-        job_list.generate(date_list, member_list, num_chunks, parameters, 'H', 9999, Type.BASH)
+        job_list.generate(date_list, member_list, num_chunks, 1, parameters, 'H', 9999, Type.BASH)
 
         # assert
         self.assertEquals(job_list.parameters, parameters)

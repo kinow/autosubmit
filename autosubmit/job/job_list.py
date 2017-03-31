@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -30,12 +30,13 @@ from time import localtime, strftime
 from sys import setrecursionlimit
 from shutil import move
 
-from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job import Job
-from autosubmit.job.job_package import JobPackageSimple
-from autosubmit.job.job_package import JobPackageArray
-from autosubmit.config.log import Log
-from autosubmit.date.chunk_date_lib import date2str, parse_date
+from bscearth.utils.log import Log
+from autosubmit.job.job_dict import DicJobs
+from autosubmit.job.job_utils import Dependency
+from autosubmit.job.job_common import Status, Type
+from bscearth.utils.date import date2str, parse_date, sum_str_hours
+from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageThread
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
@@ -89,8 +90,8 @@ class JobList:
     def graph(self, value):
         self._graph = value
 
-    def generate(self, date_list, member_list, num_chunks, parameters, date_format, default_retrials, default_job_type,
-                 new=True):
+    def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
+                 default_job_type, new=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -102,6 +103,8 @@ class JobList:
         :type member_list: list
         :param num_chunks: number of chunks to run
         :type num_chunks: int
+        :param chunk_ini: the experiment will start by the given chunk
+        :type chunk_ini: int
         :param parameters: parameters for the jobs
         :type parameters: dict
         :param date_format: option to format dates
@@ -115,7 +118,7 @@ class JobList:
         self._date_list = date_list
         self._member_list = member_list
 
-        chunk_list = range(1, num_chunks + 1)
+        chunk_list = range(chunk_ini, num_chunks + 1)
         self._chunk_list = chunk_list
 
         jobs_parser = self._get_jobs_parser()
@@ -169,7 +172,8 @@ class JobList:
         return dependencies
 
     @staticmethod
-    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies, graph):
+    def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
+                                 graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
@@ -515,7 +519,7 @@ class JobList:
 
     def update_from_file(self, store_change=True):
         """
-        Updates joblist on the fly from and update file
+        Updates jobs list on the fly from and update file
         :param store_change: if True, renames the update file to avoid reloading it at the next iteration
         """
         if os.path.exists(os.path.join(self._persistence_path, self._update_file)):
@@ -632,9 +636,12 @@ class JobList:
         for job in self._job_list:
             if job.section in sections_checked:
                 continue
-            if not job.check_script(as_conf, self.parameters):
-                out = False
-                Log.warning("Invalid parameter substitution in {0} template!!!", job.section)
+            if job.check.lower() != 'true':
+                Log.warning('Template {0} will not be checked'.format(job.section))
+            else:
+                if not job.check_script(as_conf, self.parameters):
+                    out = False
+                    Log.warning("Invalid parameter substitution in {0} template", job.section)
             sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
@@ -670,6 +677,7 @@ class JobList:
         jobs_parser = self._get_jobs_parser()
 
         Log.info("Adding dependencies...")
+        dependencies = dict()
         for job_section in jobs_parser.sections():
             Log.debug("Reading rerun dependencies for {0} jobs".format(job_section))
 
@@ -745,366 +753,3 @@ class JobList:
         if flag:
             self.update_genealogy()
         del self._dic_jobs
-
-    def get_ready_packages(self, platform):
-        # Check there are ready jobs
-        jobs_available = self.get_ready(platform)
-        if len(jobs_available) == 0:
-            return list()
-        Log.info("\nJobs ready for {1}: {0}", len(jobs_available), platform.name)
-        # Checking available submission slots
-        max_waiting_jobs = platform.max_waiting_jobs
-        waiting_jobs = len(self.get_submitted(platform) + self.get_queuing(platform))
-        max_wait_jobs_to_submit = max_waiting_jobs - waiting_jobs
-        max_jobs_to_submit = platform.total_jobs - len(self.get_in_queue(platform))
-        # Logging obtained data
-        Log.debug("Number of jobs ready: {0}", len(jobs_available))
-        Log.debug("Number of jobs available: {0}", max_wait_jobs_to_submit)
-        Log.info("Jobs to submit: {0}", min(max_wait_jobs_to_submit, len(jobs_available)))
-        # If can submit jobs
-        if max_wait_jobs_to_submit > 0 and max_jobs_to_submit > 0:
-            available_sorted = sorted(jobs_available, key=lambda k: k.long_name.split('_')[1][:6])
-            list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
-            num_jobs_to_submit = min(max_wait_jobs_to_submit, len(jobs_available), max_jobs_to_submit)
-            jobs_to_submit = list_of_available[0:num_jobs_to_submit]
-            jobs_to_submit_by_section = self.divide_list_by_section(jobs_to_submit)
-            packages_to_submit = list()
-            if platform.allow_arrays:
-                for section_list in jobs_to_submit_by_section.values():
-                    packages_to_submit.append(JobPackageArray(section_list))
-                return packages_to_submit
-            for job in jobs_to_submit:
-                packages_to_submit.append(JobPackageSimple([job]))
-            return packages_to_submit
-        return list()  # no packages to submit
-
-    @staticmethod
-    def divide_list_by_section(jobs_list):
-        """
-        Returns a dict() with as many keys as 'jobs_list' different sections.
-        The value for each key is a list() with all the jobs with the key section.
-
-        :param jobs_list: list of jobs to be divided
-        :rtype: dict
-        """
-        by_section = dict()
-        for job in jobs_list:
-            if job.section not in by_section:
-                by_section[job.section] = list()
-            by_section[job.section].append(job)
-        return by_section
-
-
-class DicJobs:
-    """
-    Class to create jobs from conf file and to find jobs by stardate, member and chunk
-
-    :param joblist: joblist to use
-    :type joblist: JobList
-    :param parser: jobs conf file parser
-    :type parser: SafeConfigParser
-    :param date_list: startdates
-    :type date_list: list
-    :param member_list: member
-    :type member_list: list
-    :param chunk_list: chunks
-    :type chunk_list: list
-    :param date_format: option to formate dates
-    :type date_format: str
-    :param default_retrials: default retrials for ech job
-    :type default_retrials: int
-
-    """
-
-    def __init__(self, joblist, parser, date_list, member_list, chunk_list, date_format, default_retrials):
-        self._date_list = date_list
-        self._joblist = joblist
-        self._member_list = member_list
-        self._chunk_list = chunk_list
-        self._parser = parser
-        self._date_format = date_format
-        self.default_retrials = default_retrials
-        self._dic = dict()
-
-    def read_section(self, section, priority, default_job_type, jobs_data=dict()):
-        """
-        Read a section from jobs conf and creates all jobs for it
-
-        :param default_job_type: default type for jobs
-        :type default_job_type: str
-        :param jobs_data: dictionary containing the plain data from jobs
-        :type jobs_data: dict
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        """
-        running = 'once'
-        if self._parser.has_option(section, 'RUNNING'):
-            running = self._parser.get(section, 'RUNNING').lower()
-        frequency = int(self.get_option(section, "FREQUENCY", 1))
-        if running == 'once':
-            self._create_jobs_once(section, priority, default_job_type, jobs_data)
-        elif running == 'date':
-            self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data)
-        elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data)
-        elif running == 'chunk':
-            synchronize = self.get_option(section, "SYNCHRONIZE", None)
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, jobs_data)
-
-    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
-        """
-        Create jobs to be run once
-
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        """
-        self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
-        self._joblist.graph.add_node(self._dic[section].name)
-
-    def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
-        """
-        Create jobs to be run once per startdate
-
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        :param frequency: if greater than 1, only creates one job each frequency startdates. Allways creates one job
-                          for the last
-        :type frequency: int
-        """
-        self._dic[section] = dict()
-        count = 0
-        for date in self._date_list:
-            count += 1
-            if count % frequency == 0 or count == len(self._date_list):
-                self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
-                                                          jobs_data)
-                self._joblist.graph.add_node(self._dic[section][date].name)
-
-    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
-        """
-        Create jobs to be run once per member
-
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        :param frequency: if greater than 1, only creates one job each frequency members. Allways creates one job
-                          for the last
-        :type frequency: int
-        """
-        self._dic[section] = dict()
-        for date in self._date_list:
-            self._dic[section][date] = dict()
-            count = 0
-            for member in self._member_list:
-                count += 1
-                if count % frequency == 0 or count == len(self._member_list):
-                    self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
-                                                                      default_job_type, jobs_data)
-                    self._joblist.graph.add_node(self._dic[section][date][member].name)
-
-    '''
-        Maybe a good choice could be split this function or ascend the
-        conditional decision to the father which makes the call
-    '''
-
-    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, jobs_data=dict()):
-        """
-        Create jobs to be run once per chunk
-
-        :param synchronize:
-        :param section: section to read
-        :type section: str
-        :param priority: priority for the jobs
-        :type priority: int
-        :param frequency: if greater than 1, only creates one job each frequency chunks. Always creates one job
-                          for the last
-        :type frequency: int
-        """
-        # Temporally creation for unified jobs in case of synchronize
-        if synchronize is not None:
-            tmp_dic = dict()
-            count = 0
-            for chunk in self._chunk_list:
-                count += 1
-                if count % frequency == 0 or count == len(self._chunk_list):
-                    if synchronize == 'date':
-                        tmp_dic[chunk] = self.build_job(section, priority, None, None,
-                                                        chunk, default_job_type, jobs_data)
-                    elif synchronize == 'member':
-                        tmp_dic[chunk] = dict()
-                        for date in self._date_list:
-                            tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
-                                                                  chunk, default_job_type, jobs_data)
-        # Real dic jobs assignment/creation
-        self._dic[section] = dict()
-        for date in self._date_list:
-            self._dic[section][date] = dict()
-            for member in self._member_list:
-                self._dic[section][date][member] = dict()
-                count = 0
-                for chunk in self._chunk_list:
-                    count += 1
-                    if count % frequency == 0 or count == len(self._chunk_list):
-                        if synchronize == 'date':
-                            self._dic[section][date][member][chunk] = tmp_dic[chunk]
-                        elif synchronize == 'member':
-                            self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
-                        else:
-                            self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
-                                                                                     chunk, default_job_type, jobs_data)
-                        self._joblist.graph.add_node(self._dic[section][date][member][chunk].name)
-
-    def get_jobs(self, section, date=None, member=None, chunk=None):
-        """
-        Return all the jobs matching section, date, member and chunk provided. If any parameter is none, returns all
-        the jobs without checking that parameter value. If a job has one parameter to None, is returned if all the
-        others match parameters passed
-
-        :param section: section to return
-        :type section: str
-        :param date: stardate to return
-        :type date: str
-        :param member: member to return
-        :type member: str
-        :param chunk: chunk to return
-        :type chunk: int
-        :return: jobs matching parameters passed
-        :rtype: list
-        """
-        jobs = list()
-
-        if section not in self._dic:
-            return jobs
-
-        dic = self._dic[section]
-        if type(dic) is not dict:
-            jobs.append(dic)
-        else:
-            if date is not None:
-                self._get_date(jobs, dic, date, member, chunk)
-            else:
-                for d in self._date_list:
-                    self._get_date(jobs, dic, d, member, chunk)
-        return jobs
-
-    def _get_date(self, jobs, dic, date, member, chunk):
-        if date not in dic:
-            return jobs
-        dic = dic[date]
-        if type(dic) is not dict:
-            jobs.append(dic)
-        else:
-            if member is not None:
-                self._get_member(jobs, dic, member, chunk)
-            else:
-                for m in self._member_list:
-                    self._get_member(jobs, dic, m, chunk)
-
-        return jobs
-
-    def _get_member(self, jobs, dic, member, chunk):
-        if member not in dic:
-            return jobs
-        dic = dic[member]
-        if type(dic) is not dict:
-            jobs.append(dic)
-        else:
-            if chunk is not None and chunk in dic:
-                jobs.append(dic[chunk])
-            else:
-                for c in self._chunk_list:
-                    if c not in dic:
-                        continue
-                    jobs.append(dic[c])
-        return jobs
-
-    def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict()):
-        name = self._joblist.expid
-        if date is not None:
-            name += "_" + date2str(date, self._date_format)
-        if member is not None:
-            name += "_" + member
-        if chunk is not None:
-            name += "_{0}".format(chunk)
-        name += "_" + section
-        if name in jobs_data:
-            job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
-            job.local_logs = (jobs_data[name][8], jobs_data[name][9])
-            job.remote_logs = (jobs_data[name][10], jobs_data[name][11])
-        else:
-            job = Job(name, 0, Status.WAITING, priority)
-        job.section = section
-        job.date = date
-        job.member = member
-        job.chunk = chunk
-        job.date_format = self._date_format
-
-        job.frequency = int(self.get_option(section, "FREQUENCY", 1))
-        job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
-        job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
-
-        type = self.get_option(section, "TYPE", default_job_type).lower()
-        if type == 'bash':
-            job.type = Type.BASH
-        elif type == 'python':
-            job.type = Type.PYTHON
-        elif type == 'r':
-            job.type = Type.R
-
-        job.platform_name = self.get_option(section, "PLATFORM", None)
-        if job.platform_name is not None:
-            job.platform_name = job.platform_name
-        job.file = self.get_option(section, "FILE", None)
-        job.queue = self.get_option(section, "QUEUE", None)
-        if self.get_option(section, "CHECK", 'True').lower() == 'true':
-            job.check = True
-        else:
-            job.check = False
-
-        job.processors = self.get_option(section, "PROCESSORS", 1)
-        job.threads = self.get_option(section, "THREADS", '')
-        job.tasks = self.get_option(section, "TASKS", '')
-        job.memory = self.get_option(section, "MEMORY", '')
-        job.wallclock = self.get_option(section, "WALLCLOCK", '')
-        job.retrials = int(self.get_option(section, 'RETRIALS', -1))
-        if job.retrials == -1:
-            job.retrials = None
-        job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
-        self._joblist.get_job_list().append(job)
-        return job
-
-    def get_option(self, section, option, default):
-        """
-        Returns value for a given option
-
-        :param section: section name
-        :type section: str
-        :param option: option to return
-        :type option: str
-        :param default: value to return if not defined in configuration file
-        :type default: object
-        """
-        if self._parser.has_option(section, option):
-            return self._parser.get(section, option)
-        else:
-            return default
-
-
-class Dependency(object):
-    """
-    Class to manage the metadata related with a dependency
-
-    """
-
-    def __init__(self, section, distance=None, running=None, sign=None):
-        self.section = section
-        self.distance = distance
-        self.running = running
-        self.sign = sign

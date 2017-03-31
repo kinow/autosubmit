@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,11 +16,15 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
+
+from autosubmit.platforms.headers.pbs10_header import Pbs10Header
+from autosubmit.platforms.headers.pbs11_header import Pbs11Header
+from autosubmit.platforms.headers.pbs12_header import Pbs12Header
 
 
 class PBSPlatform(ParamikoPlatform):
@@ -98,139 +102,3 @@ class PBSPlatform(ParamikoPlatform):
             return self._checkjob_cmd + str(job_id)
         else:
             return "ssh " + self.host + " " + self.get_qstatjob(job_id)
-
-
-class Pbs12Header:
-    """Class to handle the Archer headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l select=serial=true:ncpus=1
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %CURRENT_BUDG%
-            #
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l select=%NUMPROC%
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %CURRENT_BUDG%
-            #
-            ###############################################################################
-            """)
-
-
-class Pbs10Header:
-    """Class to handle the Hector headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -q serial
-            #PBS -l cput=%WALLCLOCK%:00
-            #PBS -A %CURRENT_BUDG%
-            #
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=32
-            #PBS -l walltime=%WALLCLOCK%:00
-            #PBS -A %CURRENT_BUDG%
-            #
-            ###############################################################################
-            """)
-
-
-class Pbs11Header:
-    """Class to handle the Lindgren headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #!/bin/sh --login
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
-            #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                         %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #!/bin/sh --login
-            #PBS -N %JOBNAME%
-            #PBS -l mppwidth=%NUMPROC%
-            #PBS -l mppnppn=%NUMTASK%
-            #PBS -l walltime=%WALLCLOCK%
-            #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
-            #
-            ###############################################################################
-            """)

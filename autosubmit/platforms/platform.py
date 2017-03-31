@@ -2,7 +2,7 @@ from time import sleep
 
 import os
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 
 
@@ -39,7 +39,12 @@ class Platform(object):
         self.service = None
         self.scheduler = None
         self.directory = None
+        self.hyperthreading = 'false'
+        self.max_wallclock = ''
+        self.max_processors = None
         self._allow_arrays = False
+        self._allow_wrappers = False
+        self._allow_python_jobs = True
 
     @property
     def serial_platform(self):
@@ -89,6 +94,14 @@ class Platform(object):
     @property
     def allow_arrays(self):
         return self._allow_arrays is True
+
+    @property
+    def allow_wrappers(self):
+        return self._allow_wrappers is True
+
+    @property
+    def allow_python_jobs(self):
+        return self._allow_python_jobs is True
 
     def add_parameters(self, parameters, main_hpc=False):
         """
@@ -190,7 +203,7 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=5):
+    def get_completed_files(self, job_name, retries=0):
         """
         Get the COMPLETED file of the given job
 
@@ -216,7 +229,7 @@ class Platform(object):
 
         :param job_name: name of job to check
         :type job_name: str
-        :return: True if succesful, False otherwise
+        :return: True if successful, False otherwise
         :rtype: bool
         """
         filename = job_name + '_STAT'
@@ -231,7 +244,7 @@ class Platform(object):
 
         :param job_name: name of job to check
         :type job_name: str
-        :return: True if succesful, False otherwise
+        :return: True if successful, False otherwise
         :rtype: bool
         """
         filename = job_name + '_COMPLETED'
@@ -240,7 +253,7 @@ class Platform(object):
             return True
         return False
 
-    def get_stat_file(self, job_name, retries=1):
+    def get_stat_file(self, job_name, retries=0):
         """
         Copies *STAT* files from remote to local
 

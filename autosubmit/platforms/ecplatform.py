@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,17 +16,21 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
+
+from autosubmit.platforms.headers.ec_header import EcHeader
+from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
+from autosubmit.platforms.wrappers.ec_wrapper import EcWrapper
 
 
 class EcPlatform(ParamikoPlatform):
     """
-    Class to manage queues with ecacces
+    Class to manage queues with ecaccess
 
     :param expid: experiment's identifier
     :type expid: str
@@ -42,12 +46,16 @@ class EcPlatform(ParamikoPlatform):
             self._header = EcHeader()
         else:
             raise ParamikoPlatformException('ecaccess scheduler {0} not supported'.format(scheduler))
+        self._wrapper = EcWrapper()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['EXEC']
         self.job_status['QUEUING'] = ['INIT', 'RETR', 'STDBY', 'WAIT']
         self.job_status['FAILED'] = ['STOP']
         self._pathdir = "\$HOME/LOG_" + self.expid
+        self._allow_arrays = False
+        self._allow_wrappers = True
+        self._allow_python_jobs = False
         self.update_cmds()
 
     def update_cmds(self):
@@ -135,11 +143,15 @@ class EcPlatform(ParamikoPlatform):
         return True
 
     def get_file(self, filename, must_exist=True, relative_path=''):
-        local_path = os.path.join(self.tmp_path, relative_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
 
-        command = '{0} {3}:{2} {1}'.format(self.get_cmd, local_path, os.path.join(self.get_files_path(), filename),
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, file_path, os.path.join(self.get_files_path(), filename),
                                            self.host)
         try:
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
@@ -163,127 +175,3 @@ class EcPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
-
-
-class EcHeader:
-    """Class to handle the ECMWF headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    # noinspection PyPep8
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = ns
-            #@ job_type         = serial
-            #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ platforms
-            #
-            ###############################################################################
-            """)
-
-    # noinspection PyPep8
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #@ shell            = /usr/bin/ksh
-            #@ class            = np
-            #@ job_type         = parallel
-            #@ job_name         = %JOBNAME%
-            #@ output           = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).out
-            #@ error            = %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/$(job_name).$(jobid).err
-            #@ notification     = error
-            #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
-            #@ ec_smt           = no
-            #@ total_tasks      = %NUMPROC%
-            #@ wall_clock_limit = %WALLCLOCK%:00
-            #@ platforms
-            #
-            ###############################################################################
-            """)
-
-
-class EcCcaHeader:
-    """Class to handle the ECMWF headers of a job"""
-
-    # noinspection PyMethodMayBeStatic,PyUnusedLocal
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        # There is no queue, so directive is empty
-        return ""
-
-    # noinspection PyMethodMayBeStatic
-    def get_tasks_per_node(self, job):
-        if not isinstance(job.tasks, int):
-            return ""
-        else:
-            return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
-
-    # noinspection PyMethodMayBeStatic
-    def get_threads_per_task(self, job):
-        if not isinstance(job.threads, int):
-            return ""
-        else:
-            return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
-
-    SERIAL = textwrap.dedent("""\
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q ns
-             #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%CURRENT_BUDG%
-             #
-             ###############################################################################
-
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-             ###############################################################################
-             #                   %TASKTYPE% %EXPID% EXPERIMENT
-             ###############################################################################
-             #
-             #PBS -N %JOBNAME%
-             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q np
-             #PBS -l EC_total_tasks=%NUMPROC%
-             %THREADS_PER_TASK_DIRECTIVE%
-             %TASKS_PER_NODE_DIRECTIVE%
-             #PBS -l walltime=%WALLCLOCK%:00
-             #PBS -l EC_billing_account=%CURRENT_BUDG%
-             #
-             ###############################################################################
-            """)

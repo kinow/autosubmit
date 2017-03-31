@@ -4,11 +4,11 @@ import os
 import paramiko
 import datetime
 
-from autosubmit.config.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
-from autosubmit.date.chunk_date_lib import date2str
+from bscearth.utils.date import date2str
 
 
 class ParamikoPlatform(Platform):
@@ -42,6 +42,16 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._header
+
+    @property
+    def wrapper(self):
+        """
+        Handler to manage wrappers
+
+        :return: wrapper-handler
+        :rtype: object
+        """
+        return self._wrapper
 
     def connect(self):
         """
@@ -91,6 +101,8 @@ class ParamikoPlatform(Platform):
         try:
             ftp = self._ssh.open_sftp()
             ftp.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
+            ftp.chmod(os.path.join(self.get_files_path(), filename),
+                      os.stat(os.path.join(self.tmp_path, filename)).st_mode)
             ftp.close()
             return True
         except BaseException as e:
@@ -112,9 +124,13 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
 
-        local_path = os.path.join(self.tmp_path, relative_path, filename)
-        if os.path.exists(local_path):
-            os.remove(local_path)
+        local_path = os.path.join(self.tmp_path, relative_path)
+        if not os.path.exists(local_path):
+            os.makedirs(local_path)
+
+        file_path = os.path.join(local_path, filename)
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
         if self._ssh is None:
             if not self.connect():
@@ -122,10 +138,13 @@ class ParamikoPlatform(Platform):
 
         try:
             ftp = self._ssh.open_sftp()
-            ftp.get(os.path.join(self.get_files_path(), filename), local_path)
+            ftp.get(os.path.join(self.get_files_path(), filename), file_path)
             ftp.close()
             return True
         except BaseException:
+            # ftp.get creates a local file anyway
+            if os.path.exists(file_path):
+                os.remove(file_path)
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             return False
@@ -354,7 +373,7 @@ class ParamikoPlatform(Platform):
         :return: command to check job status script
         :rtype: str
         """
-        return 'nohup kill -0 {0}; echo $?'.format(job_id)
+        return 'nohup kill -0 {0} >& /dev/null; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """
@@ -375,10 +394,10 @@ class ParamikoPlatform(Platform):
         :return: header to use
         :rtype: str
         """
-        if job.processors > 1:
-            header = self.header.PARALLEL
-        else:
+        if str(job.processors) == '1':
             header = self.header.SERIAL
+        else:
+            header = self.header.PARALLEL
 
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.{1}.out".format(job.name, str_datetime)
@@ -397,6 +416,14 @@ class ParamikoPlatform(Platform):
             header = header.replace('%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
         if hasattr(self.header, 'get_exclusivity'):
             header = header.replace('%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
+        if hasattr(self.header, 'get_account_directive'):
+            header = header.replace('%ACCOUNT_DIRECTIVE%', self.header.get_account_directive(job))
+        if hasattr(self.header, 'get_memory_directive'):
+            header = header.replace('%MEMORY_DIRECTIVE%', self.header.get_memory_directive(job))
+        if hasattr(self.header, 'get_memory_per_task_directive'):
+            header = header.replace('%MEMORY_PER_TASK_DIRECTIVE%', self.header.get_memory_per_task_directive(job))
+        if hasattr(self.header, 'get_hyperthreading_directive'):
+            header = header.replace('%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
 
     def check_remote_log_dir(self):

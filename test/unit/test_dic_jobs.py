@@ -3,10 +3,10 @@ from unittest import TestCase
 
 from mock import Mock
 import math
-from autosubmit.config.parser_factory import ConfigParserFactory
+from bscearth.utils.config_parser import ConfigParserFactory
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
-from autosubmit.job.job_list import DicJobs
+from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_list import JobList
 from autosubmit.job.job_list_persistence import JobListPersistenceDb
 
@@ -286,19 +286,20 @@ class TestDicJobs(TestCase):
         platform_name = 'fake-platform'
         filename = 'fake-fike'
         queue = 'fake-queue'
-        processors = 111
+        processors = '111'
         threads = 222
         tasks = 333
-        memory = 444
+        memory = memory_per_task = 444
         wallclock = 555
         notify_on = 'COMPLETED FAILED'
         self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True,
-                                                        True, True, True, False, True])
+                                                        True, True, True, True, False, True])
         self.parser_mock.get = Mock(side_effect=[frequency, 'True', 'True', 'bash', platform_name, filename, queue,
-                                                 'True', processors, threads, tasks, memory, wallclock, notify_on])
+                                                 'True', processors, threads, tasks, memory, memory_per_task,
+                                                 wallclock, notify_on])
         job_list_mock = Mock()
         job_list_mock.append = Mock()
-        self.dictionary._joblist.get_job_list = Mock(return_value=job_list_mock)
+        self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)
 
         # act
         created_job = self.dictionary.build_job(section, priority, date, member, chunk, dict())

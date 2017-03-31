@@ -43,7 +43,7 @@ class TestJob(TestCase):
         platform.serial_platform = 'serial-platform'
 
         self.job._platform = platform
-        self.job.processors = 1
+        self.job.processors = '1'
 
         returned_platform = self.job.platform
 
@@ -90,7 +90,7 @@ class TestJob(TestCase):
         dummy_platform.queue = parallel_queue
 
         self.job.platform = dummy_platform
-        self.job.processors = 1
+        self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)
 
@@ -180,16 +180,6 @@ class TestJob(TestCase):
         write_mock.write.assert_called_with('some-content: 999, 777, 666 % %')
         chmod_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 0o775)
 
-    def test_that_check_script_returns_true_when_it_is_not_needed(self):
-        # arrange
-        self.job.check = False
-
-        # act
-        result = self.job.check_script(Mock(), dict())
-
-        # assert
-        self.assertTrue(result)
-
     def test_that_check_script_returns_false_when_there_is_an_unbound_template_variable(self):
         # arrange
         update_content_mock = Mock(return_value='some-content: %UNBOUND%')
@@ -225,16 +215,12 @@ class TestJob(TestCase):
         config = Mock(spec=AutosubmitConfig)
         config.get_project_dir = Mock(return_value='/project/dir')
 
-        create_script_mock = Mock()
-        self.job.create_script = create_script_mock
-
         # act
         checked = self.job.check_script(config, self.job.parameters)
 
         # assert
         update_parameters_mock.assert_called_with(config, self.job.parameters)
         update_content_mock.assert_called_with(config)
-        create_script_mock.assert_called_with(config)
         self.assertTrue(checked)
 
     def test_exists_completed_file_then_sets_status_to_completed(self):

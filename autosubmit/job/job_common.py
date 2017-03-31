@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -53,7 +53,9 @@ class Type:
         return getattr(self, value)
 
 
-# noinspection PyPep8
+# TODO: Statistics classes refactor proposal: replace tailer by footer
+
+
 class StatisticsSnippetBash:
     """
     Class to handle the statistics snippet of a job. It contains header and tailer for
@@ -81,8 +83,6 @@ class StatisticsSnippetBash:
 
             """)
 
-
-    # noinspection PyPep8
     @staticmethod
     def as_tailer():
         return textwrap.dedent("""\
@@ -129,8 +129,6 @@ class StatisticsSnippetPython:
 
             """)
 
-
-    # noinspection PyPep8
     @staticmethod
     def as_tailer():
         return textwrap.dedent("""\
@@ -177,7 +175,6 @@ class StatisticsSnippetR:
 
             """)
 
-    # noinspection PyPep8
     @staticmethod
     def as_tailer():
         return textwrap.dedent("""\
@@ -194,3 +191,22 @@ class StatisticsSnippetR:
             close(fileConn)
             quit(save = 'no', status = 0)
             """)
+
+
+class StatisticsSnippetEmpty:
+    """
+    Class to handle the statistics snippet of a job. It contains header and footer for
+    local and remote jobs
+    """
+
+    @staticmethod
+    def as_header(scheduler_header):
+        return textwrap.dedent("""\
+            #!/bin/bash
+
+            """) + \
+            scheduler_header
+
+    @staticmethod
+    def as_tailer():
+        return ''

@@ -26,6 +26,8 @@ class TestSagaPlatform(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
         self.platform = SagaPlatform(self.experiment_id, 'test', FakeBasicConfig)
+        self.platform.service = Mock()
+        self.platform.service.session = Mock()
 
     def test_check_status_returns_completed_if_job_id_not_exists(self):
         # arrange
@@ -153,8 +155,8 @@ class TestSagaPlatform(TestCase):
 
         self.assertTrue(deleted)
         sys.modules['saga'].filesystem.File.assert_called_once_with(
-            "sftp://{0}{1}".format(self.platform.host, os.path.join(self.platform.get_files_path(),
-                                                                    'file/path')))
+            "sftp://{0}{1}".format(self.platform.host, os.path.join(self.platform.get_files_path(),'file/path')),
+                                   session=self.platform.service.session)
         out_mock.remove.assert_called_once_with()
         out_mock.close.assert_called_once_with()
 

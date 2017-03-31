@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2015 Earth Sciences Department, BSC-CNS
+# Copyright 2017 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 
@@ -16,10 +16,12 @@
 
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
-import textwrap
+
 import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from autosubmit.platforms.headers.lsf_header import LsfHeader
+from autosubmit.platforms.wrappers.lsf_wrapper import LsfWrapper
 
 
 class LsfPlatform(ParamikoPlatform):
@@ -32,12 +34,14 @@ class LsfPlatform(ParamikoPlatform):
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = LsfHeader()
+        self._wrapper = LsfWrapper()
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['RUN']
         self.job_status['QUEUING'] = ['PEND', 'FW_PEND']
         self.job_status['FAILED'] = ['SSUSP', 'USUSP', 'EXIT']
         self._allow_arrays = True
+        self._allow_wrappers = True
         self.update_cmds()
 
     def update_cmds(self):
@@ -84,97 +88,3 @@ class LsfPlatform(ParamikoPlatform):
 
     def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
-
-
-class LsfHeader:
-    """Class to handle the MareNostrum3 headers of a job"""
-
-    # noinspection PyMethodMayBeStatic
-    def get_queue_directive(self, job):
-        """
-        Returns queue directive for the specified job
-
-        :param job: job to create queue directibve for
-        :type job: Job
-        :return: queue directive
-        :rtype: str
-        """
-        if job.parameters['CURRENT_QUEUE'] == '':
-            return ""
-        else:
-            return "BSUB -q {0}".format(job.parameters['CURRENT_QUEUE'])
-
-    # noinspection PyMethodMayBeStatic
-    def get_scratch_free_space(self, job):
-        if not isinstance(job.scratch_free_space, int):
-            return ""
-        else:
-            return '#BSUB -R "select[(scratch<{0})]"'.format(job.scratch_free_space)
-
-    # noinspection PyMethodMayBeStatic
-    def get_tasks_per_node(self, job):
-        if not isinstance(job.tasks, int):
-            return ""
-        else:
-            return '#BSUB -R "span[ptile={0}]"'.format(job.tasks)
-
-    # noinspection PyMethodMayBeStatic
-    def get_exclusivity(self, job):
-        if job.platform.exclusivity == 'true':
-            return "#BSUB -x"
-        else:
-            return ""
-
-    @classmethod
-    def array_header(cls, filename, array_id, wallclock, num_processors):
-        return textwrap.dedent("""\
-            ###############################################################################
-            #              {0}
-            ###############################################################################
-            #
-            #
-            #BSUB -J {0}{1}
-            #BSUB -oo {0}.%I.out
-            #BSUB -eo {0}.%I.err
-            #BSUB -W {2}
-            #BSUB -n {3}
-            #
-            ###############################################################################
-
-            SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
-            chmod +x $SCRIPT
-            ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_processors))
-
-    SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            %EXCLUSIVITY_DIRECTIVE%
-            #
-            ###############################################################################
-            """)
-
-    PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #BSUB -J %JOBNAME%
-            #BSUB -oo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #BSUB -eo %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-            #BSUB -W %WALLCLOCK%
-            #BSUB -n %NUMPROC%
-            %TASKS_PER_NODE_DIRECTIVE%
-            %SCRATCH_FREE_SPACE_DIRECTIVE%
-            #
-            ###############################################################################
-            """)
