@@ -695,6 +695,9 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
 
+        except WrongTemplateException:
+            return False
+
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test):
         """
@@ -709,7 +712,7 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            Log.info("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
+            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages()
             for package in packages_to_submit:
                 try:
