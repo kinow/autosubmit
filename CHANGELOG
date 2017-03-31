@@ -1,5 +1,17 @@
+3.8.1
+    First version with job packages ~ only paramiko (LSF, SLURM and PBS)
+    - Vertical
+    - Horizontal
+    - With dependencies ~ only for vertical
+    Python wrapper for CCA (ECMWF)
+    On submission template checking
+    Some UX improvements
+    Other minor bug fixes
+
 3.8.0
-    First version with LSF arrays
+    First version with LSF arrays:
+    - Include all the bug fixes & features from 3.7.7
+    - NOT include the bug fixes from 3.7.8
 
 3.7.8
     Some bug fixes:
