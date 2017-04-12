@@ -59,8 +59,8 @@ class Job(object):
         self.platform_name = None
         self.section = None
         self.wallclock = None
-        self.tasks = None
-        self.threads = None
+        self.tasks = '1'
+        self.threads = '1'
         self.processors = '1'
         self.memory = ''
         self.memory_per_task = ''
