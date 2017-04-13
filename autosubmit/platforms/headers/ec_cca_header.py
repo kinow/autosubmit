@@ -38,14 +38,14 @@ class EcCcaHeader(object):
 
     # noinspection PyMethodMayBeStatic
     def get_tasks_per_node(self, job):
-        if not isinstance(job.tasks, int):
+        if not isinstance(job.tasks, str):
             return ""
         else:
             return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
 
     # noinspection PyMethodMayBeStatic
     def get_threads_per_task(self, job):
-        if not isinstance(job.threads, int):
+        if not isinstance(job.threads, str):
             return ""
         else:
             return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
