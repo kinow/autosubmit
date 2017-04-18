@@ -214,6 +214,11 @@ class Autosubmit:
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
+            # Handle
+            subparser = subparsers.add_parser('handle', description="Handle experiments to another user")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-mf', '--mapfile', help='map users file')
+
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
@@ -340,6 +345,8 @@ class Autosubmit:
                 return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
+            elif args.command == 'handle':
+                return Autosubmit.handle(args.expid, args.mapfile)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
@@ -1051,6 +1058,31 @@ class Autosubmit:
             monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
 
         return True
+
+    @staticmethod
+    def handle(experiment_id, map_file):
+        """
+        Handles experiment files to another users. It takes mapping information of old
+        user and new user from a map file.
+        
+        :param experiment_id: experiment identifier:
+        :param map_file: map file:
+        """"
+        BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory {0} is needed and does not exist.", exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return False
+
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'handle_exp.log')
+        Log.set_file(log_file)
+
+        as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            return False
+
+
 
     @staticmethod
     def check(experiment_id):
