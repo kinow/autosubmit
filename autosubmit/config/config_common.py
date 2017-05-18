@@ -902,6 +902,15 @@ class AutosubmitConfig(object):
         """
         return self._conf_parser.get_option('storage', 'TYPE', 'pkl').lower()
 
+    def get_migrate_to(self):
+        """
+        Returns the user to change experiment's owner to from autosubmit's config file.
+
+        :return: migrate to user
+        :rtype: str
+        """
+        return self._conf_parser.get_option('migrate', 'TO_USER', '').lower()
+
     @staticmethod
     def is_valid_mail_address(mail_address):
         if re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', mail_address):

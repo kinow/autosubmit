@@ -72,6 +72,7 @@ from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
+from experiment.experiment_common import migrate_experiment
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -214,10 +215,9 @@ class Autosubmit:
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
-            # Handle
-            subparser = subparsers.add_parser('handle', description="Handle experiments to another user")
+            # Migrate
+            subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
             subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-mf', '--mapfile', help='map users file')
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -345,8 +345,8 @@ class Autosubmit:
                 return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
-            elif args.command == 'handle':
-                return Autosubmit.handle(args.expid, args.mapfile)
+            elif args.command == 'migrate':
+                return Autosubmit.migrate(args.expid, args.mapfile)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
@@ -1060,14 +1060,14 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def handle(experiment_id, map_file):
+    def migrate(experiment_id, map_file):
         """
-        Handles experiment files to another users. It takes mapping information of old
+        Migrates experiment files from current to other user. It takes mapping information of old
         user and new user from a map file.
         
         :param experiment_id: experiment identifier:
         :param map_file: map file:
-        """"
+        """
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
         if not os.path.exists(exp_path):
@@ -1075,12 +1075,19 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'handle_exp.log')
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'migrate_exp.log')
         Log.set_file(log_file)
 
-        as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
+        #as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+        #if not as_conf.check_conf_files():
+            #return False
+        user_to = "cprodhom"
+
+        if not migrate_experiment(exp_path, user_to):
+            Log.critical("The directory owner for {0} cannot be changed to {1}.", exp_path, user_to)
             return False
+        
+        return True
 
 
 
