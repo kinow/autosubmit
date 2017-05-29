@@ -136,16 +136,6 @@ class TestAutosubmitConfig(TestCase):
         # assert
         self._assert_get_option(parser_mock, 'MEMORY', expected_value, returned_value, default_value, str)
 
-    def test_get_user_to(self):
-        # arrange
-        expected_value = 'new_user'
-        default_value = ''
-        config, parser_mock = self._arrange_config(expected_value)
-        # act
-        returned_value = config.get_chown(self.section)
-        # assert
-        self._assert_get_option(parser_mock, 'USER_TO', expected_value, returned_value, default_value, str)
-
     def test_that_reload_must_load_parsers(self):
         # arrange
         config = AutosubmitConfig(self.any_expid, FakeBasicConfig, ConfigParserFactory())
@@ -213,16 +203,6 @@ class TestAutosubmitConfig(TestCase):
 
         # assert
         open_mock.assert_any_call(getattr(config, '_conf_parser_file'), 'w')
-
-    def test_get_to_user(self):
-        # arrange
-        expected_value = 'new_user'
-        default_value = ''
-        config, parser_mock = self._arrange_config(expected_value)
-        # act
-        returned_value = config.get_to_user(self.section)
-        # assert
-        self._assert_get_option(parser_mock, 'TO_USER', expected_value, returned_value, default_value, str)
 
     def test_load_project_parameters(self):
         # arrange

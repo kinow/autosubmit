@@ -50,6 +50,7 @@ import random
 import signal
 import datetime
 import portalocker
+import pwd
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 
@@ -72,7 +73,8 @@ from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
-from experiment.experiment_common import migrate_experiment
+from experiment.experiment_common import migrate_experiment_offer
+from experiment.experiment_common import migrate_experiment_pickup
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -218,6 +220,9 @@ class Autosubmit:
             # Migrate
             subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
             subparser.add_argument('expid', help='experiment identifier')
+            group = subparser.add_mutually_exclusive_group(required=True)
+            group.add_argument('-o', '--offer', action="store_true", default=False, help='Offer experiment')
+            group.add_argument('-p', '--pickup', action="store_true", default=False, help='Pick-up released experiment')
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -346,7 +351,7 @@ class Autosubmit:
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'migrate':
-                return Autosubmit.migrate(args.expid, args.mapfile)
+                return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
@@ -1060,36 +1065,26 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def migrate(experiment_id, map_file):
+    def migrate(experiment_id, offer, pickup):
         """
-        Migrates experiment files from current to other user. It takes mapping information of old
-        user and new user from a map file.
+        Migrates experiment files from current to other user. 
+        It takes mapping information for new user from config files.
         
         :param experiment_id: experiment identifier:
-        :param map_file: map file:
         """
-        BasicConfig.read()
-        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
-        if not os.path.exists(exp_path):
-            Log.critical("The directory {0} is needed and does not exist.", exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return False
+        if offer:
+             Autosubmit.archive(experiment_id, False)
+             log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
+             Log.set_file(log_file)
+             Log.result("The experiment has been successfully offered.")
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'migrate_exp.log')
-        Log.set_file(log_file)
+        elif pickup:
+             Autosubmit.unarchive(experiment_id)
+             log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
+             Log.set_file(log_file)
+             Log.result("The experiment has been successfully picked up.")
 
-        #as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
-        #if not as_conf.check_conf_files():
-            #return False
-        user_to = "cprodhom"
-
-        if not migrate_experiment(exp_path, user_to):
-            Log.critical("The directory owner for {0} cannot be changed to {1}.", exp_path, user_to)
-            return False
-        
         return True
-
-
 
     @staticmethod
     def check(experiment_id):
@@ -1483,7 +1478,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def archive(expid):
+    def archive(expid, clean=True):
         """
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
@@ -1498,14 +1493,15 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
-        # Cleaning to reduce file size.
-        version = get_autosubmit_version(expid)
-        if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
-            Log.critical("Can not archive project. Clean not successful")
-            return False
+        if clean:
+            # Cleaning to reduce file size.
+            version = get_autosubmit_version(expid)
+            if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
+                Log.critical("Can not archive project. Clean not successful")
+                return False
 
         # Getting year of last completed. If not, year of expid folder
         year = None
@@ -1530,6 +1526,7 @@ class Autosubmit:
             with tarfile.open(os.path.join(year_path, '{0}.tar.gz'.format(expid)), "w:gz") as tar:
                 tar.add(exp_folder, arcname='')
                 tar.close()
+                os.chmod(os.path.join(year_path, '{0}.tar.gz'.format(expid)), 0o775)
         except Exception as e:
             Log.critical("Can not write tar file: {0}".format(e))
             return False
@@ -1555,7 +1552,7 @@ class Autosubmit:
         :type experiment_id: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(experiment_id)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         if os.path.exists(exp_folder):

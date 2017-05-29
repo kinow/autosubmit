@@ -902,7 +902,7 @@ class AutosubmitConfig(object):
         """
         return self._conf_parser.get_option('storage', 'TYPE', 'pkl').lower()
 
-    def get_migrate_to(self):
+    def get_exp_migrate_to_user(self):
         """
         Returns the user to change experiment's owner to from autosubmit's config file.
 

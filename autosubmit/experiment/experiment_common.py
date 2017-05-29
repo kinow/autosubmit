@@ -20,9 +20,6 @@
 """
 Module containing functions to manage autosubmit's experiments.
 """
-import os
-import pwd
-import glob
 import string
 import autosubmit.database.db_common as db_common
 from bscearth.utils.log import Log
@@ -172,34 +169,3 @@ def base36decode(number):
     :rtype: int
     """
     return int(number, 36)
-
-
-def migrate_experiment(exp_path, user_to):
-    """
-    Migrates experiment files from current to new user. 
-    Group id will be kept the same.
-    
-    :param exp_path: experiment path:
-    :param user_to: to user:
-    """
-    to_uid = pwd.getpwnam(user_to).pw_uid
-    Log.info("The UID for {0} is {1}.", user_to, to_uid) 
-    current_gid = os.stat(exp_path).st_gid
-    Log.info("GID will be kept to {0}.", current_gid) 
-    recursive_file_permissions(exp_path, to_uid, current_gid)
-    return user_to, current_gid
-
-def recursive_file_permissions(path,uid=-1,gid=-1):
-    """
-    Recursively updates file permissions on a given path.
-    UID and GID default to -1
-    """
-    os.chown(path,uid,gid)
-    for item in glob.glob(path+'/*'):
-        if os.path.isdir(item):
-            recursive_file_permissions(os.path.join(path,item),uid,gid)
-        else:
-            try:
-                os.chown(os.path.join(path,item),uid,gid)
-            except:
-                Log.critical('File permissions on {0} not updated due to error.', os.path.join(path,item))
