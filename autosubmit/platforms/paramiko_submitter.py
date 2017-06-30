@@ -69,6 +69,7 @@ class ParamikoSubmitter(Submitter):
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
         local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
+        local_platform.temp_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
         local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.host = 'localhost'
         platforms['local'] = local_platform
@@ -127,6 +128,7 @@ class ParamikoSubmitter(Submitter):
             remote_platform.exclusivity = parser.get_option(section, 'EXCLUSIVITY', '').lower()
             remote_platform.user = parser.get_option(section, 'USER', None)
             remote_platform.scratch = parser.get_option(section, 'SCRATCH_DIR', None)
+            remote_platform.temp_dir = parser.get_option(section, 'TEMP_DIR', None)
             remote_platform._default_queue = parser.get_option(section, 'QUEUE', None)
             remote_platform._serial_queue = parser.get_option(section, 'SERIAL_QUEUE', None)
             remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
