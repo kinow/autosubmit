@@ -73,6 +73,8 @@ from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
+from experiment.experiment_common import migrate_experiment_offer
+from experiment.experiment_common import migrate_experiment_pickup
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -1074,43 +1076,75 @@ class Autosubmit:
         """
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
         Log.set_file(log_file)
-        as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
-            Log.critical('Can not run with invalid configuration')
-            return False
-
-        Log.info('Migrating experiment {0}'.format(experiment_id))
-        submitter = Autosubmit._get_submitter(as_conf)
-        submitter.load_platforms(as_conf)
-        if submitter.platforms is None:
-            return False
-
-        Log.info("Checking remote platforms")
-        platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
 
         if offer:
+            Log.info('Migrating experiment {0}'.format(experiment_id))
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            if not as_conf.check_conf_files():
+                Log.critical('Can not proceed with invalid configuration')
+                return False
+
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                return False
+
+            Log.info("Checking remote platforms")
+            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
             Log.info("Moving remote files/dirs")
             for platform in platforms:
+                Log.info("Updating platform configuration with target user")
+                if not as_conf.get_migrate_user_to(platform):
+                    Log.critical("Missing target user in platforms configuration file")
+                    return False
+
+                as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
+                Log.info("User in platform configuration file successfully updated to {0}",
+                         as_conf.get_migrate_user_to(platform))
+
                 p = submitter.platforms[platform]
                 Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
                          os.path.join(p.temp_dir, experiment_id))
-                p.move_file(os.path.join(p.root_dir), os.path.join(p.temp_dir, experiment_id))
+                if not p.move_file(os.path.join(p.root_dir), os.path.join(p.temp_dir, experiment_id)):
+                    Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
+                                 os.path.join(p.temp_dir, experiment_id))
+                    return False
                 Log.result("Files/dirs on {0} have been successfully offered", platform)
-
-            Log.info("Updating configuration with target user/project")
-            as_conf._conf_parser.get_option('migrate', 'TO_USER', '').lower()
-            as_conf.check_platforms_conf()
-            content = open(as_conf._conf_parser_file).read()
-            content = content.replace(re.search('SAFETYSLEEPTIME =.*', content).group(0),
-                                      "SAFETYSLEEPTIME = %d" % sleep_time)
-            open(self._conf_parser_file, 'w').write(content)
 
             Log.info("Moving local files/dirs")
             Autosubmit.archive(experiment_id, False)
             Log.result("The experiment has been successfully offered.")
 
         elif pickup:
+            Log.info('Migrating experiment {0}'.format(experiment_id))
+            Log.info("Moving local files/dirs")
             Autosubmit.unarchive(experiment_id)
+            Log.info("Local files/dirs have been sucessfully picked up")
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            if not as_conf.check_conf_files():
+                Log.critical('Can not proceed with invalid configuration')
+                return False
+
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                return False
+
+            Log.info("Checking remote platforms")
+            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            Log.info("Copying remote files/dirs")
+            for platform in platforms:
+                p = submitter.platforms[platform]
+                Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
+                         os.path.join(p.root_dir))
+                if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
+                                      os.path.join(p.root_dir)):
+                    Log.critical("The files/dirs on {0} cannot be copied to {1}.",
+                                 os.path.join(p.temp_dir, experiment_id), p.root_dir)
+                    return False
+
+                Log.result("Files/dirs on {0} have been successfully picked up", platform)
+
             Log.result("The experiment has been successfully picked up.")
 
         return True

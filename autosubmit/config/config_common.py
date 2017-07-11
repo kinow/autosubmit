@@ -204,6 +204,27 @@ class AutosubmitConfig(object):
         """
         return str(self._jobs_parser.get_option(section, 'MEMORY_PER_TASK', ''))
 
+    def get_migrate_user_to(self, section):
+        """
+        Returns the user to change to from platform config file.
+
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+
+    def set_new_user(self, section, new_user):
+        """
+        Sets new user for given platform
+        :param new_user: 
+        :param section: platform name
+        :type: str
+        """
+        content = open(self._platforms_parser_file).read()
+        if re.search(section, content):
+            content = content.replace(re.search('USER =.*', content).group(0), "USER = " + new_user)
+        open(self._platforms_parser_file, 'w').write(content)
+
     def check_conf_files(self):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
