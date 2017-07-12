@@ -73,8 +73,6 @@ from bscearth.utils.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
-from experiment.experiment_common import migrate_experiment_offer
-from experiment.experiment_common import migrate_experiment_pickup
 from database.db_common import delete_experiment
 from database.db_common import get_autosubmit_version
 from monitor.monitor import Monitor
@@ -511,7 +509,8 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"), 0o775)
+        os.mkdir(os.path.join(exp_id_path, "tmp"))
+        os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
@@ -1091,9 +1090,8 @@ class Autosubmit:
 
             Log.info("Checking remote platforms")
             platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
-            Log.info("Moving remote files/dirs")
             for platform in platforms:
-                Log.info("Updating platform configuration with target user")
+                Log.info("Updating {0} platform configuration with target user", platform)
                 if not as_conf.get_migrate_user_to(platform):
                     Log.critical("Missing target user in platforms configuration file")
                     return False
@@ -1102,6 +1100,15 @@ class Autosubmit:
                 Log.info("User in platform configuration file successfully updated to {0}",
                          as_conf.get_migrate_user_to(platform))
 
+                if as_conf.get_migrate_project_to(platform):
+                    Log.info("Updating {0} platform configuration with target project", platform)
+                    as_conf.set_new_project(platform, as_conf.get_migrate_project_to(platform))
+                    Log.info("Project in platform configuration file successfully updated to {0}",
+                             as_conf.get_migrate_user_to(platform))
+                else:
+                    Log.warning("Project in platforms configuration file remains unchanged")
+
+                Log.info("Moving remote files/dirs on {0}", platform)
                 p = submitter.platforms[platform]
                 Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
                          os.path.join(p.temp_dir, experiment_id))
@@ -1109,31 +1116,37 @@ class Autosubmit:
                     Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                  os.path.join(p.temp_dir, experiment_id))
                     return False
+
                 Log.result("Files/dirs on {0} have been successfully offered", platform)
 
             Log.info("Moving local files/dirs")
-            Autosubmit.archive(experiment_id, False)
+            if not Autosubmit.archive(experiment_id, False):
+                Log.critical("The experiment cannot be offered")
+                return False
+
             Log.result("The experiment has been successfully offered.")
 
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
-            Autosubmit.unarchive(experiment_id)
+            if not Autosubmit.unarchive(experiment_id):
+                Log.critical("The experiment cannot be picked up")
+                return False
             Log.info("Local files/dirs have been sucessfully picked up")
             as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
             if not as_conf.check_conf_files():
                 Log.critical('Can not proceed with invalid configuration')
                 return False
 
+            Log.info("Checking remote platforms")
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             if submitter.platforms is None:
                 return False
 
-            Log.info("Checking remote platforms")
             platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
-            Log.info("Copying remote files/dirs")
             for platform in platforms:
+                Log.info("Copying remote files/dirs on {0}", platform)
                 p = submitter.platforms[platform]
                 Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
                          os.path.join(p.root_dir))
