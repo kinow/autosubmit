@@ -381,7 +381,8 @@ class JobPackageVertical(JobPackageThread):
     def _common_script_content(self):
         return self.platform.wrapper.vertical(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency, expid=self._expid)
+                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              rootdir=self.platform.root_dir)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -402,4 +403,5 @@ class JobPackageHorizontal(JobPackageThread):
     def _common_script_content(self):
         return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
                                                 self._num_processors, len(self.jobs), self._jobs_scripts,
-                                                self._job_dependency, expid=self._expid)
+                                                self._job_dependency, expid=self._expid,
+                                                rootdir=self.platform.root_dir)
