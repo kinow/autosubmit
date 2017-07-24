@@ -21,6 +21,7 @@ import textwrap
 
 
 # TODO: Refactor with kwargs
+# TODO: Project is not EC_billing_account, use budget
 class EcWrapper(object):
     """Class to handle wrappers on ECMWF platform"""
 
@@ -35,8 +36,8 @@ class EcWrapper(object):
             #PBS -N {0}
             #PBS -q {1}
             #PBS -l EC_billing_account={2}
-            #PBS -o $SCRATCH/{6}/LOG_{6}/{0}.out
-            #PBS -o $SCRATCH/{6}/LOG_{6}/{0}.err
+            #PBS -o {8}/LOG_{6}/{0}.out
+            #PBS -e {8}/LOG_{6}/{0}.err
             #PBS -l walltime={3}:00
             #PBS -l EC_total_tasks={4}
             #PBS -l EC_hyperthreads=1
@@ -66,12 +67,13 @@ class EcWrapper(object):
                     echo "The job $script has been COMPLETED"
                 else
                     echo "The job $script has FAILED"
+                    exit 1
                 fi
                 i=$((i+1))
             done
             """.format(filename, queue, project, wallclock, num_procs,
                        ' '.join(str(s) for s in job_scripts), kwargs['expid'],
-                       cls.dependency_directive(dependency)))
+                       cls.dependency_directive(dependency), kwargs['rootdir']))
 
     @classmethod
     def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
@@ -84,8 +86,8 @@ class EcWrapper(object):
             #PBS -N {0}
             #PBS -q {1}
             #PBS -l EC_billing_account={2}
-            #PBS -o $SCRATCH/{6}/LOG_{6}/{0}.out
-            #PBS -e $SCRATCH/{6}/LOG_{6}/{0}.err
+            #PBS -o {8}/LOG_{6}/{0}.out
+            #PBS -e {8}/LOG_{6}/{0}.err
             #PBS -l walltime={3}:00
             #PBS -l EC_total_tasks={4}
             #PBS -l EC_hyperthreads=1
@@ -125,7 +127,7 @@ class EcWrapper(object):
             done
             """.format(filename, queue, project, wallclock, num_procs,
                        ' '.join(str(s) for s in job_scripts), kwargs['expid'],
-                       cls.dependency_directive(dependency)))
+                       cls.dependency_directive(dependency), kwargs['rootdir']))
 
     @classmethod
     def dependency_directive(cls, dependency):
