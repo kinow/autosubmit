@@ -382,7 +382,7 @@ class JobPackageVertical(JobPackageThread):
         return self.platform.wrapper.vertical(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
                                               self._jobs_scripts, self._job_dependency, expid=self._expid,
-                                              rootdir=self.platform.root_dir)
+                                              rootdir=self.platform.root_dir, customdir=self.platform.customdir)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -404,4 +404,4 @@ class JobPackageHorizontal(JobPackageThread):
         return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
                                                 self._num_processors, len(self.jobs), self._jobs_scripts,
                                                 self._job_dependency, expid=self._expid,
-                                                rootdir=self.platform.root_dir)
+                                                rootdir=self.platform.root_dir, customdir=self.platform.customdir)

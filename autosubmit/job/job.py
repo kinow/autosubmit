@@ -23,6 +23,7 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 import os
 import re
 import time
+import json
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
@@ -73,6 +74,7 @@ class Job(object):
         self.date_format = ''
         self.type = Type.BASH
         self.scratch_free_space = None
+        self.custom_directives = None
 
         self.id = job_id
         self.file = None
@@ -610,6 +612,13 @@ class Job(object):
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
+        self.custom_directives = as_conf.get_custom_directives(self.section)
+        if self.custom_directives != '':
+            self.custom_directives = json.loads(as_conf.get_custom_directives(self.section))
+            if job_platform.custom_directives:
+                self.custom_directives = self.custom_directives + json.loads(job_platform.custom_directives)
+        elif job_platform.custom_directives:
+            self.custom_directives = json.loads(job_platform.custom_directives)
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
@@ -619,6 +628,7 @@ class Job(object):
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
         parameters['SCRATCH_FREE_SPACE'] = self.scratch_free_space
+        parameters['CUSTOM_DIRECTIVES'] = self.custom_directives
 
         parameters['CURRENT_ARCH'] = job_platform.name
         parameters['CURRENT_HOST'] = job_platform.host

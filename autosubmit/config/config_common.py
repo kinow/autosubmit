@@ -204,6 +204,16 @@ class AutosubmitConfig(object):
         """
         return str(self._jobs_parser.get_option(section, 'MEMORY_PER_TASK', ''))
 
+    def get_custom_directives(self, section):
+        """
+        Gets custom directives needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: custom directives needed
+        :rtype: str
+        """
+        return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
+
     def check_conf_files(self):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing

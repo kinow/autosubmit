@@ -59,6 +59,21 @@ class LsfHeader(object):
         else:
             return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     @classmethod
     def array_header(cls, filename, array_id, wallclock, num_processors):
         return textwrap.dedent("""\
@@ -141,6 +156,7 @@ class LsfHeader(object):
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             %EXCLUSIVITY_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -158,6 +174,7 @@ class LsfHeader(object):
             #BSUB -n %NUMPROC%
             %TASKS_PER_NODE_DIRECTIVE%
             %SCRATCH_FREE_SPACE_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)

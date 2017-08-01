@@ -27,6 +27,7 @@ class Platform(object):
         self._default_queue = None
         self.processors_per_node = None
         self.scratch_free_space = None
+        self.custom_directives = None
         self.host = ''
         self.user = ''
         self.project = ''

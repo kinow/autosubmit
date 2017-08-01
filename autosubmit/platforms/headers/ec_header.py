@@ -36,6 +36,21 @@ class EcHeader(object):
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     # noinspection PyPep8
     SERIAL = textwrap.dedent("""\
             ###############################################################################
@@ -52,6 +67,7 @@ class EcHeader(object):
             #@ resources        = ConsumableCpus(1) ConsumableMemory(1200mb)
             #@ wall_clock_limit = %WALLCLOCK%:00
             #@ platforms
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -74,6 +90,7 @@ class EcHeader(object):
             #@ total_tasks      = %NUMPROC%
             #@ wall_clock_limit = %WALLCLOCK%:00
             #@ platforms
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)

@@ -39,6 +39,21 @@ class SgeHeader(object):
         else:
             return "$ -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -52,6 +67,7 @@ class SgeHeader(object):
             #$ -l h_rt=%WALLCLOCK%:00
             #$ -l s_rt=%WALLCLOCK%:00
             #%QUEUE_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -70,6 +86,7 @@ class SgeHeader(object):
             #$ -l s_rt=%WALLCLOCK%:00
             #$ -pe orte %NUMPROC%
             #%QUEUE_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
