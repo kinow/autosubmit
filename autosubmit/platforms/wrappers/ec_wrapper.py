@@ -131,4 +131,4 @@ class EcWrapper(object):
 
     @classmethod
     def dependency_directive(cls, dependency):
-        return '#' if dependency is None else '#PBS -W depend=afterok:{0}'.format(dependency)
+        return '#' if dependency is None else '#PBS -v depend=afterok:{0}'.format(dependency)
