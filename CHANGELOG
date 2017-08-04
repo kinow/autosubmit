@@ -1,3 +1,13 @@
+3.9.0
+    Custom directives for the HPC resource manager headers
+     can be added on platforms and jobs configuration files
+      ~ only paramiko (LSF, SLURM and PBS)
+    First version with migrate experiments (to another user)
+    On CCA, TASKS and THREADS can be expressed in lots (e.g. 127:1)
+    Some bug fixes:
+    - QUEUE on slurm specified on directive qos instead of partition
+    - Variable expansion on CCA (ECMWF) headers
+
 3.8.1
     First version with job packages ~ only paramiko (LSF, SLURM and PBS)
     - Vertical
