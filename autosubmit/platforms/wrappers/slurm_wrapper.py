@@ -146,4 +146,4 @@ class SlurmWrapper(object):
 
     @classmethod
     def queue_directive(cls, queue):
-        return '#' if queue == '' else '#SBATCH -p {0}'.format(queue)
+        return '#' if queue == '' else '#SBATCH --qos={0}'.format(queue)

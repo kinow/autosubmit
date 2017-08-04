@@ -37,7 +37,7 @@ class SlurmHeader(object):
         if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
-            return "SBATCH -p {0}".format(job.parameters['CURRENT_QUEUE'])
+            return "SBATCH --qos={0}".format(job.parameters['CURRENT_QUEUE'])
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_account_directive(self, job):
