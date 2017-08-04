@@ -36,6 +36,21 @@ class Pbs11Header(object):
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                         %TASKTYPE% %EXPID% EXPERIMENT
@@ -48,6 +63,7 @@ class Pbs11Header(object):
             #PBS -l walltime=%WALLCLOCK%
             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -64,6 +80,7 @@ class Pbs11Header(object):
             #PBS -l walltime=%WALLCLOCK%
             #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
             #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)

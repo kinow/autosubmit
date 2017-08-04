@@ -38,14 +38,14 @@ class EcCcaHeader(object):
 
     # noinspection PyMethodMayBeStatic
     def get_tasks_per_node(self, job):
-        if not isinstance(job.tasks, int):
+        if not isinstance(job.tasks, str):
             return ""
         else:
             return '#PBS -l EC_tasks_per_node={0}'.format(job.tasks)
 
     # noinspection PyMethodMayBeStatic
     def get_threads_per_task(self, job):
-        if not isinstance(job.threads, int):
+        if not isinstance(job.threads, str):
             return ""
         else:
             return '#PBS -l EC_threads_per_task={0}'.format(job.threads)
@@ -80,6 +80,21 @@ class EcCcaHeader(object):
             return "#PBS -l EC_hyperthreads=2"
         return "#PBS -l EC_hyperthreads=1"
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -91,6 +106,7 @@ class EcCcaHeader(object):
              #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
+             %CUSTOM_DIRECTIVES%
              #
              ###############################################################################
 
@@ -112,6 +128,7 @@ class EcCcaHeader(object):
              %HYPERTHREADING_DIRECTIVE%
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
+             %CUSTOM_DIRECTIVES%
              #
              ###############################################################################
             """)

@@ -108,23 +108,23 @@ class TestAutosubmitConfig(TestCase):
 
     def test_get_threads(self):
         # arrange
-        expected_value = 99999
+        expected_value = '99999'
         default_value = 1
         config, parser_mock = self._arrange_config(expected_value)
         # act
         returned_value = config.get_threads(self.section)
         # assert
-        self._assert_get_option(parser_mock, 'THREADS', expected_value, returned_value, default_value, int)
+        self._assert_get_option(parser_mock, 'THREADS', expected_value, returned_value, default_value, str)
 
     def test_get_tasks(self):
         # arrange
-        expected_value = 99999
+        expected_value = '99999'
         default_value = 0
         config, parser_mock = self._arrange_config(expected_value)
         # act
         returned_value = config.get_tasks(self.section)
         # assert
-        self._assert_get_option(parser_mock, 'TASKS', expected_value, returned_value, default_value, int)
+        self._assert_get_option(parser_mock, 'TASKS', expected_value, returned_value, default_value, str)
 
     def test_get_memory(self):
         # arrange
@@ -444,11 +444,11 @@ class TestAutosubmitConfig(TestCase):
 
 
 class FakeBasicConfig:
-    DB_DIR = '/scratch/Earth/dmanuben/dummy/db/dir'
-    DB_FILE = '/scratch/Earth/dmanuben/dummy/db/file'
-    DB_PATH = '/scratch/Earth/dmanuben/dummy/db/path'
-    LOCAL_ROOT_DIR = '/scratch/Earth/dmanuben/dummy/local/root/dir'
-    LOCAL_TMP_DIR = '/scratch/Earth/dmanuben/dummy/local/temp/dir'
-    LOCAL_PROJ_DIR = '/scratch/Earth/dmanuben/dummy/local/proj/dir'
+    DB_DIR = '/dummy/db/dir'
+    DB_FILE = '/dummy/db/file'
+    DB_PATH = '/dummy/db/path'
+    LOCAL_ROOT_DIR = '/dummy/local/root/dir'
+    LOCAL_TMP_DIR = '/dummy/local/temp/dir'
+    LOCAL_PROJ_DIR = '/dummy/local/proj/dir'
     DEFAULT_PLATFORMS_CONF = ''
     DEFAULT_JOBS_CONF = ''

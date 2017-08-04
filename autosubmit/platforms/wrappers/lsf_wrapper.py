@@ -25,7 +25,7 @@ class LsfWrapper(object):
     """Class to handle wrappers on LSF platforms"""
 
     @classmethod
-    def array(cls, filename, array_id, wallclock, num_procs):
+    def array(cls, filename, array_id, wallclock, num_procs, **kwargs):
         return textwrap.dedent("""\
             ###############################################################################
             #              {0}
@@ -37,13 +37,15 @@ class LsfWrapper(object):
             #BSUB -eo {0}.%I.err
             #BSUB -W {2}
             #BSUB -n {3}
+            {4}
             #
             ###############################################################################
 
             SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
             chmod +x $SCRIPT
             ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_procs))
+            """.format(filename, array_id, wallclock, num_procs,
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def vertical(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
@@ -61,6 +63,7 @@ class LsfWrapper(object):
             #BSUB -W {3}
             #BSUB -n {4}
             {6}
+            {7}
             #
             ###############################################################################
 
@@ -95,7 +98,8 @@ class LsfWrapper(object):
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
             """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
-                       cls.dependency_directive(dependency)))
+                       cls.dependency_directive(dependency),
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def horizontal(cls, filename, queue, project, wallclock, num_procs, num_jobs, job_scripts, dependency, **kwargs):
@@ -113,6 +117,7 @@ class LsfWrapper(object):
             #BSUB -W {3}
             #BSUB -n {4}
             {7}
+            {10}
             #
             ###############################################################################
 
@@ -158,7 +163,8 @@ class LsfWrapper(object):
                 else:
                     print "The job ", pid.template," has FAILED"
             """.format(filename, queue, project, wallclock, num_procs, (int(num_procs) / num_jobs),
-                       str(job_scripts), cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}", "${LSB_JOBID}"))
+                       str(job_scripts), cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}",
+                       "${LSB_JOBID}", '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def dependency_directive(cls, dependency):

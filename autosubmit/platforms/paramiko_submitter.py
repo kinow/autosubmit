@@ -22,6 +22,8 @@ import time
 
 import os
 
+from bscearth.utils.log import Log
+
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from submitter import Submitter
@@ -133,6 +135,9 @@ class ParamikoSubmitter(Submitter):
             remote_platform._serial_queue = parser.get_option(section, 'SERIAL_QUEUE', None)
             remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
                                                                     None)
+            remote_platform.custom_directives = parser.get_option(section, 'CUSTOM_DIRECTIVES',
+                                                                  None)
+            Log.debug("Custom directives from platform.conf: {0}".format(remote_platform.custom_directives))
             remote_platform.scratch_free_space = parser.get_option(section, 'SCRATCH_FREE_SPACE',
                                                                    None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,

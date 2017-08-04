@@ -162,7 +162,7 @@ class AutosubmitConfig(object):
         :return: threads needed
         :rtype: str
         """
-        return int(self._jobs_parser.get_option(section, 'THREADS', 1))
+        return str(self._jobs_parser.get_option(section, 'THREADS', 1))
 
     def get_tasks(self, section):
         """
@@ -170,9 +170,9 @@ class AutosubmitConfig(object):
         :param section: job type
         :type section: str
         :return: tasks (processes) per host
-        :rtype: int
+        :rtype: str
         """
-        return int(self._jobs_parser.get_option(section, 'TASKS', 0))
+        return str(self._jobs_parser.get_option(section, 'TASKS', 0))
 
     def get_scratch_free_space(self, section):
         """
@@ -245,6 +245,16 @@ class AutosubmitConfig(object):
         if re.search(section, content):
             content = content.replace(re.search('PROJECT =.*', content).group(0), "PROJECT = " + new_project)
         open(self._platforms_parser_file, 'w').write(content)
+
+    def get_custom_directives(self, section):
+        """
+        Gets custom directives needed for the given job type
+        :param section: job type
+        :type section: str
+        :return: custom directives needed
+        :rtype: str
+        """
+        return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
 
     def check_conf_files(self):
         """

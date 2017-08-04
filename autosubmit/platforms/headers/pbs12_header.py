@@ -36,6 +36,21 @@ class Pbs12Header(object):
         # There is no queue, so directive is empty
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -45,6 +60,7 @@ class Pbs12Header(object):
             #PBS -l select=serial=true:ncpus=1
             #PBS -l walltime=%WALLCLOCK%:00
             #PBS -A %CURRENT_BUDG%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -58,6 +74,7 @@ class Pbs12Header(object):
             #PBS -l select=%NUMPROC%
             #PBS -l walltime=%WALLCLOCK%:00
             #PBS -A %CURRENT_BUDG%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)

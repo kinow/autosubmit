@@ -37,7 +37,7 @@ class SlurmHeader(object):
         if job.parameters['CURRENT_QUEUE'] == '':
             return ""
         else:
-            return "SBATCH -p {0}".format(job.parameters['CURRENT_QUEUE'])
+            return "SBATCH --qos={0}".format(job.parameters['CURRENT_QUEUE'])
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_account_directive(self, job):
@@ -84,6 +84,21 @@ class SlurmHeader(object):
             return "SBATCH --mem-per-cpu {0}".format(job.parameters['MEMORY_PER_TASK'])
         return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -98,6 +113,7 @@ class SlurmHeader(object):
             #SBATCH -J %JOBNAME%
             #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
             #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
            """)
@@ -116,6 +132,7 @@ class SlurmHeader(object):
             #SBATCH -J %JOBNAME%
             #SBATCH -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
             #SBATCH -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)

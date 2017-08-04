@@ -57,6 +57,7 @@ suite of variables is defined for the current platform where {PLATFORM_NAME} is 
 - **{PLATFORM_NAME}_VERSION**: Platform scheduler version
 - **{PLATFORM_NAME}_SCRATCH_DIR**: Platform's scratch folder path
 - **{PLATFORM_NAME}_ROOTDIR**: Platform's experiment folder path
+- **{PLATFORM_NAME}_CUSTOM_DIRECTIVES**: Platform's custom directives for the resource manager.
 
 .. hint::
     The variables ``_USER``, ``_PROJ`` and ``_BUDG`` has no value on the LOCAL platform.
