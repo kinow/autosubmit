@@ -162,7 +162,7 @@ class AutosubmitConfig(object):
         :return: threads needed
         :rtype: str
         """
-        return int(self._jobs_parser.get_option(section, 'THREADS', 1))
+        return str(self._jobs_parser.get_option(section, 'THREADS', 1))
 
     def get_tasks(self, section):
         """
@@ -170,9 +170,9 @@ class AutosubmitConfig(object):
         :param section: job type
         :type section: str
         :return: tasks (processes) per host
-        :rtype: int
+        :rtype: str
         """
-        return int(self._jobs_parser.get_option(section, 'TASKS', 0))
+        return str(self._jobs_parser.get_option(section, 'TASKS', 0))
 
     def get_scratch_free_space(self, section):
         """
