@@ -45,6 +45,7 @@ class JobPackageBase(object):
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0].platform
+            self._custom_directives = set()
             for job in jobs:
                 if job.platform != self._platform or job.platform is None:
                     raise Exception('Only one valid platform per package')
@@ -80,6 +81,8 @@ class JobPackageBase(object):
                 if not job.check_script(configuration, parameters):
                     raise WrongTemplateException(job.name)
             job.update_parameters(configuration, parameters)
+            # looking for directives on jobs
+            self._custom_directives = self._custom_directives | set(job.custom_directives)
         self._create_scripts(configuration)
         self._send_files()
         self._do_submission()
@@ -186,7 +189,8 @@ class JobPackageArray(JobPackageBase):
 
     def _create_common_script(self, filename):
         script_content = self.platform.header.array_header(filename, self._array_size_id, self._wallclock,
-                                                           self._num_processors)
+                                                           self._num_processors,
+                                                           directives=self.platform.custom_directives)
         filename += '.cmd'
         open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o775)
@@ -382,7 +386,8 @@ class JobPackageVertical(JobPackageThread):
         return self.platform.wrapper.vertical(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
                                               self._jobs_scripts, self._job_dependency, expid=self._expid,
-                                              rootdir=self.platform.root_dir)
+                                              rootdir=self.platform.root_dir,
+                                              directives=self._custom_directives)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -404,4 +409,5 @@ class JobPackageHorizontal(JobPackageThread):
         return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
                                                 self._num_processors, len(self.jobs), self._jobs_scripts,
                                                 self._job_dependency, expid=self._expid,
-                                                rootdir=self.platform.root_dir)
+                                                rootdir=self.platform.root_dir,
+                                                directives=self._custom_directives)

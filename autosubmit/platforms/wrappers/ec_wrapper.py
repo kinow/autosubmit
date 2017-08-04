@@ -42,6 +42,7 @@ class EcWrapper(object):
             #PBS -l EC_total_tasks={4}
             #PBS -l EC_hyperthreads=1
             {7}
+            {9}
             #
             ###############################################################################
 
@@ -73,7 +74,8 @@ class EcWrapper(object):
             done
             """.format(filename, queue, project, wallclock, num_procs,
                        ' '.join(str(s) for s in job_scripts), kwargs['expid'],
-                       cls.dependency_directive(dependency), kwargs['rootdir']))
+                       cls.dependency_directive(dependency), kwargs['rootdir'],
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
@@ -92,6 +94,7 @@ class EcWrapper(object):
             #PBS -l EC_total_tasks={4}
             #PBS -l EC_hyperthreads=1
             {7}
+            {9}
             #
             ###############################################################################
 
@@ -127,8 +130,9 @@ class EcWrapper(object):
             done
             """.format(filename, queue, project, wallclock, num_procs,
                        ' '.join(str(s) for s in job_scripts), kwargs['expid'],
-                       cls.dependency_directive(dependency), kwargs['rootdir']))
+                       cls.dependency_directive(dependency), kwargs['rootdir'],
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def dependency_directive(cls, dependency):
-        return '#' if dependency is None else '#PBS -W depend=afterok:{0}'.format(dependency)
+        return '#' if dependency is None else '#PBS -v depend=afterok:{0}'.format(dependency)

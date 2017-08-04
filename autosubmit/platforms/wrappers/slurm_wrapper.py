@@ -33,13 +33,14 @@ class SlurmWrapper(object):
             ###############################################################################
             #
             #SBATCH -J {0}
-            #SBATCH -p {1}
+            {1}
             #SBATCH -A {2}
             #SBATCH -o {0}.out
             #SBATCH -e {0}.err
             #SBATCH -t {3}:00
             #SBATCH -n {4}
             {6}
+            {7}
             #
             ###############################################################################
 
@@ -73,8 +74,9 @@ class SlurmWrapper(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
-                       cls.dependency_directive(dependency)))
+            """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
+                       cls.dependency_directive(dependency),
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
@@ -85,13 +87,14 @@ class SlurmWrapper(object):
             ###############################################################################
             #
             #SBATCH -J {0}
-            #SBATCH -p {1}
+            {1}
             #SBATCH -A {2}
             #SBATCH -o {0}.out
             #SBATCH -e {0}.err
             #SBATCH -t {3}:00
             #SBATCH -n {4}
             {6}
+            {7}
             #
             ###############################################################################
 
@@ -133,9 +136,14 @@ class SlurmWrapper(object):
                     print "The job ", pid.template," has been COMPLETED"
                 else:
                     print "The job ", pid.template," has FAILED"
-            """.format(filename, queue, project, wallclock, num_procs, str(job_scripts),
-                       cls.dependency_directive(dependency)))
+            """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
+                       cls.dependency_directive(dependency),
+                       '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def dependency_directive(cls, dependency):
         return '#' if dependency is None else '#SBATCH --dependency=afterok:{0}'.format(dependency)
+
+    @classmethod
+    def queue_directive(cls, queue):
+        return '#' if queue == '' else '#SBATCH -p {0}'.format(queue)

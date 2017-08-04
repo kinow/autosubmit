@@ -414,6 +414,8 @@ class ParamikoPlatform(Platform):
             header = header.replace('%THREADS_PER_TASK_DIRECTIVE%', self.header.get_threads_per_task(job))
         if hasattr(self.header, 'get_scratch_free_space'):
             header = header.replace('%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))
+        if hasattr(self.header, 'get_custom_directives'):
+            header = header.replace('%CUSTOM_DIRECTIVES%', self.header.get_custom_directives(job))
         if hasattr(self.header, 'get_exclusivity'):
             header = header.replace('%EXCLUSIVITY_DIRECTIVE%', self.header.get_exclusivity(job))
         if hasattr(self.header, 'get_account_directive'):

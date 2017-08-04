@@ -59,8 +59,23 @@ class LsfHeader(object):
         else:
             return ""
 
+    # noinspection PyMethodMayBeStatic,PyUnusedLocal
+    def get_custom_directives(self, job):
+        """
+        Returns custom directives for the specified job
+
+        :param job: job to create custom directive for
+        :type job: Job
+        :return: custom directives
+        :rtype: str
+        """
+        # There is no custom directives, so directive is empty
+        if job.parameters['CUSTOM_DIRECTIVES'] != '':
+            return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
+        return ""
+
     @classmethod
-    def array_header(cls, filename, array_id, wallclock, num_processors):
+    def array_header(cls, filename, array_id, wallclock, num_processors, **kwargs):
         return textwrap.dedent("""\
             ###############################################################################
             #              {0}
@@ -72,16 +87,17 @@ class LsfHeader(object):
             #BSUB -eo {0}.%I.err
             #BSUB -W {2}
             #BSUB -n {3}
+            {4}
             #
             ###############################################################################
 
             SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
             chmod +x $SCRIPT
             ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_processors))
+            """.format(filename, array_id, wallclock, num_processors, '\n'.join(str(s) for s in kwargs['directives'])))
 
     @classmethod
-    def thread_header(cls, filename, wallclock, num_processors, job_scripts, dependency_directive):
+    def thread_header(cls, filename, wallclock, num_processors, job_scripts, dependency_directive, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -94,6 +110,7 @@ class LsfHeader(object):
             #BSUB -W {1}
             #BSUB -n {2}
             {4}
+            {5}
             #
             ###############################################################################
 
@@ -127,7 +144,8 @@ class LsfHeader(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, wallclock, num_processors, str(job_scripts), dependency_directive))
+            """.format(filename, wallclock, num_processors, str(job_scripts), dependency_directive,
+                       '\n'.join(str(s) for s in kwargs['directives'])))
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################
@@ -141,6 +159,7 @@ class LsfHeader(object):
             #BSUB -W %WALLCLOCK%
             #BSUB -n %NUMPROC%
             %EXCLUSIVITY_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
@@ -158,6 +177,7 @@ class LsfHeader(object):
             #BSUB -n %NUMPROC%
             %TASKS_PER_NODE_DIRECTIVE%
             %SCRATCH_FREE_SPACE_DIRECTIVE%
+            %CUSTOM_DIRECTIVES%
             #
             ###############################################################################
             """)
