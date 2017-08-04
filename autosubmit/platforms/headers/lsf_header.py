@@ -75,7 +75,7 @@ class LsfHeader(object):
         return ""
 
     @classmethod
-    def array_header(cls, filename, array_id, wallclock, num_processors):
+    def array_header(cls, filename, array_id, wallclock, num_processors, **kwargs):
         return textwrap.dedent("""\
             ###############################################################################
             #              {0}
@@ -87,16 +87,17 @@ class LsfHeader(object):
             #BSUB -eo {0}.%I.err
             #BSUB -W {2}
             #BSUB -n {3}
+            {4}
             #
             ###############################################################################
 
             SCRIPT=$(cat {0}.$LSB_JOBINDEX | awk 'NR==1')
             chmod +x $SCRIPT
             ./$SCRIPT
-            """.format(filename, array_id, wallclock, num_processors))
+            """.format(filename, array_id, wallclock, num_processors, '\n'.join(str(s) for s in kwargs['directives'])))
 
     @classmethod
-    def thread_header(cls, filename, wallclock, num_processors, job_scripts, dependency_directive):
+    def thread_header(cls, filename, wallclock, num_processors, job_scripts, dependency_directive, **kwargs):
         return textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -109,6 +110,7 @@ class LsfHeader(object):
             #BSUB -W {1}
             #BSUB -n {2}
             {4}
+            {5}
             #
             ###############################################################################
 
@@ -142,7 +144,8 @@ class LsfHeader(object):
                 else:
                     print "The job ", current.template," has FAILED"
                     os._exit(1)
-            """.format(filename, wallclock, num_processors, str(job_scripts), dependency_directive))
+            """.format(filename, wallclock, num_processors, str(job_scripts), dependency_directive,
+                       '\n'.join(str(s) for s in kwargs['directives'])))
 
     SERIAL = textwrap.dedent("""\
             ###############################################################################

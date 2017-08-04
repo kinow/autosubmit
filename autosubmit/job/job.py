@@ -74,7 +74,7 @@ class Job(object):
         self.date_format = ''
         self.type = Type.BASH
         self.scratch_free_space = None
-        self.custom_directives = None
+        self.custom_directives = []
 
         self.id = job_id
         self.file = None
@@ -619,6 +619,8 @@ class Job(object):
                 self.custom_directives = self.custom_directives + json.loads(job_platform.custom_directives)
         elif job_platform.custom_directives:
             self.custom_directives = json.loads(job_platform.custom_directives)
+        elif self.custom_directives == '':
+            self.custom_directives = []
 
         parameters['NUMPROC'] = self.processors
         parameters['MEMORY'] = self.memory
