@@ -50,6 +50,7 @@ import random
 import signal
 import datetime
 import portalocker
+import pwd
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 
@@ -214,6 +215,13 @@ class Autosubmit:
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
+            # Migrate
+            subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
+            subparser.add_argument('expid', help='experiment identifier')
+            group = subparser.add_mutually_exclusive_group(required=True)
+            group.add_argument('-o', '--offer', action="store_true", default=False, help='Offer experiment')
+            group.add_argument('-p', '--pickup', action="store_true", default=False, help='Pick-up released experiment')
+
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
@@ -340,6 +348,8 @@ class Autosubmit:
                 return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
+            elif args.command == 'migrate':
+                return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
             elif args.command == 'configure':
@@ -499,7 +509,8 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"), 0o775)
+        os.mkdir(os.path.join(exp_id_path, "tmp"))
+        os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
@@ -1053,6 +1064,105 @@ class Autosubmit:
         return True
 
     @staticmethod
+    def migrate(experiment_id, offer, pickup):
+        """
+        Migrates experiment files from current to other user. 
+        It takes mapping information for new user from config files.
+        
+        :param experiment_id: experiment identifier:
+        :param pickup: 
+        :param offer: 
+        """
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
+        Log.set_file(log_file)
+
+        if offer:
+            Log.info('Migrating experiment {0}'.format(experiment_id))
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            if not as_conf.check_conf_files():
+                Log.critical('Can not proceed with invalid configuration')
+                return False
+
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                return False
+
+            Log.info("Checking remote platforms")
+            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            for platform in platforms:
+                Log.info("Updating {0} platform configuration with target user", platform)
+                if not as_conf.get_migrate_user_to(platform):
+                    Log.critical("Missing target user in platforms configuration file")
+                    return False
+
+                as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
+                Log.info("User in platform configuration file successfully updated to {0}",
+                         as_conf.get_migrate_user_to(platform))
+
+                if as_conf.get_migrate_project_to(platform):
+                    Log.info("Updating {0} platform configuration with target project", platform)
+                    as_conf.set_new_project(platform, as_conf.get_migrate_project_to(platform))
+                    Log.info("Project in platform configuration file successfully updated to {0}",
+                             as_conf.get_migrate_user_to(platform))
+                else:
+                    Log.warning("Project in platforms configuration file remains unchanged")
+
+                Log.info("Moving remote files/dirs on {0}", platform)
+                p = submitter.platforms[platform]
+                Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
+                         os.path.join(p.temp_dir, experiment_id))
+                if not p.move_file(os.path.join(p.root_dir), os.path.join(p.temp_dir, experiment_id)):
+                    Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
+                                 os.path.join(p.temp_dir, experiment_id))
+                    return False
+
+                Log.result("Files/dirs on {0} have been successfully offered", platform)
+
+            Log.info("Moving local files/dirs")
+            if not Autosubmit.archive(experiment_id, False):
+                Log.critical("The experiment cannot be offered")
+                return False
+
+            Log.result("The experiment has been successfully offered.")
+
+        elif pickup:
+            Log.info('Migrating experiment {0}'.format(experiment_id))
+            Log.info("Moving local files/dirs")
+            if not Autosubmit.unarchive(experiment_id):
+                Log.critical("The experiment cannot be picked up")
+                return False
+            Log.info("Local files/dirs have been sucessfully picked up")
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            if not as_conf.check_conf_files():
+                Log.critical('Can not proceed with invalid configuration')
+                return False
+
+            Log.info("Checking remote platforms")
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                return False
+
+            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            for platform in platforms:
+                Log.info("Copying remote files/dirs on {0}", platform)
+                p = submitter.platforms[platform]
+                Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
+                         os.path.join(p.root_dir))
+                if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
+                                      os.path.join(p.root_dir)):
+                    Log.critical("The files/dirs on {0} cannot be copied to {1}.",
+                                 os.path.join(p.temp_dir, experiment_id), p.root_dir)
+                    return False
+
+                Log.result("Files/dirs on {0} have been successfully picked up", platform)
+
+            Log.result("The experiment has been successfully picked up.")
+
+        return True
+
+    @staticmethod
     def check(experiment_id):
         """
         Checks experiment configuration and warns about any detected error or inconsistency.
@@ -1444,11 +1554,13 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def archive(expid):
+    def archive(expid, clean=True):
         """
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
 
+        :param clean: 
+        :return: 
         :param expid: experiment identifier
         :type expid: str
         """
@@ -1459,14 +1571,15 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
-        # Cleaning to reduce file size.
-        version = get_autosubmit_version(expid)
-        if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
-            Log.critical("Can not archive project. Clean not successful")
-            return False
+        if clean:
+            # Cleaning to reduce file size.
+            version = get_autosubmit_version(expid)
+            if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
+                Log.critical("Can not archive project. Clean not successful")
+                return False
 
         # Getting year of last completed. If not, year of expid folder
         year = None
@@ -1491,6 +1604,7 @@ class Autosubmit:
             with tarfile.open(os.path.join(year_path, '{0}.tar.gz'.format(expid)), "w:gz") as tar:
                 tar.add(exp_folder, arcname='')
                 tar.close()
+                os.chmod(os.path.join(year_path, '{0}.tar.gz'.format(expid)), 0o775)
         except Exception as e:
             Log.critical("Can not write tar file: {0}".format(e))
             return False
@@ -1516,7 +1630,7 @@ class Autosubmit:
         :type experiment_id: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive{0}.log'.format(experiment_id)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         if os.path.exists(exp_folder):

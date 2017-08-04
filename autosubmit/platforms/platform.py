@@ -36,6 +36,7 @@ class Platform(object):
         self.exclusivity = ''
         self.type = ''
         self.scratch = ''
+        self.temp_dir = ''
         self.root_dir = ''
         self.service = None
         self.scheduler = None
@@ -129,6 +130,7 @@ class Platform(object):
         parameters['{0}EXCLUSIVITY'.format(prefix)] = self.exclusivity
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
+        parameters['{0}TEMP_DIR'.format(prefix)] = self.temp_dir
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
         parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 

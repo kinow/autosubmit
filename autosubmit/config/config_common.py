@@ -204,6 +204,48 @@ class AutosubmitConfig(object):
         """
         return str(self._jobs_parser.get_option(section, 'MEMORY_PER_TASK', ''))
 
+    def get_migrate_user_to(self, section):
+        """
+        Returns the user to change to from platform config file.
+
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+
+    def set_new_user(self, section, new_user):
+        """
+        Sets new user for given platform
+        :param new_user: 
+        :param section: platform name
+        :type: str
+        """
+        content = open(self._platforms_parser_file).read()
+        if re.search(section, content):
+            content = content.replace(re.search('USER =.*', content).group(0), "USER = " + new_user)
+        open(self._platforms_parser_file, 'w').write(content)
+
+    def get_migrate_project_to(self, section):
+        """
+        Returns the project to change to from platform config file.
+
+        :return: migrate project to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower()
+
+    def set_new_project(self, section, new_project):
+        """
+        Sets new project for given platform
+        :param new_project: 
+        :param section: platform name
+        :type: str
+        """
+        content = open(self._platforms_parser_file).read()
+        if re.search(section, content):
+            content = content.replace(re.search('PROJECT =.*', content).group(0), "PROJECT = " + new_project)
+        open(self._platforms_parser_file, 'w').write(content)
+
     def get_custom_directives(self, section):
         """
         Gets custom directives needed for the given job type
