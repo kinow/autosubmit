@@ -130,6 +130,10 @@ class Job(object):
         self._parents = parents
 
     @property
+    def is_serial(self):
+        return str(self.processors) == '1'
+
+    @property
     def platform(self):
         """
         Returns the platform to be used by the job. Chooses between serial and parallel platforms
@@ -137,7 +141,7 @@ class Job(object):
         :return HPCPlatform object for the job to use
         :rtype: HPCPlatform
         """
-        if str(self.processors) == '1':
+        if self.is_serial:
             return self._platform.serial_platform
         else:
             return self._platform
@@ -162,7 +166,7 @@ class Job(object):
         """
         if self._queue is not None:
             return self._queue
-        if str(self.processors) == '1':
+        if self.is_serial:
             return self._platform.serial_platform.serial_queue
         else:
             return self._platform.queue

@@ -34,7 +34,14 @@ class EcCcaHeader(object):
         :rtype: str
         """
         # There is no queue, so directive is empty
-        return ""
+        queue = job.parameters['CURRENT_QUEUE']
+        if not queue:
+            if job.is_serial:
+                queue = 'ns'
+            else:
+                queue = 'np'
+
+        return "PBS -q {0}".format(job.parameters['CURRENT_QUEUE'])
 
     # noinspection PyMethodMayBeStatic
     def get_tasks_per_node(self, job):
@@ -95,15 +102,16 @@ class EcCcaHeader(object):
             return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
         return ""
 
+
     SERIAL = textwrap.dedent("""\
              ###############################################################################
              #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
+             #%QUEUE_DIRECTIVE%
              #PBS -N %JOBNAME%
              #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
              #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q ns
              #PBS -l walltime=%WALLCLOCK%:00
              #PBS -l EC_billing_account=%CURRENT_BUDG%
              %CUSTOM_DIRECTIVES%
@@ -117,10 +125,10 @@ class EcCcaHeader(object):
              #                   %TASKTYPE% %EXPID% EXPERIMENT
              ###############################################################################
              #
+             #%QUEUE_DIRECTIVE%
              #PBS -N %JOBNAME%
              #PBS -o %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
              #PBS -e %CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-             #PBS -q np
              #PBS -l EC_total_tasks=%NUMPROC%
              %THREADS_PER_TASK_DIRECTIVE%
              %TASKS_PER_NODE_DIRECTIVE%
