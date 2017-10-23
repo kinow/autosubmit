@@ -99,8 +99,8 @@ class ExperimentStats(object):
 
     def _calculate_stats(self):
         for i, job in enumerate(self._jobs_list):
-            processors = job.processors
             last_retrials = job.get_last_retrials()
+            processors = job.total_processors
             for retrial in last_retrials:
                 if Job.is_a_completed_retrial(retrial):
                     self._queued[i] += retrial[1] - retrial[0]
@@ -120,7 +120,7 @@ class ExperimentStats(object):
             self._total_jobs_run += len(last_retrials)
             self._total_jobs_failed += self.failed_jobs[i]
             self._threshold = max(self._threshold, job.total_wallclock)
-            self._expected_cpu_consumption += job.total_wallclock * int(job.total_processors)
+            self._expected_cpu_consumption += job.total_wallclock * int(processors)
             self._expected_real_consumption += job.total_wallclock
             self._total_queueing_time += self._queued[i]
 
