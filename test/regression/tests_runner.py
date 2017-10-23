@@ -108,7 +108,7 @@ def run(current_experiment_id, only_list=None, exclude_list=None, max_threads=5)
         current_experiment_id = next_experiment_id(current_experiment_id)
 
         # Avoiding synchronization problems
-        sleep(3)
+        sleep(10)
 
     # Loop to wait the end of all the running tests
     for test_thread in test_threads:
