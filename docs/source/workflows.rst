@@ -328,7 +328,7 @@ The resulting workflow can be seen in Figure :numref:`delay`
    :align: center
    :alt: simple workflow with delay option
 
-   Example showing the data assimilation job starting only from chunk 3.
+   Example showing the asim job starting only from chunk 3.
 
 Rerun dependencies
 ------------------
