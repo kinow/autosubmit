@@ -3,7 +3,7 @@ Defining the workflow
 #####################
 
 One of the most important step that you have to do when planning to use autosubmit for an experiment is the definition
-of the workflow the experiment will use. On this section you will learn about the workflow definition syntax so you will
+of the workflow the experiment will use. In this section you will learn about the workflow definition syntax so you will
 be able to exploit autosubmit's full potential
 
 .. warning::
@@ -32,7 +32,7 @@ be finished before launching the job that has the DEPENDENCIES attribute.
    DEPENDENCIES = One
 
 
-The resulting workflow can be seen on figure 5.1
+The resulting workflow can be seen in Figure :numref:`simple`
 
 .. figure:: workflows/simple.png
    :name: simple
@@ -49,7 +49,7 @@ Running jobs once per startdate, member or chunk
 Autosubmit is capable of running ensembles made of various startdates and members. It also has the capability to
 divide member execution on different chunks.
 
-To set at what level a job has to run you have to use the RUNNING attribute. It has four posible values: once, date,
+To set at what level a job has to run you have to use the RUNNING attribute. It has four possible values: once, date,
 member and chunk corresponding to running once, once per startdate, once per member or once per chunk respectively.
 
 .. code-block:: ini
@@ -73,9 +73,10 @@ member and chunk corresponding to running once, once per startdate, once per mem
     RUNNING = chunk
 
 
-The resulting workflow can be seen on figure 5.2 for a experiment with 2 startdates, 2 members and 2 chunks.
+The resulting workflow can be seen in Figure :numref:`running` for a experiment with 2 startdates, 2 members and 2 chunks.
 
 .. figure:: workflows/running.png
+   :name: running
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -93,7 +94,7 @@ Dependencies with previous jobs
 _______________________________
 
 Autosubmit can manage dependencies between jobs that are part of different chunks, members or startdates. The next
-example will show how to make wait a simulation job for the previous chunk of the simulation. To do that, we add
+example will show how to make a simulation job wait for the previous chunk of the simulation. To do that, we add
 sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much dependencies as you like separated by spaces
 
 .. code-block:: ini
@@ -113,7 +114,7 @@ sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much depende
    RUNNING = chunk
 
 
-The resulting workflow can be seen on figure 5.3
+The resulting workflow can be seen in Figure :numref:`dprevious`
 
 .. warning::
 
@@ -123,6 +124,7 @@ The resulting workflow can be seen on figure 5.3
 
 
 .. figure:: workflows/dependencies_previous.png
+   :name: dprevious
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -163,9 +165,10 @@ jobs to be finished. That is the case of the postprocess combine dependency on t
     RUNNING = member
 
 
-The resulting workflow can be seen on figure 5.4
+The resulting workflow can be seen in Figure :numref:`dependencies`
 
 .. figure:: workflows/dependencies_running.png
+   :name: dependencies
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -177,8 +180,8 @@ Job frequency
 -------------
 
 Some times you just don't need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
-job after various chunks have completed. This behaviour can be achieved by using the FREQUENCY attribute. You can specify
-an integer I on this attribute and the job will run only once for each I iterations on the running level.
+job after various chunks have completed. This behaviour can be achieved using the FREQUENCY attribute. You can specify
+an integer I for this attribute and the job will run only once for each I iterations on the running level.
 
 .. hint::
    You don't need to adjust the frequency to be a divisor of the total jobs. A job will always execute at the last
@@ -207,9 +210,10 @@ an integer I on this attribute and the job will run only once for each I iterati
     RUNNING = member
 
 
-The resulting workflow can be seen on figure 5.5
+The resulting workflow can be seen in Figure :numref:`frequency`
 
 .. figure:: workflows/frequency.png
+   :name: frequency
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -244,9 +248,10 @@ of synchronization do you want. See the below examples with and without this par
     DEPENDENCIES = SIM
     RUNNING = chunk
 
-The resulting workflow can be seen on figure 5.6
+The resulting workflow can be seen in Figure :numref:`nosync`
 
 .. figure:: workflows/no-synchronize.png
+   :name: nosync
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -258,9 +263,10 @@ The resulting workflow can be seen on figure 5.6
     [ASIM]
     SYNCHRONIZE = member
 
-The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen on figure 5.7
+The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen in Figure :numref:`msynchronize`
 
 .. figure:: workflows/member-synchronize.png
+   :name: msynchronize
    :width: 100%
    :align: center
    :alt: simple workflow plot
@@ -272,14 +278,57 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
     [ASIM]
     SYNCHRONIZE = date
 
-The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen on figure 5.8
+The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in Figure :numref:`dsynchronize`
 
 .. figure:: workflows/date-synchronize.png
+   :name: dsynchronize
    :width: 100%
    :align: center
    :alt: simple workflow plot
 
    Example showing dependencies between chunk jobs running with date synchronize.
+
+Job delay
+------------------
+
+Some times you need a job to be run after a certain number of chunks. For example, you may want to launch the asim
+job after various chunks have completed. This behaviour can be achieved using the DELAY attribute. You can specify
+an integer N for this attribute and the job will run only after N chunks.
+
+.. hint::
+   This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
+
+.. code-block:: ini
+
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [asim]
+    FILE = asim.sh
+    DEPENDENCIES = sim asim-1
+    RUNNING = chunk
+    DELAY = 2
+
+    [post]
+    FILE = post.sh
+    DEPENDENCIES = sim asim
+    RUNNING = chunk
+
+The resulting workflow can be seen in Figure :numref:`delay`
+
+.. figure:: workflows/experiment_delay_doc.png
+   :name: delay
+   :width: 100%
+   :align: center
+   :alt: simple workflow with delay option
+
+   Example showing the data assimilation job starting only from chunk 3.
 
 Rerun dependencies
 ------------------
@@ -319,9 +368,10 @@ case, but will appear on the reruns.
     DEPENDENCIES = postprocess
     RUNNING = member
 
-The resulting workflow can be seen on figure 5.9 for a rerun of chunks 2 and 3 of member 2.
+The resulting workflow can be seen in Figure :numref:`rerun` for a rerun of chunks 2 and 3 of member 2.
 
 .. figure:: workflows/rerun.png
+   :name: rerun
    :width: 100%
    :align: center
    :alt: simple workflow plot

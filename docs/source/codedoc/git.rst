@@ -1,4 +1,4 @@
 autosubmit.git
 ==============
-.. automodule:: autosubmit.git.git_common
+.. automodule:: autosubmit.git.autosubmit_git
    :members:

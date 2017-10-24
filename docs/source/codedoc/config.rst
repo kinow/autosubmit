@@ -16,7 +16,3 @@ autosubmit.config.config_common
    :inherited-members:
    :members:
 
-autosubmit.config.log
----------------------
-.. automodule:: autosubmit.config.log
-   :members:

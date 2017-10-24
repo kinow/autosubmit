@@ -146,7 +146,7 @@ class JobList:
         for job_section in jobs_parser.sections():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
 
-            # If does not has dependencies, do nothing
+            # If does not have dependencies, do nothing
             if not jobs_parser.has_option(job_section, option):
                 continue
 
@@ -162,13 +162,19 @@ class JobList:
         dependencies = dict()
         for key in dependencies_keys:
             if '-' not in key and '+' not in key:
-                dependencies[key] = Dependency(key)
+                dependency = Dependency(key)
+                section = key
             else:
                 sign = '-' if '-' in key else '+'
                 key_split = key.split(sign)
-                dependency_running_type = dic_jobs.get_option(key_split[0], 'RUNNING', 'once').lower()
-                dependency = Dependency(key_split[0], int(key_split[1]), dependency_running_type, sign)
-                dependencies[key] = dependency
+                section = key_split[0]
+                distance = key_split[1]
+                dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
+                dependency = Dependency(section, int(distance), dependency_running_type, sign)
+
+            delay = int(dic_jobs.get_option(section, 'DELAY', -1))
+            dependency.delay = delay
+            dependencies[key] = dependency
         return dependencies
 
     @staticmethod
@@ -184,8 +190,10 @@ class JobList:
                 continue
 
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
-                job.add_parent(parent)
-                graph.add_edge(parent.name, job.name)
+                # only creates the dependency in the graph if the delay is not defined or if the chunk is greater than it
+                if dependency.delay == -1 or chunk > dependency.delay:
+                    job.add_parent(parent)
+                    graph.add_edge(parent.name, job.name)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)

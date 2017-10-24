@@ -97,9 +97,10 @@ class TestDicJobs(TestCase):
         priority = 999
         frequency = 123
         synchronize = 'date'
+        delay = -1
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='chunk')
-        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize])
+        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize, delay])
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -112,7 +113,7 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
-        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, Type.BASH, synchronize, {})
+        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, Type.BASH, synchronize, delay, {})
 
     def test_dic_creates_right_jobs_by_startdate(self):
         # arrange
@@ -283,6 +284,7 @@ class TestDicJobs(TestCase):
         member = 'fc0'
         chunk = 'ch0'
         frequency = 123
+        delay = -1
         platform_name = 'fake-platform'
         filename = 'fake-fike'
         queue = 'fake-queue'
@@ -292,9 +294,9 @@ class TestDicJobs(TestCase):
         memory = memory_per_task = 444
         wallclock = 555
         notify_on = 'COMPLETED FAILED'
-        self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True,
+        self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True, True,
                                                         True, True, True, True, False, True])
-        self.parser_mock.get = Mock(side_effect=[frequency, 'True', 'True', 'bash', platform_name, filename, queue,
+        self.parser_mock.get = Mock(side_effect=[frequency, delay, 'True', 'True', 'bash', platform_name, filename, queue,
                                                  'True', processors, threads, tasks, memory, memory_per_task,
                                                  wallclock, notify_on])
         job_list_mock = Mock()
@@ -314,6 +316,7 @@ class TestDicJobs(TestCase):
         self.assertEquals(chunk, created_job.chunk)
         self.assertEquals(self.date_format, created_job.date_format)
         self.assertEquals(frequency, created_job.frequency)
+        self.assertEquals(delay, created_job.delay)
         self.assertTrue(created_job.wait)
         self.assertTrue(created_job.rerun_only)
         self.assertEquals(Type.BASH, created_job.type)

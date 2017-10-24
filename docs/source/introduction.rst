@@ -58,9 +58,10 @@ To create a new experiment, run the command:
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *Description* is a brief experiment description.
 
-This command assigns a unique four character identifier (``xxxx``, names starting from a letter, the other three characters) to the experiment and creates a new folder in experiments repository with structure shown in Figure 1.1.
+This command assigns a unique four character identifier (``xxxx``, names starting from a letter, the other three characters) to the experiment and creates a new folder in experiments repository with structure shown in Figure :numref:`exp_folder`.
 
 .. figure:: fig1.png
+   :name: exp_folder
    :width: 33%
    :align: center
    :alt: experiment folder
@@ -70,9 +71,10 @@ This command assigns a unique four character identifier (``xxxx``, names startin
 Experiment configuration
 ------------------------
 
-To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and ``platforms_xxxx.conf`` in the ``conf`` folder of the experiment (see contents in Figure 1.2).
+To configure the experiment, edit ``expdef_xxxx.conf``, ``jobs_xxxx.conf`` and ``platforms_xxxx.conf`` in the ``conf`` folder of the experiment (see contents in Figure :numref:`exp_config`).
 
 .. figure:: fig2.png
+   :name: exp_config
    :width: 50%
    :align: center
    :alt: configuration files

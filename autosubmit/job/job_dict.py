@@ -78,7 +78,8 @@ class DicJobs:
             self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data)
         elif running == 'chunk':
             synchronize = self.get_option(section, "SYNCHRONIZE", None)
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, jobs_data)
+            delay = int(self.get_option(section, "DELAY", -1))
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, jobs_data)
 
     def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
         """
@@ -100,7 +101,7 @@ class DicJobs:
         :type section: str
         :param priority: priority for the jobs
         :type priority: int
-        :param frequency: if greater than 1, only creates one job each frequency startdates. Allways creates one job
+        :param frequency: if greater than 1, only creates one job each frequency startdates. Always creates one job
                           for the last
         :type frequency: int
         """
@@ -121,7 +122,7 @@ class DicJobs:
         :type section: str
         :param priority: priority for the jobs
         :type priority: int
-        :param frequency: if greater than 1, only creates one job each frequency members. Allways creates one job
+        :param frequency: if greater than 1, only creates one job each frequency members. Always creates one job
                           for the last
         :type frequency: int
         """
@@ -141,7 +142,7 @@ class DicJobs:
         conditional decision to the father which makes the call
     '''
 
-    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, jobs_data=dict()):
+    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, jobs_data=dict()):
         """
         Create jobs to be run once per chunk
 
@@ -153,6 +154,8 @@ class DicJobs:
         :param frequency: if greater than 1, only creates one job each frequency chunks. Always creates one job
                           for the last
         :type frequency: int
+        :param delay: if this parameter is set, the job is only created for the chunks greater than the delay
+        :type delay: int
         """
         # Temporally creation for unified jobs in case of synchronize
         if synchronize is not None:
@@ -160,14 +163,15 @@ class DicJobs:
             count = 0
             for chunk in self._chunk_list:
                 count += 1
-                if count % frequency == 0 or count == len(self._chunk_list):
-                    if synchronize == 'date':
-                        tmp_dic[chunk] = self.build_job(section, priority, None, None,
-                                                        chunk, default_job_type, jobs_data)
-                    elif synchronize == 'member':
-                        tmp_dic[chunk] = dict()
-                        for date in self._date_list:
-                            tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
+                if delay == -1 or delay < chunk:
+                    if count % frequency == 0 or count == len(self._chunk_list):
+                        if synchronize == 'date':
+                            tmp_dic[chunk] = self.build_job(section, priority, None, None,
+                                                            chunk, default_job_type, jobs_data)
+                        elif synchronize == 'member':
+                            tmp_dic[chunk] = dict()
+                            for date in self._date_list:
+                                tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
                                                                   chunk, default_job_type, jobs_data)
         # Real dic jobs assignment/creation
         self._dic[section] = dict()
@@ -178,15 +182,16 @@ class DicJobs:
                 count = 0
                 for chunk in self._chunk_list:
                     count += 1
-                    if count % frequency == 0 or count == len(self._chunk_list):
-                        if synchronize == 'date':
-                            self._dic[section][date][member][chunk] = tmp_dic[chunk]
-                        elif synchronize == 'member':
-                            self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
-                        else:
-                            self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
-                                                                                     chunk, default_job_type, jobs_data)
-                        self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
+                    if delay == -1 or delay < chunk:
+                        if count % frequency == 0 or count == len(self._chunk_list):
+                            if synchronize == 'date':
+                                self._dic[section][date][member][chunk] = tmp_dic[chunk]
+                            elif synchronize == 'member':
+                                self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
+                            else:
+                                self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
+                                                                                         chunk, default_job_type, jobs_data)
+                            self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
@@ -274,6 +279,7 @@ class DicJobs:
         job.date_format = self._date_format
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
+        job.delay = int(self.get_option(section, "DELAY", -1))
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
