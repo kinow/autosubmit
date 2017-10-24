@@ -8,7 +8,6 @@ Module documentation
    autosubmit
    config
    database
-   date
    git
    job
    monitor
