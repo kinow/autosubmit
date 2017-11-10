@@ -112,7 +112,7 @@ todo_include_todos = False
 
 autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "pydotplus", "pyparsing",
                       'numpy', 'matplotlib', 'saga', 'saga-python', 'paramiko',
-                      'mock', "networkx", 'bscearth.utils']
+                      'mock', "networkx", 'bscearth.utils', 'bscearth.utils.log']
 
 # -- Options for HTML output ----------------------------------------------
 
