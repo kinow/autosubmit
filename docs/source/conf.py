@@ -19,7 +19,7 @@ import os
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
-sys.path.insert(0, os.path.abspath('../../autosubmit/..'))
+sys.path.insert(0, os.path.abspath('../..'))
 
 # -- General configuration ------------------------------------------------
 
@@ -111,8 +111,8 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "pydotplus", "pyparsing",
-                      'numpy', 'matplotlib', 'saga', 'saga-python', 'paramiko',
-                      'mock', "networkx", 'bscearth.utils', 'bscearth.utils.log', 'bscearth.utils.config_parser',
+                      'numpy', 'matplotlib', 'matplotlib.pyplot', 'matplotlib.gridspec', 'matplotlib.patches', 'saga', 'saga-python', 'paramiko',
+                      'mock', "networkx", 'networkx.algorithms', 'bscearth.utils', 'bscearth.utils.log', 'bscearth.utils.config_parser',
                         'bscearth.utils.date']
 
 # -- Options for HTML output ----------------------------------------------
