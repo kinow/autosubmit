@@ -110,7 +110,9 @@ pygments_style = 'sphinx'
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-autodoc_mock_imports = ["portalocker"]
+autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "pydotplus", "pyparsing",
+                      'numpy', 'matplotlib', 'saga-python', 'paramiko',
+                      'mock', "networkx"]
 
 # -- Options for HTML output ----------------------------------------------
 
