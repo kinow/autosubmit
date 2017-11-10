@@ -111,7 +111,7 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "pydotplus", "pyparsing",
-                      'numpy', 'matplotlib', 'saga-python', 'paramiko',
+                      'numpy', 'matplotlib', 'saga', 'saga-python', 'paramiko',
                       'mock', "networkx"]
 
 # -- Options for HTML output ----------------------------------------------
