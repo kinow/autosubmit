@@ -66,6 +66,8 @@ from bscearth.utils.config_parser import ConfigParserFactory
 from job.job_common import Status
 from git.autosubmit_git import AutosubmitGit
 from job.job_list import JobList
+from job.job_packages import JobPackageThread
+from job.job_package_persistence import JobPackagePersistence
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
 # noinspection PyPackageRequirements
@@ -641,6 +643,9 @@ class Autosubmit:
 
                 job_list.check_scripts(as_conf)
 
+                packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                        "job_packages_" + expid)
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -689,7 +694,7 @@ class Autosubmit:
                     if Autosubmit.exit:
                         return 2
 
-                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test):
+                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
                     if Autosubmit.exit:
                         return 2
@@ -710,7 +715,7 @@ class Autosubmit:
             return False
 
     @staticmethod
-    def submit_ready_jobs(as_conf, job_list, platforms_to_test):
+    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
@@ -728,6 +733,8 @@ class Autosubmit:
             for package in packages_to_submit:
                 try:
                     package.submit(as_conf, job_list.parameters)
+                    if isinstance(package, JobPackageThread):
+                        packages_persistence.save(package.name, package.jobs, package._expid)
                     save = True
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
@@ -844,8 +851,13 @@ class Autosubmit:
             job.children = job.children - referenced_jobs_to_remove
             job.parents = job.parents - referenced_jobs_to_remove
 
+        packages = None
+        if as_conf.get_wrapper_type() != 'none':
+            packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                     "job_packages_" + expid).load()
+
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, jobs, file_format, not hide)
+        monitor_exp.generate_output(expid, jobs, file_format, packages, not hide)
         return True
 
     @staticmethod
@@ -1056,10 +1068,13 @@ class Autosubmit:
 
         Log.result("Recovery finalized")
 
+        packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                              "job_packages_" + expid).load()
+
         if not noplot:
             Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), packages=packages, show=not hide)
 
         return True
 
@@ -1785,7 +1800,8 @@ class Autosubmit:
                         date_format = 'M'
                 job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                   as_conf.get_retrials(),
-                                  as_conf.get_default_job_type())
+                                  as_conf.get_default_job_type(),
+                                  as_conf.get_wrapper_expression())
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list)
@@ -1794,10 +1810,13 @@ class Autosubmit:
 
                 Log.info("\nSaving the jobs list...")
                 job_list.save()
+
+                JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                      "job_packages_" + expid).reset_table()
                 if not noplot:
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), output, None, not hide)
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -2011,10 +2030,13 @@ class Autosubmit:
                     job_list.update_list(as_conf)
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
+                packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                      "job_packages_" + expid).load()
+
                 if not noplot:
                     Log.info("\nPloting joblist...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), packages=packages, show=not hide)
 
                 return True
 
@@ -2350,7 +2372,7 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_expression(), False)
         return job_list
 
     @staticmethod

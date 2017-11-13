@@ -91,6 +91,8 @@ class Job(object):
         self.write_start = False
         self._platform = None
         self.check = 'True'
+        self.packed = False
+
 
     def __getstate__(self):
         odict = self.__dict__
