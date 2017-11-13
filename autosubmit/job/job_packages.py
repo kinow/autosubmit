@@ -374,6 +374,7 @@ class JobPackageVertical(JobPackageThread):
 
     def __init__(self, jobs, dependency=None):
         super(JobPackageVertical, self).__init__(jobs, dependency)
+        #TODO unit or regression test of the wrappers, it will fail as in issue 280
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
