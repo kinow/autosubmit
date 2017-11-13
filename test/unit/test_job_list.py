@@ -218,7 +218,7 @@ class TestJobList(TestCase):
         graph_mock = Mock()
         job_list.graph = graph_mock
         # act
-        job_list.generate(date_list, member_list, num_chunks, 1, parameters, 'H', 9999, Type.BASH)
+        job_list.generate(date_list, member_list, num_chunks, 1, parameters, 'H', 9999, Type.BASH, 'None')
 
         # assert
         self.assertEquals(job_list.parameters, parameters)
