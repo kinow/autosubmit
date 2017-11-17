@@ -1000,11 +1000,12 @@ class AutosubmitConfig(object):
 
     def is_valid_wrapper_expression(self):
         expression = self.get_wrapper_expression()
-        parser = self._jobs_parser
-        sections = parser.sections()
-        for section in expression.split(" "):
-            if section not in sections:
-                return False
+        if expression != 'None':
+            parser = self._jobs_parser
+            sections = parser.sections()
+            for section in expression.split(" "):
+                if section not in sections:
+                    return False
         return True
 
     def is_valid_git_repository(self):

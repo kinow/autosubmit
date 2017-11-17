@@ -303,10 +303,54 @@ class JobList:
 
         num_chunks = len(self._chunk_list)
 
-        sorted_jobs_list = sorted(self._job_list, key=lambda k: (k.name.split('_')[1], (k.name.split('_')[2]
-                                                                            if len(k.name.split('_')) >= 3 else None)))
+        filtered_jobs_list = filter(lambda job: job.section in wrapper_expression, self._job_list)
 
-        sorted_jobs_list = filter(lambda job: job.section in wrapper_expression, sorted_jobs_list)
+        filtered_jobs_list_fake_jobs = []
+
+        fake_original_job_map = dict()
+
+        date_format = ''
+        if self.parameters.get('CHUNKSIZEUNIT') is 'hour':
+            date_format = 'H'
+        for date in self._date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+
+        import copy
+        for job in filtered_jobs_list:
+            fake_job = None
+            # running once
+            if job.date is None and job.member is None:
+                for date in self._date_list:
+                    fake_job = copy.deepcopy(job)
+                    fake_job.name = fake_job.name.split('_', 1)[0] + "_" + date2str(date, date_format) + "_" + fake_job.name.split("_", 1)[1]
+                    name_with_date = fake_job.name
+                    for member in self._member_list:
+                        fake_job_member = copy.deepcopy(fake_job)
+                        fake_job_member.name = name_with_date.split('_', 2)[0] + "_" + name_with_date.split('_', 2)[1] + "_" + member + "_" + name_with_date.split("_", 2)[2]
+                        filtered_jobs_list_fake_jobs.append(fake_job_member)
+                        fake_original_job_map[fake_job_member] = job
+            # synchronize date
+            elif job.date is None:
+                for date in self._date_list:
+                    fake_job = copy.deepcopy(job)
+                    fake_job.name = fake_job.name.split('_', 1)[0] + "_" + date2str(date, date_format) + "_" + fake_job.name.split("_", 1)[1]
+                    filtered_jobs_list_fake_jobs.append(fake_job)
+                    fake_original_job_map[fake_job] = job
+            # running date or synchronize member
+            elif job.member is None:
+                for member in self._member_list:
+                    fake_job = copy.deepcopy(job)
+                    fake_job.name = fake_job.name.split('_', 2)[0] +  "_" + fake_job.name.split('_', 2)[1] +  "_" + member + "_" + fake_job.name.split("_", 2)[2]
+                    filtered_jobs_list_fake_jobs.append(fake_job)
+                    fake_original_job_map[fake_job] = job
+
+            if fake_job is None:
+                filtered_jobs_list_fake_jobs.append(job)
+
+        sorted_jobs_list = sorted(filtered_jobs_list_fake_jobs, key=lambda k: (k.name.split('_')[1], (k.name.split('_')[2])))
 
         previous_job = sorted_jobs_list[0]
         section_running_type = 'date'
@@ -318,26 +362,42 @@ class JobList:
 
         jobs_to_sort = [previous_job]
         previous_section_running_type = None
-        for index in range(1, len(sorted_jobs_list)):
-            job = sorted_jobs_list[index]
-            if previous_job.section != job.section:
-                previous_section_running_type = section_running_type
-                section_running_type = 'date'
-                if job.member is not None:
-                    if job.chunk is not None:
-                        section_running_type = 'chunk'
-                    else:
-                        section_running_type = 'member'
+        for index in range(1, len(sorted_jobs_list)+1):
+            if index < len(sorted_jobs_list):
+                job = sorted_jobs_list[index]
 
-            if (previous_section_running_type != None and previous_section_running_type != section_running_type) \
-                    or (previous_job.member != job.member or previous_job.date != job.date) \
-                    or index == len(sorted_jobs_list)-1:
+                if previous_job.section != job.section:
+                    previous_section_running_type = section_running_type
+                    section_running_type = 'date'
+                    if job.member is not None:
+                        if job.chunk is not None:
+                            section_running_type = 'chunk'
+                        else:
+                            section_running_type = 'member'
 
-                dict_jobs[previous_job.date][previous_job.member] += sorted(jobs_to_sort, key=lambda k: (k.name.split('_')[1],
-                                                                     (k.name.split('_')[2]
-                                                                        if len(k.name.split('_')) >= 3 else None),
-                                                                     (int(k.name.split('_')[3])
-                                                                        if len(k.name.split('_')) == 5 else num_chunks+1)))
+            if (previous_section_running_type != None
+                    and previous_job.section != job.section
+                    and previous_section_running_type != section_running_type) \
+                or (previous_job.member != job.member or previous_job.date != job.date) \
+                or index == len(sorted_jobs_list):
+
+                _date = previous_job.date
+                if _date is None:
+                    _date = parse_date(previous_job.name.split("_")[1])
+
+                _member = previous_job.member
+                if _member is None:
+                    _member = previous_job.name.split("_")[2]
+
+                jobs_to_sort = sorted(jobs_to_sort, key=lambda k: (k.name.split('_')[1], (k.name.split('_')[2]),
+                                                (int(k.name.split('_')[3]) if len(k.name.split('_')) == 5 else num_chunks + 1)))
+
+                for idx in range(0, len(jobs_to_sort)):
+                    if jobs_to_sort[idx] in fake_original_job_map:
+                        _job = jobs_to_sort[idx]
+                        jobs_to_sort[idx] = fake_original_job_map[_job]
+
+                dict_jobs[_date][_member] += jobs_to_sort
                 jobs_to_sort = []
 
             jobs_to_sort.append(job)

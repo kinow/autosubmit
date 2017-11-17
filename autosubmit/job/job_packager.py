@@ -62,41 +62,41 @@ class JobPackager(object):
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
         jobs_to_submit = list_of_available[0:num_jobs_to_submit]
 
-        # If wrapper allowed / well-configured
-        wrapper_type = self._as_config.get_wrapper_type()
-        if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical']:
-            remote_dependencies = self._as_config.get_remote_dependencies()
-            max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
+        jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
 
+        for section in jobs_to_submit_by_section:
             wrapper_expression = self._as_config.get_wrapper_expression()
-            max_wrapped_jobs = self._as_config.get_max_wrapped_jobs()
-            jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
+            wrapper_type = self._as_config.get_wrapper_type()
+            if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical'] and \
+                    (wrapper_expression == 'None' or section in wrapper_expression.split(' ')):
 
-            if wrapper_type == 'vertical':
-                for section_list in jobs_to_submit_by_section.values():
-                    built_packages, max_jobs = JobPackager._build_vertical_packages(self._jobs_list.get_ordered_jobs_by_date_member(),
-                                                                                    wrapper_expression,
-                                                                                    section_list,
-                                                                                    max_jobs, self._platform.max_wallclock,
-                                                                                    max_wrapped_jobs,
+                remote_dependencies = self._as_config.get_remote_dependencies()
+                max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
+                max_wrapped_jobs = self._as_config.get_max_wrapped_jobs()
+
+                if wrapper_type == 'vertical':
+                    built_packages, max_jobs = JobPackager._build_vertical_packages(
+                                                                        self._jobs_list.get_ordered_jobs_by_date_member(),
+                                                                        wrapper_expression,
+                                                                        jobs_to_submit_by_section[section],
+                                                                        max_jobs, self._platform.max_wallclock,
+                                                                        max_wrapped_jobs,
+                                                                        remote_dependencies)
+                    packages_to_submit += built_packages
+                elif wrapper_type == 'horizontal':
+                    built_packages, max_jobs = JobPackager._build_horizontal_packages(jobs_to_submit_by_section[section],
+                                                                                    max_jobs, self._platform.max_processors,
                                                                                     remote_dependencies)
                     packages_to_submit += built_packages
-                return packages_to_submit
-            elif wrapper_type == 'horizontal':
-                for section_list in jobs_to_submit_by_section.values():
-                    built_packages, max_jobs = JobPackager._build_horizontal_packages(section_list,
-                                                                                      max_jobs,
-                                                                                      self._platform.max_processors,
-                                                                                      remote_dependencies)
-                    packages_to_submit += built_packages
-                return packages_to_submit
-        # No wrapper allowed / well-configured
-        for job in jobs_to_submit:
-            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
-                package = JobPackageSimpleWrapped([job])
             else:
-                package = JobPackageSimple([job])
-            packages_to_submit.append(package)
+                # No wrapper allowed / well-configured
+                for job in jobs_to_submit_by_section[section]:
+                    if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                        package = JobPackageSimpleWrapped([job])
+                    else:
+                        package = JobPackageSimple([job])
+                    packages_to_submit.append(package)
+
         return packages_to_submit
 
     @staticmethod
@@ -195,26 +195,35 @@ class JobPackager(object):
 
     @staticmethod
     def _build_vertical_package_mixed_sections(dict_jobs, ready_job, jobs_list, total_wallclock, max_jobs, max_wallclock, max_wrapped_jobs):
-        if ready_job.member is not None:
-            sorted_jobs = dict_jobs[ready_job.date][ready_job.member]
-        else:
-            sorted_jobs = dict_jobs[ready_job.date]
+        dates_to_test = dict_jobs.keys()
+        members_to_test = dict_jobs[dates_to_test[0]].keys()
+        if ready_job.date is not None and ready_job.member is not None:
+            dates_to_test = [ready_job.date]
+            members_to_test = [ready_job.member]
+        elif ready_job.member is None and ready_job.date is not None:
+            dates_to_test = [ready_job.date]
+        elif ready_job.member is not None and ready_job.date is None:
+            members_to_test = [ready_job.member]
 
-        for job in sorted_jobs:
-            if job.packed == False:
-                dependencies_satisfied = True
-                for parent in job.parents:
-                    if parent.packed == False and parent.status != Status.COMPLETED:
-                        dependencies_satisfied = False
-                        continue
-                if dependencies_satisfied and (job.status == Status.READY or job.status == Status.WAITING):
-                    total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
-                    if total_wallclock <= max_wallclock and len(jobs_list) < max_jobs and len(jobs_list) < max_wrapped_jobs:
-                        jobs_list.append(job)
-                        job.packed = True
-                        Log.info("Added "+job.name)
-                    else:
-                        break
+        for date in dates_to_test:
+            for member in members_to_test:
+                sorted_jobs = dict_jobs[date][member]
+                for job in sorted_jobs:
+                    if job.packed == False:
+                        dependencies_satisfied = True
+                        for parent in job.parents:
+                            #if parent.packed == False and parent.status != Status.COMPLETED:
+                            if parent not in jobs_list and parent.status != Status.COMPLETED:
+                                dependencies_satisfied = False
+                                break
+                        if dependencies_satisfied and (job.status == Status.READY or job.status == Status.WAITING):
+                            total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
+                            if total_wallclock <= max_wallclock and len(jobs_list) < max_jobs and len(jobs_list) < max_wrapped_jobs:
+                                jobs_list.append(job)
+                                job.packed = True
+                                Log.info("Added "+job.name)
+                            else:
+                                break
 
         return jobs_list
 
