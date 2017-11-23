@@ -192,6 +192,28 @@ class Monitor:
             except subprocess.CalledProcessError:
                 Log.error('File {0} could not be opened', output_file)
 
+        self.generate_output_txt(expid, joblist)
+
+    def generate_output_txt(self, expid, joblist):
+        Log.info('Writing status txt...')
+
+        now = time.localtime()
+        output_date = time.strftime("%Y%m%d_%H%M", now)
+        file_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "status", expid + "_" + output_date + ".txt")
+
+        if not os.path.exists(os.path.dirname(file_path)):
+            os.makedirs(os.path.dirname(file_path))
+
+        output_file = open(file_path, 'w+')
+        for job in joblist:
+            output = job.name + " " + Status().VALUE_TO_KEY[job.status]
+            if job != joblist[-1]:
+                output += "\n"
+            output_file.write(output)
+        output_file.close()
+
+        Log.result('Status txt created at {0}', output_file)
+
     def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
         """
         Plots stats for joblist and stores it in a file
