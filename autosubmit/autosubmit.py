@@ -182,6 +182,8 @@ class Autosubmit:
                                help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('--txt', action='store_true', default=False,
+                                   help='Generates only txt status file')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -339,7 +341,7 @@ class Autosubmit:
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.hide)
+                                          args.filter_type, args.hide, args.txt)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -738,7 +740,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -845,7 +847,11 @@ class Autosubmit:
             job.parents = job.parents - referenced_jobs_to_remove
 
         monitor_exp = Monitor()
-        monitor_exp.generate_output(expid, jobs, file_format, not hide)
+        if txt_only:
+            monitor_exp.generate_output_txt(expid, jobs, exp_path+"/tmp/LOG_"+expid)
+        else:
+            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, not hide)
+
         return True
 
     @staticmethod
@@ -1059,7 +1065,7 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), show=not hide)
 
         return True
 
@@ -1797,7 +1803,7 @@ class Autosubmit:
                 if not noplot:
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), output, not hide)
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -2014,7 +2020,7 @@ class Autosubmit:
                 if not noplot:
                     Log.info("\nPloting joblist...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), show=not hide)
 
                 return True
 
