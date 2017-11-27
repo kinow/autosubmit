@@ -145,7 +145,8 @@ class JobList:
             job.parameters = parameters
 
         if wrapper_expression != 'None':
-            self._create_sorted_dict_jobs(wrapper_expression)
+            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_expression)
+
 
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
@@ -311,7 +312,7 @@ class JobList:
             sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", '')
 
         for date in self._date_list:
-            str_date = date2str(date, self._get_date_format())
+            str_date = self._get_date(date)
             for member in self._member_list:
                 sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
                                                       job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
@@ -348,7 +349,7 @@ class JobList:
                     jobs_to_sort.append(job)
                     previous_job = job
 
-        self._ordered_jobs_by_date_member = dict_jobs
+        return dict_jobs
 
     def _create_fake_dates_members(self, filtered_jobs_list):
         filtered_jobs_fake_date_member = []
@@ -363,7 +364,7 @@ class JobList:
                 member = self._member_list[-1]
 
                 fake_job = copy.deepcopy(job)
-                fake_job.name = fake_job.name.split('_', 1)[0] + "_" + date2str(date, self._get_date_format()) + "_" \
+                fake_job.name = fake_job.name.split('_', 1)[0] + "_" + self._get_date(date) + "_" \
                                 + member + "_" + fake_job.name.split("_", 1)[1]
                 filtered_jobs_fake_date_member.append(fake_job)
                 fake_original_job_map[fake_job] = job
@@ -381,7 +382,7 @@ class JobList:
 
         return filtered_jobs_fake_date_member, fake_original_job_map
 
-    def _get_date_format(self):
+    def _get_date(self, date):
         date_format = ''
         if self.parameters.get('CHUNKSIZEUNIT') is 'hour':
             date_format = 'H'
@@ -390,8 +391,8 @@ class JobList:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
-
-        return date_format
+        str_date = date2str(date, date_format)
+        return str_date
 
     def __len__(self):
         return self._job_list.__len__()
