@@ -148,7 +148,7 @@ class Monitor:
                 if flag:
                     self._add_children(child, exp, node_child)
 
-    def generate_output(self, expid, joblist, output_format="pdf", show=False):
+    def generate_output(self, expid, joblist, path, output_format="pdf", show=False):
         """
         Plots graph for joblist and stores it in a file
 
@@ -192,7 +192,7 @@ class Monitor:
             except subprocess.CalledProcessError:
                 Log.error('File {0} could not be opened', output_file)
 
-        self.generate_output_txt(expid, joblist)
+        self.generate_output_txt(expid, joblist, path)
 
     def generate_output_txt(self, expid, joblist, path):
         Log.info('Writing status txt...')

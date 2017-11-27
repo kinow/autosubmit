@@ -279,10 +279,10 @@ class Autosubmit:
                                help='Supply the list of chunks to change the status. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
-                               help='Select the status (one or more) to filter the list of jobs.'
-                                    "Valid values = ['Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN']")
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
             group.add_argument('-ft', '--filter_type', type=str,
-                               help='Select the job type(s) to filter from the list of jobs')
+                               help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
 
@@ -850,7 +850,7 @@ class Autosubmit:
         if txt_only:
             monitor_exp.generate_output_txt(expid, jobs, exp_path+"/tmp/LOG_"+expid)
         else:
-            monitor_exp.generate_output(expid, jobs, file_format, not hide)
+            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, not hide)
 
         return True
 
@@ -1065,7 +1065,7 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), show=not hide)
 
         return True
 
@@ -1803,7 +1803,7 @@ class Autosubmit:
                 if not noplot:
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), output, not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), output, not hide)
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -1976,29 +1976,26 @@ class Autosubmit:
                                         Autosubmit.change_status(final, final_status, job)
 
                 if filter_status:
-                    status_list = filter_status.split()
-
                     Log.debug("Filtering jobs with status {0}", filter_status)
-                    if status_list == 'Any':
+                    if filter_status == 'Any':
                         for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
                     else:
-                        for status in status_list:
-                            fs = Autosubmit._get_status(status)
-                            for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                                Autosubmit.change_status(final, final_status, job)
+                        fs = Autosubmit._get_status(filter_status)
+                        for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
+                            Autosubmit.change_status(final, final_status, job)
 
                 if filter_section:
-                    ft = filter_section.split()
+                    ft = filter_section
+                    Log.debug(ft)
 
                     if ft == 'Any':
                         for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
                     else:
-                        for section in ft:
-                            for job in job_list.get_job_list():
-                                if job.section == section:
-                                    Autosubmit.change_status(final, final_status, job)
+                        for job in job_list.get_job_list():
+                            if job.section == ft:
+                                Autosubmit.change_status(final, final_status, job)
 
                 if lst:
                     jobs = lst.split()
@@ -2023,7 +2020,7 @@ class Autosubmit:
                 if not noplot:
                     Log.info("\nPloting joblist...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), show=not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), show=not hide)
 
                 return True
 
