@@ -67,7 +67,7 @@ class TestWrappers(TestCase):
 
         cls.workflows['synchronize_date']['sections']["s5"] = dict()
         cls.workflows['synchronize_date']['sections']["s5"]["RUNNING"] = "chunk"
-        # SYNCHRONIZE
+        cls.workflows['synchronize_date']['sections']["s5"]["SYNCHRONIZE"] = "date"
         cls.workflows['synchronize_date']['sections']["s5"]["WALLCLOCK"] = '00:30'
         cls.workflows['synchronize_date']['sections']["s5"]["DEPENDENCIES"] = "s2"
 
@@ -93,7 +93,7 @@ class TestWrappers(TestCase):
 
         cls.workflows['synchronize_member']['sections']["s5"] = dict()
         cls.workflows['synchronize_member']['sections']["s5"]["RUNNING"] = "chunk"
-        #SYNCHRONIZE
+        cls.workflows['synchronize_member']['sections']["s5"]["SYNCHRONIZE"] = "member"
         cls.workflows['synchronize_member']['sections']["s5"]["WALLCLOCK"] = '00:30'
         cls.workflows['synchronize_member']['sections']["s5"]["DEPENDENCIES"] = "s2"
 
@@ -153,8 +153,233 @@ class TestWrappers(TestCase):
         self.job_list = JobList(self.experiment_id, FakeBasicConfig, ConfigParserFactory(),
                                 JobListPersistenceDb('.', '.'))
         self.parser_mock = Mock(spec='SafeConfigParser')
-
+    
+    ### ONE SECTION WRAPPER ###
     def test_returned_packages(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        self._createDummyJobs(self.workflows['basic'], date_list, member_list, chunk_list)
+
+        self.job_list.get_job_by_name('expid_d1_m1_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_s1').status = Status.COMPLETED
+
+        self.job_list.get_job_by_name('expid_d1_m1_1_s2').status = Status.READY
+        self.job_list.get_job_by_name('expid_d1_m2_1_s2').status = Status.READY
+
+        max_jobs = 20
+        max_wrapped_jobs = 20
+        max_wallclock = '10:00'
+
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m1_5_s2 = self.job_list.get_job_by_name('expid_d1_m1_5_s2')
+        d1_m1_6_s2 = self.job_list.get_job_by_name('expid_d1_m1_6_s2')
+        d1_m1_7_s2 = self.job_list.get_job_by_name('expid_d1_m1_7_s2')
+        d1_m1_8_s2 = self.job_list.get_job_by_name('expid_d1_m1_8_s2')
+        d1_m1_9_s2 = self.job_list.get_job_by_name('expid_d1_m1_9_s2')
+        d1_m1_10_s2 = self.job_list.get_job_by_name('expid_d1_m1_10_s2')
+
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+        d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
+        d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
+        d1_m2_5_s2 = self.job_list.get_job_by_name('expid_d1_m2_5_s2')
+        d1_m2_6_s2 = self.job_list.get_job_by_name('expid_d1_m2_6_s2')
+        d1_m2_7_s2 = self.job_list.get_job_by_name('expid_d1_m2_7_s2')
+        d1_m2_8_s2 = self.job_list.get_job_by_name('expid_d1_m2_8_s2')
+        d1_m2_9_s2 = self.job_list.get_job_by_name('expid_d1_m2_9_s2')
+        d1_m2_10_s2 = self.job_list.get_job_by_name('expid_d1_m2_10_s2')
+
+        section_list = [d1_m1_1_s2, d1_m2_1_s2]
+
+        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs)
+
+        package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
+                         d1_m1_9_s2, d1_m1_10_s2]
+        package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2, d1_m2_6_s2, d1_m2_7_s2, d1_m2_8_s2,
+                         d1_m2_9_s2, d1_m2_10_s2]
+
+        packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
+
+        returned_packages = returned_packages[0]
+        for i in range(0, len(returned_packages)):
+            self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
+
+    def test_returned_packages_max_jobs(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        self._createDummyJobs(self.workflows['basic'], date_list, member_list, chunk_list)
+
+        self.job_list.get_job_by_name('expid_d1_m1_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_s1').status = Status.COMPLETED
+
+        self.job_list.get_job_by_name('expid_d1_m1_1_s2').status = Status.READY
+        self.job_list.get_job_by_name('expid_d1_m2_1_s2').status = Status.READY
+
+        max_jobs = 12
+        max_wrapped_jobs = 10
+        max_wallclock = '10:00'
+
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m1_5_s2 = self.job_list.get_job_by_name('expid_d1_m1_5_s2')
+        d1_m1_6_s2 = self.job_list.get_job_by_name('expid_d1_m1_6_s2')
+        d1_m1_7_s2 = self.job_list.get_job_by_name('expid_d1_m1_7_s2')
+        d1_m1_8_s2 = self.job_list.get_job_by_name('expid_d1_m1_8_s2')
+        d1_m1_9_s2 = self.job_list.get_job_by_name('expid_d1_m1_9_s2')
+        d1_m1_10_s2 = self.job_list.get_job_by_name('expid_d1_m1_10_s2')
+
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+
+        section_list = [d1_m1_1_s2, d1_m2_1_s2]
+
+        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs)
+
+        package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
+                         d1_m1_9_s2, d1_m1_10_s2]
+        package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2]
+
+        packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
+
+        returned_packages = returned_packages[0]
+        for i in range(0, len(returned_packages)):
+            self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
+
+    def test_returned_packages_max_wrapped_jobs(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        self._createDummyJobs(self.workflows['basic'], date_list, member_list, chunk_list)
+
+        self.job_list.get_job_by_name('expid_d1_m1_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_s1').status = Status.COMPLETED
+
+        self.job_list.get_job_by_name('expid_d1_m1_1_s2').status = Status.READY
+        self.job_list.get_job_by_name('expid_d1_m2_1_s2').status = Status.READY
+
+        max_jobs = 20
+        max_wrapped_jobs = 5
+        max_wallclock = '10:00'
+
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m1_5_s2 = self.job_list.get_job_by_name('expid_d1_m1_5_s2')
+
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+        d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
+        d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
+        d1_m2_5_s2 = self.job_list.get_job_by_name('expid_d1_m2_5_s2')
+
+        section_list = [d1_m1_1_s2, d1_m2_1_s2]
+
+        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs)
+
+        package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
+        package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
+
+        packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
+
+        returned_packages = returned_packages[0]
+        for i in range(0, len(returned_packages)):
+            self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
+
+    def test_returned_packages_max_wallclock(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        self._createDummyJobs(self.workflows['basic'], date_list, member_list, chunk_list)
+
+        self.job_list.get_job_by_name('expid_d1_m1_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_s1').status = Status.COMPLETED
+
+        self.job_list.get_job_by_name('expid_d1_m1_1_s2').status = Status.READY
+        self.job_list.get_job_by_name('expid_d1_m2_1_s2').status = Status.READY
+
+        max_jobs = 20
+        max_wrapped_jobs = 15
+        max_wallclock = '00:50'
+
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m1_5_s2 = self.job_list.get_job_by_name('expid_d1_m1_5_s2')
+
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+        d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
+        d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
+        d1_m2_5_s2 = self.job_list.get_job_by_name('expid_d1_m2_5_s2')
+
+        section_list = [d1_m1_1_s2, d1_m2_1_s2]
+
+        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs)
+
+        package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
+        package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
+
+        packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
+
+        returned_packages = returned_packages[0]
+        for i in range(0, len(returned_packages)):
+            self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
+
+    def test_returned_packages_section_not_self_dependent(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+
+        self._createDummyJobs(self.workflows['basic'], date_list, member_list, chunk_list)
+
+        self.job_list.get_job_by_name('expid_d1_m1_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_s1').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m1_1_s2').status = Status.COMPLETED
+        self.job_list.get_job_by_name('expid_d1_m2_1_s2').status = Status.COMPLETED
+
+        self.job_list.get_job_by_name('expid_d1_m1_1_s3').status = Status.READY
+        self.job_list.get_job_by_name('expid_d1_m2_1_s3').status = Status.READY
+
+        max_jobs = 20
+        max_wrapped_jobs = 20
+        max_wallclock = '10:00'
+
+        d1_m1_1_s3 = self.job_list.get_job_by_name('expid_d1_m1_1_s3')
+        d1_m2_1_s3 = self.job_list.get_job_by_name('expid_d1_m2_1_s3')
+
+        section_list = [d1_m1_1_s3, d1_m2_1_s3]
+
+        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs)
+
+        package_m1_s2 = [d1_m1_1_s3]
+        package_m2_s2 = [d1_m2_1_s3]
+
+        packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
+
+        returned_packages = returned_packages[0]
+        for i in range(0, len(returned_packages)):
+            self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
+
+    ### MIXED WRAPPER ###
+    def test_returned_packages_mixed_wrapper(self):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -214,7 +439,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_returned_packages_parent_failed(self):
+    def test_returned_packages_parent_failed_mixed_wrapper(self):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -271,7 +496,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_returned_packages_max_jobs(self):
+    def test_returned_packages_max_jobs_mixed_wrapper(self):
         wrapper_expression = "s2 s3"
         max_jobs = 10
         max_wrapped_jobs = 10
@@ -330,7 +555,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_returned_packages_max_wrapped_jobs(self):
+    def test_returned_packages_max_wrapped_jobs_mixed_wrapper(self):
         wrapper_expression = "s2 s3"
         max_jobs = 15
         max_wrapped_jobs = 5
@@ -388,7 +613,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_returned_packages_max_wallclock(self):
+    def test_returned_packages_max_wallclock_mixed_wrapper(self):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -446,7 +671,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_returned_packages_first_chunks_completed(self):
+    def test_returned_packages_first_chunks_completed_mixed_wrapper(self):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -515,7 +740,7 @@ class TestWrappers(TestCase):
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
-    def test_ordered_dict_jobs_simple_workflow(self):
+    def test_ordered_dict_jobs_simple_workflow_mixed_wrapper(self):
         date_list = ["d1"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -560,7 +785,7 @@ class TestWrappers(TestCase):
 
         self.assertDictEqual(self.job_list._create_sorted_dict_jobs("s2 s3"), ordered_jobs_by_date_member)
 
-    def test_ordered_dict_jobs_running_date(self):
+    def test_ordered_dict_jobs_running_date_mixed_wrapper(self):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -588,7 +813,7 @@ class TestWrappers(TestCase):
         d1_m2_2_s3 = self.job_list.get_job_by_name('expid_d1_m2_2_s3')
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
-        
+
         d1_s5 = self.job_list.get_job_by_name('expid_d1_s5')
 
         d2_m1_1_s2 = self.job_list.get_job_by_name('expid_d2_m1_1_s2')
@@ -627,7 +852,7 @@ class TestWrappers(TestCase):
 
         self.assertDictEqual(self.job_list._create_sorted_dict_jobs("s2 s3 s5"), ordered_jobs_by_date_member)
 
-    def test_ordered_dict_jobs_running_once(self):
+    def test_ordered_dict_jobs_running_once_mixed_wrapper(self):
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4]
@@ -692,16 +917,146 @@ class TestWrappers(TestCase):
 
         self.assertDictEqual(self.job_list._create_sorted_dict_jobs("s2 s3 s5"), ordered_jobs_by_date_member)
 
-    '''
+    def test_ordered_dict_jobs_synchronize_date_mixed_wrapper(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4]
 
-    #tests for simple vertical wrapper
-    
-    #test_returned_packages_max_wrapped_section(self):
-    
+        self._createDummyJobs(self.workflows['synchronize_date'], date_list, member_list, chunk_list)
 
-    #def test_ordered_dict_jobs_synchronize_date(self):
+        self.parser_mock.has_option = Mock(return_value=True)
+        self.parser_mock.get = Mock(return_value="chunk")
+        self.job_list._get_date = Mock(side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd2'])
 
-    #def test_ordered_dict_jobs_synchronize_member(self):'''
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+        d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
+        d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
+
+        d1_m1_1_s3 = self.job_list.get_job_by_name('expid_d1_m1_1_s3')
+        d1_m1_2_s3 = self.job_list.get_job_by_name('expid_d1_m1_2_s3')
+        d1_m1_3_s3 = self.job_list.get_job_by_name('expid_d1_m1_3_s3')
+        d1_m1_4_s3 = self.job_list.get_job_by_name('expid_d1_m1_4_s3')
+        d1_m2_1_s3 = self.job_list.get_job_by_name('expid_d1_m2_1_s3')
+        d1_m2_2_s3 = self.job_list.get_job_by_name('expid_d1_m2_2_s3')
+        d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
+        d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
+
+        d2_m1_1_s2 = self.job_list.get_job_by_name('expid_d2_m1_1_s2')
+        d2_m1_2_s2 = self.job_list.get_job_by_name('expid_d2_m1_2_s2')
+        d2_m1_3_s2 = self.job_list.get_job_by_name('expid_d2_m1_3_s2')
+        d2_m1_4_s2 = self.job_list.get_job_by_name('expid_d2_m1_4_s2')
+        d2_m2_1_s2 = self.job_list.get_job_by_name('expid_d2_m2_1_s2')
+        d2_m2_2_s2 = self.job_list.get_job_by_name('expid_d2_m2_2_s2')
+        d2_m2_3_s2 = self.job_list.get_job_by_name('expid_d2_m2_3_s2')
+        d2_m2_4_s2 = self.job_list.get_job_by_name('expid_d2_m2_4_s2')
+
+        d2_m1_1_s3 = self.job_list.get_job_by_name('expid_d2_m1_1_s3')
+        d2_m1_2_s3 = self.job_list.get_job_by_name('expid_d2_m1_2_s3')
+        d2_m1_3_s3 = self.job_list.get_job_by_name('expid_d2_m1_3_s3')
+        d2_m1_4_s3 = self.job_list.get_job_by_name('expid_d2_m1_4_s3')
+        d2_m2_1_s3 = self.job_list.get_job_by_name('expid_d2_m2_1_s3')
+        d2_m2_2_s3 = self.job_list.get_job_by_name('expid_d2_m2_2_s3')
+        d2_m2_3_s3 = self.job_list.get_job_by_name('expid_d2_m2_3_s3')
+        d2_m2_4_s3 = self.job_list.get_job_by_name('expid_d2_m2_4_s3')
+
+        _1_s5 = self.job_list.get_job_by_name('expid_1_s5')
+        _2_s5 = self.job_list.get_job_by_name('expid_2_s5')
+        _3_s5 = self.job_list.get_job_by_name('expid_3_s5')
+        _4_s5 = self.job_list.get_job_by_name('expid_4_s5')
+
+        ordered_jobs_by_date_member = dict()
+        ordered_jobs_by_date_member["d1"] = dict()
+        ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2,
+                                                   d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
+
+        ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3, d1_m2_3_s2,
+                                                   d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
+        ordered_jobs_by_date_member["d2"] = dict()
+        ordered_jobs_by_date_member["d2"]["m1"] = [d2_m1_1_s2, d2_m1_1_s3, d2_m1_2_s2, d2_m1_2_s3, d2_m1_3_s2,
+                                                   d2_m1_3_s3, d2_m1_4_s2, d2_m1_4_s3]
+
+        ordered_jobs_by_date_member["d2"]["m2"] = [d2_m2_1_s2, d2_m2_1_s3, _1_s5, d2_m2_2_s2, d2_m2_2_s3, _2_s5, d2_m2_3_s2,
+                                                   d2_m2_3_s3, _3_s5, d2_m2_4_s2, d2_m2_4_s3, _4_s5]
+
+        self.assertDictEqual(self.job_list._create_sorted_dict_jobs("s2 s3 s5"), ordered_jobs_by_date_member)
+
+    def test_ordered_dict_jobs_synchronize_member_mixed_wrapper(self):
+        date_list = ["d1", "d2"]
+        member_list = ["m1", "m2"]
+        chunk_list = [1, 2, 3, 4]
+
+        self._createDummyJobs(self.workflows['synchronize_member'], date_list, member_list, chunk_list)
+
+        self.parser_mock.has_option = Mock(return_value=True)
+        self.parser_mock.get = Mock(return_value="chunk")
+        self.job_list._get_date = Mock(side_effect=['d1', 'd2'])
+
+        d1_m1_1_s2 = self.job_list.get_job_by_name('expid_d1_m1_1_s2')
+        d1_m1_2_s2 = self.job_list.get_job_by_name('expid_d1_m1_2_s2')
+        d1_m1_3_s2 = self.job_list.get_job_by_name('expid_d1_m1_3_s2')
+        d1_m1_4_s2 = self.job_list.get_job_by_name('expid_d1_m1_4_s2')
+        d1_m2_1_s2 = self.job_list.get_job_by_name('expid_d1_m2_1_s2')
+        d1_m2_2_s2 = self.job_list.get_job_by_name('expid_d1_m2_2_s2')
+        d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
+        d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
+
+        d1_m1_1_s3 = self.job_list.get_job_by_name('expid_d1_m1_1_s3')
+        d1_m1_2_s3 = self.job_list.get_job_by_name('expid_d1_m1_2_s3')
+        d1_m1_3_s3 = self.job_list.get_job_by_name('expid_d1_m1_3_s3')
+        d1_m1_4_s3 = self.job_list.get_job_by_name('expid_d1_m1_4_s3')
+        d1_m2_1_s3 = self.job_list.get_job_by_name('expid_d1_m2_1_s3')
+        d1_m2_2_s3 = self.job_list.get_job_by_name('expid_d1_m2_2_s3')
+        d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
+        d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
+
+        d2_m1_1_s2 = self.job_list.get_job_by_name('expid_d2_m1_1_s2')
+        d2_m1_2_s2 = self.job_list.get_job_by_name('expid_d2_m1_2_s2')
+        d2_m1_3_s2 = self.job_list.get_job_by_name('expid_d2_m1_3_s2')
+        d2_m1_4_s2 = self.job_list.get_job_by_name('expid_d2_m1_4_s2')
+        d2_m2_1_s2 = self.job_list.get_job_by_name('expid_d2_m2_1_s2')
+        d2_m2_2_s2 = self.job_list.get_job_by_name('expid_d2_m2_2_s2')
+        d2_m2_3_s2 = self.job_list.get_job_by_name('expid_d2_m2_3_s2')
+        d2_m2_4_s2 = self.job_list.get_job_by_name('expid_d2_m2_4_s2')
+
+        d2_m1_1_s3 = self.job_list.get_job_by_name('expid_d2_m1_1_s3')
+        d2_m1_2_s3 = self.job_list.get_job_by_name('expid_d2_m1_2_s3')
+        d2_m1_3_s3 = self.job_list.get_job_by_name('expid_d2_m1_3_s3')
+        d2_m1_4_s3 = self.job_list.get_job_by_name('expid_d2_m1_4_s3')
+        d2_m2_1_s3 = self.job_list.get_job_by_name('expid_d2_m2_1_s3')
+        d2_m2_2_s3 = self.job_list.get_job_by_name('expid_d2_m2_2_s3')
+        d2_m2_3_s3 = self.job_list.get_job_by_name('expid_d2_m2_3_s3')
+        d2_m2_4_s3 = self.job_list.get_job_by_name('expid_d2_m2_4_s3')
+
+        d1_1_s5 = self.job_list.get_job_by_name('expid_d1_1_s5')
+        d1_2_s5 = self.job_list.get_job_by_name('expid_d1_2_s5')
+        d1_3_s5 = self.job_list.get_job_by_name('expid_d1_3_s5')
+        d1_4_s5 = self.job_list.get_job_by_name('expid_d1_4_s5')
+
+        d2_1_s5 = self.job_list.get_job_by_name('expid_d2_1_s5')
+        d2_2_s5 = self.job_list.get_job_by_name('expid_d2_2_s5')
+        d2_3_s5 = self.job_list.get_job_by_name('expid_d2_3_s5')
+        d2_4_s5 = self.job_list.get_job_by_name('expid_d2_4_s5')
+
+        ordered_jobs_by_date_member = dict()
+        ordered_jobs_by_date_member["d1"] = dict()
+        ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2,
+                                                   d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
+
+        ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_1_s5, d1_m2_2_s2, d1_m2_2_s3, d1_2_s5, d1_m2_3_s2,
+                                                   d1_m2_3_s3, d1_3_s5, d1_m2_4_s2, d1_m2_4_s3, d1_4_s5]
+        ordered_jobs_by_date_member["d2"] = dict()
+        ordered_jobs_by_date_member["d2"]["m1"] = [d2_m1_1_s2, d2_m1_1_s3, d2_m1_2_s2, d2_m1_2_s3, d2_m1_3_s2,
+                                                   d2_m1_3_s3, d2_m1_4_s2, d2_m1_4_s3]
+
+        ordered_jobs_by_date_member["d2"]["m2"] = [d2_m2_1_s2, d2_m2_1_s3, d2_1_s5, d2_m2_2_s2, d2_m2_2_s3, d2_2_s5, d2_m2_3_s2,
+                                                   d2_m2_3_s3, d2_3_s5, d2_m2_4_s2, d2_m2_4_s3, d2_4_s5]
+
+        self.assertDictEqual(self.job_list._create_sorted_dict_jobs("s2 s3 s5"), ordered_jobs_by_date_member)
 
     def _createDummyJobs(self, sections_dict, date_list, member_list, chunk_list):
         for section, section_dict in sections_dict.get('sections').items():
@@ -724,12 +1079,25 @@ class TestWrappers(TestCase):
                         job = self._createDummyJob(name, wallclock, section, date, member)
                         self.job_list._job_list.append(job)
             elif running == 'chunk':
-                for date in date_list:
-                    for member in member_list:
+                synchronize_type = section_dict['SYNCHRONIZE'] if 'SYNCHRONIZE' in section_dict else None
+                if synchronize_type == 'date':
+                    for chunk in chunk_list:
+                        name = 'expid_' + str(chunk) + "_" + section
+                        job = self._createDummyJob(name, wallclock, section, None, None, chunk)
+                        self.job_list._job_list.append(job)
+                elif synchronize_type == 'member':
+                    for date in date_list:
                         for chunk in chunk_list:
-                            name = 'expid_' + date + "_" + member + "_" + str(chunk) + "_" + section
-                            job = self._createDummyJob(name, wallclock, section, date, member, chunk)
+                            name = 'expid_' + date + "_" + str(chunk) + "_" + section
+                            job = self._createDummyJob(name, wallclock, section, date, None, chunk)
                             self.job_list._job_list.append(job)
+                else:
+                    for date in date_list:
+                        for member in member_list:
+                            for chunk in chunk_list:
+                                name = 'expid_' + date + "_" + member + "_" + str(chunk) + "_" + section
+                                job = self._createDummyJob(name, wallclock, section, date, member, chunk)
+                                self.job_list._job_list.append(job)
 
         self.job_list._date_list = date_list
         self.job_list._member_list = member_list
@@ -763,8 +1131,14 @@ class TestWrappers(TestCase):
             if skip:
                 continue
 
-            for parent in self.job_list._dic_jobs.get_jobs(dependency.section, date, member, chunk):
+            for parent in self._filter_jobs(dependency.section, date, member, chunk):
                 job.add_parent(parent)
+
+    def _filter_jobs(self, section, date=None, member=None, chunk=None):
+        # TODO: improve the efficiency
+        jobs = filter(lambda job: job.section == section and job.date == date and job.member == member and job.chunk == chunk,
+                self.job_list.get_job_list())
+        return jobs
 
     def _createDummyJob(self, name, total_wallclock, section, date=None, member=None, chunk=None):
         job_id = randrange(1, 999)
