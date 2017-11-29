@@ -51,6 +51,8 @@ class JobPackager(object):
         :rtype list
         """
         packages_to_submit = list()
+        remote_dependencies_dict = dict()
+
         jobs_ready = self._jobs_list.get_ready(self._platform)
         if jobs_ready == 0:
             return packages_to_submit
@@ -75,7 +77,7 @@ class JobPackager(object):
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
 
                 if wrapper_type == 'vertical':
-                    built_packages, max_jobs = JobPackager._build_vertical_packages(
+                    built_packages, max_jobs, remote_dependencies_dict = JobPackager._build_vertical_packages(
                                                                         self._jobs_list.get_ordered_jobs_by_date_member(),
                                                                         wrapper_expression,
                                                                         jobs_to_submit_by_section[section],
@@ -97,7 +99,7 @@ class JobPackager(object):
                         package = JobPackageSimple([job])
                     packages_to_submit.append(package)
 
-        return packages_to_submit
+        return packages_to_submit, remote_dependencies_dict
 
     @staticmethod
     def _divide_list_by_section(jobs_list):
@@ -142,6 +144,10 @@ class JobPackager(object):
                                  remote_dependencies=False):
         packages = []
         potential_dependency = None
+        remote_dependencies_dict = dict()
+        if remote_dependencies:
+            remote_dependencies_dict['name_to_id'] = dict()
+            remote_dependencies_dict['dependencies'] = dict()
 
         for job in section_list:
             if max_jobs > 0:
@@ -162,7 +168,10 @@ class JobPackager(object):
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(jobs_list))
                     else:
-                        packages.append(JobPackageVertical(jobs_list, potential_dependency))
+                        package = JobPackageVertical(jobs_list, potential_dependency)
+                        packages.append(package)
+                        remote_dependencies_dict['name_to_id'][potential_dependency] = -1
+                        remote_dependencies_dict['dependencies'][package.name] = potential_dependency
                     Log.info("---------------END PACKAGE-------------\n")
                     if remote_dependencies:
                         child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
@@ -171,7 +180,7 @@ class JobPackager(object):
                             potential_dependency = packages[-1].name
             else:
                 break
-        return packages, max_jobs
+        return packages, max_jobs, remote_dependencies_dict
 
 class JobPackagerVertical(object):
 

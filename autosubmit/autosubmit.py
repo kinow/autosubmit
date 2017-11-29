@@ -729,12 +729,22 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
-            packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages()
+            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
             for package in packages_to_submit:
                 try:
+                    if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
+                        remote_dependency = remote_dependencies_dict['dependencies'][package.name]
+                        remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
+                        package.set_job_dependency(remote_dependency_id)
+
                     package.submit(as_conf, job_list.parameters)
+
+                    if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                        remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+
                     if isinstance(package, JobPackageThread):
                         packages_persistence.save(package.name, package.jobs, package._expid)
+
                     save = True
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)

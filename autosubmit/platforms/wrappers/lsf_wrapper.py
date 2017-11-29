@@ -169,4 +169,4 @@ class LsfWrapper(object):
 
     @classmethod
     def dependency_directive(cls, dependency):
-        return '#' if dependency is None else '#BSUB -w \'done("{0}")\' [-ti]'.format(dependency)
+        return '#' if dependency is None else '#BSUB -w \'done({0})\' [-ti]'.format(dependency)
