@@ -48,6 +48,7 @@ class SlurmWrapper(object):
             import sys
             from threading import Thread
             from commands import getstatusoutput
+            from datetime import datetime
 
             class JobThread(Thread):
                 def __init__ (self, template, id_run):
@@ -70,9 +71,9 @@ class SlurmWrapper(object):
                 completed_filename = scripts[i].replace('.cmd', '_COMPLETED')
                 completed_path = os.path.join(os.getcwd(), completed_filename)
                 if os.path.exists(completed_path):
-                    print "The job ", current.template," has been COMPLETED"
+                    print datetime.now(), "The job ", current.template," has been COMPLETED"
                 else:
-                    print "The job ", current.template," has FAILED"
+                    print datetime.now(), "The job ", current.template," has FAILED"
                     os._exit(1)
             """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
                        cls.dependency_directive(dependency),

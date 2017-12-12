@@ -266,9 +266,10 @@ class AutosubmitConfig(object):
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        result = self.check_autosubmit_conf()
-        result = result and self.check_platforms_conf()
+        #result = self.check_autosubmit_conf()
+        result = self.check_platforms_conf()
         result = result and self.check_jobs_conf()
+        result = result and self.check_autosubmit_conf()
         result = result and self.check_expdef_conf()
         if result:
             Log.result("Configuration files OK\n")
@@ -294,6 +295,7 @@ class AutosubmitConfig(object):
         result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
+        result = result and self.is_valid_wrapper_expression()
 
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
@@ -828,7 +830,7 @@ class AutosubmitConfig(object):
 
     def get_max_wallclock(self):
         """
-        Returns max wallclock from autosubmit's config file
+        Returns max wallclock
 
         :rtype: str
         """
@@ -918,6 +920,33 @@ class AutosubmitConfig(object):
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
 
+    def get_wrapper_expression(self):
+        """
+        Returns the wrapper expression the user has configured in the autosubmit's config
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'EXPRESSION', 'None')
+
+    def get_max_wrapped_jobs(self):
+        """
+         Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
+
+         :return: maximum number of jobs (or total jobs)
+         :rtype: string
+         """
+        return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
+
+    def get_jobs_sections(self):
+        """
+        Returns the list of sections defined in the jobs config file
+
+        :return: sections
+        :rtype: list
+        """
+        return self._jobs_parser.sections()
+
     def get_copy_remote_logs(self):
         """
         Returns if the user has enabled the logs local copy from autosubmit's config file
@@ -968,6 +997,16 @@ class AutosubmitConfig(object):
     def is_valid_storage_type(self):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
+
+    def is_valid_wrapper_expression(self):
+        expression = self.get_wrapper_expression()
+        if expression != 'None':
+            parser = self._jobs_parser
+            sections = parser.sections()
+            for section in expression.split(" "):
+                if section not in sections:
+                    return False
+        return True
 
     def is_valid_git_repository(self):
         origin_exists = self._exp_parser.check_exists('git', 'PROJECT_ORIGIN')

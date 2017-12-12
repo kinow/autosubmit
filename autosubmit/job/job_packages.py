@@ -255,6 +255,9 @@ class JobPackageThread(JobPackageBase):
     def _project(self):
         return self._platform.project
 
+    def set_job_dependency(self, dependency):
+        self._job_dependency = dependency
+
     def _create_scripts(self, configuration):
         for i in range(1, len(self.jobs) + 1):
             self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
@@ -374,6 +377,7 @@ class JobPackageVertical(JobPackageThread):
 
     def __init__(self, jobs, dependency=None):
         super(JobPackageVertical, self).__init__(jobs, dependency)
+        #TODO unit or regression test of the wrappers, it will fail as in issue 280
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors

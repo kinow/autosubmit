@@ -66,6 +66,9 @@ class JobList:
         self._persistence = job_list_persistence
         self._graph = DiGraph()
 
+        self._packages_dict = dict()
+        self._ordered_jobs_by_date_member = dict()
+
     @property
     def expid(self):
         """
@@ -91,7 +94,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, new=True):
+                 default_job_type, wrapper_expression, new=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -140,6 +143,10 @@ class JobList:
         self.update_genealogy(new)
         for job in self._job_list:
             job.parameters = parameters
+
+        if wrapper_expression != 'None':
+            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_expression)
+
 
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
@@ -288,8 +295,135 @@ class JobList:
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 
+    def _create_sorted_dict_jobs(self, wrapper_expression):
+        dict_jobs = dict()
+        for date in self._date_list:
+            dict_jobs[date] = dict()
+            for member in self._member_list:
+                dict_jobs[date][member] = list()
+        num_chunks = len(self._chunk_list)
+
+        filtered_jobs_list = filter(lambda job: job.section in wrapper_expression, self._job_list)
+
+        filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(filtered_jobs_list)
+
+        sections_running_type_map = dict()
+        for section in wrapper_expression.split(" "):
+            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", '')
+
+        for date in self._date_list:
+            str_date = self._get_date(date)
+            for member in self._member_list:
+                sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
+                                                      job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
+
+                previous_job = sorted_jobs_list[0]
+                section_running_type = sections_running_type_map[previous_job.section]
+
+                jobs_to_sort = [previous_job]
+                previous_section_running_type = None
+
+                for index in range(1, len(sorted_jobs_list) + 1):
+                    if index < len(sorted_jobs_list):
+                        job = sorted_jobs_list[index]
+
+                        if previous_job.section != job.section:
+                            previous_section_running_type = section_running_type
+                            section_running_type = sections_running_type_map[job.section]
+
+                    if (previous_section_running_type != None and previous_section_running_type != section_running_type) \
+                      or index == len(sorted_jobs_list):
+
+                        jobs_to_sort = sorted(jobs_to_sort, key=lambda k: (k.name.split('_')[1], (k.name.split('_')[2]),
+                                                                           (int(k.name.split('_')[3])
+                                                                            if len(k.name.split('_')) == 5 else num_chunks + 1)))
+
+                        for idx in range(0, len(jobs_to_sort)):
+                            if jobs_to_sort[idx] in fake_original_job_map:
+                                fake_job = jobs_to_sort[idx]
+                                jobs_to_sort[idx] = fake_original_job_map[fake_job]
+
+                        dict_jobs[date][member] += jobs_to_sort
+                        jobs_to_sort = []
+
+                    jobs_to_sort.append(job)
+                    previous_job = job
+
+        return dict_jobs
+
+    def _create_fake_dates_members(self, filtered_jobs_list):
+        filtered_jobs_fake_date_member = []
+        fake_original_job_map = dict()
+
+        import copy
+        for job in filtered_jobs_list:
+            fake_job = None
+            # running once and synchronize date
+            if job.date is None and job.member is None:
+                date = self._date_list[-1]
+                member = self._member_list[-1]
+
+                fake_job = copy.deepcopy(job)
+                fake_job.name = fake_job.name.split('_', 1)[0] + "_" + self._get_date(date) + "_" \
+                                + member + "_" + fake_job.name.split("_", 1)[1]
+                filtered_jobs_fake_date_member.append(fake_job)
+                fake_original_job_map[fake_job] = job
+            # running date or synchronize member
+            elif job.member is None:
+                member = self._member_list[-1]
+                fake_job = copy.deepcopy(job)
+                fake_job.name = fake_job.name.split('_', 2)[0] + "_" + fake_job.name.split('_', 2)[
+                    1] + "_" + member + "_" + fake_job.name.split("_", 2)[2]
+                filtered_jobs_fake_date_member.append(fake_job)
+                fake_original_job_map[fake_job] = job
+
+            if fake_job is None:
+                filtered_jobs_fake_date_member.append(job)
+
+        return filtered_jobs_fake_date_member, fake_original_job_map
+
+    def _get_date(self, date):
+        date_format = ''
+        if self.parameters.get('CHUNKSIZEUNIT') is 'hour':
+            date_format = 'H'
+        for date in self._date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        str_date = date2str(date, date_format)
+        return str_date
+
     def __len__(self):
         return self._job_list.__len__()
+
+    def get_date_list(self):
+        """
+        Get inner date list
+
+        :return: date list
+        :rtype: list
+        """
+        return self._date_list
+
+    def get_member_list(self):
+
+        """
+        Get inner member list
+
+        :return: member list
+        :rtype: list
+        """
+        return self._member_list
+
+    def get_chunk_list(self):
+        """
+        Get inner chunk list
+
+        :return: chunk list
+        :rtype: list
+        """
+        return self._chunk_list
 
     def get_job_list(self):
         """
@@ -299,6 +433,15 @@ class JobList:
         :rtype: list
         """
         return self._job_list
+
+    def get_ordered_jobs_by_date_member(self):
+        """
+        Get the dictionary of jobs ordered according to wrapper's expression divided by date and member
+
+        :return: jobs ordered divided by date and member
+        :rtype: dict
+        """
+        return self._ordered_jobs_by_date_member
 
     def get_completed(self, platform=None):
         """

@@ -77,7 +77,7 @@ class Monitor:
         else:
             return Monitor._table[Status.UNKNOWN]
 
-    def create_tree_list(self, expid, joblist):
+    def create_tree_list(self, expid, joblist, packages):
         """
         Create graph from joblist
 
@@ -116,6 +116,13 @@ class Monitor:
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
         self.nodes_ploted = set()
         Log.debug('Creating job graph...')
+
+        jobs_packages_dict = dict()
+        if packages != None and packages:
+            for (exp_id, package_name, job_name) in packages:
+                jobs_packages_dict[job_name] = package_name
+        packages_subgraphs_dict = dict()
+
         for job in joblist:
             if job.has_parents():
                 continue
@@ -126,6 +133,20 @@ class Monitor:
             self._add_children(job, exp, node_job)
 
         graph.add_subgraph(exp)
+
+        for node in exp.get_nodes():
+            name = node.obj_dict['name']
+            if name in jobs_packages_dict:
+                package = jobs_packages_dict[name]
+                if package not in packages_subgraphs_dict:
+                    packages_subgraphs_dict[package] = pydotplus.graphviz.Cluster(graph_name=package)
+                    packages_subgraphs_dict[package].obj_dict['attributes']['color'] = 'black'
+                    packages_subgraphs_dict[package].obj_dict['attributes']['style'] = 'dashed'
+                packages_subgraphs_dict[package].add_node(node)
+
+        for package, cluster in packages_subgraphs_dict.items():
+            graph.add_subgraph(cluster)
+
         Log.debug('Graph definition finalized')
         return graph
 
@@ -148,7 +169,7 @@ class Monitor:
                 if flag:
                     self._add_children(child, exp, node_child)
 
-    def generate_output(self, expid, joblist, path, output_format="pdf", show=False):
+    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False):
         """
         Plots graph for joblist and stores it in a file
 
@@ -167,7 +188,7 @@ class Monitor:
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
                                    output_format)
 
-        graph = self.create_tree_list(expid, joblist)
+        graph = self.create_tree_list(expid, joblist, packages)
 
         Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
