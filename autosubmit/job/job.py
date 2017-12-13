@@ -69,6 +69,7 @@ class Job(object):
         self.member = None
         self.date = None
         self.name = name
+        self.split = None
         self._long_name = None
         self.long_name = name
         self.date_format = ''

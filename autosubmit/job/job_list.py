@@ -66,7 +66,7 @@ class JobList:
         self._persistence = job_list_persistence
         self._graph = DiGraph()
 
-        self._packages_dict = dict()
+        self.packages_dict = dict()
         self._ordered_jobs_by_date_member = dict()
 
     @property
@@ -161,8 +161,13 @@ class JobList:
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs)
 
             for job in dic_jobs.get_jobs(job_section):
-                JobList._manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys,
-                                                 dependencies, graph)
+                num_jobs = 1
+                if isinstance(job, list):
+                    num_jobs = len(job)
+                for i in range(num_jobs):
+                    _job = job[i] if num_jobs > 1 else job
+                    JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
+                                                     dependencies, graph)
 
     @staticmethod
     def _manage_dependencies(dependencies_keys, dic_jobs):
@@ -189,6 +194,7 @@ class JobList:
                                  graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
+
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
                                                                                  job.member, member_list,
                                                                                  job.date, date_list,
@@ -199,8 +205,13 @@ class JobList:
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
                 # only creates the dependency in the graph if the delay is not defined or if the chunk is greater than it
                 if dependency.delay == -1 or chunk > dependency.delay:
-                    job.add_parent(parent)
-                    graph.add_edge(parent.name, job.name)
+                    num_parents = 1
+                    if isinstance(parent, list):
+                        num_parents = len(parent)
+                    for i in range(num_parents):
+                        _parent = parent[i] if num_parents > 1 else parent
+                        job.add_parent(_parent)
+                        graph.add_edge(_parent.name, job.name)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
