@@ -180,14 +180,35 @@ class JobList:
                 sign = '-' if '-' in key else '+'
                 key_split = key.split(sign)
                 section = key_split[0]
+                splits = None
+                if '[' in section:
+                    section_name = section[0:section.find("[")]
+                    splits_section = int(dic_jobs.get_option(section_name, 'SPLITS', 0))
+                    splits = JobList._calculate_splits_dependencies(section, splits_section)
+                    section = section_name
                 distance = key_split[1]
                 dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
-                dependency = Dependency(section, int(distance), dependency_running_type, sign)
+                dependency = Dependency(section, int(distance), dependency_running_type, sign, splits=splits)
 
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
             dependency.delay = delay
             dependencies[key] = dependency
         return dependencies
+
+    @staticmethod
+    def _calculate_splits_dependencies(section, max_splits):
+        splits_list = section[section.find("[") + 1:section.find("]")]
+        splits = []
+        for str_split in splits_list.split(","):
+            if str_split.find(":") != -1:
+                numbers = str_split.split(":")
+                max_splits = min(int(numbers[1]), max_splits)
+                for count in range(int(numbers[0]), max_splits+1):
+                    splits.append(int(str(count).zfill(len(numbers[0]))))
+            else:
+                if int(str_split) <= max_splits:
+                    splits.append(int(str_split))
+        return splits
 
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
@@ -203,13 +224,18 @@ class JobList:
                 continue
 
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
-                # only creates the dependency in the graph if the delay is not defined or if the chunk is greater than it
                 if dependency.delay == -1 or chunk > dependency.delay:
                     num_parents = 1
                     if isinstance(parent, list):
-                        num_parents = len(parent)
+                        if job.split is not None:
+                            parent = filter(lambda _parent: _parent.split == job.split, parent)[0]
+                        else:
+                            if dependency.splits is not None:
+                                parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
+                            num_parents = len(parent)
+
                     for i in range(num_parents):
-                        _parent = parent[i] if num_parents > 1 else parent
+                        _parent = parent[i] if isinstance(parent, list) else parent
                         job.add_parent(_parent)
                         graph.add_edge(_parent.name, job.name)
 
@@ -320,7 +346,7 @@ class JobList:
 
         sections_running_type_map = dict()
         for section in wrapper_expression.split(" "):
-            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", '')
+            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         for date in self._date_list:
             str_date = self._get_date(date)

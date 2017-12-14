@@ -44,10 +44,11 @@ class Dependency(object):
 
     """
 
-    def __init__(self, section, distance=None, running=None, sign=None, delay=-1):
+    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None):
         self.section = section
         self.distance = distance
         self.running = running
         self.sign = sign
         self.delay = delay
+        self.splits = splits
 

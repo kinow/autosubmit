@@ -140,7 +140,7 @@ class DicJobs:
 
     '''
         Maybe a good choice could be split this function or ascend the
-        conditional decision to the father which makes the call
+        conditional decision to the parent which makes the call
     '''
 
     def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):
