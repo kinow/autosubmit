@@ -225,19 +225,15 @@ class JobList:
 
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
                 if dependency.delay == -1 or chunk > dependency.delay:
-                    num_parents = 1
                     if isinstance(parent, list):
                         if job.split is not None:
                             parent = filter(lambda _parent: _parent.split == job.split, parent)[0]
                         else:
                             if dependency.splits is not None:
                                 parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
-                            num_parents = len(parent)
 
-                    for i in range(num_parents):
-                        _parent = parent[i] if isinstance(parent, list) else parent
-                        job.add_parent(_parent)
-                        graph.add_edge(_parent.name, job.name)
+                    job.add_parent(parent)
+                    JobList._add_edge(graph, job, parent)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
@@ -303,7 +299,7 @@ class JobList:
                 for distance in range(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
             elif job.member is not None:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
@@ -313,7 +309,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
             elif job.date is not None:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
@@ -323,7 +319,16 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
+
+    @staticmethod
+    def _add_edge(graph, job, parents):
+        num_parents = 1
+        if isinstance(parents, list):
+            num_parents = len(parents)
+        for i in range(num_parents):
+            parent = parents[i] if isinstance(parents, list) else parents
+            graph.add_edge(parent.name, job.name)
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
