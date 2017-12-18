@@ -55,9 +55,9 @@ class JobPackager(object):
 
         jobs_ready = self._jobs_list.get_ready(self._platform)
         if jobs_ready == 0:
-            return packages_to_submit
+            return packages_to_submit, remote_dependencies_dict
         if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
-            return packages_to_submit
+            return packages_to_submit, remote_dependencies_dict
 
         available_sorted = sorted(jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
         list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)

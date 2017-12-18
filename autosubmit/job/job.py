@@ -576,6 +576,7 @@ class Job(object):
                 chunk = self.chunk
 
             parameters['CHUNK'] = chunk
+            parameters['SPLIT'] = self.split
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
