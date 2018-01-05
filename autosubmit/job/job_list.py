@@ -202,6 +202,7 @@ class JobList:
         for str_split in splits_list.split(","):
             if str_split.find(":") != -1:
                 numbers = str_split.split(":")
+                # change this to be checked in job_common.py
                 max_splits = min(int(numbers[1]), max_splits)
                 for count in range(int(numbers[0]), max_splits+1):
                     splits.append(int(str(count).zfill(len(numbers[0]))))
@@ -425,14 +426,10 @@ class JobList:
         return filtered_jobs_fake_date_member, fake_original_job_map
 
     def _get_date(self, date):
-        date_format = ''
-        if self.parameters.get('CHUNKSIZEUNIT') is 'hour':
+        if date.hour > 1:
             date_format = 'H'
-        for date in self._date_list:
-            if date.hour > 1:
-                date_format = 'H'
-            if date.minute > 1:
-                date_format = 'M'
+        if date.minute > 1:
+            date_format = 'M'
         str_date = date2str(date, date_format)
         return str_date
 

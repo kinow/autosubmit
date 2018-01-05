@@ -170,12 +170,14 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split'), default=None,
+                                   help='Groups the jobs by date, member, chunk or split')
             group = subparser.add_mutually_exclusive_group(required=False)
             group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be changed. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
-                               help='Supply the list of chunks to change the status. Default = "Any". '
+                               help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -343,7 +345,7 @@ class Autosubmit:
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.hide, args.txt)
+                                          args.filter_type, args.hide, args.txt, args.group_by)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -741,6 +743,9 @@ class Autosubmit:
 
                     package.submit(as_conf, job_list.parameters)
 
+                    if hasattr(package, "name"):
+                        job_list.packages_dict[package.name] = package.jobs
+
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
                         remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
 
@@ -757,7 +762,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -868,12 +873,14 @@ class Autosubmit:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                      "job_packages_" + expid).load()
 
+        groups_dict = Autosubmit._group_jobs(group_by, jobs, job_list)
+
         monitor_exp = Monitor()
 
         if txt_only:
             monitor_exp.generate_output_txt(expid, jobs, exp_path+"/tmp/LOG_"+expid)
         else:
-            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide)
+            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict)
 
         return True
 
@@ -1098,12 +1105,12 @@ class Autosubmit:
     @staticmethod
     def migrate(experiment_id, offer, pickup):
         """
-        Migrates experiment files from current to other user. 
+        Migrates experiment files from current to other user.
         It takes mapping information for new user from config files.
-        
+
         :param experiment_id: experiment identifier:
-        :param pickup: 
-        :param offer: 
+        :param pickup:
+        :param offer:
         """
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
         Log.set_file(log_file)
@@ -1591,8 +1598,8 @@ class Autosubmit:
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
 
-        :param clean: 
-        :return: 
+        :param clean:
+        :return:
         :param expid: experiment identifier
         :type expid: str
         """
@@ -1819,6 +1826,7 @@ class Autosubmit:
                                   as_conf.get_retrials(),
                                   as_conf.get_default_job_type(),
                                   as_conf.get_wrapper_expression())
+
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list)
@@ -1841,6 +1849,54 @@ class Autosubmit:
 
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
+
+    @staticmethod
+    def _group_jobs(group_by, jobs, job_list):
+        groups_dict = dict()
+        date_format = job_list._dic_jobs._date_format
+
+        for date in job_list.get_date_list():
+            if group_by == 'date':
+                Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date)
+            elif group_by in ['member', 'chunk', 'split']:
+                for member in job_list.get_member_list():
+                    if group_by in ['chunk', 'split']:
+                        for chunk in job_list.get_chunk_list():
+                            Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date, member, chunk)
+                    else:
+                        Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date, member)
+
+        return groups_dict
+
+    @staticmethod
+    def _create_group(jobs, groups_dict, group_by, date_format, date=None, member=None, chunk=None):
+        if chunk is not None:
+            name = date2str(date, date_format) + '_' + member + '_' +str(chunk)
+        elif member is not None:
+            name = date2str(date, date_format) + '_' + member
+        else:
+            name = date2str(date, date_format)
+
+        for i in reversed(range(len(jobs))):
+            job = jobs[i]
+
+            if group_by == 'date':
+                condition = (job.date == date or (job.date is None and job.chunk is not None))
+            elif group_by == 'member':
+                condition = (job.date == date and job.member == member) or (job.date in [date, None] and job.member is None and job.chunk is not None)
+            elif group_by in ['chunk']:
+                condition = (job.member in [member, None] and job.date in [date, None] and job.chunk == chunk)
+            elif group_by == 'split':
+                condition = job.split is not None
+                idx = job.name.rfind("_")
+                name = job.name[:idx - 1] + job.name[idx + 1:]
+
+            if (condition):
+                if (job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None):
+                    jobs.pop(i) #if synchronized does not remove
+                if job.name not in groups_dict:
+                    groups_dict[job.name] = list()
+                groups_dict[job.name].append(name)
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):

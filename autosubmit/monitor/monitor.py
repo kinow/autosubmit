@@ -77,7 +77,7 @@ class Monitor:
         else:
             return Monitor._table[Status.UNKNOWN]
 
-    def create_tree_list(self, expid, joblist, packages):
+    def create_tree_list(self, expid, joblist, packages, groups):
         """
         Create graph from joblist
 
@@ -127,10 +127,35 @@ class Monitor:
             if job.has_parents():
                 continue
 
-            node_job = pydotplus.Node(job.name, shape='box', style="filled",
-                                      fillcolor=self.color_status(job.status))
-            exp.add_node(node_job)
-            self._add_children(job, exp, node_job)
+            if groups is None or job.name not in groups or (job.name in groups and len(groups[job.name]) == 1):
+                node_job = pydotplus.Node(job.name, shape='box', style="filled",
+                                          fillcolor=self.color_status(job.status))
+                if job.name in groups:
+                    group = groups[job.name]
+                    node_job.obj_dict['name'] = group[0]
+                    node_job.obj_dict['attributes']['shape'] = 'box3d'
+                exp.add_node(node_job)
+                self._add_children(job, exp, node_job, groups)
+
+        if groups:
+            for job, group in groups.items():
+                if len(group) > 1:
+                    subgraph = pydotplus.graphviz.Cluster(graph_name='cluster_'+'_'.join(group))
+                    subgraph.obj_dict['attributes']['color'] = 'invis'
+
+                    previous_node = exp.get_node(group[0])[0]
+                    subgraph.add_node(previous_node)
+
+                    for i in range(1, len(group)):
+                        node = exp.get_node(group[i])[0]
+                        subgraph.add_node(node)
+                        # constraint false allows the horizontal alignment
+                        edge = pydotplus.Edge(previous_node, node, constraint='false', penwidth=4)
+                        edge.obj_dict['attributes']['dir'] = 'none'
+                        subgraph.add_edge(edge)
+                        previous_node = node
+                    graph.add_subgraph(subgraph)
+            graph.set_strict(True)
 
         graph.add_subgraph(exp)
 
@@ -150,7 +175,7 @@ class Monitor:
         Log.debug('Graph definition finalized')
         return graph
 
-    def _add_children(self, job, exp, node_job):
+    def _add_children(self, job, exp, node_job, groups):
         if job in self.nodes_ploted:
             return
         self.nodes_ploted.add(job)
@@ -158,18 +183,25 @@ class Monitor:
             for child in sorted(job.children, key=lambda k: k.name):
                 node_child = exp.get_node(child.name)
                 if len(node_child) == 0:
-                    node_child = pydotplus.Node(child.name, shape='box', style="filled",
-                                                fillcolor=self.color_status(child.status))
-                    exp.add_node(node_child)
                     flag = True
+                    if child.name not in groups or (child.name in groups and len(groups[child.name]) == 1):
+                        node_child = pydotplus.Node(child.name, shape='box', style="filled",
+                                                    fillcolor=self.color_status(child.status))
+                        if child.name in groups:
+                            group = groups[child.name][0]
+                            node_child.obj_dict['name'] = group
+                            node_child.obj_dict['attributes']['shape'] = 'box3d'
+
+                        exp.add_node(node_child)
+                        exp.add_edge(pydotplus.Edge(node_job, node_child))
                 else:
                     node_child = node_child[0]
+                    exp.add_edge(pydotplus.Edge(node_job, node_child))
                     flag = False
-                exp.add_edge(pydotplus.Edge(node_job, node_child))
                 if flag:
-                    self._add_children(child, exp, node_child)
+                    self._add_children(child, exp, node_child, groups)
 
-    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False):
+    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict()):
         """
         Plots graph for joblist and stores it in a file
 
@@ -188,7 +220,7 @@ class Monitor:
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
                                    output_format)
 
-        graph = self.create_tree_list(expid, joblist, packages)
+        graph = self.create_tree_list(expid, joblist, packages, groups)
 
         Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
@@ -224,8 +256,6 @@ class Monitor:
 
         if not os.path.exists(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
-
-
 
         output_file = open(file_path, 'w+')
         for job in joblist:
