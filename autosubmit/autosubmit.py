@@ -174,7 +174,7 @@ class Autosubmit:
                                    help='Groups the jobs by date, member, chunk or split')
             group = subparser.add_mutually_exclusive_group(required=False)
             group.add_argument('-fl', '--list', type=str,
-                               help='Supply the list of job names to be changed. Default = "Any". '
+                               help='Supply the list of job names to be filtered. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
                                help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
@@ -1853,23 +1853,32 @@ class Autosubmit:
     @staticmethod
     def _group_jobs(group_by, jobs, job_list):
         groups_dict = dict()
+        jobs_group_dict = dict()
+        group_status_dict = dict()
         date_format = job_list._dic_jobs._date_format
 
         for date in job_list.get_date_list():
             if group_by == 'date':
-                Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date)
+                Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date)
             elif group_by in ['member', 'chunk', 'split']:
                 for member in job_list.get_member_list():
                     if group_by in ['chunk', 'split']:
                         for chunk in job_list.get_chunk_list():
-                            Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date, member, chunk)
+                            Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date, member, chunk)
                     else:
-                        Autosubmit._create_group(jobs, groups_dict, group_by, date_format, date, member)
+                        Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date, member)
+
+        for group, statuses in group_status_dict.items():
+            status = Autosubmit._set_group_status(statuses)
+            group_status_dict[group] = status
+
+        groups_dict['jobs'] = jobs_group_dict
+        groups_dict['status'] = group_status_dict
 
         return groups_dict
 
     @staticmethod
-    def _create_group(jobs, groups_dict, group_by, date_format, date=None, member=None, chunk=None):
+    def _create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date=None, member=None, chunk=None):
         if chunk is not None:
             name = date2str(date, date_format) + '_' + member + '_' +str(chunk)
         elif member is not None:
@@ -1894,9 +1903,35 @@ class Autosubmit:
             if (condition):
                 if (job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None):
                     jobs.pop(i) #if synchronized does not remove
-                if job.name not in groups_dict:
-                    groups_dict[job.name] = list()
-                groups_dict[job.name].append(name)
+                if job.name not in jobs_group_dict:
+                    jobs_group_dict[job.name] = list()
+                jobs_group_dict[job.name].append(name)
+
+                if name not in group_status_dict:
+                    group_status_dict[name] = set()
+                group_status_dict[name].add(job.status)
+
+    @staticmethod
+    def _set_group_status(statuses):
+        if len(statuses) == 1:
+            return next(iter(statuses))
+        else:
+            if Status.FAILED in statuses:
+                return Status.FAILED
+            elif Status.RUNNING in statuses:
+                return Status.RUNNING
+            elif Status.SUBMITTED in statuses:
+                return Status.SUBMITTED
+            elif Status.QUEUING in statuses:
+                return Status.QUEUING
+            elif Status.READY in statuses:
+                return Status.READY
+            elif Status.WAITING in statuses:
+                return Status.WAITING
+            elif Status.SUSPENDED in statuses:
+                return Status.SUSPENDED
+            elif Status.UNKNOWN in statuses:
+                return Status.UNKNOWN
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):

@@ -173,25 +173,27 @@ class JobList:
     def _manage_dependencies(dependencies_keys, dic_jobs):
         dependencies = dict()
         for key in dependencies_keys:
+            distance = None
+            splits = None
+            sign = None
+
             if '-' not in key and '+' not in key:
-                dependency = Dependency(key)
                 section = key
             else:
                 sign = '-' if '-' in key else '+'
                 key_split = key.split(sign)
                 section = key_split[0]
-                splits = None
-                if '[' in section:
-                    section_name = section[0:section.find("[")]
-                    splits_section = int(dic_jobs.get_option(section_name, 'SPLITS', 0))
-                    splits = JobList._calculate_splits_dependencies(section, splits_section)
-                    section = section_name
-                distance = key_split[1]
-                dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
-                dependency = Dependency(section, int(distance), dependency_running_type, sign, splits=splits)
+                distance = int(key_split[1])
 
+            if '[' in section:
+                section_name = section[0:section.find("[")]
+                splits_section = int(dic_jobs.get_option(section_name, 'SPLITS', 0))
+                splits = JobList._calculate_splits_dependencies(section, splits_section)
+                section = section_name
+
+            dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            dependency.delay = delay
+            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits)
             dependencies[key] = dependency
         return dependencies
 
@@ -426,6 +428,7 @@ class JobList:
         return filtered_jobs_fake_date_member, fake_original_job_map
 
     def _get_date(self, date):
+        date_format = ''
         if date.hour > 1:
             date_format = 'H'
         if date.minute > 1:

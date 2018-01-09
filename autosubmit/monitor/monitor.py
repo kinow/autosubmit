@@ -127,18 +127,19 @@ class Monitor:
             if job.has_parents():
                 continue
 
-            if groups is None or job.name not in groups or (job.name in groups and len(groups[job.name]) == 1):
+            if not groups or job.name not in groups['jobs'] or (job.name in groups['jobs'] and len(groups['jobs'][job.name]) == 1):
                 node_job = pydotplus.Node(job.name, shape='box', style="filled",
                                           fillcolor=self.color_status(job.status))
-                if job.name in groups:
-                    group = groups[job.name]
-                    node_job.obj_dict['name'] = group[0]
+                if groups and job.name in groups['jobs']:
+                    group = groups['jobs'][job.name][0]
+                    node_job.obj_dict['name'] = group
+                    node_job.obj_dict['attributes']['fillcolor'] = self.color_status(groups['status'][group])
                     node_job.obj_dict['attributes']['shape'] = 'box3d'
                 exp.add_node(node_job)
                 self._add_children(job, exp, node_job, groups)
 
         if groups:
-            for job, group in groups.items():
+            for job, group in groups['jobs'].items():
                 if len(group) > 1:
                     subgraph = pydotplus.graphviz.Cluster(graph_name='cluster_'+'_'.join(group))
                     subgraph.obj_dict['attributes']['color'] = 'invis'
@@ -184,12 +185,13 @@ class Monitor:
                 node_child = exp.get_node(child.name)
                 if len(node_child) == 0:
                     flag = True
-                    if child.name not in groups or (child.name in groups and len(groups[child.name]) == 1):
+                    if not groups or child.name not in groups['jobs'] or (child.name in groups['jobs'] and len(groups['jobs'][child.name]) == 1):
                         node_child = pydotplus.Node(child.name, shape='box', style="filled",
                                                     fillcolor=self.color_status(child.status))
-                        if child.name in groups:
-                            group = groups[child.name][0]
+                        if groups and child.name in groups['jobs']:
+                            group = groups['jobs'][child.name][0]
                             node_child.obj_dict['name'] = group
+                            node_child.obj_dict['attributes']['fillcolor'] = self.color_status(groups['status'][group])
                             node_child.obj_dict['attributes']['shape'] = 'box3d'
 
                         exp.add_node(node_child)

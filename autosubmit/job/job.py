@@ -24,12 +24,13 @@ import os
 import re
 import time
 import json
+import datetime
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
-from bscearth.utils.date import *
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 
 
 class Job(object):
