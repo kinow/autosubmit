@@ -41,7 +41,7 @@ import subprocess
 import json
 import tarfile
 import time
-import pickle
+import copy
 import os
 import sys
 import shutil
@@ -70,6 +70,7 @@ from job.job_packages import JobPackageThread
 from job.job_package_persistence import JobPackagePersistence
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
+from job.job_grouping import JobGrouping
 # noinspection PyPackageRequirements
 from bscearth.utils.log import Log
 from database.db_common import create_db
@@ -170,8 +171,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
-            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split'), default=None,
-                                   help='Groups the jobs by date, member, chunk or split')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
+                                   help='Groups the jobs automatically or by date, member, chunk or split')
             group = subparser.add_mutually_exclusive_group(required=False)
             group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be filtered. Default = "Any". '
@@ -873,7 +874,10 @@ class Autosubmit:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                      "job_packages_" + expid).load()
 
-        groups_dict = Autosubmit._group_jobs(group_by, jobs, job_list)
+        groups_dict = dict()
+        if group_by:
+            job_grouping = JobGrouping(group_by, copy.deepcopy(jobs), job_list, '')
+            groups_dict = job_grouping.group_jobs()
 
         monitor_exp = Monitor()
 
@@ -1838,6 +1842,7 @@ class Autosubmit:
 
                 JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).reset_table()
+
                 if not noplot:
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
@@ -1849,89 +1854,6 @@ class Autosubmit:
 
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
-
-    @staticmethod
-    def _group_jobs(group_by, jobs, job_list):
-        groups_dict = dict()
-        jobs_group_dict = dict()
-        group_status_dict = dict()
-        date_format = job_list._dic_jobs._date_format
-
-        for date in job_list.get_date_list():
-            if group_by == 'date':
-                Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date)
-            elif group_by in ['member', 'chunk', 'split']:
-                for member in job_list.get_member_list():
-                    if group_by in ['chunk', 'split']:
-                        for chunk in job_list.get_chunk_list():
-                            Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date, member, chunk)
-                    else:
-                        Autosubmit._create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date, member)
-
-        for group, statuses in group_status_dict.items():
-            status = Autosubmit._set_group_status(statuses)
-            group_status_dict[group] = status
-
-        groups_dict['jobs'] = jobs_group_dict
-        groups_dict['status'] = group_status_dict
-
-        return groups_dict
-
-    @staticmethod
-    def _create_group(jobs, jobs_group_dict, group_by, date_format, group_status_dict, date=None, member=None, chunk=None):
-        if chunk is not None:
-            name = date2str(date, date_format) + '_' + member + '_' +str(chunk)
-        elif member is not None:
-            name = date2str(date, date_format) + '_' + member
-        else:
-            name = date2str(date, date_format)
-
-        for i in reversed(range(len(jobs))):
-            job = jobs[i]
-
-            if group_by == 'date':
-                condition = (job.date == date or (job.date is None and job.chunk is not None))
-            elif group_by == 'member':
-                condition = (job.date == date and job.member == member) or (job.date in [date, None] and job.member is None and job.chunk is not None)
-            elif group_by in ['chunk']:
-                condition = (job.member in [member, None] and job.date in [date, None] and job.chunk == chunk)
-            elif group_by == 'split':
-                condition = job.split is not None
-                idx = job.name.rfind("_")
-                name = job.name[:idx - 1] + job.name[idx + 1:]
-
-            if (condition):
-                if (job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None):
-                    jobs.pop(i) #if synchronized does not remove
-                if job.name not in jobs_group_dict:
-                    jobs_group_dict[job.name] = list()
-                jobs_group_dict[job.name].append(name)
-
-                if name not in group_status_dict:
-                    group_status_dict[name] = set()
-                group_status_dict[name].add(job.status)
-
-    @staticmethod
-    def _set_group_status(statuses):
-        if len(statuses) == 1:
-            return next(iter(statuses))
-        else:
-            if Status.FAILED in statuses:
-                return Status.FAILED
-            elif Status.RUNNING in statuses:
-                return Status.RUNNING
-            elif Status.SUBMITTED in statuses:
-                return Status.SUBMITTED
-            elif Status.QUEUING in statuses:
-                return Status.QUEUING
-            elif Status.READY in statuses:
-                return Status.READY
-            elif Status.WAITING in statuses:
-                return Status.WAITING
-            elif Status.SUSPENDED in statuses:
-                return Status.SUSPENDED
-            elif Status.UNKNOWN in statuses:
-                return Status.UNKNOWN
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
