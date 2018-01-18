@@ -22,15 +22,22 @@ from bscearth.utils.date import date2str
 
 class JobGrouping(object):
 
-    def __init__(self, group_by, jobs, job_list, date_format, expand_list=list()):
+    def __init__(self, group_by, jobs, job_list, expand_list=list(), expanded_status=list()):
         self.group_by = group_by
         self.jobs = jobs
         self.job_list = job_list
-        self.date_format = date_format
+        self.date_format = job_list.get_date_format()
         self.expand_list = expand_list
+        self.expand_status = expanded_status
+        self.automatic = False
         self.group_status_dict = dict()
+        self.ungrouped_jobs = list()
 
     def group_jobs(self):
+        if self.expand_list:
+            self._set_ungrouped_jobs()
+            self.jobs = list(set(self.jobs) - set(self.ungrouped_jobs))
+
         jobs_group_dict = dict()
         blacklist = list()
 
@@ -40,6 +47,10 @@ class JobGrouping(object):
             jobs_group_dict = self._automatic_grouping(groups_map)
         else:
             self._group_jobs_by(jobs_group_dict, blacklist)
+
+            for group, statuses in self.group_status_dict.items():
+                status = self._set_group_status(statuses)
+                self.group_status_dict[group] = status
 
         final_jobs_group = dict()
         for job, groups in jobs_group_dict.items():
@@ -60,6 +71,70 @@ class JobGrouping(object):
         groups_dict['status'] = self.group_status_dict
 
         return groups_dict
+
+    def _set_ungrouped_jobs(self):
+        text = self.expand_list
+
+        from pyparsing import nestedExpr
+        """
+        Function to parse rerun specification from json format
+
+        :param text: text to parse
+        :type text: list
+        :return: parsed output
+        """
+        count = 0
+
+        out = nestedExpr('[', ']').parseString(text).asList()
+
+        depth = lambda L: isinstance(L, list) and max(map(depth, L)) + 1
+
+        if self.group_by == 'date':
+            if depth(out) == 2:
+                dates = list()
+                for date in out[0]:
+                    dates.append(date)
+                self.ungrouped_jobs = [job for job in self.jobs if date2str(job.date, self.date_format) in dates]
+            else:
+                raise ValueError("Please check the syntax of the expand parameter including only dates")
+        elif self.group_by == 'member':
+            if depth(out) == 3:
+                for element in out[0]:
+                    if count % 2 == 0:
+                        date = out[0][count]
+                        members = out[0][count + 1]
+                        self.ungrouped_jobs = self.ungrouped_jobs + [job for job in self.jobs if date2str(job.date, self.date_format) == date and job.member in members]
+                        count += 1
+                    else:
+                        count += 1
+            else:
+                raise ValueError("Please check the syntax of the expand parameter including dates and the corresponding members")
+        elif self.group_by == 'chunk':
+            if depth(out) == 4:
+                for element in out[0]:
+                    if count % 2 == 0:
+                        date = out[0][count]
+                        member_chunks = out[0][count + 1]
+                        member_count = 0
+                        for element_member in member_chunks:
+                            if member_count % 2 == 0:
+                                member = member_chunks[member_count]
+                                chunks = list()
+                                for chunk in member_chunks[member_count + 1]:
+                                    if chunk.find("-") != -1:
+                                        numbers = chunk.split("-")
+                                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                                            chunks.append(count)
+                                    else:
+                                        chunks.append(int(chunk))
+
+                                self.ungrouped_jobs = self.ungrouped_jobs + \
+                                                      [job for job in self.jobs if date2str(job.date, self.date_format) == date
+                                                       and job.member == member and job.chunk in chunks]
+                            member_count += 1
+                    count += 1
+            else:
+                raise ValueError("Please check the syntax of the expand parameter including dates and the corresponding members and chunks")
 
     def _set_group_status(self, statuses):
         if isinstance(statuses, int):
@@ -119,17 +194,16 @@ class JobGrouping(object):
                 name = job.name[:idx - 1] + job.name[idx + 1:]
                 condition = job.split is not None
 
-            condition = condition and name not in blacklist
+            condition = condition and name not in blacklist# and job not in self.ungrouped_jobs
 
             if (condition):
-                #(not self.automatic and self.group_by == 'split') and \
                 if ((job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None)):
                     self.jobs.pop(i) #if synchronized does not remove; neither if automatic and grouping the splits only
                 if name not in self.group_status_dict:
                     self.group_status_dict[name] = set()
                 self.group_status_dict[name].add(job.status)
 
-                if job.status in self.expand_list or \
+                if job.status in self.expand_status or \
                         (self.automatic and name in self.group_status_dict and (len(self.group_status_dict[name]) > 1)):
                     self.group_status_dict.pop(name)
                     blacklist.append(name)
@@ -215,7 +289,7 @@ class JobGrouping(object):
         for group in groups_to_check:
             if group in self.group_status_dict:
                 split_count = len(group.split('_'))
-                if split_count > 0:
+                if split_count > 1:
                     new_group = group[:(group.rfind("_"))]
 
                     num_groups = len(self.job_list.get_chunk_list()) if split_count == 3 else len(self.job_list.get_member_list())

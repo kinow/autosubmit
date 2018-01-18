@@ -173,6 +173,13 @@ class Autosubmit:
                                    help='chooses type of output for generated plot')
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
                                    help='Groups the jobs automatically or by date, member, chunk or split')
+            subparser.add_argument('-expand', type=str,
+                                    help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
             group = subparser.add_mutually_exclusive_group(required=False)
             group.add_argument('-fl', '--list', type=str,
                                help='Supply the list of job names to be filtered. Default = "Any". '
@@ -346,7 +353,7 @@ class Autosubmit:
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.hide, args.txt, args.group_by)
+                                          args.filter_type, args.hide, args.txt, args.group_by, args.expand, args.expand_status)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -763,7 +770,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None, expand=list(), expand_status=list()):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -876,7 +883,11 @@ class Autosubmit:
 
         groups_dict = dict()
         if group_by:
-            job_grouping = JobGrouping(group_by, copy.deepcopy(jobs), job_list, '')
+            status = list()
+            if expand_status:
+                for s in expand_status.split():
+                    status.append(Autosubmit._get_status(s.upper()))
+            job_grouping = JobGrouping(group_by, copy.deepcopy(jobs), job_list, expand_list=expand, expanded_status=status)
             groups_dict = job_grouping.group_jobs()
 
         monitor_exp = Monitor()

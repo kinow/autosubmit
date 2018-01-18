@@ -476,6 +476,15 @@ class JobList:
         """
         return self._job_list
 
+    def get_date_format(self):
+        date_format = ''
+        for date in self.get_date_list():
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        return date_format
+
     def get_ordered_jobs_by_date_member(self):
         """
         Get the dictionary of jobs ordered according to wrapper's expression divided by date and member
