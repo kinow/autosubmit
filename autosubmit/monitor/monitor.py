@@ -121,6 +121,7 @@ class Monitor:
         if packages != None and packages:
             for (exp_id, package_name, job_name) in packages:
                 jobs_packages_dict[job_name] = package_name
+
         packages_subgraphs_dict = dict()
 
         for job in joblist:
@@ -182,20 +183,20 @@ class Monitor:
         self.nodes_ploted.add(job)
         if job.has_children() != 0:
             for child in sorted(job.children, key=lambda k: k.name):
-                node_child = exp.get_node(child.name)
+                if groups and child.name in groups['jobs']:
+                    node_child = exp.get_node(groups['jobs'][child.name][0])
+                else:
+                    node_child = exp.get_node(child.name)
                 if len(node_child) == 0:
                     flag = True
-                    if not groups or child.name not in groups['jobs'] or (child.name in groups['jobs'] and len(groups['jobs'][child.name]) == 1):
+                    if groups and child.name in groups['jobs'] and len(groups['jobs'][child.name]) == 1:
+                        group = groups['jobs'][child.name][0]
+                        node_child = pydotplus.Node(group, shape='box3d', style="filled", fillcolor=self.color_status(groups['status'][group]))
+                    elif not groups or child.name not in groups['jobs']:
                         node_child = pydotplus.Node(child.name, shape='box', style="filled",
                                                     fillcolor=self.color_status(child.status))
-                        if groups and child.name in groups['jobs']:
-                            group = groups['jobs'][child.name][0]
-                            node_child.obj_dict['name'] = group
-                            node_child.obj_dict['attributes']['fillcolor'] = self.color_status(groups['status'][group])
-                            node_child.obj_dict['attributes']['shape'] = 'box3d'
-
-                        exp.add_node(node_child)
-                        exp.add_edge(pydotplus.Edge(node_job, node_child))
+                    exp.add_node(node_child)
+                    exp.add_edge(pydotplus.Edge(node_job, node_child))
                 else:
                     node_child = node_child[0]
                     exp.add_edge(pydotplus.Edge(node_job, node_child))

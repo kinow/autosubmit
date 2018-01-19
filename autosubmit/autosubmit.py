@@ -228,6 +228,12 @@ class Autosubmit:
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
+                                   help='Groups the jobs automatically or by date, member, chunk or split')
+            subparser.add_argument('-expand', type=str,
+                                   help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
+                                        'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
 
             # Migrate
             subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
@@ -248,6 +254,12 @@ class Autosubmit:
                                    help='hides plot window')
             subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
                                    help='chooses type of output for generated plot')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
+                                   help='Groups the jobs automatically or by date, member, chunk or split')
+            subparser.add_argument('-expand', type=str,
+                                   help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
+                                        'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -297,6 +309,12 @@ class Autosubmit:
                                help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
+                                   help='Groups the jobs automatically or by date, member, chunk or split')
+            subparser.add_argument('-expand', type=str,
+                                   help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
+                                        'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
 
             # Test Case
             subparser = subparsers.add_parser('testcase', description='create test case experiment')
@@ -359,13 +377,13 @@ class Autosubmit:
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
-                return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide)
+                return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by, args.expand, args.expand_status)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid)
             elif args.command == 'migrate':
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output)
+                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand, args.expand_status)
             elif args.command == 'configure':
                 if dialog is None or (args.databasepath is not None and args.localrootpath is not None):
                     return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
@@ -377,7 +395,8 @@ class Autosubmit:
                 return Autosubmit.install()
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
-                                             args.filter_chunks, args.filter_status, args.filter_type, args.hide)
+                                             args.filter_chunks, args.filter_status, args.filter_type, args.hide,
+                                             args.group_by, args.expand, args.expand_status)
             elif args.command == 'testcase':
                 return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
                                            args.HPC, args.branch)
@@ -887,6 +906,7 @@ class Autosubmit:
             if expand_status:
                 for s in expand_status.split():
                     status.append(Autosubmit._get_status(s.upper()))
+
             job_grouping = JobGrouping(group_by, copy.deepcopy(jobs), job_list, expand_list=expand, expanded_status=status)
             groups_dict = job_grouping.group_jobs()
 
@@ -1019,7 +1039,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, noplot, save, all_jobs, hide):
+    def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list()):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the jobs list.
@@ -1110,10 +1130,21 @@ class Autosubmit:
         packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                               "job_packages_" + expid).load()
 
+        groups_dict = dict()
+        if group_by:
+            status = list()
+            if expand_status:
+                for s in expand_status.split():
+                    status.append(Autosubmit._get_status(s.upper()))
+
+            job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list, expand_list=expand,
+                                       expanded_status=status)
+            groups_dict = job_grouping.group_jobs()
+
         if not noplot:
             Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide)
+            monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide, groups=groups_dict)
 
         return True
 
@@ -1757,7 +1788,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide, output='pdf'):
+    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list()):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1854,10 +1885,24 @@ class Autosubmit:
                 JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).reset_table()
 
+                groups_dict = dict()
+
                 if not noplot:
+                    if group_by:
+                        status = list()
+                        if expand_status:
+                            for s in expand_status.split():
+                                status.append(Autosubmit._get_status(s.upper()))
+
+                        job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list, expand_list=expand,
+                                                   expanded_status=status)
+                        groups_dict = job_grouping.group_jobs()
+
+                        Log.info("\nFINISHED GROUPING...")
+
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), output, None, not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), output, None, not hide, groups=groups_dict)
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -1949,7 +1994,7 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide):
+    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide, group_by=None, expand=list(), expand_status=list()):
         """
         Set status
 
@@ -2075,9 +2120,19 @@ class Autosubmit:
                                       "job_packages_" + expid).load()
 
                 if not noplot:
+                    groups_dict = dict()
+                    if group_by:
+                        status = list()
+                        if expand_status:
+                            for s in expand_status.split():
+                                status.append(Autosubmit._get_status(s.upper()))
+
+                        job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list, expand_list=expand,
+                                                   expanded_status=status)
+                        groups_dict = job_grouping.group_jobs()
                     Log.info("\nPloting joblist...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide, groups=groups_dict)
 
                 return True
 

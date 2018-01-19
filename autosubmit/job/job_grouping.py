@@ -194,7 +194,7 @@ class JobGrouping(object):
                 name = job.name[:idx - 1] + job.name[idx + 1:]
                 condition = job.split is not None
 
-            condition = condition and name not in blacklist# and job not in self.ungrouped_jobs
+            condition = condition and name not in blacklist
 
             if (condition):
                 if ((job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None)):
