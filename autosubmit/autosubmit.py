@@ -223,7 +223,7 @@ class Autosubmit:
             subparser = subparsers.add_parser('recovery', description="recover specified experiment")
             subparser.add_argument('expid', type=str, help='experiment identifier')
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
-            subparser.add_argument('-all', action="store_true", default=False,
+            subparser.add_argument('--all', action="store_true", default=False,
                                    help='Get completed files to synchronize pkl')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('--hide', action='store_true', default=False,
@@ -303,8 +303,8 @@ class Autosubmit:
                                help='Supply the list of chunks to change the status. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
-                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
-                               help='Select the original status to filter the list of jobs')
+                               help='Select the status (one or more) to filter the list of jobs.'
+                                    "Valid values = ['Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN']")
             group.add_argument('-ft', '--filter_type', type=str,
                                help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
@@ -2075,26 +2075,29 @@ class Autosubmit:
                                         Autosubmit.change_status(final, final_status, job)
 
                 if filter_status:
+                    status_list = filter_status.split()
+
                     Log.debug("Filtering jobs with status {0}", filter_status)
-                    if filter_status == 'Any':
+                    if status_list == 'Any':
                         for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
                     else:
-                        fs = Autosubmit._get_status(filter_status)
-                        for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                            Autosubmit.change_status(final, final_status, job)
+                        for status in status_list:
+                            fs = Autosubmit._get_status(status)
+                            for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
+                                Autosubmit.change_status(final, final_status, job)
 
                 if filter_section:
-                    ft = filter_section
-                    Log.debug(ft)
+                    ft = filter_section.split()
 
                     if ft == 'Any':
                         for job in job_list.get_job_list():
                             Autosubmit.change_status(final, final_status, job)
                     else:
-                        for job in job_list.get_job_list():
-                            if job.section == ft:
-                                Autosubmit.change_status(final, final_status, job)
+                        for section in ft:
+                            for job in job_list.get_job_list():
+                                if job.section == section:
+                                    Autosubmit.change_status(final, final_status, job)
 
                 if lst:
                     jobs = lst.split()
