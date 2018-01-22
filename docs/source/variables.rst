@@ -16,6 +16,7 @@ This variables are relatives to the current job.
 - **SDATE**: current startdate.
 - **MEMBER**: current member.
 - **CHUNK**: current chunk.
+- **SPLIT**: current split.
 - **DAY_BEFORE**: day before the startdate
 - **Chunk_End_IN_DAYS**: chunk's length in days
 - **Chunk_START_DATE**: chunk's start date
