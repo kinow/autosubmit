@@ -24,12 +24,13 @@ import os
 import re
 import time
 import json
+import datetime
 
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
-from bscearth.utils.date import *
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 
 
 class Job(object):
@@ -69,6 +70,7 @@ class Job(object):
         self.member = None
         self.date = None
         self.name = name
+        self.split = None
         self._long_name = None
         self.long_name = name
         self.date_format = ''
@@ -273,16 +275,21 @@ class Job(object):
         self.fail_count += 1
 
     # Maybe should be renamed to the plural?
-    def add_parent(self, *new_parent):
+    def add_parent(self, *parents):
         """
         Add parents for the job. It also adds current job as a child for all the new parents
 
-        :param new_parent: job's parents to add
-        :type new_parent: *Job
+        :param parents: job's parents to add
+        :type parents: *Job
         """
-        for parent in new_parent:
-            self._parents.add(parent)
-            parent.__add_child(self)
+        for parent in parents:
+            num_parents = 1
+            if isinstance(parent, list):
+                num_parents = len(parent)
+            for i in range(num_parents):
+                new_parent = parent[i] if isinstance(parent, list) else parent
+                self._parents.add(new_parent)
+                new_parent.__add_child(self)
 
     def __add_child(self, new_child):
         """

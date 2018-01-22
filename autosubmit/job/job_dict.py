@@ -79,7 +79,8 @@ class DicJobs:
         elif running == 'chunk':
             synchronize = self.get_option(section, "SYNCHRONIZE", None)
             delay = int(self.get_option(section, "DELAY", -1))
-            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, jobs_data)
+            splits = int(self.get_option(section, "SPLITS", 0))
+            self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
 
     def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
         """
@@ -139,10 +140,10 @@ class DicJobs:
 
     '''
         Maybe a good choice could be split this function or ascend the
-        conditional decision to the father which makes the call
+        conditional decision to the parent which makes the call
     '''
 
-    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, jobs_data=dict()):
+    def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):
         """
         Create jobs to be run once per chunk
 
@@ -165,14 +166,27 @@ class DicJobs:
                 count += 1
                 if delay == -1 or delay < chunk:
                     if count % frequency == 0 or count == len(self._chunk_list):
-                        if synchronize == 'date':
-                            tmp_dic[chunk] = self.build_job(section, priority, None, None,
-                                                            chunk, default_job_type, jobs_data)
-                        elif synchronize == 'member':
-                            tmp_dic[chunk] = dict()
-                            for date in self._date_list:
-                                tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
-                                                                  chunk, default_job_type, jobs_data)
+                        if splits > 0:
+                            if synchronize == 'date':
+                                tmp_dic[chunk] = []
+                                self._create_jobs_split(splits, section, None, None, chunk, priority,
+                                                   default_job_type, jobs_data, tmp_dic[chunk])
+                            elif synchronize == 'member':
+                                tmp_dic[chunk] = dict()
+                                for date in self._date_list:
+                                    tmp_dic[chunk][date] = []
+                                    self._create_jobs_split(splits, section, date, None, chunk, priority,
+                                                            default_job_type, jobs_data, tmp_dic[chunk][date])
+
+                        else:
+                            if synchronize == 'date':
+                                tmp_dic[chunk] = self.build_job(section, priority, None, None,
+                                                                chunk, default_job_type, jobs_data)
+                            elif synchronize == 'member':
+                                tmp_dic[chunk] = dict()
+                                for date in self._date_list:
+                                    tmp_dic[chunk][date] = self.build_job(section, priority, date, None,
+                                                                      chunk, default_job_type, jobs_data)
         # Real dic jobs assignment/creation
         self._dic[section] = dict()
         for date in self._date_list:
@@ -188,10 +202,22 @@ class DicJobs:
                                 self._dic[section][date][member][chunk] = tmp_dic[chunk]
                             elif synchronize == 'member':
                                 self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
-                            else:
+
+                            if splits > 0 and synchronize is None:
+                                self._dic[section][date][member][chunk] = []
+                                self._create_jobs_split(splits, section, date, member, chunk, priority, default_job_type, jobs_data, self._dic[section][date][member][chunk])
+                            elif synchronize is None:
                                 self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
-                                                                                         chunk, default_job_type, jobs_data)
-                            self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
+                                                                                             chunk, default_job_type, jobs_data)
+                                self._jobs_list.graph.add_node(self._dic[section][date][member][chunk].name)
+
+    def _create_jobs_split(self, splits, section, date, member, chunk, priority, default_job_type, jobs_data, dict):
+        total_jobs = 1
+        while total_jobs <= splits:
+            job = self.build_job(section, priority, date, member, chunk, default_job_type, jobs_data, total_jobs)
+            dict.append(job)
+            self._jobs_list.graph.add_node(job.name)
+            total_jobs += 1
 
     def get_jobs(self, section, date=None, member=None, chunk=None):
         """
@@ -257,7 +283,7 @@ class DicJobs:
                     jobs.append(dic[c])
         return jobs
 
-    def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict()):
+    def build_job(self, section, priority, date, member, chunk, default_job_type, jobs_data=dict(), split=-1):
         name = self._jobs_list.expid
         if date is not None:
             name += "_" + date2str(date, self._date_format)
@@ -265,6 +291,8 @@ class DicJobs:
             name += "_" + member
         if chunk is not None:
             name += "_{0}".format(chunk)
+        if split > -1:
+            name += "_{0}".format(split)
         name += "_" + section
         if name in jobs_data:
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
@@ -277,6 +305,8 @@ class DicJobs:
         job.member = member
         job.chunk = chunk
         job.date_format = self._date_format
+        if split > -1:
+            job.split = split
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
         job.delay = int(self.get_option(section, "DELAY", -1))
