@@ -15,13 +15,13 @@ You must execute:
 Options:
 ::
 
-    usage: autosubmit recovery [-h] [-np] [-all] [-s] [-group_by {date,member,chunk,split} -expand -expand_status] expid
+    usage: autosubmit recovery [-h] [-np] [--all] [-s] [-group_by {date,member,chunk,split} -expand -expand_status] expid
 
         expid       experiment identifier
 
         -h, --help  show this help message and exit
         -np, --noplot  omit plot
-        -all        Get all completed files to synchronize pkl
+        --all        Get all completed files to synchronize pkl
         -s, --save  Save changes to disk
         -group_by {date,member,chunk,split,automatic}
                             criteria to use for grouping jobs
@@ -44,4 +44,4 @@ The -all flag is used to synchronize all jobs of our experiment locally with the
 Example:
 ::
 
-    autosubmit recovery cxxx -all -s
+    autosubmit recovery cxxx --all -s
