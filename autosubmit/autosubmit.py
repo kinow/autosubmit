@@ -620,6 +620,13 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
+        # checking host whitelist
+        import platform
+        host = platform.node()
+        if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS:
+            Log.info("\n Autosubmit run command is not allowed on this host")
+            return False
+
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
