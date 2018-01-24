@@ -38,7 +38,7 @@ In order to be able to use the vertical wrapper, in ``platforms_cxxx.conf`` set 
 .. important::  Note that the **numbers** shown in this documentation are examples. The actual values must be set according to the specific workflow, as well as the platform configurations.
 
 For example, in the case of the vertical wrapper, if the maximum wallclock for the platform is 72 hours and each simulation takes 2 hours to complete,
-then this will be the most limiting factor, and even if **MAXWRAPPEDJOBS** is greater than 36, for the simulations no more than 36 would be wrapped together.
+then this will be the most limiting factor, and even if **MAXWRAPPEDJOBS** is greater than 36, no more than 36 simulations could be wrapped together.
 
 Note that the solution considers the order of the sections defined in the ``jobs_cxxx.conf`` file, so the order of the sections given in the expression is irrelevant.
 Additionally, jobs are grouped within the corresponding date, member and chunk hierarchy.
@@ -84,7 +84,7 @@ Considering a very simple workflow with the configurations as follows:
     EXPRESSION = SIM POST
     MAXWRAPPEDJOBS = 10
 
-The following image shows an example of how are wrapped together in packages:
+The following image shows an example of the visualization of how jobs are wrapped together in packages:
 
 .. figure:: ../workflows/wrapper_expression.png
    :name: wrapper_expression

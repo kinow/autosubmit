@@ -266,6 +266,7 @@ class Autosubmit:
                                                                        "can be done at machine, user or local level."
                                                                        "If no arguments specified configure will "
                                                                        "display dialog boxes (if installed)")
+            subparser.add_argument('--advanced', action="store_true", help="Open advanced configuration of autosubmit")
             subparser.add_argument('-db', '--databasepath', default=None, help='path to database. If not supplied, '
                                                                                'it will prompt for it')
             subparser.add_argument('-dbf', '--databasefilename', default=None, help='database filename')
@@ -385,8 +386,8 @@ class Autosubmit:
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand, args.expand_status)
             elif args.command == 'configure':
-                if dialog is None or (args.databasepath is not None and args.localrootpath is not None):
-                    return Autosubmit.configure(args.databasepath, args.databasefilename, args.localrootpath,
+                if not args.advanced or (args.advanced and dialog is None):
+                    return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename, args.localrootpath,
                                                 args.platformsconfpath, args.jobsconfpath,
                                                 args.smtphostname, args.mailfrom, args.all, args.local)
                 else:
@@ -1295,7 +1296,7 @@ class Autosubmit:
         return job_list.check_scripts(as_conf)
 
     @staticmethod
-    def configure(database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
+    def configure(advanced, database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
                   smtp_hostname, mail_from, machine, local):
         """
         Configure several paths for autosubmit: database, local root and others. Can be configured at system,
@@ -1322,6 +1323,12 @@ class Autosubmit:
         :type smtp_hostname: str
         """
         home_path = os.path.expanduser('~')
+        # Setting default values
+        if not advanced and database_path is None and local_root_path is None:
+            database_path = home_path
+            local_root_path = home_path + '/autosubmit'
+            database_filename = 'autosubmit.db'
+
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
         database_path = database_path.replace('~', home_path)

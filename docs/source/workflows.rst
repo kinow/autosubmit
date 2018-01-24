@@ -271,7 +271,7 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'member' can be seen 
    :align: center
    :alt: simple workflow plot
 
-   Example showing dependencies between chunk jobs running with member synchronize. This can be achieved with the SPLIT
+   Example showing dependencies between chunk jobs running with member synchronize.
 
 .. code-block:: ini
 
