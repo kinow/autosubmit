@@ -19,6 +19,7 @@
 
 from autosubmit.job.job_common import Status
 from bscearth.utils.date import date2str
+import copy
 
 class JobGrouping(object):
 
@@ -35,8 +36,7 @@ class JobGrouping(object):
 
     def group_jobs(self):
         if self.expand_list:
-            self._set_ungrouped_jobs()
-            self.jobs = list(set(self.jobs) - set(self.ungrouped_jobs))
+            self._set_expanded_jobs()
 
         jobs_group_dict = dict()
         blacklist = list()
@@ -46,7 +46,7 @@ class JobGrouping(object):
             self.automatic = True
             jobs_group_dict = self._automatic_grouping(groups_map)
         else:
-            self._group_jobs_by(jobs_group_dict, blacklist)
+            self._create_groups(jobs_group_dict, self.ungrouped_jobs)
 
             for group, statuses in self.group_status_dict.items():
                 status = self._set_group_status(statuses)
@@ -72,8 +72,10 @@ class JobGrouping(object):
 
         return groups_dict
 
-    def _set_ungrouped_jobs(self):
+    def _set_expanded_jobs(self):
         text = self.expand_list
+
+        self.ungrouped_jobs = []
 
         from pyparsing import nestedExpr
         """
@@ -93,8 +95,9 @@ class JobGrouping(object):
             if depth(out) == 2:
                 dates = list()
                 for date in out[0]:
+                    date = date2str(date, self.date_format)
                     dates.append(date)
-                self.ungrouped_jobs = [job for job in self.jobs if date2str(job.date, self.date_format) in dates]
+                self.ungrouped_jobs = dates
             else:
                 raise ValueError("Please check the syntax of the expand parameter including only dates")
         elif self.group_by == 'member':
@@ -102,18 +105,22 @@ class JobGrouping(object):
                 for element in out[0]:
                     if count % 2 == 0:
                         date = out[0][count]
+                        date = date2str(date, self.date_format)
                         members = out[0][count + 1]
-                        self.ungrouped_jobs = self.ungrouped_jobs + [job for job in self.jobs if date2str(job.date, self.date_format) == date and job.member in members]
+                        for member in members:
+                            self.ungrouped_jobs.append(date + '_' + member)
                         count += 1
                     else:
                         count += 1
             else:
-                raise ValueError("Please check the syntax of the expand parameter including dates and the corresponding members")
+                raise ValueError(
+                    "Please check the syntax of the expand parameter including dates and the corresponding members")
         elif self.group_by == 'chunk':
             if depth(out) == 4:
                 for element in out[0]:
                     if count % 2 == 0:
                         date = out[0][count]
+                        date = date2str(date, self.date_format)
                         member_chunks = out[0][count + 1]
                         member_count = 0
                         for element_member in member_chunks:
@@ -127,14 +134,13 @@ class JobGrouping(object):
                                             chunks.append(count)
                                     else:
                                         chunks.append(int(chunk))
-
-                                self.ungrouped_jobs = self.ungrouped_jobs + \
-                                                      [job for job in self.jobs if date2str(job.date, self.date_format) == date
-                                                       and job.member == member and job.chunk in chunks]
+                                for chunk in chunks:
+                                    self.ungrouped_jobs.append(date + '_' + member + '_' + str(chunk))
                             member_count += 1
                     count += 1
             else:
-                raise ValueError("Please check the syntax of the expand parameter including dates and the corresponding members and chunks")
+                raise ValueError(
+                    "Please check the syntax of the expand parameter including dates and the corresponding members and chunks")
 
     def _set_group_status(self, statuses):
         if isinstance(statuses, int):
@@ -159,62 +165,55 @@ class JobGrouping(object):
             elif Status.UNKNOWN in statuses:
                 return Status.UNKNOWN
 
-    def _group_jobs_by(self, jobs_group_dict, blacklist):
-        for date in reversed(self.job_list.get_date_list()):
-            if self.group_by == 'date' or not self.job_list.get_member_list():
-                self._create_group(jobs_group_dict, date, blacklist=blacklist)
-            elif self.group_by in ['member', 'chunk', 'split']:
-                for member in reversed(self.job_list.get_member_list()):
-                    if self.group_by == 'member' or not self.job_list.get_chunk_list():
-                        self._create_group(jobs_group_dict, date, member, blacklist=blacklist)
-                    else:
-                        for chunk in reversed(self.job_list.get_chunk_list()):
-                            self._create_group(jobs_group_dict, date, member, chunk, blacklist=blacklist)
-
-    def _create_group(self, jobs_group_dict, date=None, member=None, chunk=None, blacklist=list()):
-        if chunk is not None:
-            name = date2str(date, self.date_format) + '_' + member + '_' +str(chunk)
-        elif member is not None:
-            name = date2str(date, self.date_format) + '_' + member
-        else:
-            name = date2str(date, self.date_format)
-
+    def _create_groups(self, jobs_group_dict, blacklist=list()):
         for i in reversed(range(len(self.jobs))):
             job = self.jobs[i]
 
-            if self.group_by == 'date':
-                condition = (job.date == date or (job.date is None and job.chunk is not None))
+            groups = []
+            if self.group_by == 'split':
+                if job.split is not None:
+                    idx = job.name.rfind("_")
+                    groups.append(job.name[:idx - 1] + job.name[idx + 1:])
+            elif self.group_by == 'chunk':
+                if job.chunk is not None:
+                    # synchronized
+                    if job.date is None:
+                        for date in self.job_list.get_date_list():
+                            groups.append(groups.append(date2str(date, self.date_format) + '_' + job.member + '_' + str(job.chunk)))
+                    elif job.member is None:
+                        for member in self.job_list.get_member_list():
+                            groups.append(date2str(job.date, self.date_format) + '_' + member + '_' + str(job.chunk))
+                    else:
+                        groups.append(date2str(job.date, self.date_format) + '_' + job.member + '_' + str(job.chunk))
             elif self.group_by == 'member':
-                condition = (job.date == date and job.member == member) or \
-                            (job.date in [date, None] and job.member is None and job.chunk is not None)
-            elif self.group_by  == 'chunk':
-                condition = (job.member in [member, None] and job.date in [date, None] and job.chunk == chunk)
-            elif self.group_by == 'split':
-                idx = job.name.rfind("_")
-                name = job.name[:idx - 1] + job.name[idx + 1:]
-                condition = job.split is not None
+                if job.member is not None:
+                    groups.append(date2str(job.date, self.date_format) + '_' + job.member)
+            elif self.group_by == 'date':
+                if job.date is not None:
+                    groups.append(date2str(job.date, self.date_format))
 
-            condition = condition and name not in blacklist
+            if groups:
+                self.jobs.pop(i)
 
-            if (condition):
-                if ((job.chunk is None) or (job.member is not None and job.date is not None and job.chunk is not None)):
-                    self.jobs.pop(i) #if synchronized does not remove; neither if automatic and grouping the splits only
-                if name not in self.group_status_dict:
-                    self.group_status_dict[name] = set()
-                self.group_status_dict[name].add(job.status)
+            while groups:
+                group = groups.pop(0)
+                if group not in blacklist:
+                    if group not in self.group_status_dict:
+                        self.group_status_dict[group] = set()
+                    self.group_status_dict[group].add(job.status)
 
-                if job.status in self.expand_status or \
-                        (self.automatic and name in self.group_status_dict and (len(self.group_status_dict[name]) > 1)):
-                    self.group_status_dict.pop(name)
-                    blacklist.append(name)
-                    break
+                    if job.status in self.expand_status or \
+                            self.automatic and group in self.group_status_dict and (len(self.group_status_dict[group]) > 1):
+                        self.group_status_dict.pop(group)
+                        blacklist.append(group)
+                        break
 
-                if job.name not in jobs_group_dict:
-                    jobs_group_dict[job.name] = list()
-                jobs_group_dict[job.name].append(name)
+                    if job.name not in jobs_group_dict:
+                        jobs_group_dict[job.name] = list()
+                    jobs_group_dict[job.name].append(group)
 
     def _automatic_grouping(self, groups_map):
-        all_jobs = self.jobs
+        all_jobs = copy.deepcopy(self.jobs)
         split_groups, split_groups_status = self._create_splits_groups()
 
         blacklist = list()
@@ -223,7 +222,7 @@ class JobGrouping(object):
         self.group_by = 'chunk'
         self.jobs = all_jobs
 
-        self._group_jobs_by(jobs_group_dict, blacklist)
+        self._create_groups(jobs_group_dict, blacklist)
 
         for group, statuses in self.group_status_dict.items():
             status = self._set_group_status(statuses)
@@ -246,7 +245,7 @@ class JobGrouping(object):
         jobs_group_dict = dict()
 
         self.group_by = 'split'
-        self._group_jobs_by(jobs_group_dict, list())
+        self._create_groups(jobs_group_dict, list())
         return jobs_group_dict, self.group_status_dict
 
     def _fix_splits_automatic_grouping(self, split_groups, split_groups_status, jobs_group_dict):
@@ -297,7 +296,7 @@ class JobGrouping(object):
                     if new_group not in checked_groups:
                         checked_groups.append(new_group)
                         possible_groups = [existing_group for existing_group in list(self.group_status_dict.keys()) if
-                                              new_group in existing_group]
+                                              new_group+'_' in existing_group]
 
                         if len(possible_groups) == num_groups:
                             if self._check_valid_group(possible_groups, new_group, groups_map):

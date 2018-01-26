@@ -177,6 +177,7 @@ class Autosubmit:
                                     help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+            subparser.add_argument('--hide_groups', action='store_true', default=False, help='Hides the groups from the plot')
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
@@ -372,7 +373,8 @@ class Autosubmit:
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.hide, args.txt, args.group_by, args.expand, args.expand_status)
+                                          args.filter_type, args.hide, args.txt, args.group_by, args.expand, args.expand_status,
+                                          args.hide_groups)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
             elif args.command == 'clean':
@@ -797,7 +799,7 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None, expand=list(), expand_status=list()):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None, expand=list(), expand_status=list(), hide_groups=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -923,7 +925,7 @@ class Autosubmit:
         if txt_only:
             monitor_exp.generate_output_txt(expid, jobs, exp_path+"/tmp/LOG_"+expid)
         else:
-            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict)
+            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict, hide_groups=hide_groups)
 
         return True
 
@@ -1911,8 +1913,6 @@ class Autosubmit:
                         job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list, expand_list=expand,
                                                    expanded_status=status)
                         groups_dict = job_grouping.group_jobs()
-
-                        Log.info("\nFINISHED GROUPING...")
 
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()

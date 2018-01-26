@@ -34,8 +34,7 @@ class TestJobGrouping(TestCase):
                         job = self._createDummyJob('expid_' + date + '_' + member + '_' + str(chunk) + '_' + section, Status.WAITING, date, member, chunk)
                         self.job_list.get_job_list().append(job)
 
-    @patch('autosubmit.job.job_grouping.date2str', side_effect=['d2', 'd1'])
-    def test_group_by_date(self, *patches):
+    def test_group_by_date(self):
         groups_dict = dict()
 
         groups_dict['status'] = {'d1' : Status.WAITING, 'd2' : Status.WAITING}
@@ -57,11 +56,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('date', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str', side_effect=['d2', 'd2', 'd1', 'd1'])
-    def test_group_by_member(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('date', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_group_by_member(self):
         groups_dict = dict()
 
         groups_dict['status'] = {'d1_m1': Status.WAITING, 'd1_m2': Status.WAITING, 'd2_m1': Status.WAITING, 'd2_m2' : Status.WAITING}
@@ -89,11 +93,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.member is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str', side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_group_by_chunk(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_group_by_chunk(self):
         groups_dict = dict()
 
         groups_dict['status'] = {'d1_m1_1': Status.WAITING, 'd1_m1_2': Status.WAITING,
@@ -122,11 +131,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.chunk is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str', side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_group_by_split(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_group_by_split(self):
         for date in ['d1', 'd2']:
             for member in ['m1', 'm2']:
                 for chunk in [1, 2]:
@@ -175,9 +189,7 @@ class TestJobGrouping(TestCase):
         job_grouping = JobGrouping('split', self.job_list.get_job_list(), self.job_list)
         self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_automatic_grouping_all(self, *patches):
+    def test_automatic_grouping_all(self):
         groups_dict = dict()
 
         groups_dict['status'] = {'d1': Status.WAITING, 'd2': Status.WAITING}
@@ -205,12 +217,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_automatic_grouping_not_ini(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_automatic_grouping_not_ini(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.READY
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.READY
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.READY
@@ -241,12 +257,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_automatic_grouping_splits(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_automatic_grouping_splits(self,):
         for date in ['d1', 'd2']:
             for member in ['m1', 'm2']:
                 for chunk in [1, 2]:
@@ -300,12 +320,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_automatic_grouping_different_status_member(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_automatic_grouping_different_status_member(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -348,12 +372,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_automatic_grouping_different_status_chunk(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_automatic_grouping_different_status_chunk(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -393,12 +421,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d2', 'd2', 'd1', 'd1'])
-    def test_group_by_member_expand_running(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('automatic', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_group_by_member_expand_running(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -442,11 +474,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list, expanded_status=[Status.RUNNING])
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.member is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str', side_effect=['d2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
-    def test_group_by_chunk_expand_failed_running(self, *patches):
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list, expanded_status=[Status.RUNNING])
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_group_by_chunk_expand_failed_running(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -491,20 +528,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list, expanded_status=[Status.RUNNING, Status.FAILED])
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.chunk is not None:
+                side_effect.append(job.date)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list, expanded_status=[Status.RUNNING, Status.FAILED])
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
-                        'd1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd2', 'd2', 'd1', 'd1'])
-    def test_group_by_member_expand(self, *patches):
+    def test_group_by_member_expand(self):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -540,21 +573,17 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list,
+        side_effect = ['d1', 'd2']
+        for job in reversed(self.job_list.get_job_list()):
+            if job.member is not None:
+                side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list,
                                    expand_list="[ d1 [m2] d2 [m1 m2] ]")
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd2', 'd2', 'd1', 'd1'])
-    def test_group_by_member_expand_running(self, *patches):
+    def test_group_by_member_expand_and_running(self, *patches):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d2_m1_INI').status = Status.COMPLETED
@@ -592,24 +621,16 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list,
+        side_effect = ['d1', 'd2']
+        for job in reversed(self.job_list.get_job_list()):
+            if job.member is not None:
+                side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list,
                                    expand_list="[ d1 [m2] d2 [m2] ]", expanded_status=[Status.RUNNING])
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
-    @patch('autosubmit.job.job_grouping.date2str',
-           side_effect=['d1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd1', 'd1', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-                        'd1', 'd1', 'd1', 'd1', 'd2', 'd2', 'd2', 'd2',
-
-                        'd2', 'd2', 'd2', 'd2', 'd1', 'd1', 'd1', 'd1'])
     def test_group_by_chunk_expand(self, *patches):
         self.job_list.get_job_by_name('expid_d1_m1_INI').status = Status.COMPLETED
         self.job_list.get_job_by_name('expid_d1_m2_INI').status = Status.COMPLETED
@@ -645,9 +666,15 @@ class TestJobGrouping(TestCase):
         self.job_list.get_chunk_list = Mock(return_value=[1, 2])
         self.job_list.get_date_format = Mock(return_value='')
 
-        job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list,
+        side_effect = ['d1', 'd2']
+        for job in reversed(self.job_list.get_job_list()):
+            if job.chunk is not None:
+                side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list,
                                    expand_list="[ d1 [m2 [2] ] d2 [m1 [1 2] m2 [1] ] ]")
-        self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
     def _createDummyJob(self, name, status, date=None, member=None, chunk=None, split=None):
         job_id = randrange(1, 999)

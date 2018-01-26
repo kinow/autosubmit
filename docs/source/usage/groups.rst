@@ -196,3 +196,9 @@ For example:
    :width: 70%
    :align: center
    :alt: group automatic
+
+Especially in the case of monitoring an experiment with a very large number of chunks, it might be useful to hide the groups created automatically. This allows to better visualize the chunks in which there are jobs with different status, which can be a good indication that there is something currently happening within such chunks (jobs ready, submitted, running, queueing or failed).
+
+::
+
+    -group_by=automatic --hide_groups
