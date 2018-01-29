@@ -77,6 +77,7 @@ class Job(object):
         self.type = Type.BASH
         self.scratch_free_space = None
         self.custom_directives = []
+        self.undefined_variables = None
 
         self.id = job_id
         self.file = None
@@ -94,7 +95,6 @@ class Job(object):
         self._platform = None
         self.check = 'True'
         self.packed = False
-
 
     def __getstate__(self):
         odict = self.__dict__
@@ -546,7 +546,8 @@ class Job(object):
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
-                          default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%'}):
+                          default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
+                                              'M' : '%M%', 'M_' : '%M_%'}):
         """
         Refresh parameters value
 
@@ -664,6 +665,11 @@ class Job(object):
         parameters['PROJDIR'] = as_conf.get_project_dir()
 
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
+
+        if self.undefined_variables:
+            for variable in self.undefined_variables:
+                if variable not in parameters:
+                    parameters[variable] = ''
 
         self.parameters = parameters
 
@@ -789,8 +795,9 @@ class Job(object):
         out = set(parameters).issuperset(set(variables))
 
         if not out:
+            self.undefined_variables = set(variables) - set(parameters)
             Log.warning("The following set of variables to be substituted in template script is not part of "
-                        "parameters set: {0}", str(set(variables) - set(parameters)))
+                        "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
         return out
 
     def write_submit_time(self):

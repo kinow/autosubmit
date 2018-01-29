@@ -843,7 +843,7 @@ class JobList:
             else:
                 if not job.check_script(as_conf, self.parameters):
                     out = False
-                    Log.warning("Invalid parameter substitution in {0} template", job.section)
+                    #Log.warning("Invalid parameter substitution in {0} template", job.section)
             sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
