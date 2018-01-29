@@ -22,7 +22,7 @@ def refresh_experiment_cmd(experiment_id):
 
 
 def recovery_experiment_cmd(experiment_id):
-    return 'autosubmit -lf EVERYTHING -lc EVERYTHING recovery {0} -all --hide -s'.format(experiment_id)
+    return 'autosubmit -lf EVERYTHING -lc EVERYTHING recovery {0} --all --hide -s'.format(experiment_id)
 
 
 def check_experiment_cmd(experiment_id):
