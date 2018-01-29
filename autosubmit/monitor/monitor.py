@@ -142,39 +142,39 @@ class Monitor:
                 exp.add_node(node_job)
                 self._add_children(job, exp, node_job, groups, hide_groups)
 
-        if groups and not hide_groups:
-            for job, group in groups['jobs'].items():
-                if len(group) > 1:
-                    subgraph = pydotplus.graphviz.Cluster(graph_name='cluster_'+'_'.join(group))
-                    subgraph.obj_dict['attributes']['color'] = 'invis'
+        if groups:
+            if not hide_groups:
+                for job, group in groups['jobs'].items():
+                    if len(group) > 1:
+                        subgraph = pydotplus.graphviz.Cluster(graph_name='cluster_'+'_'.join(group))
+                        subgraph.obj_dict['attributes']['color'] = 'invis'
 
-                    if '_' in group[0]:
-                        group[0] = '"'+group[0]+'"'
+                        if '_' in group[0]:
+                            group[0] = '"'+group[0]+'"'
 
-                    previous_node = exp.get_node(group[0])[0]
-                    subgraph.add_node(previous_node)
+                        previous_node = exp.get_node(group[0])[0]
+                        subgraph.add_node(previous_node)
 
-                    for i in range(1, len(group)):
-                        if '_' in group[i]:
-                            group[i] = '"' + group[i] + '"'
-                        node = exp.get_node(group[i])[0]
-                        subgraph.add_node(node)
+                        for i in range(1, len(group)):
+                            if '_' in group[i]:
+                                group[i] = '"' + group[i] + '"'
+                            node = exp.get_node(group[i])[0]
+                            subgraph.add_node(node)
 
-                        edge = exp.get_edge(node.obj_dict['name'], previous_node.obj_dict['name'])
-                        if len(edge) == 0:
-                            edge = pydotplus.Edge(previous_node, node)
-                        else:
-                            edge = edge[0]
+                            edge = exp.get_edge(node.obj_dict['name'], previous_node.obj_dict['name'])
+                            if len(edge) == 0:
+                                edge = pydotplus.Edge(previous_node, node)
+                            else:
+                                edge = edge[0]
 
-                        edge.obj_dict['attributes']['dir'] = 'none'
-                        # constraint false allows the horizontal alignment
-                        edge.obj_dict['attributes']['constraint'] = 'false'
-                        edge.obj_dict['attributes']['penwidth'] = 4
-                        subgraph.add_edge(edge)
-                        previous_node = node
-                    graph.add_subgraph(subgraph)
-
-            if hide_groups:
+                            edge.obj_dict['attributes']['dir'] = 'none'
+                            # constraint false allows the horizontal alignment
+                            edge.obj_dict['attributes']['constraint'] = 'false'
+                            edge.obj_dict['attributes']['penwidth'] = 4
+                            subgraph.add_edge(edge)
+                            previous_node = node
+                        graph.add_subgraph(subgraph)
+            else:
                 for edge in copy.deepcopy(exp.obj_dict['edges']):
                     if edge[0].replace('"', '') in groups['status']:
                         del exp.obj_dict['edges'][edge]
@@ -217,7 +217,6 @@ class Monitor:
                         hidden_group = True
                 else:
                     node_child = exp.get_node(child.name)
-
                 if len(node_child) == 0:
                     flag = True
                     if groups and child.name in groups['jobs'] and len(groups['jobs'][child.name]) == 1:
@@ -231,7 +230,6 @@ class Monitor:
                                                     fillcolor=self.color_status(child.status))
                     else:
                         skip = True
-
                     if not hidden_group:
                         exp.add_node(node_child)
                         exp.add_edge(pydotplus.Edge(node_job, node_child))
