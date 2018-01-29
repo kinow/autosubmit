@@ -1,3 +1,13 @@
+3.10.0
+    Vertical wrapper allowing mixed job types and additional constraints
+    Job grouping in the visualization graph
+    Txt output status for autosubmit monitor
+    Setstatus with allowing multiple job types
+    Host whitelist option in .autosubmitrc for autosubmit run
+    DELAY and SPLITS options for job configuration
+    Setting blank value for absent variables in project configuration
+    Minor bug fixes
+
 3.9.0
     Custom directives for the HPC resource manager headers
      can be added on platforms and jobs configuration files
