@@ -676,6 +676,322 @@ class TestJobGrouping(TestCase):
                                    expand_list="[ d1 [m2 [2] ] d2 [m1 [1 2] m2 [1] ] ]")
             self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
 
+    def test_synchronize_member_group_member(self):
+        for date in ['d1', 'd2']:
+            for chunk in [1, 2]:
+                job = self._createDummyJob('expid_' + date + '_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, date, None, chunk)
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+                self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1_m1': Status.WAITING,
+                                 'd1_m2': Status.WAITING,
+                                 'd2_m1': Status.WAITING,
+                                 'd2_m2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_INI': ['d1_m1'], 'expid_d1_m2_INI': ['d1_m2'], 'expid_d2_m1_INI': ['d2_m1'],
+            'expid_d2_m2_INI': ['d2_m2'],
+            'expid_d1_m1_1_SIM': ['d1_m1'], 'expid_d1_m1_2_SIM': ['d1_m1'], 'expid_d1_m2_1_SIM': ['d1_m2'],
+            'expid_d1_m2_2_SIM': ['d1_m2'],
+            'expid_d2_m1_1_SIM': ['d2_m1'], 'expid_d2_m1_2_SIM': ['d2_m1'], 'expid_d2_m2_1_SIM': ['d2_m2'],
+            'expid_d2_m2_2_SIM': ['d2_m2'],
+
+            'expid_d1_m1_1_POST': ['d1_m1'], 'expid_d1_m1_2_POST': ['d1_m1'], 'expid_d1_m2_1_POST': ['d1_m2'],
+            'expid_d1_m2_2_POST': ['d1_m2'],
+            'expid_d2_m1_1_POST': ['d2_m1'], 'expid_d2_m1_2_POST': ['d2_m1'], 'expid_d2_m2_1_POST': ['d2_m2'],
+            'expid_d2_m2_2_POST': ['d2_m2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1_m1'], 'expid_d1_m1_2_CLEAN': ['d1_m1'], 'expid_d1_m2_1_CLEAN': ['d1_m2'],
+            'expid_d1_m2_2_CLEAN': ['d1_m2'],
+            'expid_d2_m1_1_CLEAN': ['d2_m1'], 'expid_d2_m1_2_CLEAN': ['d2_m1'], 'expid_d2_m2_1_CLEAN': ['d2_m2'],
+            'expid_d2_m2_2_CLEAN': ['d2_m2'],
+
+            'expid_d1_1_ASIM' : ['d1_m1', 'd1_m2'], 'expid_d1_2_ASIM' : ['d1_m1', 'd1_m2'],
+            'expid_d2_1_ASIM': ['d2_m1', 'd2_m2'], 'expid_d2_2_ASIM' : ['d2_m1', 'd2_m2']
+        }
+
+        self.job_list.get_date_list = Mock(return_value=['d1', 'd2'])
+        self.job_list.get_member_list = Mock(return_value=['m1', 'm2'])
+        self.job_list.get_chunk_list = Mock(return_value=[1, 2])
+        self.job_list.get_date_format = Mock(return_value='')
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            side_effect.append(job.date)
+            if job.member is None and job.chunk is not None:
+                side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_synchronize_member_group_chunk(self):
+        for date in ['d1', 'd2']:
+            for chunk in [1, 2]:
+                job = self._createDummyJob('expid_' + date + '_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, date, None, chunk)
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+                self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1_m1_1': Status.WAITING, 'd1_m1_2': Status.WAITING,
+                                 'd1_m2_1': Status.WAITING, 'd1_m2_2': Status.WAITING,
+                                 'd2_m1_1': Status.WAITING, 'd2_m1_2': Status.WAITING,
+                                 'd2_m2_1': Status.WAITING, 'd2_m2_2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_1_SIM': ['d1_m1_1'], 'expid_d1_m1_2_SIM': ['d1_m1_2'], 'expid_d1_m2_1_SIM': ['d1_m2_1'],
+            'expid_d1_m2_2_SIM': ['d1_m2_2'],
+            'expid_d2_m1_1_SIM': ['d2_m1_1'], 'expid_d2_m1_2_SIM': ['d2_m1_2'], 'expid_d2_m2_1_SIM': ['d2_m2_1'],
+            'expid_d2_m2_2_SIM': ['d2_m2_2'],
+
+            'expid_d1_m1_1_POST': ['d1_m1_1'], 'expid_d1_m1_2_POST': ['d1_m1_2'], 'expid_d1_m2_1_POST': ['d1_m2_1'],
+            'expid_d1_m2_2_POST': ['d1_m2_2'],
+            'expid_d2_m1_1_POST': ['d2_m1_1'], 'expid_d2_m1_2_POST': ['d2_m1_2'], 'expid_d2_m2_1_POST': ['d2_m2_1'],
+            'expid_d2_m2_2_POST': ['d2_m2_2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1_m1_1'], 'expid_d1_m1_2_CLEAN': ['d1_m1_2'], 'expid_d1_m2_1_CLEAN': ['d1_m2_1'],
+            'expid_d1_m2_2_CLEAN': ['d1_m2_2'],
+            'expid_d2_m1_1_CLEAN': ['d2_m1_1'], 'expid_d2_m1_2_CLEAN': ['d2_m1_2'], 'expid_d2_m2_1_CLEAN': ['d2_m2_1'],
+            'expid_d2_m2_2_CLEAN': ['d2_m2_2'],
+
+            'expid_d1_1_ASIM' : ['d1_m1_1', 'd1_m2_1'], 'expid_d1_2_ASIM' : ['d1_m1_2', 'd1_m2_2'],
+            'expid_d2_1_ASIM': ['d2_m1_1', 'd2_m2_1'], 'expid_d2_2_ASIM' : ['d2_m1_2', 'd2_m2_2']
+        }
+
+        self.job_list.get_date_list = Mock(return_value=['d1', 'd2'])
+        self.job_list.get_member_list = Mock(return_value=['m1', 'm2'])
+        self.job_list.get_chunk_list = Mock(return_value=[1, 2])
+        self.job_list.get_date_format = Mock(return_value='')
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.chunk is not None:
+                side_effect.append(job.date)
+                if job.member is None:
+                    side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_synchronize_member_group_date(self):
+        for date in ['d1', 'd2']:
+            for chunk in [1, 2]:
+                job = self._createDummyJob('expid_' + date + '_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, date, None, chunk)
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+                self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1': Status.WAITING,
+                                 'd2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_INI': ['d1'], 'expid_d1_m2_INI': ['d1'], 'expid_d2_m1_INI': ['d2'],
+            'expid_d2_m2_INI': ['d2'],
+            'expid_d1_m1_1_SIM': ['d1'], 'expid_d1_m1_2_SIM': ['d1'], 'expid_d1_m2_1_SIM': ['d1'],
+            'expid_d1_m2_2_SIM': ['d1'],
+            'expid_d2_m1_1_SIM': ['d2'], 'expid_d2_m1_2_SIM': ['d2'], 'expid_d2_m2_1_SIM': ['d2'],
+            'expid_d2_m2_2_SIM': ['d2'],
+
+            'expid_d1_m1_1_POST': ['d1'], 'expid_d1_m1_2_POST': ['d1'], 'expid_d1_m2_1_POST': ['d1'],
+            'expid_d1_m2_2_POST': ['d1'],
+            'expid_d2_m1_1_POST': ['d2'], 'expid_d2_m1_2_POST': ['d2'], 'expid_d2_m2_1_POST': ['d2'],
+            'expid_d2_m2_2_POST': ['d2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1'], 'expid_d1_m1_2_CLEAN': ['d1'], 'expid_d1_m2_1_CLEAN': ['d1'],
+            'expid_d1_m2_2_CLEAN': ['d1'],
+            'expid_d2_m1_1_CLEAN': ['d2'], 'expid_d2_m1_2_CLEAN': ['d2'], 'expid_d2_m2_1_CLEAN': ['d2'],
+            'expid_d2_m2_2_CLEAN': ['d2'],
+
+            'expid_d1_1_ASIM': ['d1'], 'expid_d1_2_ASIM': ['d1'],
+            'expid_d2_1_ASIM': ['d2'], 'expid_d2_2_ASIM': ['d2']
+        }
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('date', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_synchronize_date_group_member(self):
+        for chunk in [1, 2]:
+            job = self._createDummyJob('expid_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, None, None, chunk)
+            for date in ['d1', 'd2']:
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+            self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1_m1': Status.WAITING,
+                                 'd1_m2': Status.WAITING,
+                                 'd2_m1': Status.WAITING,
+                                 'd2_m2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_INI': ['d1_m1'], 'expid_d1_m2_INI': ['d1_m2'], 'expid_d2_m1_INI': ['d2_m1'],
+            'expid_d2_m2_INI': ['d2_m2'],
+            'expid_d1_m1_1_SIM': ['d1_m1'], 'expid_d1_m1_2_SIM': ['d1_m1'], 'expid_d1_m2_1_SIM': ['d1_m2'],
+            'expid_d1_m2_2_SIM': ['d1_m2'],
+            'expid_d2_m1_1_SIM': ['d2_m1'], 'expid_d2_m1_2_SIM': ['d2_m1'], 'expid_d2_m2_1_SIM': ['d2_m2'],
+            'expid_d2_m2_2_SIM': ['d2_m2'],
+
+            'expid_d1_m1_1_POST': ['d1_m1'], 'expid_d1_m1_2_POST': ['d1_m1'], 'expid_d1_m2_1_POST': ['d1_m2'],
+            'expid_d1_m2_2_POST': ['d1_m2'],
+            'expid_d2_m1_1_POST': ['d2_m1'], 'expid_d2_m1_2_POST': ['d2_m1'], 'expid_d2_m2_1_POST': ['d2_m2'],
+            'expid_d2_m2_2_POST': ['d2_m2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1_m1'], 'expid_d1_m1_2_CLEAN': ['d1_m1'], 'expid_d1_m2_1_CLEAN': ['d1_m2'],
+            'expid_d1_m2_2_CLEAN': ['d1_m2'],
+            'expid_d2_m1_1_CLEAN': ['d2_m1'], 'expid_d2_m1_2_CLEAN': ['d2_m1'], 'expid_d2_m2_1_CLEAN': ['d2_m2'],
+            'expid_d2_m2_2_CLEAN': ['d2_m2'],
+
+            'expid_1_ASIM' : ['d1_m1', 'd1_m2', 'd2_m1', 'd2_m2'], 'expid_2_ASIM' : ['d1_m1', 'd1_m2', 'd2_m1', 'd2_m2']
+        }
+
+        self.job_list.get_date_list = Mock(return_value=['d1', 'd2'])
+        self.job_list.get_member_list = Mock(return_value=['m1', 'm2'])
+        self.job_list.get_chunk_list = Mock(return_value=[1, 2])
+        self.job_list.get_date_format = Mock(return_value='')
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is None and job.chunk is not None:
+                side_effect.append('d1')
+                side_effect.append('d1')
+                side_effect.append('d1')
+                side_effect.append('d2')
+                side_effect.append('d2')
+                side_effect.append('d2')
+            else:
+                side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('member', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_synchronize_date_group_chunk(self):
+        for chunk in [1, 2]:
+            job = self._createDummyJob('expid_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, None, None, chunk)
+            for date in ['d1', 'd2']:
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+            self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1_m1_1': Status.WAITING, 'd1_m1_2': Status.WAITING,
+                                 'd1_m2_1': Status.WAITING, 'd1_m2_2': Status.WAITING,
+                                 'd2_m1_1': Status.WAITING, 'd2_m1_2': Status.WAITING,
+                                 'd2_m2_1': Status.WAITING, 'd2_m2_2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_1_SIM': ['d1_m1_1'], 'expid_d1_m1_2_SIM': ['d1_m1_2'], 'expid_d1_m2_1_SIM': ['d1_m2_1'],
+            'expid_d1_m2_2_SIM': ['d1_m2_2'],
+            'expid_d2_m1_1_SIM': ['d2_m1_1'], 'expid_d2_m1_2_SIM': ['d2_m1_2'], 'expid_d2_m2_1_SIM': ['d2_m2_1'],
+            'expid_d2_m2_2_SIM': ['d2_m2_2'],
+
+            'expid_d1_m1_1_POST': ['d1_m1_1'], 'expid_d1_m1_2_POST': ['d1_m1_2'], 'expid_d1_m2_1_POST': ['d1_m2_1'],
+            'expid_d1_m2_2_POST': ['d1_m2_2'],
+            'expid_d2_m1_1_POST': ['d2_m1_1'], 'expid_d2_m1_2_POST': ['d2_m1_2'], 'expid_d2_m2_1_POST': ['d2_m2_1'],
+            'expid_d2_m2_2_POST': ['d2_m2_2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1_m1_1'], 'expid_d1_m1_2_CLEAN': ['d1_m1_2'], 'expid_d1_m2_1_CLEAN': ['d1_m2_1'],
+            'expid_d1_m2_2_CLEAN': ['d1_m2_2'],
+            'expid_d2_m1_1_CLEAN': ['d2_m1_1'], 'expid_d2_m1_2_CLEAN': ['d2_m1_2'], 'expid_d2_m2_1_CLEAN': ['d2_m2_1'],
+            'expid_d2_m2_2_CLEAN': ['d2_m2_2'],
+
+            'expid_1_ASIM' : ['d1_m1_1', 'd1_m2_1', 'd2_m1_1', 'd2_m2_1'], 'expid_2_ASIM' : ['d1_m1_2', 'd1_m2_2', 'd2_m1_2', 'd2_m2_2'],
+        }
+
+        self.job_list.get_date_list = Mock(return_value=['d1', 'd2'])
+        self.job_list.get_member_list = Mock(return_value=['m1', 'm2'])
+        self.job_list.get_chunk_list = Mock(return_value=[1, 2])
+        self.job_list.get_date_format = Mock(return_value='')
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.chunk is not None:
+                if job.date is None:
+                    side_effect.append('d1')
+                    side_effect.append('d1')
+                    side_effect.append('d1')
+                    side_effect.append('d2')
+                    side_effect.append('d2')
+                    side_effect.append('d2')
+                else:
+                    side_effect.append(job.date)
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('chunk', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
+    def test_synchronize_date_group_date(self):
+        for chunk in [1, 2]:
+            job = self._createDummyJob('expid_' + str(chunk) + '_ASIM',
+                                           Status.WAITING, None, None, chunk)
+            for date in ['d1', 'd2']:
+                for member in ['m1', 'm2']:
+                    job.add_parent(
+                        self.job_list.get_job_by_name('expid_' + date + '_' + member + '_' + str(chunk) + '_SIM'))
+
+            self.job_list.get_job_list().append(job)
+
+        groups_dict = dict()
+        groups_dict['status'] = {'d1': Status.WAITING,
+                                 'd2': Status.WAITING}
+        groups_dict['jobs'] = {
+            'expid_d1_m1_INI': ['d1'], 'expid_d1_m2_INI': ['d1'], 'expid_d2_m1_INI': ['d2'],
+            'expid_d2_m2_INI': ['d2'],
+            'expid_d1_m1_1_SIM': ['d1'], 'expid_d1_m1_2_SIM': ['d1'], 'expid_d1_m2_1_SIM': ['d1'],
+            'expid_d1_m2_2_SIM': ['d1'],
+            'expid_d2_m1_1_SIM': ['d2'], 'expid_d2_m1_2_SIM': ['d2'], 'expid_d2_m2_1_SIM': ['d2'],
+            'expid_d2_m2_2_SIM': ['d2'],
+
+            'expid_d1_m1_1_POST': ['d1'], 'expid_d1_m1_2_POST': ['d1'], 'expid_d1_m2_1_POST': ['d1'],
+            'expid_d1_m2_2_POST': ['d1'],
+            'expid_d2_m1_1_POST': ['d2'], 'expid_d2_m1_2_POST': ['d2'], 'expid_d2_m2_1_POST': ['d2'],
+            'expid_d2_m2_2_POST': ['d2'],
+
+            'expid_d1_m1_1_CLEAN': ['d1'], 'expid_d1_m1_2_CLEAN': ['d1'], 'expid_d1_m2_1_CLEAN': ['d1'],
+            'expid_d1_m2_2_CLEAN': ['d1'],
+            'expid_d2_m1_1_CLEAN': ['d2'], 'expid_d2_m1_2_CLEAN': ['d2'], 'expid_d2_m2_1_CLEAN': ['d2'],
+            'expid_d2_m2_2_CLEAN': ['d2'],
+
+            'expid_1_ASIM': ['d1', 'd2'], 'expid_2_ASIM': ['d1', 'd2']
+        }
+
+        self.job_list.get_date_list = Mock(return_value=['d1', 'd2'])
+        self.job_list.get_member_list = Mock(return_value=['m1', 'm2'])
+        self.job_list.get_chunk_list = Mock(return_value=[1, 2])
+        self.job_list.get_date_format = Mock(return_value='')
+
+        side_effect = []
+        for job in reversed(self.job_list.get_job_list()):
+            if job.date is not None:
+                side_effect.append(job.date)
+            elif job.chunk is not None:
+                side_effect.append('d1')
+                side_effect.append('d2')
+
+        with patch('autosubmit.job.job_grouping.date2str', side_effect=side_effect):
+            job_grouping = JobGrouping('date', self.job_list.get_job_list(), self.job_list)
+            self.assertDictEqual(job_grouping.group_jobs(), groups_dict)
+
     def _createDummyJob(self, name, status, date=None, member=None, chunk=None, split=None):
         job_id = randrange(1, 999)
         job = Job(name, job_id, status, 0)

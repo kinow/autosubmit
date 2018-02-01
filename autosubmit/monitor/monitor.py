@@ -78,7 +78,7 @@ class Monitor:
         else:
             return Monitor._table[Status.UNKNOWN]
 
-    def create_tree_list(self, expid, joblist, packages, groups, hide_groups=True):
+    def create_tree_list(self, expid, joblist, packages, groups, hide_groups=False):
         """
         Create graph from joblist
 
@@ -146,34 +146,34 @@ class Monitor:
             if not hide_groups:
                 for job, group in groups['jobs'].items():
                     if len(group) > 1:
-                        subgraph = pydotplus.graphviz.Cluster(graph_name='cluster_'+'_'.join(group))
-                        subgraph.obj_dict['attributes']['color'] = 'invis'
-
-                        if '_' in group[0]:
-                            group[0] = '"'+group[0]+'"'
+                        group_name = 'cluster_'+'_'.join(group)
+                        if group_name not in graph.obj_dict['subgraphs']:
+                            subgraph = pydotplus.graphviz.Cluster(graph_name='_'.join(group))
+                            subgraph.obj_dict['attributes']['color'] = 'invis'
+                        else:
+                            subgraph = graph.get_subgraph(group_name)[0]
 
                         previous_node = exp.get_node(group[0])[0]
-                        subgraph.add_node(previous_node)
+                        if len(subgraph.get_node(group[0])) == 0:
+                            subgraph.add_node(previous_node)
 
                         for i in range(1, len(group)):
-                            if '_' in group[i]:
-                                group[i] = '"' + group[i] + '"'
                             node = exp.get_node(group[i])[0]
-                            subgraph.add_node(node)
+                            if len(subgraph.get_node(group[i])) == 0:
+                                subgraph.add_node(node)
 
-                            edge = exp.get_edge(node.obj_dict['name'], previous_node.obj_dict['name'])
+                            edge = subgraph.get_edge(node.obj_dict['name'], previous_node.obj_dict['name'])
                             if len(edge) == 0:
                                 edge = pydotplus.Edge(previous_node, node)
-                            else:
-                                edge = edge[0]
+                                edge.obj_dict['attributes']['dir'] = 'none'
+                                # constraint false allows the horizontal alignment
+                                edge.obj_dict['attributes']['constraint'] = 'false'
+                                edge.obj_dict['attributes']['penwidth'] = 4
+                                subgraph.add_edge(edge)
 
-                            edge.obj_dict['attributes']['dir'] = 'none'
-                            # constraint false allows the horizontal alignment
-                            edge.obj_dict['attributes']['constraint'] = 'false'
-                            edge.obj_dict['attributes']['penwidth'] = 4
-                            subgraph.add_edge(edge)
                             previous_node = node
-                        graph.add_subgraph(subgraph)
+                        if group_name not in graph.obj_dict['subgraphs']:
+                            graph.add_subgraph(subgraph)
             else:
                 for edge in copy.deepcopy(exp.obj_dict['edges']):
                     if edge[0].replace('"', '') in groups['status']:
@@ -197,6 +197,7 @@ class Monitor:
             graph.add_subgraph(cluster)
 
         Log.debug('Graph definition finalized')
+        Log.info('FINISHED')
         return graph
 
     def _add_children(self, job, exp, node_job, groups, hide_groups):
@@ -205,40 +206,51 @@ class Monitor:
         self.nodes_ploted.add(job)
         if job.has_children() != 0:
             for child in sorted(job.children, key=lambda k: k.name):
-                hidden_group, skip, flag = (False, False, False)
-                if groups and child.name in groups['jobs']:
-                    group = groups['jobs'][child.name][0]
-                    if '_' in group:
-                        group = '"'+group+'"'
-                    node_child = exp.get_node(group)
-                    if len(groups['jobs'][child.name]) > 1:
-                        skip = True
-                    if hide_groups:
-                        hidden_group = True
-                else:
-                    node_child = exp.get_node(child.name)
-                if len(node_child) == 0:
-                    flag = True
-                    if groups and child.name in groups['jobs'] and len(groups['jobs'][child.name]) == 1:
-                        group = groups['jobs'][child.name][0]
-                        node_child = pydotplus.Node(group, shape='box3d', style="filled", fillcolor=self.color_status(groups['status'][group]))
-                        if hide_groups:
-                            hidden_group = True
-                            node_child.obj_dict['attributes']['style'] = 'invis'
-                    elif not groups or child.name not in groups['jobs']:
-                        node_child = pydotplus.Node(child.name, shape='box', style="filled",
-                                                    fillcolor=self.color_status(child.status))
-                    else:
-                        skip = True
-                    if not hidden_group:
+                node_child, skip = self._check_node_exists(exp, child, groups, hide_groups)
+                if len(node_child) == 0 and not skip:
+                    node_child = self._create_node(child, groups, hide_groups)
+                    if node_child:
                         exp.add_node(node_child)
                         exp.add_edge(pydotplus.Edge(node_job, node_child))
-                elif not skip and not hidden_group:
+                    else:
+                        skip = True
+                elif not skip:
                     node_child = node_child[0]
                     exp.add_edge(pydotplus.Edge(node_job, node_child))
-                    flag = False
-                if flag:
+                    skip = True
+                if not skip:
+                    Log.info('-----------------\n')
                     self._add_children(child, exp, node_child, groups, hide_groups)
+
+    def _check_node_exists(self, exp, job, groups, hide_groups):
+        skip = False
+        if groups and job.name in groups['jobs']:
+            group = groups['jobs'][job.name][0]
+            node = exp.get_node(group)
+            if len(groups['jobs'][job.name]) > 1 or hide_groups:
+                skip = True
+        else:
+            node = exp.get_node(job.name)
+
+        return node, skip
+
+    def _create_node(self, job, groups, hide_groups):
+        node = None
+
+        if groups and job.name in groups['jobs'] and len(groups['jobs'][job.name]) == 1:
+            if not hide_groups:
+                group = groups['jobs'][job.name][0]
+                Log.info(group)
+                node = pydotplus.Node(group, shape='box3d', style="filled",
+                                        fillcolor=self.color_status(groups['status'][group]))
+                node.set_name(group.replace('"', ''))
+
+        elif not groups or job.name not in groups['jobs']:
+            node = pydotplus.Node(job.name, shape='box', style="filled",
+                                        fillcolor=self.color_status(job.status))
+            Log.info(job.name)
+
+        return node
 
     def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False):
         """
@@ -298,10 +310,13 @@ class Monitor:
 
         output_file = open(file_path, 'w+')
         for job in joblist:
-            log_out = job.local_logs[0]
-            log_err = job.local_logs[1]
+            log_out = ""
+            log_err = ""
+            if job.status in [Status.RUNNING, Status.COMPLETED]:
+                log_out = path + "/" + job.local_logs[0]
+                log_err = path + "/" + job.local_logs[1]
 
-            output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + path + "/" + log_out + " " + path + "/" + log_err + "\n"
+            output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
             output_file.write(output)
         output_file.close()
 
