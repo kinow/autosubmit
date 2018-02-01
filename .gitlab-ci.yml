@@ -4,5 +4,5 @@ test:
       - ~/venv/autosubmit
   script:
   - source ~/venv/autosubmit/bin/activate
-  - nosetests test/unit
+  - nosetests test/unit --ignore-files="test_job_graph.py"
   - nosetests test/integration
