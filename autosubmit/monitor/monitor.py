@@ -215,7 +215,6 @@ class Monitor:
                     exp.add_edge(pydotplus.Edge(node_job, node_child))
                     skip = True
                 if not skip:
-                    Log.info('-----------------\n')
                     self._add_children(child, exp, node_child, groups, hide_groups)
 
     def _check_node_exists(self, exp, job, groups, hide_groups):
@@ -236,7 +235,6 @@ class Monitor:
         if groups and job.name in groups['jobs'] and len(groups['jobs'][job.name]) == 1:
             if not hide_groups:
                 group = groups['jobs'][job.name][0]
-                Log.info(group)
                 node = pydotplus.Node(group, shape='box3d', style="filled",
                                         fillcolor=self.color_status(groups['status'][group]))
                 node.set_name(group.replace('"', ''))
@@ -244,8 +242,6 @@ class Monitor:
         elif not groups or job.name not in groups['jobs']:
             node = pydotplus.Node(job.name, shape='box', style="filled",
                                         fillcolor=self.color_status(job.status))
-            Log.info(job.name)
-
         return node
 
     def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False):
