@@ -304,7 +304,7 @@ class Monitor:
         for job in joblist:
             log_out = ""
             log_err = ""
-            if job.status in [Status.RUNNING, Status.COMPLETED]:
+            if job.status in [Status.FAILED, Status.COMPLETED]:
                 log_out = path + "/" + job.local_logs[0]
                 log_err = path + "/" + job.local_logs[1]
 
