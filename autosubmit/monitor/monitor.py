@@ -193,7 +193,6 @@ class Monitor:
             graph.add_subgraph(cluster)
 
         Log.debug('Graph definition finalized')
-        Log.info('FINISHED')
         return graph
 
     def _add_children(self, job, exp, node_job, groups, hide_groups):

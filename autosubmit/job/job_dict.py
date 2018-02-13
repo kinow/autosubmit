@@ -274,8 +274,9 @@ class DicJobs:
         if type(dic) is not dict:
             jobs.append(dic)
         else:
-            if chunk is not None and chunk in dic:
-                jobs.append(dic[chunk])
+            if chunk is not None:
+                if chunk in dic:
+                    jobs.append(dic[chunk])
             else:
                 for c in self._chunk_list:
                     if c not in dic:

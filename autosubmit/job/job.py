@@ -756,8 +756,7 @@ class Job(object):
         parameters = self.parameters
         template_content = self.update_content(as_conf)
         for key, value in parameters.items():
-            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
-                                      flags=re.IGNORECASE)
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
@@ -768,8 +767,7 @@ class Job(object):
         parameters = self.parameters
         template_content = self.get_wrapped_content(as_conf)
         for key, value in parameters.items():
-            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content,
-                                      flags=re.IGNORECASE)
+            template_content = re.sub('%(?<!%%)' + key + '%(?!%%)', str(parameters[key]), template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         open(os.path.join(self._tmp_path, script_name), 'w').write(template_content)
