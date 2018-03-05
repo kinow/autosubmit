@@ -487,6 +487,8 @@ class AutosubmitConfig(object):
         :rtype: dict
         """
         parameters = dict()
+        #from collections import OrderedDict
+        #parameters = OrderedDict()
         for section in self._exp_parser.sections():
             for option in self._exp_parser.options(section):
                 parameters[option] = self._exp_parser.get(section, option)

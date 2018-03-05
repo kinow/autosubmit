@@ -103,6 +103,7 @@ class SlurmWrapper(object):
             import sys
             from threading import Thread
             from commands import getstatusoutput
+            from datetime import datetime
 
             class JobThread(Thread):
                 def __init__ (self, template, id_run):
@@ -134,12 +135,80 @@ class SlurmWrapper(object):
                 completed_filename = scripts[i].replace('.cmd', '_COMPLETED')
                 completed_path = os.path.join(os.getcwd(), completed_filename)
                 if os.path.exists(completed_path):
-                    print "The job ", pid.template," has been COMPLETED"
+                    print datetime.now(), "The job ", pid.template," has been COMPLETED"
                 else:
-                    print "The job ", pid.template," has FAILED"
+                    print datetime.now(), "The job ", pid.template," has FAILED"
             """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
                        cls.dependency_directive(dependency),
                        '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
+
+    @classmethod
+    def hybrid(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
+        return textwrap.dedent("""\
+                #!/usr/bin/env python
+                ###############################################################################
+                #              {0}
+                ###############################################################################
+                #
+                #SBATCH -J {0}
+                {1}
+                #SBATCH -A {2}
+                #SBATCH -o {0}.out
+                #SBATCH -e {0}.err
+                #SBATCH -t {3}:00
+                #SBATCH -n {4}
+                {6}
+                {7}
+                #
+                ###############################################################################
+
+                import os
+                import sys
+                from threading import Thread
+                from commands import getstatusoutput
+                from datetime import datetime
+
+                class JobThread(Thread):
+                    def __init__ (self, jobs_list, id_run):
+                        Thread.__init__(self)
+                        self.jobs_list = jobs_list
+                        self.id_run = id_run
+
+                    def run(self):
+                        for i in range(len(self.jobs_list)):
+                            job = self.jobs_list[i]
+                            out = str(job) + "." + str(self.id_run) + "." + str(i) + ".out"
+                            err = str(job) + "." + str(self.id_run) + "." + str(i) + ".err"
+                            command = "bash " + str(job) + " " + str(self.id_run) + "." + str(i) + " " + os.getcwd()
+                            (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+
+                # Defining scripts to be run
+                scripts = {5}
+
+                # Initializing PIDs container
+                pid_list = []
+
+                # Initializing the scripts
+                for i in range(len(scripts)):
+                    current = JobThread(scripts[i], i)
+                    pid_list.append(current)
+                    current.start()
+
+                # Waiting until all scripts finish
+                for i in range(len(pid_list)):
+                    pid = pid_list[i]
+                    pid.join()
+                    
+                    for job in scripts[i]:
+                        completed_filename = job.replace('.cmd', '_COMPLETED')
+                        completed_path = os.path.join(os.getcwd(), completed_filename)
+                        if os.path.exists(completed_path):
+                            print datetime.now(), "The job ", job," has been COMPLETED"
+                        else:
+                            print datetime.now(), "The job ", job," has FAILED"
+                """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
+                           cls.dependency_directive(dependency),
+                           '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
     def dependency_directive(cls, dependency):

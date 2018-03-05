@@ -126,6 +126,7 @@ class LsfWrapper(object):
             import sys
             from threading import Thread
             from commands import getstatusoutput
+            from datetime import datetime
 
             class JobThread(Thread):
                 def __init__ (self, template, id_run):
@@ -160,9 +161,9 @@ class LsfWrapper(object):
                 completed_filename = scripts[i].replace('.cmd', '_COMPLETED')
                 completed_path = os.path.join(os.getcwd(), completed_filename)
                 if os.path.exists(completed_path):
-                    print "The job ", pid.template," has been COMPLETED"
+                    print datetime.now(), "The job ", pid.template," has been COMPLETED"
                 else:
-                    print "The job ", pid.template," has FAILED"
+                    print datetime.now(), "The job ", pid.template," has FAILED"
             """.format(filename, queue, project, wallclock, num_procs, (int(num_procs) / num_jobs),
                        str(job_scripts), cls.dependency_directive(dependency), "${LSB_DJOB_HOSTFILE}",
                        "${LSB_JOBID}", '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))

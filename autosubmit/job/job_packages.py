@@ -415,3 +415,32 @@ class JobPackageHorizontal(JobPackageThread):
                                                 self._job_dependency, expid=self._expid,
                                                 rootdir=self.platform.root_dir,
                                                 directives=self._custom_directives)
+
+class JobPackageHybrid(JobPackageThread):
+    """
+        Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
+        """
+
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None):
+        all_jobs = [item for sublist in jobs for item in sublist]
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency)
+        self.jobs_list = jobs
+        self._num_processors = int(num_processors)
+        self._wallclock = total_wallclock
+        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+                                                              self._num_processors,
+                                                              len(self._jobs))
+
+    @property
+    def _jobs_scripts(self):
+        jobs_scripts = []
+        for job_list in self.jobs:
+            jobs_scripts.append(self._job_scripts[job.name])
+        return jobs_scripts
+
+    def _common_script_content(self):
+        return self.platform.wrapper.hybrid(self._name, self._queue, self._project,
+                                              self._wallclock, self._num_processors,
+                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              rootdir=self.platform.root_dir,
+                                              directives=self._custom_directives)

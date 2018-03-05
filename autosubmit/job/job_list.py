@@ -599,6 +599,15 @@ class JobList:
                 return job
         Log.warning("We could not find that job {0} in the list!!!!", name)
 
+    def get_in_queue_grouped_id(self, platform):
+        jobs = self.get_in_queue(platform)
+        jobs_by_id = dict()
+        for job in jobs:
+            if job.id not in jobs_by_id:
+                jobs_by_id[job.id] = list()
+            jobs_by_id[job.id].append(job)
+        return jobs_by_id
+
     def sort_by_name(self):
         """
         Returns a list of jobs sorted by name
