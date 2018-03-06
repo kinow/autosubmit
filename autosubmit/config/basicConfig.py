@@ -45,6 +45,7 @@ class BasicConfig:
     DEFAULT_JOBS_CONF = ''
     SMTP_SERVER = ''
     MAIL_FROM = ''
+    ALLOWED_HOSTS = ''
 
     @staticmethod
     def _update_config():
@@ -84,6 +85,8 @@ class BasicConfig:
             BasicConfig.SMTP_SERVER = parser.get('mail', 'smtp_server')
         if parser.has_option('mail', 'mail_from'):
             BasicConfig.MAIL_FROM = parser.get('mail', 'mail_from')
+        if parser.has_option('hosts', 'whitelist'):
+            BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
 
     @staticmethod
     def read():

@@ -376,6 +376,8 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
                         dependency = dependency.split('+')[0]
+                    if '[' in dependency:
+                        dependency = dependency[:dependency.find('[')]
                     if dependency not in sections:
                         Log.error(
                             'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
@@ -386,6 +388,8 @@ class AutosubmitConfig(object):
                                                         '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
+                    if '[' in dependency:
+                        dependency = dependency[:dependency.find('[')]
                     if dependency not in sections:
                         Log.error(
                             'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,

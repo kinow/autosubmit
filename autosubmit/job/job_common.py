@@ -73,14 +73,14 @@ class StatisticsSnippetBash:
             ###################
             # Autosubmit header
             ###################
-
+            set -xuve
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
             echo $(date +%s) > ${job_name_ptrn}_STAT
 
             ###################
             # Autosubmit job
             ###################
-
+            
             """)
 
     @staticmethod
@@ -90,10 +90,11 @@ class StatisticsSnippetBash:
                 ###################
                 # Autosubmit tailer
                 ###################
-
+                set -xuve
                 echo $(date +%s) >> ${job_name_ptrn}_STAT
                 touch ${job_name_ptrn}_COMPLETED
                 exit 0
+                
                 """)
 
 

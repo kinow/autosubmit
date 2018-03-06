@@ -224,13 +224,13 @@ The resulting workflow can be seen in Figure :numref:`frequency`
 Job synchronize
 -------------
 
-Some times when you have a job running at chunk level, and this job has dependencies, you could want
+For jobs running at chunk level, and this job has dependencies, you could want
 not to run a job for each experiment chunk, but to run once for all member/date dependencies, maintaining
-the chunk granularity, in this cases you can use the SYNCHRONIZE job parameter to determine which kind
+the chunk granularity. In this cases you can use the SYNCHRONIZE job parameter to determine which kind
 of synchronization do you want. See the below examples with and without this parameter.
 
 .. hint::
-   This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
+   This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
 .. code-block:: ini
 
@@ -288,6 +288,50 @@ The resulting workflow of setting SYNCHRONIZE parameter to 'date' can be seen in
 
    Example showing dependencies between chunk jobs running with date synchronize.
 
+Job split
+------------------
+For jobs running at chunk level, it may be useful to split each chunk into different parts.
+This behaviour can be achieved using the SPLITS attribute to specify the number of parts.
+It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
+in the format [1:3,7,10] or [1,2,3]
+
+
+.. hint::
+   This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
+
+.. code-block:: ini
+
+    [ini]
+    FILE = ini.sh
+    RUNNING = member
+
+    [sim]
+    FILE = sim.sh
+    DEPENDENCIES = ini sim-1
+    RUNNING = chunk
+
+    [asim]
+    FILE = asim.sh
+    DEPENDENCIES = sim
+    RUNNING = chunk
+    SPLITS = 3
+
+    [post]
+    FILE = post.sh
+    RUNNING = chunk
+    DEPENDENCIES = asim[1] asim[1]+1
+
+The resulting workflow can be seen in Figure :numref:`split`
+
+.. figure:: workflows/split.png
+   :name: split
+   :width: 100%
+   :align: center
+   :alt: simple workflow plot
+
+   Example showing the job ASIM divided into 3 parts for each chunk.
+
+
 Job delay
 ------------------
 
@@ -296,7 +340,7 @@ job after various chunks have completed. This behaviour can be achieved using th
 an integer N for this attribute and the job will run only after N chunks.
 
 .. hint::
-   This job parameter was thought to work with jobs with RUNNING parameter equals to 'chunk'.
+   This job parameter works with jobs with RUNNING parameter equals to 'chunk'.
 
 .. code-block:: ini
 

@@ -36,24 +36,28 @@ How to configure
 ================
 
 After installation, you have to configure database and path for Autosubmit.
-It can be done at host, user or local level (by default at host level).
-If it does not exist, create a repository for experiments: Say for example ``/cfu/autosubmit``
+In order to use the default settings, just create a directory called `autosubmit` in your home directory before running the configure command.
+The experiments will be created in this folder, and the database named `autosubmit.db` in your home directory.
 
-Then follow the configure instructions after executing:
 ::
 
     autosubmit configure
 
-and introduce path to experiment storage and database. Folders must exist.
+
+
+
+For advanced options you can add `--advanced` to the configure command. It will allow you to choose different directories (they must exist) for the experiments and database,
+as well as configure SMTP server and an email account in order to use the email notifications feature.
+
+
+::
+
+    autosubmit configure --advanced
+
 
 .. hint::
     The ``dialog`` (GUI) library is optional. Otherwise the configuration parameters
     will be prompted (CLI). Use ``autosubmit configure -h`` to see all the allowed options.
-
-As Autosubmit has an email notifications feature, you have also to configure
-a SMTP server and an email account from where the notifications will be sent.
-
-There is the BSC configuration by default, it can helps you as an example.
 
 
 For installing the database for Autosubmit on the configured folder, when no database is created on the given path, execute:

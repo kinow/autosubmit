@@ -98,9 +98,10 @@ class TestDicJobs(TestCase):
         frequency = 123
         synchronize = 'date'
         delay = -1
+        splits = 0
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='chunk')
-        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize, delay])
+        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize, delay, splits])
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -113,7 +114,7 @@ class TestDicJobs(TestCase):
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
-        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, Type.BASH, synchronize, delay, {})
+        self.dictionary._create_jobs_chunk.assert_called_once_with(section, priority, frequency, Type.BASH, synchronize, delay, splits, {})
 
     def test_dic_creates_right_jobs_by_startdate(self):
         # arrange
@@ -158,7 +159,7 @@ class TestDicJobs(TestCase):
         self.dictionary.build_job = Mock(return_value=mock_section)
 
         # act
-        self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH, dict())
+        self.dictionary._create_jobs_chunk(mock_section.name, priority, frequency, Type.BASH)
 
         # assert
         self.assertEquals(len(self.date_list) * len(self.member_list) * len(self.chunk_list),

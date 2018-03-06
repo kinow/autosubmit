@@ -66,7 +66,7 @@ class JobList:
         self._persistence = job_list_persistence
         self._graph = DiGraph()
 
-        self._packages_dict = dict()
+        self.packages_dict = dict()
         self._ordered_jobs_by_date_member = dict()
 
     @property
@@ -161,34 +161,64 @@ class JobList:
             dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs)
 
             for job in dic_jobs.get_jobs(job_section):
-                JobList._manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys,
-                                                 dependencies, graph)
+                num_jobs = 1
+                if isinstance(job, list):
+                    num_jobs = len(job)
+                for i in range(num_jobs):
+                    _job = job[i] if num_jobs > 1 else job
+                    JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
+                                                     dependencies, graph)
 
     @staticmethod
     def _manage_dependencies(dependencies_keys, dic_jobs):
         dependencies = dict()
         for key in dependencies_keys:
+            distance = None
+            splits = None
+            sign = None
+
             if '-' not in key and '+' not in key:
-                dependency = Dependency(key)
                 section = key
             else:
                 sign = '-' if '-' in key else '+'
                 key_split = key.split(sign)
                 section = key_split[0]
-                distance = key_split[1]
-                dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
-                dependency = Dependency(section, int(distance), dependency_running_type, sign)
+                distance = int(key_split[1])
 
+            if '[' in section:
+                section_name = section[0:section.find("[")]
+                splits_section = int(dic_jobs.get_option(section_name, 'SPLITS', 0))
+                splits = JobList._calculate_splits_dependencies(section, splits_section)
+                section = section_name
+
+            dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            dependency.delay = delay
+            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits)
             dependencies[key] = dependency
         return dependencies
+
+    @staticmethod
+    def _calculate_splits_dependencies(section, max_splits):
+        splits_list = section[section.find("[") + 1:section.find("]")]
+        splits = []
+        for str_split in splits_list.split(","):
+            if str_split.find(":") != -1:
+                numbers = str_split.split(":")
+                # change this to be checked in job_common.py
+                max_splits = min(int(numbers[1]), max_splits)
+                for count in range(int(numbers[0]), max_splits+1):
+                    splits.append(int(str(count).zfill(len(numbers[0]))))
+            else:
+                if int(str_split) <= max_splits:
+                    splits.append(int(str_split))
+        return splits
 
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
+
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
                                                                                  job.member, member_list,
                                                                                  job.date, date_list,
@@ -197,10 +227,16 @@ class JobList:
                 continue
 
             for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
-                # only creates the dependency in the graph if the delay is not defined or if the chunk is greater than it
                 if dependency.delay == -1 or chunk > dependency.delay:
+                    if isinstance(parent, list):
+                        if job.split is not None:
+                            parent = filter(lambda _parent: _parent.split == job.split, parent)[0]
+                        else:
+                            if dependency.splits is not None:
+                                parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
+
                     job.add_parent(parent)
-                    graph.add_edge(parent.name, job.name)
+                    JobList._add_edge(graph, job, parent)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
@@ -266,7 +302,7 @@ class JobList:
                 for distance in range(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
             elif job.member is not None:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
@@ -276,7 +312,7 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
             elif job.date is not None:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
@@ -286,7 +322,16 @@ class JobList:
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         job.add_parent(parent)
-                        graph.add_edge(parent.name, job.name)
+                        JobList._add_edge(graph, job, parent)
+
+    @staticmethod
+    def _add_edge(graph, job, parents):
+        num_parents = 1
+        if isinstance(parents, list):
+            num_parents = len(parents)
+        for i in range(num_parents):
+            parent = parents[i] if isinstance(parents, list) else parents
+            graph.add_edge(parent.name, job.name)
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
@@ -309,7 +354,7 @@ class JobList:
 
         sections_running_type_map = dict()
         for section in wrapper_expression.split(" "):
-            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", '')
+            sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         for date in self._date_list:
             str_date = self._get_date(date)
@@ -384,13 +429,10 @@ class JobList:
 
     def _get_date(self, date):
         date_format = ''
-        if self.parameters.get('CHUNKSIZEUNIT') is 'hour':
+        if date.hour > 1:
             date_format = 'H'
-        for date in self._date_list:
-            if date.hour > 1:
-                date_format = 'H'
-            if date.minute > 1:
-                date_format = 'M'
+        if date.minute > 1:
+            date_format = 'M'
         str_date = date2str(date, date_format)
         return str_date
 
@@ -433,6 +475,15 @@ class JobList:
         :rtype: list
         """
         return self._job_list
+
+    def get_date_format(self):
+        date_format = ''
+        for date in self.get_date_list():
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        return date_format
 
     def get_ordered_jobs_by_date_member(self):
         """
@@ -801,7 +852,7 @@ class JobList:
             else:
                 if not job.check_script(as_conf, self.parameters):
                     out = False
-                    Log.warning("Invalid parameter substitution in {0} template", job.section)
+                    #Log.warning("Invalid parameter substitution in {0} template", job.section)
             sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
