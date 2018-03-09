@@ -687,6 +687,10 @@ class Autosubmit:
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_packages_" + expid)
 
+                import datetime
+                checked = datetime.datetime.now()
+                check_wrapper_jobs_sleeptime = as_conf.get_post_check_time()
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -713,7 +717,11 @@ class Autosubmit:
 
                     save = False
                     for platform in platforms_to_test:
-                        for job in job_list.get_in_queue(platform):
+                        if platform.type == 'slurm' and datetime.timedelta.total_seconds(datetime.datetime.now()-checked) >= check_wrapper_jobs_sleeptime:
+                            Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, save, expid)
+                            checked = datetime.datetime.now()
+
+                        '''for job in job_list.get_in_queue(platform):
                             prev_status = job.status
                             if job.status == Status.FAILED:
                                 continue
@@ -727,7 +735,7 @@ class Autosubmit:
                                                                       Status.VALUE_TO_KEY[prev_status],
                                                                       Status.VALUE_TO_KEY[job.status],
                                                                       as_conf.get_mails_to())
-                                save = True
+                                save = True'''
 
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
@@ -2493,3 +2501,31 @@ class Autosubmit:
         Log.warning("We have detected that there is another Autosubmit instance using the experiment {0}.", expid)
         Log.warning("We have stopped this execution in order to prevent incoherency errors.")
         Log.warning("Stop other Autosubmit instances that are using the experiment {0} and try it again.", expid)
+
+    @staticmethod
+    def _check_inner_package_dependency(as_conf, platform, job_list, save, expid):
+        completed_files = platform.check_completed_files()
+        jobs_in_queue = job_list.get_in_queue()
+        ready_posts = []
+        if len(completed_files) > 0:
+            for job in jobs_in_queue:
+                if job.name in completed_files and job.status != Status.COMPLETED:
+                    job.update_status(Status.COMPLETED, as_conf.get_copy_remote_logs() == 'true')
+                    save = True
+                    Log.debug('Adding post of '+job.name)
+                    ready_posts.append(job_list.get_job_by_name(job.name.replace("SIM", "POST")))
+                elif job.status != Status.COMPLETED:
+                    prev_status = job.status
+                    platform.check_job(job.id)
+                    if as_conf.get_notifications() == 'true':
+
+                        if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                          Status.VALUE_TO_KEY[prev_status],
+                                                          Status.VALUE_TO_KEY[job.status],
+                                                          as_conf.get_mails_to())
+
+            for ready_post in ready_posts:
+                if ready_post.status == Status.SUSPENDED:
+                    Log.debug('Changing post ' +ready_post.name)
+                    ready_post.update_status(Status.READY)

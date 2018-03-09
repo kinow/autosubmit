@@ -201,73 +201,49 @@ class JobPackager(object):
         current_processors = 0
         total_wallclock = '00:00'
         total_jobs = 0
-        packed_dict = dict()
 
         ## READY JOBS ##
+        ## Create the horizontal ##
         for job in section_list:
             if total_jobs < max_jobs and total_jobs < max_wrapped_jobs:
                 if (current_processors + job.total_processors) <= int(max_processors) and job.total_wallclock <= max_wallclock:
                     current_package.append([job])
                     current_processors += job.total_processors
                     total_jobs += 1
-                    packed_dict[job.name] = True
-                    if job.total_wallclock > total_wallclock:
-                        total_wallclock = job.total_wallclock
-            else:
-                break
-
-        current_section = section_list[0].section
+                else:
+                    break
+        num_parallel_jobs = total_jobs
+        ## Create the vertical ##
         idx = 0
-
         while True:
             jobs_list = current_package[idx]
             job = jobs_list[-1]
-            Log.info("-- CURRENT JOB = " + str(job.name))
-            if job.section in wrapper_expression and total_wallclock < max_wallclock and total_jobs < max_jobs and total_jobs < max_wrapped_jobs:
-                wrappable_child = None
-
-                for child in job.children:
-                    if child.section in wrapper_expression and child.name not in packed_dict:
-                        for parent in child.parents:
-                            if parent.status != Status.COMPLETED and parent not in jobs_list:
-                                break
-                        wrappable_child = child
-                        break
-
-                if wrappable_child is not None:
-                    Log.info("----- WRAPPABLE CHILD = " + str(wrappable_child.name))
-                    Log.info("----------------- WALLCLOCK  = " + str(wrappable_child.wallclock))
-
-                    if current_section != wrappable_child.section:
-                        total_processors = wrappable_child.total_processors * len(current_package)
-                        if total_processors > int(max_processors):
-                            break
-                        elif total_processors > current_processors:
-                            current_processors = total_processors
-                        current_section = wrappable_child.section
-
-                        total_wallclock = sum_str_hours(total_wallclock, wrappable_child.wallclock)
+            Log.debug("CURRENT JOB = " + str(job.name))
+            if total_wallclock < max_wallclock and total_jobs < max_jobs and total_jobs < max_wrapped_jobs:
+                if job.has_children():
+                    child = next(iter(job.children))
+                    total_wallclock = sum_str_hours(total_wallclock, child.wallclock)
 
                     if total_wallclock <= max_wallclock:
-                        jobs_list.append(wrappable_child)
+                        current_package[idx].append(child)
+                        Log.info("----- ADDED CHILD = " + str(child.name))
                         total_jobs += 1
-                        packed_dict[wrappable_child.name] = True
-
-                    idx += 1
-                    if idx == len(current_package):
-                        idx = 0
+                        idx += 1
+                        if idx == num_parallel_jobs:
+                            idx = 0
+                    else:
+                        break
                 else:
                     break
             else:
                 break
 
-        Log.info("TOTAL PROCESSORS = " + str(current_processors))
-        Log.info("TOTAL WALLCLOCK = " + str(total_wallclock))
+        Log.debug("TOTAL PROCESSORS = " + str(current_processors))
+        Log.debug("TOTAL WALLCLOCK = " + str(total_wallclock))
 
         package = JobPackageHybrid(current_package, current_processors, total_wallclock)
 
         return package, max_jobs
-
 
 class JobPackagerVertical(object):
 

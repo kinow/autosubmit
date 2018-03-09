@@ -167,8 +167,20 @@ class SlurmWrapper(object):
                 from threading import Thread
                 from commands import getstatusoutput
                 from datetime import datetime
-
+                
                 class JobThread(Thread):
+                    def __init__ (self, template, id_run):
+                        Thread.__init__(self)
+                        self.template = template
+                        self.id_run = id_run
+                    
+                    def run(self):
+                        out = str(self.template) + "." + str(self.id_run) + ".out"
+                        err = str(self.template) + "." + str(self.id_run) + ".err"
+                        command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                        (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+
+                class JobListThread(Thread):
                     def __init__ (self, jobs_list, id_run):
                         Thread.__init__(self)
                         self.jobs_list = jobs_list
@@ -177,10 +189,15 @@ class SlurmWrapper(object):
                     def run(self):
                         for i in range(len(self.jobs_list)):
                             job = self.jobs_list[i]
-                            out = str(job) + "." + str(self.id_run) + "." + str(i) + ".out"
-                            err = str(job) + "." + str(self.id_run) + "." + str(i) + ".err"
-                            command = "bash " + str(job) + " " + str(self.id_run) + "." + str(i) + " " + os.getcwd()
-                            (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+                            current = JobThread(job, self.id_run)
+                            current.start()
+                            current.join()
+                            completed_filename = job.replace('.cmd', '_COMPLETED')
+                            completed_path = os.path.join(os.getcwd(), completed_filename)
+                            if os.path.exists(completed_path):
+                                print datetime.now(), "The job ", job," has been COMPLETED"
+                            else:
+                                print datetime.now(), "The job ", job," has FAILED"
 
                 # Defining scripts to be run
                 scripts = {5}
@@ -189,23 +206,18 @@ class SlurmWrapper(object):
                 pid_list = []
 
                 # Initializing the scripts
-                for i in range(len(scripts)):
-                    current = JobThread(scripts[i], i)
+                id = 0
+                for job_list in scripts:
+                    current = JobListThread(job_list, id)
                     pid_list.append(current)
                     current.start()
+                    id += 1
 
                 # Waiting until all scripts finish
                 for i in range(len(pid_list)):
                     pid = pid_list[i]
                     pid.join()
-                    
-                    for job in scripts[i]:
-                        completed_filename = job.replace('.cmd', '_COMPLETED')
-                        completed_path = os.path.join(os.getcwd(), completed_filename)
-                        if os.path.exists(completed_path):
-                            print datetime.now(), "The job ", job," has been COMPLETED"
-                        else:
-                            print datetime.now(), "The job ", job," has FAILED"
+                                            
                 """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
                            cls.dependency_directive(dependency),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))

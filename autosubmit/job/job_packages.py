@@ -422,9 +422,9 @@ class JobPackageHybrid(JobPackageThread):
         """
 
     def __init__(self, jobs, num_processors, total_wallclock, dependency=None):
-        all_jobs = [item for sublist in jobs for item in sublist]
+        all_jobs = [item for sublist in jobs for item in sublist] #flatten list
         super(JobPackageHybrid, self).__init__(all_jobs, dependency)
-        self.jobs_list = jobs
+        self.jobs_lists = jobs
         self._num_processors = int(num_processors)
         self._wallclock = total_wallclock
         self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
@@ -434,8 +434,11 @@ class JobPackageHybrid(JobPackageThread):
     @property
     def _jobs_scripts(self):
         jobs_scripts = []
-        for job_list in self.jobs:
-            jobs_scripts.append(self._job_scripts[job.name])
+        for job_list in self.jobs_lists:
+            inner_jobs = list()
+            for job in job_list:
+                inner_jobs.append(job.name + '.cmd')
+            jobs_scripts.append(inner_jobs)
         return jobs_scripts
 
     def _common_script_content(self):

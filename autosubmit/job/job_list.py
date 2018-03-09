@@ -590,6 +590,18 @@ class JobList:
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.UNKNOWN]
 
+    def get_suspended(self, platform=None):
+        """
+        Returns a list of jobs on unknown state
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: unknown state jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                job.status == Status.SUSPENDED]
+
     def get_in_queue(self, platform=None):
         """
         Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown)

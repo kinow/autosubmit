@@ -944,6 +944,15 @@ class AutosubmitConfig(object):
          """
         return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
 
+    def get_post_check_time(self):
+        """
+         Returns time to check if the SIM are completed and POST jobs can be sent
+
+         :return: post check time
+         :rtype: int
+         """
+        return int(self._conf_parser.get_option('wrapper', 'POST_CHECK_TIME', 1800))
+
     def get_jobs_sections(self):
         """
         Returns the list of sections defined in the jobs config file
