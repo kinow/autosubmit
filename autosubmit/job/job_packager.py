@@ -92,8 +92,7 @@ class JobPackager(object):
                     packages_to_submit += built_packages
 
                 elif wrapper_type == 'hybrid':
-                    built_packages, max_jobs = JobPackager._build_hybrid_package(wrapper_expression,
-                                                        jobs_to_submit_by_section[section],
+                    built_packages, max_jobs = JobPackager._build_hybrid_package(jobs_to_submit_by_section[section],
                                                         max_jobs, self._platform.max_wallclock,
                                                         max_wrapped_jobs, self._platform.max_processors)
 
@@ -128,7 +127,7 @@ class JobPackager(object):
 
     @staticmethod
     def _build_horizontal_packages(section_list, max_jobs, max_processors, remote_dependencies=False):
-        # TODO: Implement remote dependencies for horizontal wrapper
+        # TODO: Test remote dependencies for horizontal wrapper
         packages = []
         current_package = []
         current_processors = 0
@@ -196,47 +195,36 @@ class JobPackager(object):
         return packages, max_jobs, remote_dependencies_dict
 
     @staticmethod
-    def _build_hybrid_package(wrapper_expression, section_list, max_jobs, max_wallclock, max_wrapped_jobs, max_processors):
+    def _build_hybrid_package(jobs_list, max_jobs, max_wallclock, max_wrapped_jobs, max_processors):
         current_package = []
+        horizontal_package = []
+
         current_processors = 0
         total_wallclock = '00:00'
         total_jobs = 0
 
         ## READY JOBS ##
         ## Create the horizontal ##
-        for job in section_list:
+        for job in jobs_list:
             if total_jobs < max_jobs and total_jobs < max_wrapped_jobs:
-                if (current_processors + job.total_processors) <= int(max_processors) and job.total_wallclock <= max_wallclock:
-                    current_package.append([job])
+                if (current_processors + job.total_processors) <= int(
+                        max_processors) and job.total_wallclock <= max_wallclock:
+                    horizontal_package.append(job)
                     current_processors += job.total_processors
                     total_jobs += 1
                 else:
                     break
-        num_parallel_jobs = total_jobs
-        ## Create the vertical ##
-        idx = 0
-        while True:
-            jobs_list = current_package[idx]
-            job = jobs_list[-1]
-            Log.debug("CURRENT JOB = " + str(job.name))
-            if total_wallclock < max_wallclock and total_jobs < max_jobs and total_jobs < max_wrapped_jobs:
-                if job.has_children():
-                    child = next(iter(job.children))
-                    total_wallclock = sum_str_hours(total_wallclock, child.wallclock)
 
-                    if total_wallclock <= max_wallclock:
-                        current_package[idx].append(child)
-                        Log.info("----- ADDED CHILD = " + str(child.name))
-                        total_jobs += 1
-                        idx += 1
-                        if idx == num_parallel_jobs:
-                            idx = 0
-                    else:
-                        break
-                else:
-                    break
-            else:
-                break
+        ## Create the vertical ##
+        for job in horizontal_package:
+            job_list = JobPackagerVerticalSimple([job], job.wallclock, max_jobs,
+                                                 max_wrapped_jobs, max_wallclock).build_vertical_package(job)
+            current_package.append(job_list)
+
+        for job_list in current_package:
+            for job in job_list:
+                total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
+            break
 
         Log.debug("TOTAL PROCESSORS = " + str(current_processors))
         Log.debug("TOTAL WALLCLOCK = " + str(total_wallclock))

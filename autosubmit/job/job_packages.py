@@ -382,7 +382,7 @@ class JobPackageVertical(JobPackageThread):
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
 
@@ -405,7 +405,7 @@ class JobPackageHorizontal(JobPackageThread):
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
             self._num_processors = str(int(self._num_processors) + int(job.processors))
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
 
@@ -427,7 +427,7 @@ class JobPackageHybrid(JobPackageThread):
         self.jobs_lists = jobs
         self._num_processors = int(num_processors)
         self._wallclock = total_wallclock
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
 

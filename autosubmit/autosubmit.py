@@ -689,7 +689,8 @@ class Autosubmit:
 
                 import datetime
                 checked = datetime.datetime.now()
-                check_wrapper_jobs_sleeptime = as_conf.get_post_check_time()
+                check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+                Log.debug('CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime) )
 
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
@@ -717,25 +718,29 @@ class Autosubmit:
 
                     save = False
                     for platform in platforms_to_test:
-                        if platform.type == 'slurm' and datetime.timedelta.total_seconds(datetime.datetime.now()-checked) >= check_wrapper_jobs_sleeptime:
-                            Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, save, expid)
-                            checked = datetime.datetime.now()
+                        if platform.type == 'slurm':
+                            check_completed = True if datetime.timedelta.total_seconds(datetime.datetime.now() - checked) >= check_wrapper_jobs_sleeptime else False
+                            if check_completed:
+                                Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, save, expid)
+                                checked = datetime.datetime.now()
+                            else:
+                                Log.debug("Waiting for check time: {0}", check_wrapper_jobs_sleeptime)
+                        else:
+                            for job in job_list.get_in_queue(platform):
+                                prev_status = job.status
+                                if job.status == Status.FAILED:
+                                    continue
+                                if prev_status != job.update_status(platform.check_job(job.id),
+                                                                    as_conf.get_copy_remote_logs() == 'true'):
 
-                        '''for job in job_list.get_in_queue(platform):
-                            prev_status = job.status
-                            if job.status == Status.FAILED:
-                                continue
-                            if prev_status != job.update_status(platform.check_job(job.id),
-                                                                as_conf.get_copy_remote_logs() == 'true'):
+                                    if as_conf.get_notifications() == 'true':
 
-                                if as_conf.get_notifications() == 'true':
-
-                                    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                      Status.VALUE_TO_KEY[prev_status],
-                                                                      Status.VALUE_TO_KEY[job.status],
-                                                                      as_conf.get_mails_to())
-                                save = True'''
+                                        if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                          Status.VALUE_TO_KEY[prev_status],
+                                                                          Status.VALUE_TO_KEY[job.status],
+                                                                          as_conf.get_mails_to())
+                                    save = True
 
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
@@ -2506,26 +2511,38 @@ class Autosubmit:
     def _check_inner_package_dependency(as_conf, platform, job_list, save, expid):
         completed_files = platform.check_completed_files()
         jobs_in_queue = job_list.get_in_queue()
-        ready_posts = []
+
+        completed_jobs = list()
+        ready_posts = list()
         if len(completed_files) > 0:
+
             for job in jobs_in_queue:
                 if job.name in completed_files and job.status != Status.COMPLETED:
-                    job.update_status(Status.COMPLETED, as_conf.get_copy_remote_logs() == 'true')
                     save = True
-                    Log.debug('Adding post of '+job.name)
-                    ready_posts.append(job_list.get_job_by_name(job.name.replace("SIM", "POST")))
+                    completed_jobs.append(job)
+                    if job.section == 'SIM':
+                        ready_posts.append(job_list.get_job_by_name(job.name.replace("SIM", "POST")))
                 elif job.status != Status.COMPLETED:
                     prev_status = job.status
-                    platform.check_job(job.id)
-                    if as_conf.get_notifications() == 'true':
+                    if job.status == Status.FAILED:
+                        continue
+                    new_status = platform.check_job(job.id)
+                    if prev_status != job.update_status(new_status,
+                                                        as_conf.get_copy_remote_logs() == 'true'):
 
-                        if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                          Status.VALUE_TO_KEY[prev_status],
-                                                          Status.VALUE_TO_KEY[job.status],
-                                                          as_conf.get_mails_to())
+                        if as_conf.get_notifications() == 'true':
+                            if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                              Status.VALUE_TO_KEY[prev_status],
+                                                              Status.VALUE_TO_KEY[job.status],
+                                                              as_conf.get_mails_to())
+                    save = True
+
+            for job in completed_jobs:
+                job.update_status(Status.COMPLETED, as_conf.get_copy_remote_logs() == 'true')
 
             for ready_post in ready_posts:
                 if ready_post.status == Status.SUSPENDED:
-                    Log.debug('Changing post ' +ready_post.name)
+                    Log.debug('CHANGING ' +ready_post.name+ ' TO READY')
                     ready_post.update_status(Status.READY)
+                    save = True
