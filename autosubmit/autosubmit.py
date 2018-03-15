@@ -721,7 +721,7 @@ class Autosubmit:
                         if platform.type == 'slurm':
                             check_completed = True if datetime.timedelta.total_seconds(datetime.datetime.now() - checked) >= check_wrapper_jobs_sleeptime else False
                             if check_completed:
-                                Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, save, expid)
+                                save = Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, expid)
                                 checked = datetime.datetime.now()
                             else:
                                 Log.debug("Waiting for check time: {0}", check_wrapper_jobs_sleeptime)
@@ -2508,21 +2508,24 @@ class Autosubmit:
         Log.warning("Stop other Autosubmit instances that are using the experiment {0} and try it again.", expid)
 
     @staticmethod
-    def _check_inner_package_dependency(as_conf, platform, job_list, save, expid):
+    def _check_inner_package_dependency(as_conf, platform, job_list, expid):
         completed_files = platform.check_completed_files()
         jobs_in_queue = job_list.get_in_queue()
 
         completed_jobs = list()
         ready_posts = list()
-        if len(completed_files) > 0:
+        save = False
 
+        if len(completed_files) > 0:
             for job in jobs_in_queue:
                 if job.name in completed_files and job.status != Status.COMPLETED:
-                    save = True
+                    Log.debug('Job ' + job.name + ' in completed files... appending to completed list')
                     completed_jobs.append(job)
                     if job.section == 'SIM':
                         ready_posts.append(job_list.get_job_by_name(job.name.replace("SIM", "POST")))
+                    save = True
                 elif job.status != Status.COMPLETED:
+                    Log.debug('Job ' + job.name + ' not in completed files... checking job status')
                     prev_status = job.status
                     if job.status == Status.FAILED:
                         continue
@@ -2546,3 +2549,4 @@ class Autosubmit:
                     Log.debug('CHANGING ' +ready_post.name+ ' TO READY')
                     ready_post.update_status(Status.READY)
                     save = True
+        return save
