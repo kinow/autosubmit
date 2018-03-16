@@ -116,7 +116,7 @@ class SlurmWrapper(object):
                     err = str(self.template) + "." + str(self.id_run) + ".err"
                     command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
-
+            
             # Defining scripts to be run
             scripts = {5}
 
@@ -158,7 +158,7 @@ class SlurmWrapper(object):
                 #SBATCH -t {3}:00
                 #SBATCH -n {4}
                 {6}
-                {7}
+                {8}
                 #
                 ###############################################################################
 
@@ -198,7 +198,14 @@ class SlurmWrapper(object):
                                 print datetime.now(), "The job ", job," has been COMPLETED"
                             else:
                                 print datetime.now(), "The job ", job," has FAILED"
-
+                
+                # Getting the list of allocated nodes
+                os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")
+                os.system("mkdir machinefiles")
+                # Splits the list of nodes into sublists with the number of nodes necessary for each job and 
+                # adds it to the folder machinefiles in the format machinefile_XX
+                os.system("cat node_list | split -a 2 -d -l {7}  - machinefiles/machinefile_")
+                
                 # Defining scripts to be run
                 scripts = {5}
 
@@ -208,6 +215,10 @@ class SlurmWrapper(object):
                 # Initializing the scripts
                 id = 0
                 for job_list in scripts:
+                    machinefile = 'machinefile_' + format(id, '02d')
+                    member = job_list[0].split('_')[2]
+                    rename_cmd = "mv machinefiles/"+machinefile+" machinefiles/machinefile_"+member
+                    os.system(rename_cmd)
                     current = JobListThread(job_list, id)
                     pid_list.append(current)
                     current.start()
@@ -219,7 +230,7 @@ class SlurmWrapper(object):
                     pid.join()
                                             
                 """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
-                           cls.dependency_directive(dependency),
+                           cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
