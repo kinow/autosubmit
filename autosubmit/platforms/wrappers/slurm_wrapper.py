@@ -117,14 +117,53 @@ class SlurmWrapper(object):
                     command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
             
+            # Getting the list of allocated nodes
+            os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")
+            os.system("mkdir -p machinefiles")
+            
             # Defining scripts to be run
             scripts = {5}
 
             # Initializing PIDs container
             pid_list = []
+            
+            with open('node_list', 'r') as file:
+                 all_nodes = file.read()
+            
+            all_nodes = all_nodes.split('\n')
+            all_nodes = list(reversed(all_nodes))
+            remaining_cores = 0
 
             # Initializing the scripts
             for i in range(len(scripts)):
+                job = scripts[i]
+                total_cores = ({4} / len(scripts))
+				machines = str()                
+                
+                for i in reversed(range(len(all_nodes))):
+                    node = all_nodes[i]
+                    if node:
+                        if total_cores >= 48:
+                            if remaining_cores > 0:
+                                for idx in range(remaining_cores):
+                                    machines += node +'\n'
+                                total_cores -= remaining_cores
+                                remaining_cores = 0
+                            else:
+                                for idx in range(48):
+                                    machines += node +'\n'
+                                total_cores -= 48
+                            all_nodes.pop(i)
+                        else:
+                            remaining_cores = 48 - total_cores
+                            for idx in range(total_cores):
+                                machines += node +'\n'
+                            break
+    
+                machines = "\n".join([s for s in machines.split("\n") if s])
+                with open("machinefiles/machinefile_"+sim, "w") as machinefile:
+                    machinefile.write(machines)
+
                 current = JobThread(scripts[i], i)
                 pid_list.append(current)
                 current.start()
@@ -201,13 +240,17 @@ class SlurmWrapper(object):
                 
                 # Getting the list of allocated nodes
                 os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")
-                os.system("mkdir machinefiles")
-                # Splits the list of nodes into sublists with the number of nodes necessary for each job and 
-                # adds it to the folder machinefiles in the format machinefile_XX
-                os.system("cat node_list | split -a 2 -d -l {7}  - machinefiles/machinefile_")
-                
+                os.system("mkdir -p machinefiles")
+                                                 
                 # Defining scripts to be run
                 scripts = {5}
+                
+                with open('node_list', 'r') as file:
+                    all_nodes = file.read()
+            
+                all_nodes = all_nodes.split('\n')
+                all_nodes = list(reversed(all_nodes))
+                remaining_cores = 0
 
                 # Initializing PIDs container
                 pid_list = []
@@ -215,10 +258,34 @@ class SlurmWrapper(object):
                 # Initializing the scripts
                 id = 0
                 for job_list in scripts:
-                    machinefile = 'machinefile_' + format(id, '02d')
                     member = job_list[0].split('_')[2]
-                    rename_cmd = "mv machinefiles/"+machinefile+" machinefiles/machinefile_"+member
-                    os.system(rename_cmd)
+                    total_cores = ({4} / len(scripts))
+	    			machines = str()
+	    			   
+                    for i in reversed(range(len(all_nodes))):
+                        node = all_nodes[i]
+                        if node:
+                            if total_cores >= 48:
+                                if remaining_cores > 0:
+                                    for idx in range(remaining_cores):
+                                        machines += node +'\n'
+                                    total_cores -= remaining_cores
+                                    remaining_cores = 0
+                                else:
+                                    for idx in range(48):
+                                        machines += node +'\n'
+                                    total_cores -= 48
+                                all_nodes.pop(i)
+                            else:
+                                remaining_cores = 48 - total_cores
+                                for idx in range(total_cores):
+                                    machines += node +'\n'
+                                break
+    
+                    machines = "\n".join([s for s in machines.split("\n") if s])
+                    with open("machinefiles/machinefile_"+member, "w") as machinefile:
+                        machinefile.write(machines)
+                            
                     current = JobListThread(job_list, id)
                     pid_list.append(current)
                     current.start()
