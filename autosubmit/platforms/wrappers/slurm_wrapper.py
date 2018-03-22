@@ -81,7 +81,7 @@ class SlurmWrapper(object):
 
     @classmethod
     def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
-        return textwrap.dedent("""\
+        wrapper_script = textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
             #              {0}
@@ -130,7 +130,7 @@ class SlurmWrapper(object):
             with open('node_list', 'r') as file:
                  all_nodes = file.read()
             
-            all_nodes = all_nodes.split('\n')
+            all_nodes = all_nodes.split("_NEWLINE_")
             all_nodes = list(reversed(all_nodes))
             remaining_cores = 0
 
@@ -146,22 +146,22 @@ class SlurmWrapper(object):
                         if total_cores >= 48:
                             if remaining_cores > 0:
                                 for idx in range(remaining_cores):
-                                    machines += node +'\n'
+                                    machines += node +'_NEWLINE_'
                                 total_cores -= remaining_cores
                                 remaining_cores = 0
                             else:
                                 for idx in range(48):
-                                    machines += node +'\n'
+                                    machines += node +'_NEWLINE_'
                                 total_cores -= 48
                             all_nodes.pop(i)
                         else:
                             remaining_cores = 48 - total_cores
                             for idx in range(total_cores):
-                                machines += node +'\n'
+                                machines += node +'_NEWLINE_'
                             break
     
-                machines = "\n".join([s for s in machines.split("\n") if s])
-                with open("machinefiles/machinefile_"+sim, "w") as machinefile:
+                machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
+                with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
                     machinefile.write(machines)
 
                 current = JobThread(scripts[i], i)
@@ -181,124 +181,129 @@ class SlurmWrapper(object):
                        cls.dependency_directive(dependency),
                        '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
+        wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
+        return wrapper_script
+
     @classmethod
     def hybrid(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
-        return textwrap.dedent("""\
-                #!/usr/bin/env python
-                ###############################################################################
-                #              {0}
-                ###############################################################################
-                #
-                #SBATCH -J {0}
-                {1}
-                #SBATCH -A {2}
-                #SBATCH -o {0}.out
-                #SBATCH -e {0}.err
-                #SBATCH -t {3}:00
-                #SBATCH -n {4}
-                {6}
-                {8}
-                #
-                ###############################################################################
+        wrapper_script = textwrap.dedent("""\
+            #!/usr/bin/env python
+            ###############################################################################
+            #              {0}
+            ###############################################################################
+            #
+            #SBATCH -J {0}
+            {1}
+            #SBATCH -A {2}
+            #SBATCH -o {0}.out
+            #SBATCH -e {0}.err
+            #SBATCH -t {3}:00
+            #SBATCH -n {4}
+            {6}
+            {8}
+            #
+            ###############################################################################
 
-                import os
-                import sys
-                from threading import Thread
-                from commands import getstatusoutput
-                from datetime import datetime
-                
-                class JobThread(Thread):
-                    def __init__ (self, template, id_run):
-                        Thread.__init__(self)
-                        self.template = template
-                        self.id_run = id_run
-                    
-                    def run(self):
-                        out = str(self.template) + "." + str(self.id_run) + ".out"
-                        err = str(self.template) + "." + str(self.id_run) + ".err"
-                        command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
-                        (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
-
-                class JobListThread(Thread):
-                    def __init__ (self, jobs_list, id_run):
-                        Thread.__init__(self)
-                        self.jobs_list = jobs_list
-                        self.id_run = id_run
-
-                    def run(self):
-                        for i in range(len(self.jobs_list)):
-                            job = self.jobs_list[i]
-                            current = JobThread(job, self.id_run)
-                            current.start()
-                            current.join()
-                            completed_filename = job.replace('.cmd', '_COMPLETED')
-                            completed_path = os.path.join(os.getcwd(), completed_filename)
-                            if os.path.exists(completed_path):
-                                print datetime.now(), "The job ", job," has been COMPLETED"
-                            else:
-                                print datetime.now(), "The job ", job," has FAILED"
-                
-                # Getting the list of allocated nodes
-                os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")
-                os.system("mkdir -p machinefiles")
-                                                 
-                # Defining scripts to be run
-                scripts = {5}
-                
-                with open('node_list', 'r') as file:
-                    all_nodes = file.read()
+            import os
+            import sys
+            from threading import Thread
+            from commands import getstatusoutput
+            from datetime import datetime
             
-                all_nodes = all_nodes.split('\n')
-                all_nodes = list(reversed(all_nodes))
-                remaining_cores = 0
+            class JobThread(Thread):
+                def __init__ (self, template, id_run):
+                    Thread.__init__(self)
+                    self.template = template
+                    self.id_run = id_run
+                
+                def run(self):
+                    out = str(self.template) + "." + str(self.id_run) + ".out"
+                    err = str(self.template) + "." + str(self.id_run) + ".err"
+                    command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                    (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
 
-                # Initializing PIDs container
-                pid_list = []
+            class JobListThread(Thread):
+                def __init__ (self, jobs_list, id_run):
+                    Thread.__init__(self)
+                    self.jobs_list = jobs_list
+                    self.id_run = id_run
 
-                # Initializing the scripts
-                id = 0
-                for job_list in scripts:
-                    member = job_list[0].split('_')[2]
-                    total_cores = ({4} / len(scripts))
-	    			machines = str()
-	    			   
-                    for i in reversed(range(len(all_nodes))):
-                        node = all_nodes[i]
-                        if node:
-                            if total_cores >= 48:
-                                if remaining_cores > 0:
-                                    for idx in range(remaining_cores):
-                                        machines += node +'\n'
-                                    total_cores -= remaining_cores
-                                    remaining_cores = 0
-                                else:
-                                    for idx in range(48):
-                                        machines += node +'\n'
-                                    total_cores -= 48
-                                all_nodes.pop(i)
+                def run(self):
+                    for i in range(len(self.jobs_list)):
+                        job = self.jobs_list[i]
+                        current = JobThread(job, self.id_run)
+                        current.start()
+                        current.join()
+                        completed_filename = job.replace('.cmd', '_COMPLETED')
+                        completed_path = os.path.join(os.getcwd(), completed_filename)
+                        if os.path.exists(completed_path):
+                            print datetime.now(), "The job ", job," has been COMPLETED"
+                        else:
+                            print datetime.now(), "The job ", job," has FAILED"
+            
+            # Getting the list of allocated nodes
+            os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")
+            os.system("mkdir -p machinefiles")
+                                             
+            # Defining scripts to be run
+            scripts = {5}
+            
+            with open('node_list', 'r') as file:
+                all_nodes = file.read()
+        
+            all_nodes = all_nodes.split('_NEWLINE_')
+            all_nodes = list(reversed(all_nodes))
+            remaining_cores = 0
+
+            # Initializing PIDs container
+            pid_list = []
+
+            # Initializing the scripts
+            id = 0
+            for job_list in scripts:
+                member = job_list[0].split('_')[2]
+                total_cores = ({4} / len(scripts))
+                machines = str()
+                   
+                for i in reversed(range(len(all_nodes))):
+                    node = all_nodes[i]
+                    if node:
+                        if total_cores >= 48:
+                            if remaining_cores > 0:
+                                for idx in range(remaining_cores):
+                                    machines += node +'_NEWLINE_'
+                                total_cores -= remaining_cores
+                                remaining_cores = 0
                             else:
-                                remaining_cores = 48 - total_cores
-                                for idx in range(total_cores):
-                                    machines += node +'\n'
-                                break
-    
-                    machines = "\n".join([s for s in machines.split("\n") if s])
-                    with open("machinefiles/machinefile_"+member, "w") as machinefile:
-                        machinefile.write(machines)
-                            
-                    current = JobListThread(job_list, id)
-                    pid_list.append(current)
-                    current.start()
-                    id += 1
+                                for idx in range(48):
+                                    machines += node +'_NEWLINE_'
+                                total_cores -= 48
+                            all_nodes.pop(i)
+                        else:
+                            remaining_cores = 48 - total_cores
+                            for idx in range(total_cores):
+                                machines += node +"_NEWLINE_"
+                            break
 
-                # Waiting until all scripts finish
-                for i in range(len(pid_list)):
-                    pid = pid_list[i]
-                    pid.join()
-                                            
-                """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
+                machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
+                with open("machinefiles/machinefile_"+member, "w") as machinefile:
+                    machinefile.write(machines)
+                        
+                current = JobListThread(job_list, id)
+                pid_list.append(current)
+                current.start()
+                id += 1
+
+            # Waiting until all scripts finish
+            for i in range(len(pid_list)):
+                pid = pid_list[i]
+                pid.join()
+                                        
+            """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
                            cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
+        wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
+        return wrapper_script
 
     @classmethod
     def dependency_directive(cls, dependency):
