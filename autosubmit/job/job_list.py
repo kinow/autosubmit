@@ -69,6 +69,9 @@ class JobList:
         self.packages_dict = dict()
         self._ordered_jobs_by_date_member = dict()
 
+        self.packages_id = dict()
+        self.job_package_map = dict()
+
     @property
     def expid(self):
         """
@@ -801,11 +804,13 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    job.packed = False
                     save = True
                     Log.debug("Resetting job: {0} status to: READY for retrial...".format(job.name))
                 else:
                     job.status = Status.WAITING
                     save = True
+                    job.packed = False
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY

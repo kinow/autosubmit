@@ -95,7 +95,6 @@ class JobGrouping(object):
             if depth(out) == 2:
                 dates = list()
                 for date in out[0]:
-                    date = date2str(date, self.date_format)
                     dates.append(date)
                 self.ungrouped_jobs = dates
             else:
@@ -105,7 +104,6 @@ class JobGrouping(object):
                 for element in out[0]:
                     if count % 2 == 0:
                         date = out[0][count]
-                        date = date2str(date, self.date_format)
                         members = out[0][count + 1]
                         for member in members:
                             self.ungrouped_jobs.append(date + '_' + member)
@@ -120,7 +118,6 @@ class JobGrouping(object):
                 for element in out[0]:
                     if count % 2 == 0:
                         date = out[0][count]
-                        date = date2str(date, self.date_format)
                         member_chunks = out[0][count + 1]
                         member_count = 0
                         for element_member in member_chunks:

@@ -1,6 +1,6 @@
 How to migrate an experiment
 ============================
-To migrate an experiment from one user to another, you need to add two parameters in the platforms configuration file:
+To migrate an experiment from one user to another, you need to add two parameters for each platform in the platforms configuration file:
 
  * USER_TO = <user>
  * TEMP_DIR = <hpc_temporary_directory>
@@ -8,7 +8,7 @@ To migrate an experiment from one user to another, you need to add two parameter
 Then, just run the command:
 ::
 
-    autosubmit migrate_exp --ofer expid
+    autosubmit migrate --offer expid
 
 
 Local files will be archived and remote files put in the HPC temporary directory.
@@ -18,7 +18,7 @@ Local files will be archived and remote files put in the HPC temporary directory
 Then the new owner will have to run the command:
 ::
 
-    autosubmit migrate_exp --pickup expid
+    autosubmit migrate --pickup expid
 
 
 

@@ -84,12 +84,18 @@ class ParamikoPlatform(Platform):
             Log.error('Can not create ssh connection to {0}: {1}', self.host, e.strerror)
             return False
 
-    def check_completed_files(self):
+    def check_completed_files(self, sections=None):
         if self.host == 'localhost':
             return None
 
         command = "find %s " % self.remote_log_dir
-        command += " -name \*_COMPLETED"
+        if sections:
+            for i, section in enumerate(sections.split()):
+                command += " -name \*%s_COMPLETED" % section
+                if i < len(sections.split())-1:
+                    command += " -o "
+        else:
+            command += " -name \*_COMPLETED"
 
         if self.send_command(command):
             return self._ssh_output

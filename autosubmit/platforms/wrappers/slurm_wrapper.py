@@ -57,6 +57,9 @@ class SlurmWrapper(object):
                     self.id_run = id_run
 
                 def run(self):
+                    jobname = self.template.replace('.cmd', '')
+                    os.system("rm "+jobname+"_STAT")
+                    os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + '.' + str(self.id_run) + '.out'
                     err = str(self.template) + '.' + str(self.id_run) + '.err'
                     command = "bash " + str(self.template) + ' ' + str(self.id_run) + ' ' + os.getcwd()
@@ -112,6 +115,9 @@ class SlurmWrapper(object):
                     self.id_run = id_run
 
                 def run(self):
+                    jobname = self.template.replace('.cmd', '')
+                    os.system("rm "+jobname+"_STAT")
+                    os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + "." + str(self.id_run) + ".out"
                     err = str(self.template) + "." + str(self.id_run) + ".err"
                     command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
@@ -131,34 +137,20 @@ class SlurmWrapper(object):
                  all_nodes = file.read()
             
             all_nodes = all_nodes.split("_NEWLINE_")
-            all_nodes = list(reversed(all_nodes))
-            remaining_cores = 0
+            all_cores = []
+            for node in all_nodes:
+               for n in range(48):
+                  all_cores.append(node)
 
             # Initializing the scripts
             for i in range(len(scripts)):
                 job = scripts[i]
                 total_cores = ({4} / len(scripts))
-				machines = str()                
-                
-                for i in reversed(range(len(all_nodes))):
-                    node = all_nodes[i]
-                    if node:
-                        if total_cores >= 48:
-                            if remaining_cores > 0:
-                                for idx in range(remaining_cores):
-                                    machines += node +'_NEWLINE_'
-                                total_cores -= remaining_cores
-                                remaining_cores = 0
-                            else:
-                                for idx in range(48):
-                                    machines += node +'_NEWLINE_'
-                                total_cores -= 48
-                            all_nodes.pop(i)
-                        else:
-                            remaining_cores = 48 - total_cores
-                            for idx in range(total_cores):
-                                machines += node +'_NEWLINE_'
-                            break
+                machines = str()
+                for idx in range(total_cores):
+                        node = all_cores.pop(0)
+                        if node:
+                                machines += node +"\n"
     
                 machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                 with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
@@ -217,6 +209,9 @@ class SlurmWrapper(object):
                     self.id_run = id_run
                 
                 def run(self):
+                    jobname = self.template.replace('.cmd', '')
+                    os.system("rm "+jobname+"_STAT")
+                    os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + "." + str(self.id_run) + ".out"
                     err = str(self.template) + "." + str(self.id_run) + ".err"
                     command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
@@ -252,8 +247,10 @@ class SlurmWrapper(object):
                 all_nodes = file.read()
         
             all_nodes = all_nodes.split('_NEWLINE_')
-            all_nodes = list(reversed(all_nodes))
-            remaining_cores = 0
+            all_cores = []
+            for node in all_nodes:
+               for n in range(48):
+                  all_cores.append(node)
 
             # Initializing PIDs container
             pid_list = []
@@ -265,25 +262,10 @@ class SlurmWrapper(object):
                 total_cores = ({4} / len(scripts))
                 machines = str()
                    
-                for i in reversed(range(len(all_nodes))):
-                    node = all_nodes[i]
-                    if node:
-                        if total_cores >= 48:
-                            if remaining_cores > 0:
-                                for idx in range(remaining_cores):
-                                    machines += node +'_NEWLINE_'
-                                total_cores -= remaining_cores
-                                remaining_cores = 0
-                            else:
-                                for idx in range(48):
-                                    machines += node +'_NEWLINE_'
-                                total_cores -= 48
-                            all_nodes.pop(i)
-                        else:
-                            remaining_cores = 48 - total_cores
-                            for idx in range(total_cores):
-                                machines += node +"_NEWLINE_"
-                            break
+                for idx in range(total_cores):
+                        node = all_cores.pop(0)
+                        if node:
+                                machines += node +"\n"
 
                 machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                 with open("machinefiles/machinefile_"+member, "w") as machinefile:

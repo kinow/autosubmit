@@ -687,6 +687,20 @@ class Autosubmit:
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_packages_" + expid)
 
+                if as_conf.get_wrapper_type() != 'none':
+                    packages = packages_persistence.load()
+                    for (exp_id, package_name, job_name) in packages:
+                        if package_name not in job_list.packages_dict:
+                            job_list.packages_dict[package_name] = []
+                        job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
+
+                    for package_name, jobs in job_list.packages_dict.items():
+                        from job.job import WrapperJob
+                        wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                 None,
+                                                 None, as_conf.get_wrapper_type(), jobs[0].platform)
+                        job_list.job_package_map[jobs[0].id] = wrapper_job
+
                 import datetime
                 checked = datetime.datetime.now()
                 check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
@@ -718,15 +732,23 @@ class Autosubmit:
 
                     save = False
                     for platform in platforms_to_test:
-                        if platform.type == 'slurm':
-                            check_completed = True if datetime.timedelta.total_seconds(datetime.datetime.now() - checked) >= check_wrapper_jobs_sleeptime else False
-                            if check_completed:
-                                save = Autosubmit._check_inner_package_dependency(as_conf, platform, job_list, expid)
-                                checked = datetime.datetime.now()
+                        queuing_jobs = job_list.get_in_queue_grouped_id(platform)
+                        for job_id, job in queuing_jobs.items():
+                            if job_list.job_package_map and job_id in job_list.job_package_map:
+                                # from submitted to running, set id
+                                wrapper_job = job_list.job_package_map[job_id]
+                                if wrapper_job.status == Status.SUBMITTED:
+                                    status = platform.check_job(wrapper_job.id)
+                                    if status == Status.FAILED:
+                                      wrapper_job.update_failed_jobs(as_conf)
+                                    elif status not in [Status.QUEUING, Status.SUBMITTED]:
+                                        wrapper_job.status = status
+                                        wrapper_job.check_running_jobs(as_conf)
+                                else:
+                                    wrapper_job.check_inner_job_status(as_conf)
+                                save = True
                             else:
-                                Log.debug("Waiting for check time: {0}", check_wrapper_jobs_sleeptime)
-                        else:
-                            for job in job_list.get_in_queue(platform):
+                                job = job[0]
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
@@ -795,6 +817,12 @@ class Autosubmit:
 
                     if hasattr(package, "name"):
                         job_list.packages_dict[package.name] = package.jobs
+
+                        from job.job import WrapperJob
+                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
+                                                 package._wallclock, package._num_processors,
+                                                 as_conf.get_wrapper_type(), package.platform)
+                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
                         remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
@@ -2086,8 +2114,8 @@ class Autosubmit:
                             date = date_json['sd']
                             jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
-                            for job in filter(lambda j: j.member is None, jobs_date):
-                                Autosubmit.change_status(final, final_status, job)
+                            #for job in filter(lambda j: j.member is None, jobs_date):
+                            #    Autosubmit.change_status(final, final_status, job)
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
@@ -2522,7 +2550,9 @@ class Autosubmit:
                     Log.debug('Job ' + job.name + ' in completed files... appending to completed list')
                     completed_jobs.append(job)
                     if job.section == 'SIM':
-                        ready_posts.append(job_list.get_job_by_name(job.name.replace("SIM", "POST")))
+                        post_job = job_list.get_job_by_name(job.name.replace("SIM", "POST"))
+                        if post_job:
+                            ready_posts.append(post_job)
                     save = True
                 elif job.status != Status.COMPLETED:
                     Log.debug('Job ' + job.name + ' not in completed files... checking job status')
