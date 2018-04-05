@@ -150,7 +150,7 @@ class SlurmWrapper(object):
                 for idx in range(total_cores):
                         node = all_cores.pop(0)
                         if node:
-                                machines += node +"\n"
+                                machines += node +"_NEWLINE_"
     
                 machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                 with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
@@ -265,7 +265,7 @@ class SlurmWrapper(object):
                 for idx in range(total_cores):
                         node = all_cores.pop(0)
                         if node:
-                                machines += node +"\n"
+                                machines += node +"_NEWLINE_"
 
                 machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                 with open("machinefiles/machinefile_"+member, "w") as machinefile:

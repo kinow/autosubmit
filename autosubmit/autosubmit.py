@@ -698,7 +698,7 @@ class Autosubmit:
                         from job.job import WrapperJob
                         wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
                                                  None,
-                                                 None, as_conf.get_wrapper_type(), jobs[0].platform)
+                                                 None, jobs[0].platform, as_conf)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
 
                 import datetime
@@ -735,17 +735,23 @@ class Autosubmit:
                         queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                         for job_id, job in queuing_jobs.items():
                             if job_list.job_package_map and job_id in job_list.job_package_map:
-                                # from submitted to running, set id
+                                Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
-                                if wrapper_job.status == Status.SUBMITTED:
+
+                                if wrapper_job.status in [Status.SUBMITTED, Status.QUEUING]:
+                                    Log.debug('Status QUEUING, checking....')
                                     status = platform.check_job(wrapper_job.id)
-                                    if status == Status.FAILED:
-                                      wrapper_job.update_failed_jobs(as_conf)
-                                    elif status not in [Status.QUEUING, Status.SUBMITTED]:
+                                    if status != Status.QUEUING:
+                                        Log.debug('New status = '+str(Status.VALUE_TO_KEY[status]))
                                         wrapper_job.status = status
-                                        wrapper_job.check_running_jobs(as_conf)
-                                else:
-                                    wrapper_job.check_inner_job_status(as_conf)
+                                        if status == Status.FAILED:
+                                            Log.debug('Updating failed jobs')
+                                            wrapper_job.update_failed_jobs()
+
+                                if wrapper_job.status not in [Status.SUBMITTED, Status.QUEUING, Status.FAILED]:
+                                    Log.debug('Checking inner job status')
+                                    wrapper_job.check_inner_job_status()
+
                                 save = True
                             else:
                                 job = job[0]
@@ -821,7 +827,7 @@ class Autosubmit:
                         from job.job import WrapperJob
                         wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
                                                  package._wallclock, package._num_processors,
-                                                 as_conf.get_wrapper_type(), package.platform)
+                                                 package.platform, as_conf)
                         job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
@@ -2534,49 +2540,3 @@ class Autosubmit:
         Log.warning("We have detected that there is another Autosubmit instance using the experiment {0}.", expid)
         Log.warning("We have stopped this execution in order to prevent incoherency errors.")
         Log.warning("Stop other Autosubmit instances that are using the experiment {0} and try it again.", expid)
-
-    @staticmethod
-    def _check_inner_package_dependency(as_conf, platform, job_list, expid):
-        completed_files = platform.check_completed_files()
-        jobs_in_queue = job_list.get_in_queue()
-
-        completed_jobs = list()
-        ready_posts = list()
-        save = False
-
-        if len(completed_files) > 0:
-            for job in jobs_in_queue:
-                if job.name in completed_files and job.status != Status.COMPLETED:
-                    Log.debug('Job ' + job.name + ' in completed files... appending to completed list')
-                    completed_jobs.append(job)
-                    if job.section == 'SIM':
-                        post_job = job_list.get_job_by_name(job.name.replace("SIM", "POST"))
-                        if post_job:
-                            ready_posts.append(post_job)
-                    save = True
-                elif job.status != Status.COMPLETED:
-                    Log.debug('Job ' + job.name + ' not in completed files... checking job status')
-                    prev_status = job.status
-                    if job.status == Status.FAILED:
-                        continue
-                    new_status = platform.check_job(job.id)
-                    if prev_status != job.update_status(new_status,
-                                                        as_conf.get_copy_remote_logs() == 'true'):
-
-                        if as_conf.get_notifications() == 'true':
-                            if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                              Status.VALUE_TO_KEY[prev_status],
-                                                              Status.VALUE_TO_KEY[job.status],
-                                                              as_conf.get_mails_to())
-                    save = True
-
-            for job in completed_jobs:
-                job.update_status(Status.COMPLETED, as_conf.get_copy_remote_logs() == 'true')
-
-            for ready_post in ready_posts:
-                if ready_post.status == Status.SUSPENDED:
-                    Log.debug('CHANGING ' +ready_post.name+ ' TO READY')
-                    ready_post.update_status(Status.READY)
-                    save = True
-        return save

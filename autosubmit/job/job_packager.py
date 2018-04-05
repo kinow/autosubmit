@@ -166,7 +166,6 @@ class JobPackager(object):
                         packages.append(package)
                         remote_dependencies_dict['name_to_id'][potential_dependency] = -1
                         remote_dependencies_dict['dependencies'][package.name] = potential_dependency
-                    Log.info("---------------END PACKAGE-------------\n")
                     if remote_dependencies:
                         child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
                         if child is not None:
@@ -222,11 +221,9 @@ class JobPackagerVertical(object):
         if child is not None:
             self.total_wallclock = sum_str_hours(self.total_wallclock, child.wallclock)
             if self.total_wallclock <= self.max_wallclock:
-                Log.info("Added " + child.name)
                 child.packed = True
                 self.jobs_list.append(child)
                 return self.build_vertical_package(child)
-        Log.info("total wallclock "+self.total_wallclock)
         return self.jobs_list
 
     def get_wrappable_child(self, job):
