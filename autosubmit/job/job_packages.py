@@ -275,14 +275,26 @@ class JobPackageThread(JobPackageBase):
         return script_file
 
     def _send_files(self):
+        self.platform.check_remote_log_dir()
+        if callable(getattr(self.platform, 'remove_multiple_files')):
+            filenames = str()
+            for job in self.jobs:
+                filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
+            self.platform.remove_multiple_files(filenames)
         for job in self.jobs:
-            self.platform.send_file(self._job_scripts[job.name])
+            self.platform.send_file(self._job_scripts[job.name], check=False)
         self.platform.send_file(self._common_script)
 
     def _do_submission(self):
-        for job in self.jobs:
-            self.platform.remove_stat_file(job.name)
-            self.platform.remove_completed_file(job.name)
+        if callable(getattr(self.platform, 'remove_multiple_files')):
+            filenames = str()
+            for job in self.jobs:
+                filenames += " " + self.platform.remote_log_dir + "/" + job.name + "_STAT " + self.platform.remote_log_dir + "/" + job.name + "_COMPLETED"
+            self.platform.remove_multiple_files(filenames)
+        else:
+            for job in self.jobs:
+                self.platform.remove_stat_file(job.name)
+                self.platform.remove_completed_file(job.name)
 
         package_id = self.platform.submit_job(None, self._common_script)
 

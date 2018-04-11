@@ -58,7 +58,6 @@ class SlurmWrapper(object):
 
                 def run(self):
                     jobname = self.template.replace('.cmd', '')
-                    os.system("rm "+jobname+"_STAT")
                     os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + '.' + str(self.id_run) + '.out'
                     err = str(self.template) + '.' + str(self.id_run) + '.err'
@@ -116,7 +115,6 @@ class SlurmWrapper(object):
 
                 def run(self):
                     jobname = self.template.replace('.cmd', '')
-                    os.system("rm "+jobname+"_STAT")
                     os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + "." + str(self.id_run) + ".out"
                     err = str(self.template) + "." + str(self.id_run) + ".err"
@@ -210,7 +208,6 @@ class SlurmWrapper(object):
                 
                 def run(self):
                     jobname = self.template.replace('.cmd', '')
-                    os.system("rm "+jobname+"_STAT")
                     os.system("echo $(date +%s) > "+jobname+"_STAT")
                     out = str(self.template) + "." + str(self.id_run) + ".out"
                     err = str(self.template) + "." + str(self.id_run) + ".err"
@@ -235,6 +232,8 @@ class SlurmWrapper(object):
                             print datetime.now(), "The job ", job," has been COMPLETED"
                         else:
                             print datetime.now(), "The job ", job," has FAILED"
+                            #os._exit(1)
+                            sys.exit()
             
             # Getting the list of allocated nodes
             os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")

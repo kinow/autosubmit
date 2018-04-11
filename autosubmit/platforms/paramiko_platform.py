@@ -102,7 +102,15 @@ class ParamikoPlatform(Platform):
         else:
             return None
 
-    def send_file(self, filename):
+    def remove_multiple_files(self, filenames):
+        command = "rm " + filenames
+
+        if self.send_command(command):
+            return self._ssh_output
+        else:
+            return None
+
+    def send_file(self, filename, check=True):
         """
         Sends a local file to the platform
         :param filename: name of the file to send
@@ -112,9 +120,9 @@ class ParamikoPlatform(Platform):
         if self._ssh is None:
             if not self.connect():
                 return None
-
-        self.check_remote_log_dir()
-        self.delete_file(filename)
+        if check:
+            self.check_remote_log_dir()
+            self.delete_file(filename)
 
         try:
             ftp = self._ssh.open_sftp()

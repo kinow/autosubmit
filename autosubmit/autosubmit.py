@@ -704,7 +704,7 @@ class Autosubmit:
                 import datetime
                 checked = datetime.datetime.now()
                 check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
-                Log.debug('CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime) )
+                Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
 
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
@@ -735,6 +735,7 @@ class Autosubmit:
                         queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                         for job_id, job in queuing_jobs.items():
                             if job_list.job_package_map and job_id in job_list.job_package_map:
+
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
 
@@ -742,17 +743,22 @@ class Autosubmit:
                                     Log.debug('Status QUEUING, checking....')
                                     status = platform.check_job(wrapper_job.id)
                                     if status != Status.QUEUING:
-                                        Log.debug('New status = '+str(Status.VALUE_TO_KEY[status]))
+                                        Log.debug('New status = ' + str(Status.VALUE_TO_KEY[status]))
                                         wrapper_job.status = status
                                         if status == Status.FAILED:
                                             Log.debug('Updating failed jobs')
                                             wrapper_job.update_failed_jobs()
-
-                                if wrapper_job.status not in [Status.SUBMITTED, Status.QUEUING, Status.FAILED]:
-                                    Log.debug('Checking inner job status')
-                                    wrapper_job.check_inner_job_status()
-
-                                save = True
+                                        save = True
+                                elif wrapper_job.status != Status.FAILED:
+                                    check_completed = True if datetime.timedelta.total_seconds(
+                                        datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
+                                    if check_completed:
+                                        wrapper_job.checked_time = datetime.datetime.now()
+                                        Log.info('Checking inner jobs status')
+                                        wrapper_job.check_inner_job_status()
+                                        save = True
+                                    else:
+                                        Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
                             else:
                                 job = job[0]
                                 prev_status = job.status

@@ -64,16 +64,18 @@ class JobPackager(object):
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
         jobs_to_submit = list_of_available[0:num_jobs_to_submit]
 
+
         jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
 
-        for section in jobs_to_submit_by_section:
-            wrapper_expression = self._as_config.get_wrapper_expression()
-            wrapper_type = self._as_config.get_wrapper_type()
-            if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical', 'hybrid'] and \
-                    (wrapper_expression == 'None' or section in wrapper_expression.split(' ')):
+        wrapper_expression = self._as_config.get_wrapper_expression()
+        wrapper_type = self._as_config.get_wrapper_type()
+        remote_dependencies = self._as_config.get_remote_dependencies()
+        max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
 
-                remote_dependencies = self._as_config.get_remote_dependencies()
-                max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
+        for section in jobs_to_submit_by_section:
+            if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical', 'hybrid'] and \
+                    (wrapper_expression == 'None' or section in wrapper_expression):
+
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
 
                 if wrapper_type == 'vertical':
@@ -88,7 +90,7 @@ class JobPackager(object):
                 elif wrapper_type == 'horizontal':
                     built_packages, max_jobs = JobPackager._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_jobs, self._platform.max_processors,
-                                                                                    remote_dependencies)
+                                                                                      max_wrapped_jobs)
                     packages_to_submit += built_packages
 
                 elif wrapper_type == 'hybrid':
@@ -125,11 +127,11 @@ class JobPackager(object):
         return jobs_section
 
     @staticmethod
-    def _build_horizontal_packages(section_list, max_jobs, max_processors, remote_dependencies=False):
-        # TODO: Implement remote dependencies for horizontal wrapper
+    def _build_horizontal_packages(section_list, max_jobs, max_processors, max_wrapped_jobs):
+        # TODO: implement remote dependencies?
         packages = []
 
-        current_package = JobPackagerHorizontal(section_list, max_jobs, max_processors).build_horizontal_package()
+        current_package = JobPackagerHorizontal(section_list, max_jobs, max_processors, max_wrapped_jobs).build_horizontal_package()
         if current_package:
             packages.append(JobPackageHorizontal(current_package))
 
@@ -183,7 +185,7 @@ class JobPackager(object):
 
         ## READY JOBS ##
         ## Create the horizontal ##
-        horizontal_package = JobPackagerHorizontal(jobs_list, max_jobs, max_processors).build_horizontal_package()
+        horizontal_package = JobPackagerHorizontal(jobs_list, max_jobs, max_processors, max_wrapped_jobs).build_horizontal_package()
 
         ## Create the vertical ##
         for job in horizontal_package:
@@ -289,16 +291,17 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         return False
 
 class JobPackagerHorizontal(object):
-    def __init__(self, job_list, max_jobs, max_processors):
+    def __init__(self, job_list, max_jobs, max_processors, max_wrapped_jobs):
         self.job_list = job_list
         self.max_jobs = max_jobs
         self.max_processors = max_processors
+        self.max_wrapped_jobs = max_wrapped_jobs
 
     def build_horizontal_package(self):
         current_package = []
         current_processors = 0
         for job in self.job_list:
-            if self.max_jobs > 0:
+            if self.max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
                 self.max_jobs -= 1
                 if (current_processors + job.total_processors) <= int(self.max_processors):
                     current_package.append(job)
