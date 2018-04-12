@@ -749,7 +749,7 @@ class Autosubmit:
                                             Log.debug('Updating failed jobs')
                                             wrapper_job.update_failed_jobs()
                                         save = True
-                                elif wrapper_job.status != Status.FAILED:
+                                if wrapper_job.status == Status.RUNNING:
                                     check_completed = True if datetime.timedelta.total_seconds(
                                         datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                     if check_completed:
@@ -1940,7 +1940,7 @@ class Autosubmit:
                 job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                   as_conf.get_retrials(),
                                   as_conf.get_default_job_type(),
-                                  as_conf.get_wrapper_expression())
+                                  as_conf.get_wrapper_jobs())
 
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
@@ -2538,7 +2538,7 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_expression(), False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_jobs(), False)
         return job_list
 
     @staticmethod

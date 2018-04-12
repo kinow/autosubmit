@@ -196,8 +196,8 @@ class TestWrappers(TestCase):
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
-        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+        returned_packages = JobPackager._build_vertical_packages(None, section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical')
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -243,8 +243,8 @@ class TestWrappers(TestCase):
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
-        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+        returned_packages = JobPackager._build_vertical_packages(None, section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical')
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -287,8 +287,8 @@ class TestWrappers(TestCase):
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
-        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+        returned_packages = JobPackager._build_vertical_packages(None, section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical')
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
         package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
@@ -330,8 +330,8 @@ class TestWrappers(TestCase):
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
-        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+        returned_packages = JobPackager._build_vertical_packages(None, section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical')
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
         package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
@@ -366,8 +366,8 @@ class TestWrappers(TestCase):
 
         section_list = [d1_m1_1_s3, d1_m2_1_s3]
 
-        returned_packages = JobPackager._build_vertical_packages(None, 'None', section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+        returned_packages = JobPackager._build_vertical_packages(None, section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical')
 
         package_m1_s2 = [d1_m1_1_s3]
         package_m2_s2 = [d1_m2_1_s3]
@@ -425,8 +425,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+                                                                 section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -484,8 +484,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_1_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+                                                                 section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -542,8 +542,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+                                                                 section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -601,8 +601,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+                                                                 section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2]
         package_m2_s2_s3 = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3, d1_m2_3_s2]
@@ -659,8 +659,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list, max_jobs,
-                                                                 max_wallclock, max_wrapped_jobs)
+                                                                 section_list, max_jobs,
+                                                                 max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3]
         package_m2_s2_s3 = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3]
@@ -728,8 +728,8 @@ class TestWrappers(TestCase):
         section_list = [d1_m1_2_s3, d1_m1_4_s2, d1_m2_3_s2]
 
         returned_packages = JobPackager._build_vertical_packages(self.job_list.get_ordered_jobs_by_date_member(),
-                                                                 wrapper_expression, section_list,
-                                                                 max_jobs, max_wallclock, max_wrapped_jobs)
+                                                                 section_list,
+                                                                 max_jobs, max_wallclock, max_wrapped_jobs, 'vertical-mixed')
 
         package_m1_s2_s3 = [d1_m1_2_s3, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
         package_m2_s2_s3 = [d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]

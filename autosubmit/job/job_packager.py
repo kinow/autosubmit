@@ -67,28 +67,27 @@ class JobPackager(object):
 
         jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
 
-        wrapper_expression = self._as_config.get_wrapper_expression()
+        jobs_in_wrapper = self._as_config.get_wrapper_jobs()
         wrapper_type = self._as_config.get_wrapper_type()
         remote_dependencies = self._as_config.get_remote_dependencies()
         max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
 
         for section in jobs_to_submit_by_section:
-            if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical', 'hybrid'] and \
-                    (wrapper_expression == 'None' or section in wrapper_expression):
+            if self._platform.allow_wrappers and wrapper_type in ['horizontal', 'vertical', 'vertical-mixed', 'hybrid'] and \
+                    (jobs_in_wrapper == 'None' or section in jobs_in_wrapper):
 
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
 
-                if wrapper_type == 'vertical':
+                if wrapper_type in ['vertical', 'vertical-mixed']:
                     built_packages, max_jobs, remote_dependencies_dict = JobPackager._build_vertical_packages(
                                                                         self._jobs_list.get_ordered_jobs_by_date_member(),
-                                                                        wrapper_expression,
                                                                         jobs_to_submit_by_section[section],
                                                                         max_jobs, self._platform.max_wallclock,
-                                                                        max_wrapped_jobs,
+                                                                        max_wrapped_jobs, wrapper_type,
                                                                         remote_dependencies)
                     packages_to_submit += built_packages
                 elif wrapper_type == 'horizontal':
-                    built_packages, max_jobs = JobPackager._build_horizontal_packages(jobs_to_submit_by_section[section],
+                    built_packages, max_jobs, remote_dependencies_dict = JobPackager._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_jobs, self._platform.max_processors,
                                                                                       max_wrapped_jobs)
                     packages_to_submit += built_packages
@@ -127,18 +126,50 @@ class JobPackager(object):
         return jobs_section
 
     @staticmethod
-    def _build_horizontal_packages(section_list, max_jobs, max_processors, max_wrapped_jobs):
-        # TODO: implement remote dependencies?
+    def _build_horizontal_packages(section_list, max_jobs, max_processors, max_wrapped_jobs, remote_dependencies=True):
         packages = []
+        remote_dependencies_dict = dict()
 
-        current_package = JobPackagerHorizontal(section_list, max_jobs, max_processors, max_wrapped_jobs).build_horizontal_package()
-        if current_package:
-            packages.append(JobPackageHorizontal(current_package))
 
-        return packages, max_jobs
+        horizontal_packager = JobPackagerHorizontal(max_processors, max_wrapped_jobs)
+
+        package_jobs = horizontal_packager.build_horizontal_package(section_list, max_jobs)
+        current_package = None
+        if package_jobs:
+            current_package = JobPackageHorizontal(package_jobs)
+            packages.append(current_package)
+
+        if remote_dependencies and current_package:
+            remote_dependencies_dict['name_to_id'] = dict()
+            remote_dependencies_dict['dependencies'] = dict()
+
+            while max_jobs > 0:
+                potential_dependency = current_package.name
+                next_section_list = []
+                for job in section_list:
+                    for child in job.children:
+                        if job.section == child.section:
+                            wrappable = True
+                            for other_parent in child.parents:
+                                if other_parent.status != Status.COMPLETED and other_parent != job:
+                                    wrappable = False
+                            if wrappable:
+                                next_section_list.append(child)
+
+                package_jobs = horizontal_packager.build_horizontal_package(next_section_list, max_jobs)
+                if package_jobs:
+                    current_package = JobPackageHorizontal(package_jobs, potential_dependency)
+                    packages.append(current_package)
+                    remote_dependencies_dict['name_to_id'][potential_dependency] = -1
+                    remote_dependencies_dict['dependencies'][current_package.name] = potential_dependency
+                    section_list = next_section_list
+                else:
+                    break
+
+        return packages, max_jobs, remote_dependencies_dict
 
     @staticmethod
-    def _build_vertical_packages(dict_jobs, wrapper_expression, section_list, max_jobs, max_wallclock, max_wrapped_jobs,
+    def _build_vertical_packages(dict_jobs, section_list, max_jobs, max_wallclock, max_wrapped_jobs, type,
                                  remote_dependencies=False):
         packages = []
         potential_dependency = None
@@ -152,7 +183,7 @@ class JobPackager(object):
                 if job.packed == False:
                     job.packed = True
 
-                    if job.section in wrapper_expression:
+                    if type == 'vertical-mixed':
                         job_vertical_packager = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock, max_jobs,
                                                                                        max_wrapped_jobs, max_wallclock)
                     else:
@@ -185,7 +216,7 @@ class JobPackager(object):
 
         ## READY JOBS ##
         ## Create the horizontal ##
-        horizontal_package = JobPackagerHorizontal(jobs_list, max_jobs, max_processors, max_wrapped_jobs).build_horizontal_package()
+        horizontal_package = JobPackagerHorizontal(max_processors, max_wrapped_jobs).build_horizontal_package(jobs_list, max_jobs)
 
         ## Create the vertical ##
         for job in horizontal_package:
@@ -291,18 +322,16 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         return False
 
 class JobPackagerHorizontal(object):
-    def __init__(self, job_list, max_jobs, max_processors, max_wrapped_jobs):
-        self.job_list = job_list
-        self.max_jobs = max_jobs
+    def __init__(self, max_processors, max_wrapped_jobs):
         self.max_processors = max_processors
         self.max_wrapped_jobs = max_wrapped_jobs
 
-    def build_horizontal_package(self):
+    def build_horizontal_package(self, job_list, max_jobs):
         current_package = []
         current_processors = 0
-        for job in self.job_list:
-            if self.max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
-                self.max_jobs -= 1
+        for job in job_list:
+            if max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
+                max_jobs -= 1
                 if (current_processors + job.total_processors) <= int(self.max_processors):
                     current_package.append(job)
                     current_processors += job.total_processors

@@ -919,21 +919,21 @@ class AutosubmitConfig(object):
 
     def get_wrapper_type(self):
         """
-        Returns what kind of wrapper (VERTICAL, HORIZONTAL, NONE) the user has configured in the autosubmit's config
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
 
-    def get_wrapper_expression(self):
+    def get_wrapper_jobs(self):
         """
         Returns the wrapper expression the user has configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'EXPRESSION', 'None')
+        return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
 
     def get_max_wrapped_jobs(self):
         """
@@ -951,7 +951,7 @@ class AutosubmitConfig(object):
          :return: post check time
          :rtype: int
          """
-        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME', 1800))
+        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', 1800))
 
     def get_jobs_sections(self):
         """
@@ -1014,7 +1014,7 @@ class AutosubmitConfig(object):
         return storage_type in ['pkl', 'db']
 
     def is_valid_wrapper_expression(self):
-        expression = self.get_wrapper_expression()
+        expression = self.get_wrapper_jobs()
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()
