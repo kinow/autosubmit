@@ -951,7 +951,7 @@ class AutosubmitConfig(object):
          :return: post check time
          :rtype: int
          """
-        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', 1800))
+        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
     def get_jobs_sections(self):
         """

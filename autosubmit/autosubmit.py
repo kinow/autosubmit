@@ -701,11 +701,6 @@ class Autosubmit:
                                                  None, jobs[0].platform, as_conf)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
 
-                import datetime
-                checked = datetime.datetime.now()
-                check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
-                Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
-
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -729,6 +724,9 @@ class Autosubmit:
                     Log.debug("Sleep: {0}", safetysleeptime)
                     default_retrials = as_conf.get_retrials()
                     Log.debug("Number of retrials: {0}", default_retrials)
+
+                    check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+                    Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
 
                     save = False
                     for platform in platforms_to_test:

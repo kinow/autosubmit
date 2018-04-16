@@ -64,7 +64,6 @@ class JobPackager(object):
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
         jobs_to_submit = list_of_available[0:num_jobs_to_submit]
 
-
         jobs_to_submit_by_section = JobPackager._divide_list_by_section(jobs_to_submit)
 
         jobs_in_wrapper = self._as_config.get_wrapper_jobs()
@@ -89,7 +88,7 @@ class JobPackager(object):
                 elif wrapper_type == 'horizontal':
                     built_packages, max_jobs, remote_dependencies_dict = JobPackager._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_jobs, self._platform.max_processors,
-                                                                                      max_wrapped_jobs)
+                                                                                      max_wrapped_jobs, remote_dependencies)
                     packages_to_submit += built_packages
 
                 elif wrapper_type == 'hybrid':
@@ -126,7 +125,7 @@ class JobPackager(object):
         return jobs_section
 
     @staticmethod
-    def _build_horizontal_packages(section_list, max_jobs, max_processors, max_wrapped_jobs, remote_dependencies=True):
+    def _build_horizontal_packages(section_list, max_jobs, max_processors, max_wrapped_jobs, remote_dependencies=False):
         packages = []
         remote_dependencies_dict = dict()
 
