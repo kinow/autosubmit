@@ -586,7 +586,7 @@ class AutosubmitConfig(object):
         :return: git branch
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'PROJECT_BRANCH', None)
+        return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
 
     def get_git_project_commit(self):
         """
