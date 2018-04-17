@@ -329,6 +329,9 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
+    def parse_queue_reason(self):
+        raise NotImplementedError
+
     def get_ssh_output(self):
         """
         Gets output from last command executed

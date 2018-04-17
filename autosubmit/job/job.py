@@ -487,7 +487,16 @@ class Job(object):
         else:
             self.status = new_status
         if self.status is Status.QUEUING:
-            Log.info("Job {0} is QUEUING", self.name)
+            reason = str()
+            if self.platform.type == 'slurm':
+                self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+                reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+                if self._queuing_reason_cancel(reason):
+                    Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
+                    self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+                    self.update_status(Status.FAILED, copy_remote_logs)
+                    return
+            Log.info("Job {0} is QUEUING {1}", self.name, reason)
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
         elif self.status is Status.COMPLETED:
@@ -736,6 +745,17 @@ class Job(object):
         return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
                         snippet.as_tailer()])
+
+    def _queuing_reason_cancel(self, reason):
+        reason = reason.split('(', 1)[1].split(')')[0]
+        if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
+                                            'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
+                                            'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
+                                            'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
+                                            'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
+                                            'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
+            return True
+        return False
 
     @staticmethod
     def is_a_completed_retrial(fields):

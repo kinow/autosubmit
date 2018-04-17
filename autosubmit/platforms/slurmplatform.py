@@ -86,3 +86,13 @@ class SlurmPlatform(ParamikoPlatform):
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
+
+    def get_queue_status_cmd(self, job_id):
+        return 'squeue -j {0} -o %R'.format(job_id)
+
+    def parse_queue_reason(self, output):
+        output = output.split('\n')
+        if len(output) > 1:
+            return output[1]
+        else:
+            return output
