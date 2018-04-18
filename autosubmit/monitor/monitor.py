@@ -333,8 +333,14 @@ class Monitor:
         Log.info('Creating stats file')
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_statistics_" + output_date +
+
+        directory = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats")
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", expid + "_statistics_" + output_date +
                                    "." + output_format)
+
         create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_file, period_ini, period_fi)
         Log.result('Stats created at {0}', output_file)
         if show:

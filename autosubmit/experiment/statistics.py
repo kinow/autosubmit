@@ -50,6 +50,8 @@ class ExperimentStats(object):
         self._threshold = 0
         # Totals arrays
         self._totals = []
+        self._start_times = [datetime.timedelta()] * len(jobs_list)
+        self._end_times = [datetime.timedelta()] * len(jobs_list)
         self._run = [datetime.timedelta()] * len(jobs_list)
         self._queued = [datetime.timedelta()] * len(jobs_list)
         self._failed_jobs = [0] * len(jobs_list)
@@ -78,6 +80,14 @@ class ExperimentStats(object):
         return self._threshold
 
     @property
+    def start_times(self):
+        return self._start_times
+
+    @property
+    def end_times(self):
+        return self._end_times
+
+    @property
     def run(self):
         return FixedSizeList(self._run, 0.0)
 
@@ -98,12 +108,19 @@ class ExperimentStats(object):
         return FixedSizeList(self._fail_run, 0.0)
 
     def _calculate_stats(self):
+        queued_by_id = dict()
         for i, job in enumerate(self._jobs_list):
             last_retrials = job.get_last_retrials()
             processors = job.total_processors
             for retrial in last_retrials:
                 if Job.is_a_completed_retrial(retrial):
-                    self._queued[i] += retrial[1] - retrial[0]
+                    if job.id not in queued_by_id:
+                        self._queued[i] += retrial[1] - retrial[0]
+                        queued_by_id[job.id] = self._queued[i]
+                    else:
+                        self._queued[i] += queued_by_id[job.id]
+                    self._start_times[i] = retrial[1]
+                    self._end_times[i] = retrial[2]
                     self._run[i] += retrial[2] - retrial[1]
                     self._cpu_consumption += self.run[i] * int(processors)
                     self._real_consumption += self.run[i]

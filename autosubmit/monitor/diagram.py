@@ -85,6 +85,20 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     grid_spec.tight_layout(fig, rect=[0, 0.03, 1, 0.97])
     plt.savefig(output_file)
 
+    create_csv_stats(exp_stats, jobs_list, output_file)
+
+def create_csv_stats(exp_stats, jobs_list, output_file):
+    job_names = [job.name for job in jobs_list]
+    start_times = exp_stats.start_times
+    end_times = exp_stats.end_times
+    queuing_times = exp_stats.queued
+    running_times = exp_stats.run
+
+    output_file = output_file.replace('pdf', 'csv')
+    with open(output_file, 'wb') as file:
+        file.write("Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
+        for i in range(len(jobs_list)):
+            file.write("{0},{1},{2},{3},{4}\n".format(job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
 
 def build_legends(plot, rects, experiment_stats, general_stats):
     # Main legend with colourful rectangles
