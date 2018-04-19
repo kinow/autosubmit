@@ -734,7 +734,7 @@ class Autosubmit:
                         for job_id, job in queuing_jobs.items():
                             if job_list.job_package_map and job_id in job_list.job_package_map:
 
-                                Log.debug('Checking wrapper job with id ' + str(job_id))
+                                Log.info('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
 
                                 if wrapper_job.status in [Status.SUBMITTED, Status.QUEUING]:

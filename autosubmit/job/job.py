@@ -666,6 +666,7 @@ class Job(object):
         parameters['PROJDIR'] = as_conf.get_project_dir()
 
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
+        parameters['WRAPPER'] = as_conf.get_wrapper_type()
 
         self.parameters = parameters
 
@@ -1005,7 +1006,7 @@ class WrapperJob(Job):
                 Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")
                 self._cancel_failed_wrapper_job()
             elif status == Status.COMPLETED:
-                Log.info("Wrapper job COMPLETED. Setting all jobs to COMPLETED...")
+                Log.info("Wrapper job " + self.name + " COMPLETED. Setting all jobs to COMPLETED...")
                 self._update_completed_jobs()
                 self.status = Status.COMPLETED
 
