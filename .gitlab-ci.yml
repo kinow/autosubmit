@@ -10,7 +10,7 @@ stages:
 
 cache:
   paths:
-    - test/report
+    - test/coverage.xml
 
 prepare:
   stage: prepare
@@ -24,7 +24,7 @@ test_python2:
     - git submodule update --init --recursive
     - conda env update -f environment.yml -n autosubmit2 python=2.7
     - source activate autosubmit2
-    - nosetests --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/report/python2/coverage.xml test
+    - nosetests --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml test
 
 # test_python3:
 #   stage: test
@@ -40,7 +40,7 @@ report_codacy:
   script:
     - source activate autosubmit2
     - pip install codacy-coverage --upgrade
-    - python-codacy-coverage -r test/report/python2/coverage.xml
+    - python-codacy-coverage -r test/coverage.xml
     
 
 clean:
