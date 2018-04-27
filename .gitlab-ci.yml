@@ -4,8 +4,5 @@ test:
       - ~/venv/autosubmit
   script:
   - source ~/venv/autosubmit/bin/activate
-  - pip install coverage
   - nosetests test --ignore-files="test_job_graph.py" --with-coverage --cover-xml
-  - source ~/venv/autosubmit/bin/activate
-  - pip install codacy-coverage --upgrade
   - python-codacy-coverage -r test/coverage.xml
