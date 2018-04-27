@@ -7,3 +7,53 @@ test:
   - python-coverage run -m nose --ignore-files="test_job_graph.py"
   - python-coverage xml -o test/coverage.xml
   - python-codacy-coverage -r test/coverage.xml
+  
+before_script:
+  - export GIT_SSL_NO_VERIFY=1
+  - export PATH="$HOME/miniconda2/bin:$PATH"
+
+stages:
+  - prepare
+  - test
+  - report
+  - clean
+
+cache:
+  paths:
+    - test/report
+
+prepare:
+  stage: prepare
+  script:
+    - conda update conda
+
+test_python2:
+  stage: test
+  script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+    - conda env update -f environment.yml -n autosubmit2 python=2.7
+    - source activate autosubmit2
+    - nosetests --with-coverage --cover-xml-file=test/report/python2/coverage.xml test
+    - python run_test.py
+
+# test_python3:
+#   stage: test
+#   script:
+#     - git submodule sync --recursive
+#     - git submodule update --init --recursive
+#     - conda env update -f environment.yml -n earthdiagnostics3 python=3.6
+#     - source activate earthdiagnostics3
+#     - python run_test.py
+
+report_codacy:
+  stage: report
+  script:
+    - source activate earthdiagnostics3
+    - pip install codacy-coverage --upgrade
+    - python-codacy-coverage -r test/report/python2/coverage.xml
+
+clean:
+  stage: clean
+  script:
+    - conda clean --all --yes
