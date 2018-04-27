@@ -40,7 +40,10 @@ report_codacy:
   script:
     - source activate autosubmit2
     - pip install codacy-coverage --upgrade
+    - ls
+    - tree test/report
     - python-codacy-coverage -r test/report/python2/coverage.xml
+    
 
 clean:
   stage: clean
