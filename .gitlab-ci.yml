@@ -4,6 +4,6 @@ test:
       - ~/venv/autosubmit
   script:
   - source ~/venv/autosubmit/bin/activate
-  - coverage run -m nose --ignore-files="test_job_graph.py"
-  - coverage xml -o test/coverage.xml
+  - python-coverage run -m nose --ignore-files="test_job_graph.py"
+  - python-coverage xml -o test/coverage.xml
   - python-codacy-coverage -r test/coverage.xml
