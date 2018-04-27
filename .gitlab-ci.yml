@@ -25,7 +25,6 @@ test_python2:
     - conda env update -f environment.yml -n autosubmit2 python=2.7
     - source activate autosubmit2
     - nosetests --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml-file=test/report/python2/coverage.xml test
-    - python run_test.py
 
 # test_python3:
 #   stage: test
