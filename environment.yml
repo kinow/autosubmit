@@ -5,6 +5,15 @@ channels:
 dependencies:
 - nose
 - paramiko
+- pydotplus
+- python-dateutil
+- pyparsing
+- numpy
+- matplotlib
+- saga-python
+- mock
+- portalocker
+- networkx
 
 - pip:
   - bscearth.utils
