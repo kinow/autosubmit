@@ -10,11 +10,12 @@ dependencies:
 - pyparsing
 - numpy
 - matplotlib
-- saga-python
+
 - mock
 - portalocker
 - networkx
 
 - pip:
   - bscearth.utils
+  - saga-python
 
