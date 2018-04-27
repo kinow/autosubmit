@@ -41,7 +41,9 @@ report_codacy:
     - source activate autosubmit2
     - pip install codacy-coverage --upgrade
     - ls
-    - tree test/report
+    - ls test/report
+    - ls test/report/python2
+    - ls test/report/python2/coverage.xml
     - python-codacy-coverage -r test/report/python2/coverage.xml
     
 
