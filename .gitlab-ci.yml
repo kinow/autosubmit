@@ -1,13 +1,3 @@
-test:
-  cache:
-    paths:
-      - ~/venv/autosubmit
-  script:
-  - source ~/venv/autosubmit/bin/activate
-  - python-coverage run -m nose --ignore-files="test_job_graph.py"
-  - python-coverage xml -o test/coverage.xml
-  - python-codacy-coverage -r test/coverage.xml
-  
 before_script:
   - export GIT_SSL_NO_VERIFY=1
   - export PATH="$HOME/miniconda2/bin:$PATH"
