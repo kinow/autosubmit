@@ -24,7 +24,7 @@ test_python2:
     - git submodule update --init --recursive
     - conda env update -f environment.yml -n autosubmit2 python=2.7
     - source activate autosubmit2
-    - nosetests --with-coverage --cover-xml-file=test/report/python2/coverage.xml test
+    - nosetests --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml-file=test/report/python2/coverage.xml test
     - python run_test.py
 
 # test_python3:
