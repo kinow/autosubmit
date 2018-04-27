@@ -1,0 +1,11 @@
+name: autosubmit
+channels:
+- conda-forge
+
+dependencies:
+- nose
+- paramiko
+
+- pip:
+  - bscearth.utils
+
