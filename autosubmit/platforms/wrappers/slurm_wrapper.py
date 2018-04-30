@@ -76,7 +76,8 @@ class SlurmWrapper(object):
                     print datetime.now(), "The job ", current.template," has been COMPLETED"
                 else:
                     print datetime.now(), "The job ", current.template," has FAILED"
-                    os._exit(1)
+                    #os._exit(1)
+                    sys.exit()
             """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
                        cls.dependency_directive(dependency),
                        '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))

@@ -737,26 +737,19 @@ class Autosubmit:
                                 Log.info('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
 
-                                if wrapper_job.status in [Status.SUBMITTED, Status.QUEUING]:
-                                    Log.debug('Status QUEUING, checking....')
-                                    status = platform.check_job(wrapper_job.id)
-                                    if status != Status.QUEUING:
-                                        Log.debug('New status = ' + str(Status.VALUE_TO_KEY[status]))
-                                        wrapper_job.status = status
-                                        if status == Status.FAILED:
-                                            Log.debug('Updating failed jobs')
-                                            wrapper_job.update_failed_jobs()
-                                        save = True
+                                check_wrapper = True
                                 if wrapper_job.status == Status.RUNNING:
-                                    check_completed = True if datetime.timedelta.total_seconds(
+                                    check_wrapper = True if datetime.timedelta.total_seconds(
                                         datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
-                                    if check_completed:
-                                        wrapper_job.checked_time = datetime.datetime.now()
-                                        Log.info('Checking inner jobs status')
-                                        wrapper_job.check_inner_job_status()
-                                        save = True
-                                    else:
-                                        Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
+                                if check_wrapper:
+                                    wrapper_job.checked_time = datetime.datetime.now()
+                                    status = platform.check_job(wrapper_job.id)
+                                    Log.info(
+                                        'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[status]))
+                                    wrapper_job.check_status(status)
+                                    save = True
+                                else:
+                                    Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
                             else:
                                 job = job[0]
                                 prev_status = job.status
@@ -1938,7 +1931,7 @@ class Autosubmit:
                 job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                   as_conf.get_retrials(),
                                   as_conf.get_default_job_type(),
-                                  as_conf.get_wrapper_jobs())
+                                  as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs())
 
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
@@ -2536,7 +2529,7 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_jobs(), False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), False)
         return job_list
 
     @staticmethod

@@ -928,7 +928,7 @@ class AutosubmitConfig(object):
 
     def get_wrapper_jobs(self):
         """
-        Returns the wrapper expression the user has configured in the autosubmit's config
+        Returns the jobs that should be wrapped, configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string

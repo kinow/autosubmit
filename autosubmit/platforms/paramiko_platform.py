@@ -105,7 +105,7 @@ class ParamikoPlatform(Platform):
     def remove_multiple_files(self, filenames):
         command = "rm " + filenames
 
-        if self.send_command(command):
+        if self.send_command(command, ignore_log=True):
             return self._ssh_output
         else:
             return None
@@ -294,7 +294,7 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def send_command(self, command):
+    def send_command(self, command, ignore_log=False):
         """
         Sends given command to HPC
 
@@ -315,7 +315,7 @@ class ParamikoPlatform(Platform):
                     Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                 Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
                 return True
-            else:
+            elif not ignore_log:
                 Log.error('Command {0} in {1} failed with error message: {2}',
                           command, self.host, '\n'.join(stderr_readlines))
                 return False

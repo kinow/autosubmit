@@ -97,7 +97,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_expression, new=True):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -147,8 +147,8 @@ class JobList:
         for job in self._job_list:
             job.parameters = parameters
 
-        if wrapper_expression != 'None':
-            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_expression)
+        if wrapper_type == 'vertical-mixed':
+            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_jobs)
 
 
     @staticmethod
@@ -343,7 +343,7 @@ class JobList:
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 
-    def _create_sorted_dict_jobs(self, wrapper_expression):
+    def _create_sorted_dict_jobs(self, wrapper_jobs):
         dict_jobs = dict()
         for date in self._date_list:
             dict_jobs[date] = dict()
@@ -351,12 +351,12 @@ class JobList:
                 dict_jobs[date][member] = list()
         num_chunks = len(self._chunk_list)
 
-        filtered_jobs_list = filter(lambda job: job.section in wrapper_expression, self._job_list)
+        filtered_jobs_list = filter(lambda job: job.section in wrapper_jobs, self._job_list)
 
         filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(filtered_jobs_list)
 
         sections_running_type_map = dict()
-        for section in wrapper_expression.split(" "):
+        for section in wrapper_jobs.split(" "):
             sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         for date in self._date_list:
