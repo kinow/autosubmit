@@ -923,6 +923,7 @@ class WrapperJob(Job):
     def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config):
         super(WrapperJob, self).__init__(name, job_id, status, priority)
         self.job_list = job_list
+        # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
@@ -940,7 +941,8 @@ class WrapperJob(Job):
         elif status == Status.COMPLETED:
             self.check_inner_jobs_completed(self.job_list)
         elif status == Status.RUNNING:
-            Log.info('Checking inner jobs status')
+            time.sleep(5)
+            Log.debug('Checking inner jobs status')
             self.check_inner_job_status()
 
 
@@ -984,25 +986,37 @@ class WrapperJob(Job):
             self._update_failed_job(job)
 
     def _check_running_jobs(self):
-        for job in self.job_list:
-            if job.status not in [Status.COMPLETED, Status.FAILED]:
-                if job not in self.running_jobs_start:
-                    Log.debug('Checking status of '+job.name)
-                    output = self._read_remote_logs(job.platform, job.name)
-                    if output:
-                        start_time = self._check_time(output, 0)
-                        Log.info("Job " + job.name + " started at " + str(parse_date(start_time)))
+        not_finished_jobs = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED]]
+        not_finished_jobs_dict = OrderedDict()
+        for job in not_finished_jobs:
+            not_finished_jobs_dict[job.name] = job
+
+        not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
+
+        remote_log_dir = self.platform.get_remote_log_dir()
+        command = 'cd ' + remote_log_dir + '; for job in ' + not_finished_jobs_names + '; do echo ${job} $(head ${job}_STAT); done'
+        output = self.platform.send_command(command, ignore_log=True)
+
+        if output:
+            content = self.platform._ssh_output
+            for line in content.split('\n'):
+                out = line.split()
+                jobname = out[0]
+                job = not_finished_jobs_dict[jobname]
+                if len(out) > 1:
+                    if job not in self.running_jobs_start:
+                        start_time = self._check_time(out, 1)
+                        Log.info("Job " + jobname + " started at " + str(parse_date(start_time)))
                         self.running_jobs_start[job] = start_time
-                        if len(output) > 1:
-                            end_time = self._check_time(output, 1)
-                            Log.info("Job " + job.name + " finished at " + str(parse_date(end_time)))
-                            self._check_finished_job(job)
-                        elif job.status != Status.RUNNING:
-                            job.update_status(Status.RUNNING, self.as_config.get_copy_remote_logs() == 'true')
+                        job.update_status(Status.RUNNING, self.as_config.get_copy_remote_logs() == 'true')
+                    elif len(out) == 2:
+                        Log.info("Job " + jobname + " is RUNNING")
                     else:
-                        Log.info("Job " + job.name + " is SUBMITTED and waiting for dependencies")
+                        end_time = self._check_time(out, 2)
+                        Log.info("Job " + jobname + " finished at " + str(parse_date(end_time)))
+                        self._check_finished_job(job)
                 else:
-                    Log.info("Job " + job.name + " is RUNNING")
+                    Log.debug("Job " + jobname + " is SUBMITTED and waiting for dependencies")
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):
@@ -1015,7 +1029,6 @@ class WrapperJob(Job):
     def update_failed_jobs(self):
         for job in self.job_list:
             self._update_failed_job(job)
-        #self.status = Status.FAILED
 
     def _update_failed_job(self, job):
         if job.status != Status.COMPLETED:
@@ -1031,12 +1044,10 @@ class WrapperJob(Job):
             elif status == Status.COMPLETED:
                 Log.info("Wrapper job " + self.name + " COMPLETED. Setting all jobs to COMPLETED...")
                 self._update_completed_jobs()
-                #self.status = Status.COMPLETED
 
     def cancel_failed_wrapper_job(self):
         Log.info("Cancelling job with id "+str(self.id))
         self.platform.send_command(self.platform.cancel_cmd + " " + str(self.id))
-        #self.status = Status.FAILED
 
     def _update_completed_jobs(self):
         for job in self.job_list:
@@ -1053,16 +1064,6 @@ class WrapperJob(Job):
         if elapsed > wallclock_delta:
             return True
         return False
-
-    def _read_remote_logs(self, platform, jobname):
-        remote_log_dir = platform.get_remote_log_dir()
-        command = platform.send_command('cat ' + remote_log_dir + '/' + jobname + '_STAT', ignore_log=True)
-
-        if command:
-            output = platform._ssh_output
-            return output.split()
-        else:
-            return command
 
     def _parse_timestamp(self, timestamp):
         value = datetime.datetime.fromtimestamp(timestamp)

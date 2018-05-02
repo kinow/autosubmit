@@ -50,7 +50,6 @@ import random
 import signal
 import datetime
 import portalocker
-import pwd
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 
@@ -734,7 +733,7 @@ class Autosubmit:
                         for job_id, job in queuing_jobs.items():
                             if job_list.job_package_map and job_id in job_list.job_package_map:
 
-                                Log.info('Checking wrapper job with id ' + str(job_id))
+                                Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
 
                                 check_wrapper = True
