@@ -261,12 +261,12 @@ class AutosubmitConfig(object):
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
 
-        :return: True if everithing is correct, False if it founds any error
+        :return: True if everything is correct, False if it finds any error
         :rtype: bool
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        #result = self.check_autosubmit_conf()
+
         result = self.check_platforms_conf()
         result = result and self.check_jobs_conf()
         result = result and self.check_autosubmit_conf()
@@ -295,8 +295,9 @@ class AutosubmitConfig(object):
         result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
-        result = result and self.is_valid_wrapper_expression()
+        result = result and self.is_valid_jobs_in_wrapper()
 
+        #TODO: if wrapper, check if max wallclock and platforms are defined
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
@@ -1013,7 +1014,7 @@ class AutosubmitConfig(object):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
 
-    def is_valid_wrapper_expression(self):
+    def is_valid_jobs_in_wrapper(self):
         expression = self.get_wrapper_jobs()
         if expression != 'None':
             parser = self._jobs_parser
