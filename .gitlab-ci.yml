@@ -1,10 +1,49 @@
-test:
-  cache:
-    paths:
-      - ~/venv/autosubmit
+before_script:
+  - export GIT_SSL_NO_VERIFY=1
+  - export PATH="$HOME/miniconda2/bin:$PATH"
+
+stages:
+  - prepare
+  - test
+  - report
+  - clean
+
+cache:
+  paths:
+    - test/coverage.xml
+
+prepare:
+  stage: prepare
   script:
-  - source ~/venv/autosubmit/bin/activate
-  - nosetests test --ignore-files="unit/test_job_graph.py" --with-coverage --cover-xml
-  - source ~/venv/autosubmit/bin/activate
-  - pip install codacy-coverage --upgrade
-  - python-codacy-coverage -r test/coverage.xml
+    - conda update conda
+
+test_python2:
+  stage: test
+  script:
+    - git submodule sync --recursive
+    - git submodule update --init --recursive
+    - conda env update -f environment.yml -n autosubmit2 python=2.7
+    - source activate autosubmit2
+    - nosetests --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml test
+
+# test_python3:
+#   stage: test
+#   script:
+#     - git submodule sync --recursive
+#     - git submodule update --init --recursive
+#     - conda env update -f environment.yml -n earthdiagnostics3 python=3.6
+#     - source activate earthdiagnostics3
+#     - python run_test.py
+
+report_codacy:
+  stage: report
+  script:
+    - source activate autosubmit2
+    - pip install codacy-coverage --upgrade
+    - python-codacy-coverage -r test/coverage.xml
+    
+
+clean:
+  stage: clean
+  script:
+    - conda clean --all --yes
