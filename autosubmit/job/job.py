@@ -1034,11 +1034,11 @@ class WrapperJob(Job):
     def _check_wrapper_status(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         if not self.running_jobs_start and not_finished_jobs:
-            status = self.platform.check_job(self.id)
-            if status == Status.RUNNING:
+            self.status = self.platform.check_job(self.id)
+            if self.status == Status.RUNNING:
                 Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")
                 self.cancel_failed_wrapper_job()
-            elif status == Status.COMPLETED:
+            elif self.status == Status.COMPLETED:
                 Log.info("Wrapper job {0} COMPLETED. Setting all jobs to COMPLETED...".format(self.name))
                 self._update_completed_jobs()
 
