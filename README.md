@@ -1,3 +1,5 @@
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/e9b46f9e6b3047d58f004f024c4971bb)](https://www.codacy.com/app/BSC-Earth/autosubmit?utm_source=earth.bsc.es&amp;utm_medium=referral&amp;utm_content=gitlab/es/autosubmit&amp;utm_campaign=Badge_Grade)
+
 Autosubmit is a tool to create, manage and monitor experiments using
 computing clusters, HPC platforms and supercomputers remotely via ssh.
 
