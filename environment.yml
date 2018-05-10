@@ -1,0 +1,22 @@
+name: autosubmit
+channels:
+- conda-forge
+
+dependencies:
+- nose
+- nose-cov
+- paramiko
+- pydotplus
+- python-dateutil
+- pyparsing
+- numpy
+- matplotlib
+
+- mock
+- portalocker
+- networkx
+
+- pip:
+  - bscearth.utils
+  - saga-python
+
