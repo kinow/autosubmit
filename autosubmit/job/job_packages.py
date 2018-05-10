@@ -275,14 +275,26 @@ class JobPackageThread(JobPackageBase):
         return script_file
 
     def _send_files(self):
+        self.platform.check_remote_log_dir()
+        if callable(getattr(self.platform, 'remove_multiple_files')):
+            filenames = str()
+            for job in self.jobs:
+                filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
+            self.platform.remove_multiple_files(filenames)
         for job in self.jobs:
-            self.platform.send_file(self._job_scripts[job.name])
+            self.platform.send_file(self._job_scripts[job.name], check=False)
         self.platform.send_file(self._common_script)
 
     def _do_submission(self):
-        for job in self.jobs:
-            self.platform.remove_stat_file(job.name)
-            self.platform.remove_completed_file(job.name)
+        if callable(getattr(self.platform, 'remove_multiple_files')):
+            filenames = str()
+            for job in self.jobs:
+                filenames += " " + self.platform.remote_log_dir + "/" + job.name + "_STAT " + self.platform.remote_log_dir + "/" + job.name + "_COMPLETED"
+            self.platform.remove_multiple_files(filenames)
+        else:
+            for job in self.jobs:
+                self.platform.remove_stat_file(job.name)
+                self.platform.remove_completed_file(job.name)
 
         package_id = self.platform.submit_job(None, self._common_script)
 
@@ -382,7 +394,7 @@ class JobPackageVertical(JobPackageThread):
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
 
@@ -405,7 +417,7 @@ class JobPackageHorizontal(JobPackageThread):
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
             self._num_processors = str(int(self._num_processors) + int(job.processors))
-        self._name = self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
 
@@ -415,3 +427,35 @@ class JobPackageHorizontal(JobPackageThread):
                                                 self._job_dependency, expid=self._expid,
                                                 rootdir=self.platform.root_dir,
                                                 directives=self._custom_directives)
+
+class JobPackageHybrid(JobPackageThread):
+    """
+        Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
+        """
+
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None):
+        all_jobs = [item for sublist in jobs for item in sublist] #flatten list
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency)
+        self.jobs_lists = jobs
+        self._num_processors = int(num_processors)
+        self._wallclock = total_wallclock
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
+                                                              self._num_processors,
+                                                              len(self._jobs))
+
+    @property
+    def _jobs_scripts(self):
+        jobs_scripts = []
+        for job_list in self.jobs_lists:
+            inner_jobs = list()
+            for job in job_list:
+                inner_jobs.append(job.name + '.cmd')
+            jobs_scripts.append(inner_jobs)
+        return jobs_scripts
+
+    def _common_script_content(self):
+        return self.platform.wrapper.hybrid(self._name, self._queue, self._project,
+                                              self._wallclock, self._num_processors,
+                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              rootdir=self.platform.root_dir,
+                                              directives=self._custom_directives)

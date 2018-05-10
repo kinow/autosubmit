@@ -261,12 +261,12 @@ class AutosubmitConfig(object):
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
 
-        :return: True if everithing is correct, False if it founds any error
+        :return: True if everything is correct, False if it finds any error
         :rtype: bool
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        #result = self.check_autosubmit_conf()
+
         result = self.check_platforms_conf()
         result = result and self.check_jobs_conf()
         result = result and self.check_autosubmit_conf()
@@ -295,8 +295,9 @@ class AutosubmitConfig(object):
         result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
-        result = result and self.is_valid_wrapper_expression()
+        result = result and self.is_valid_jobs_in_wrapper()
 
+        #TODO: if wrapper, check if max wallclock and platforms are defined
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
@@ -491,6 +492,8 @@ class AutosubmitConfig(object):
         :rtype: dict
         """
         parameters = dict()
+        #from collections import OrderedDict
+        #parameters = OrderedDict()
         for section in self._exp_parser.sections():
             for option in self._exp_parser.options(section):
                 parameters[option] = self._exp_parser.get(section, option)
@@ -917,21 +920,21 @@ class AutosubmitConfig(object):
 
     def get_wrapper_type(self):
         """
-        Returns what kind of wrapper (VERTICAL, HORIZONTAL, NONE) the user has configured in the autosubmit's config
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
 
-    def get_wrapper_expression(self):
+    def get_wrapper_jobs(self):
         """
-        Returns the wrapper expression the user has configured in the autosubmit's config
+        Returns the jobs that should be wrapped, configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'EXPRESSION', 'None')
+        return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
 
     def get_max_wrapped_jobs(self):
         """
@@ -941,6 +944,15 @@ class AutosubmitConfig(object):
          :rtype: string
          """
         return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
+
+    def get_wrapper_check_time(self):
+        """
+         Returns time to check if the SIM are completed and POST jobs can be sent
+
+         :return: post check time
+         :rtype: int
+         """
+        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
     def get_jobs_sections(self):
         """
@@ -1002,8 +1014,8 @@ class AutosubmitConfig(object):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
 
-    def is_valid_wrapper_expression(self):
-        expression = self.get_wrapper_expression()
+    def is_valid_jobs_in_wrapper(self):
+        expression = self.get_wrapper_jobs()
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()

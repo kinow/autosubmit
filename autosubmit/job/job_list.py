@@ -69,6 +69,9 @@ class JobList:
         self.packages_dict = dict()
         self._ordered_jobs_by_date_member = dict()
 
+        self.packages_id = dict()
+        self.job_package_map = dict()
+
     @property
     def expid(self):
         """
@@ -94,7 +97,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_expression, new=True):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -144,8 +147,8 @@ class JobList:
         for job in self._job_list:
             job.parameters = parameters
 
-        if wrapper_expression != 'None':
-            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_expression)
+        if wrapper_type == 'vertical-mixed':
+            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_jobs)
 
 
     @staticmethod
@@ -340,7 +343,7 @@ class JobList:
             dic_jobs.read_section(section, priority, default_job_type, jobs_data)
             priority += 1
 
-    def _create_sorted_dict_jobs(self, wrapper_expression):
+    def _create_sorted_dict_jobs(self, wrapper_jobs):
         dict_jobs = dict()
         for date in self._date_list:
             dict_jobs[date] = dict()
@@ -348,12 +351,12 @@ class JobList:
                 dict_jobs[date][member] = list()
         num_chunks = len(self._chunk_list)
 
-        filtered_jobs_list = filter(lambda job: job.section in wrapper_expression, self._job_list)
+        filtered_jobs_list = filter(lambda job: job.section in wrapper_jobs, self._job_list)
 
         filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(filtered_jobs_list)
 
         sections_running_type_map = dict()
-        for section in wrapper_expression.split(" "):
+        for section in wrapper_jobs.split(" "):
             sections_running_type_map[section] = self._dic_jobs.get_option(section, "RUNNING", 'once')
 
         for date in self._date_list:
@@ -590,6 +593,18 @@ class JobList:
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.UNKNOWN]
 
+    def get_suspended(self, platform=None):
+        """
+        Returns a list of jobs on unknown state
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: unknown state jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                job.status == Status.SUSPENDED]
+
     def get_in_queue(self, platform=None):
         """
         Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown)
@@ -649,6 +664,15 @@ class JobList:
             if job.name == name:
                 return job
         Log.warning("We could not find that job {0} in the list!!!!", name)
+
+    def get_in_queue_grouped_id(self, platform):
+        jobs = self.get_in_queue(platform)
+        jobs_by_id = dict()
+        for job in jobs:
+            if job.id not in jobs_by_id:
+                jobs_by_id[job.id] = list()
+            jobs_by_id[job.id].append(job)
+        return jobs_by_id
 
     def sort_by_name(self):
         """
@@ -780,11 +804,13 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    job.packed = False
                     save = True
                     Log.debug("Resetting job: {0} status to: READY for retrial...".format(job.name))
                 else:
                     job.status = Status.WAITING
                     save = True
+                    job.packed = False
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY

@@ -84,7 +84,33 @@ class ParamikoPlatform(Platform):
             Log.error('Can not create ssh connection to {0}: {1}', self.host, e.strerror)
             return False
 
-    def send_file(self, filename):
+    def check_completed_files(self, sections=None):
+        if self.host == 'localhost':
+            return None
+
+        command = "find %s " % self.remote_log_dir
+        if sections:
+            for i, section in enumerate(sections.split()):
+                command += " -name \*%s_COMPLETED" % section
+                if i < len(sections.split())-1:
+                    command += " -o "
+        else:
+            command += " -name \*_COMPLETED"
+
+        if self.send_command(command):
+            return self._ssh_output
+        else:
+            return None
+
+    def remove_multiple_files(self, filenames):
+        command = "rm " + filenames
+
+        if self.send_command(command, ignore_log=True):
+            return self._ssh_output
+        else:
+            return None
+
+    def send_file(self, filename, check=True):
         """
         Sends a local file to the platform
         :param filename: name of the file to send
@@ -94,9 +120,9 @@ class ParamikoPlatform(Platform):
         if self._ssh is None:
             if not self.connect():
                 return None
-
-        self.check_remote_log_dir()
-        self.delete_file(filename)
+        if check:
+            self.check_remote_log_dir()
+            self.delete_file(filename)
 
         try:
             ftp = self._ssh.open_sftp()
@@ -268,7 +294,7 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def send_command(self, command):
+    def send_command(self, command, ignore_log=False):
         """
         Sends given command to HPC
 
@@ -285,13 +311,14 @@ class ParamikoPlatform(Platform):
             stderr_readlines = stderr.readlines()
             self._ssh_output = stdout.read().rstrip()
             if stdout.channel.recv_exit_status() == 0:
-                if len(stderr_readlines) > 0:
+                if len(stderr_readlines) > 0 and not ignore_log:
                     Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                 Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
                 return True
             else:
-                Log.error('Command {0} in {1} failed with error message: {2}',
-                          command, self.host, '\n'.join(stderr_readlines))
+                if not ignore_log:
+                    Log.error('Command {0} in {1} failed with error message: {2}',
+                            command, self.host, '\n'.join(stderr_readlines))
                 return False
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)

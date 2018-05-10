@@ -50,7 +50,6 @@ import random
 import signal
 import datetime
 import portalocker
-import pwd
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 
@@ -687,6 +686,20 @@ class Autosubmit:
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_packages_" + expid)
 
+                if as_conf.get_wrapper_type() != 'none':
+                    packages = packages_persistence.load()
+                    for (exp_id, package_name, job_name) in packages:
+                        if package_name not in job_list.packages_dict:
+                            job_list.packages_dict[package_name] = []
+                        job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
+
+                    for package_name, jobs in job_list.packages_dict.items():
+                        from job.job import WrapperJob
+                        wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                 None,
+                                                 None, jobs[0].platform, as_conf)
+                        job_list.job_package_map[jobs[0].id] = wrapper_job
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -711,23 +724,47 @@ class Autosubmit:
                     default_retrials = as_conf.get_retrials()
                     Log.debug("Number of retrials: {0}", default_retrials)
 
+                    check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+                    Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
+
                     save = False
                     for platform in platforms_to_test:
-                        for job in job_list.get_in_queue(platform):
-                            prev_status = job.status
-                            if job.status == Status.FAILED:
-                                continue
-                            if prev_status != job.update_status(platform.check_job(job.id),
-                                                                as_conf.get_copy_remote_logs() == 'true'):
+                        queuing_jobs = job_list.get_in_queue_grouped_id(platform)
+                        for job_id, job in queuing_jobs.items():
+                            if job_list.job_package_map and job_id in job_list.job_package_map:
 
-                                if as_conf.get_notifications() == 'true':
+                                Log.debug('Checking wrapper job with id ' + str(job_id))
+                                wrapper_job = job_list.job_package_map[job_id]
 
-                                    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                      Status.VALUE_TO_KEY[prev_status],
-                                                                      Status.VALUE_TO_KEY[job.status],
-                                                                      as_conf.get_mails_to())
-                                save = True
+                                check_wrapper = True
+                                if wrapper_job.status == Status.RUNNING:
+                                    check_wrapper = True if datetime.timedelta.total_seconds(
+                                        datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
+                                if check_wrapper:
+                                    wrapper_job.checked_time = datetime.datetime.now()
+                                    status = platform.check_job(wrapper_job.id)
+                                    Log.info(
+                                        'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[status]))
+                                    wrapper_job.check_status(status)
+                                    save = True
+                                else:
+                                    Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
+                            else:
+                                job = job[0]
+                                prev_status = job.status
+                                if job.status == Status.FAILED:
+                                    continue
+                                if prev_status != job.update_status(platform.check_job(job.id),
+                                                                    as_conf.get_copy_remote_logs() == 'true'):
+
+                                    if as_conf.get_notifications() == 'true':
+
+                                        if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                          Status.VALUE_TO_KEY[prev_status],
+                                                                          Status.VALUE_TO_KEY[job.status],
+                                                                          as_conf.get_mails_to())
+                                    save = True
 
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
@@ -782,6 +819,12 @@ class Autosubmit:
 
                     if hasattr(package, "name"):
                         job_list.packages_dict[package.name] = package.jobs
+
+                        from job.job import WrapperJob
+                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
+                                                 package._wallclock, package._num_processors,
+                                                 package.platform, as_conf)
+                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
                         remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
@@ -1887,7 +1930,7 @@ class Autosubmit:
                 job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                   as_conf.get_retrials(),
                                   as_conf.get_default_job_type(),
-                                  as_conf.get_wrapper_expression())
+                                  as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs())
 
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
@@ -2073,8 +2116,8 @@ class Autosubmit:
                             date = date_json['sd']
                             jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
 
-                            for job in filter(lambda j: j.member is None, jobs_date):
-                                Autosubmit.change_status(final, final_status, job)
+                            #for job in filter(lambda j: j.member is None, jobs_date):
+                            #    Autosubmit.change_status(final, final_status, job)
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
@@ -2485,7 +2528,7 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_expression(), False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), False)
         return job_list
 
     @staticmethod
