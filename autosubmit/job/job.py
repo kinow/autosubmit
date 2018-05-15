@@ -744,14 +744,15 @@ class Job(object):
                         snippet.as_tailer()])
 
     def _queuing_reason_cancel(self, reason):
-        reason = reason.split('(', 1)[1].split(')')[0]
-        if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
-                                            'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
-                                            'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
-                                            'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
-                                            'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
-                                            'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
-            return True
+        if len(reason) > 1:
+            reason = reason.split('(', 1)[1].split(')')[0]
+            if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
+                                                'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
+                                                'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
+                                                'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
+                                                'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
+                                                'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
+                return True
         return False
 
     @staticmethod
@@ -954,6 +955,17 @@ class WrapperJob(Job):
 
     def check_status(self, status):
         if status != self.status:
+            if status == Status.QUEUING:
+                reason = str()
+                if self.platform.type == 'slurm':
+                    self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+                    reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+                    if self._queuing_reason_cancel(reason):
+                        Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
+                                  reason)
+                        self.cancel_failed_wrapper_job()
+                        return
+                    Log.info("Job {0} is QUEUING {1}", self.name, reason)
             self.status = status
         if status in [Status.FAILED, Status.UNKNOWN]:
             self.cancel_failed_wrapper_job()
@@ -961,7 +973,7 @@ class WrapperJob(Job):
         elif status == Status.COMPLETED:
             self.check_inner_jobs_completed(self.job_list)
         elif status == Status.RUNNING:
-            time.sleep(5)
+            time.sleep(10)
             Log.debug('Checking inner jobs status')
             self.check_inner_job_status()
 
@@ -1056,8 +1068,10 @@ class WrapperJob(Job):
         if not self.running_jobs_start and not_finished_jobs:
             self.status = self.platform.check_job(self.id)
             if self.status == Status.RUNNING:
-                Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")
-                self.cancel_failed_wrapper_job()
+                self._check_running_jobs()
+                if not self.running_jobs_start:
+                    Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")
+                    self.cancel_failed_wrapper_job()
             elif self.status == Status.COMPLETED:
                 Log.info("Wrapper job {0} COMPLETED. Setting all jobs to COMPLETED...".format(self.name))
                 self._update_completed_jobs()

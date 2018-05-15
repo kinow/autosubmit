@@ -433,7 +433,7 @@ class JobPackageHybrid(JobPackageThread):
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, crossdate=False):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
         super(JobPackageHybrid, self).__init__(all_jobs, dependency)
         self.jobs_lists = jobs
@@ -442,6 +442,8 @@ class JobPackageHybrid(JobPackageThread):
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
+        self._crossdate = crossdate
+        self._custom_directives_dict = dict()
 
     @property
     def _jobs_scripts(self):
@@ -450,10 +452,21 @@ class JobPackageHybrid(JobPackageThread):
             inner_jobs = list()
             for job in job_list:
                 inner_jobs.append(job.name + '.cmd')
+                # TODO: test the custom directives dict
+                #if job.section not in self._custom_directives_dict:
+                #    self._custom_directives_dict[job.section] = dict()
+                #    self._custom_directives_dict[job.section]['PROCESSORS'] = job.processors
+                #    self._custom_directives_dict[job.section]['TASKS_PER_NODE'] = job.tasks
             jobs_scripts.append(inner_jobs)
         return jobs_scripts
 
     def _common_script_content(self):
+        if self._crossdate:
+            return self.platform.wrapper.hybrid_crossdate(self._name, self._queue, self._project,
+                                              self._wallclock, self._num_processors,
+                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              rootdir=self.platform.root_dir,
+                                              directives=self._custom_directives)
         return self.platform.wrapper.hybrid(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
                                               self._jobs_scripts, self._job_dependency, expid=self._expid,

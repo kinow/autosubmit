@@ -954,6 +954,9 @@ class AutosubmitConfig(object):
          """
         return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
+    def get_wrapper_crossdate(self):
+        return self._conf_parser.get_option('wrapper', 'CROSSDATE', 'false').lower() == 'true'
+
     def get_jobs_sections(self):
         """
         Returns the list of sections defined in the jobs config file
@@ -1020,7 +1023,11 @@ class AutosubmitConfig(object):
             parser = self._jobs_parser
             sections = parser.sections()
             for section in expression.split(" "):
-                if section not in sections:
+                if "&" in section:
+                    for inner_section in section.split("&"):
+                        if inner_section not in sections:
+                            return False
+                elif section not in sections:
                     return False
         return True
 
