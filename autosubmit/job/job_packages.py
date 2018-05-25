@@ -443,7 +443,7 @@ class JobPackageHybrid(JobPackageThread):
                                                               self._num_processors,
                                                               len(self._jobs))
         self._crossdate = crossdate
-        self._custom_directives_dict = dict()
+        self._jobs_resources = dict()
 
     @property
     def _jobs_scripts(self):
@@ -452,11 +452,10 @@ class JobPackageHybrid(JobPackageThread):
             inner_jobs = list()
             for job in job_list:
                 inner_jobs.append(job.name + '.cmd')
-                # TODO: test the custom directives dict
-                #if job.section not in self._custom_directives_dict:
-                #    self._custom_directives_dict[job.section] = dict()
-                #    self._custom_directives_dict[job.section]['PROCESSORS'] = job.processors
-                #    self._custom_directives_dict[job.section]['TASKS_PER_NODE'] = job.tasks
+                if job.section not in self._jobs_resources:
+                    self._jobs_resources[job.section] = dict()
+                    self._jobs_resources[job.section]['PROCESSORS'] = job.processors
+                    self._jobs_resources[job.section]['TASKS'] = job.tasks if job.tasks != '0' else '48'
             jobs_scripts.append(inner_jobs)
         return jobs_scripts
 
@@ -464,7 +463,8 @@ class JobPackageHybrid(JobPackageThread):
         if self._crossdate:
             return self.platform.wrapper.hybrid_crossdate(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              self._jobs_scripts, self._job_dependency,
+                                              jobs_resources=self._jobs_resources, expid=self._expid,
                                               rootdir=self.platform.root_dir,
                                               directives=self._custom_directives)
         return self.platform.wrapper.hybrid(self._name, self._queue, self._project,

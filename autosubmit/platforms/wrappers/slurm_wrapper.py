@@ -288,7 +288,7 @@ class SlurmWrapper(object):
         return wrapper_script
 
     @classmethod
-    def hybrid_crossdate(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
+    def hybrid_crossdate(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, jobs_resources=dict(), **kwargs):
         wrapper_script = textwrap.dedent("""\
                 #!/usr/bin/env python
                 ###############################################################################
@@ -303,7 +303,7 @@ class SlurmWrapper(object):
                 #SBATCH -t {3}:00
                 #SBATCH -n {4}
                 {6}
-                {8}
+                {9}
                 #
                 ###############################################################################
 
@@ -312,6 +312,7 @@ class SlurmWrapper(object):
                 from threading import Thread
                 from commands import getstatusoutput
                 from datetime import datetime
+                from math import ceil
 
                 class JobThread(Thread):
                     def __init__ (self, template, id_run):
@@ -333,6 +334,7 @@ class SlurmWrapper(object):
                         self.jobs_list = jobs_list
                         self.id_run = id_run
                         self.nodes = nodes
+                        self.jobs_resources = {8}
 
                     def run(self):
                         pid_list = []
@@ -343,25 +345,27 @@ class SlurmWrapper(object):
                               
                         for i in range(len(self.jobs_list)):
                             job = self.jobs_list[i]
+                            jobname = job.split('_')[-1]
+                            section = jobname.replace('.cmd', '')
                             
                             machines = str()
-
-                            if '_DA.cmd' in job:
-                                for idx in range(3):
-                                        for u in range(4):
-                                                node = all_cores.pop(0)
-                                                if node:
-                                                        machines += node +"_NEWLINE_"
-                                        for u in range(44):
-                                            all_cores.pop(0)
-                            else:
-                                total_cores = 1544
-                        
-                                for idx in range(total_cores):
+                            
+                            cores = int(self.jobs_resources[section]['PROCESSORS'])
+                            tasks = int(self.jobs_resources[section]['TASKS'])
+                            nodes = int(ceil(int(cores)/float(tasks)))
+                            
+                            for n in range(nodes):
+                                for task in range(tasks):
+                                    if cores > 0:
                                         node = all_cores.pop(0)
                                         if node:
-                                                machines += node +"_NEWLINE_"
-                        
+                                            machines += node +"_NEWLINE_"
+                                            cores -= 1
+                                    else:
+                                        break
+                                for rest in range(48-tasks):
+                                    all_cores.pop(0)
+                                                    
                             machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                             with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
                                 machinefile.write(machines)
@@ -373,6 +377,8 @@ class SlurmWrapper(object):
                         for i in range(len(pid_list)):
                             pid = pid_list[i]
                             pid.join()
+                            job = self.job_list[i]
+                            print job
                             completed_filename = job.replace('.cmd', '_COMPLETED')
                             completed_path = os.path.join(os.getcwd(), completed_filename)
                             if os.path.exists(completed_path):
@@ -397,10 +403,10 @@ class SlurmWrapper(object):
                     current = JobListThread(job_list, index, all_nodes)
                     current.start()
                     current.join()
-                    print datetime.now(), "List ", str(index)," has finished"
+                    print datetime.now(), "List ", str(index+1)," has finished"
 
                 """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
-                           cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48),
+                           cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48), str(jobs_resources),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
         return wrapper_script
