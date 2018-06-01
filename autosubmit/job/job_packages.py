@@ -453,9 +453,10 @@ class JobPackageHybrid(JobPackageThread):
             for job in job_list:
                 inner_jobs.append(job.name + '.cmd')
                 if job.section not in self._jobs_resources:
+                    self._jobs_resources['PROCESSORS_PER_NODE'] = self.platform.processors_per_node
                     self._jobs_resources[job.section] = dict()
                     self._jobs_resources[job.section]['PROCESSORS'] = job.processors
-                    self._jobs_resources[job.section]['TASKS'] = job.tasks if job.tasks != '0' else '48'
+                    self._jobs_resources[job.section]['TASKS'] = job.tasks
             jobs_scripts.append(inner_jobs)
         return jobs_scripts
 

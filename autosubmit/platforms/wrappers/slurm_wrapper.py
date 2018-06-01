@@ -339,8 +339,12 @@ class SlurmWrapper(object):
                     def run(self):
                         pid_list = []
                         all_cores = []
+                        
+                        processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                        total_cores = int({4})
+                        
                         for node in self.nodes:
-                           for n in range(48):
+                           for n in range(total_cores):
                               all_cores.append(node)
                               
                         for i in range(len(self.jobs_list)):
@@ -363,8 +367,10 @@ class SlurmWrapper(object):
                                             cores -= 1
                                     else:
                                         break
-                                for rest in range(48-tasks):
-                                    all_cores.pop(0)
+                                if cores > 0:
+                                    for rest in range(processors_per_node-tasks):
+                                        all_cores.pop(0)
+                                        cores -= 1
                                                     
                             machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                             with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:

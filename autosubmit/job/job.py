@@ -62,7 +62,7 @@ class Job(object):
         self.platform_name = None
         self.section = None
         self.wallclock = None
-        self.tasks = '1'
+        self.tasks = '0'
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
@@ -629,7 +629,7 @@ class Job(object):
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
-        if self.tasks == 0:
+        if self.tasks == '0':
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
         self.memory_per_task = as_conf.get_memory_per_task(self.section)
@@ -1014,7 +1014,7 @@ class WrapperJob(Job):
                 self.cancel_failed_wrapper_job()
             else:
                 Log.error("Job {0} inside wrapper {1} is running for longer than its wallclock! Setting to FAILED...".format(job.name, self.name))
-            self._update_failed_job(job)
+            self._check_finished_job(job)
 
     def _check_running_jobs(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED]]

@@ -260,6 +260,7 @@ class Autosubmit:
                                    help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -385,7 +386,7 @@ class Autosubmit:
             elif args.command == 'migrate':
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand, args.expand_status)
+                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand, args.expand_status, args.notransitive)
             elif args.command == 'configure':
                 if not args.advanced or (args.advanced and dialog is None):
                     return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename, args.localrootpath,
@@ -1847,7 +1848,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list()):
+    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False):
         """
         Creates job list for given experiment. Configuration files must be valid before realizaing this process.
 
@@ -1930,13 +1931,13 @@ class Autosubmit:
                 job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                   as_conf.get_retrials(),
                                   as_conf.get_default_job_type(),
-                                  as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs())
+                                  as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
 
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-                    job_list.rerun(chunk_list)
+                    job_list.rerun(chunk_list, notransitive)
                 else:
-                    job_list.remove_rerun_only_jobs()
+                    job_list.remove_rerun_only_jobs(notransitive)
 
                 Log.info("\nSaving the jobs list...")
                 job_list.save()
@@ -2115,9 +2116,6 @@ class Autosubmit:
                         for date_json in data['sds']:
                             date = date_json['sd']
                             jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
-
-                            #for job in filter(lambda j: j.member is None, jobs_date):
-                            #    Autosubmit.change_status(final, final_status, job)
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
@@ -2528,7 +2526,7 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), new=False)
         return job_list
 
     @staticmethod

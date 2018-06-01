@@ -99,6 +99,19 @@ class SlurmHeader(object):
             return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
         return ""
 
+    def get_tasks_per_node(self, job):
+        """
+        Returns memory per task directive for the specified job
+
+        :param job: job to create tasks per node directive for
+        :type job: Job
+        :return: tasks per node directive
+        :rtype: str
+        """
+        #if job.parameters['NUMTASK'] != '':
+        #    return "SBATCH --tasks-per-node={0}".format(job.parameters['NUMTASK'])
+        return ""
+
     SERIAL = textwrap.dedent("""\
             ###############################################################################
             #                   %TASKTYPE% %EXPID% EXPERIMENT
@@ -107,7 +120,8 @@ class SlurmHeader(object):
             #%QUEUE_DIRECTIVE%
             #%ACCOUNT_DIRECTIVE%
             #%MEMORY_DIRECTIVE%
-            #%MEMORY_PER_TASK_DIRECTIVE%
+            #%TASKS_PER_NODE_DIRECTIVE%
+            #%NUMTASK%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
@@ -127,6 +141,7 @@ class SlurmHeader(object):
             #%ACCOUNT_DIRECTIVE%
             #%MEMORY_DIRECTIVE%
             #%MEMORY_PER_TASK_DIRECTIVE%
+            #%TASKS_PER_NODE_DIRECTIVE%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
