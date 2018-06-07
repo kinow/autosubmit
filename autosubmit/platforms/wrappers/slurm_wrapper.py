@@ -343,10 +343,18 @@ class SlurmWrapper(object):
                         processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
                         total_cores = int({4})
                         
-                        for node in self.nodes:
-                           for n in range(total_cores):
-                              all_cores.append(node)
-                              
+                        idx = 0
+                        for n in range(total_cores):
+                            if processors_per_node > 0:
+                                processors_per_node -= 1
+                                print processors_per_node
+                                all_cores.append(self.nodes[idx])
+                            else:
+                                idx += 1
+                                processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                        
+                        processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                        
                         for i in range(len(self.jobs_list)):
                             job = self.jobs_list[i]
                             jobname = job.split('_')[-1]

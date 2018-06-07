@@ -83,13 +83,15 @@ class JobPackager(object):
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     built_packages, remote_dependencies_dict = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs)
+                    packages_to_submit += built_packages
                 elif self.wrapper_type == 'horizontal':
                     built_packages, remote_dependencies_dict = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs, section)
+                    packages_to_submit += built_packages
+
                 elif self.wrapper_type == 'hybrid':
                     built_packages = self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section)
-
-                packages_to_submit.append(built_packages)
+                    packages_to_submit.append(built_packages)
             else:
                 # No wrapper allowed / well-configured
                 for job in jobs_to_submit_by_section[section]:

@@ -744,7 +744,7 @@ class Job(object):
                         snippet.as_tailer()])
 
     def _queuing_reason_cancel(self, reason):
-        if len(reason.split()) > 1:
+        if len(reason.split('(', 1)) > 1:
             reason = reason.split('(', 1)[1].split(')')[0]
             if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
                                                 'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
@@ -960,6 +960,7 @@ class WrapperJob(Job):
                 if self.platform.type == 'slurm':
                     self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
                     reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+
                     if self._queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
                                   reason)
