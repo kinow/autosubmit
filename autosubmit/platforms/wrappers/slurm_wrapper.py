@@ -176,7 +176,7 @@ class SlurmWrapper(object):
         return wrapper_script
 
     @classmethod
-    def hybrid(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, **kwargs):
+    def hybrid(cls, filename, queue, project, wallclock, num_procs, job_scripts, dependency, jobs_resources=dict(),  **kwargs):
         wrapper_script = textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -243,14 +243,26 @@ class SlurmWrapper(object):
             # Defining scripts to be run
             scripts = {5}
             
+            jobs_resources = {7}
+            
             with open('node_list', 'r') as file:
                 all_nodes = file.read()
         
             all_nodes = all_nodes.split('_NEWLINE_')
+            total_cores = int({4})
+            
             all_cores = []
-            for node in all_nodes:
-               for n in range(48):
-                  all_cores.append(node)
+            idx = 0
+            while total_cores > 0:
+                if processors_per_node > 0:
+                    processors_per_node -= 1
+                    total_cores -= 1
+                    all_cores.append(all_nodes[idx])
+                else:
+                    idx += 1
+                    processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+            
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
             # Initializing PIDs container
             pid_list = []
@@ -263,9 +275,9 @@ class SlurmWrapper(object):
                 machines = str()
                    
                 for idx in range(total_cores):
-                        node = all_cores.pop(0)
-                        if node:
-                                machines += node +"_NEWLINE_"
+                    node = all_cores.pop(0)
+                    if node:
+                            machines += node +"_NEWLINE_"
 
                 machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                 with open("machinefiles/machinefile_"+member, "w") as machinefile:
@@ -282,7 +294,7 @@ class SlurmWrapper(object):
                 pid.join()
                                         
             """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
-                           cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48),
+                           cls.dependency_directive(dependency), str(jobs_resources),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
         return wrapper_script
@@ -303,7 +315,7 @@ class SlurmWrapper(object):
                 #SBATCH -t {3}:00
                 #SBATCH -n {4}
                 {6}
-                {9}
+                {8}
                 #
                 ###############################################################################
 
@@ -334,26 +346,26 @@ class SlurmWrapper(object):
                         self.jobs_list = jobs_list
                         self.id_run = id_run
                         self.nodes = nodes
-                        self.jobs_resources = {8}
 
                     def run(self):
                         pid_list = []
                         all_cores = []
                         
-                        processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                        jobs_resources = {7}
+                        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
                         total_cores = int({4})
                         
                         idx = 0
-                        for n in range(total_cores):
+                        while total_cores > 0:
                             if processors_per_node > 0:
                                 processors_per_node -= 1
-                                print processors_per_node
+                                total_cores -= 1
                                 all_cores.append(self.nodes[idx])
                             else:
                                 idx += 1
-                                processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
                         
-                        processors_per_node = int(self.jobs_resources['PROCESSORS_PER_NODE'])
+                        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
                         
                         for i in range(len(self.jobs_list)):
                             job = self.jobs_list[i]
@@ -362,23 +374,19 @@ class SlurmWrapper(object):
                             
                             machines = str()
                             
-                            cores = int(self.jobs_resources[section]['PROCESSORS'])
-                            tasks = int(self.jobs_resources[section]['TASKS'])
+                            cores = int(jobs_resources[section]['PROCESSORS'])
+                            tasks = int(jobs_resources[section]['TASKS'])
                             nodes = int(ceil(int(cores)/float(tasks)))
                             
-                            for n in range(nodes):
-                                for task in range(tasks):
-                                    if cores > 0:
-                                        node = all_cores.pop(0)
-                                        if node:
-                                            machines += node +"_NEWLINE_"
-                                            cores -= 1
-                                    else:
-                                        break
-                                if cores > 0:
-                                    for rest in range(processors_per_node-tasks):
-                                        all_cores.pop(0)
+                            while nodes > 0:
+                                while cores > 0:
+                                    node = all_cores.pop(0)
+                                    if node:
+                                        machines += node +"_NEWLINE_"
                                         cores -= 1
+                                for rest in range(processors_per_node-tasks):
+                                    all_cores.pop(0)
+                                nodes -= 1
                                                     
                             machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                             with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
@@ -391,7 +399,7 @@ class SlurmWrapper(object):
                         for i in range(len(pid_list)):
                             pid = pid_list[i]
                             pid.join()
-                            job = self.job_list[i]
+                            job = self.jobs_list[i]
                             print job
                             completed_filename = job.replace('.cmd', '_COMPLETED')
                             completed_path = os.path.join(os.getcwd(), completed_filename)
@@ -420,7 +428,7 @@ class SlurmWrapper(object):
                     print datetime.now(), "List ", str(index+1)," has finished"
 
                 """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
-                           cls.dependency_directive(dependency), (int(num_procs / len(job_scripts)) / 48), str(jobs_resources),
+                           cls.dependency_directive(dependency), str(jobs_resources),
                            '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
         return wrapper_script

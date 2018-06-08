@@ -470,6 +470,7 @@ class JobPackageHybrid(JobPackageThread):
                                               directives=self._custom_directives)
         return self.platform.wrapper.hybrid(self._name, self._queue, self._project,
                                               self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
+                                              self._jobs_scripts, self._job_dependency,
+                                              jobs_resources=self._jobs_resources, expid=self._expid,
                                               rootdir=self.platform.root_dir,
                                               directives=self._custom_directives)
