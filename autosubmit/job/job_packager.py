@@ -197,6 +197,9 @@ class JobPackager(object):
 
         if horizontal_package:
             if self.crossdate:
+                horizontal_packager.create_sections_order(section)
+                horizontal_package.sort(key=lambda job: horizontal_packager.sort_by_expression(job.name))
+
                 ## Get the next horizontal packages ##
                 current_package = [horizontal_package]
                 for job in horizontal_package:
@@ -321,6 +324,7 @@ class JobPackagerHorizontal(object):
         self.max_wrapped_jobs = max_wrapped_jobs
         self.job_list = job_list
         self.max_jobs = max_jobs
+        self._sort_order_dict = dict()
 
     def build_horizontal_package(self):
         current_package = []
@@ -337,6 +341,14 @@ class JobPackagerHorizontal(object):
             else:
                 break
         return current_package
+
+    def create_sections_order(self, jobs_sections):
+        for i, section in enumerate(jobs_sections.split('&')):
+            self._sort_order_dict[section] = i
+
+    def sort_by_expression(self, jobname):
+        jobname = jobname.split('_')[-1]
+        return self._sort_order_dict[jobname]
 
     def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict()):
         packages = []
@@ -357,6 +369,7 @@ class JobPackagerHorizontal(object):
                         if wrappable and child not in next_section_list:
                             next_section_list.append(child)
 
+            next_section_list.sort(key=lambda job: self.sort_by_expression(job.name))
             self.job_list = next_section_list
             package_jobs = self.build_horizontal_package()
 
