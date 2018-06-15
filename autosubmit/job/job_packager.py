@@ -130,9 +130,10 @@ class JobPackager(object):
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, max_wrapped_jobs, self.max_jobs)
 
         package_jobs = horizontal_packager.build_horizontal_package()
+        jobs_resources = horizontal_packager.components_dict
         current_package = None
         if package_jobs:
-            current_package = JobPackageHorizontal(package_jobs)
+            current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources)
             packages.append(current_package)
 
         if self.remote_dependencies and current_package:
@@ -325,6 +326,7 @@ class JobPackagerHorizontal(object):
         self.job_list = job_list
         self.max_jobs = max_jobs
         self._sort_order_dict = dict()
+        self._components_dict = dict()
 
     def build_horizontal_package(self):
         current_package = []
@@ -340,6 +342,9 @@ class JobPackagerHorizontal(object):
                     current_processors = job.total_processors
             else:
                 break
+
+        self.create_components_dict()
+
         return current_package
 
     def create_sections_order(self, jobs_sections):
@@ -387,3 +392,13 @@ class JobPackagerHorizontal(object):
                 break
 
         return packages
+
+    @property
+    def components_dict(self):
+        return self._components_dict
+
+    def create_components_dict(self):
+        for job in self.job_list:
+            if job.section not in self.components_dict:
+                self._components_dict[job.section] = dict()
+                self.components_dict[job.section]['COMPONENTS'] = {parameter: job.parameters[parameter] for parameter in job.parameters.keys() if '_NUMPROC' in parameter }

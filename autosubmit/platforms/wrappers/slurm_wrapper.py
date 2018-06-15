@@ -83,7 +83,7 @@ class SlurmWrapper(object):
                        '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
     @classmethod
-    def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, **kwargs):
+    def horizontal(cls, filename, queue, project, wallclock, num_procs, _, job_scripts, dependency, jobs_resources=dict(), **kwargs):
         wrapper_script = textwrap.dedent("""\
             #!/usr/bin/env python
             ###############################################################################
@@ -98,7 +98,7 @@ class SlurmWrapper(object):
             #SBATCH -t {3}:00
             #SBATCH -n {4}
             {6}
-            {7}
+            {8}
             #
             ###############################################################################
 
@@ -117,9 +117,10 @@ class SlurmWrapper(object):
                 def run(self):
                     jobname = self.template.replace('.cmd', '')
                     os.system("echo $(date +%s) > "+jobname+"_STAT")
-                    out = str(self.template) + "." + str(self.id_run) + ".out"
-                    err = str(self.template) + "." + str(self.id_run) + ".err"
+                    out = str(jobname) + "." + str(self.id_run) + ".out"
+                    err = str(jobname) + "." + str(self.id_run) + ".err"
                     command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                    print command
                     (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
             
             # Getting the list of allocated nodes
@@ -135,26 +136,61 @@ class SlurmWrapper(object):
             with open('node_list', 'r') as file:
                  all_nodes = file.read()
             
+            total_cores = {4}
+            
+            jobs_resources = {7}
+            
             all_nodes = all_nodes.split("_NEWLINE_")
             all_cores = []
-            for node in all_nodes:
-               for n in range(48):
-                  all_cores.append(node)
+            
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+            
+            idx = 0
+            while total_cores > 0:
+                if processors_per_node > 0:
+                    processors_per_node -= 1
+                    total_cores -= 1
+                    all_cores.append(all_nodes[idx])
+                else:
+                    idx += 1
+                    processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+            
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
             # Initializing the scripts
             for i in range(len(scripts)):
                 job = scripts[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+                                
                 total_cores = ({4} / len(scripts))
-                machines = str()
-                for idx in range(total_cores):
+                                
+                if section in jobs_resources and 'COMPONENTS' in jobs_resources[section]:
+                    for component, cores in jobs_resources[section]['COMPONENTS'].items():
+                        machines = str()
+
+                        for idx in range(int(cores)):
+                            node = all_cores.pop(0)
+                            if node:
+                                machines += node +"_NEWLINE_"
+                        
+                        machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
+                        with open("machinefiles/machinefile_"+jobname+"_"+component.split('_')[0], "w") as machinefile:
+                            machinefile.write(machines)     
+                                
+                else:
+                    machines = str()
+        
+                    for idx in range(total_cores):
                         node = all_cores.pop(0)
                         if node:
-                                machines += node +"_NEWLINE_"
+                            machines += node +"_NEWLINE_"
     
-                machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
-                with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
-                    machinefile.write(machines)
-
+                    machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
+                    with open("machinefiles/machinefile_"+jobname, "w") as machinefile:
+                        machinefile.write(machines)
+                
+                print datetime.now(), " - starting job ", jobname
                 current = JobThread(scripts[i], i)
                 pid_list.append(current)
                 current.start()
@@ -169,7 +205,7 @@ class SlurmWrapper(object):
                 else:
                     print datetime.now(), "The job ", pid.template," has FAILED"
             """.format(filename, cls.queue_directive(queue), project, wallclock, num_procs, str(job_scripts),
-                       cls.dependency_directive(dependency),
+                       cls.dependency_directive(dependency), str(jobs_resources),
                        '\n'.ljust(13).join(str(s) for s in kwargs['directives'])))
 
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
@@ -250,6 +286,8 @@ class SlurmWrapper(object):
         
             all_nodes = all_nodes.split('_NEWLINE_')
             total_cores = int({4})
+            
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
             
             all_cores = []
             idx = 0

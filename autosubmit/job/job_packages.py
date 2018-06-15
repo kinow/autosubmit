@@ -225,13 +225,14 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
+        self._jobs_resources = jobs_resources
 
     @property
     def name(self):
@@ -239,6 +240,8 @@ class JobPackageThread(JobPackageBase):
 
     @property
     def _jobs_scripts(self):
+        self._jobs_resources['PROCESSORS_PER_NODE'] = self.platform.processors_per_node
+
         jobs_scripts = []
         for job in self.jobs:
             jobs_scripts.append(self._job_scripts[job.name])
@@ -411,8 +414,8 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None):
-        super(JobPackageHorizontal, self).__init__(jobs, dependency)
+    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
+        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
@@ -420,11 +423,13 @@ class JobPackageHorizontal(JobPackageThread):
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
                                                               self._num_processors,
                                                               len(self._jobs))
+        self._jobs_resources = jobs_resources
 
     def _common_script_content(self):
         return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
                                                 self._num_processors, len(self.jobs), self._jobs_scripts,
-                                                self._job_dependency, expid=self._expid,
+                                                self._job_dependency, jobs_resources=self._jobs_resources,
+                                                expid=self._expid,
                                                 rootdir=self.platform.root_dir,
                                                 directives=self._custom_directives)
 
