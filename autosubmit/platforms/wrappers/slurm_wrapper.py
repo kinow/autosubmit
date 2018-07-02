@@ -176,7 +176,11 @@ class SlurmWrapper(object):
                         
                         machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                         with open("machinefiles/machinefile_"+jobname+"_"+component.split('_')[0], "w") as machinefile:
-                            machinefile.write(machines)     
+                            machinefile.write(machines)
+                    
+                    machine = all_cores.pop(0)
+                    with open("machinefiles/machinefile_"+jobname, "w") as machinefile:
+                        machinefile.write(machine)    
                                 
                 else:
                     machines = str()
@@ -415,7 +419,10 @@ class SlurmWrapper(object):
                             cores = int(jobs_resources[section]['PROCESSORS'])
                             tasks = int(jobs_resources[section]['TASKS'])
                             nodes = int(ceil(int(cores)/float(tasks)))
-                            
+                            if tasks < processors_per_node:
+                                cores = tasks
+                           
+                            job_cores = cores
                             while nodes > 0:
                                 while cores > 0:
                                     node = all_cores.pop(0)
@@ -425,6 +432,7 @@ class SlurmWrapper(object):
                                 for rest in range(processors_per_node-tasks):
                                     all_cores.pop(0)
                                 nodes -= 1
+                                cores = job_cores
                                                     
                             machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                             with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
