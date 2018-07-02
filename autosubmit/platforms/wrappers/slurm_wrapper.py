@@ -432,7 +432,8 @@ class SlurmWrapper(object):
                                 for rest in range(processors_per_node-tasks):
                                     all_cores.pop(0)
                                 nodes -= 1
-                                cores = job_cores
+                                if tasks < processors_per_node:
+                                    cores = job_cores
                                                     
                             machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
                             with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
