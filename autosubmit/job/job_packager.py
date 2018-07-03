@@ -130,7 +130,11 @@ class JobPackager(object):
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, max_wrapped_jobs, self.max_jobs)
 
         package_jobs = horizontal_packager.build_horizontal_package()
-        jobs_resources = horizontal_packager.components_dict
+
+        jobs_resources = dict()
+        if 'COMPONENTS' in horizontal_packager.components_dict:
+            jobs_resources = horizontal_packager.components_dict
+
         current_package = None
         if package_jobs:
             current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources)
@@ -399,6 +403,6 @@ class JobPackagerHorizontal(object):
 
     def create_components_dict(self):
         for job in self.job_list:
-            if job.section not in self.components_dict:
+            if job.section not in self._components_dict:
                 self._components_dict[job.section] = dict()
-                self.components_dict[job.section]['COMPONENTS'] = {parameter: job.parameters[parameter] for parameter in job.parameters.keys() if '_NUMPROC' in parameter }
+                self._components_dict[job.section]['COMPONENTS'] = {parameter: job.parameters[parameter] for parameter in job.parameters.keys() if '_NUMPROC' in parameter }
