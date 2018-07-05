@@ -629,7 +629,7 @@ class Job(object):
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
-        if self.tasks == '0':
+        if self.tasks == '0' and job_platform.processors_per_node:
             self.tasks = job_platform.processors_per_node
         self.memory = as_conf.get_memory(self.section)
         self.memory_per_task = as_conf.get_memory_per_task(self.section)

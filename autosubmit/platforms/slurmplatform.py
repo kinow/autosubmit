@@ -23,7 +23,7 @@ from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
-from autosubmit.platforms.wrappers.slurm_wrapper import SlurmWrapper
+from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
 
 
 class SlurmPlatform(ParamikoPlatform):
@@ -37,7 +37,7 @@ class SlurmPlatform(ParamikoPlatform):
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = SlurmHeader()
-        self._wrapper = SlurmWrapper()
+        self._wrapper = SlurmWrapperFactory(self)
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['COMPLETED']
         self.job_status['RUNNING'] = ['RUNNING']
@@ -96,3 +96,29 @@ class SlurmPlatform(ParamikoPlatform):
             return output[1]
         else:
             return output
+
+    @staticmethod
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
+        return """\
+        #!/usr/bin/env python
+        ###############################################################################
+        #              {0}
+        ###############################################################################
+        #
+        #SBATCH -J {0}
+        {1}
+        #SBATCH -A {2}
+        #SBATCH -o {0}.out
+        #SBATCH -e {0}.err
+        #SBATCH -t {3}:00
+        #SBATCH -n {4}
+        {5}
+        {6}
+        #
+        ###############################################################################
+        """.format(filename, queue, project, wallclock, num_procs, dependency,
+                   '\n'.ljust(13).join(str(s) for s in directives))
+
+    @staticmethod
+    def allocated_nodes():
+        return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")"""

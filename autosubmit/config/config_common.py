@@ -295,9 +295,9 @@ class AutosubmitConfig(object):
         result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
-        result = result and self.is_valid_jobs_in_wrapper()
+        if self.get_wrapper_type() != 'None':
+            result = result and self.check_wrapper_conf()
 
-        #TODO: if wrapper, check if max wallclock and platforms are defined
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
@@ -469,6 +469,17 @@ class AutosubmitConfig(object):
         except Exception as e:
             Log.error('Project conf file error: {0}', e)
             return False
+
+    def check_wrapper_conf(self):
+        result = True
+        result = result and self.is_valid_jobs_in_wrapper()
+
+        if 'horizontal' in self.get_wrapper_type():
+            result = result and self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE')
+            result = result and self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS')
+        if 'vertical' in self.get_wrapper_type():
+            result = result and self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK')
+        return result
 
     def reload(self):
         """
@@ -945,15 +956,21 @@ class AutosubmitConfig(object):
 
     def get_wrapper_check_time(self):
         """
-         Returns time to check if the SIM are completed and POST jobs can be sent
+         Returns time to check the status of jobs in the wrapper
 
-         :return: post check time
+         :return: wrapper check time
          :rtype: int
          """
         return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
-    def get_wrapper_crossdate(self):
-        return self._conf_parser.get_option('wrapper', 'CROSSDATE', 'false').lower() == 'true'
+    def get_wrapper_machinefiles(self):
+        """
+         Returns the strategy for creating the machinefiles in wrapper jobs
+
+         :return: machinefiles function to use
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'MACHINEFILES', '')
 
     def get_jobs_sections(self):
         """
