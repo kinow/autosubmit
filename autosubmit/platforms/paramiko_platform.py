@@ -356,7 +356,7 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def parse_queue_reason(self):
+    def parse_queue_reason(self, output):
         raise NotImplementedError
 
     def get_ssh_output(self):

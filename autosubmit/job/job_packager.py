@@ -133,12 +133,13 @@ class JobPackager(object):
         package_jobs = horizontal_packager.build_horizontal_package()
 
         jobs_resources = dict()
-        if 'COMPONENTS' in horizontal_packager.components_dict:
-            jobs_resources = horizontal_packager.components_dict
 
         current_package = None
         if package_jobs:
-            jobs_resources['MACHINEFILES'] = self._as_config.get_wrapper_machinefiles()
+            machinefile_function = self._as_config.get_wrapper_machinefiles()
+            if machinefile_function == 'COMPONENTS':
+                jobs_resources = horizontal_packager.components_dict
+            jobs_resources['MACHINEFILES'] = machinefile_function
             current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources)
             packages.append(current_package)
 

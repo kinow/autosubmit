@@ -52,6 +52,8 @@ class WrapperBuilder(object):
         self.expid = kwargs['expid']
         self.jobs_resources = kwargs.get('jobs_resources', dict())
         self.allocated_nodes = kwargs.get('allocated_nodes', '')
+        self.machinefiles_name = ''
+        self.machinefiles_indent = 0
 
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -79,8 +81,11 @@ class WrapperBuilder(object):
             machinefile_function = self.jobs_resources['MACHINEFILES']
 
             if machinefile_function == 'COMPONENTS':
+                self.machinefiles_indent = 4
+                self.machinefiles_name = textwrap.dedent("""jobname+"_"+component.split('_')[0]""")
                 return self.build_machinefiles_components()
             else:
+                self.machinefiles_name = "jobname"
                 return self.build_machinefiles_standard()
         return machinefile_function
 
@@ -181,7 +186,7 @@ class PythonWrapperBuilder(WrapperBuilder):
     def build_machinefiles(self):
         machinefile_function = self.get_machinefile_function()
         if machinefile_function:
-            return self.get_machinefile_function() + self.write_machinefiles()
+            return self.get_machinefile_function() + self._indent(self.write_machinefiles(), self.machinefiles_indent)
         return ""
 
     def build_machinefiles_standard(self):
@@ -226,9 +231,9 @@ class PythonWrapperBuilder(WrapperBuilder):
         return textwrap.dedent("""
         # get the correct name (job or component)
         machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
-        with open("machinefiles/machinefile_"+job.replace(".cmd", ''), "w") as machinefile:
+        with open("machinefiles/machinefile_"+{0}, "w") as machinefile:
             machinefile.write(machines)
-        """).format('\n'.ljust(13))
+        """).format(self.machinefiles_name, '\n'.ljust(13))
 
     def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
         sequential_threads_launcher = textwrap.dedent("""

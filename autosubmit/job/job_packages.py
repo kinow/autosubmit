@@ -233,7 +233,7 @@ class JobPackageThread(JobPackageBase):
         self._wallclock = '00:00'
         self._num_processors = '0'
         self._jobs_resources = jobs_resources
-        self.wrapper_factory = self.platform.wrapper
+        self._wrapper_factory = self.platform.wrapper
 
     @property
     def name(self):
@@ -412,12 +412,12 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def _common_script_content(self):
-        return self.wrapper_factory.get_wrapper(self.wrapper_factory.vertical_wrapper, name=self._name,
-                                                queue=self._queue, project=self._project, wallclock=self._wallclock,
-                                                num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
-                                                dependency=self._job_dependency, jobs_resources=self._jobs_resources,
-                                                expid=self._expid, rootdir=self.platform.root_dir,
-                                                directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.vertical_wrapper, name=self._name,
+                                                 queue=self._queue, project=self._project, wallclock=self._wallclock,
+                                                 num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
+                                                 dependency=self._job_dependency, jobs_resources=self._jobs_resources,
+                                                 expid=self._expid, rootdir=self.platform.root_dir,
+                                                 directives=self._custom_directives)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -438,12 +438,12 @@ class JobPackageHorizontal(JobPackageThread):
         self._jobs_resources = jobs_resources
 
     def _common_script_content(self):
-        return self.wrapper_factory.get_wrapper(self.wrapper_factory.horizontal_wrapper, name=self._name,
-                                                queue=self._queue, project=self._project, wallclock=self._wallclock,
-                                                num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
-                                                dependency=self._job_dependency, jobs_resources=self._jobs_resources,
-                                                expid=self._expid, rootdir=self.platform.root_dir,
-                                                directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.horizontal_wrapper, name=self._name,
+                                                 queue=self._queue, project=self._project, wallclock=self._wallclock,
+                                                 num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
+                                                 dependency=self._job_dependency, jobs_resources=self._jobs_resources,
+                                                 expid=self._expid, rootdir=self.platform.root_dir,
+                                                 directives=self._custom_directives)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -481,20 +481,20 @@ class JobPackageHybrid(JobPackageThread):
 class JobPackageVerticalHorizontal(JobPackageHybrid):
 
     def _common_script_content(self):
-        return self.wrapper_factory.get_wrapper(self.wrapper_factory.hybrid_wrapper_vertical_horizontal,
-                                                name=self._name, queue=self._queue, project=self._project,
-                                                wallclock=self._wallclock, num_processors=self._num_processors,
-                                                jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
-                                                jobs_resources=self._jobs_resources, expid=self._expid,
-                                                rootdir=self.platform.root_dir, directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.hybrid_wrapper_vertical_horizontal,
+                                                 name=self._name, queue=self._queue, project=self._project,
+                                                 wallclock=self._wallclock, num_processors=self._num_processors,
+                                                 jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
+                                                 jobs_resources=self._jobs_resources, expid=self._expid,
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
 
     def _common_script_content(self):
-        return self.wrapper_factory.get_wrapper(self.wrapper_factory.hybrid_wrapper_horizontal_vertical,
-                                                name=self._name, queue=self._queue, project=self._project,
-                                                wallclock=self._wallclock, num_processors=self._num_processors,
-                                                jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
-                                                jobs_resources=self._jobs_resources, expid=self._expid,
-                                                rootdir=self.platform.root_dir, directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.hybrid_wrapper_horizontal_vertical,
+                                                 name=self._name, queue=self._queue, project=self._project,
+                                                 wallclock=self._wallclock, num_processors=self._num_processors,
+                                                 jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
+                                                 jobs_resources=self._jobs_resources, expid=self._expid,
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)

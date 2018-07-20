@@ -557,7 +557,7 @@ class Job(object):
 
     def update_parameters(self, as_conf, parameters,
                           default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
-                                              'M' : '%M%', 'M_' : '%M_%'}):
+                                              'M' : '%M%', 'M_' : '%M_%', 'm' : '%m%', 'm_' : '%m_%'}):
         """
         Refresh parameters value
 
@@ -744,16 +744,19 @@ class Job(object):
                         snippet.as_tailer()])
 
     def _queuing_reason_cancel(self, reason):
-        if len(reason.split('(', 1)) > 1:
-            reason = reason.split('(', 1)[1].split(')')[0]
-            if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
-                                                'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
-                                                'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
-                                                'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
-                                                'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
-                                                'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
-                return True
-        return False
+        try:
+            if len(reason.split('(', 1)) > 1:
+                reason = reason.split('(', 1)[1].split(')')[0]
+                if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
+                                                    'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
+                                                    'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
+                                                    'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
+                                                    'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
+                                                    'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
+                    return True
+            return False
+        except:
+            return False
 
     @staticmethod
     def is_a_completed_retrial(fields):
@@ -816,10 +819,17 @@ class Job(object):
         variables = [variable[1:-1] for variable in variables]
         out = set(parameters).issuperset(set(variables))
 
+        # Check if the variables in the templates are defined in the configurations
         if not out:
             self.undefined_variables = set(variables) - set(parameters)
             Log.warning("The following set of variables to be substituted in template script is not part of "
                         "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
+
+        # Check which variables in the proj.conf are not being used in the templates
+        if not set(variables).issuperset(set(parameters)):
+            Log.warning("The following set of variables are not being used in the templates: {0}",
+                        str(set(parameters)-set(variables)))
+
         return out
 
     def write_submit_time(self):
