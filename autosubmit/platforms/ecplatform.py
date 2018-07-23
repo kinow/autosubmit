@@ -25,7 +25,7 @@ from bscearth.utils.log import Log
 
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
-from autosubmit.platforms.wrappers.ec_wrapper import EcWrapper
+from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 
 
 class EcPlatform(ParamikoPlatform):
@@ -46,7 +46,7 @@ class EcPlatform(ParamikoPlatform):
             self._header = EcHeader()
         else:
             raise ParamikoPlatformException('ecaccess scheduler {0} not supported'.format(scheduler))
-        self._wrapper = EcWrapper()
+        self._wrapper = EcWrapperFactory(self)
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['EXEC']
@@ -175,3 +175,26 @@ class EcPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
+
+    @staticmethod
+    def wrapper_header(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir, **directives):
+        return """\
+        #!/bin/bash
+        ###############################################################################
+        #              {0}
+        ###############################################################################
+        #
+        #PBS -N {0}
+        #PBS -q {1}
+        #PBS -l EC_billing_account={2}
+        #PBS -o {7}/LOG_{5}/{0}.out
+        #PBS -e {7}/LOG_{5}/{0}.err
+        #PBS -l walltime={3}:00
+        #PBS -l EC_total_tasks={4}
+        #PBS -l EC_hyperthreads=1
+        {6}
+        {8}
+        #
+        ###############################################################################
+        """.format(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir,
+                   '\n'.ljust(13).join(str(s) for s in directives))

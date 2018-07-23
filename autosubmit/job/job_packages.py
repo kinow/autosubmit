@@ -225,13 +225,15 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
+        self._jobs_resources = jobs_resources
+        self._wrapper_factory = self.platform.wrapper
 
     @property
     def name(self):
@@ -239,8 +241,14 @@ class JobPackageThread(JobPackageBase):
 
     @property
     def _jobs_scripts(self):
+        self._jobs_resources['PROCESSORS_PER_NODE'] = self.platform.processors_per_node
+
         jobs_scripts = []
         for job in self.jobs:
+            if job.section not in self._jobs_resources:
+                self._jobs_resources[job.section] = dict()
+                self._jobs_resources[job.section]['PROCESSORS'] = job.processors
+                self._jobs_resources[job.section]['TASKS'] = job.tasks
             jobs_scripts.append(self._job_scripts[job.name])
         return jobs_scripts
 
@@ -289,7 +297,8 @@ class JobPackageThread(JobPackageBase):
         if callable(getattr(self.platform, 'remove_multiple_files')):
             filenames = str()
             for job in self.jobs:
-                filenames += " " + self.platform.remote_log_dir + "/" + job.name + "_STAT " + self.platform.remote_log_dir + "/" + job.name + "_COMPLETED"
+                filenames += " " + self.platform.remote_log_dir + "/" + job.name + "_STAT " + \
+                             self.platform.remote_log_dir + "/" + job.name + "_COMPLETED"
             self.platform.remove_multiple_files(filenames)
         else:
             for job in self.jobs:
@@ -306,6 +315,9 @@ class JobPackageThread(JobPackageBase):
             self.jobs[i - 1].id = str(package_id)
             self.jobs[i - 1].status = Status.SUBMITTED
             self.jobs[i - 1].write_submit_time()
+
+    def _common_script_content(self):
+        pass
 
 
 class JobPackageThreadWrapped(JobPackageThread):
@@ -394,16 +406,18 @@ class JobPackageVertical(JobPackageThread):
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
-        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
-                                                              self._num_processors,
-                                                              len(self._jobs))
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
+                                                                                  str(random.randint(1, 10000)),
+                                                                                  self._num_processors,
+                                                                                  len(self._jobs))
 
     def _common_script_content(self):
-        return self.platform.wrapper.vertical(self._name, self._queue, self._project,
-                                              self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
-                                              rootdir=self.platform.root_dir,
-                                              directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.vertical_wrapper, name=self._name,
+                                                 queue=self._queue, project=self._project, wallclock=self._wallclock,
+                                                 num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
+                                                 dependency=self._job_dependency, jobs_resources=self._jobs_resources,
+                                                 expid=self._expid, rootdir=self.platform.root_dir,
+                                                 directives=self._custom_directives)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -411,51 +425,76 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None):
-        super(JobPackageHorizontal, self).__init__(jobs, dependency)
+    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
+        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
             self._num_processors = str(int(self._num_processors) + int(job.processors))
-        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
-                                                              self._num_processors,
-                                                              len(self._jobs))
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
+                                                                                  str(random.randint(1, 10000)),
+                                                                                  self._num_processors,
+                                                                                  len(self._jobs))
+        self._jobs_resources = jobs_resources
 
     def _common_script_content(self):
-        return self.platform.wrapper.horizontal(self._name, self._queue, self._project, self._wallclock,
-                                                self._num_processors, len(self.jobs), self._jobs_scripts,
-                                                self._job_dependency, expid=self._expid,
-                                                rootdir=self.platform.root_dir,
-                                                directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.horizontal_wrapper, name=self._name,
+                                                 queue=self._queue, project=self._project, wallclock=self._wallclock,
+                                                 num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
+                                                 dependency=self._job_dependency, jobs_resources=self._jobs_resources,
+                                                 expid=self._expid, rootdir=self.platform.root_dir,
+                                                 directives=self._custom_directives)
 
 class JobPackageHybrid(JobPackageThread):
     """
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict()):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
-        super(JobPackageHybrid, self).__init__(all_jobs, dependency)
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources)
         self.jobs_lists = jobs
         self._num_processors = int(num_processors)
         self._wallclock = total_wallclock
-        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) + str(random.randint(1, 10000)),
-                                                              self._num_processors,
-                                                              len(self._jobs))
+        self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
+                                                                                  str(random.randint(1, 10000)),
+                                                                                  self._num_processors,
+                                                                                  len(self._jobs))
 
     @property
     def _jobs_scripts(self):
+        self._jobs_resources['PROCESSORS_PER_NODE'] = self.platform.processors_per_node
+
         jobs_scripts = []
         for job_list in self.jobs_lists:
             inner_jobs = list()
             for job in job_list:
                 inner_jobs.append(job.name + '.cmd')
+                if job.section not in self._jobs_resources:
+                    self._jobs_resources[job.section] = dict()
+                    self._jobs_resources[job.section]['PROCESSORS'] = job.processors
+                    self._jobs_resources[job.section]['TASKS'] = job.tasks
             jobs_scripts.append(inner_jobs)
         return jobs_scripts
 
+
+class JobPackageVerticalHorizontal(JobPackageHybrid):
+
     def _common_script_content(self):
-        return self.platform.wrapper.hybrid(self._name, self._queue, self._project,
-                                              self._wallclock, self._num_processors,
-                                              self._jobs_scripts, self._job_dependency, expid=self._expid,
-                                              rootdir=self.platform.root_dir,
-                                              directives=self._custom_directives)
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.hybrid_wrapper_vertical_horizontal,
+                                                 name=self._name, queue=self._queue, project=self._project,
+                                                 wallclock=self._wallclock, num_processors=self._num_processors,
+                                                 jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
+                                                 jobs_resources=self._jobs_resources, expid=self._expid,
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)
+
+
+class JobPackageHorizontalVertical(JobPackageHybrid):
+
+    def _common_script_content(self):
+        return self._wrapper_factory.get_wrapper(self._wrapper_factory.hybrid_wrapper_horizontal_vertical,
+                                                 name=self._name, queue=self._queue, project=self._project,
+                                                 wallclock=self._wallclock, num_processors=self._num_processors,
+                                                 jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
+                                                 jobs_resources=self._jobs_resources, expid=self._expid,
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)

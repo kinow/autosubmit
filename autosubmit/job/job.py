@@ -62,7 +62,7 @@ class Job(object):
         self.platform_name = None
         self.section = None
         self.wallclock = None
-        self.tasks = '1'
+        self.tasks = '0'
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
@@ -744,16 +744,19 @@ class Job(object):
                         snippet.as_tailer()])
 
     def _queuing_reason_cancel(self, reason):
-        if len(reason.split()) > 1:
-            reason = reason.split('(', 1)[1].split(')')[0]
-            if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
-                                                'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
-                                                'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
-                                                'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
-                                                'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
-                                                'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
-                return True
-        return False
+        try:
+            if len(reason.split('(', 1)) > 1:
+                reason = reason.split('(', 1)[1].split(')')[0]
+                if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
+                                                    'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
+                                                    'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
+                                                    'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
+                                                    'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
+                                                    'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
+                    return True
+            return False
+        except:
+            return False
 
     @staticmethod
     def is_a_completed_retrial(fields):

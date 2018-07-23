@@ -97,7 +97,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False):
         """
         Creates all jobs needed for the current workflow
 
@@ -143,7 +143,7 @@ class JobList:
         self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, self.graph)
 
         Log.info("Removing redundant dependencies...")
-        self.update_genealogy(new)
+        self.update_genealogy(new, notransitive)
         for job in self._job_list:
             job.parameters = parameters
 
@@ -824,7 +824,7 @@ class JobList:
         Log.debug('Update finished')
         return save
 
-    def update_genealogy(self, new=True):
+    def update_genealogy(self, new=True, notransitive=False):
         """
         When we have created the job list, every type of job is created.
         Update genealogy remove jobs that have no templates
@@ -839,12 +839,13 @@ class JobList:
 
         # Simplifying dependencies: if a parent is already an ancestor of another parent,
         # we remove parent dependency
-        self.graph = transitive_reduction(self.graph)
-        for job in self._job_list:
-            children_to_remove = [child for child in job.children if child.name not in self.graph.neighbors(job.name)]
-            for child in children_to_remove:
-                job.children.remove(child)
-                child.parents.remove(job)
+        if not notransitive:
+            self.graph = transitive_reduction(self.graph)
+            for job in self._job_list:
+                children_to_remove = [child for child in job.children if child.name not in self.graph.neighbors(job.name)]
+                for child in children_to_remove:
+                    job.children.remove(child)
+                    child.parents.remove(job)
 
         for job in self._job_list:
             if not job.has_parents() and new:
@@ -895,7 +896,7 @@ class JobList:
 
         self._job_list.remove(job)
 
-    def rerun(self, chunk_list):
+    def rerun(self, chunk_list, notransitive=False):
         """
         Updates job list to rerun the jobs specified by chunk_list
 
@@ -959,7 +960,7 @@ class JobList:
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
             self._remove_job(job)
 
-        self.update_genealogy()
+        self.update_genealogy(notransitive=notransitive)
 
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()
@@ -968,7 +969,7 @@ class JobList:
             os.path.join(self._config.LOCAL_ROOT_DIR, self._expid, 'conf', "jobs_" + self._expid + ".conf"))
         return jobs_parser
 
-    def remove_rerun_only_jobs(self):
+    def remove_rerun_only_jobs(self, notransitive=False):
         """
         Removes all jobs to be run only in reruns
         """
@@ -979,5 +980,5 @@ class JobList:
                 flag = True
 
         if flag:
-            self.update_genealogy()
+            self.update_genealogy(notransitive=notransitive)
         del self._dic_jobs

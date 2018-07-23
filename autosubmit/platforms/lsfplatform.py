@@ -21,7 +21,7 @@ import os
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.lsf_header import LsfHeader
-from autosubmit.platforms.wrappers.lsf_wrapper import LsfWrapper
+from autosubmit.platforms.wrappers.wrapper_factory import LSFWrapperFactory
 
 
 class LsfPlatform(ParamikoPlatform):
@@ -34,7 +34,7 @@ class LsfPlatform(ParamikoPlatform):
     def __init__(self, expid, name, config):
         ParamikoPlatform.__init__(self, expid, name, config)
         self._header = LsfHeader()
-        self._wrapper = LsfWrapper()
+        self._wrapper = LSFWrapperFactory(self)
         self.job_status = dict()
         self.job_status['COMPLETED'] = ['DONE']
         self.job_status['RUNNING'] = ['RUN']
@@ -88,3 +88,25 @@ class LsfPlatform(ParamikoPlatform):
 
     def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
+
+    @staticmethod
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, **directives):
+        return """\
+        #!/usr/bin/env python
+        ###############################################################################
+        #              {0}
+        ###############################################################################
+        #
+        #BSUB -J {0}
+        #BSUB -q {1}
+        #BSUB -P {2}
+        #BSUB -oo {0}.out
+        #BSUB -eo {0}.err
+        #BSUB -W {3}
+        #BSUB -n {4}
+        {5}
+        {6}
+        #
+        ###############################################################################
+        """.format(filename, queue, project, wallclock, num_procs, dependency,
+                   '\n'.ljust(13).join(str(s) for s in directives))

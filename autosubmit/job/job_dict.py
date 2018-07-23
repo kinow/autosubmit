@@ -330,7 +330,7 @@ class DicJobs:
         job.check = self.get_option(section, "CHECK", 'True').lower()
         job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = str(self.get_option(section, "THREADS", 1))
-        job.tasks = str(self.get_option(section, "TASKS", 1))
+        job.tasks = str(self.get_option(section, "TASKS", '0'))
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
