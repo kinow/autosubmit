@@ -24,6 +24,8 @@ Solution
 ---------------
 Make sure the experiment is not still running. If it's not, delete the autosubmit.lock in the /tmp folder inside your experiment directory.
 
+----
+
 [CRITICAL] Unhandled exception on Autosubmit: attempt to write a readonly database
 ====================
 
@@ -49,6 +51,8 @@ Solution
 ---------------
 This usually happens when trying to run `autosubmit create` with an expid of another user, please double check the expid you are using.
 
+----
+
 [ERROR] Command sbatch -D ... failed with error message: sbatch: error: Batch job submission failed: Invalid account or account/partition combination specified
 ====================
 
@@ -65,6 +69,7 @@ If so, once you are in the remote platform, type bsc_acct and see if the informa
 
 If not, contact support referring to the problem and specifying your account.
 
+----
 
 [ERROR] Cannot send file to remote platform
 ===================================
