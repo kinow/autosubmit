@@ -25,6 +25,7 @@ from bscearth.utils.log import Log
 
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
+from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 
 
@@ -44,6 +45,8 @@ class EcPlatform(ParamikoPlatform):
             self._header = EcCcaHeader()
         elif scheduler == 'loadleveler':
             self._header = EcHeader()
+        elif scheduler == 'slurm':
+            self._header = SlurmHeader()
         else:
             raise ParamikoPlatformException('ecaccess scheduler {0} not supported'.format(scheduler))
         self._wrapper = EcWrapperFactory(self)

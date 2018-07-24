@@ -55,7 +55,7 @@ Examples:
 ::
 
     autosubmit setstatus cxxx -fl "cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim" -t READY -s
-    autosubmit setstatus cxxx -fc [ 19601101 [ fc1 [1] ] ] -t READY -s
+    autosubmit setstatus cxxx -fc "[ 19601101 [ fc1 [1] ] ]" -t READY -s
     autosubmit setstatus cxxx -fs FAILED -t READY -s
     autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
 
@@ -81,7 +81,7 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 
         [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]
 
-* The variable -fs can be one of the following status for job:
+* The variable -fs can be the following status for job:
     ::
 
         {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
