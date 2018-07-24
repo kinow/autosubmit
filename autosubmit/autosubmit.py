@@ -146,6 +146,7 @@ class Autosubmit:
             # Run
             subparser = subparsers.add_parser('run', description="runs specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Expid
             subparser = subparsers.add_parser('expid', description="Creates a new experiment")
@@ -196,6 +197,7 @@ class Autosubmit:
                                    help='hides plot window')
             subparser.add_argument('--txt', action='store_true', default=False,
                                    help='Generates only txt status file')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -209,6 +211,7 @@ class Autosubmit:
                                    help='type of output for generated plot')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Clean
             subparser = subparsers.add_parser('clean', description="clean specified experiment")
@@ -234,6 +237,7 @@ class Autosubmit:
                                    help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Migrate
             subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
@@ -245,6 +249,7 @@ class Autosubmit:
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Create
             subparser = subparsers.add_parser('create', description="create specified experiment joblist")
@@ -317,6 +322,7 @@ class Autosubmit:
                                    help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Test Case
             subparser = subparsers.add_parser('testcase', description='create test case experiment')
@@ -365,7 +371,7 @@ class Autosubmit:
             Log.set_file_level(args.logfile)
 
             if args.command == 'run':
-                return Autosubmit.run_experiment(args.expid)
+                return Autosubmit.run_experiment(args.expid, args.notransitive)
             elif args.command == 'expid':
                 return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                         args.operational) != ''
@@ -373,24 +379,27 @@ class Autosubmit:
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.hide, args.txt, args.group_by, args.expand, args.expand_status,
-                                          args.hide_groups)
+                                          args.filter_type, args.hide, args.txt, args.group_by, args.expand,
+                                          args.expand_status, args.hide_groups, args.notransitive)
             elif args.command == 'stats':
-                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide)
+                return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
+                                             args.notransitive)
             elif args.command == 'clean':
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
-                return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by, args.expand, args.expand_status)
+                return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by,
+                                           args.expand, args.expand_status, args.notransitive)
             elif args.command == 'check':
-                return Autosubmit.check(args.expid)
+                return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'migrate':
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
-                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand, args.expand_status, args.notransitive)
+                return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
+                                         args.expand_status, args.notransitive)
             elif args.command == 'configure':
                 if not args.advanced or (args.advanced and dialog is None):
-                    return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename, args.localrootpath,
-                                                args.platformsconfpath, args.jobsconfpath,
+                    return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename,
+                                                args.localrootpath, args.platformsconfpath, args.jobsconfpath,
                                                 args.smtphostname, args.mailfrom, args.all, args.local)
                 else:
                     return Autosubmit.configure_dialog()
@@ -399,7 +408,7 @@ class Autosubmit:
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type, args.hide,
-                                             args.group_by, args.expand, args.expand_status)
+                                             args.group_by, args.expand, args.expand_status, args.notransitive)
             elif args.command == 'testcase':
                 return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
                                            args.HPC, args.branch)
@@ -602,7 +611,7 @@ class Autosubmit:
         job_list.parameters = parameters
 
     @staticmethod
-    def run_experiment(expid):
+    def run_experiment(expid, notransitive=False):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
 
@@ -663,7 +672,7 @@ class Autosubmit:
                 Log.info("Starting job submission...")
 
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-                job_list = Autosubmit.load_job_list(expid, as_conf)
+                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
                 Log.debug("Length of the jobs list: {0}", len(job_list))
@@ -843,7 +852,8 @@ class Autosubmit:
         return save
 
     @staticmethod
-    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False, group_by=None, expand=list(), expand_status=list(), hide_groups=False):
+    def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -880,7 +890,7 @@ class Autosubmit:
             return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
         if not isinstance(job_list, type([])):
             jobs = []
@@ -974,7 +984,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def statistics(expid, filter_type, filter_period, file_format, hide):
+    def statistics(expid, filter_type, filter_period, file_format, hide,notransitive=False):
         """
         Plots statistics graph for a given experiment.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1005,7 +1015,7 @@ class Autosubmit:
             return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         if filter_type:
@@ -1093,7 +1103,8 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list()):
+    def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list(),
+                 notransitive=False):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the jobs list.
@@ -1124,7 +1135,7 @@ class Autosubmit:
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         if not as_conf.check_conf_files():
@@ -1302,7 +1313,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def check(experiment_id):
+    def check(experiment_id, notransitive=False):
         """
         Checks experiment configuration and warns about any detected error or inconsistency.
 
@@ -1334,7 +1345,7 @@ class Autosubmit:
             return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
-        job_list = Autosubmit.load_job_list(experiment_id, as_conf)
+        job_list = Autosubmit.load_job_list(experiment_id, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1954,13 +1965,15 @@ class Autosubmit:
                             for s in expand_status.split():
                                 status.append(Autosubmit._get_status(s.upper()))
 
-                        job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list, expand_list=expand,
-                                                   expanded_status=status)
+                        job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list,
+                                                   expand_list=expand, expanded_status=status)
                         groups_dict = job_grouping.group_jobs()
 
                     Log.info("\nPlotting the jobs list...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), output, None, not hide, groups=groups_dict)
+                    monitor_exp.generate_output(expid, job_list.get_job_list(),
+                                                os.path.join(exp_path, "/tmp/LOG_", expid), output, None, not hide,
+                                                groups=groups_dict)
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
@@ -2052,7 +2065,8 @@ class Autosubmit:
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
-    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide, group_by=None, expand=list(), expand_status=list()):
+    def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide, group_by=None,
+                   expand=list(), expand_status=list(), notransitive=False):
         """
         Set status
 
@@ -2100,7 +2114,7 @@ class Autosubmit:
                     Log.critical('Can not run with invalid configuration')
                     return False
 
-                job_list = Autosubmit.load_job_list(expid, as_conf)
+                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
 
                 final_status = Autosubmit._get_status(final)
                 if filter_chunks:
@@ -2512,7 +2526,7 @@ class Autosubmit:
         open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
-    def load_job_list(expid, as_conf):
+    def load_job_list(expid, as_conf, notransitive=False):
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
         date_list = as_conf.get_date_list()
@@ -2526,7 +2540,8 @@ class Autosubmit:
                 date_format = 'M'
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), new=False)
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
+                          new=False, notransitive=notransitive)
         return job_list
 
     @staticmethod
