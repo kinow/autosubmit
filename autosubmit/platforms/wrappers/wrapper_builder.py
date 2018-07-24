@@ -216,10 +216,9 @@ class PythonWrapperBuilder(WrapperBuilder):
         """).format('\n'.ljust(13))
 
     def build_machinefiles_components(self):
-        return textwrap.dedent("""
-        machines = str()
-    
+        return textwrap.dedent("""    
         for component, cores in jobs_resources[section]['COMPONENTS'].items():
+            machines = str()
             for idx in range(int(cores)):
                 if len(all_cores) > 0:
                     node = all_cores.pop(0)
