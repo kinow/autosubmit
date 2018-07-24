@@ -1116,3 +1116,4 @@ class WrapperJob(Job):
         time = int(output[index])
         time = self._parse_timestamp(time)
         return time
+    
