@@ -123,7 +123,7 @@ class EcPlatform(ParamikoPlatform):
         """
         return True
 
-    def send_command(self, command):
+    def send_command(self, command, ignore_log=False):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
@@ -132,7 +132,7 @@ class EcPlatform(ParamikoPlatform):
         self._ssh_output = output
         return True
 
-    def send_file(self, filename):
+    def send_file(self, filename, check=True):
         self.check_remote_log_dir()
         self.delete_file(filename)
         command = '{0} {1} {3}:{2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
@@ -180,7 +180,7 @@ class EcPlatform(ParamikoPlatform):
         return self._ssh_output
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir, **directives):
+    def wrapper_header(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir, directives):
         return """\
         #!/bin/bash
         ###############################################################################

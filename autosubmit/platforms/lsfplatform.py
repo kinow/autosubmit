@@ -90,7 +90,7 @@ class LsfPlatform(ParamikoPlatform):
         return self._submit_cmd + job_script
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, **directives):
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
         return """\
         #!/usr/bin/env python
         ###############################################################################
