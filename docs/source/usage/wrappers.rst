@@ -10,7 +10,7 @@ At the moment there are 4 types of wrappers that can be used depending on the ex
 * Vertical
 * Vertical mixed
 * Horizontal
-* Hybrid
+* Hybrid (horizontal-vertical and vertical-horizontal approaches)
 
 How to configure
 ========================
@@ -94,10 +94,14 @@ Horizontal wrapper
 
 The horizontal wrapper is more appropriate when there are multiple ensemble members that can be run in parallel.
 
+If the wrapped jobs have an mpirun call, they will need machine files to specify in which nodes each job will run.
+Different cases may need specific approaches when creating the machine files. For auto-ecearth use COMPONENTS instead of STANDARD.
+
 .. code-block:: ini
 
     [wrapper]
     TYPE = horizontal
+    MACHINEFILES = STANDARD
 
 In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` set the maximum number of processors allowed by the platform in use:
 
@@ -124,12 +128,48 @@ Hybrid wrapper
 ==========================
 
 The hybrid wrapper is a wrapper that works both vertically and horizontally at the same time, meaning that members and chunks can be wrapped in one single job.
+Mixed approach using a combination of horizontal and vertical wrappers and the list of jobs is a list of lists.
+
+Horizontal-vertical
+===========================
+
+- There is a dependency between lists. Each list runs after the previous one finishes; the jobs within the list run in parallel at the same time
+- It is particularly suitable if there are jobs of different types in the list with different wall clocks, but dependencies between jobs of different lists; it waits for all the jobs in the list to finish before starting the next list
+
 
 .. code-block:: ini
 
     [wrapper]
-    TYPE = hybrid
+    TYPE = horizontal-vertical
+    MACHINEFILES = STANDARD
+    JOBS_IN_WRAPPER = SIM POST
 
+.. figure:: ../workflows/horizontal-vertical.png
+   :name: wrapper_horizontal_vertical
+   :width: 80%
+   :align: center
+   :alt: hybrid wrapper
+
+
+Vertical-horizontal
+===========================
+
+- In this approach, each list is independent of each other and run in parallel; jobs within the list run one after the other
+- It is particularly suitable for running many sequential ensembles
+
+
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = vertical-horizontal
+    MACHINEFILES = STANDARD
+    JOBS_IN_WRAPPER = SIM POST
+
+.. figure:: ../workflows/vertical-horizontal.png
+   :name: wrapper_vertical_horizontal
+   :width: 80%
+   :align: center
+   :alt: hybrid wrapper
 
 Summary
 ==========================
@@ -139,7 +179,7 @@ In `autosubmit_cxxx.conf`:
 .. code-block:: ini
 
     [wrapper]
-    TYPE = {vertical,vertical-mixed,horizontal,hybrid} # REQUIRED
+    TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
     JOBS_IN_WRAPPER = # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
     CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
     DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
@@ -197,47 +237,3 @@ Horizontal wrapper with remote dependencies
    :width: 60%
    :align: center
    :alt: horizontally wrapped jobs
-
-Hybrid wrapper
-**********************
-
-Mixed approach using a combination of horizontal and vertical wrappers. The list of jobs is a list of lists.
-
-Horizontal-vertical
-===========================
-
-- There is a dependency between lists. Each list runs after the previous one finishes; the jobs within the list run in parallel at the same time
-- It is particularly suitable if there are jobs of different types in the list with different wall clocks, but dependencies between jobs of different lists; it waits for all the jobs in the list to finish before starting the next list
-
-
-.. code-block:: ini
-
-    [wrapper]
-    TYPE = horizontal-vertical
-    JOBS_IN_WRAPPER = SIM POST
-
-.. figure:: ../workflows/horizontal-vertical.png
-   :name: wrapper_horizontal_vertical
-   :width: 80%
-   :align: center
-   :alt: hybrid wrapper
-
-
-Vertical-horizontal
-===========================
-
-- In this approach, each list is independent of each other and run in parallel; jobs within the list run one after the other
-- It is particularly suitable for running many sequential ensembles
-
-
-.. code-block:: ini
-
-    [wrapper]
-    TYPE = vertical-horizontal
-    JOBS_IN_WRAPPER = SIM POST
-
-.. figure:: ../workflows/vertical-horizontal.png
-   :name: wrapper_vertical_horizontal
-   :width: 80%
-   :align: center
-   :alt: hybrid wrapper
