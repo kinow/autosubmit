@@ -827,7 +827,7 @@ class Job(object):
 
         # Check which variables in the proj.conf are not being used in the templates
         if not set(variables).issuperset(set(parameters)):
-            Log.warning("The following set of variables are not being used in the templates: {0}",
+            Log.debug("The following set of variables are not being used in the templates: {0}",
                         str(set(parameters)-set(variables)))
 
         return out
@@ -1044,22 +1044,23 @@ class WrapperJob(Job):
                 content = self.platform._ssh_output
                 for line in content.split('\n'):
                     out = line.split()
-                    jobname = out[0]
-                    job = not_finished_jobs_dict[jobname]
-                    if len(out) > 1:
-                        if job not in self.running_jobs_start:
-                            start_time = self._check_time(out, 1)
-                            Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
-                            self.running_jobs_start[job] = start_time
-                            job.update_status(Status.RUNNING, self.as_config.get_copy_remote_logs() == 'true')
-                        elif len(out) == 2:
-                            Log.info("Job {0} is RUNNING".format(jobname))
+                    if out:
+                        jobname = out[0]
+                        job = not_finished_jobs_dict[jobname]
+                        if len(out) > 1:
+                            if job not in self.running_jobs_start:
+                                start_time = self._check_time(out, 1)
+                                Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+                                self.running_jobs_start[job] = start_time
+                                job.update_status(Status.RUNNING, self.as_config.get_copy_remote_logs() == 'true')
+                            elif len(out) == 2:
+                                Log.info("Job {0} is RUNNING".format(jobname))
+                            else:
+                                end_time = self._check_time(out, 2)
+                                Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
+                                self._check_finished_job(job)
                         else:
-                            end_time = self._check_time(out, 2)
-                            Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
-                            self._check_finished_job(job)
-                    else:
-                        Log.debug("Job {0} is SUBMITTED and waiting for dependencies".format(jobname))
+                            Log.debug("Job {0} is SUBMITTED and waiting for dependencies".format(jobname))
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):

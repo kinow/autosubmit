@@ -109,6 +109,9 @@ class LSFWrapperFactory(WrapperFactory):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
                                             kwargs['num_processors'], kwargs['dependency'], kwargs['directives'])
 
+    def queue_directive(self, queue):
+        return queue
+
     def dependency_directive(self, dependency):
         return '#BSUB -w \'done({0})\' [-ti]'.format(dependency)
 
@@ -125,6 +128,9 @@ class EcWrapperFactory(WrapperFactory):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
                                             kwargs['num_processors'], kwargs['expid'], kwargs['dependency'],
                                             kwargs['rootdir'], kwargs['directives'])
+
+    def queue_directive(self, queue):
+        return queue
 
     def dependency_directive(self, dependency):
         return '#PBS -v depend=afterok:{0}'.format(dependency)

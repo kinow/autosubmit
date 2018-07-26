@@ -154,6 +154,7 @@ In `platforms_cxxx.conf`:
     ...
     MAX_WALLCLOCK =
     MAX_PROCESSORS =
+    PROCESSORS_PER_NODE = 48
 
 
 Visualization examples
@@ -200,17 +201,43 @@ Horizontal wrapper with remote dependencies
 Hybrid wrapper
 **********************
 
+Mixed approach using a combination of horizontal and vertical wrappers. The list of jobs is a list of lists.
+
+Horizontal-vertical
+===========================
+
+- There is a dependency between lists. Each list runs after the previous one finishes; the jobs within the list run in parallel at the same time
+- It is particularly suitable if there are jobs of different types in the list with different wall clocks, but dependencies between jobs of different lists; it waits for all the jobs in the list to finish before starting the next list
+
+
 .. code-block:: ini
 
     [wrapper]
-    TYPE = hybrid
+    TYPE = horizontal-vertical
     JOBS_IN_WRAPPER = SIM POST
 
-.. figure:: ../workflows/wrapper_hybrid.png
-   :name: wrapper_hybrid
-   :width: 60%
+.. figure:: ../workflows/horizontal-vertical.png
+   :name: wrapper_horizontal_vertical
+   :width: 80%
    :align: center
    :alt: hybrid wrapper
 
 
+Vertical-horizontal
+===========================
 
+- In this approach, each list is independent of each other and run in parallel; jobs within the list run one after the other
+- It is particularly suitable for running many sequential ensembles
+
+
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = vertical-horizontal
+    JOBS_IN_WRAPPER = SIM POST
+
+.. figure:: ../workflows/vertical-horizontal.png
+   :name: wrapper_vertical_horizontal
+   :width: 80%
+   :align: center
+   :alt: hybrid wrapper
