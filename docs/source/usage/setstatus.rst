@@ -33,6 +33,8 @@ Options:
                             criteria to use for grouping jobs
       -expand,              list of dates/members/chunks to expand
       -expand_status,       status(es) to expand
+      -nt                   --notransitive
+                                prevents doing the transitive reduction when plotting the workflow
 
 Example:
 ::

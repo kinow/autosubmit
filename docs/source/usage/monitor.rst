@@ -31,6 +31,8 @@ Options:
                             type to be filtered
       --hide,               hide the plot
       --txt,                generates only txt status file
+      -nt                   --notransitive
+                                prevents doing the transitive reduction when plotting the workflow
 
 Example:
 ::

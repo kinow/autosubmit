@@ -12,10 +12,11 @@ It checks experiment configuration and warns about any detected error or inconsi
 Options:
 ::
 
-    usage: autosubmit check [-h] expid
+    usage: autosubmit check [-h -nt] expid
 
       expid                 experiment identifier
-
+      -nt                   --notransitive
+                                prevents doing the transitive reduction when plotting the workflow
       -h, --help            show this help message and exit
 
 Example:

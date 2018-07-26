@@ -23,6 +23,8 @@ Options:
       -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
                             type of output for generated plot
       --hide,               hide the plot
+      -nt                   --notransitive
+                                prevents doing the transitive reduction when plotting the workflow
 
 Example:
 ::

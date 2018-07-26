@@ -13,7 +13,8 @@ Options:
     usage: autosubmit run [-h] expid
 
       expid       experiment identifier
-
+      -nt                   --notransitive
+                                prevents doing the transitive reduction when plotting the workflow
       -h, --help  show this help message and exit
 
 Example:

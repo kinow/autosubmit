@@ -127,7 +127,8 @@ class EcPlatform(ParamikoPlatform):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
-            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
+            if not ignore_log:
+                Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
         self._ssh_output = output
         return True
