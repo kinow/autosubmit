@@ -3,7 +3,7 @@
 How to restart the experiment
 =============================
 
-This procedure allows you to restart an experiment.
+This procedure allows you to restart an experiment. Autosubmit looks for the COMPLETED file for jobs that are considered active (SUBMITTED, QUEUING, RUNNING), UNKNOWN or READY
 
 You must execute:
 ::
@@ -40,7 +40,7 @@ In order to understand more the grouping options, which are used for visualizati
 
 .. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file and rename the update file.
 
-The -all flag is used to synchronize all jobs of our experiment locally with the information available on the remote platform
+The --all flag is used to synchronize all jobs of our experiment locally with the information available on the remote platform
 (i.e.: download the COMPLETED files we may not have). In case new files are found, the ``pkl`` will be updated.
 
 Example:

@@ -38,7 +38,7 @@ This variables are relatives to the current job.
 - **WALLCLOCK**: Number of processors that the job will use.
 - **SCRATCH_FREE_SPACE**: Percentage of free space required on the ``scratch``.
 - **NOTIFY_ON**: Determine the job statuses you want to be notified.
-
+- **WRAPPER**: Wrapper type, None if wrapper is not being used
 
 Platform variables
 ==================
