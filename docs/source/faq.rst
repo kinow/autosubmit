@@ -98,3 +98,28 @@ If not, contact support referring to the problem and specifying your account.
      IOError: size mismatch in put!  0 != 38998
 
 This happens when the quota has been reached and the machine is full
+
+----
+
+[CRITICAL] Unhandled exception on Autosubmit: database is locked
+===================================
+
+.. code-block:: python
+
+    [CRITICAL] Unhandled exception on Autosubmit: database is locked
+    Traceback (most recent call last):
+      File "/shared/earth/software/autosubmit/3.11.0b-foss-2015a-Python-2.7.9/lib/python2.7/site-packages/autosubmit-3.10.0-py2.7.egg/autosubmit/autosubmit.py", line 377, in parse_args
+        args.operational) != ''
+      File "/shared/earth/software/autosubmit/3.11.0b-foss-2015a-Python-2.7.9/lib/python2.7/site-packages/autosubmit-3.10.0-py2.7.egg/autosubmit/autosubmit.py", line 532, in expid
+        exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
+      File "/shared/earth/software/autosubmit/3.11.0b-foss-2015a-Python-2.7.9/lib/python2.7/site-packages/autosubmit-3.10.0-py2.7.egg/autosubmit/experiment/experiment_common.py", line 93, in copy_experiment
+        new_name = new_experiment(description, version, test, operational)
+      File "/shared/earth/software/autosubmit/3.11.0b-foss-2015a-Python-2.7.9/lib/python2.7/site-packages/autosubmit-3.10.0-py2.7.egg/autosubmit/experiment/experiment_common.py", line 68, in new_experiment
+        if not db_common.save_experiment(new_name, description, version):
+      File "/shared/earth/software/autosubmit/3.11.0b-foss-2015a-Python-2.7.9/lib/python2.7/site-packages/autosubmit-3.10.0-py2.7.egg/autosubmit/database/db_common.py", line 151, in save_experiment
+        {'name': name, 'description': description, 'version': version})
+    OperationalError: database is locked
+
+Solution
+---------------
+If you were trying to copy an experiment, make sure you put the -y immediately after expid: `autosubmit expid -y`

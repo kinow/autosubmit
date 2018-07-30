@@ -40,7 +40,7 @@ It registrates a new unique identifier and copies all configuration files in the
 Example:
 ::
 
-    autosubmit expid -H ithaca -y cxxx -d "experiment is about..."
+    autosubmit expid -y cxxx -H ithaca -d "experiment is about..."
 
 .. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
 
