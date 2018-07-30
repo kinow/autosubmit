@@ -1,3 +1,22 @@
+3.11.0
+    Included %m% in the list of exceptions
+    Wrapper major refactoring
+        - WrapperJob, WrapperBuilder and WrapperFactory
+        - 2 types of hybrid wrapper: vertical-horizontal and horizontal-vertical
+        - Machinefiles for horizontal and hybrid
+        - Reduced submitting time by merging commands (rm and find) into one
+    Fixed stats plot for wrapped jobs
+    Checks for necessary configuration when defining wrapper in autosubmit.conf:
+        MAX_WALLCLOCK, MAX_PROCESSORS, PROCESSORS_PER_NODE
+    Wrapper regression tests for mn4
+    Flag option not to do transitive reduction
+    Added the reasons for QUEUING (Reason) as returned by SLURM
+    Added master as default branch for git projects (otherwise clone failed if empty)
+    Some bug fixes:
+        - Bug fix for changing status of synchronized jobs
+        - Bug fix related to grouping
+        - Bug fix related to variable substitution %%
+
 3.10.0
     Vertical wrapper allowing mixed job types and additional constraints
     Job grouping in the visualization graph
