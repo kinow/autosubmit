@@ -473,6 +473,8 @@ class AutosubmitConfig(object):
     def check_wrapper_conf(self):
         result = True
         result = result and self.is_valid_jobs_in_wrapper()
+        if not result:
+            Log.error("There are sections in JOBS_IN_WRAPPER that are not defined in your jobs.conf file")
 
         if 'horizontal' in self.get_wrapper_type():
             result = result and self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE')

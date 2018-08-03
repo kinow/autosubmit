@@ -31,7 +31,7 @@ This option makes a copy of an existing experiment.
 It registrates a new unique identifier and copies all configuration files in the new experiment folder:
 ::
 
-    autosubmit expid -H HPCname -y COPY -d Description
+    autosubmit expid -y COPY -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *COPY* is the experiment identifier to copy from.

@@ -85,7 +85,6 @@ class WrapperBuilder(object):
                 self.machinefiles_name = textwrap.dedent("""jobname+"_"+component.split('_')[0]""")
                 return self.build_machinefiles_components()
             else:
-                self.machinefiles_name = "jobname"
                 return self.build_machinefiles_standard()
         return machinefile_function
 
@@ -120,6 +119,8 @@ class PythonWrapperBuilder(WrapperBuilder):
         from commands import getstatusoutput
         from datetime import datetime
         from math import ceil
+        from collections import OrderedDict
+        import copy
 
         # Defining scripts to be run
         scripts = {0}
@@ -228,7 +229,6 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def write_machinefiles(self):
         return textwrap.dedent("""
-        # get the correct name (job or component)
         machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
         with open("machinefiles/machinefile_"+{0}, "w") as machinefile:
             machinefile.write(machines)
@@ -361,8 +361,8 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
     def build_main(self):
         nodes_list = self.build_nodes_list()
         joblist_thread = self.build_joblist_thread()
-        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i, all_cores)",
-                                                                  footer=False)
+        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i, "
+                                                                             "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
 
 

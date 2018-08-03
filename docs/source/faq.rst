@@ -123,3 +123,13 @@ This happens when the quota has been reached and the machine is full
 Solution
 ---------------
 If you were trying to copy an experiment, make sure you put the -y immediately after expid: `autosubmit expid -y`
+
+----
+
+bash: sbatch: command not found
+===================================
+
+Solution
+---------------
+First, check your jobs_expid.conf and platforms_expid.conf files and make sure the platform assigned to the running job is defined correctly and is a SLURM platform.
+If this is ok, check that the hostname of the platform you are using is also correctly defined in your ~/.ssh/config file.
