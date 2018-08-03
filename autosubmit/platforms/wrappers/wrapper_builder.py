@@ -80,6 +80,8 @@ class WrapperBuilder(object):
         if 'MACHINEFILES' in self.jobs_resources and self.jobs_resources['MACHINEFILES']:
             machinefile_function = self.jobs_resources['MACHINEFILES']
 
+            self.machinefiles_name = "jobname"
+
             if machinefile_function == 'COMPONENTS':
                 self.machinefiles_indent = 4
                 self.machinefiles_name = textwrap.dedent("""jobname+"_"+component.split('_')[0]""")
@@ -92,6 +94,9 @@ class WrapperBuilder(object):
         pass
 
     def build_machinefiles_components(self):
+        pass
+
+    def build_machinefiles_components_alternate(self):
         pass
 
     def build_sequential_threads_launcher(self, **kwargs):
