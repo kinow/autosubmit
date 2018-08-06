@@ -964,6 +964,8 @@ class Autosubmit:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                      "job_packages_" + expid).load()
 
+        sys.setrecursionlimit(50000)
+
         groups_dict = dict()
         if group_by:
             status = list()
