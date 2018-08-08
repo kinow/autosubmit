@@ -84,8 +84,6 @@ class WrapperBuilder(object):
             self.machinefiles_name = "jobname"
 
             if machinefile_function == 'COMPONENTS':
-                self.machinefiles_indent = 4
-                self.machinefiles_name = textwrap.dedent("""jobname+"_"+component.split('_')[0]""")
                 return self.build_machinefiles_components()
             else:
                 return self.build_machinefiles_standard()
@@ -222,16 +220,36 @@ class PythonWrapperBuilder(WrapperBuilder):
                 cores = job_cores
         """).format('\n'.ljust(13))
 
+    def _create_components_dict(self):
+        return textwrap.dedent("""
+        xio_procs = int(jobs_resources[section]['COMPONENTS']['XIO_NUMPROC'])
+        rnf_procs = int(jobs_resources[section]['COMPONENTS']['RNF_NUMPROC'])
+        ifs_procs = int(jobs_resources[section]['COMPONENTS']['IFS_NUMPROC'])
+        nem_procs = int(jobs_resources[section]['COMPONENTS']['NEM_NUMPROC'])
+        
+        components = OrderedDict([
+            ('XIO', xio_procs),
+            ('RNF', rnf_procs),
+            ('IFS', ifs_procs),
+            ('NEM', nem_procs)
+        ])
+        
+        jobs_resources[section]['COMPONENTS'] = components
+        """).format('\n'.ljust(13))
+
     def build_machinefiles_components(self):
-        return textwrap.dedent("""    
-        for component, cores in jobs_resources[section]['COMPONENTS'].items():
-            machines = str()
-            for idx in range(int(cores)):
+        return textwrap.dedent("""
+        {0}
+        
+        machines = str()
+        for component, cores in jobs_resources[section]['COMPONENTS'].items():        
+            while cores > 0:
                 if len(all_cores) > 0:
                     node = all_cores.pop(0)
                     if node:
                         machines += node +"_NEWLINE_"
-        """.format('\n'.ljust(13)))
+                        cores -= 1
+        """).format(self._create_components_dict(), '\n'.ljust(13))
 
     def write_machinefiles(self):
         return textwrap.dedent("""
