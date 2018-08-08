@@ -296,7 +296,8 @@ class PythonWrapperBuilder(WrapperBuilder):
             current.start()
 
         # Waiting until all scripts finish
-        for pid in pid_list:
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
             pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
 
