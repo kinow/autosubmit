@@ -54,6 +54,7 @@ class WrapperBuilder(object):
         self.allocated_nodes = kwargs.get('allocated_nodes', '')
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
+        self.exit_thread = ''
 
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -255,8 +256,8 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", current.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", current.template," has FAILED"
-                sys.exit()
-            """).format(jobs_list, '\n'.ljust(13)), 4)
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return sequential_threads_launcher
 
@@ -289,8 +290,8 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", pid.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", pid.template," has FAILED"
-            sys.exit()
-            """).format(jobs_list, '\n'.ljust(13)), 4)
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
 
@@ -312,6 +313,7 @@ class PythonWrapperBuilder(WrapperBuilder):
 class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):
+        self.exit_thread = "os._exit(1)"
         return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i)")
 
 
@@ -340,6 +342,7 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
                          8), '\n'.ljust(13))
 
     def build_main(self):
+        self.exit_thread = "sys.exit()"
         joblist_thread = self.build_joblist_thread()
         nodes_list = self.build_nodes_list()
         threads_launcher = self.build_parallel_threads_launcher("scripts", "JobListThread", footer=False)
@@ -365,6 +368,7 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):
         nodes_list = self.build_nodes_list()
+        self.exit_thread = "os._exit(1)"
         joblist_thread = self.build_joblist_thread()
         threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i, "
                                                                              "copy.deepcopy(all_cores))", footer=False)
