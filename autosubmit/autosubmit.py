@@ -304,8 +304,6 @@ class Autosubmit:
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
             group.add_argument('-fl', '--list', type=str,
-
-
                                help='Supply the list of job names to be changed. Default = "Any". '
                                     'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
             group.add_argument('-fc', '--filter_chunks', type=str,
