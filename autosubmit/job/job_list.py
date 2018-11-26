@@ -875,7 +875,7 @@ class JobList:
         if out:
             Log.result("Scripts OK")
         else:
-            Log.error("Scripts check failed")
+            Log.warning("Scripts check failed")
             Log.user_warning("Running after failed scripts check is at your own risk!")
         return out
 
