@@ -18,5 +18,5 @@ dependencies:
 
 - pip:
   - bscearth.utils
-  - saga-python==0.50.1
+  - saga-python
 
