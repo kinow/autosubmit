@@ -166,7 +166,7 @@ class DicJobs:
                 count += 1
                 if delay == -1 or delay < chunk:
                     if count % frequency == 0 or count == len(self._chunk_list):
-                        if splits > 0:
+                        if splits > 1:
                             if synchronize == 'date':
                                 tmp_dic[chunk] = []
                                 self._create_jobs_split(splits, section, None, None, chunk, priority,
@@ -203,7 +203,7 @@ class DicJobs:
                             elif synchronize == 'member':
                                 self._dic[section][date][member][chunk] = tmp_dic[chunk][date]
 
-                            if splits > 0 and synchronize is None:
+                            if splits > 1 and synchronize is None:
                                 self._dic[section][date][member][chunk] = []
                                 self._create_jobs_split(splits, section, date, member, chunk, priority, default_job_type, jobs_data, self._dic[section][date][member][chunk])
                             elif synchronize is None:
