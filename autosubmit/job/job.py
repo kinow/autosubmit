@@ -72,6 +72,7 @@ class Job(object):
         self.date = None
         self.name = name
         self.split = None
+        self.delay = None
         self._long_name = None
         self.long_name = name
         self.date_format = ''
@@ -588,6 +589,7 @@ class Job(object):
 
             parameters['CHUNK'] = chunk
             parameters['SPLIT'] = self.split
+            parameters['DELAY'] = self.delay
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
