@@ -43,6 +43,7 @@ import tarfile
 import time
 import copy
 import os
+import pwd
 import sys
 import shutil
 import re
@@ -250,6 +251,9 @@ class Autosubmit:
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            # Describe
+            subparser = subparsers.add_parser('describe', description="details about the specified experiment:")
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Create
             subparser = subparsers.add_parser('create', description="create specified experiment joblist")
@@ -391,6 +395,8 @@ class Autosubmit:
                                            args.expand, args.expand_status, args.notransitive)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
+            elif args.command == 'describe':
+                return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
@@ -1362,6 +1368,66 @@ class Autosubmit:
         return job_list.check_scripts(as_conf)
 
     @staticmethod
+    def describe(experiment_id):
+        """
+        Describe the specified experiment
+
+        :param experiment_id: experiment identifier:
+        :type experiment_id: str
+        """
+
+        BasicConfig.read()
+        Log.info("Describing {0}", experiment_id)
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory {0} is needed and does not exist.", exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return False
+
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'describe_exp.log')
+        Log.set_file(log_file)
+
+        as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            return False
+        user = os.stat(as_conf.experiment_file).st_uid
+        try:
+            user = pwd.getpwuid(user).pw_name
+        except:
+            Log.warning("The user does not exist anymore in the system, using id instead")
+
+        created = datetime.datetime.fromtimestamp(os.path.getmtime(as_conf.experiment_file))
+
+
+        project_type = as_conf.get_project_type()
+        if project_type != "none":
+            if not as_conf.check_proj():
+                return False
+        if (as_conf.get_svn_project_url()):
+            model = as_conf.get_svn_project_url()
+            branch = as_conf.get_svn_project_url()
+        else:
+            model = as_conf.get_git_project_origin()
+            branch = as_conf.get_git_project_branch()
+        if model is "":
+            model = "Not Found"
+        if branch is "":
+            branch = "Not Found"
+
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        if len(submitter.platforms) == 0:
+            return False
+        hpc = as_conf.get_platform()
+
+        Log.result("User: {0}", user)
+        Log.result("Created: {0}", created)
+        Log.result("Model: {0}", model)
+        Log.result("Branch: {0}", branch)
+        Log.result("HPC: {0}", hpc)
+        return user, created, model, branch, hpc
+
+    @staticmethod
     def configure(advanced, database_path, database_filename, local_root_path, platforms_conf_path, jobs_conf_path,
                   smtp_hostname, mail_from, machine, local):
         """
@@ -1863,7 +1929,7 @@ class Autosubmit:
     @staticmethod
     def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False):
         """
-        Creates job list for given experiment. Configuration files must be valid before realizaing this process.
+        Creates job list for given experiment. Configuration files must be valid before realizing this process.
 
         :param expid: experiment identifier
         :type expid: str
