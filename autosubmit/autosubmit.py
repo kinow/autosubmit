@@ -252,7 +252,7 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
             # Describe
-            subparser = subparsers.add_parser('describe', description="details about the specified experiment:")
+            subparser = subparsers.add_parser('describe', description="Show details for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
 
             # Create
@@ -1370,7 +1370,7 @@ class Autosubmit:
     @staticmethod
     def describe(experiment_id):
         """
-        Describe the specified experiment
+        Show details for specified experiment
 
         :param experiment_id: experiment identifier:
         :type experiment_id: str
@@ -1420,7 +1420,7 @@ class Autosubmit:
             return False
         hpc = as_conf.get_platform()
 
-        Log.result("User: {0}", user)
+        Log.result("Owner: {0}", user)
         Log.result("Created: {0}", created)
         Log.result("Model: {0}", model)
         Log.result("Branch: {0}", branch)

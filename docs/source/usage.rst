@@ -9,6 +9,7 @@ Command list
 -expid  Create a new experiment
 -create  Create specified experiment workflow
 -check  Check configuration for specified experiment
+-describe  Show details for specified experiment
 -run  Run specified experiment
 -test  Test experiment
 -testcase  Test case experiment
@@ -28,6 +29,7 @@ Command list
 .. toctree::
    usage/create_exp
    usage/check
+   usage/describe
    usage/run
    usage/test
    usage/testcase
