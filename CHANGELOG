@@ -1,3 +1,7 @@
+3.11.1
+    Fix minor issues
+    Added new command for describe experiment
+
 3.11.0
     Included %m% in the list of exceptions
     Wrapper major refactoring
