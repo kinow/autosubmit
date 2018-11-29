@@ -510,6 +510,7 @@ class Autosubmit:
 
                 os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
                 Log.info("Copying config files...")
+
                 # autosubmit config and experiment copied from AS.
                 files = resource_listdir('autosubmit.config', 'files')
                 for filename in files:
@@ -550,6 +551,17 @@ class Autosubmit:
                             content = open(os.path.join(conf_copy_id, filename), 'r').read()
                             open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
+                    #####
+                    autosubmit_config = AutosubmitConfig(copy_id, BasicConfig, ConfigParserFactory())
+                    if autosubmit_config.check_conf_files():
+                        project_type = autosubmit_config.get_project_type()
+                        if project_type == "git":
+                            autosubmit_config.check_proj()
+                            autosubmit_git = AutosubmitGit(copy_id[0])
+                            Log.info("checking model version...")
+                            if not autosubmit_git.check_commit(autosubmit_config):
+                                return False
+                        #####
                 else:
                     Log.critical("The previous experiment directory does not exist")
                     return ''
