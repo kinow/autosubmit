@@ -1187,6 +1187,9 @@ class Autosubmit:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+            if save:
+                job.platform.get_logs_files(expid, job.remote_logs)
+
         end = datetime.datetime.now()
         Log.info("Time spent: '{0}'".format(end - start))
         Log.info("Updating the jobs list")
