@@ -796,6 +796,11 @@ class Autosubmit:
 
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
+                    #TODO: Send Mail Notification
+                    if as_conf.get_notifications():
+                        Notifier.notify_status_change(exp_id,job_name,prev_status,status,as_conf.get_mails_to())
+
+
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
                 else:
