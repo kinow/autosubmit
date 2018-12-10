@@ -436,7 +436,6 @@ class AutosubmitConfig(object):
             if project_type == 'git':
                 result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
                 result = result and parser.check_exists('git', 'PROJECT_BRANCH')
-                result = result and parser.check_is_boolean('git', 'RECURSIVE', False)
             elif project_type == 'svn':
                 result = result and parser.check_exists('svn', 'PROJECT_URL')
                 result = result and parser.check_exists('svn', 'PROJECT_REVISION')
@@ -619,6 +618,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'RECURSIVE', True)
+
     def get_project_destination(self):
         """
         Returns git commit from experiment's config file

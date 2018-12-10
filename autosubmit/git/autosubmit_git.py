@@ -95,7 +95,7 @@ class AutosubmitGit:
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()
-        if as_conf.get_git_project_recursive() :
+        if as_conf.get_git_recursive():
             git_project_recursive = "--recursive"
         else:
             git_project_recursive = ""
