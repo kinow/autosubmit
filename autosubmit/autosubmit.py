@@ -796,7 +796,7 @@ class Autosubmit:
 
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
-                    #TODO: Send Mail Notification
+
                     if as_conf.get_notifications():
                         Notifier.notify_status_change(exp_id,job_name,prev_status,status,as_conf.get_mails_to())
 
@@ -2253,12 +2253,10 @@ class Autosubmit:
                                 Autosubmit.change_status(final, final_status, job)
 
                 sys.setrecursionlimit(50000)
-
+                job_list.update_list(as_conf,False)
                 if save:
-                    job_list.update_list(as_conf)
                     job_list.save()
                 else:
-                    job_list.update_list(as_conf)
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
