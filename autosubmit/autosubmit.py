@@ -722,6 +722,14 @@ class Autosubmit:
                 # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
                     if Autosubmit.exit:
+                        prev_status = job.status
+                        if prev_status != job.update_status(platform.check_job(job.id),
+                                                            as_conf.get_copy_remote_logs() == 'true'):
+                            if as_conf.get_notifications():
+                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                  Status.VALUE_TO_KEY[prev_status],
+                                                                  Status.VALUE_TO_KEY[job.status],
+                                                                  as_conf.get_mails_to())
                         return 2
 
                     # reload parameters changes
@@ -774,7 +782,6 @@ class Autosubmit:
                                                                     as_conf.get_copy_remote_logs() == 'true'):
 
                                     if as_conf.get_notifications() == 'true':
-
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
                                                                           Status.VALUE_TO_KEY[prev_status],
@@ -786,21 +793,34 @@ class Autosubmit:
                         job_list.save()
 
                     if Autosubmit.exit:
+                        prev_status = job.status
+                        if prev_status != job.update_status(platform.check_job(job.id),
+                                                            as_conf.get_copy_remote_logs() == 'true'):
+                            if as_conf.get_notifications():
+
+                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                  Status.VALUE_TO_KEY[prev_status],
+                                                                  Status.VALUE_TO_KEY[job.status],
+                                                                  as_conf.get_mails_to())
                         return 2
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
                     if Autosubmit.exit:
+                        prev_status = job.status
+                        if prev_status != job.update_status(platform.check_job(job.id),
+                                                            as_conf.get_copy_remote_logs() == 'true'):
+                            if as_conf.get_notifications():
+
+                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                  Status.VALUE_TO_KEY[prev_status],
+                                                                  Status.VALUE_TO_KEY[job.status],
+                                                                  as_conf.get_mails_to())
                         return 2
                     time.sleep(safetysleeptime)
 
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
-                    #TODO: Send Mail Notification
-                    if as_conf.get_notifications():
-                        Notifier.notify_status_change(exp_id,job_name,prev_status,status,as_conf.get_mails_to())
-
-
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
                 else:
