@@ -436,7 +436,7 @@ class AutosubmitConfig(object):
             if project_type == 'git':
                 result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
                 result = result and parser.check_exists('git', 'PROJECT_BRANCH')
-                result = result and parser.check_is_boolean('git', 'RECURSIVE')
+                result = result and parser.check_is_boolean('git', 'RECURSIVE', False)
             elif project_type == 'svn':
                 result = result and parser.check_exists('svn', 'PROJECT_URL')
                 result = result and parser.check_exists('svn', 'PROJECT_REVISION')
