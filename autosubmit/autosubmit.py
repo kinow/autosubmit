@@ -460,15 +460,15 @@ class Autosubmit:
             ret = False
             if pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name == os.getlogin():
                 try:
-                    Log.warning("Fake Deleted")
-                    #shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+
+                    shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                 except OSError as e:
                     Log.warning('Can not delete experiment folder: {0}', e)
                     return ret
                 Log.info("Deleting experiment from database...")
-                #ret = delete_experiment(expid_delete)
-                # if ret:
-                #    Log.result("Experiment {0} deleted".format(expid_delete))
+                ret = delete_experiment(expid_delete)
+                if ret:
+                    Log.result("Experiment {0} deleted".format(expid_delete))
             else:
                 Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
             return ret
