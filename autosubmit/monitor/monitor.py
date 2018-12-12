@@ -311,7 +311,7 @@ class Monitor:
                 output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
                 output_file.write(output)
         else:
-            output_file.write("Writing jobs right to left prioritizing deep \n")
+            output_file.write("Writing jobs, they're grouped by [FC and DATE] \n")
             self.write_output_txt_recursive(joblist[0],output_file,"")
             output_file.close()
         Log.result('Status txt created at {0}', output_file)
