@@ -78,7 +78,41 @@ class AutosubmitGit:
         else:
             Log.debug("Not a directory... SKIPPING!")
         return True
+    @staticmethod
+    def check_commit(as_conf):
+        """
+        Function to check uncommited changes
 
+        :param as_conf: experiment configuration
+        :type as_conf: autosubmit.config.AutosubmitConfig
+        """
+        proj_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
+        dirname_path = as_conf.get_project_dir()
+        if path.isdir(dirname_path):
+            Log.debug("Checking git directory status...")
+            Log.info("test")
+            if path.isdir(os.path.join(dirname_path, '.git')):
+                try:
+                    output = subprocess.check_output("cd {0}; git diff-index HEAD --".format(dirname_path),
+                                                     shell=True)
+                except subprocess.CalledProcessError:
+                    Log.info("This is not a git experiment")
+                    return True
+
+                if output:
+                    Log.warning("There are commits pending to Git")
+                    return True
+                else:
+                    output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
+                                                     shell=True)
+                    if output:
+                        Log.warning("Last commits are not pushed to Git")
+                        return True
+                    else:
+                        Log.info("Model Git repository is updated")
+                        Log.result("Model Git repository is updated")
+
+        return True
     @staticmethod
     def clone_repository(as_conf, force):
         """

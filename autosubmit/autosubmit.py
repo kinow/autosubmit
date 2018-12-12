@@ -457,17 +457,21 @@ class Autosubmit:
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
-            try:
-                shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
-            except OSError as e:
-                Log.warning('Can not delete experiment folder: {0}', e)
-                return False
-        Log.info("Deleting experiment from database...")
-        ret = delete_experiment(expid_delete)
-        if ret:
-            Log.result("Experiment {0} deleted".format(expid_delete))
-        return ret
+            ret = False
+            if pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name == os.getlogin():
+                try:
 
+                    shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                except OSError as e:
+                    Log.warning('Can not delete experiment folder: {0}', e)
+                    return ret
+                Log.info("Deleting experiment from database...")
+                ret = delete_experiment(expid_delete)
+                if ret:
+                    Log.result("Experiment {0} deleted".format(expid_delete))
+            else:
+                Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
+            return ret
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
@@ -510,6 +514,7 @@ class Autosubmit:
 
                 os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, 'conf'))
                 Log.info("Copying config files...")
+
                 # autosubmit config and experiment copied from AS.
                 files = resource_listdir('autosubmit.config', 'files')
                 for filename in files:
@@ -550,6 +555,17 @@ class Autosubmit:
                             content = open(os.path.join(conf_copy_id, filename), 'r').read()
                             open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
+                    #####
+                    autosubmit_config = AutosubmitConfig(copy_id, BasicConfig, ConfigParserFactory())
+                    if autosubmit_config.check_conf_files():
+                        project_type = autosubmit_config.get_project_type()
+                        if project_type == "git":
+                            autosubmit_config.check_proj()
+                            autosubmit_git = AutosubmitGit(copy_id[0])
+                            Log.info("checking model version...")
+                            if not autosubmit_git.check_commit(autosubmit_config):
+                                return False
+                        #####
                 else:
                     Log.critical("The previous experiment directory does not exist")
                     return ''
@@ -1212,6 +1228,9 @@ class Autosubmit:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+            if save:
+                job.platform.get_logs_files(expid, job.remote_logs)
+
         end = datetime.datetime.now()
         Log.info("Time spent: '{0}'".format(end - start))
         Log.info("Updating the jobs list")
@@ -2273,12 +2292,10 @@ class Autosubmit:
                                 Autosubmit.change_status(final, final_status, job)
 
                 sys.setrecursionlimit(50000)
-
+                job_list.update_list(as_conf,False)
                 if save:
-                    job_list.update_list(as_conf)
                     job_list.save()
                 else:
-                    job_list.update_list(as_conf)
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),

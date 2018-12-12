@@ -8,6 +8,7 @@ How to install
 The Autosubmit code is maintained in *PyPi*, the main source for python packages.
 
 - Pre-requisties: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog and GraphViz) must be available at local host machine.
+
 These packages (argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, saga-python, python2-pythondialog and portalocker) must be available for python runtime.
 
 .. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh.

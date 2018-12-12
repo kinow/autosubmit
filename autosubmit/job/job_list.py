@@ -777,7 +777,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf):
+    def update_list(self, as_conf,store_change=True):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -788,8 +788,8 @@ class JobList:
         """
         # load updated file list
         save = False
-        if self.update_from_file():
-            save = True
+        if self.update_from_file(store_change):
+            save = store_change
 
         # reset jobs that has failed less than 10 times
         Log.debug('Updating FAILED jobs')
