@@ -457,17 +457,21 @@ class Autosubmit:
             Log.info("Experiment directory does not exist.")
         else:
             Log.info("Removing experiment directory...")
-            try:
-                shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
-            except OSError as e:
-                Log.warning('Can not delete experiment folder: {0}', e)
-                return False
-        Log.info("Deleting experiment from database...")
-        ret = delete_experiment(expid_delete)
-        if ret:
-            Log.result("Experiment {0} deleted".format(expid_delete))
-        return ret
+            ret = False
+            if pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name == os.getlogin():
+                try:
 
+                    shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                except OSError as e:
+                    Log.warning('Can not delete experiment folder: {0}', e)
+                    return ret
+                Log.info("Deleting experiment from database...")
+                ret = delete_experiment(expid_delete)
+                if ret:
+                    Log.result("Experiment {0} deleted".format(expid_delete))
+            else:
+                Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
+            return ret
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
@@ -808,6 +812,11 @@ class Autosubmit:
 
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
+
+                    if as_conf.get_notifications():
+                        Notifier.notify_status_change(exp_id,job_name,prev_status,status,as_conf.get_mails_to())
+
+
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
                 else:
@@ -2263,12 +2272,10 @@ class Autosubmit:
                                 Autosubmit.change_status(final, final_status, job)
 
                 sys.setrecursionlimit(50000)
-
+                job_list.update_list(as_conf,False)
                 if save:
-                    job_list.update_list(as_conf)
                     job_list.save()
                 else:
-                    job_list.update_list(as_conf)
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
 
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
