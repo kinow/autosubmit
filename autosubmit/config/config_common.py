@@ -610,14 +610,15 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
-    def get_git_recursive(self):
+    def get_submodules_list(self):
         """
-        Returns git recursive boolean from experiment's config file
+        Returns submodules list from experiment's config file
+        Default is --recursive
+        :return: submodules to load
+        :rtype: list
+        """
+        return ' '.join(self._exp_parser.get('git', 'PROJECT_SUBMODULES').split()).split()
 
-        :return: git commit
-        :rtype: str
-        """
-        return self._exp_parser.get_option('git', 'RECURSIVE', True)
 
     def get_project_destination(self):
         """

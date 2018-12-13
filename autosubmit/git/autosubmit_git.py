@@ -95,10 +95,7 @@ class AutosubmitGit:
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_project_commit = as_conf.get_git_project_commit()
-        if as_conf.get_git_recursive():
-            git_project_recursive = "--recursive"
-        else:
-            git_project_recursive = ""
+        git_project_submodules = as_conf.get_submodules_list()
         project_destination = as_conf.get_project_destination()
         project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
         git_path = as_conf.get_project_dir()
@@ -116,9 +113,14 @@ class AutosubmitGit:
         if git_project_commit:
             Log.info("Fetching {0} into {1}", git_project_commit + " " + git_project_origin, project_path)
             try:
-                command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3}; " \
-                          "git submodule update --init {5}".format(project_path, git_project_origin, git_path,
-                                                                           git_project_commit, project_destination,git_project_recursive)
+
+                command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3};".format(project_path, git_project_origin, git_path,
+                                                                           git_project_commit, project_destination)
+                if git_project_submodules.__len__() <= 0:
+                    command+="git submodule update --init --recursive"
+                else:
+                    for submodule in git_project_submodules:
+                        command +="git submodule update --init {0};".format(submodule)
                 output = subprocess.check_output(command, shell=True)
             except subprocess.CalledProcessError:
                 Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
@@ -128,8 +130,8 @@ class AutosubmitGit:
         else:
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             try:
-                command = "cd {0}; git clone {4} -b {1} {2} {3}".format(project_path, git_project_branch,
-                                                                            git_project_origin, project_destination,git_project_recursive)
+                command = "cd {0}; git clone --recursive -b {1} {2} {3}".format(project_path, git_project_branch,
+                                                                            git_project_origin, project_destination)
                 output = subprocess.check_output(command, shell=True)
                 Log.debug('{0}:{1}', command, output)
             except subprocess.CalledProcessError:
