@@ -436,6 +436,7 @@ class AutosubmitConfig(object):
             if project_type == 'git':
                 result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
                 result = result and parser.check_exists('git', 'PROJECT_BRANCH')
+
             elif project_type == 'svn':
                 result = result and parser.check_exists('svn', 'PROJECT_URL')
                 result = result and parser.check_exists('svn', 'PROJECT_REVISION')
@@ -617,7 +618,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return ' '.join(self._exp_parser.get('git', 'PROJECT_SUBMODULES').split()).split()
+        return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES','').split()).split()
 
 
     def get_project_destination(self):

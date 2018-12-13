@@ -117,10 +117,10 @@ class AutosubmitGit:
                 command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3};".format(project_path, git_project_origin, git_path,
                                                                            git_project_commit, project_destination)
                 if git_project_submodules.__len__() <= 0:
-                    command+="git submodule update --init --recursive"
+                    command+=" git submodule update --init --recursive"
                 else:
                     for submodule in git_project_submodules:
-                        command +="git submodule update --init {0};".format(submodule)
+                        command +=" git submodule update --init {0};".format(submodule)
                 output = subprocess.check_output(command, shell=True)
             except subprocess.CalledProcessError:
                 Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
@@ -130,8 +130,15 @@ class AutosubmitGit:
         else:
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             try:
-                command = "cd {0}; git clone --recursive -b {1} {2} {3}".format(project_path, git_project_branch,
-                                                                            git_project_origin, project_destination)
+                command = "cd {0}; ".format(project_path)
+                if git_project_submodules.__len__() <= 0:
+                    command +=" git clone --recursive -b {0} {1} {2}".format(git_project_branch,git_project_origin, project_destination)
+                else:
+                    command += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,project_destination)
+                    command += " cd {0}; git submodule init;".format(project_destination)
+                    for submodule in git_project_submodules:
+                        command +=" git submodule update {0};".format(submodule)
+
                 output = subprocess.check_output(command, shell=True)
                 Log.debug('{0}:{1}', command, output)
             except subprocess.CalledProcessError:
