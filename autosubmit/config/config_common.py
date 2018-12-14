@@ -436,7 +436,7 @@ class AutosubmitConfig(object):
             if project_type == 'git':
                 result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
                 result = result and parser.check_exists('git', 'PROJECT_BRANCH')
-                #result = result and parser.check_is_boolean('git', 'RECURSIVE')
+
             elif project_type == 'svn':
                 result = result and parser.check_exists('svn', 'PROJECT_URL')
                 result = result and parser.check_exists('svn', 'PROJECT_REVISION')
@@ -611,14 +611,16 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
-    #def get_git_recursive(self):
-        #"""
-        #Returns git recursive boolean from experiment's config file
+    def get_submodules_list(self):
+        """
+        Returns submodules list from experiment's config file
+        Default is --recursive
+        :return: submodules to load
+        :rtype: list
+        """
+        return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES','').split()).split()
 
-        #:return: git commit
-        #:rtype: str
-        #"""
-        #return self._exp_parser.get_option('git', 'RECURSIVE', True)
+
     def get_project_destination(self):
         """
         Returns git commit from experiment's config file
