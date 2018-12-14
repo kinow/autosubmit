@@ -287,9 +287,9 @@ class Monitor:
             except subprocess.CalledProcessError:
                 Log.error('File {0} could not be opened', output_file)
 
-        self.generate_output_txt(expid, joblist, path)
+        self.generate_output_txt(expid, joblist, path, "default")
 
-    def generate_output_txt(self, expid, joblist, path):
+    def generate_output_txt(self, expid, joblist, path,show="recursive"):
         Log.info('Writing status txt...')
 
         now = time.localtime()
@@ -300,18 +300,33 @@ class Monitor:
             os.makedirs(os.path.dirname(file_path))
 
         output_file = open(file_path, 'w+')
-        for job in joblist:
-            log_out = ""
-            log_err = ""
-            if job.status in [Status.FAILED, Status.COMPLETED]:
-                log_out = path + "/" + job.local_logs[0]
-                log_err = path + "/" + job.local_logs[1]
+        if show != "recursive":
+            for job in joblist:
+                log_out = ""
+                log_err = ""
+                if job.status in [Status.FAILED, Status.COMPLETED]:
+                    log_out = path + "/" + job.local_logs[0]
+                    log_err = path + "/" + job.local_logs[1]
 
-            output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
-            output_file.write(output)
-        output_file.close()
-
+                output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
+                output_file.write(output)
+        else:
+            output_file.write("Writing jobs, they're grouped by [FC and DATE] \n")
+            self.write_output_txt_recursive(joblist[0],output_file,"")
+            output_file.close()
         Log.result('Status txt created at {0}', output_file)
+
+    def write_output_txt_recursive(self,job,output_file,level):
+        log_out = ""
+        log_err = ""
+        if job.status in [Status.FAILED, Status.COMPLETED]:
+            log_out = path + "/" + job.local_logs[0]
+            log_err = path + "/" + job.local_logs[1]
+        output = level+job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
+        output_file.write(output)
+        if job.has_children() > 0:
+            for child in job.children:
+                self.write_output_txt_recursive(child,output_file,"_"+level)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
         """
