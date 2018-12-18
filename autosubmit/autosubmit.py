@@ -246,6 +246,10 @@ class Autosubmit:
             group = subparser.add_mutually_exclusive_group(required=True)
             group.add_argument('-o', '--offer', action="store_true", default=False, help='Offer experiment')
             group.add_argument('-p', '--pickup', action="store_true", default=False, help='Pick-up released experiment')
+            # Inspect
+            subparser = subparsers.add_parser('inspect', description="Generate all .cmd files")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -395,6 +399,8 @@ class Autosubmit:
                                            args.expand, args.expand_status, args.notransitive)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
+            elif args.command == 'inspect':
+                return Autosubmit.inspect(args.expid, args.notransitive)
             elif args.command == 'describe':
                 return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
@@ -426,6 +432,7 @@ class Autosubmit:
                 return Autosubmit.archive(args.expid)
             elif args.command == 'unarchive':
                 return Autosubmit.unarchive(args.expid)
+
             elif args.command == 'readme':
                 if os.path.isfile(Autosubmit.readme_path):
                     with open(Autosubmit.readme_path) as f:
@@ -631,6 +638,107 @@ class Autosubmit:
         platform.add_parameters(parameters, True)
 
         job_list.parameters = parameters
+    @staticmethod
+    def inspect(expid, notransitive=False):
+        """
+         Generates cmd files experiment.
+
+         :type expid: str
+         :param expid: identifier of experiment to be run
+         :return: True if run to the end, False otherwise
+         :rtype: bool
+         """
+        if expid is None:
+            Log.critical("Missing experiment id")
+
+        BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist" % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+        Log.info("Starting inspect command")
+        Log.set_file(os.path.join(tmp_path, 'generate.log'))
+        os.system('clear')
+        signal.signal(signal.SIGINT, signal_handler)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            Log.critical('Can not generate scripts with invalid configuration')
+            return False
+        project_type = as_conf.get_project_type()
+        if project_type != "none":
+            # Check proj configuration
+            as_conf.check_proj()
+
+        hpcarch = as_conf.get_platform()
+
+        safetysleeptime = as_conf.get_safetysleeptime()
+
+
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+
+        Log.debug("The Experiment name is: {0}", expid)
+        Log.debug("Sleep: {0}", safetysleeptime)
+
+
+
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+
+        Log.debug("Length of the jobs list: {0}", len(job_list))
+
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+
+        # check the job list script creation
+        Log.debug("Checking experiment templates...")
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = submitter.platforms[job.platform_name.lower()]
+            # noinspection PyTypeChecker
+            platforms_to_test.add(job.platform)
+
+        job_list.check_scripts(as_conf)
+
+        packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                     "job_packages_" + expid)
+
+        if as_conf.get_wrapper_type() != 'none':
+            packages = packages_persistence.load()
+            for (exp_id, package_name, job_name) in packages:
+                if package_name not in job_list.packages_dict:
+                    job_list.packages_dict[package_name] = []
+                job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
+
+            for package_name, jobs in job_list.packages_dict.items():
+                from job.job import WrapperJob
+                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                         None,
+                                         None, jobs[0].platform, as_conf)
+                job_list.job_package_map[jobs[0].id] = wrapper_job
+
+
+        as_conf.reload()
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+
+        # variables to be updated on the fly
+        safetysleeptime = as_conf.get_safetysleeptime()
+        Log.debug("Sleep: {0}", safetysleeptime)
+        #Generate
+        Log.info("Starting to generate cmd scripts")
+        for platform in platforms_to_test:
+            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
+            for package in packages_to_submit:
+                package.submit(as_conf, job_list.parameters,True)
+        Log.info("no more scripts to generate, now proceed to check them manually")
+        time.sleep(safetysleeptime)
+        return True
+
+
 
     @staticmethod
     def run_experiment(expid, notransitive=False):
@@ -691,6 +799,7 @@ class Autosubmit:
                 Log.debug("The Experiment name is: {0}", expid)
                 Log.debug("Sleep: {0}", safetysleeptime)
                 Log.debug("Default retrials: {0}", retrials)
+
                 Log.info("Starting job submission...")
 
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -822,6 +931,7 @@ class Autosubmit:
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
+
                     if Autosubmit.exit:
                         prev_status = job.status
                         if prev_status != job.update_status(platform.check_job(job.id),
@@ -897,6 +1007,7 @@ class Autosubmit:
                     Log.error("{0} submission failed", platform.name)
                     raise
         return save
+
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
