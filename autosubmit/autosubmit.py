@@ -730,10 +730,10 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         #Generate
         Log.info("Starting to generate cmd scripts")
-        for platform in platforms_to_test:
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
-            for package in packages_to_submit:
-                package.submit(as_conf, job_list.parameters,True)
+
+        packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True)
+        for package in packages_to_submit:
+            package.submit(as_conf, job_list.parameters,True)
         Log.info("no more scripts to generate, now proceed to check them manually")
         time.sleep(safetysleeptime)
         return True

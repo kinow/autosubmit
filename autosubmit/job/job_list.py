@@ -557,6 +557,17 @@ class JobList:
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.FAILED]
 
+    def get_all(self, platform=None):
+        """
+        Returns a list of all jobs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: ready jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list]
+
     def get_ready(self, platform=None):
         """
         Returns a list of ready jobs

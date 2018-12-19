@@ -50,7 +50,7 @@ class JobPackager(object):
         if len(jobs_list.get_ready(platform)) > 0:
             Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform)))
 
-    def build_packages(self):
+    def build_packages(self,only_generate=False):
         """
         Returns the list of the built packages to be submitted
 
@@ -59,8 +59,10 @@ class JobPackager(object):
         """
         packages_to_submit = list()
         remote_dependencies_dict = dict()
-
-        jobs_ready = self._jobs_list.get_ready(self._platform)
+        if only_generate:
+            jobs_ready = self._jobs_list.get_all()
+        else:
+            jobs_ready = self._jobs_list.get_ready(self._platform)
         if jobs_ready == 0:
             return packages_to_submit, remote_dependencies_dict
         if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
@@ -69,7 +71,10 @@ class JobPackager(object):
         available_sorted = sorted(jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
         list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
-        jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+        if only_generate:
+            jobs_to_submit = jobs_ready
+        else:
+            jobs_to_submit = list_of_available[0:num_jobs_to_submit]
 
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
 
