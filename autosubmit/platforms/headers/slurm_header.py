@@ -84,6 +84,12 @@ class SlurmHeader(object):
             return "SBATCH --mem-per-cpu {0}".format(job.parameters['MEMORY_PER_TASK'])
         return ""
 
+    def get_threads_per_task(self, job):
+        if job.parameters['NUMTHREADS'] == '':
+            return ""
+        else:
+            return "SBATCH --cpus-per-task={0}".format(job.parameters['NUMTHREADS'])
+
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
     def get_custom_directives(self, job):
         """
@@ -98,6 +104,8 @@ class SlurmHeader(object):
         if job.parameters['CUSTOM_DIRECTIVES'] != '':
             return '\n'.join(str(s) for s in job.parameters['CUSTOM_DIRECTIVES'])
         return ""
+
+
 
     def get_tasks_per_node(self, job):
         """
@@ -121,6 +129,7 @@ class SlurmHeader(object):
             #%ACCOUNT_DIRECTIVE%
             #%MEMORY_DIRECTIVE%
             #%TASKS_PER_NODE_DIRECTIVE%
+            #%THREADS%
             #%NUMTASK%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
@@ -142,6 +151,7 @@ class SlurmHeader(object):
             #%MEMORY_DIRECTIVE%
             #%MEMORY_PER_TASK_DIRECTIVE%
             #%TASKS_PER_NODE_DIRECTIVE%
+            #%THREADS%
             #SBATCH -n %NUMPROC%
             #SBATCH -t %WALLCLOCK%:00
             #SBATCH -J %JOBNAME%
