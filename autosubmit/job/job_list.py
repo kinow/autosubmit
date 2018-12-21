@@ -947,7 +947,7 @@ class JobList:
                                                                                                  dependencies[key])
                             if skip:
                                 continue
-
+#dummy commit for test if remote works
                             section_name = dependencies[key].section
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
