@@ -943,11 +943,11 @@ class JobList:
                             continue
 
                         for key in dependencies_keys:
-                            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(chunk, member, date,
+                            skip, (current_chunk, current_member, current_date) = JobList._calculate_dependency_metadata(chunk, member, date,
                                                                                                  dependencies[key])
                             if skip:
                                 continue
-#dummy commit for test if remote works
+
                             section_name = dependencies[key].section
                             for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
                                                                   current_chunk):
