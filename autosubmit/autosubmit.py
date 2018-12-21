@@ -731,7 +731,9 @@ class Autosubmit:
                                                  None,
                                                  None, jobs[0].platform, as_conf)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
-
+                if as_conf.get_rerun():
+                    job_list.update_list(as_conf)
+                    job_list.save()
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
