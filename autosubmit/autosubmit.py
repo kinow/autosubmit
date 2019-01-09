@@ -179,6 +179,7 @@ class Autosubmit:
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('--hide_groups', action='store_true', default=False, help='Hides the groups from the plot')
+
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
@@ -250,6 +251,30 @@ class Autosubmit:
             subparser = subparsers.add_parser('inspect', description="Generate all .cmd files")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            subparser.add_argument('-f', '--force', action="store_true",help='Overwrite all cmd')
+            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
+                                   help='Groups the jobs automatically or by date, member, chunk or split')
+            subparser.add_argument('-expand', type=str,
+                                   help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
+                                        'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
+
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group = subparser.add_mutually_exclusive_group(required=False)
+            group.add_argument('-fl', '--list', type=str,
+                               help='Supply the list of job names to be filtered. Default = "Any". '
+                                    'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group.add_argument('-fc', '--filter_chunks', type=str,
+                               help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group.add_argument('-ft', '--filter_type', type=str,
+                               help='Select the job type to filter the list of jobs')
+
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -400,7 +425,9 @@ class Autosubmit:
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'inspect':
-                return Autosubmit.inspect(args.expid, args.notransitive)
+                return Autosubmit.inspect(args.expid,  args.list, args.filter_chunks, args.filter_status,
+                                          args.filter_type, args.group_by, args.expand,
+                                          args.expand_status,args.notransitive , args.force)
             elif args.command == 'describe':
                 return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
@@ -639,7 +666,7 @@ class Autosubmit:
 
         job_list.parameters = parameters
     @staticmethod
-    def inspect(expid, notransitive=False):
+    def inspect(expid,  lst, filter_chunks, filter_status, filter_section, group_by=None, expand=list(), expand_status=list() , notransitive=False, force=False ):
         """
          Generates cmd files experiment.
 
@@ -648,12 +675,18 @@ class Autosubmit:
          :return: True if run to the end, False otherwise
          :rtype: bool
          """
+
         if expid is None:
             Log.critical("Missing experiment id")
 
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if os.path.exists(os.path.join(tmp_path, 'autosubmit.lock')):
+            locked=True
+        else:
+            locked=False
+
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist" % exp_path)
             Log.warning("Does an experiment with the given id exist?")
@@ -682,14 +715,10 @@ class Autosubmit:
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
 
-
-
         job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-
         Log.debug("Length of the jobs list: {0}", len(job_list))
 
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-
         # check the job list script creation
         Log.debug("Checking experiment templates...")
 
@@ -730,8 +759,13 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         #Generate
         Log.info("Starting to generate cmd scripts")
+        if force or not locked:
+            Log.info("Overwritting all cmd scripts")
+            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True,True)
+        else:
+            Log.info("Generating unsubmitted cmd scripts")
+            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(),job_list).build_packages(True,False)
 
-        packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True)
         for package in packages_to_submit:
             package.submit(as_conf, job_list.parameters,True)
         Log.info("no more scripts to generate, now proceed to check them manually")

@@ -557,17 +557,27 @@ class JobList:
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.FAILED]
 
+    def get_unsubmitted(self, platform=None):
+        """
+        Returns a list of unsummited jobs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: all jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                ( job.status != Status.SUBMITTED and job.status != Status.QUEUING and job.status == Status.RUNNING and job.status == Status.COMPLETED ) ]
     def get_all(self, platform=None):
         """
         Returns a list of all jobs
 
         :param platform: job platform
         :type platform: HPCPlatform
-        :return: ready jobs
+        :return: all jobs
         :rtype: list
         """
         return [job for job in self._job_list]
-
     def get_ready(self, platform=None):
         """
         Returns a list of ready jobs
@@ -646,7 +656,7 @@ class JobList:
 
         :param platform: job platform
         :type platform: HPCPlatform
-        :return: finsihed jobs
+        :return: finished jobs
         :rtype: list
         """
         return self.get_completed(platform) + self.get_failed(platform)
