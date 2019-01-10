@@ -100,7 +100,7 @@ class AutosubmitGit:
                     return True
 
                 if output:
-                    Log.warning("There are commits pending to Git")
+                    Log.warning( "There are local changes not commited to Git" )
                     return True
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
