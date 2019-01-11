@@ -91,6 +91,7 @@ class JobPackageBase(object):
             self._send_files()
             self._do_submission()
 
+
     def _create_scripts(self, configuration):
         raise Exception('Not implemented')
 

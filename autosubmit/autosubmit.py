@@ -252,13 +252,6 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
             subparser.add_argument('-f', '--force', action="store_true",help='Overwrite all cmd')
-            subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
-                                   help='Groups the jobs automatically or by date, member, chunk or split')
-            subparser.add_argument('-expand', type=str,
-                                   help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
-                                        'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
-            subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
-
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
@@ -425,9 +418,8 @@ class Autosubmit:
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'inspect':
-                return Autosubmit.inspect(args.expid,  args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type, args.group_by, args.expand,
-                                          args.expand_status,args.notransitive , args.force)
+                return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
+                                          args.filter_type,args.notransitive , args.force)
             elif args.command == 'describe':
                 return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
@@ -610,8 +602,15 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"))
-        os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
+        tmp_path = os.path.join(exp_id_path, "tmp")
+        os.mkdir(tmp_path)
+        os.chmod(tmp_path, 0o775)
+
+        Log.debug("Creating temporal remote directory...")
+        remote_tmp_path = os.path.join(tmp_path,"LOG_"+exp_id)
+        os.mkdir(remote_tmp_path)
+        os.chmod(remote_tmp_path, 0o775)
+
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
@@ -666,7 +665,7 @@ class Autosubmit:
 
         job_list.parameters = parameters
     @staticmethod
-    def inspect(expid,  lst, filter_chunks, filter_status, filter_section, group_by=None, expand=list(), expand_status=list() , notransitive=False, force=False ):
+    def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False ):
         """
          Generates cmd files experiment.
 
@@ -759,12 +758,85 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         #Generate
         Log.info("Starting to generate cmd scripts")
-        if force or not locked:
-            Log.info("Overwritting all cmd scripts")
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True,True)
-        else:
-            Log.info("Generating unsubmitted cmd scripts")
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(),job_list).build_packages(True,False)
+
+        if not isinstance(job_list, type([])):
+            jobs = []
+            if (force and  not locked) or (force and locked) :
+                Log.info("Overwritting all cmd scripts")
+                jobs = job_list.get_job_list()
+            elif locked:
+                Log.warning("There is a .lock file and not -f, generating only all unsubmitted cmd scripts")
+                jobs = job_list.get_unsubmitted()
+            else:
+                Log.info("Generating cmd scripts only for selected jobs")
+
+                if filter_chunks:
+                    fc = filter_chunks
+                    Log.debug(fc)
+
+                    if fc == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        # noinspection PyTypeChecker
+                        data = json.loads(Autosubmit._create_json(fc))
+                        for date_json in data['sds']:
+                            date = date_json['sd']
+                            jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
+
+                            for member_json in date_json['ms']:
+                                member = member_json['m']
+                                jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                                for chunk_json in member_json['cs']:
+                                    chunk = int(chunk_json)
+                                    jobs = jobs + [job for job in filter(lambda j: j.chunk == chunk, jobs_member)]
+
+                elif filter_status:
+                    Log.debug("Filtering jobs with status {0}", filter_status)
+                    if filter_status == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        fs = Autosubmit._get_status(filter_status)
+                        jobs = [job for job in filter(lambda j: j.status == fs, job_list.get_job_list())]
+
+                elif filter_section:
+                    ft = filter_section
+                    Log.debug(ft)
+
+                    if ft == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.section == ft:
+                                jobs.append(job)
+
+                elif lst:
+                    jobs_lst = lst.split()
+
+                    if jobs == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.name in jobs_lst:
+                                jobs.append(job)
+                else:
+                    jobs = job_list.get_job_list()
+
+            referenced_jobs_to_remove = set()
+            for job in jobs:
+                for child in job.children:
+                    if child not in jobs:
+                        referenced_jobs_to_remove.add(child)
+                for parent in job.parents:
+                    if parent not in jobs:
+                        referenced_jobs_to_remove.add(parent)
+
+            for job in jobs:
+                job.children = job.children - referenced_jobs_to_remove
+                job.parents = job.parents - referenced_jobs_to_remove
+
+
+        packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True,jobs)
 
         for package in packages_to_submit:
             package.submit(as_conf, job_list.parameters,True)
