@@ -53,7 +53,7 @@ import datetime
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
-
+from collections import defaultdict
 from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
@@ -190,6 +190,7 @@ class Autosubmit:
                                help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
+
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
             group.add_argument('-ft', '--filter_type', type=str,
@@ -731,9 +732,7 @@ class Autosubmit:
                                                  None,
                                                  None, jobs[0].platform, as_conf)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
-                if as_conf.get_rerun():
-                    job_list.update_list(as_conf)
-                    job_list.save()
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -807,7 +806,7 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                     save = True
 
-                    if job_list.update_list(as_conf) or save:
+                    if job_list.updatze_list(as_conf) or save:
                         job_list.save()
 
                     if Autosubmit.exit:
@@ -2222,7 +2221,7 @@ class Autosubmit:
                 Log.debug('Chunks to change: {0}', filter_chunks)
                 Log.debug('Status of jobs to change: {0}', filter_status)
                 Log.debug('Sections to change: {0}', filter_section)
-
+                wrongExpid = 0
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                 if not as_conf.check_conf_files():
                     Log.critical('Can not run with invalid configuration')
@@ -2284,6 +2283,15 @@ class Autosubmit:
 
                 if lst:
                     jobs = lst.split()
+                    expidJoblist =defaultdict(int)
+                    for x in lst.split():
+                        expidJoblist[str(x[0:4])] += 1
+
+                    if str(expid) in expidJoblist:
+                        wrongExpid=jobs.__len__()-expidJoblist[expid]
+                    if wrongExpid > 0:
+                        Log.warning("There are {0} job.name with an invalid Expid",wrongExpid)
+
 
                     if jobs == 'Any':
                         for job in job_list.get_job_list():
@@ -2295,10 +2303,14 @@ class Autosubmit:
 
                 sys.setrecursionlimit(50000)
                 job_list.update_list(as_conf,False)
-                if save:
+
+                if save and wrongExpid == 0:
                     job_list.save()
                 else:
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
+                    if wrongExpid == 0:
+                        Log.error("Save disabled due invalid  expid, please check <expid> or/and jobs expid name")
+
 
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).load()
