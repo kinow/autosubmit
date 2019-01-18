@@ -777,7 +777,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf,store_change=True):
+    def update_list(self, as_conf,store_change=True,fromSetStatus=False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -814,13 +814,25 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
-        Log.debug('Updating WAITING jobs')
-        for job in self.get_waiting():
-            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-            if len(tmp) == len(job.parents):
-                job.status = Status.READY
-                save = True
-                Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+
+        if not fromSetStatus:
+            Log.debug('Updating WAITING jobs')
+            for job in self.get_waiting():
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) == len(job.parents):
+                    job.status = Status.READY
+                    save = True
+                    Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+            Log.debug('Update finished')
+        #RERUN FIX
+        for job in self.get_completed():
+            Log.debug('Updating SYNC jobs')
+            if job.synchronize is not None:
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) != len(job.parents):
+                    job.status = Status.WAITING
+                    save = True
+                    Log.debug("Sync Job detected with parents uncompleted, changing into ready".format(job.name))
         Log.debug('Update finished')
         return save
 

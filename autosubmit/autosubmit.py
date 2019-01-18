@@ -2302,7 +2302,7 @@ class Autosubmit:
                                 Autosubmit.change_status(final, final_status, job)
 
                 sys.setrecursionlimit(50000)
-                job_list.update_list(as_conf,False)
+                job_list.update_list(as_conf,False,True)
 
                 if save and wrongExpid == 0:
                     job_list.save()
