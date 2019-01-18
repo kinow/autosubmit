@@ -818,6 +818,7 @@ class JobList:
         if not fromSetStatus:
             Log.debug('Updating WAITING jobs')
             for job in self.get_waiting():
+
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
@@ -825,6 +826,8 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
             Log.debug('Update finished')
         #RERUN FIX
+        # for job in self.get_waiting():
+        #     Log.info("Sync:{0},{1}", job.name, job.synchronize)
         for job in self.get_completed():
             Log.debug('Updating SYNC jobs')
             if job.synchronize is not None:

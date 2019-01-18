@@ -159,6 +159,7 @@ class DicJobs:
         :type delay: int
         """
         # Temporally creation for unified jobs in case of synchronize
+
         if synchronize is not None:
             tmp_dic = dict()
             count = 0
@@ -341,8 +342,9 @@ class DicJobs:
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
-        job.synchronize = str(self.get_option(section, "SYNCHRONIZE", None))
+
         self._jobs_list.get_job_list().append(job)
+        job.synchronize = str(self.get_option(section, 'SYNCHRONIZE', ''))
         return job
 
     def get_option(self, section, option, default):
