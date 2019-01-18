@@ -637,6 +637,7 @@ class Job(object):
         self.memory = as_conf.get_memory(self.section)
         self.memory_per_task = as_conf.get_memory_per_task(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
+        self.synchronize = as_conf.get_synchronize(self.section)
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space

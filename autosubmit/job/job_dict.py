@@ -334,7 +334,8 @@ class DicJobs:
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
-        job.synchronize = self.get_option(section, "SYNCHRONIZE", '')
+        job.synchronize = str(self.get_option(section, "SYNCHRONIZE", ''))
+
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
         if job.retrials == -1:
             job.retrials = None
