@@ -151,7 +151,7 @@ class AutosubmitConfig(object):
         :return: synchronize
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'SYNCHRONIZE',None)
+        return str(self._jobs_parser.get_option(section, 'SYNCHRONIZE',None))
     def get_processors(self, section):
         """
         Gets processors needed for the given job type
