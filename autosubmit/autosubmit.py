@@ -2308,7 +2308,7 @@ class Autosubmit:
                     job_list.save()
                 else:
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
-                    if wrongExpid == 0:
+                    if wrongExpid > 0:
                         Log.error("Save disabled due invalid  expid, please check <expid> or/and jobs expid name")
 
 

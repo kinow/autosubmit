@@ -143,6 +143,16 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
+
+    def get_synchronize(self, section):
+        """
+        Gets wallclock for the given job type
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'SYNCHRONIZE', '')
     def get_processors(self, section):
         """
         Gets processors needed for the given job type

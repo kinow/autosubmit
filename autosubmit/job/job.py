@@ -73,7 +73,7 @@ class Job(object):
         self.name = name
         self.split = None
         self.delay = None
-        self.synchronize = None
+        
         self._long_name = None
         self.long_name = name
         self.date_format = ''
@@ -98,6 +98,7 @@ class Job(object):
         self._platform = None
         self.check = 'True'
         self.packed = False
+
 
     def __getstate__(self):
         odict = self.__dict__
@@ -591,6 +592,7 @@ class Job(object):
             parameters['CHUNK'] = chunk
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
+            parameters['SYNCHRONIZE'] = self.synchronize
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
