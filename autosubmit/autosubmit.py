@@ -806,7 +806,7 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                     save = True
 
-                    if job_list.updatze_list(as_conf) or save:
+                    if job_list.update_list(as_conf) or save:
                         job_list.save()
 
                     if Autosubmit.exit:

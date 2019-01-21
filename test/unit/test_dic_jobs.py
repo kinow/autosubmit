@@ -294,10 +294,11 @@ class TestDicJobs(TestCase):
         tasks = '333'
         memory = memory_per_task = 444
         wallclock = 555
+        synchronize =None
         notify_on = 'COMPLETED FAILED'
-        self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True, True,
+        self.parser_mock.has_option = Mock(side_effect=[True,True, True, True, True, True, True, True, True, True, True, True,
                                                         True, True, True, True, False, True])
-        self.parser_mock.get = Mock(side_effect=[frequency, delay, 'True', 'True', 'bash', platform_name, filename, queue,
+        self.parser_mock.get = Mock(side_effect=[frequency,synchronize, delay, 'True', 'True', 'bash', platform_name, filename, queue,
                                                  'True', processors, threads, tasks, memory, memory_per_task,
                                                  wallclock, notify_on])
         job_list_mock = Mock()
