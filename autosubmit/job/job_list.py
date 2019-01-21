@@ -827,7 +827,7 @@ class JobList:
             Log.debug('Update finished')
         #RERUN FIX
         #for job in self.get_waiting():
-            #Log.info("Sync:{0},{1}", job.name, job.synchronize)
+        #    Log.info("Sync:{0},{1}", job.name, job.synchronize)
         for job in self.get_completed():
             Log.debug('Updating SYNC jobs')
             if job.synchronize is not None:

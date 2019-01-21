@@ -343,10 +343,7 @@ class DicJobs:
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
-        sync= self.get_option(section, "SYNCHRONIZE", '')
-        if sync != None:
-            job.synchronize = str(sync)
-
+        job.synchronize = self._parser.get_option(section, "SYNCHRONIZE", '')
         self._jobs_list.get_job_list().append(job)
 
         return job
