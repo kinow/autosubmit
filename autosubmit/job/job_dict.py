@@ -302,7 +302,7 @@ class DicJobs:
             job.remote_logs = (jobs_data[name][10], jobs_data[name][11])
         else:
             job = Job(name, 0, Status.WAITING, priority)
-        job.synchronize = self.get_option(section, "SYNCHRONIZE", '')
+
         job.section = section
         job.date = date
         job.member = member
@@ -343,6 +343,9 @@ class DicJobs:
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
+        sync= self.get_option(section, "SYNCHRONIZE", '')
+        if sync != None:
+            job.synchronize = str(sync)
 
         self._jobs_list.get_job_list().append(job)
 
