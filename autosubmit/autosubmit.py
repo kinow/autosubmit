@@ -942,7 +942,7 @@ class Autosubmit:
         job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
 
         #for job in job_list.get_job_list():
-        #    job.check_completion()
+        #    job.check_completion() #
         Log.debug("Job list restored from {0} files", pkl_dir)
         if not isinstance(job_list, type([])):
             jobs = []
