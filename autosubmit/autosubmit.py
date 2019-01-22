@@ -696,6 +696,7 @@ class Autosubmit:
 
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
                 Log.debug("Length of the jobs list: {0}", len(job_list))
@@ -938,7 +939,10 @@ class Autosubmit:
             return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
+
+        #for job in job_list.get_job_list():
+        #    job.check_completion()
         Log.debug("Job list restored from {0} files", pkl_dir)
         if not isinstance(job_list, type([])):
             jobs = []
@@ -2059,13 +2063,12 @@ class Autosubmit:
 
                 if rerun == "true":
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+
                     job_list.rerun(chunk_list, notransitive)
                 else:
                     job_list.remove_rerun_only_jobs(notransitive)
-
                 Log.info("\nSaving the jobs list...")
                 job_list.save()
-
                 JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).reset_table()
 
@@ -2137,7 +2140,7 @@ class Autosubmit:
                 shutil.rmtree(project_path, ignore_errors=True)
                 return False
             Log.debug("{0}", output)
-
+        #RSYNC
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
@@ -2651,7 +2654,8 @@ class Autosubmit:
         open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
-    def load_job_list(expid, as_conf, notransitive=False):
+    def load_job_list(expid, as_conf, notransitive=False,monitor=False):
+        rerun = as_conf.get_rerun()
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
         date_list = as_conf.get_date_list()
@@ -2667,6 +2671,15 @@ class Autosubmit:
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
                           new=False, notransitive=notransitive)
+        if not monitor:
+            if rerun == "true":
+                chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+
+                job_list.rerun(chunk_list, notransitive)
+            else:
+                job_list.remove_rerun_only_jobs(notransitive)
+
+
         return job_list
 
     @staticmethod

@@ -97,7 +97,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None,new=True, notransitive=False):
         """
         Creates all jobs needed for the current workflow
 
@@ -138,7 +138,6 @@ class JobList:
         if not new:
             jobs_data = {str(row[0]): row for row in self.load()}
         self._create_jobs(dic_jobs, jobs_parser, priority, default_job_type, jobs_data)
-
         Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, self.graph)
 
@@ -814,6 +813,16 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
+        #RERUN FIX
+        for job in self.get_completed():
+            Log.debug('Updating SYNC jobs')
+            if job.synchronize is not None:
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) != len(job.parents):
+                    job.status = Status.WAITING
+                    save = True
+                    Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
+        Log.debug('Update finished')
 
         if not fromSetStatus:
             Log.debug('Updating WAITING jobs')
@@ -825,16 +834,7 @@ class JobList:
                     save = True
                     Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
             Log.debug('Update finished')
-        #RERUN FIX
-        for job in self.get_completed():
-            Log.debug('Updating SYNC jobs')
-            if job.synchronize is not None:
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if len(tmp) != len(job.parents):
-                    job.status = Status.WAITING
-                    save = True
-                    Log.debug("Sync Job detected with parents uncompleted, changing into ready".format(job.name))
-        Log.debug('Update finished')
+
         return save
 
     def update_genealogy(self, new=True, notransitive=False):
@@ -967,11 +967,20 @@ class JobList:
                                 parent.status = Status.WAITING
                                 Log.debug("Parent: " + parent.name)
 
-        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            self._remove_job(job)
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            self._remove_job(job)
+            if job.synchronize is not None:
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) != len(job.parents):
+                    job.status = Status.WAITING
+                    save = True
+                    Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
+                else:
+
+                    self._remove_job(job)
+            else:
+
+                self._remove_job(job)
 
         self.update_genealogy(notransitive=notransitive)
 
