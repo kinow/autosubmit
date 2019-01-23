@@ -909,7 +909,7 @@ class JobList:
 
         self._job_list.remove(job)
 
-    def rerun(self, chunk_list, notransitive=False):
+    def rerun(self, chunk_list, notransitive=False,monitor=False):
         """
         Updates job list to rerun the jobs specified by chunk_list
 
@@ -973,7 +973,7 @@ class JobList:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
                     job.status = Status.WAITING
-                    save = True
+
                     Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
                 else:
 

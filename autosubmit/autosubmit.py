@@ -940,10 +940,9 @@ class Autosubmit:
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
         job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
-
-        #for job in job_list.get_job_list():
-        #    job.check_completion() #
         Log.debug("Job list restored from {0} files", pkl_dir)
+
+
         if not isinstance(job_list, type([])):
             jobs = []
             if filter_chunks:
@@ -1189,7 +1188,7 @@ class Autosubmit:
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         if not as_conf.check_conf_files():
@@ -2062,9 +2061,11 @@ class Autosubmit:
                                   as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
 
                 if rerun == "true":
-                    chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
 
+                    chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list, notransitive)
+
+
                 else:
                     job_list.remove_rerun_only_jobs(notransitive)
                 Log.info("\nSaving the jobs list...")
@@ -2093,6 +2094,7 @@ class Autosubmit:
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
+
                 return True
 
         except portalocker.AlreadyLocked:
@@ -2671,15 +2673,80 @@ class Autosubmit:
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
                           new=False, notransitive=notransitive)
-        if not monitor:
-            if rerun == "true":
-                chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+        if rerun == "true":
 
+            chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+            if not monitor:
                 job_list.rerun(chunk_list, notransitive)
             else:
-                job_list.remove_rerun_only_jobs(notransitive)
+                rerun_list = copy.copy(job_list)
+                rerun_list.rerun(chunk_list, notransitive)
+                job_list =Autosubmit.rerun_recovery(expid,job_list,rerun_list,as_conf)
+        else:
+            job_list.remove_rerun_only_jobs(notransitive)
 
 
+        return job_list
+    @staticmethod
+    def rerun_recovery(expid,job_list,rerun_list,as_conf):
+        """
+        Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+        otherwise it will be set to WAITING. It will also update the jobs list.
+
+        :param expid: identifier of the experiment to recover
+        :type expid: str
+        :param save: If true, recovery saves changes to the jobs list
+        :type save: bool
+        :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
+        :type all_jobs: bool
+        :param hide: hides plot window
+        :type hide: bool
+        """
+
+        hpcarch = as_conf.get_platform()
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        if submitter.platforms is None:
+            return False
+        platforms = submitter.platforms
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = platforms[job.platform_name.lower()]
+            # noinspection PyTypeChecker
+            platforms_to_test.add(platforms[job.platform_name.lower()])
+
+
+        rerun_names=[]
+
+        [rerun_names.append(job.name) for job in rerun_list.get_job_list()]
+        jobs_to_recover = [i for i in job_list.get_job_list() if i.name not in rerun_names]
+        Log.info("{0},{1},{2}",job_list.get_job_list() ,rerun_names,jobs_to_recover)
+
+        Log.info("Looking for COMPLETED files")
+        start = datetime.datetime.now()
+        for job in jobs_to_recover:
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = platforms[job.platform_name.lower()]
+
+            if job.platform.get_completed_files(job.name, 0):
+                job.status = Status.COMPLETED
+                Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+            elif job.status != Status.SUSPENDED:
+                job.status = Status.WAITING
+                job.fail_count = 0
+                Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+
+            job.platform.get_logs_files(expid, job.remote_logs)
+
+        end = datetime.datetime.now()
+        Log.info("Time spent: '{0}'".format(end - start))
+        Log.info("Updating the jobs list")
         return job_list
 
     @staticmethod
