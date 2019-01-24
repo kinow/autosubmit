@@ -816,7 +816,8 @@ class JobList:
         #RERUN FIX
         for job in self.get_completed():
             Log.debug('Updating SYNC jobs')
-            if job.synchronize is not None:
+            if job.synchronize is not None: #and job in self.get_active():
+                Log.info("{0}",job.name)
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
                     job.status = Status.WAITING
@@ -944,8 +945,7 @@ class JobList:
                 for c in m['cs']:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
-                    for job in [i for i in self._job_list if i.date == date and i.member == member and
-                                    i.chunk == chunk]:
+                    for job in [i for i in self._job_list if i.date == date and i.member == member and  (i.chunk == chunk ) ]:
 
                         if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
@@ -969,20 +969,15 @@ class JobList:
 
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            if job.synchronize is not None:
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if len(tmp) != len(job.parents):
-                    job.status = Status.WAITING
-
-                    Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
-                else:
-
-                    self._remove_job(job)
-            else:
-
+            if job.synchronize is None:
                 self._remove_job(job)
 
         self.update_genealogy(notransitive=notransitive)
+        for job in [j for j in self._job_list if j.synchronize !=None]:
+            if job.status == Status.COMPLETED:
+                job.status = Status.WAITING
+            else:
+                self._remove_job(job)
 
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()

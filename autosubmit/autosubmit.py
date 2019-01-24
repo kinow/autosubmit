@@ -2731,7 +2731,7 @@ class Autosubmit:
 
         [rerun_names.append(job.name) for job in rerun_list.get_job_list()]
         jobs_to_recover = [i for i in job_list.get_job_list() if i.name not in rerun_names]
-        Log.info("{0},{1},{2}",job_list.get_job_list() ,rerun_names,jobs_to_recover)
+
 
         Log.info("Looking for COMPLETED files")
         start = datetime.datetime.now()
@@ -2743,17 +2743,17 @@ class Autosubmit:
 
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
-                Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-            elif job.status != Status.SUSPENDED:
-                job.status = Status.WAITING
-                job.fail_count = 0
-                Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+            #    Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+            #elif job.status != Status.SUSPENDED:
+            #    job.status = Status.WAITING
+            #    job.fail_count = 0
+            #    Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
             job.platform.get_logs_files(expid, job.remote_logs)
 
-        end = datetime.datetime.now()
-        Log.info("Time spent: '{0}'".format(end - start))
-        Log.info("Updating the jobs list")
+        #end = datetime.datetime.now()
+        #Log.info("Time spent: '{0}'".format(end - start))
+        #Log.info("Updating the jobs list")
         return job_list
 
     @staticmethod
