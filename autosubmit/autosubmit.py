@@ -2253,11 +2253,14 @@ class Autosubmit:
                                 member = member_json['m']
                                 jobs_member = filter(lambda j: j.member == member, jobs_date)
 
-                                for job in filter(lambda j: j.chunk is None, jobs_member):
-                                    Autosubmit.change_status(final, final_status, job)
+                                #for job in filter(lambda j: j.chunk is None, jobs_member):
+                                #    Autosubmit.change_status(final, final_status, job)
 
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
+                                    for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
+                                        Autosubmit.change_status(final, final_status, job)
+
                                     for job in filter(lambda j: j.chunk == chunk, jobs_member):
                                         Autosubmit.change_status(final, final_status, job)
 

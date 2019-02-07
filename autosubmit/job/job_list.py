@@ -814,10 +814,11 @@ class JobList:
 
         # if waiting jobs has all parents completed change its State to READY
         #RERUN FIX
+
         for job in self.get_completed():
-            Log.debug('Updating SYNC jobs')
+
             if job.synchronize is not None: #and job in self.get_active():
-                Log.info("{0}",job.name)
+                Log.debug('Updating SYNC jobs')
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
                     job.status = Status.WAITING
@@ -825,16 +826,16 @@ class JobList:
                     Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
         Log.debug('Update finished')
 
-        if not fromSetStatus:
-            Log.debug('Updating WAITING jobs')
-            for job in self.get_waiting():
 
+        Log.debug('Updating WAITING jobs')
+        for job in self.get_waiting():
+            if not fromSetStatus:
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     save = True
                     Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
-            Log.debug('Update finished')
+        Log.debug('Update finished')
 
         return save
 

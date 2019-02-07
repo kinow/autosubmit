@@ -132,6 +132,7 @@ class Platform(object):
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}TEMP_DIR'.format(prefix)] = self.temp_dir
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
+
         parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()
 
     def send_file(self, filename):
