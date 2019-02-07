@@ -53,7 +53,7 @@ import datetime
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
-
+from collections import defaultdict
 from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
@@ -190,6 +190,7 @@ class Autosubmit:
                                help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
+
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
             group.add_argument('-ft', '--filter_type', type=str,
@@ -695,6 +696,7 @@ class Autosubmit:
 
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
 
                 Log.debug("Length of the jobs list: {0}", len(job_list))
@@ -937,8 +939,10 @@ class Autosubmit:
             return False
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
+
+
         if not isinstance(job_list, type([])):
             jobs = []
             if filter_chunks:
@@ -1184,7 +1188,7 @@ class Autosubmit:
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive,monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
         if not as_conf.check_conf_files():
@@ -2057,14 +2061,15 @@ class Autosubmit:
                                   as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
 
                 if rerun == "true":
+
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list, notransitive)
+
+
                 else:
                     job_list.remove_rerun_only_jobs(notransitive)
-
                 Log.info("\nSaving the jobs list...")
                 job_list.save()
-
                 JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).reset_table()
 
@@ -2089,6 +2094,7 @@ class Autosubmit:
 
                 Log.result("\nJob list created successfully")
                 Log.user_warning("Remember to MODIFY the MODEL config files!")
+
                 return True
 
         except portalocker.AlreadyLocked:
@@ -2136,7 +2142,7 @@ class Autosubmit:
                 shutil.rmtree(project_path, ignore_errors=True)
                 return False
             Log.debug("{0}", output)
-
+        #RSYNC
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
@@ -2220,7 +2226,7 @@ class Autosubmit:
                 Log.debug('Chunks to change: {0}', filter_chunks)
                 Log.debug('Status of jobs to change: {0}', filter_status)
                 Log.debug('Sections to change: {0}', filter_section)
-
+                wrongExpid = 0
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                 if not as_conf.check_conf_files():
                     Log.critical('Can not run with invalid configuration')
@@ -2247,11 +2253,14 @@ class Autosubmit:
                                 member = member_json['m']
                                 jobs_member = filter(lambda j: j.member == member, jobs_date)
 
-                                for job in filter(lambda j: j.chunk is None, jobs_member):
-                                    Autosubmit.change_status(final, final_status, job)
+                                #for job in filter(lambda j: j.chunk is None, jobs_member):
+                                #    Autosubmit.change_status(final, final_status, job)
 
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
+                                    for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
+                                        Autosubmit.change_status(final, final_status, job)
+
                                     for job in filter(lambda j: j.chunk == chunk, jobs_member):
                                         Autosubmit.change_status(final, final_status, job)
 
@@ -2282,6 +2291,15 @@ class Autosubmit:
 
                 if lst:
                     jobs = lst.split()
+                    expidJoblist =defaultdict(int)
+                    for x in lst.split():
+                        expidJoblist[str(x[0:4])] += 1
+
+                    if str(expid) in expidJoblist:
+                        wrongExpid=jobs.__len__()-expidJoblist[expid]
+                    if wrongExpid > 0:
+                        Log.warning("There are {0} job.name with an invalid Expid",wrongExpid)
+
 
                     if jobs == 'Any':
                         for job in job_list.get_job_list():
@@ -2292,11 +2310,16 @@ class Autosubmit:
                                 Autosubmit.change_status(final, final_status, job)
 
                 sys.setrecursionlimit(50000)
-                job_list.update_list(as_conf,False)
-                if save:
+                job_list.update_list(as_conf,False,True)
+
+                if save and wrongExpid == 0:
                     job_list.save()
                 else:
                     Log.warning("Changes NOT saved to the JobList!!!!:  use -s option to save")
+                    if wrongExpid > 0:
+
+                        Log.error("Save disabled due invalid  expid, please check <expid> or/and jobs expid name")
+
 
                 packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                       "job_packages_" + expid).load()
@@ -2636,7 +2659,8 @@ class Autosubmit:
         open(as_conf.experiment_file, 'w').write(content)
 
     @staticmethod
-    def load_job_list(expid, as_conf, notransitive=False):
+    def load_job_list(expid, as_conf, notransitive=False,monitor=False):
+        rerun = as_conf.get_rerun()
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
         date_list = as_conf.get_date_list()
@@ -2652,6 +2676,87 @@ class Autosubmit:
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
                           new=False, notransitive=notransitive)
+        if rerun == "true":
+
+            chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+            if not monitor:
+                job_list.rerun(chunk_list, notransitive)
+            else:
+                rerun_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                                   Autosubmit._get_job_list_persistence(expid, as_conf))
+                rerun_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(),
+                                  as_conf.get_chunk_ini(),
+                                  as_conf.load_parameters(), date_format, as_conf.get_retrials(),
+                                  as_conf.get_default_job_type(), as_conf.get_wrapper_type(),
+                                  as_conf.get_wrapper_jobs(),
+                                  new=False, notransitive=notransitive)
+                rerun_list.rerun(chunk_list, notransitive)
+                job_list =Autosubmit.rerun_recovery(expid,job_list,rerun_list,as_conf)
+        else:
+            job_list.remove_rerun_only_jobs(notransitive)
+
+
+        return job_list
+    @staticmethod
+    def rerun_recovery(expid,job_list,rerun_list,as_conf):
+        """
+        Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+        otherwise it will be set to WAITING. It will also update the jobs list.
+
+        :param expid: identifier of the experiment to recover
+        :type expid: str
+        :param save: If true, recovery saves changes to the jobs list
+        :type save: bool
+        :param all_jobs: if True, it tries to get completed files for all jobs, not only active.
+        :type all_jobs: bool
+        :param hide: hides plot window
+        :type hide: bool
+        """
+
+        hpcarch = as_conf.get_platform()
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        if submitter.platforms is None:
+            return False
+        platforms = submitter.platforms
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = platforms[job.platform_name.lower()]
+            # noinspection PyTypeChecker
+            platforms_to_test.add(platforms[job.platform_name.lower()])
+
+
+        rerun_names=[]
+
+        [rerun_names.append(job.name) for job in rerun_list.get_job_list()]
+        jobs_to_recover = [i for i in job_list.get_job_list() if i.name not in rerun_names]
+
+
+        Log.info("Looking for COMPLETED files")
+        start = datetime.datetime.now()
+        for job in jobs_to_recover:
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = platforms[job.platform_name.lower()]
+
+            if job.platform.get_completed_files(job.name, 0):
+                job.status = Status.COMPLETED
+            #    Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+            #elif job.status != Status.SUSPENDED:
+            #    job.status = Status.WAITING
+            #    job.fail_count = 0
+            #    Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+
+            job.platform.get_logs_files(expid, job.remote_logs)
+
+        #end = datetime.datetime.now()
+        #Log.info("Time spent: '{0}'".format(end - start))
+        #Log.info("Updating the jobs list")
         return job_list
 
     @staticmethod

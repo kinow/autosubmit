@@ -159,6 +159,7 @@ class DicJobs:
         :type delay: int
         """
         # Temporally creation for unified jobs in case of synchronize
+
         if synchronize is not None:
             tmp_dic = dict()
             count = 0
@@ -299,8 +300,11 @@ class DicJobs:
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
             job.local_logs = (jobs_data[name][8], jobs_data[name][9])
             job.remote_logs = (jobs_data[name][10], jobs_data[name][11])
+
         else:
             job = Job(name, 0, Status.WAITING, priority)
+
+
         job.section = section
         job.date = date
         job.member = member
@@ -334,11 +338,17 @@ class DicJobs:
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
+
+
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
+
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
+        job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
+
         self._jobs_list.get_job_list().append(job)
+
         return job
 
     def get_option(self, section, option, default):

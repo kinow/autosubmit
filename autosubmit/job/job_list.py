@@ -97,7 +97,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None,new=True, notransitive=False):
         """
         Creates all jobs needed for the current workflow
 
@@ -138,7 +138,6 @@ class JobList:
         if not new:
             jobs_data = {str(row[0]): row for row in self.load()}
         self._create_jobs(dic_jobs, jobs_parser, priority, default_job_type, jobs_data)
-
         Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, self.graph)
 
@@ -777,7 +776,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf,store_change=True):
+    def update_list(self, as_conf,store_change=True,fromSetStatus=False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -814,14 +813,30 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
+        #RERUN FIX
+
+        for job in self.get_completed():
+
+            if job.synchronize is not None: #and job in self.get_active():
+                Log.debug('Updating SYNC jobs')
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) != len(job.parents):
+                    job.status = Status.WAITING
+                    save = True
+                    Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
+        Log.debug('Update finished')
+
+
         Log.debug('Updating WAITING jobs')
         for job in self.get_waiting():
-            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-            if len(tmp) == len(job.parents):
-                job.status = Status.READY
-                save = True
-                Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+            if not fromSetStatus:
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if len(tmp) == len(job.parents):
+                    job.status = Status.READY
+                    save = True
+                    Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
         Log.debug('Update finished')
+
         return save
 
     def update_genealogy(self, new=True, notransitive=False):
@@ -896,7 +911,7 @@ class JobList:
 
         self._job_list.remove(job)
 
-    def rerun(self, chunk_list, notransitive=False):
+    def rerun(self, chunk_list, notransitive=False,monitor=False):
         """
         Updates job list to rerun the jobs specified by chunk_list
 
@@ -931,8 +946,7 @@ class JobList:
                 for c in m['cs']:
                     Log.debug("Chunk: " + c)
                     chunk = int(c)
-                    for job in [i for i in self._job_list if i.date == date and i.member == member and
-                                    i.chunk == chunk]:
+                    for job in [i for i in self._job_list if i.date == date and i.member == member and  (i.chunk == chunk ) ]:
 
                         if not job.rerun_only or chunk != previous_chunk + 1:
                             job.status = Status.WAITING
@@ -943,7 +957,7 @@ class JobList:
                             continue
 
                         for key in dependencies_keys:
-                            skip, (chunk, member, date) = JobList._calculate_dependency_metadata(chunk, member, date,
+                            skip, (current_chunk, current_member, current_date) = JobList._calculate_dependency_metadata(chunk, member, date,
                                                                                                  dependencies[key])
                             if skip:
                                 continue
@@ -954,13 +968,17 @@ class JobList:
                                 parent.status = Status.WAITING
                                 Log.debug("Parent: " + parent.name)
 
-        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            self._remove_job(job)
 
         for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            self._remove_job(job)
+            if job.synchronize is None:
+                self._remove_job(job)
 
         self.update_genealogy(notransitive=notransitive)
+        for job in [j for j in self._job_list if j.synchronize !=None]:
+            if job.status == Status.COMPLETED:
+                job.status = Status.WAITING
+            else:
+                self._remove_job(job)
 
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()
