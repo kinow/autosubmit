@@ -2142,32 +2142,43 @@ class Autosubmit:
                 shutil.rmtree(project_path, ignore_errors=True)
                 return False
             Log.debug("{0}", output)
-        #RSYNC
+
         elif project_type == "local":
             local_project_path = as_conf.get_local_project_path()
             project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_PROJ_DIR)
             local_destination = os.path.join(project_path, project_destination)
+
             if os.path.exists(project_path):
+
                 Log.info("Using project folder: {0}", project_path)
-                if not force:
-                    Log.debug("The project folder exists. SKIPPING...")
-                    return True
+                if  os.path.exists(local_destination):
+                    try:
+                        output = subprocess.check_output("rsync -ac " + local_project_path + "/* " + local_destination, shell=True)
+                    except subprocess.CalledProcessError:
+                        Log.error("Can not synchronize {0} into {1}. Exiting...", local_project_path, project_path)
+                        #shutil.rmtree(project_path)
+                        return False
                 else:
+                    os.mkdir(local_destination)
+                    try:
+                        output = subprocess.check_output("cp -R " + local_project_path + "/* " + local_destination, shell=True)
+                    except subprocess.CalledProcessError:
+                        Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
+                        shutil.rmtree(project_path)
+                        return False
+            else:
+                os.mkdir(project_path)
+                os.mkdir(local_destination)
+                Log.debug("The project folder {0} has been created.", project_path)
+                Log.info("Copying {0} into {1}", local_project_path, project_path)
+
+                try:
+                    output = subprocess.check_output("cp -R " + local_project_path + "/* " + local_destination, shell=True)
+                except subprocess.CalledProcessError:
+                    Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                     shutil.rmtree(project_path)
-
-            os.mkdir(project_path)
-            os.mkdir(local_destination)
-            Log.debug("The project folder {0} has been created.", project_path)
-
-            Log.info("Copying {0} into {1}", local_project_path, project_path)
-
-            try:
-                output = subprocess.check_output("cp -R " + local_project_path + "/* " + local_destination, shell=True)
-            except subprocess.CalledProcessError:
-                Log.error("Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
-                shutil.rmtree(project_path)
-                return False
-            Log.debug("{0}", output)
+                    return False
+                Log.debug("{0}", output)
         return True
 
     @staticmethod
