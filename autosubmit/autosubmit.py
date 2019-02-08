@@ -179,6 +179,7 @@ class Autosubmit:
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('--hide_groups', action='store_true', default=False, help='Hides the groups from the plot')
+
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
@@ -247,6 +248,27 @@ class Autosubmit:
             group = subparser.add_mutually_exclusive_group(required=True)
             group.add_argument('-o', '--offer', action="store_true", default=False, help='Offer experiment')
             group.add_argument('-p', '--pickup', action="store_true", default=False, help='Pick-up released experiment')
+            # Inspect
+            subparser = subparsers.add_parser('inspect', description="Generate all .cmd files")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            subparser.add_argument('-f', '--force', action="store_true",help='Overwrite all cmd')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group = subparser.add_mutually_exclusive_group(required=False)
+            group.add_argument('-fl', '--list', type=str,
+                               help='Supply the list of job names to be filtered. Default = "Any". '
+                                    'LIST = "b037_20101101_fc3_21_sim b037_20111101_fc4_26_sim"')
+            group.add_argument('-fc', '--filter_chunks', type=str,
+                               help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
+                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+            group.add_argument('-fs', '--filter_status', type=str,
+                               choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
+                               help='Select the original status to filter the list of jobs')
+            group.add_argument('-ft', '--filter_type', type=str,
+                               help='Select the job type to filter the list of jobs')
+
 
             # Check
             subparser = subparsers.add_parser('check', description="check configuration for specified experiment")
@@ -396,6 +418,9 @@ class Autosubmit:
                                            args.expand, args.expand_status, args.notransitive)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
+            elif args.command == 'inspect':
+                return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
+                                          args.filter_type,args.notransitive , args.force)
             elif args.command == 'describe':
                 return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
@@ -427,6 +452,7 @@ class Autosubmit:
                 return Autosubmit.archive(args.expid)
             elif args.command == 'unarchive':
                 return Autosubmit.unarchive(args.expid)
+
             elif args.command == 'readme':
                 if os.path.isfile(Autosubmit.readme_path):
                     with open(Autosubmit.readme_path) as f:
@@ -577,8 +603,15 @@ class Autosubmit:
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
-        os.mkdir(os.path.join(exp_id_path, "tmp"))
-        os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
+        tmp_path = os.path.join(exp_id_path, "tmp")
+        os.mkdir(tmp_path)
+        os.chmod(tmp_path, 0o775)
+
+        Log.debug("Creating temporal remote directory...")
+        remote_tmp_path = os.path.join(tmp_path,"LOG_"+exp_id)
+        os.mkdir(remote_tmp_path)
+        os.chmod(remote_tmp_path, 0o775)
+
 
         Log.debug("Creating pkl directory...")
         os.mkdir(os.path.join(exp_id_path, "pkl"))
@@ -632,6 +665,187 @@ class Autosubmit:
         platform.add_parameters(parameters, True)
 
         job_list.parameters = parameters
+    @staticmethod
+    def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False ):
+        """
+         Generates cmd files experiment.
+
+         :type expid: str
+         :param expid: identifier of experiment to be run
+         :return: True if run to the end, False otherwise
+         :rtype: bool
+         """
+
+        if expid is None:
+            Log.critical("Missing experiment id")
+
+        BasicConfig.read()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if os.path.exists(os.path.join(tmp_path, 'autosubmit.lock')):
+            locked=True
+        else:
+            locked=False
+
+        if not os.path.exists(exp_path):
+            Log.critical("The directory %s is needed and does not exist" % exp_path)
+            Log.warning("Does an experiment with the given id exist?")
+            return 1
+        Log.info("Starting inspect command")
+        Log.set_file(os.path.join(tmp_path, 'generate.log'))
+        os.system('clear')
+        signal.signal(signal.SIGINT, signal_handler)
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            Log.critical('Can not generate scripts with invalid configuration')
+            return False
+        project_type = as_conf.get_project_type()
+        if project_type != "none":
+            # Check proj configuration
+            as_conf.check_proj()
+
+        hpcarch = as_conf.get_platform()
+
+        safetysleeptime = as_conf.get_safetysleeptime()
+
+
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+
+        Log.debug("The Experiment name is: {0}", expid)
+        Log.debug("Sleep: {0}", safetysleeptime)
+
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+        Log.debug("Length of the jobs list: {0}", len(job_list))
+
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        # check the job list script creation
+        Log.debug("Checking experiment templates...")
+
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = submitter.platforms[job.platform_name.lower()]
+            # noinspection PyTypeChecker
+            platforms_to_test.add(job.platform)
+
+        job_list.check_scripts(as_conf)
+
+        packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                     "job_packages_" + expid)
+
+        if as_conf.get_wrapper_type() != 'none':
+            packages = packages_persistence.load()
+            for (exp_id, package_name, job_name) in packages:
+                if package_name not in job_list.packages_dict:
+                    job_list.packages_dict[package_name] = []
+                job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
+
+            for package_name, jobs in job_list.packages_dict.items():
+                from job.job import WrapperJob
+                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                         None,
+                                         None, jobs[0].platform, as_conf)
+                job_list.job_package_map[jobs[0].id] = wrapper_job
+
+
+        as_conf.reload()
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+
+        # variables to be updated on the fly
+        safetysleeptime = as_conf.get_safetysleeptime()
+        Log.debug("Sleep: {0}", safetysleeptime)
+        #Generate
+        Log.info("Starting to generate cmd scripts")
+
+        if not isinstance(job_list, type([])):
+            jobs = []
+            if (force and  not locked) or (force and locked) :
+                Log.info("Overwritting all cmd scripts")
+                jobs = job_list.get_job_list()
+            elif locked:
+                Log.warning("There is a .lock file and not -f, generating only all unsubmitted cmd scripts")
+                jobs = job_list.get_unsubmitted()
+            else:
+                Log.info("Generating cmd scripts only for selected jobs")
+
+                if filter_chunks:
+                    fc = filter_chunks
+                    Log.debug(fc)
+
+                    if fc == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        # noinspection PyTypeChecker
+                        data = json.loads(Autosubmit._create_json(fc))
+                        for date_json in data['sds']:
+                            date = date_json['sd']
+                            jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
+
+                            for member_json in date_json['ms']:
+                                member = member_json['m']
+                                jobs_member = filter(lambda j: j.member == member, jobs_date)
+
+                                for chunk_json in member_json['cs']:
+                                    chunk = int(chunk_json)
+                                    jobs = jobs + [job for job in filter(lambda j: j.chunk == chunk, jobs_member)]
+
+                elif filter_status:
+                    Log.debug("Filtering jobs with status {0}", filter_status)
+                    if filter_status == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        fs = Autosubmit._get_status(filter_status)
+                        jobs = [job for job in filter(lambda j: j.status == fs, job_list.get_job_list())]
+
+                elif filter_section:
+                    ft = filter_section
+                    Log.debug(ft)
+
+                    if ft == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.section == ft:
+                                jobs.append(job)
+
+                elif lst:
+                    jobs_lst = lst.split()
+
+                    if jobs == 'Any':
+                        jobs = job_list.get_job_list()
+                    else:
+                        for job in job_list.get_job_list():
+                            if job.name in jobs_lst:
+                                jobs.append(job)
+                else:
+                    jobs = job_list.get_job_list()
+
+            referenced_jobs_to_remove = set()
+            for job in jobs:
+                for child in job.children:
+                    if child not in jobs:
+                        referenced_jobs_to_remove.add(child)
+                for parent in job.parents:
+                    if parent not in jobs:
+                        referenced_jobs_to_remove.add(parent)
+
+            for job in jobs:
+                job.children = job.children - referenced_jobs_to_remove
+                job.parents = job.parents - referenced_jobs_to_remove
+
+
+        packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True,jobs)
+
+        for package in packages_to_submit:
+            package.submit(as_conf, job_list.parameters,True)
+        Log.info("no more scripts to generate, now proceed to check them manually")
+        time.sleep(safetysleeptime)
+        return True
+
+
 
     @staticmethod
     def run_experiment(expid, notransitive=False):
@@ -692,6 +906,7 @@ class Autosubmit:
                 Log.debug("The Experiment name is: {0}", expid)
                 Log.debug("Sleep: {0}", safetysleeptime)
                 Log.debug("Default retrials: {0}", retrials)
+
                 Log.info("Starting job submission...")
 
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -824,6 +1039,7 @@ class Autosubmit:
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
+
                     if Autosubmit.exit:
                         prev_status = job.status
                         if prev_status != job.update_status(platform.check_job(job.id),
@@ -899,6 +1115,7 @@ class Autosubmit:
                     Log.error("{0} submission failed", platform.name)
                     raise
         return save
+
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
