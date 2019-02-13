@@ -56,6 +56,7 @@ from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
 
+
 sys.path.insert(0, os.path.abspath('.'))
 import saga
 # noinspection PyPackageRequirements
@@ -2100,6 +2101,8 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
 
+
+
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
         """
@@ -2153,7 +2156,8 @@ class Autosubmit:
                 Log.info("Using project folder: {0}", project_path)
                 if  os.path.exists(local_destination):
                     try:
-                        output = subprocess.check_output("rsync -ac " + local_project_path + "/* " + local_destination, shell=True)
+                        cmd=["rsync -ac --info=progress " +local_project_path+"/* "+local_destination]
+                        subprocess.call(cmd,shell=True)
                     except subprocess.CalledProcessError:
                         Log.error("Can not synchronize {0} into {1}. Exiting...", local_project_path, project_path)
                         #shutil.rmtree(project_path)
