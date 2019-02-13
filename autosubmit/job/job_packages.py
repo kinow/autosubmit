@@ -75,7 +75,7 @@ class JobPackageBase(object):
         """
         return self._platform
 
-    def submit(self, configuration, parameters):
+    def submit(self, configuration, parameters,only_generate=False):
         for job in self.jobs:
             if job.check.lower() == Job.CHECK_ON_SUBMISSION:
                 if not job.check_script(configuration, parameters):
@@ -83,9 +83,14 @@ class JobPackageBase(object):
             job.update_parameters(configuration, parameters)
             # looking for directives on jobs
             self._custom_directives = self._custom_directives | set(job.custom_directives)
-        self._create_scripts(configuration)
-        self._send_files()
-        self._do_submission()
+        if only_generate:
+            self._create_scripts(configuration)
+            #self._send_files()
+        else:
+            self._create_scripts(configuration)
+            self._send_files()
+            self._do_submission()
+
 
     def _create_scripts(self, configuration):
         raise Exception('Not implemented')
