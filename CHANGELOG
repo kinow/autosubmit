@@ -1,3 +1,24 @@
+3.12.0b
+    Hotfixed in 3.11.0 , now you are unable to erase other user experiments. 
+    Now you can select which submodules uses your experiment.
+    New command called inspect that generates  cmd files in local expid folder.
+    Autosubmit monitor -txt was improved.
+    Autosubmit expid copy now is capable of detect if there are commits pending.
+    Rerun jobs now are working properly with sync jobs.
+    Some minor tweaks to autosubmit monitor.
+    Now autosubmit recovery also copies the log.
+    Added rsync when updates a local proyect.
+    Delay and synchronize now is exportable in job.conf.
+    Changes to some warning/error messages.
+    Autosubmit treats THREADS in mn4 as if it is #SBATCH --cpus-per-task=n
+    Some bug fixes:
+        -minor issues.
+        -Bug fix for mail notifier.
+        -Bug fix related to update_list.txt.
+        -Bugs fixes to synchronize jobs.
+        -Bug fix for ec-gate
+   
+        
 3.11.1
     Fix minor issues
     Added new command for describe experiment
