@@ -108,8 +108,8 @@ class SlurmPlatform(ParamikoPlatform):
         #SBATCH -J {0}
         {1}
         #SBATCH -A {2}
-        #SBATCH --output {0}.out
-        #SBATCH --error {0}.err
+        #SBATCH --output={0}.out
+        #SBATCH --error={0}.err
         #SBATCH -t {3}:00
         #SBATCH -n {4}
         {5}
