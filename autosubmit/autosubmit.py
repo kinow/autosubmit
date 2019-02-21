@@ -202,6 +202,7 @@ class Autosubmit:
             subparser.add_argument('--txt', action='store_true', default=False,
                                    help='Generates only txt status file')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='check wrappers if inspect was execute')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -408,7 +409,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                           args.filter_type, args.hide, args.txt, args.group_by, args.expand,
-                                          args.expand_status, args.hide_groups, args.notransitive)
+                                          args.expand_status, args.hide_groups, args.notransitive,args.checkwrapper)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                              args.notransitive)
@@ -741,7 +742,7 @@ class Autosubmit:
                                                      "job_packages_" + expid)
 
         if as_conf.get_wrapper_type() != 'none':
-            packages = packages_persistence.load()
+            packages = packages_persistence.load(True)
             for (exp_id, package_name, job_name) in packages:
                 if package_name not in job_list.packages_dict:
                     job_list.packages_dict[package_name] = []
@@ -842,7 +843,7 @@ class Autosubmit:
                 if hasattr(package, "name"):
                     job_list.packages_dict[package.name] = package.jobs
                     from job.job import WrapperJob
-                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.RUNNING, 0, package.jobs,
+                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
                                              package._wallclock, package._num_processors,
                                              package.platform, as_conf)
                     job_list.job_package_map[package.jobs[0].id] = wrapper_job
@@ -851,7 +852,7 @@ class Autosubmit:
                     remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
 
                 if isinstance(package, JobPackageThread):
-                    packages_persistence.save(package.name, package.jobs, package._expid)
+                   packages_persistence.save(package.name, package.jobs, package._expid,True)
 
                 package.submit(as_conf, job_list.parameters,True)
                 jobs_by_platform = []
@@ -1136,7 +1137,7 @@ class Autosubmit:
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
-                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False):
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, checkwrapper=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1246,8 +1247,9 @@ class Autosubmit:
 
         packages = None
         if as_conf.get_wrapper_type() != 'none':
+
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                     "job_packages_" + expid).load()
+                                                     "job_packages_" + expid).load(checkwrapper)
 
         sys.setrecursionlimit(50000)
 
