@@ -837,30 +837,24 @@ class Autosubmit:
         jobs_by_platform=[]
         for platform in platforms_to_test:
             [jobs_by_platform.append(job) for job in jobs if (platform is None or job._platform.name is platform.name)]
-
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf,platform, job_list).build_packages(True,jobs_by_platform)
-            jobs_by_platform = []
+            for package in packages_to_submit:
+                if hasattr(package, "name"):
+                    job_list.packages_dict[package.name] = package.jobs
+                    from job.job import WrapperJob
+                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.RUNNING, 0, package.jobs,
+                                             package._wallclock, package._num_processors,
+                                             package.platform, as_conf)
+                    job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
-        for package in packages_to_submit:
-            if hasattr(package, "name"):
-                job_list.packages_dict[package.name] = package.jobs
+                if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                    remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
 
-                from job.job import WrapperJob
-                wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.RUNNING, 0, package.jobs,
-                                         package._wallclock, package._num_processors,
-                                         package.platform, as_conf)
-                job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                if isinstance(package, JobPackageThread):
+                    packages_persistence.save(package.name, package.jobs, package._expid)
 
-            if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-
-            if isinstance(package, JobPackageThread):
-                packages_persistence.save(package.name, package.jobs, package._expid)
-
-            save = True
-            job_list.update_list(as_conf,save)
-
-            package.submit(as_conf, job_list.parameters,True)
+                package.submit(as_conf, job_list.parameters,True)
+                jobs_by_platform = []
 
 
 
