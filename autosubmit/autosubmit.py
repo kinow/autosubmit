@@ -724,7 +724,10 @@ class Autosubmit:
         Log.debug("Checking experiment templates...")
 
         platforms_to_test = set()
+
+
         for job in job_list.get_job_list():
+
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
@@ -744,17 +747,10 @@ class Autosubmit:
                     job_list.packages_dict[package_name] = []
                 job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
 
-            for package_name, jobs in job_list.packages_dict.items():
-                from job.job import WrapperJob
-                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                         None,
-                                         None, jobs[0].platform, as_conf)
-                job_list.job_package_map[jobs[0].id] = wrapper_job
-
-
         as_conf.reload()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-
+        job_list.update_list(as_conf)
+        job_list.save()
         # variables to be updated on the fly
         safetysleeptime = as_conf.get_safetysleeptime()
         Log.debug("Sleep: {0}", safetysleeptime)
@@ -838,10 +834,36 @@ class Autosubmit:
                 job.parents = job.parents - referenced_jobs_to_remove
 
 
-        packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platforms_to_test.pop(), job_list).build_packages(True,jobs)
+        jobs_by_platform=[]
+        for platform in platforms_to_test:
+            [jobs_by_platform.append(job) for job in jobs if (platform is None or job._platform.name is platform.name)]
+
+            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf,platform, job_list).build_packages(True,jobs_by_platform)
+            jobs_by_platform = []
 
         for package in packages_to_submit:
+            if hasattr(package, "name"):
+                job_list.packages_dict[package.name] = package.jobs
+
+                from job.job import WrapperJob
+                wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.RUNNING, 0, package.jobs,
+                                         package._wallclock, package._num_processors,
+                                         package.platform, as_conf)
+                job_list.job_package_map[package.jobs[0].id] = wrapper_job
+
+            if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+
+            if isinstance(package, JobPackageThread):
+                packages_persistence.save(package.name, package.jobs, package._expid)
+
+            save = True
+            job_list.update_list(as_conf,save)
+
             package.submit(as_conf, job_list.parameters,True)
+
+
+
         Log.info("no more scripts to generate, now proceed to check them manually")
         time.sleep(safetysleeptime)
         return True
