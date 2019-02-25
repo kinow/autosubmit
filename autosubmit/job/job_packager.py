@@ -209,9 +209,8 @@ class JobPackager(object):
     def _build_horizontal_vertical_package(self, horizontal_packager, section, jobs_resources):
         total_wallclock = '00:00'
 
-        horizontal_package = horizontal_packager.build_horizontal_package()
-        total_processors = horizontal_packager.total_processors
-
+        horizontal_package = horizontal_packager.build_horizontal_package(True)
+        total_processors=job.total_processors
         horizontal_packager.create_sections_order(section)
         horizontal_package.sort(key=lambda job: horizontal_packager.sort_by_expression(job.name))
 
@@ -219,9 +218,9 @@ class JobPackager(object):
         wallclock = job.wallclock
 
         current_package = [horizontal_package]
-
+        #current_package = []
         ## Get the next horizontal packages ##
-        current_package += horizontal_packager.get_next_packages(section, max_wallclock=self._platform.max_wallclock)
+        current_package += horizontal_packager.get_next_packages(section, max_wallclock=self._platform.max_wallclock,horizontal_vertical=True)
 
         for i in range(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
@@ -347,8 +346,10 @@ class JobPackagerHorizontal(object):
         self._sort_order_dict = dict()
         self._components_dict = dict()
 
-    def build_horizontal_package(self):
+    def build_horizontal_package(self,horizontal_vertical=False):
         current_package = []
+        if horizontal_vertical:
+            self._current_processors = 0
         for job in self.job_list:
             if self.max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
                 self.max_jobs -= 1
@@ -379,7 +380,7 @@ class JobPackagerHorizontal(object):
         jobname = jobname.split('_')[-1]
         return self._sort_order_dict[jobname]
 
-    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict()):
+    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict(),horizontal_vertical=False):
         packages = []
         job = max(self.job_list, key=attrgetter('total_wallclock'))
         wallclock = job.wallclock
@@ -400,7 +401,7 @@ class JobPackagerHorizontal(object):
 
             next_section_list.sort(key=lambda job: self.sort_by_expression(job.name))
             self.job_list = next_section_list
-            package_jobs = self.build_horizontal_package()
+            package_jobs = self.build_horizontal_package(horizontal_vertical)
 
             if package_jobs:
                 if max_wallclock:

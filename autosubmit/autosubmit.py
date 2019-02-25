@@ -867,7 +867,7 @@ class Autosubmit:
 
                 package.submit(as_conf, job_list.parameters,True)
                 jobs_by_platform = []
-
+        #
         if  isinstance(jobs_cw, type([])):
             referenced_jobs_to_remove = set()
             for job in jobs_cw:
