@@ -27,22 +27,34 @@ class JobPackagePersistence(object):
 
     VERSION = 1
     JOB_PACKAGES_TABLE = 'job_package'
+    WRAPPER_JOB_PACKAGES_TABLE = 'wrapper_job_package'
     TABLE_FIELDS = ['exp_id', 'package_name', 'job_name']
 
     def __init__(self, persistence_path, persistence_file):
         self.db_manager = DbManager(persistence_path, persistence_file, self.VERSION)
         self.db_manager.create_table(self.JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
-
-    def load(self):
+        self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+    def load(self,wrapper=False):
         """
         Loads package of jobs from a database
         :param persistence_file: str
         :param persistence_path: str
 
         """
-        return self.db_manager.select_all(self.JOB_PACKAGES_TABLE)
+        if not wrapper:
+            return self.db_manager.select_all(self.JOB_PACKAGES_TABLE)
+        else:
+            return self.db_manager.select_all(self.WRAPPER_JOB_PACKAGES_TABLE)
+    def reset(self):
+        """
+        Loads package of jobs from a database
+        :param persistence_file: str
+        :param persistence_path: str
 
-    def save(self, package_name, jobs, exp_id):
+        """
+        self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+        self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+    def save(self, package_name, jobs, exp_id,wrapper=False):
         """
         Persists a job list in a database
         :param packages_dict: dictionary of jobs per package
@@ -55,12 +67,20 @@ class JobPackagePersistence(object):
         for job in jobs:
             job_packages_data += [(exp_id, package_name, job.name)]
 
-        self.db_manager.insertMany(self.JOB_PACKAGES_TABLE, job_packages_data)
-
-    def reset_table(self):
+        if  wrapper:
+            self.db_manager.insertMany(self.WRAPPER_JOB_PACKAGES_TABLE, job_packages_data)
+        else:
+            self.db_manager.insertMany(self.JOB_PACKAGES_TABLE, job_packages_data)
+            self.db_manager.insertMany(self.WRAPPER_JOB_PACKAGES_TABLE, job_packages_data)
+    def reset_table(self,wrappers=False):
         """
         Drops and recreates the database
-
         """
-        self.db_manager.drop_table(self.JOB_PACKAGES_TABLE)
-        self.db_manager.create_table(self.JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+        if wrappers:
+            self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+        else:
+            self.db_manager.drop_table(self.JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+            self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)

@@ -507,7 +507,17 @@ class JobList:
         """
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.COMPLETED]
+    def get_uncompleted(self, platform=None):
+        """
+        Returns a list of completed jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: completed jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                job.status != Status.COMPLETED]
     def get_submitted(self, platform=None):
         """
         Returns a list of submitted jobs
