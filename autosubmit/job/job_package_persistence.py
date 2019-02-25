@@ -45,6 +45,15 @@ class JobPackagePersistence(object):
             return self.db_manager.select_all(self.JOB_PACKAGES_TABLE)
         else:
             return self.db_manager.select_all(self.WRAPPER_JOB_PACKAGES_TABLE)
+    def reset(self):
+        """
+        Loads package of jobs from a database
+        :param persistence_file: str
+        :param persistence_path: str
+
+        """
+        self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+        self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
     def save(self, package_name, jobs, exp_id,wrapper=False):
         """
         Persists a job list in a database
@@ -62,12 +71,16 @@ class JobPackagePersistence(object):
             self.db_manager.insertMany(self.WRAPPER_JOB_PACKAGES_TABLE, job_packages_data)
         else:
             self.db_manager.insertMany(self.JOB_PACKAGES_TABLE, job_packages_data)
-    def reset_table(self):
+            self.db_manager.insertMany(self.WRAPPER_JOB_PACKAGES_TABLE, job_packages_data)
+    def reset_table(self,wrappers=False):
         """
         Drops and recreates the database
-
         """
-        self.db_manager.drop_table(self.JOB_PACKAGES_TABLE)
-        self.db_manager.create_table(self.JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
-        self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
-        self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+        if wrappers:
+            self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+        else:
+            self.db_manager.drop_table(self.JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
+            self.db_manager.drop_table(self.WRAPPER_JOB_PACKAGES_TABLE)
+            self.db_manager.create_table(self.WRAPPER_JOB_PACKAGES_TABLE, self.TABLE_FIELDS)
