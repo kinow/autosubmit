@@ -793,12 +793,30 @@ class Autosubmit:
                     else:
                         jobs = job_list.get_job_list()
         if isinstance(jobs, type([])):
+            referenced_jobs_to_remove = set()
+            for job in jobs:
+                for child in job.children:
+                    if child not in jobs:
+                        referenced_jobs_to_remove.add(child)
+                for parent in job.parents:
+                    if parent not in jobs:
+                        referenced_jobs_to_remove.add(parent)
+
             for job in jobs:
                 job.status=Status.WAITING
             Autosubmit.generate_scripts_andor_wrappers(as_conf,job_list, jobs,packages_persistence,False)
         if isinstance(jobs_cw, type([])):
+            referenced_jobs_to_remove = set()
             for job in jobs_cw:
-                job.status=Status.WAITING
+                for child in job.children:
+                    if child not in jobs_cw:
+                        referenced_jobs_to_remove.add(child)
+                for parent in job.parents:
+                    if parent not in jobs_cw:
+                        referenced_jobs_to_remove.add(parent)
+
+            for job in jobs_cw:
+                job.status = Status.WAITING
             Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list, jobs_cw,packages_persistence,False)
 
         Log.info("no more scripts to generate, now proceed to check them manually")
@@ -840,7 +858,8 @@ class Autosubmit:
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
             for jobready in job_list.get_ready():
                 jobready.status=Status.COMPLETED
-            job_list.update_list(as_conf, False)
+
+            #job_list.update_list(as_conf, False)
 
     @staticmethod
     def run_experiment(expid, notransitive=False):
