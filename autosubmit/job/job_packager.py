@@ -209,8 +209,8 @@ class JobPackager(object):
     def _build_horizontal_vertical_package(self, horizontal_packager, section, jobs_resources):
         total_wallclock = '00:00'
 
-        horizontal_package = horizontal_packager.build_horizontal_package(True)
-        total_processors=job.total_processors
+        horizontal_package = horizontal_packager.build_horizontal_package()
+        total_processors=horizontal_packager.total_processors
         horizontal_packager.create_sections_order(section)
         horizontal_package.sort(key=lambda job: horizontal_packager.sort_by_expression(job.name))
 
@@ -224,6 +224,7 @@ class JobPackager(object):
 
         for i in range(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
+
 
         return JobPackageHorizontalVertical(current_package, total_processors, total_wallclock,
                                             jobs_resources=jobs_resources)

@@ -704,6 +704,17 @@ class JobList:
             jobs_by_id[job.id].append(job)
         return jobs_by_id
 
+    def get_in_ready_grouped_id(self, platform):
+        jobs=[]
+        [jobs.append(job) for job in jobs if (platform is None or job._platform.name is platform.name)]
+
+        jobs_by_id = dict()
+        for job in jobs:
+            if job.id not in jobs_by_id:
+                jobs_by_id[job.id] = list()
+            jobs_by_id[job.id].append(job)
+        return jobs_by_id
+
     def sort_by_name(self):
         """
         Returns a list of jobs sorted by name

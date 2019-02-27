@@ -709,54 +709,17 @@ class Autosubmit:
         if project_type != "none":
             # Check proj configuration
             as_conf.check_proj()
-
-        hpcarch = as_conf.get_platform()
-
         safetysleeptime = as_conf.get_safetysleeptime()
-
-
-        submitter = Autosubmit._get_submitter(as_conf)
-        submitter.load_platforms(as_conf)
-
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
-
+        packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                                     "job_packages_" + expid)
+        packages_persistence.reset_table(True)
         job_list_original = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         job_list = copy.deepcopy(job_list_original)
         job_list.packages_dict = {}
         Log.debug("Length of the jobs list: {0}", len(job_list))
 
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-        # check the job list script creation
-        Log.debug("Checking experiment templates...")
-
-        platforms_to_test = set()
-
-
-        for job in job_list.get_job_list():
-            if job.platform_name is None:
-                job.platform_name = hpcarch
-            # noinspection PyTypeChecker
-            job.platform = submitter.platforms[job.platform_name.lower()]
-            # noinspection PyTypeChecker
-            platforms_to_test.add(job.platform)
-
-        job_list.check_scripts(as_conf)
-
-        packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                     "job_packages_" + expid)
-        packages_persistence.reset_table(True)
-        if as_conf.get_wrapper_type() != 'none':
-            packages = packages_persistence.load()
-            for (exp_id, package_name, job_name) in packages: #LUNES
-                if package_name not in job_list.packages_dict:
-                    job_list.packages_dict[package_name] = []
-                job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
-
-        as_conf.reload()
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-        job_list.update_list(as_conf)
-        job_list.save()
         # variables to be updated on the fly
         safetysleeptime = as_conf.get_safetysleeptime()
         Log.debug("Sleep: {0}", safetysleeptime)
@@ -764,7 +727,6 @@ class Autosubmit:
         Log.info("Starting to generate cmd scripts")
 
         if not isinstance(job_list, type([])):
-
             jobs = []
             jobs_cw = []
             if checkwrapper and ( not locked or (force and locked)):
@@ -830,91 +792,55 @@ class Autosubmit:
                                     jobs.append(job)
                     else:
                         jobs = job_list.get_job_list()
-
-            referenced_jobs_to_remove = set()
+        if isinstance(jobs, type([])):
             for job in jobs:
-                for child in job.children:
-                    if child not in jobs:
-                        referenced_jobs_to_remove.add(child)
-                for parent in job.parents:
-                    if parent not in jobs:
-                        referenced_jobs_to_remove.add(parent)
-
-            for job in jobs:
-                job.children = job.children - referenced_jobs_to_remove
-                job.parents = job.parents - referenced_jobs_to_remove
-
-
-        jobs_by_platform=[]
-
-        for platform in platforms_to_test:
-            [jobs_by_platform.append(job) for job in jobs if (platform is None or job._platform.name is platform.name)]
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf,platform, job_list).build_packages(True,jobs_by_platform)
-            for package in packages_to_submit:
-                if hasattr(package, "name"):
-                    job_list.packages_dict[package.name] = package.jobs
-                    from job.job import WrapperJob
-                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
-                                             package._wallclock, package._num_processors,
-                                             package.platform, as_conf)
-                    job_list.job_package_map[package.jobs[0].id] = wrapper_job
-
-                if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                    remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-
-                if isinstance(package, JobPackageThread):
-                   packages_persistence.save(package.name, package.jobs, package._expid,True)
-
-                package.submit(as_conf, job_list.parameters,True)
-                jobs_by_platform = []
-        #
-        if  isinstance(jobs_cw, type([])):
-            referenced_jobs_to_remove = set()
+                job.status=Status.WAITING
+            Autosubmit.generate_scripts_andor_wrappers(as_conf,job_list, jobs,packages_persistence,False)
+        if isinstance(jobs_cw, type([])):
             for job in jobs_cw:
-                for child in job.children:
-                    if child not in jobs_cw:
-                        referenced_jobs_to_remove.add(child)
-                for parent in job.parents:
-                    if parent not in jobs_cw:
-                        referenced_jobs_to_remove.add(parent)
-
-            for job in jobs_cw:
-                job.children = job.children - referenced_jobs_to_remove
-                job.parents = job.parents - referenced_jobs_to_remove
-
-            for platform in platforms_to_test:
-                [jobs_by_platform.append(job) for job in jobs_cw if
-                 (platform is None or job._platform.name is platform.name)]
-                packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform,
-                                                                           job_list).build_packages(True,
-                                                                                                    jobs_by_platform)
-                for package in packages_to_submit:
-                    if hasattr(package, "name"):
-                        job_list.packages_dict[package.name] = package.jobs
-                        from job.job import WrapperJob
-                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
-                                                 package.jobs,
-                                                 package._wallclock, package._num_processors,
-                                                 package.platform, as_conf)
-                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
-
-                    if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                        remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-
-                    if isinstance(package, JobPackageThread):
-                        packages_persistence.save(package.name, package.jobs, package._expid, True)
-
-                    package.submit(as_conf, job_list.parameters, True)
-                    jobs_by_platform = []
-
-
-
+                job.status=Status.WAITING
+            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list, jobs_cw,packages_persistence,False)
 
         Log.info("no more scripts to generate, now proceed to check them manually")
         time.sleep(safetysleeptime)
         return True
 
-
+    @staticmethod
+    def generate_scripts_andor_wrappers(as_conf,job_list,jobs_filtered,packages_persistence,only_wrappers=False):
+        job_list._job_list=jobs_filtered
+        job_list.update_list(as_conf,False)
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        hpcarch = as_conf.get_platform()
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        platforms_to_test = set()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = hpcarch
+            # noinspection PyTypeChecker
+            job.platform = submitter.platforms[job.platform_name.lower()]
+            # noinspection PyTypeChecker
+            platforms_to_test.add(job.platform)
+        job_list.update_list(as_conf, False)
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        while job_list.get_active():
+            if as_conf.get_wrapper_type() != 'none':
+                for platform in platforms_to_test:
+                    queuing_jobs = job_list.get_in_queue_grouped_id(platform)
+                    for job_id, job in queuing_jobs.items():
+                        if (job_list.job_package_map and job_id in job_list.job_package_map ):
+                            wrapper_job = job_list.job_package_map[job_id]
+                            if wrapper_job.status != Status.COMPLETED:
+                                status = Status.RUNNING
+                            wrapper_job.check_status(status)
+                        else:
+                            job = job[0]
+                            prev_status = job.status
+            job_list.update_list(as_conf, False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
+            for jobready in job_list.get_ready():
+                jobready.status=Status.COMPLETED
+            job_list.update_list(as_conf, False)
 
     @staticmethod
     def run_experiment(expid, notransitive=False):
@@ -1137,7 +1063,7 @@ class Autosubmit:
             return False
 
     @staticmethod
-    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
+    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,only_wrappers=False):
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
@@ -1158,8 +1084,8 @@ class Autosubmit:
                         remote_dependency = remote_dependencies_dict['dependencies'][package.name]
                         remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
                         package.set_job_dependency(remote_dependency_id)
-
-                    package.submit(as_conf, job_list.parameters)
+                    if not only_wrappers:
+                        package.submit(as_conf, job_list.parameters,inspect)
 
                     if hasattr(package, "name"):
                         job_list.packages_dict[package.name] = package.jobs
@@ -1174,7 +1100,7 @@ class Autosubmit:
                         remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
 
                     if isinstance(package, JobPackageThread):
-                        packages_persistence.save(package.name, package.jobs, package._expid)
+                        packages_persistence.save(package.name, package.jobs, package._expid,inspect)
 
                     save = True
                 except WrongTemplateException as e:
