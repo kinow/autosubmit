@@ -10,7 +10,7 @@ To monitor the status of the experiment, use the command:
 Options:
 ::
 
-    usage: autosubmit monitor [-h] [-o {pdf,png,ps,svg}] [-group_by {date,member,chunk,split} -expand -expand_status] [-fl] [-fc] [-fs] [-ft] expid
+    usage: autosubmit monitor [-h] [-o {pdf,png,ps,svg}] [-group_by {date,member,chunk,split} -expand -expand_status] [-fl] [-fc] [-fs] [-ft] [-cw] expid
 
       expid                 experiment identifier
 
@@ -33,7 +33,8 @@ Options:
       --txt,                generates only txt status file
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
-
+      -cw                   --checkwrapper
+                                Generate the wrapper in the current workflow
 Example:
 ::
 

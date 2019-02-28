@@ -99,7 +99,7 @@ Experiment workflow, which contains all the jobs and its dependencies, will be s
 Options:
 ::
 
-    usage: autosubmit create [-group_by {date,member,chunk,split} -expand -expand_status] [-h] [-np] expid
+    usage: autosubmit create [-group_by {date,member,chunk,split} -expand -expand_status] [-h] [-np] [-cw] expid
 
       expid          experiment identifier
 
@@ -112,6 +112,8 @@ Options:
       -expand_status,       status(es) to expand
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
+      -cw                   --checkwrapper
+                                Generate the wrapper in the current workflow
       
 Example:
 ::

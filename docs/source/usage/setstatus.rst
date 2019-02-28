@@ -10,7 +10,7 @@ EXPID is the experiment identifier.
 Options:
 ::
 
-    usage: autosubmit setstatus [-h] [-np] [-s] [-t] [-o {pdf,png,ps,svg}] [-fl] [-fc] [-fs] [-ft] [-group_by {date,member,chunk,split} -expand -expand_status] expid
+    usage: autosubmit setstatus [-h] [-np] [-s] [-t] [-o {pdf,png,ps,svg}] [-fl] [-fc] [-fs] [-ft] [-group_by {date,member,chunk,split} -expand -expand_status] [-cw] expid
 
       expid                 experiment identifier
 
@@ -35,6 +35,8 @@ Options:
       -expand_status,       status(es) to expand
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
+      -cw                   --checkwrapper
+                                Generate the wrapper in the current workflow
 
 Example:
 ::
