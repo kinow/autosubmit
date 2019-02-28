@@ -11,6 +11,7 @@ Command list
 -check  Check configuration for specified experiment
 -describe  Show details for specified experiment
 -run  Run specified experiment
+-inspect  Generate cmd files
 -test  Test experiment
 -testcase  Test case experiment
 -monitor  Plot specified experiment
@@ -31,6 +32,7 @@ Command list
    usage/check
    usage/describe
    usage/run
+   usage/inspect
    usage/test
    usage/testcase
    usage/monitor
