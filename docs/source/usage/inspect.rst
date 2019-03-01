@@ -1,11 +1,15 @@
 How to generate cmd files
-==========================
-To generate  the cmd files of current non-active jobs experiment, it is possible to use the command:
+#########################
+To generate  the cmd files of the current non-active jobs experiment, it is possible to use the command:
 ::
 
     autosubmit inspect EXPID
 
 EXPID is the experiment identifier.
+
+
+Usage
+=======
 
 Options:
 ::
@@ -31,19 +35,32 @@ Options:
       -f                    --force
                                 Generate all cmd files
 
-Example:
+Example
+=======
+
+with autosubmit.lock present or not:
 ::
 
-with autosubmit.lock present or not: autosubmit inspect expid
+    autosubmit inspect expid
 
-with autosubmit.lock present or not: autosubmit inspect expid -f
+with autosubmit.lock present or not:
+::
 
-without autosubmit.lock autosubmit inspect expid -fl [-fc,-fs or ft] (that works like setstatus,monitor...)
+    autosubmit inspect expid -f
+
+without autosubmit.lock:
+::
+
+    autosubmit inspect expid -fl [-fc,-fs or ft]
+
+To generate cmd for wrappers:
+::
+
+     autosubmit inspect expid -cw -f
 
 
 With autosubmit.lock and no (-f) force, it will only generate all files that are not submitted.
 
 Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft
 
-To generate cmd for wrappers: autosubmit inspect expid -cw -f
 
