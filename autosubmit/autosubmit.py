@@ -194,7 +194,6 @@ class Autosubmit:
                                help='Supply the list of chunks to filter the list of jobs. Default = "Any". '
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             group.add_argument('-fs', '--filter_status', type=str,
-
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
             group.add_argument('-ft', '--filter_type', type=str,
@@ -349,6 +348,7 @@ class Autosubmit:
                                     "Valid values = ['Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN']")
             group.add_argument('-ft', '--filter_type', type=str,
                                help='Select the job type to filter the list of jobs')
+
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
@@ -964,7 +964,8 @@ class Autosubmit:
                                                  None,
                                                  None, jobs[0].platform, as_conf)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
-
+                job_list.update_list(as_conf)
+                job_list.save()
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -2531,21 +2532,41 @@ class Autosubmit:
                     return False
 
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-
+                jobs_filtered =[]
                 final_status = Autosubmit._get_status(final)
+                if filter_section or filter_chunks:
+                    if filter_section:
+                        ft = filter_section.split()
+                    else:
+                        ft = filter_chunks.split(",")[1:]
+                    if ft == 'Any':
+                        for job in job_list.get_job_list():
+                            Autosubmit.change_status(final, final_status, job)
+                    else:
+                        for section in ft:
+                            for job in job_list.get_job_list():
+                                if job.section == section:
+                                    if filter_chunks:
+                                        jobs_filtered.append(job)
+                                    else:
+                                        Autosubmit.change_status(final, final_status, job)
+
                 if filter_chunks:
+                    if len(jobs_filtered) == 0:
+                        jobs_filtered = job_list.get_job_list()
+
                     fc = filter_chunks
                     Log.debug(fc)
 
                     if fc == 'Any':
-                        for job in job_list.get_job_list():
+                        for job in jobs_filtered:
                             Autosubmit.change_status(final, final_status, job)
                     else:
                         # noinspection PyTypeChecker
                         data = json.loads(Autosubmit._create_json(fc))
                         for date_json in data['sds']:
                             date = date_json['sd']
-                            jobs_date = filter(lambda j: date2str(j.date) == date, job_list.get_job_list())
+                            jobs_date = filter(lambda j: date2str(j.date) == date, jobs_filtered)
 
                             for member_json in date_json['ms']:
                                 member = member_json['m']
@@ -2575,17 +2596,11 @@ class Autosubmit:
                             for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
                                 Autosubmit.change_status(final, final_status, job)
 
-                if filter_section:
-                    ft = filter_section.split()
 
-                    if ft == 'Any':
-                        for job in job_list.get_job_list():
-                            Autosubmit.change_status(final, final_status, job)
-                    else:
-                        for section in ft:
-                            for job in job_list.get_job_list():
-                                if job.section == section:
-                                    Autosubmit.change_status(final, final_status, job)
+
+
+
+
 
                 if lst:
                     jobs = lst.split()

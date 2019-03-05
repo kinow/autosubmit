@@ -7,10 +7,8 @@ To generate  the cmd files of the current non-active jobs experiment, it is poss
 
 EXPID is the experiment identifier.
 
-
 Usage
 =======
-
 Options:
 ::
 
@@ -56,11 +54,11 @@ without autosubmit.lock:
 To generate cmd for wrappers:
 ::
 
-     autosubmit inspect expid -cw -f
+    autosubmit inspect expid -cw -f
 
 
 With autosubmit.lock and no (-f) force, it will only generate all files that are not submitted.
 
-Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft
+Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft.
 
 
