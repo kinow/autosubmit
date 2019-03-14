@@ -918,17 +918,17 @@ class JobList:
         """
         Log.info("Checking scripts...")
         out = True
-        sections_checked = set()
+        #sections_checked = set()
         for job in self._job_list:
-            if job.section in sections_checked:
-                continue
+            #if job.section in sections_checked:
+            #    continue
             if job.check.lower() != 'true':
                 Log.warning('Template {0} will not be checked'.format(job.section))
             else:
                 if not job.check_script(as_conf, self.parameters):
                     out = False
                     #Log.warning("Invalid parameter substitution in {0} template", job.section)
-            sections_checked.add(job.section)
+            #sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
         else:

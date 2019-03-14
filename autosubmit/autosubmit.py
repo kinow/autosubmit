@@ -809,6 +809,7 @@ class Autosubmit:
 
             for job in jobs:
                 job.status=Status.WAITING
+
             Autosubmit.generate_scripts_andor_wrappers(as_conf,job_list, jobs,packages_persistence,False)
         if len(jobs_cw) >0:
             referenced_jobs_to_remove = set()
@@ -1577,7 +1578,7 @@ class Autosubmit:
                 p = submitter.platforms[platform]
                 Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
                          os.path.join(p.temp_dir, experiment_id))
-                if not p.move_file(os.path.join(p.root_dir), os.path.join(p.temp_dir, experiment_id)):
+                if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id)):
                     Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                  os.path.join(p.temp_dir, experiment_id))
                     return False
@@ -2595,12 +2596,6 @@ class Autosubmit:
                             fs = Autosubmit._get_status(status)
                             for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
                                 Autosubmit.change_status(final, final_status, job)
-
-
-
-
-
-
 
                 if lst:
                     jobs = lst.split()
