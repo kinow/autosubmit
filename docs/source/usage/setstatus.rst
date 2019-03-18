@@ -35,7 +35,7 @@ Options:
       -expand_status,       status(es) to expand
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
-      -cw                   --checkwrapper
+      -cw                   --check_wrapper
                                 Generate the wrapper in the current workflow
 
 Example:

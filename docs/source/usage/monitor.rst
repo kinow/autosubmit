@@ -31,10 +31,10 @@ Options:
                             type to be filtered
       --hide,               hide the plot
       --txt,                generates only txt status file
-      --ctxt, --classictxt  generates only txt status file(AS <3.12 behaviour)
+      -ctxt, --classic_txt  generates only txt status file(AS <3.12 behaviour)
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
-      -cw                   --checkwrapper
+      -cw                   --check_wrapper
                                 Generate the wrapper in the current workflow
 Example:
 ::

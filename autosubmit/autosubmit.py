@@ -180,7 +180,7 @@ class Autosubmit:
                                     'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('--hide_groups', action='store_true', default=False, help='Hides the groups from the plot')
-            subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
+            subparser.add_argument('-cw', '--check_wrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
 
 
             group2 = subparser.add_mutually_exclusive_group(required=False)
@@ -205,7 +205,7 @@ class Autosubmit:
             group2.add_argument('--txt', action='store_true', default=False,
                                    help='Generates only txt status file')
 
-            group2.add_argument('-ctxt', '--classictxt', action='store_true', default=False,
+            group2.add_argument('-ctxt', '--classic_txt', action='store_true', default=False,
                                    help='Generates only txt status file(AS < 3.12b behaviour)')
 
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
@@ -262,7 +262,7 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
             subparser.add_argument('-f', '--force', action="store_true",help='Overwrite all cmd')
-            subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
+            subparser.add_argument('-cw', '--check_wrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
 
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
@@ -304,7 +304,7 @@ class Autosubmit:
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
-            subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
+            subparser.add_argument('-cw', '--check_wrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
 
             # Configure
             subparser = subparsers.add_parser('configure', description="configure database and path for autosubmit. It "
@@ -364,7 +364,7 @@ class Autosubmit:
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
-            subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
+            subparser.add_argument('-cw', '--check_wrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
 
 
             # Test Case
@@ -423,7 +423,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                           args.filter_type, args.hide, args.txt, args.group_by, args.expand,
-                                          args.expand_status, args.hide_groups, args.notransitive,args.checkwrapper,args.classictxt)
+                                          args.expand_status, args.hide_groups, args.notransitive,args.check_wrapper,args.classic_txt)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                              args.notransitive)
@@ -436,14 +436,14 @@ class Autosubmit:
                 return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'inspect':
                 return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
-                                          args.filter_type,args.notransitive , args.force,args.checkwrapper)
+                                          args.filter_type,args.notransitive , args.force,args.check_wrapper)
             elif args.command == 'describe':
                 return Autosubmit.describe(args.expid)
             elif args.command == 'migrate':
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
-                                         args.expand_status, args.notransitive,args.checkwrapper)
+                                         args.expand_status, args.notransitive,args.check_wrapper)
             elif args.command == 'configure':
                 if not args.advanced or (args.advanced and dialog is None):
                     return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename,
@@ -456,7 +456,7 @@ class Autosubmit:
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type, args.hide,
-                                             args.group_by, args.expand, args.expand_status, args.notransitive,args.checkwrapper)
+                                             args.group_by, args.expand, args.expand_status, args.notransitive,args.check_wrapper)
             elif args.command == 'testcase':
                 return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
                                            args.HPC, args.branch)
@@ -682,7 +682,7 @@ class Autosubmit:
 
         job_list.parameters = parameters
     @staticmethod
-    def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False, checkwrapper=False):
+    def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False, check_wrapper=False):
         """
          Generates cmd files experiment.
 
@@ -739,7 +739,7 @@ class Autosubmit:
         if not isinstance(job_list, type([])):
             jobs = []
             jobs_cw = []
-            if checkwrapper and ( not locked or (force and locked)):
+            if check_wrapper and ( not locked or (force and locked)):
                 Log.info("Generating all cmd script adapted for wrappers")
                 jobs = job_list.get_uncompleted()
                 
@@ -1143,7 +1143,7 @@ class Autosubmit:
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
-                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, checkwrapper=False, classictxt=False):
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, check_wrapper=False, classic_txt=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1254,7 +1254,7 @@ class Autosubmit:
             job.children = job.children - referenced_jobs_to_remove
             job.parents = job.parents - referenced_jobs_to_remove
         #WRAPPERS
-        if as_conf.get_wrapper_type() != 'none' and checkwrapper:
+        if as_conf.get_wrapper_type() != 'none' and check_wrapper:
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
             packages_persistence.reset_table(True)
@@ -1295,8 +1295,8 @@ class Autosubmit:
 
         monitor_exp = Monitor()
 
-        if txt_only or classictxt:
-            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),classictxt)
+        if txt_only or classic_txt:
+            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),classic_txt)
         else:
             monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict, hide_groups=hide_groups)
 
@@ -1494,12 +1494,13 @@ class Autosubmit:
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+                if save:
+                    job.platform.get_logs_files(expid, job.remote_logs)
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
-            if save:
-                job.platform.get_logs_files(expid, job.remote_logs)
+
 
         end = datetime.datetime.now()
         Log.info("Time spent: '{0}'".format(end - start))
@@ -2241,7 +2242,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False,checkwrappers=False):
+    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False,check_wrappers=False):
         """
         Creates job list for given experiment. Configuration files must be valid before realizing this process.
 
@@ -2352,7 +2353,7 @@ class Autosubmit:
                                                    expand_list=expand, expanded_status=status)
                         groups_dict = job_grouping.group_jobs()
                     # WRAPPERS
-                    if as_conf.get_wrapper_type() != 'none' and checkwrappers:
+                    if as_conf.get_wrapper_type() != 'none' and check_wrappers:
                         packages_persistence = JobPackagePersistence(
                             os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                             "job_packages_" + expid)
@@ -2490,7 +2491,7 @@ class Autosubmit:
 
     @staticmethod
     def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, hide, group_by=None,
-                   expand=list(), expand_status=list(), notransitive=False,checkwrapper=False):
+                   expand=list(), expand_status=list(), notransitive=False,check_wrapper=False):
         """
         Set status
 
@@ -2634,7 +2635,7 @@ class Autosubmit:
 
                         Log.error("Save disabled due invalid  expid, please check <expid> or/and jobs expid name")
 
-                if as_conf.get_wrapper_type() != 'none' and checkwrapper:
+                if as_conf.get_wrapper_type() != 'none' and check_wrapper:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                                  "job_packages_" + expid)
                     packages_persistence.reset_table(True)
