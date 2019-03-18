@@ -183,6 +183,8 @@ class Autosubmit:
             subparser.add_argument('-cw', '--checkwrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
 
 
+            group2 = subparser.add_mutually_exclusive_group(required=False)
+
             group.add_argument('-fs', '--filter_status', type=str,
                                choices=('Any', 'READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN'),
                                help='Select the original status to filter the list of jobs')
@@ -200,8 +202,12 @@ class Autosubmit:
                                help='Select the job type to filter the list of jobs')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
-            subparser.add_argument('--txt', action='store_true', default=False,
+            group2.add_argument('--txt', action='store_true', default=False,
                                    help='Generates only txt status file')
+
+            group2.add_argument('-ctxt', '--classictxt', action='store_true', default=False,
+                                   help='Generates only txt status file(AS < 3.12b behaviour)')
+
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
 
             # Stats
@@ -417,7 +423,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                           args.filter_type, args.hide, args.txt, args.group_by, args.expand,
-                                          args.expand_status, args.hide_groups, args.notransitive,args.checkwrapper)
+                                          args.expand_status, args.hide_groups, args.notransitive,args.checkwrapper,args.classictxt)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                              args.notransitive)
@@ -1137,7 +1143,7 @@ class Autosubmit:
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
-                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, checkwrapper=False):
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, checkwrapper=False, classictxt=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1289,8 +1295,8 @@ class Autosubmit:
 
         monitor_exp = Monitor()
 
-        if txt_only:
-            monitor_exp.generate_output_txt(expid, jobs, exp_path+"/tmp/LOG_"+expid)
+        if txt_only or classictxt:
+            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),classictxt)
         else:
             monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict, hide_groups=hide_groups)
 
