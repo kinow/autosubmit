@@ -14,7 +14,7 @@ Then, just run the command:
 Local files will be archived and remote files put in the HPC temporary directory.
 
 .. warning:: The temporary directory must be readable by both users (old owner and new owner).
-
+.. warning:: The temporary directory must be in the same filesystem.
 Then the new owner will have to run the command:
 ::
 
