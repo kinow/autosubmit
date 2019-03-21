@@ -303,6 +303,7 @@ class ParamikoPlatform(Platform):
         :return: True if executed, False if failed
         :rtype: bool
         """
+         
         if self._ssh is None:
             if not self.connect():
                 return None

@@ -1254,6 +1254,7 @@ class Autosubmit:
             job.children = job.children - referenced_jobs_to_remove
             job.parents = job.parents - referenced_jobs_to_remove
         #WRAPPERS
+        sys.setrecursionlimit(50000)
         if as_conf.get_wrapper_type() != 'none' and check_wrapper:
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
@@ -1281,7 +1282,7 @@ class Autosubmit:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                              "job_packages_" + expid).load()
 
-        sys.setrecursionlimit(50000)
+
 
         groups_dict = dict()
         if group_by:
