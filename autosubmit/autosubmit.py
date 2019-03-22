@@ -205,7 +205,7 @@ class Autosubmit:
             group2.add_argument('--txt', action='store_true', default=False,
                                    help='Generates only txt status file')
 
-            group2.add_argument('-ctxt', '--classic_txt', action='store_true', default=False,
+            group2.add_argument('-txtlog', '--txt_logfiles', action='store_true', default=False,
                                    help='Generates only txt status file(AS < 3.12b behaviour)')
 
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
@@ -423,7 +423,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                           args.filter_type, args.hide, args.txt, args.group_by, args.expand,
-                                          args.expand_status, args.hide_groups, args.notransitive,args.check_wrapper,args.classic_txt)
+                                          args.expand_status, args.hide_groups, args.notransitive,args.check_wrapper,args.txt_logfiles)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                              args.notransitive)
@@ -1143,7 +1143,7 @@ class Autosubmit:
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
-                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, check_wrapper=False, classic_txt=False):
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, check_wrapper=False, txt_logfiles=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1296,8 +1296,8 @@ class Autosubmit:
 
         monitor_exp = Monitor()
 
-        if txt_only or classic_txt:
-            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),classic_txt)
+        if txt_only or txt_logfiles:
+            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),txt_logfiles)
         else:
             monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict, hide_groups=hide_groups)
 
