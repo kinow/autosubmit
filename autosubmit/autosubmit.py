@@ -87,7 +87,7 @@ from platforms.saga_submitter import SagaSubmitter
 from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
-
+from sets import Set
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
@@ -1564,6 +1564,7 @@ class Autosubmit:
 
             Log.info("Checking remote platforms")
             platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            already_moved=set()
             for platform in platforms:
                 Log.info("Updating {0} platform configuration with target user", platform)
                 if not as_conf.get_migrate_user_to(platform):
@@ -1581,15 +1582,18 @@ class Autosubmit:
                              as_conf.get_migrate_user_to(platform))
                 else:
                     Log.warning("Project in platforms configuration file remains unchanged")
-
-                Log.info("Moving remote files/dirs on {0}", platform)
                 p = submitter.platforms[platform]
-                Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
-                         os.path.join(p.temp_dir, experiment_id))
-                if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id)):
-                    Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
+                if p.temp_dir not in already_moved:
+                    if  p.root_dir != p.temp_dir or p.temp_dir ==" ":
+                        already_moved.add(p.temp_dir)
+                        Log.info("Moving remote files/dirs on {0}", platform)
+
+                        Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
                                  os.path.join(p.temp_dir, experiment_id))
-                    return False
+                        if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id)):
+                            Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
+                                         os.path.join(p.temp_dir, experiment_id))
+                            return False
 
                 Log.result("Files/dirs on {0} have been successfully offered", platform)
 
