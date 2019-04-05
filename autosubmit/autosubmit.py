@@ -1584,10 +1584,9 @@ class Autosubmit:
                     Log.warning("Project in platforms configuration file remains unchanged")
                 p = submitter.platforms[platform]
                 if p.temp_dir not in already_moved:
-                    if  p.root_dir != p.temp_dir or p.temp_dir ==" ":
+                    if  p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
                         Log.info("Moving remote files/dirs on {0}", platform)
-
                         Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
                                  os.path.join(p.temp_dir, experiment_id))
                         if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id)):
@@ -1623,9 +1622,14 @@ class Autosubmit:
                 return False
 
             platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            already_moved = set()
             for platform in platforms:
-                Log.info("Copying remote files/dirs on {0}", platform)
                 p = submitter.platforms[platform]
+                if p.temp_dir not in already_moved:
+                    if  p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
+                        already_moved.add(p.temp_dir)
+                Log.info("Copying remote files/dirs on {0}", platform)
+
                 Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
                          os.path.join(p.root_dir))
                 if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
