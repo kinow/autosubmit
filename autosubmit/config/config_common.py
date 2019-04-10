@@ -221,7 +221,22 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+    def get_current_user(self, section):
+        """
+        Returns the user to be changed from platform config file.
 
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'USER', '').lower()
+    def get_current_project(self, section):
+        """
+        Returns the project to be changed from platform config file.
+
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'PROJECT', '').lower()
     def set_new_user(self, section, new_user):
         """
         Sets new user for given platform
@@ -231,7 +246,7 @@ class AutosubmitConfig(object):
         """
         content = open(self._platforms_parser_file).read()
         if re.search(section, content):
-            content = content.replace(re.search('USER =.*', content).group(0), "USER = " + new_user)
+            content = content.replace(re.search(r'[^#]\bUSER\b =.*', content).group(0)[1:], "USER = " + new_user)
         open(self._platforms_parser_file, 'w').write(content)
 
     def get_migrate_project_to(self, section):
@@ -241,7 +256,7 @@ class AutosubmitConfig(object):
         :return: migrate project to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower()
+        return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower() #TODO DOC
 
     def set_new_project(self, section, new_project):
         """
@@ -252,7 +267,7 @@ class AutosubmitConfig(object):
         """
         content = open(self._platforms_parser_file).read()
         if re.search(section, content):
-            content = content.replace(re.search('PROJECT =.*', content).group(0), "PROJECT = " + new_project)
+            content = content.replace(re.search(r"[^#]\bPROJECT\b =.*", content).group(0)[1:], "PROJECT = " + new_project)
         open(self._platforms_parser_file, 'w').write(content)
 
     def get_custom_directives(self, section):

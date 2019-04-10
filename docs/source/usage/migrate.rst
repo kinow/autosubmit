@@ -4,7 +4,7 @@ To migrate an experiment from one user to another, you need to add two parameter
 
  * USER_TO = <user>
  * TEMP_DIR = <hpc_temporary_directory>
-
+ * PROJECT_TO = <project>
 Then, just run the command:
 ::
 

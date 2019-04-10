@@ -1558,6 +1558,7 @@ class Autosubmit:
                 return False
 
             submitter = Autosubmit._get_submitter(as_conf)
+
             submitter.load_platforms(as_conf)
             if submitter.platforms is None:
                 return False
@@ -1565,51 +1566,83 @@ class Autosubmit:
             Log.info("Checking remote platforms")
             platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
             already_moved=set()
+            backup_files=[]
+            backup_conf=[]
+            error=False
             for platform in platforms:
-                Log.info("Updating {0} platform configuration with target user", platform)
+                #Checks
+                Log.info("Checking [{0}] from platforms configuration...",platform)
                 if not as_conf.get_migrate_user_to(platform):
-                    Log.critical("Missing target user in platforms configuration file")
-                    return False
+                    Log.critical("Missing directive USER_TO in [{0}]",platform)
+                    error = True
+                    break
 
-                as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
-                Log.info("User in platform configuration file successfully updated to {0}",
-                         as_conf.get_migrate_user_to(platform))
-
+                as_conf.set_new_user(platform[3], as_conf.get_migrate_user_to(platform))
                 if as_conf.get_migrate_project_to(platform):
-                    Log.info("Updating {0} platform configuration with target project", platform)
-                    as_conf.set_new_project(platform, as_conf.get_migrate_project_to(platform))
                     Log.info("Project in platform configuration file successfully updated to {0}",
                              as_conf.get_migrate_user_to(platform))
+                    as_conf.set_new_project(platform[3], as_conf.get_migrate_project_to(platform))
+                    backup_conf.append([platform, as_conf.get_current_user(platform),  as_conf.get_current_project(platform)])
                 else:
-                    Log.warning("Project in platforms configuration file remains unchanged")
+                    Log.warning("optional PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
+                    backup_conf.append([platform, as_conf.get_current_user(platform), None])
+                Log.info("Moving local files/dirs")
                 p = submitter.platforms[platform]
                 if p.temp_dir not in already_moved:
-                    if  p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
+                    if p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
                         Log.info("Moving remote files/dirs on {0}", platform)
-                        Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),
-                                 os.path.join(p.temp_dir, experiment_id))
-                        if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id)):
+                        Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),os.path.join(p.temp_dir, experiment_id))
+                        try:
+                            if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id),True):
+                                Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
+                                             os.path.join(p.temp_dir, experiment_id))
+                                error=True
+                                break
+                        except (IOError,BaseException):
                             Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                          os.path.join(p.temp_dir, experiment_id))
-                            return False
+                            error=True
+                            break
+                        backup_files.append(platform)
 
                 Log.result("Files/dirs on {0} have been successfully offered", platform)
+                Log.result("[{0}] from platforms configuration OK", platform)
 
-            Log.info("Moving local files/dirs")
-            if not Autosubmit.archive(experiment_id, False):
-                Log.critical("The experiment cannot be offered")
+            if error:
+                Log.critical("The experiment cannot be offered, reverting changes")
+
+                for platform in backup_files:
+                    p = submitter.platforms[platform]
+                    p.move_file(os.path.join(p.temp_dir, experiment_id),p.root_dir,True)
+                for platform in backup_conf:
+                    as_conf.set_new_user(platform[0], platform[1])
+                    if platform[2] is not None:
+                        as_conf.set_new_project(platform[0], platform[2])
+
                 return False
+            else:
+                if not Autosubmit.archive(experiment_id, False):
+                    Log.critical("The experiment cannot be offered,reverting changes.")
+                    for platform in backup_files:
+                        p = submitter.platforms[platform]
+                        p.move_file(os.path.join(p.temp_dir, experiment_id), p.root_dir,True)
 
-            Log.result("The experiment has been successfully offered.")
+                    for platform in backup_conf:
+                        as_conf.set_new_user(platform[0], platform[1])
+                        if platform[2] is not None:
+                            as_conf.set_new_project(platform[0], platform[2])
 
+                    return False
+                else:
+                    Log.result("The experiment has been successfully offered.")
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
             if not Autosubmit.unarchive(experiment_id):
                 Log.critical("The experiment cannot be picked up")
                 return False
-            Log.info("Local files/dirs have been sucessfully picked up")
+            Log.info("Local files/dirs have been successfully picked up")
             as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
             if not as_conf.check_conf_files():
                 Log.critical('Can not proceed with invalid configuration')
@@ -1632,11 +1665,22 @@ class Autosubmit:
 
                 Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
                          os.path.join(p.root_dir))
-                if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
-                                      os.path.join(p.root_dir)):
+                try:
+                    if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
+                                          os.path.join(p.root_dir)):
+                        Autosubmit.archive(experiment_id)
+                        Log.critical("The experiment cannot be picked,reverting changes.")
+                        Log.critical("The files/dirs on {0} cannot be copied to {1}.",
+                                     os.path.join(p.temp_dir, experiment_id), p.root_dir)
+                        return False
+                except (IOError, BaseException):
+                    Autosubmit.archive(experiment_id)
+                    Log.critical("The experiment cannot be picked,reverting changes.")
+
                     Log.critical("The files/dirs on {0} cannot be copied to {1}.",
                                  os.path.join(p.temp_dir, experiment_id), p.root_dir)
                     return False
+
 
                 Log.result("Files/dirs on {0} have been successfully picked up", platform)
 

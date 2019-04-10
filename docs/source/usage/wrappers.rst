@@ -23,7 +23,7 @@ For example:
 
     [config]
     EXPID = ....
-    AUTOSUBMIT_VERSION = 3.10.0
+    AUTOSUBMIT_VERSION = 3.12.0b
     ...
 
     MAXWAITINGJOBS = 100

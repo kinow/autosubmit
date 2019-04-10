@@ -197,12 +197,13 @@ class ParamikoPlatform(Platform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
-    def move_file(self, src, dest):
+    def move_file(self, src, dest,migrate=False):
         """
         Moves a file on the platform
         :param src: source name
         :type src: str
         :param dest: destination name
+        :param migrate: ignore if file exist or not
         :type dest: str
         """
         if self._ssh is None:
@@ -211,7 +212,14 @@ class ParamikoPlatform(Platform):
 
         try:
             ftp = self._ssh.open_sftp()
-            ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
+            if not migrate:
+                ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
+            else:
+                try:
+                    ftp.chdir((os.path.join(self.get_files_path(), src)))
+                    ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
+                except (IOError):
+                    pass
             ftp.close()
             return True
         except BaseException:
