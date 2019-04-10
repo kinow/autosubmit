@@ -1663,11 +1663,9 @@ class Autosubmit:
                         already_moved.add(p.temp_dir)
                 Log.info("Copying remote files/dirs on {0}", platform)
 
-                Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),
-                         os.path.join(p.root_dir))
+                Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),p.root_dir)
                 try:
-                    if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +
-                                          os.path.join(p.root_dir)):
+                    if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +p.root_dir):
                         Autosubmit.archive(experiment_id)
                         Log.critical("The experiment cannot be picked,reverting changes.")
                         Log.critical("The files/dirs on {0} cannot be copied to {1}.",
