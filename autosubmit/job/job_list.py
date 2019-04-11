@@ -855,7 +855,7 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
-        #RERUN FIX
+
 
         for job in self.get_completed():
 

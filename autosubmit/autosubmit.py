@@ -1568,6 +1568,7 @@ class Autosubmit:
             already_moved=set()
             backup_files=[]
             backup_conf=[]
+
             error=False
             for platform in platforms:
                 #Checks
@@ -1581,8 +1582,9 @@ class Autosubmit:
                 if as_conf.get_migrate_project_to(platform):
                     Log.info("Project in platform configuration file successfully updated to {0}",
                              as_conf.get_migrate_user_to(platform))
+                    backup_conf.append([platform, as_conf.get_current_user(platform), as_conf.get_current_project(platform)])
                     as_conf.set_new_project(platform[3], as_conf.get_migrate_project_to(platform))
-                    backup_conf.append([platform, as_conf.get_current_user(platform),  as_conf.get_current_project(platform)])
+
                 else:
                     Log.warning("optional PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
                     backup_conf.append([platform, as_conf.get_current_user(platform), None])
@@ -1591,6 +1593,18 @@ class Autosubmit:
                 if p.temp_dir not in already_moved:
                     if p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
+                        Log.info("Converting abs symlink to relative")
+                        #find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh #todo
+
+                        Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform)
+                        command= "find " + p.root_dir +" -type l -lname '/*' -printf ' ln -sf  \"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" \\n' "
+                        try:
+                            p.send_command(command)
+                        except IOError:
+                            Log.debug("The platform {0} does not contain absolute symlinks", platform)
+                        except BaseException:
+                            Log.warning("Absolute symlinks failed to convert")
+
                         Log.info("Moving remote files/dirs on {0}", platform)
                         Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),os.path.join(p.temp_dir, experiment_id))
                         try:
@@ -1600,6 +1614,7 @@ class Autosubmit:
                                 error=True
                                 break
                         except (IOError,BaseException):
+
                             Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                          os.path.join(p.temp_dir, experiment_id))
                             error=True
@@ -1665,12 +1680,13 @@ class Autosubmit:
 
                 Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),p.root_dir)
                 try:
-                    if not p.send_command("cp -r " + os.path.join(p.temp_dir, experiment_id) + " " +p.root_dir):
+                    if not p.send_command("cp -rP " + os.path.join(p.temp_dir, experiment_id) + " " +p.root_dir):
                         Autosubmit.archive(experiment_id)
                         Log.critical("The experiment cannot be picked,reverting changes.")
                         Log.critical("The files/dirs on {0} cannot be copied to {1}.",
                                      os.path.join(p.temp_dir, experiment_id), p.root_dir)
                         return False
+
                 except (IOError, BaseException):
                     Autosubmit.archive(experiment_id)
                     Log.critical("The experiment cannot be picked,reverting changes.")

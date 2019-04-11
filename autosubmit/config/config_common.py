@@ -245,8 +245,11 @@ class AutosubmitConfig(object):
         :type: str
         """
         content = open(self._platforms_parser_file).read()
+
         if re.search(section, content):
+            old_user = self.get_current_user(self.get_platform())
             content = content.replace(re.search(r'[^#]\bUSER\b =.*', content).group(0)[1:], "USER = " + new_user)
+            content = content.replace(re.search(r'[^#]\bUSER_TO\b =.*', content).group(0)[1:], "USER_TO = " + old_user)
         open(self._platforms_parser_file, 'w').write(content)
 
     def get_migrate_project_to(self, section):
@@ -267,7 +270,9 @@ class AutosubmitConfig(object):
         """
         content = open(self._platforms_parser_file).read()
         if re.search(section, content):
+            old_project = self.get_current_project(self.get_platform())
             content = content.replace(re.search(r"[^#]\bPROJECT\b =.*", content).group(0)[1:], "PROJECT = " + new_project)
+            content = content.replace(re.search(r"[^#]\bPROJECT_TO\b =.*", content).group(0)[1:], "PROJECT_TO = " + old_project)
         open(self._platforms_parser_file, 'w').write(content)
 
     def get_custom_directives(self, section):
