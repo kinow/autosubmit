@@ -1596,9 +1596,9 @@ class Autosubmit:
                         Log.info("Converting abs symlink to relative")
                         #find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh #todo
 
-                        Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform)
+                        Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform) #dummy
                         command= "find " + p.root_dir +" -type l -lname '/*' -printf ' ln -sf  \"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" \\n' "
-                        try: #dummy
+                        try:
                             p.send_command(command)
                         except IOError:
                             Log.debug("The platform {0} does not contain absolute symlinks", platform)
