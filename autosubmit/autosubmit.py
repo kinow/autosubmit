@@ -1598,7 +1598,7 @@ class Autosubmit:
 
                         Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform)
                         command= "find " + p.root_dir +" -type l -lname '/*' -printf ' ln -sf  \"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" \\n' "
-                        try:
+                        try: #dummy
                             p.send_command(command)
                         except IOError:
                             Log.debug("The platform {0} does not contain absolute symlinks", platform)
