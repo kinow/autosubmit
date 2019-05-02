@@ -64,6 +64,7 @@ class ParamikoPlatform(Platform):
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self._ssh_config = paramiko.SSHConfig()
+
             self._user_config_file = os.path.expanduser("~/.ssh/config")
             if os.path.exists(self._user_config_file):
                 with open(self._user_config_file) as f:
@@ -79,6 +80,7 @@ class ParamikoPlatform(Platform):
             else:
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                                   key_filename=self._host_config_id)
+            self._ftpChannel = self._ssh.open_sftp()
             return True
         except IOError as e:
             Log.error('Can not create ssh connection to {0}: {1}', self.host, e.strerror)
@@ -125,11 +127,11 @@ class ParamikoPlatform(Platform):
             self.delete_file(filename)
 
         try:
-            ftp = self._ssh.open_sftp()
-            ftp.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
-            ftp.chmod(os.path.join(self.get_files_path(), filename),
+            #ftp = self._ssh.open_sftp()
+            self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
+            self._ftpChannel.chmod(os.path.join(self.get_files_path(), filename),
                       os.stat(os.path.join(self.tmp_path, filename)).st_mode)
-            ftp.close()
+            #ftp.close()
             return True
         except BaseException as e:
             Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
@@ -160,12 +162,14 @@ class ParamikoPlatform(Platform):
 
         if self._ssh is None:
             if not self.connect():
+                self._ftpChannel = self._ssh.open_sftp()
                 return None
 
         try:
-            ftp = self._ssh.open_sftp()
-            ftp.get(os.path.join(self.get_files_path(), filename), file_path)
-            ftp.close()
+            #ftp = self._ssh.open_sftp()
+
+            self._ftpChannel.get(os.path.join(self.get_files_path(), filename), file_path)
+            #ftp.close()
             return True
         except BaseException:
             # ftp.get creates a local file anyway
@@ -189,9 +193,10 @@ class ParamikoPlatform(Platform):
                 return None
 
         try:
-            ftp = self._ssh.open_sftp()
-            ftp.remove(os.path.join(self.get_files_path(), filename))
-            ftp.close()
+            #ftp = self._ssh.open_sftp()
+
+            self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
+            #ftp.close()
             return True
         except BaseException as e:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
@@ -211,16 +216,17 @@ class ParamikoPlatform(Platform):
                 return None
 
         try:
-            ftp = self._ssh.open_sftp()
+            #ftp = self._ssh.open_sftp()
+
             if not migrate:
-                ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
+                self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
             else:
                 try:
-                    ftp.chdir((os.path.join(self.get_files_path(), src)))
-                    ftp.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
+                    self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
+                    self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
                 except (IOError):
                     pass
-            ftp.close()
+            #ftp.close()
             return True
         except BaseException:
             Log.debug('Could not move (rename) file {0} to {1}'.format(os.path.join(self.get_files_path(), src),

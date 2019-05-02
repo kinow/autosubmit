@@ -529,13 +529,14 @@ class Job(object):
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
-            self.write_start_time()
-        if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
-            self.write_end_time(self.status == Status.COMPLETED)
-            if self.local_logs != self.remote_logs:
-                self.synchronize_logs()  # unifying names for log files
-            if copy_remote_logs:
-                self.platform.get_logs_files(self.expid, self.remote_logs)
+            self.write_start_time(self.status == Status.COMPLETED)
+        else:
+            if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
+                self.write_end_time(self.status == Status.COMPLETED)
+        if self.local_logs != self.remote_logs:
+            self.synchronize_logs()  # unifying names for log files
+        if copy_remote_logs:
+            self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
 
     def update_children_status(self):
@@ -852,7 +853,7 @@ class Job(object):
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
 
-    def write_start_time(self):
+    def write_start_time(self, completed):
         """
         Writes start date and time to TOTAL_STATS file
         :return: True if succesful, False otherwise
@@ -869,6 +870,19 @@ class Job(object):
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
+        #END AND START
+        end_time = self.check_end_time()
+        if end_time > 0:
+            # noinspection PyTypeChecker
+            f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
+        else:
+            f.write(date2str(datetime.datetime.now(), 'S'))
+        f.write(' ')
+        if completed:
+            f.write('COMPLETED')
+        else:
+            f.write('FAILED')
+
         return True
 
     def write_end_time(self, completed):

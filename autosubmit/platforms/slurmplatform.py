@@ -84,6 +84,9 @@ class SlurmPlatform(ParamikoPlatform):
     def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
 
+    def get_checkAlljob_cmd(self, job_id):
+        return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
+
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
 

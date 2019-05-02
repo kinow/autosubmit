@@ -953,7 +953,7 @@ class Autosubmit:
                     # noinspection PyTypeChecker
                     platforms_to_test.add(job.platform)
 
-                job_list.check_scripts(as_conf)
+#                job_list.check_scripts(as_conf)
 
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_packages_" + expid)
@@ -1035,8 +1035,7 @@ class Autosubmit:
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-                                if prev_status != job.update_status(platform.check_job(job.id),
-                                                                    as_conf.get_copy_remote_logs() == 'true'):
+                                if prev_status != job.update_status(platform.check_job(job.id),as_conf.get_copy_remote_logs() == 'true'):
 
                                     if as_conf.get_notifications() == 'true':
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
