@@ -88,6 +88,7 @@ class Job(object):
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
         self.status = status
+        self.new_status=status
         self.priority = priority
         self._parents = set()
         self._children = set()
@@ -475,7 +476,7 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
-    def update_status(self, new_status, copy_remote_logs=False):
+    def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -484,7 +485,7 @@ class Job(object):
         :type: Status
         """
         previous_status = self.status
-
+        new_status = self.new_status
         if new_status == Status.COMPLETED:
             Log.debug("This job seems to have completed: checking...")
             self.platform.get_completed_files(self.name)

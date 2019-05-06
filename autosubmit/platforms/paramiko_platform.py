@@ -124,6 +124,7 @@ class ParamikoPlatform(Platform):
                 return None
         if check:
             self.check_remote_log_dir()
+
             self.delete_file(filename)
 
         try:
@@ -297,6 +298,45 @@ class ParamikoPlatform(Platform):
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         return job_status
 
+    def check_Alljobs(self, job_list,job_list_cmd, default_status=Status.COMPLETED, retries=5):
+        """
+        Checks jobs running status
+
+        :param retries: retries
+        :param job_id: job id
+        :type job_id: str
+        :param default_status: status to assign if it can be retrieved from the platform
+        :type default_status: autosubmit.job.job_common.Status
+        :return: current job status
+        :rtype: autosubmit.job.job_common.Status
+        """
+        cmd = self.get_checkAlljobs_cmd(job_list_cmd)
+        while not self.send_command(cmd) and retries >= 0:
+            retries -= 1
+            Log.warning('Retrying check job command: {0}', cmd)
+            Log.error('Can not get job status for all jobs, retrying in 10 sec')
+            sleep(10)
+        Log.debug('Successful check job command: {0}', cmd)
+        if retries >= 0:
+            for job in job_list:
+                job_id=job.id
+                job_status = Status.UNKNOWN
+
+                job_status = self.parse_Alljobs_output(self.get_ssh_output(),job_id)
+                # URi: define status list in HPC Queue Class
+                if job_status in self.job_status['COMPLETED'] or retries == 0:
+                    job_status = Status.COMPLETED
+                elif job_status in self.job_status['RUNNING']:
+                    job_status = Status.RUNNING
+                elif job_status in self.job_status['QUEUING']:
+                    job_status = Status.QUEUING
+                elif job_status in self.job_status['FAILED']:
+                    job_status = Status.FAILED
+                else:
+                    job_status = Status.UNKNOWN
+                    Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
+                job.new_status=job_status
+
     def get_checkjob_cmd(self, job_id):
         """
         Returns command to check job status on remote platforms
@@ -308,6 +348,16 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
+    def get_checkAlljobs_cmd(self, jobs_id):
+        """
+        Returns command to check jobs status on remote platforms
+
+        :param jobs_id: id of jobs to check
+        :param job_id: str
+        :return: command to check job status
+        :rtype: str
+        """
+        raise NotImplementedError
     def send_command(self, command, ignore_log=False):
         """
         Sends given command to HPC
@@ -323,15 +373,16 @@ class ParamikoPlatform(Platform):
                 return None
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
-            stderr_readlines = stderr.readlines()
             self._ssh_output = stdout.read().rstrip()
             if stdout.channel.recv_exit_status() == 0:
+                stderr_readlines = stderr.readlines()
                 if len(stderr_readlines) > 0 and not ignore_log:
                     Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                 Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
                 return True
             else:
                 if not ignore_log:
+                    stderr_readlines = stderr.readlines()
                     Log.error('Command {0} in {1} failed with error message: {2}',
                             command, self.host, '\n'.join(stderr_readlines))
                 return False
@@ -349,7 +400,16 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
-
+    def parse_Alljobs_output(self, output,job_id):
+        """
+        Parses check jobs command output so it can be interpreted by autosubmit
+        :param output: output to parse
+        :param job_id: select the job to parse
+        :type output: str
+        :return: job status
+        :rtype: str
+        """
+        raise NotImplementedError
     def get_submit_cmd(self, job_script, job_type):
         """
         Get command to add job to scheduler
@@ -477,10 +537,15 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        if self.send_command(self.get_mkdir_cmd()):
-            Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
-        else:
-            Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+        try:
+            self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
+        except IOError:
+            self._ftpChannel.mkdir(self.remote_log_dir)  # Create remote_path
+
+        # if self.send_command(self.get_mkdir_cmd()):
+        #     Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+        # else:
+        #     Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
 
 
 class ParamikoPlatformException(Exception):

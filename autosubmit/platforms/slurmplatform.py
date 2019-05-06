@@ -73,6 +73,11 @@ class SlurmPlatform(ParamikoPlatform):
     def parse_job_output(self, output):
         return output.strip().split(' ')[0].strip()
 
+    def parse_Alljobs_output(self, output,job_id):
+        status =[x.split()[1] for x in output.splitlines() if x.split()[0] == str(job_id)]
+
+        return status[0]
+
     def get_submitted_job_id(self, output):
         return output.split(' ')[3]
 
@@ -84,12 +89,11 @@ class SlurmPlatform(ParamikoPlatform):
     def get_submit_cmd(self, job_script, job):
         return self._submit_cmd + job_script
 
-    def get_checkAlljob_cmd(self, job_id):
-        return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
-
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
 
+    def get_checkAlljobs_cmd(self, jobs_id):
+        return "sacct -n -X -j  {1} -o 'jobid,State'".format(self.host, jobs_id)
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %R'.format(job_id)
 

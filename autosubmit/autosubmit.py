@@ -1009,14 +1009,17 @@ class Autosubmit:
                     Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
 
                     save = False
+
+                    slurm = []
                     for platform in platforms_to_test:
+                        list_jobid = ""
+                        completed_joblist = []
+                        list_prevStatus =[]
                         queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                         for job_id, job in queuing_jobs.items():
                             if job_list.job_package_map and job_id in job_list.job_package_map:
-
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
-
                                 check_wrapper = True
                                 if wrapper_job.status == Status.RUNNING:
                                     check_wrapper = True if datetime.timedelta.total_seconds(
@@ -1024,6 +1027,7 @@ class Autosubmit:
                                 if check_wrapper:
                                     wrapper_job.checked_time = datetime.datetime.now()
                                     status = platform.check_job(wrapper_job.id)
+                                    list_jobid += str(job_id) + ","
                                     Log.info(
                                         'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[status]))
                                     wrapper_job.check_status(status)
@@ -1035,29 +1039,50 @@ class Autosubmit:
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-                                if prev_status != job.update_status(platform.check_job(job.id),as_conf.get_copy_remote_logs() == 'true'):
+                                if platform.type == "slurm":
+                                    list_jobid += str(job_id) + ','
+                                    list_prevStatus.append(prev_status)
+                                    completed_joblist.append(job)
 
-                                    if as_conf.get_notifications() == 'true':
-                                        if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                            Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                          Status.VALUE_TO_KEY[prev_status],
-                                                                          Status.VALUE_TO_KEY[job.status],
-                                                                          as_conf.get_mails_to())
+                                else:
+                                    if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                        if as_conf.get_notifications() == 'true':
+                                            if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                              Status.VALUE_TO_KEY[prev_status],
+                                                                              Status.VALUE_TO_KEY[job.status],
+                                                                              as_conf.get_mails_to())
                                     save = True
+                        if platform.type == "slurm":
+                            slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
+
+                    #TODO
+                    for platform_jobs in slurm:
+                        platform = platform_jobs[0]
+                        jobs_to_check = platform_jobs[1]
+                        platform.check_Alljobs(platform_jobs[3],jobs_to_check)
+
+                        for j_Indx in xrange(0,len(platform_jobs[3])):
+                            prev_status = platform_jobs[2][j_Indx]
+                            job = platform_jobs[3][j_Indx]
+
+                            if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                if as_conf.get_notifications() == 'true':
+                                    if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                        Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                      Status.VALUE_TO_KEY[prev_status],
+                                                                      Status.VALUE_TO_KEY[job.status],
+                                                                      as_conf.get_mails_to())
 
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
 
                     if Autosubmit.exit:
-                        prev_status = job.status
-                        if prev_status != job.update_status(platform.check_job(job.id),
-                                                            as_conf.get_copy_remote_logs() == 'true'):
                             if as_conf.get_notifications():
-
-                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                  Status.VALUE_TO_KEY[prev_status],
-                                                                  Status.VALUE_TO_KEY[job.status],
-                                                                  as_conf.get_mails_to())
+                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                              Status.VALUE_TO_KEY[prev_status],
+                                                              Status.VALUE_TO_KEY[job.status],
+                                                              as_conf.get_mails_to())
                         return 2
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
@@ -1065,8 +1090,7 @@ class Autosubmit:
 
                     if Autosubmit.exit:
                         prev_status = job.status
-                        if prev_status != job.update_status(platform.check_job(job.id),
-                                                            as_conf.get_copy_remote_logs() == 'true'):
+                        if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                             if as_conf.get_notifications():
 
                                     Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
@@ -1114,7 +1138,6 @@ class Autosubmit:
                         package.set_job_dependency(remote_dependency_id)
                     if not only_wrappers:
                         package.submit(as_conf, job_list.parameters,inspect)
-
                     if hasattr(package, "name"):
                         job_list.packages_dict[package.name] = package.jobs
 
