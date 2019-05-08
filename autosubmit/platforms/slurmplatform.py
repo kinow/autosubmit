@@ -57,6 +57,7 @@ class SlurmPlatform(ParamikoPlatform):
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = 'sbatch -D {1} {1}/'.format(self.host, self.remote_log_dir)
+        self._allSubmit_cmd = ""
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
@@ -78,16 +79,21 @@ class SlurmPlatform(ParamikoPlatform):
 
         return status[0]
 
-    def get_submitted_job_id(self, output):
-        return output.split(' ')[3]
-
+    def get_submitted_job_id(self, outputlines):
+        jobs_id = []
+        for output in outputlines.splitlines():
+            jobs_id.append(int(output.split(' ')[3]))
+        return jobs_id
     def jobs_in_queue(self):
         dom = parseString('')
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script, job):
-        return self._submit_cmd + job_script
+        if self._allSubmit_cmd not is "":
+            self._allSubmit_cmd += " && "
+        self._allSubmit_cmd += self._submit_cmd + job_script
+        return self._allSubmit_cmd
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)

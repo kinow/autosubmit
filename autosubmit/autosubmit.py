@@ -1127,8 +1127,10 @@ class Autosubmit:
                     Log.error("{0} submission failed", platform.name)
                     raise
             if not only_wrappers:
+                for package in packages_to_submit:
                 try:
-                    platform.submit_Alljobs(package._allJobs_scripts)
+                    #TODO
+                    jobs_id = platform.submit_Alljobs(package._allJobs_scripts)
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise

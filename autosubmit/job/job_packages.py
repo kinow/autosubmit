@@ -103,6 +103,7 @@ class JobPackageBase(object):
         raise Exception('Not implemented')
 
 
+
 class JobPackageSimple(JobPackageBase):
     """
     Class to manage a group of simple jobs, not packaged, to be submitted by autosubmit

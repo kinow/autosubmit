@@ -32,7 +32,7 @@ class ParamikoPlatform(Platform):
         self._user_config_file = None
         self._host_config = None
         self._host_config_id = None
-        self.jobs_ready_to_submit = ""
+        self.submit_cmd = ""
 
     @property
     def header(self):
@@ -246,13 +246,35 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.send_command(self.get_submit_cmd(script_name, job)):
-            job_id = self.get_submitted_job_id(self.get_ssh_output())
-            Log.debug("Job ID: {0}", job_id)
-            return int(job_id)
+        if self.type is "slurm":
+            self._submit_cmd += self.get_submit_cmd(script_name, job)
+            return None
+        else:
+            if self.send_command(self.get_submit_cmd(script_name, job)):
+                job_id = self.get_submitted_job_id(self.get_ssh_output())
+                Log.debug("Job ID: {0}", job_id)
+                return int(job_id)
+            else:
+                return None
+
+    def submit_Alljobs(self):
+        """
+        Submit a Alljobs from a platform.
+
+        :param job: job object
+        :type job: autosubmit.job.job.Job
+        :param script_name: job script's name
+        :rtype scriptname: str
+        :return: job id for the submitted job
+        :rtype: int
+        """
+        jobs_id = []
+
+        if self.send_command(self._allSubmit_cmd):
+            jobs_id = self.get_submitted_job_id(self.get_ssh_output())
+            return jobs_id
         else:
             return None
-
     def check_job(self, job, default_status=Status.COMPLETED, retries=5):
         """
         Checks job running status
