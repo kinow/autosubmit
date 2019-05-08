@@ -32,6 +32,7 @@ class ParamikoPlatform(Platform):
         self._user_config_file = None
         self._host_config = None
         self._host_config_id = None
+        self.jobs_ready_to_submit = ""
 
     @property
     def header(self):
@@ -252,7 +253,7 @@ class ParamikoPlatform(Platform):
         else:
             return None
 
-    def check_job(self, job_id, default_status=Status.COMPLETED, retries=5):
+    def check_job(self, job, default_status=Status.COMPLETED, retries=5):
         """
         Checks job running status
 
@@ -264,13 +265,14 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
+        job_id = job.id
         job_status = Status.UNKNOWN
 
         if type(job_id) is not int and type(job_id) is not str:
             # URi: logger
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
             # URi: value ?
-            return job_status
+            job.new_status= job_status
 
         while not self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0:
             retries -= 1
@@ -296,7 +298,7 @@ class ParamikoPlatform(Platform):
             # BOUOUOUOU	NOT	GOOD!
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
-        return job_status
+        job.new_status = job_status
 
     def check_Alljobs(self, job_list,job_list_cmd, default_status=Status.COMPLETED, retries=5):
         """
@@ -537,16 +539,16 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        try:
-            self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
-        except IOError:
-            self._ftpChannel.mkdir(self.remote_log_dir)  # Create remote_path
-
-        # if self.send_command(self.get_mkdir_cmd()):
-        #     Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
-        # else:
-        #     Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
-
+        if self.type == "slurm":
+            try:
+                self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
+            except IOError:
+                self._ftpChannel.mkdir(self.remote_log_dir)  # Create remote_path
+        else:
+            if self.send_command(self.get_mkdir_cmd()):
+               Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+            else:
+                Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
 
 class ParamikoPlatformException(Exception):
     """

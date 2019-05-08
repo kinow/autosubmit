@@ -622,7 +622,8 @@ class Autosubmit:
         tmp_path = os.path.join(exp_id_path, "tmp")
         os.mkdir(tmp_path)
         os.chmod(tmp_path, 0o775)
-
+        os.mkdir(os.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR))
+        os.chmod(os.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR), 0o775)
         Log.debug("Creating temporal remote directory...")
         remote_tmp_path = os.path.join(tmp_path,"LOG_"+exp_id)
         os.mkdir(remote_tmp_path)
@@ -708,7 +709,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
         Log.info("Starting inspect command")
-        Log.set_file(os.path.join(tmp_path, 'generate.log'))
+        Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate.log'))
         os.system('clear')
         signal.signal(signal.SIGINT, signal_handler)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -886,6 +887,10 @@ class Autosubmit:
         BasicConfig.read()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
+        if not os.path.exists(aslogs_path):
+            os.mkdir(aslogs_path)
+            os.chmod(aslogs_path,0o775)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist" % exp_path)
             Log.warning("Does an experiment with the given id exist?")
@@ -903,7 +908,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
 
-                Log.set_file(os.path.join(tmp_path, 'run.log'))
+                Log.set_file(os.path.join(aslogs_path, 'run.log'))
                 os.system('clear')
 
                 signal.signal(signal.SIGINT, signal_handler)
@@ -979,21 +984,11 @@ class Autosubmit:
                 # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
                     if Autosubmit.exit:
-                        prev_status = job.status
-                        if prev_status != job.update_status(platform.check_job(job.id),
-                                                            as_conf.get_copy_remote_logs() == 'true'):
-                            if as_conf.get_notifications():
-                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                  Status.VALUE_TO_KEY[prev_status],
-                                                                  Status.VALUE_TO_KEY[job.status],
-                                                                  as_conf.get_mails_to())
                         return 2
-
                     # reload parameters changes
                     Log.debug("Reloading parameters...")
                     as_conf.reload()
                     Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-
                     # variables to be updated on the fly
                     total_jobs = len(job_list.get_job_list())
                     Log.info(
@@ -1039,12 +1034,13 @@ class Autosubmit:
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-                                if platform.type == "slurm":
+
+                                if platform.type is 'slurm':
                                     list_jobid += str(job_id) + ','
                                     list_prevStatus.append(prev_status)
                                     completed_joblist.append(job)
-
                                 else:
+                                    platform.check_job(job)
                                     if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                         if as_conf.get_notifications() == 'true':
                                             if Status.VALUE_TO_KEY[job.status] in job.notify_on:
@@ -1053,7 +1049,7 @@ class Autosubmit:
                                                                               Status.VALUE_TO_KEY[job.status],
                                                                               as_conf.get_mails_to())
                                     save = True
-                        if platform.type == "slurm":
+                        if platform.type is "slurm" and list_jobid!="":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
 
                     #TODO
@@ -1078,25 +1074,12 @@ class Autosubmit:
                         job_list.save()
 
                     if Autosubmit.exit:
-                            if as_conf.get_notifications():
-                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                              Status.VALUE_TO_KEY[prev_status],
-                                                              Status.VALUE_TO_KEY[job.status],
-                                                              as_conf.get_mails_to())
                         return 2
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
 
                     if Autosubmit.exit:
-                        prev_status = job.status
-                        if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
-                            if as_conf.get_notifications():
-
-                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                  Status.VALUE_TO_KEY[prev_status],
-                                                                  Status.VALUE_TO_KEY[job.status],
-                                                                  as_conf.get_mails_to())
                         return 2
                     time.sleep(safetysleeptime)
 
@@ -1136,30 +1119,45 @@ class Autosubmit:
                         remote_dependency = remote_dependencies_dict['dependencies'][package.name]
                         remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
                         package.set_job_dependency(remote_dependency_id)
-                    if not only_wrappers:
-                        package.submit(as_conf, job_list.parameters,inspect)
-                    if hasattr(package, "name"):
-                        job_list.packages_dict[package.name] = package.jobs
-
-                        from job.job import WrapperJob
-                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
-                                                 package._wallclock, package._num_processors,
-                                                 package.platform, as_conf)
-                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
-
-                    if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                        remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-
-                    if isinstance(package, JobPackageThread):
-                        packages_persistence.save(package.name, package.jobs, package._expid,inspect)
-
-                    save = True
+                    package.submit(as_conf, job_list.parameters, inspect)
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
+            if not only_wrappers:
+                try:
+                    platform.submit_Alljobs(package._allJobs_scripts)
+                except WrongTemplateException as e:
+                    Log.error("Invalid parameter substitution in {0} template", e.job_name)
+                    raise
+                except Exception:
+                    Log.error("{0} submission failed", platform.name)
+                    raise
+                for package in packages_to_submit:
+                    try:
+                        if hasattr(package, "name"):
+                            job_list.packages_dict[package.name] = package.jobs
+                            from job.job import WrapperJob
+                            wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
+                                                     package._wallclock, package._num_processors,
+                                                     package.platform, as_conf)
+                            job_list.job_package_map[package.jobs[0].id] = wrapper_job
+
+                        if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                            remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+
+                        if isinstance(package, JobPackageThread):
+                            packages_persistence.save(package.name, package.jobs, package._expid,inspect)
+
+                        save = True
+                    except WrongTemplateException as e:
+                        Log.error("Invalid parameter substitution in {0} template", e.job_name)
+                        raise
+                    except Exception:
+                        Log.error("{0} submission failed", platform.name)
+                        raise
         return save
 
 
@@ -1188,12 +1186,14 @@ class Autosubmit:
         BasicConfig.read()
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+
+
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, 'monitor.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor.log'))
         Log.info("Getting job list...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1347,8 +1347,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'statistics.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'statistics.log'))
         Log.info("Loading jobs...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1415,8 +1414,7 @@ class Autosubmit:
             return 1
 
         if create_log_file:
-            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                      'clean_exp.log'))
+            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp.log'))
         if project:
             autosubmit_config = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             if not autosubmit_config.check_conf_files():
@@ -1467,8 +1465,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'recovery.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'))
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -1739,7 +1736,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'check_exp.log')
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'check_exp.log')
         Log.set_file(log_file)
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
@@ -1788,7 +1785,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR, 'describe_exp.log')
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'describe_exp.log')
         Log.set_file(log_file)
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
@@ -2168,8 +2165,7 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,
-                                  'refresh.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
@@ -2354,6 +2350,10 @@ class Autosubmit:
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
+        if not os.path.exists(aslogs_path):
+            os.mkdir(aslogs_path)
+            os.chmod(aslogs_path,0o775)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
@@ -2363,8 +2363,7 @@ class Autosubmit:
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same expid.")
-
-                Log.set_file(os.path.join(tmp_path, 'create_exp.log'))
+                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
 
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                 if not as_conf.check_conf_files():
@@ -2417,11 +2416,8 @@ class Autosubmit:
                                   as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
 
                 if rerun == "true":
-
                     chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
                     job_list.rerun(chunk_list, notransitive)
-
-
                 else:
                     job_list.remove_rerun_only_jobs(notransitive)
                 Log.info("\nSaving the jobs list...")
@@ -2444,8 +2440,7 @@ class Autosubmit:
                     # WRAPPERS
                     if as_conf.get_wrapper_type() != 'none' and check_wrappers:
                         packages_persistence = JobPackagePersistence(
-                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                            "job_packages_" + expid)
+                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
                         packages_persistence.reset_table(True)
                         referenced_jobs_to_remove = set()
                         job_list_wrappers = copy.deepcopy(job_list)
@@ -2614,7 +2609,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
-                Log.set_file(os.path.join(tmp_path, 'set_status.log'))
+                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status.log'))
                 Log.debug('Exp ID: {0}', expid)
                 Log.debug('Save: {0}', save)
                 Log.debug('Final status: {0}', final)

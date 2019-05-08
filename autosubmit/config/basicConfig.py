@@ -40,6 +40,7 @@ class BasicConfig:
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
     LOCAL_TMP_DIR = 'tmp'
+    LOCAL_ASLOG_DIR = 'ASLOGS'
     LOCAL_PROJ_DIR = 'proj'
     DEFAULT_PLATFORMS_CONF = ''
     DEFAULT_JOBS_CONF = ''
