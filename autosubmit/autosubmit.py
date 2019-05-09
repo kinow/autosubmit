@@ -622,8 +622,8 @@ class Autosubmit:
         tmp_path = os.path.join(exp_id_path, "tmp")
         os.mkdir(tmp_path)
         os.chmod(tmp_path, 0o775)
-        os.mkdir(os.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR))
-        os.chmod(os.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR), 0o775)
+        os.mkdir(os.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR))
+        os.chmod(os.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR), 0o775)
         Log.debug("Creating temporal remote directory...")
         remote_tmp_path = os.path.join(tmp_path,"LOG_"+exp_id)
         os.mkdir(remote_tmp_path)
@@ -1035,7 +1035,7 @@ class Autosubmit:
                                 if job.status == Status.FAILED:
                                     continue
 
-                                if platform.type is 'slurm':
+                                if platform.type == "slurm":
                                     list_jobid += str(job_id) + ','
                                     list_prevStatus.append(prev_status)
                                     completed_joblist.append(job)
@@ -1049,7 +1049,7 @@ class Autosubmit:
                                                                               Status.VALUE_TO_KEY[job.status],
                                                                               as_conf.get_mails_to())
                                     save = True
-                        if platform.type is "slurm" and list_jobid!="":
+                        if platform.type == "slurm" and list_jobid!="":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
 
                     #TODO
@@ -1113,6 +1113,8 @@ class Autosubmit:
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
+            platform.open_submit_script()
+            jobs=[]
             for package in packages_to_submit:
                 try:
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
@@ -1120,17 +1122,25 @@ class Autosubmit:
                         remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
                         package.set_job_dependency(remote_dependency_id)
                     package.submit(as_conf, job_list.parameters, inspect)
+                    for job in package.jobs:
+                        jobs.append(job)
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
-            if not only_wrappers:
-                for package in packages_to_submit:
+            if not only_wrappers and platform.type == "slurm":
                 try:
                     #TODO
-                    jobs_id = platform.submit_Alljobs(package._allJobs_scripts)
+                    jobs_id = platform.submit_Script()
+                    i=0
+                    for job in jobs:
+                        job.id = jobs_id[i]
+                        Log.info("{0} submitted", job.name)
+                        job.status = Status.SUBMITTED
+                        job.write_submit_time()
+                        i+=1
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise

@@ -125,13 +125,12 @@ class ParamikoPlatform(Platform):
                 return None
         if check:
             self.check_remote_log_dir()
-
             self.delete_file(filename)
 
         try:
             #ftp = self._ssh.open_sftp()
-            self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), filename))
-            self._ftpChannel.chmod(os.path.join(self.get_files_path(), filename),
+            self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), os.path.basename(filename)))
+            self._ftpChannel.chmod(os.path.join(self.get_files_path(), os.path.basename(filename)),
                       os.stat(os.path.join(self.tmp_path, filename)).st_mode)
             #ftp.close()
             return True
@@ -246,8 +245,8 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.type is "slurm":
-            self._submit_cmd += self.get_submit_cmd(script_name, job)
+        if self.type == 'slurm':
+            self.get_submit_cmd(script_name, job)
             return None
         else:
             if self.send_command(self.get_submit_cmd(script_name, job)):
@@ -256,25 +255,17 @@ class ParamikoPlatform(Platform):
                 return int(job_id)
             else:
                 return None
-
-    def submit_Alljobs(self):
+    def submit_Script(self):
         """
-        Submit a Alljobs from a platform.
+        Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
-        :param script_name: job script's name
-        :rtype scriptname: str
-        :return: job id for the submitted job
-        :rtype: int
+        :return: job id for  submitted jobs
+        :rtype: list(int)
         """
-        jobs_id = []
+        raise NotImplementedError
 
-        if self.send_command(self._allSubmit_cmd):
-            jobs_id = self.get_submitted_job_id(self.get_ssh_output())
-            return jobs_id
-        else:
-            return None
     def check_job(self, job, default_status=Status.COMPLETED, retries=5):
         """
         Checks job running status
@@ -342,6 +333,8 @@ class ParamikoPlatform(Platform):
             sleep(10)
         Log.debug('Successful check job command: {0}', cmd)
         if retries >= 0:
+            in_queue_jobs=[]
+            list_queue_jobid=""
             for job in job_list:
                 job_id=job.id
                 job_status = Status.UNKNOWN
@@ -354,12 +347,26 @@ class ParamikoPlatform(Platform):
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
                     job_status = Status.QUEUING
+                    if self.type == "slurm":
+                        list_queue_jobid += str(job.id) + ','
+                        in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
                     job_status = Status.FAILED
                 else:
                     job_status = Status.UNKNOWN
                     Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
                 job.new_status=job_status
+            reason = str()
+            if self.type == 'slurm' and len(in_queue_jobs) > 0:
+                cmd=self.get_queue_status_cmd(list_queue_jobid)
+                self.send_command(cmd)
+                for job in in_queue_jobs:
+                    reason = self.parse_queue_reason(self._ssh_output,job.id)
+                    if self._queuing_reason_cancel(reason):
+                        Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
+                        self.send_command(self.platform.cancel_cmd + " {0}".format(job.id))
+                        job.update_status(Status.FAILED, copy_remote_logs)
+                        return
 
     def get_checkjob_cmd(self, job_id):
         """
@@ -434,6 +441,14 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+
+    def open_submit_script(self):
+        pass
+
+    def get_submit_script(self):
+        pass
+
+
     def get_submit_cmd(self, job_script, job_type):
         """
         Get command to add job to scheduler

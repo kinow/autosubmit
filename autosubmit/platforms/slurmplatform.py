@@ -24,7 +24,7 @@ from xml.dom.minidom import parseString
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
-
+from autosubmit.config.basicConfig import BasicConfig
 
 class SlurmPlatform(ParamikoPlatform):
     """
@@ -48,6 +48,41 @@ class SlurmPlatform(ParamikoPlatform):
         self._allow_wrappers = True
         self.update_cmds()
 
+        exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+        tmp_path = os.path.join(exp_id_path, "tmp")
+        self._submit_script_path = os.path.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR,"submit_"+self.name+".sh")
+        self._submit_script_file = open(self._submit_script_path, 'w').close()
+
+    def open_submit_script(self):
+        self._submit_script_file = open(self._submit_script_path, 'w').close()
+        self._submit_script_file = open(self._submit_script_path, 'a')
+
+    def get_submit_script(self):
+        self._submit_script_file.close()
+        os.chmod(self._submit_script_path, 0o750)
+        return os.path.join(BasicConfig.LOCAL_ASLOG_DIR,os.path.basename(self._submit_script_path))
+
+
+    def submit_Script(self):
+        """
+        Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
+
+        :param job: job object
+        :type job: autosubmit.job.job.Job
+        :return: job id for  submitted jobs
+        :rtype: list(int)
+        """
+
+        self.send_file(self.get_submit_script())
+
+        #cmd = '(cd '+self.get_files_path()+';'+' ./'+os.path.basename(self._submit_script_path)+')'
+
+        cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
+        if self.send_command(cmd):
+            jobs_id = self.get_submitted_job_id(self.get_ssh_output())
+            return jobs_id
+        else:
+            return None
     def update_cmds(self):
         """
         Updates commands for platforms
@@ -57,7 +92,6 @@ class SlurmPlatform(ParamikoPlatform):
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = 'sbatch -D {1} {1}/'.format(self.host, self.remote_log_dir)
-        self._allSubmit_cmd = ""
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
@@ -90,10 +124,8 @@ class SlurmPlatform(ParamikoPlatform):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script, job):
-        if self._allSubmit_cmd not is "":
-            self._allSubmit_cmd += " && "
-        self._allSubmit_cmd += self._submit_cmd + job_script
-        return self._allSubmit_cmd
+        self._submit_script_file.write(self._submit_cmd + job_script + "\n")
+
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
@@ -101,14 +133,18 @@ class SlurmPlatform(ParamikoPlatform):
     def get_checkAlljobs_cmd(self, jobs_id):
         return "sacct -n -X -j  {1} -o 'jobid,State'".format(self.host, jobs_id)
     def get_queue_status_cmd(self, job_id):
-        return 'squeue -j {0} -o %R'.format(job_id)
+        return 'squeue -j {0} -o %A,%R'.format(job_id)
 
-    def parse_queue_reason(self, output):
-        output = output.split('\n')
-        if len(output) > 1:
-            return output[1]
-        else:
-            return output
+    def parse_queue_reason(self, output,job_id):
+        reason =[x.split(',')[1] for x in output.splitlines() if x.split(',')[0] == str(job_id)]
+
+        return reason[0]
+        # output = output.split('\n')
+        # if len(output) > 1:
+        #     return output[1]
+        # else:
+        #     return output
+
 
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
