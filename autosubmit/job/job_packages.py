@@ -217,7 +217,8 @@ class JobPackageArray(JobPackageBase):
         package_id = self.platform.submit_job(None, self._common_script)
 
         if package_id is None:
-            raise Exception('Submission failed')
+            return
+
 
         for i in range(1, len(self.jobs) + 1):
             Log.info("{0} submitted", self.jobs[i - 1].name)
@@ -315,7 +316,7 @@ class JobPackageThread(JobPackageBase):
         package_id = self.platform.submit_job(None, self._common_script)
 
         if package_id is None:
-            raise Exception('Submission failed')
+            return
 
         for i in range(1, len(self.jobs) + 1):
             Log.info("{0} submitted", self.jobs[i - 1].name)

@@ -96,6 +96,7 @@ class SlurmPlatform(ParamikoPlatform):
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
+
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
@@ -110,8 +111,11 @@ class SlurmPlatform(ParamikoPlatform):
 
     def parse_Alljobs_output(self, output,job_id):
         status =[x.split()[1] for x in output.splitlines() if x.split()[0] == str(job_id)]
-
+        if len(status) == 0:
+            return status
         return status[0]
+
+
 
     def get_submitted_job_id(self, outputlines):
         jobs_id = []

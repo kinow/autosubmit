@@ -1021,11 +1021,10 @@ class Autosubmit:
                                         datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
                                     wrapper_job.checked_time = datetime.datetime.now()
-                                    status = platform.check_job(wrapper_job.id)
-                                    list_jobid += str(job_id) + ","
+                                    platform.check_job(wrapper_job)
                                     Log.info(
-                                        'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[status]))
-                                    wrapper_job.check_status(status)
+                                        'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+                                    wrapper_job.check_status(wrapper_job.new_status)
                                     save = True
                                 else:
                                     Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
@@ -1056,7 +1055,7 @@ class Autosubmit:
                     for platform_jobs in slurm:
                         platform = platform_jobs[0]
                         jobs_to_check = platform_jobs[1]
-                        platform.check_Alljobs(platform_jobs[3],jobs_to_check)
+                        platform.check_Alljobs(platform_jobs[3],jobs_to_check,as_conf.get_copy_remote_logs())
 
                         for j_Indx in xrange(0,len(platform_jobs[3])):
                             prev_status = platform_jobs[2][j_Indx]
@@ -1097,8 +1096,84 @@ class Autosubmit:
         except WrongTemplateException:
             return False
 
+    # @staticmethod
+    # def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,only_wrappers=False):
+    #     """
+    #     Gets READY jobs and send them to the platforms if there is available space on the queues
+    #
+    #     :param as_conf: autosubmit config object
+    #     :param job_list: job list to check
+    #     :param platforms_to_test: platforms used
+    #     :type platforms_to_test: set
+    #     :return: True if at least one job was submitted, False otherwise
+    #     :rtype: bool
+    #     """
+    #     save = False
+    #     for platform in platforms_to_test:
+    #         Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
+    #         packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
+    #         platform.open_submit_script()
+    #         jobs=[]
+    #         for package in packages_to_submit:
+    #             try:
+    #                 if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
+    #                     remote_dependency = remote_dependencies_dict['dependencies'][package.name]
+    #                     remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
+    #                     package.set_job_dependency(remote_dependency_id)
+    #                 if not only_wrappers:
+    #                     package.submit(as_conf, job_list.parameters, inspect)
+    #                 for job in package.jobs:
+    #                     jobs.append(job)
+    #             except WrongTemplateException as e:
+    #                 Log.error("Invalid parameter substitution in {0} template", e.job_name)
+    #                 raise
+    #             except Exception:
+    #                 Log.error("{0} submission failed", platform.name)
+    #                 raise
+    #         if not only_wrappers and platform.type == "slurm":
+    #             try:
+    #                 #TODO
+    #                 jobs_id = platform.submit_Script()
+    #                 i=0
+    #                 for job in jobs:
+    #                     job.id = jobs_id[i]
+    #                     Log.info("{0} submitted", job.name)
+    #                     job.status = Status.SUBMITTED
+    #                     job.write_submit_time()
+    #                     i+=1
+    #             except WrongTemplateException as e:
+    #                 Log.error("Invalid parameter substitution in {0} template", e.job_name)
+    #                 raise
+    #             except Exception:
+    #                 Log.error("{0} submission failed", platform.name)
+    #                 raise
+    #             for package in packages_to_submit:
+    #                 try:
+    #                     if hasattr(package, "name"):
+    #                         job_list.packages_dict[package.name] = package.jobs
+    #                         from job.job import WrapperJob
+    #                         wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
+    #                                                  package._wallclock, package._num_processors,
+    #                                                  package.platform, as_conf)
+    #                         job_list.job_package_map[package.jobs[0].id] = wrapper_job
+    #
+    #                     if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+    #                         remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+    #
+    #                     if isinstance(package, JobPackageThread):
+    #                         packages_persistence.save(package.name, package.jobs, package._expid,inspect)
+    #
+    #                     save = True
+    #                 except WrongTemplateException as e:
+    #                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
+    #                     raise
+    #                 except Exception:
+    #                     Log.error("{0} submission failed", platform.name)
+    #                     raise
+    #     return save
     @staticmethod
-    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,only_wrappers=False):
+    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
+                          only_wrappers=False):
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
@@ -1114,14 +1189,28 @@ class Autosubmit:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
             platform.open_submit_script()
-            jobs=[]
+            jobs = []
             for package in packages_to_submit:
                 try:
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
                         remote_dependency = remote_dependencies_dict['dependencies'][package.name]
                         remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
                         package.set_job_dependency(remote_dependency_id)
-                    package.submit(as_conf, job_list.parameters, inspect)
+                    if not only_wrappers:
+                        package.submit(as_conf, job_list.parameters, inspect)
+                    if hasattr(package, "name"):
+                        job_list.packages_dict[package.name] = package.jobs
+                        from job.job import WrapperJob
+                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
+                                                 package.jobs,
+                                                 package._wallclock, package._num_processors,
+                                                 package.platform, as_conf)
+                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                    if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                        remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+                    if isinstance(package, JobPackageThread):
+                        packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                    save = True
                     for job in package.jobs:
                         jobs.append(job)
                 except WrongTemplateException as e:
@@ -1130,48 +1219,31 @@ class Autosubmit:
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
+
             if not only_wrappers and platform.type == "slurm":
                 try:
-                    #TODO
                     jobs_id = platform.submit_Script()
-                    i=0
-                    for job in jobs:
-                        job.id = jobs_id[i]
-                        Log.info("{0} submitted", job.name)
-                        job.status = Status.SUBMITTED
-                        job.write_submit_time()
-                        i+=1
+                    i = 0
+
+
+                    for package in packages_to_submit:
+                        if i > 0:
+                            Log.info("[%-20s] %d%%" % ('=' * i, (len(packages_to_submit)*i)/100 * i))
+                        for job in package.jobs:
+                            job.id = jobs_id[i]
+                            Log.info("{0} submitted", job.name)
+                            job.status = Status.SUBMITTED
+                            job.write_submit_time()
+
+                        i += 1
+
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
-                for package in packages_to_submit:
-                    try:
-                        if hasattr(package, "name"):
-                            job_list.packages_dict[package.name] = package.jobs
-                            from job.job import WrapperJob
-                            wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0, package.jobs,
-                                                     package._wallclock, package._num_processors,
-                                                     package.platform, as_conf)
-                            job_list.job_package_map[package.jobs[0].id] = wrapper_job
-
-                        if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                            remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-
-                        if isinstance(package, JobPackageThread):
-                            packages_persistence.save(package.name, package.jobs, package._expid,inspect)
-
-                        save = True
-                    except WrongTemplateException as e:
-                        Log.error("Invalid parameter substitution in {0} template", e.job_name)
-                        raise
-                    except Exception:
-                        Log.error("{0} submission failed", platform.name)
-                        raise
         return save
-
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,

@@ -476,7 +476,7 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
-    def update_status(self, copy_remote_logs=False):
+    def update_status(self, copy_remote_logs=False,iswrapper=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -493,16 +493,18 @@ class Job(object):
         else:
             self.status = new_status
         if self.status is Status.QUEUING:
-            reason = str()
-            if self.platform.type == 'slurm':
-                self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-                reason = self.platform.parse_queue_reason(self.platform._ssh_output)
-                if self._queuing_reason_cancel(reason):
-                    Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
-                    self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
-                    self.update_status(Status.FAILED, copy_remote_logs)
-                    return
-            Log.info("Job {0} is QUEUING {1}", self.name, reason)
+            if iswrapper:
+                reason = str()
+                if self.platform.type == 'slurm':
+                    self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+                    reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+                    if self._queuing_reason_cancel(reason):
+                        Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
+                        self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+                        self.new_status = status.FAILED
+                        self.update_status(copy_remote_logs,True)
+                        return
+                Log.info("Job {0} is QUEUING {1}", self.name, reason)
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
         elif self.status is Status.COMPLETED:
@@ -752,7 +754,7 @@ class Job(object):
                         template,
                         snippet.as_tailer()])
 
-    def _queuing_reason_cancel(self, reason):
+    def queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
                 reason = reason.split('(', 1)[1].split(')')[0]
@@ -1029,7 +1031,8 @@ class WrapperJob(Job):
                 if completed_files and len(completed_files) > 0:
                     if job.name in completed_files:
                         completed_jobs.append(job)
-                        job.update_status(Status.COMPLETED, self.as_config.get_copy_remote_logs() == 'true')
+                        job.new_status=Status.COMPLETED
+                        job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
                 if job.status != Status.COMPLETED and job in self.running_jobs_start:
                     self._check_inner_job_wallclock(job)
             for job in completed_jobs:
@@ -1075,7 +1078,8 @@ class WrapperJob(Job):
                                 start_time = self._check_time(out, 1)
                                 Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
                                 self.running_jobs_start[job] = start_time
-                                job.update_status(Status.RUNNING, self.as_config.get_copy_remote_logs() == 'true')
+                                job.new_status=Status.RUNNING
+                                job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
                             elif len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
                             else:
@@ -1087,10 +1091,12 @@ class WrapperJob(Job):
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):
-            job.update_status(Status.COMPLETED, self.as_config.get_copy_remote_logs() == 'true')
+            job.new_status=Status.COMPLETED
+            job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
         else:
             Log.info("No completed filed found, setting {0} to FAILED...".format(job.name))
-            job.update_status(Status.FAILED, self.as_config.get_copy_remote_logs() == 'true')
+            job.new_status=Status.FAILED
+            job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self):
@@ -1120,7 +1126,8 @@ class WrapperJob(Job):
             if job.status == Status.RUNNING:
                 self.running_jobs_start.pop(job, None)
                 Log.debug('Setting job {0} to COMPLETED'.format(job.name))
-                job.update_status(Status.COMPLETED, self.as_config.get_copy_remote_logs() == 'true')
+                job.new_status = Status.COMPLETED
+                job.update_status(self.as_config.get_copy_remote_logs() == 'true', True)
 
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)

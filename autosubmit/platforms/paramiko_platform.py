@@ -34,6 +34,9 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self.submit_cmd = ""
 
+
+
+
     @property
     def header(self):
         """
@@ -196,7 +199,7 @@ class ParamikoPlatform(Platform):
         try:
             #ftp = self._ssh.open_sftp()
 
-            self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
+            self.ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             #ftp.close()
             return True
         except BaseException as e:
@@ -271,8 +274,8 @@ class ParamikoPlatform(Platform):
         Checks job running status
 
         :param retries: retries
-        :param job_id: job id
-        :type job_id: str
+        :param job: job
+        :type job: class(job)
         :param default_status: status to assign if it can be retrieved from the platform
         :type default_status: autosubmit.job.job_common.Status
         :return: current job status
@@ -313,15 +316,15 @@ class ParamikoPlatform(Platform):
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         job.new_status = job_status
 
-    def check_Alljobs(self, job_list,job_list_cmd, default_status=Status.COMPLETED, retries=5):
+    def check_Alljobs(self, job_list,job_list_cmd,remote_logs, retries=5):
         """
         Checks jobs running status
 
         :param retries: retries
         :param job_id: job id
         :type job_id: str
-        :param default_status: status to assign if it can be retrieved from the platform
-        :type default_status: autosubmit.job.job_common.Status
+        :param remote_logs: retrieve logs from remote if queue fails
+        :type default_status: bool
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
@@ -362,11 +365,13 @@ class ParamikoPlatform(Platform):
                 self.send_command(cmd)
                 for job in in_queue_jobs:
                     reason = self.parse_queue_reason(self._ssh_output,job.id)
-                    if self._queuing_reason_cancel(reason):
+                    if job.queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
                         self.send_command(self.platform.cancel_cmd + " {0}".format(job.id))
-                        job.update_status(Status.FAILED, copy_remote_logs)
+                        job.new_status=Status.FAILED
+                        job.update_status(remote_logs)
                         return
+                    Log.info("Job {0} is QUEUING {1}", job.name, reason)
 
     def get_checkjob_cmd(self, job_id):
         """
@@ -576,6 +581,10 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
+        if self._ssh is None:
+            if not self.connect():
+                return None
+
         if self.type == "slurm":
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
