@@ -987,6 +987,20 @@ class WrapperJob(Job):
         self.as_config = as_config
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
+    def _queuing_reason_cancel(self, reason):
+        try:
+            if len(reason.split('(', 1)) > 1:
+                reason = reason.split('(', 1)[1].split(')')[0]
+                if 'Invalid' in reason or reason in ['AssociationJobLimit', 'AssociationResourceLimit', 'AssociationTimeLimit',
+                                                    'BadConstraints', 'QOSMaxCpuMinutesPerJobLimit', 'QOSMaxWallDurationPerJobLimit',
+                                                    'QOSMaxNodePerJobLimit', 'DependencyNeverSatisfied', 'QOSMaxMemoryPerJob',
+                                                    'QOSMaxMemoryPerNode', 'QOSMaxMemoryMinutesPerJob', 'QOSMaxNodeMinutesPerJob',
+                                                    'InactiveLimit', 'JobLaunchFailure', 'NonZeroExitCode', 'PartitionNodeLimit',
+                                                    'PartitionTimeLimit', 'SystemFailure', 'TimeLimit', 'QOSUsageThreshold']:
+                    return True
+            return False
+        except:
+            return False
 
     def check_status(self, status):
         if status != self.status:
@@ -994,7 +1008,7 @@ class WrapperJob(Job):
                 reason = str()
                 if self.platform.type == 'slurm':
                     self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-                    reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+                    reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
 
                     if self._queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
