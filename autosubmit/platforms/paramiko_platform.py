@@ -589,13 +589,15 @@ class ParamikoPlatform(Platform):
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
             except IOError:
-                self._ftpChannel.mkdir(self.remote_log_dir)  # Create remote_path
+                if self.send_command(self.get_mkdir_cmd()):
+                   Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+                else:
+                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
         else:
             if self.send_command(self.get_mkdir_cmd()):
-               Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+                Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
             else:
                 Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
-
 class ParamikoPlatformException(Exception):
     """
     Exception raised from HPC queues

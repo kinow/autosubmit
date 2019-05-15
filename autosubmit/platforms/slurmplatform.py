@@ -139,6 +139,7 @@ class SlurmPlatform(ParamikoPlatform):
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
+
     def parse_queue_reason(self, output,job_id):
         reason =[x.split(',')[1] for x in output.splitlines() if x.split(',')[0] == str(job_id)]
 

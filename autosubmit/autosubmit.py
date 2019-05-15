@@ -249,7 +249,8 @@ class Autosubmit:
                                         'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
-
+            subparser.add_argument('-nl', '--no_recover_logs', action='store_true', default=False,
+                                   help='Disable logs recovery')
             # Migrate
             subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
             subparser.add_argument('expid', help='experiment identifier')
@@ -431,7 +432,7 @@ class Autosubmit:
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
                 return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by,
-                                           args.expand, args.expand_status, args.notransitive)
+                                           args.expand, args.expand_status, args.notransitive,args.no_recover_logs)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'inspect':
@@ -1142,7 +1143,7 @@ class Autosubmit:
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
-            if platform.type == "slurm" and not inspect:
+            if platform.type == "slurm" and not inspect and platform:
                 try:
                     jobs_id = platform.submit_Script()
                     i = 0
@@ -1465,7 +1466,7 @@ class Autosubmit:
 
     @staticmethod
     def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list(),
-                 notransitive=False):
+                 notransitive=False, no_recover_logs=False):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the jobs list.
@@ -1535,11 +1536,12 @@ class Autosubmit:
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-                if save and job.platform != "local":
+                if not no_recover_logs:
                     try:
                         job.platform.get_logs_files(expid, job.remote_logs)
                     except:
-                        Log.warning("Unable to retrieve the log file of {0} in platform {1}",job.name,job.platform.name)
+                        pass
+                        #Log.warning("Unable to retrieve the log file of {0} in platform {1}",job.name,job.platform.name)
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
