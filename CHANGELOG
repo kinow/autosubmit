@@ -1,3 +1,6 @@
+3.12.1b
+    Perfomance issues has been solved
+
 3.12.0b
     Hotfixed in 3.11.0 , now you are unable to erase other user experiments. 
     Now you can select which submodules uses your experiment.
@@ -17,6 +20,7 @@
         -Bug fix related to update_list.txt.
         -Bugs fixes to synchronize jobs.
         -Bug fix for ec-gate
+    Improves to hybrid wrappers
    
         
 3.11.1

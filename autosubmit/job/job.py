@@ -501,7 +501,7 @@ class Job(object):
                     if self._queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
                         self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
-                        self.new_status = status.FAILED
+                        self.new_status =Status.FAILED
                         self.update_status(copy_remote_logs,True)
                         return
                 Log.info("Job {0} is QUEUING {1}", self.name, reason)

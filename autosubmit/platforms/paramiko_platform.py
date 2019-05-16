@@ -199,7 +199,7 @@ class ParamikoPlatform(Platform):
         try:
             #ftp = self._ssh.open_sftp()
 
-            self.ftpChannel.remove(os.path.join(self.get_files_path(), filename))
+            self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             #ftp.close()
             return True
         except BaseException as e:
@@ -344,7 +344,7 @@ class ParamikoPlatform(Platform):
 
                 job_status = self.parse_Alljobs_output(self.get_ssh_output(),job_id)
                 # URi: define status list in HPC Queue Class
-                if job_status in self.job_status['COMPLETED'] or retries == 0:
+                if job_status in self.job_status['COMPLETED']:
                     job_status = Status.COMPLETED
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
@@ -355,6 +355,8 @@ class ParamikoPlatform(Platform):
                         in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
                     job_status = Status.FAILED
+                elif retries == 0:
+                    job_status = Status.COMPLETED
                 else:
                     job_status = Status.UNKNOWN
                     Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)

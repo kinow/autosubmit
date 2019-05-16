@@ -861,11 +861,11 @@ class Autosubmit:
             for jobready in job_list.get_ready():
                 jobready.status=Status.COMPLETED
             if as_conf.get_wrapper_type() != "none":
-                for platform in platforms_to_test:
-                    for wrapper_id in job_list.job_package_map:
-                        job_list.job_package_map[wrapper_id].status=Status.COMPLETED
-                        for innerjob in job_list.job_package_map[wrapper_id].job_list:
-                            innerjob.status=Status.COMPLETED
+                #for platform in platforms_to_test:
+                for wrapper_id in job_list.job_package_map:
+                    job_list.job_package_map[wrapper_id].status=Status.COMPLETED
+                    for innerjob in job_list.job_package_map[wrapper_id].job_list:
+                        innerjob.status=Status.COMPLETED
 
             job_list.update_list(as_conf, False)
 
@@ -1145,35 +1145,36 @@ class Autosubmit:
                     raise
             if platform.type == "slurm" and not inspect and platform:
                 try:
-                    jobs_id = platform.submit_Script()
-                    i = 0
-                    for package in packages_to_submit:
-                        for job in package.jobs:
-                            if len(package.jobs) > 1:
-                                if remote_dependencies_dict and package.name in remote_dependencies_dict[
-                                    'dependencies']:
-                                    remote_dependency = remote_dependencies_dict['dependencies'][package.name]
-                                    remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
-                                    package.set_job_dependency(remote_dependency_id)
-                            job.id = str(jobs_id[i])
-                            Log.info("{0} submitted", job.name)
-                            job.status = Status.SUBMITTED
-                            job.write_submit_time()
-                            if len(package.jobs) > 1:
-                                if hasattr(package, "name"):
-                                    job_list.packages_dict[package.name] = package.jobs
-                                    from job.job import WrapperJob
-                                    wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
-                                                             package.jobs,
-                                                             package._wallclock, package._num_processors,
-                                                             package.platform, as_conf)
-                                    job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                                if remote_dependencies_dict and package.name in remote_dependencies_dict[
-                                    'name_to_id']:
-                                    remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
-                                if isinstance(package, JobPackageThread):
-                                    packages_persistence.save(package.name, package.jobs, package._expid, inspect)
-                        i += 1
+                    if len(packages_to_submit) > 0:
+                        jobs_id = platform.submit_Script()
+                        i = 0
+                        for package in packages_to_submit:
+                            for job in package.jobs:
+                                if len(package.jobs) > 1:
+                                    if remote_dependencies_dict and package.name in remote_dependencies_dict[
+                                        'dependencies']:
+                                        remote_dependency = remote_dependencies_dict['dependencies'][package.name]
+                                        remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
+                                        package.set_job_dependency(remote_dependency_id)
+                                job.id = str(jobs_id[i])
+                                Log.info("{0} submitted", job.name)
+                                job.status = Status.SUBMITTED
+                                job.write_submit_time()
+                                if len(package.jobs) > 1:
+                                    if hasattr(package, "name"):
+                                        job_list.packages_dict[package.name] = package.jobs
+                                        from job.job import WrapperJob
+                                        wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
+                                                                 package.jobs,
+                                                                 package._wallclock, package._num_processors,
+                                                                 package.platform, as_conf)
+                                        job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                                    if remote_dependencies_dict and package.name in remote_dependencies_dict[
+                                        'name_to_id']:
+                                        remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+                                    if isinstance(package, JobPackageThread):
+                                        packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                            i += 1
 
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)

@@ -73,7 +73,7 @@ class SlurmPlatform(ParamikoPlatform):
         :rtype: list(int)
         """
 
-        self.send_file(self.get_submit_script())
+        self.send_file(self.get_submit_script(),False)
 
         #cmd = '(cd '+self.get_files_path()+';'+' ./'+os.path.basename(self._submit_script_path)+')'
 
