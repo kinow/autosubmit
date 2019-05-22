@@ -1144,6 +1144,7 @@ class Autosubmit:
                     raise
             if platform.type == "slurm" and not inspect and platform:
                 try:
+                    save = True
                     if len(packages_to_submit) > 0:
                         jobs_id = platform.submit_Script()
                         i = 0
