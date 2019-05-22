@@ -1071,8 +1071,7 @@ class Autosubmit:
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
 
-                    if Autosubmit.exit:
-                        return 2
+
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
                         job_list.save()
