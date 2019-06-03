@@ -88,6 +88,7 @@ from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
 from sets import Set
+from platforms.paramiko_platform import ParamikoTimeout
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
@@ -1109,11 +1110,13 @@ class Autosubmit:
         :rtype: bool
         """
         save = False
+
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
             if not inspect:
                 platform.open_submit_script()
+            valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
                     if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
@@ -1121,7 +1124,12 @@ class Autosubmit:
                         remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
                         package.set_job_dependency(remote_dependency_id)
                     if not only_wrappers:
-                        package.submit(as_conf, job_list.parameters, inspect)
+                        try:
+                            package.submit(as_conf, job_list.parameters, inspect)
+                            valid_packages_to_submit.append(package)
+                        except (IOError,OSError):
+                            #write error file
+                            continue
                     if inspect or not platform.type == "slurm":
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
@@ -1136,20 +1144,20 @@ class Autosubmit:
                         if isinstance(package, JobPackageThread):
                             packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                         save = True
-
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
-                    Log.error("{0} submission failed", platform.name)
+                    Log.error("{0} submission failed due to Unknown error", platform.name)
                     raise
+
             if platform.type == "slurm" and not inspect and platform:
                 try:
                     save = True
-                    if len(packages_to_submit) > 0:
+                    if len(valid_packages_to_submit) > 0:
                         jobs_id = platform.submit_Script()
                         i = 0
-                        for package in packages_to_submit:
+                        for package in valid_packages_to_submit:
                             for job in package.jobs:
                                 if len(package.jobs) > 1:
                                     if remote_dependencies_dict and package.name in remote_dependencies_dict[

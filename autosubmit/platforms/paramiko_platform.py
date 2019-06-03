@@ -3,12 +3,20 @@ from time import sleep
 import os
 import paramiko
 import datetime
-
+import time
 from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
+
+class ParamikoTimeout(Exception):
+    def __init__(self, message, errors):
+
+        # Call the base class constructor with the parameters it needs
+        super(ParamikoTimeout, self).__init__(message)
+        # Now for your custom code...
+        self.errors = errors
 
 
 class ParamikoPlatform(Platform):
@@ -33,10 +41,6 @@ class ParamikoPlatform(Platform):
         self._host_config = None
         self._host_config_id = None
         self.submit_cmd = ""
-
-
-
-
     @property
     def header(self):
         """
@@ -132,14 +136,18 @@ class ParamikoPlatform(Platform):
 
         try:
             #ftp = self._ssh.open_sftp()
+
             self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), os.path.basename(filename)))
             self._ftpChannel.chmod(os.path.join(self.get_files_path(), os.path.basename(filename)),
                       os.stat(os.path.join(self.tmp_path, filename)).st_mode)
             #ftp.close()
             return True
-        except BaseException as e:
-            Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
+        except (OSError,IOError) as er:
+            Log.warning('Can not send file {0} to {1} due file not found skipping until next iteration', os.path.join(self.tmp_path, filename),
                       os.path.join(self.get_files_path(), filename))
+            raise (IOError)
+        except BaseException as e:
+            Log.error('Unknown Error')
             raise
 
     def get_file(self, filename, must_exist=True, relative_path=''):
@@ -332,8 +340,8 @@ class ParamikoPlatform(Platform):
         while not self.send_command(cmd) and retries >= 0:
             retries -= 1
             Log.warning('Retrying check job command: {0}', cmd)
-            Log.error('Can not get job status for all jobs, retrying in 10 sec')
-            sleep(10)
+            Log.warning('Can not get job status for all jobs, retrying in 3 sec')
+            sleep(3)
         Log.debug('Successful check job command: {0}', cmd)
         if retries >= 0:
             in_queue_jobs=[]
@@ -374,6 +382,11 @@ class ParamikoPlatform(Platform):
                         job.update_status(remote_logs)
                         return
                     Log.info("Job {0} is QUEUING {1}", job.name, reason)
+        else:
+            for job in job_list:
+                job_status = Status.UNKNOWN
+                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {1}.', job_id, self.name, job_status)
+                job.new_status=job_status
 
     def get_checkjob_cmd(self, job_id):
         """
@@ -412,19 +425,28 @@ class ParamikoPlatform(Platform):
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             self._ssh_output = stdout.read().rstrip()
-            if stdout.channel.recv_exit_status() == 0:
-                stderr_readlines = stderr.readlines()
-                if len(stderr_readlines) > 0 and not ignore_log:
-                    Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
-                Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
-                return True
+            timeout=30
+            start = time.time()
+            while time.time() < start + timeout:
+                if stdout.channel.exit_status_ready():
+                    break
+                time.sleep(1)
             else:
-                if not ignore_log:
-                    stderr_readlines = stderr.readlines()
-                    Log.error('Command {0} in {1} failed with error message: {2}',
+                stderr_readlines = stderr.readlines()
+                if len(stderr_readlines) > 0:
+                    Log.warning('Command {0} in {1} failed with error message: {2}',
                             command, self.host, '\n'.join(stderr_readlines))
+                else:
+                    Log.warning('Command {0} in {1} timeout',command, self.host)
                 return False
+
+            stderr_readlines = stderr.readlines()
+            if len(stderr_readlines) > 0 and not ignore_log:
+                Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+            Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
+            return True
         except BaseException as e:
+
             Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)
             return False
 
