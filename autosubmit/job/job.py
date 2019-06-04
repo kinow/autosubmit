@@ -532,14 +532,14 @@ class Job(object):
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
-            self.write_start_time(self.status == Status.COMPLETED)
-        else:
-            if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
-                self.write_end_time(self.status == Status.COMPLETED)
-        if self.local_logs != self.remote_logs:
-            self.synchronize_logs()  # unifying names for log files
-        if copy_remote_logs:
-            self.platform.get_logs_files(self.expid, self.remote_logs)
+            self.write_start_time()
+
+        if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
+            self.write_end_time(self.status == Status.COMPLETED)
+            if self.local_logs != self.remote_logs:
+                self.synchronize_logs()  # unifying names for log files
+            if copy_remote_logs:
+                self.platform.get_logs_files(self.expid, self.remote_logs)
         return self.status
 
     def update_children_status(self):
@@ -812,7 +812,7 @@ class Job(object):
         os.chmod(os.path.join(self._tmp_path, script_name), 0o775)
         return script_name
 
-    def check_script(self, as_conf, parameters,only_generate=False):
+    def check_script(self, as_conf, parameters,show_logs=False):
         """
         Checks if script is well formed
 
@@ -833,7 +833,7 @@ class Job(object):
         # Check if the variables in the templates are defined in the configurations
         if not out:
             self.undefined_variables = set(variables) - set(parameters)
-            if not only_generate:
+            if show_logs:
                 Log.warning("The following set of variables to be substituted in template script is not part of "
                         "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
 
@@ -856,7 +856,7 @@ class Job(object):
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
 
-    def write_start_time(self, completed):
+    def write_start_time(self):
         """
         Writes start date and time to TOTAL_STATS file
         :return: True if succesful, False otherwise
@@ -873,19 +873,6 @@ class Job(object):
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
-        #END AND START
-        end_time = self.check_end_time()
-        if end_time > 0:
-            # noinspection PyTypeChecker
-            f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
-        else:
-            f.write(date2str(datetime.datetime.now(), 'S'))
-        f.write(' ')
-        if completed:
-            f.write('COMPLETED')
-        else:
-            f.write('FAILED')
-
         return True
 
     def write_end_time(self, completed):

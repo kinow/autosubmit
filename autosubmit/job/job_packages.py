@@ -80,11 +80,13 @@ class JobPackageBase(object):
             #if job.check.lower() == Job.CHECK_ON_SUBMISSION:
             #    if not job.check_script(configuration, parameters):
             #        raise WrongTemplateException(job.name)
-            if only_generate:
-                job.check_script(configuration, parameters,only_generate)
+            #if only_generate:
+            #    job.check_script(configuration, parameters,only_generate)
             job.update_parameters(configuration, parameters)
             # looking for directives on jobs
             self._custom_directives = self._custom_directives | set(job.custom_directives)
+            if only_generate:
+                job.status = Status.COMPLETED
         if only_generate:
             self._create_scripts(configuration)
         else:

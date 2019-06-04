@@ -71,6 +71,7 @@ class JobList:
 
         self.packages_id = dict()
         self.job_package_map = dict()
+        self.sections_checked = set()
 
     @property
     def expid(self):
@@ -920,15 +921,21 @@ class JobList:
         out = True
         #sections_checked = set()
         for job in self._job_list:
-            #if job.section in sections_checked:
-            #    continue
+
             if job.check.lower() != 'true':
-                Log.warning('Template {0} will not be checked'.format(job.section))
+                show_logs = False
+                if job.section not in self.sections_checked:
+                    Log.warning('Template {0} will be checked without logs'.format(job.section))
+            elif job.section in self.sections_checked:
+                show_logs = False
             else:
-                if not job.check_script(as_conf, self.parameters):
-                    out = False
-                    #Log.warning("Invalid parameter substitution in {0} template", job.section)
-            #sections_checked.add(job.section)
+                show_logs = True
+
+            if not job.check_script(as_conf, self.parameters,show_logs):
+                out = False
+                if show_logs:
+                    Log.warning("Invalid parameter substitution in {0} template", job.section)
+            self.sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")
         else:

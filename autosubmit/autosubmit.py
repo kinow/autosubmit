@@ -56,7 +56,6 @@ from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
 
-
 sys.path.insert(0, os.path.abspath('.'))
 import saga
 # noinspection PyPackageRequirements
@@ -731,6 +730,7 @@ class Autosubmit:
         job_list_original = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         job_list = copy.deepcopy(job_list_original)
         job_list.packages_dict = {}
+
         Log.debug("Length of the jobs list: {0}", len(job_list))
 
         # variables to be updated on the fly
@@ -820,6 +820,8 @@ class Autosubmit:
                 job.status=Status.WAITING
 
             Autosubmit.generate_scripts_andor_wrappers(as_conf,job_list, jobs,packages_persistence,False)
+
+
         if len(jobs_cw) >0:
             referenced_jobs_to_remove = set()
             for job in jobs_cw:
@@ -854,19 +856,11 @@ class Autosubmit:
             job.platform = submitter.platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
-        ## case setstatus
+        job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
-            for jobready in job_list.get_ready():
-                jobready.status=Status.COMPLETED
-            if as_conf.get_wrapper_type() != "none":
-                #for platform in platforms_to_test:
-                for wrapper_id in job_list.job_package_map:
-                    job_list.job_package_map[wrapper_id].status=Status.COMPLETED
-                    for innerjob in job_list.job_package_map[wrapper_id].job_list:
-                        innerjob.status=Status.COMPLETED
 
             job_list.update_list(as_conf, False)
 
@@ -1126,6 +1120,7 @@ class Autosubmit:
                     if not only_wrappers:
                         try:
                             package.submit(as_conf, job_list.parameters, inspect)
+
                             valid_packages_to_submit.append(package)
                         except (IOError,OSError):
                             #write error file
