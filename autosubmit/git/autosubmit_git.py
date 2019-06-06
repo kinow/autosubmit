@@ -90,7 +90,6 @@ class AutosubmitGit:
         dirname_path = as_conf.get_project_dir()
         if path.isdir(dirname_path):
             Log.debug("Checking git directory status...")
-            Log.info("test")
             if path.isdir(os.path.join(dirname_path, '.git')):
                 try:
                     output = subprocess.check_output("cd {0}; git diff-index HEAD --".format(dirname_path),
