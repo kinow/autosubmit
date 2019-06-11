@@ -820,8 +820,6 @@ class Autosubmit:
                 job.status=Status.WAITING
 
             Autosubmit.generate_scripts_andor_wrappers(as_conf,job_list, jobs,packages_persistence,False)
-
-
         if len(jobs_cw) >0:
             referenced_jobs_to_remove = set()
             for job in jobs_cw:
@@ -856,11 +854,20 @@ class Autosubmit:
             job.platform = submitter.platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
-        job_list.check_scripts(as_conf)
+        ## case setstatus
         job_list.update_list(as_conf, False)
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
+            for jobready in job_list.get_ready():
+                jobready.status=Status.COMPLETED
+            if as_conf.get_wrapper_type() != "none":
+                for platform in platforms_to_test:
+                    queuing_jobs = job_list.get_in_queue_grouped_id(platform)
+                    for wrapper_id in job_list.job_package_map:
+                        job_list.job_package_map[wrapper_id].status=Status.COMPLETED
+                        for innerjob in job_list.job_package_map[wrapper_id].job_list:
+                            innerjob.status=Status.COMPLETED
 
             job_list.update_list(as_conf, False)
 
@@ -1113,10 +1120,13 @@ class Autosubmit:
             valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
-                    if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
-                        remote_dependency = remote_dependencies_dict['dependencies'][package.name]
-                        remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
-                        package.set_job_dependency(remote_dependency_id)
+                    if hasattr(package, "name"):
+                        if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
+                            remote_dependency = remote_dependencies_dict['dependencies'][package.name]
+                            remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
+                            package.set_job_dependency(remote_dependency_id)
+
+
                     if not only_wrappers:
                         try:
                             package.submit(as_conf, job_list.parameters, inspect)
@@ -1134,8 +1144,8 @@ class Autosubmit:
                                                      package._wallclock, package._num_processors,
                                                      package.platform, as_conf)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                        if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                            remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+                            if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
+                                remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
                         if isinstance(package, JobPackageThread):
                             packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                         save = True
@@ -1628,12 +1638,12 @@ class Autosubmit:
                     error = True
                     break
 
-                as_conf.set_new_user(platform[3], as_conf.get_migrate_user_to(platform))
+                as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
                 if as_conf.get_migrate_project_to(platform):
                     Log.info("Project in platform configuration file successfully updated to {0}",
                              as_conf.get_migrate_user_to(platform))
                     backup_conf.append([platform, as_conf.get_current_user(platform), as_conf.get_current_project(platform)])
-                    as_conf.set_new_project(platform[3], as_conf.get_migrate_project_to(platform))
+                    as_conf.set_new_project(platform, as_conf.get_migrate_project_to(platform))
 
                 else:
                     Log.warning("optional PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
@@ -1644,19 +1654,29 @@ class Autosubmit:
                     if p.root_dir != p.temp_dir or len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
                         Log.info("Converting abs symlink to relative")
-                        #find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh #todo
+                        #find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh
 
                         Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform) #dummy
-                        command= "find " + p.root_dir +" -type l -lname '/*' -printf ' ln -sf  \"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" \\n' "
+                        #command = "find " + p.root_dir + " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n'"
+                        if p.root_dir.find(experiment_id) < 0:
+                            Log.error("(Aborting) it is not safe to change symlinks in {0} due an invalid expid",p.root_dir)
+                            error=True
+                            break
+                        command = "find " + p.root_dir + " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n' "
                         try:
-                            p.send_command(command)
+                            p.send_command(command,False)
+                            if p.get_ssh_output().startswith("var="):
+                                p.send_command(p.get_ssh_output(),False)
                         except IOError:
                             Log.debug("The platform {0} does not contain absolute symlinks", platform)
                         except BaseException:
-                            Log.warning("Absolute symlinks failed to convert")
+                            Log.warning("Absolute symlinks failed to convert, check user in platform.conf")
+                            error = True
+                            break
 
                         Log.info("Moving remote files/dirs on {0}", platform)
-                        Log.info("Moving from {0} to {1}", os.path.join(p.root_dir),os.path.join(p.temp_dir, experiment_id))
+
+                        Log.info("Moving from {0} to {1}",p.root_dir,os.path.join(p.temp_dir, experiment_id))
                         try:
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id),True):
                                 Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
@@ -1704,7 +1724,7 @@ class Autosubmit:
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
-            if not Autosubmit.unarchive(experiment_id):
+            if not Autosubmit.unarchive(experiment_id,True):
                 Log.critical("The experiment cannot be picked up")
                 return False
             Log.info("Local files/dirs have been successfully picked up")
@@ -1767,7 +1787,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'check_exp.log')
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'check_exp.log')
         Log.set_file(log_file)
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
@@ -1816,7 +1836,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'describe_exp.log')
+        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'describe_exp.log')
         Log.set_file(log_file)
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
@@ -2277,7 +2297,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def unarchive(experiment_id):
+    def unarchive(experiment_id,migrate=False):
         """
         Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
@@ -2319,12 +2339,12 @@ class Autosubmit:
             return False
 
         Log.info("Unpacking finished")
-
-        try:
-            os.remove(archive_path)
-        except Exception as e:
-            Log.error("Can not remove archived file folder: {0}".format(e))
-            return False
+        if not migrate:
+            try:
+                os.remove(archive_path)
+            except Exception as e:
+                Log.error("Can not remove archived file folder: {0}".format(e))
+                return False
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)
         return True

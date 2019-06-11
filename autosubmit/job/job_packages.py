@@ -77,9 +77,9 @@ class JobPackageBase(object):
 
     def submit(self, configuration, parameters,only_generate=False):
         for job in self.jobs:
-            #if job.check.lower() == Job.CHECK_ON_SUBMISSION:
-            #    if not job.check_script(configuration, parameters):
-            #        raise WrongTemplateException(job.name)
+            if job.check.lower() == Job.CHECK_ON_SUBMISSION:
+                if not job.check_script(configuration, parameters,True):
+                    raise WrongTemplateException(job.name)
             #if only_generate:
             #    job.check_script(configuration, parameters,only_generate)
             job.update_parameters(configuration, parameters)
@@ -219,8 +219,7 @@ class JobPackageArray(JobPackageBase):
         package_id = self.platform.submit_job(None, self._common_script)
 
         if package_id is None:
-            return
-
+            raise Exception('Submission failed')
 
         for i in range(1, len(self.jobs) + 1):
             Log.info("{0} submitted", self.jobs[i - 1].name)
@@ -318,7 +317,7 @@ class JobPackageThread(JobPackageBase):
         package_id = self.platform.submit_job(None, self._common_script)
 
         if package_id is None:
-            return
+            raise Exception('Submission failed')
 
         for i in range(1, len(self.jobs) + 1):
             Log.info("{0} submitted", self.jobs[i - 1].name)

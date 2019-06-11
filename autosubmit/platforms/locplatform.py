@@ -89,11 +89,12 @@ class LocalPlatform(ParamikoPlatform):
     def connect(self):
         return True
 
-    def send_command(self, command):
+    def send_command(self, command,ignore_log=False):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
-            Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
+            if not ignore_log:
+                Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
             return False
         Log.debug("Command '{0}': {1}", command, output)
         self._ssh_output = output

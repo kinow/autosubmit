@@ -244,13 +244,25 @@ class AutosubmitConfig(object):
         :param section: platform name
         :type: str
         """
-        content = open(self._platforms_parser_file).read()
-
-        if re.search(section, content):
-            old_user = self.get_current_user(self.get_platform())
-            content = content.replace(re.search(r'[^#]\bUSER\b =.*', content).group(0)[1:], "USER = " + new_user)
-            content = content.replace(re.search(r'[^#]\bUSER_TO\b =.*', content).group(0)[1:], "USER_TO = " + old_user)
+        with open(self._platforms_parser_file) as p_file:
+            contentLine = p_file.readline()
+            contentToMod=""
+            content=""
+            mod=False
+            while contentLine:
+                if re.search(section, contentLine):
+                    mod=True
+                if mod:
+                    contentToMod += contentLine
+                else:
+                    content += contentLine
+                contentLine = p_file.readline()
+        if mod:
+            old_user = self.get_current_user(section)
+            contentToMod = contentToMod.replace(re.search(r'[^#]\bUSER\b =.*', contentToMod).group(0)[1:], "USER = " + new_user)
+            contentToMod = contentToMod.replace(re.search(r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
         open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
 
     def get_migrate_project_to(self, section):
         """
@@ -259,7 +271,7 @@ class AutosubmitConfig(object):
         :return: migrate project to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower() #TODO DOC
+        return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower()
 
     def set_new_project(self, section, new_project):
         """
@@ -268,12 +280,26 @@ class AutosubmitConfig(object):
         :param section: platform name
         :type: str
         """
-        content = open(self._platforms_parser_file).read()
-        if re.search(section, content):
-            old_project = self.get_current_project(self.get_platform())
-            content = content.replace(re.search(r"[^#]\bPROJECT\b =.*", content).group(0)[1:], "PROJECT = " + new_project)
-            content = content.replace(re.search(r"[^#]\bPROJECT_TO\b =.*", content).group(0)[1:], "PROJECT_TO = " + old_project)
+        with open(self._platforms_parser_file) as p_file:
+            contentLine = p_file.readline()
+            contentToMod=""
+            content=""
+            mod=False
+            while contentLine:
+                if re.search(section, contentLine):
+                    mod=True
+                if mod:
+                    contentToMod += contentLine
+                else:
+                    content += contentLine
+                contentLine = p_file.readline()
+        if mod:
+            old_project = self.get_current_project(section)
+            contentToMod = contentToMod.replace(re.search(r"[^#]\bPROJECT\b =.*", contentToMod).group(0)[1:], "PROJECT = " + new_project)
+            contentToMod = contentToMod.replace(re.search(r"[^#]\bPROJECT_TO\b =.*", contentToMod).group(0)[1:], "PROJECT_TO = " + old_project)
         open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
+
 
     def get_custom_directives(self, section):
         """
@@ -993,8 +1019,9 @@ class AutosubmitConfig(object):
          :return: maximum number of jobs (or total jobs)
          :rtype: string
          """
-        return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
+        #return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
 
+        return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
     def get_wrapper_check_time(self):
         """
          Returns time to check the status of jobs in the wrapper

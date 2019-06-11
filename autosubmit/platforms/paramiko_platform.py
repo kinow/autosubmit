@@ -304,7 +304,7 @@ class ParamikoPlatform(Platform):
             retries -= 1
             Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
-            sleep(10)
+            sleep(5)
 
         if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
