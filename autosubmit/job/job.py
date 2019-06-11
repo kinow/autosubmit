@@ -1010,7 +1010,7 @@ class WrapperJob(Job):
         elif status == Status.COMPLETED:
             self.check_inner_jobs_completed(self.job_list)
         elif status == Status.RUNNING:
-            time.sleep(3z)
+            time.sleep(3)
             Log.debug('Checking inner jobs status')
             self.check_inner_job_status()
 
