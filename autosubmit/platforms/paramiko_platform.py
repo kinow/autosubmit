@@ -308,7 +308,7 @@ class ParamikoPlatform(Platform):
 
         if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
-            job_status = self.parse_job_output(self.get_ssh_output())
+            job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retries == 0:
                 job_status = Status.COMPLETED
@@ -442,11 +442,13 @@ class ParamikoPlatform(Platform):
                 readq, _, _ = select.select([stdout.channel], [], [], timeout)
                 for c in readq:
                     if c.recv_ready():
-                        stdout_chunks.append(stdout.channel.recv(len(c.in_buffer)).rstrip())
+                        stdout_chunks.append(stdout.channel.recv(len(c.in_buffer)))
+                        #stdout_chunks.append(" ")
                         got_chunk = True
                     if c.recv_stderr_ready():
                         # make sure to read stderr to prevent stall
-                        stderr_readlines.append(stderr.channel.recv_stderr(len(c.in_stderr_buffer)).rstrip())
+                        stderr_readlines.append(stderr.channel.recv_stderr(len(c.in_stderr_buffer)))
+                        stdout_chunks.append(" ")
                         got_chunk = True
                 if not got_chunk and stdout.channel.exit_status_ready() and not stderr.channel.recv_stderr_ready() and not stdout.channel.recv_ready():
                     # indicate that we're not going to read from this channel anymore
@@ -461,7 +463,7 @@ class ParamikoPlatform(Platform):
             if len(stdout_chunks) > 0:
                 for s in stdout_chunks:
                     if s is not None:
-                        self._ssh_output += str(s)
+                        self._ssh_output += s
             if len(stderr_readlines) > 0:
                 Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                 if len(stdout_chunks) <= 0:
