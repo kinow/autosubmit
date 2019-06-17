@@ -855,20 +855,13 @@ class Autosubmit:
             # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
         ## case setstatus
+        job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
             for jobready in job_list.get_ready():
                 jobready.status=Status.COMPLETED
-            if as_conf.get_wrapper_type() != "none":
-                for platform in platforms_to_test:
-                    queuing_jobs = job_list.get_in_queue_grouped_id(platform)
-                    for wrapper_id in job_list.job_package_map:
-                        job_list.job_package_map[wrapper_id].status=Status.COMPLETED
-                        for innerjob in job_list.job_package_map[wrapper_id].job_list:
-                            innerjob.status=Status.COMPLETED
-
             job_list.update_list(as_conf, False)
 
 

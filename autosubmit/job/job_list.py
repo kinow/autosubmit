@@ -877,7 +877,7 @@ class JobList:
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     save = True
-                    Log.debug("Resetting job: {0} status to: READY (all parents completed)...".format(job.name))
+                    Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
         Log.debug('Update finished')
 
         return save
@@ -919,9 +919,10 @@ class JobList:
         """
         Log.info("Checking scripts...")
         out = True
-        #sections_checked = set()
-        for job in self._job_list:
 
+        for job in self._job_list:
+            if job.check.lower() == 'on_submission':
+                continue
             if job.check.lower() != 'true':
                 show_logs = False
                 if job.section not in self.sections_checked:

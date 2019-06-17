@@ -820,28 +820,34 @@ class Job(object):
         :type parameters: dict
         :param as_conf: configuration file
         :type as_conf: AutosubmitConfig
+        :param show_logs: Display output
+        :type show_logs: Bool
         :return: true if not problem has been detected, false otherwise
         :rtype: bool
         """
+
+
+        out=False
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
+        if template_content is not False:
 
-        variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
-        variables = [variable[1:-1] for variable in variables]
-        out = set(parameters).issuperset(set(variables))
+            variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
+            variables = [variable[1:-1] for variable in variables]
+            out = set(parameters).issuperset(set(variables))
 
-        # Check if the variables in the templates are defined in the configurations
-        if not out:
-            self.undefined_variables = set(variables) - set(parameters)
+            # Check if the variables in the templates are defined in the configurations
+            if not out:
+                self.undefined_variables = set(variables) - set(parameters)
+                if show_logs:
+                    Log.warning("The following set of variables to be substituted in template script is not part of "
+                            "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
+
+            # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
-                Log.warning("The following set of variables to be substituted in template script is not part of "
-                        "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
-
-        # Check which variables in the proj.conf are not being used in the templates
-        if not set(variables).issuperset(set(parameters)):
-            Log.debug("The following set of variables are not being used in the templates: {0}",
-                        str(set(parameters)-set(variables)))
-
+                if not set(variables).issuperset(set(parameters)):
+                    Log.debug("The following set of variables are not being used in the templates: {0}",
+                                str(set(parameters)-set(variables)))
         return out
 
     def write_submit_time(self):

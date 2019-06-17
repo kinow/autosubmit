@@ -212,6 +212,8 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             #ftp.close()
             return True
+        except IOError:
+            return False
         except BaseException as e:
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
