@@ -34,6 +34,7 @@ class DbManager(object):
         self.connection = sqlite3.connect(self._get_db_filepath())
         if is_new:
             self._initialize_database()
+        os.chmod(self._get_db_filepath(),0664)
 
     def disconnect(self):
         """

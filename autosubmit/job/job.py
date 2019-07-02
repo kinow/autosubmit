@@ -1114,7 +1114,7 @@ class WrapperJob(Job):
     def _check_wrapper_status(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         if not self.running_jobs_start and not_finished_jobs:
-            self.status = self.platform.check_job(self.id)
+            self.status = self.platform.check_job(self)
             if self.status == Status.RUNNING:
                 self._check_running_jobs()
                 if not self.running_jobs_start:

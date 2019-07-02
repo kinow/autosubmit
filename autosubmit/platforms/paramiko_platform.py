@@ -34,6 +34,7 @@ class ParamikoPlatform(Platform):
         :param name:
         """
         Platform.__init__(self, expid, name, config)
+
         self._default_queue = None
         self.job_status = None
         self._ssh = None
@@ -43,6 +44,9 @@ class ParamikoPlatform(Platform):
         self._host_config = None
         self._host_config_id = None
         self.submit_cmd = ""
+        self._ftpChannel = None
+
+
     @property
     def header(self):
         """
@@ -93,7 +97,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = self._ssh.open_sftp()
             return True
         except IOError as e:
-            Log.error('Can not create ssh connection to {0}: {1}', self.host, e.strerror)
+            Log.error('Can not create ssh or sftp connection to {0}: {1}', self.host, e.strerror)
             return False
 
     def check_completed_files(self, sections=None):
@@ -450,7 +454,7 @@ class ParamikoPlatform(Platform):
                     if c.recv_stderr_ready():
                         # make sure to read stderr to prevent stall
                         stderr_readlines.append(stderr.channel.recv_stderr(len(c.in_stderr_buffer)))
-                        stdout_chunks.append(" ")
+                        #stdout_chunks.append(" ")
                         got_chunk = True
                 if not got_chunk and stdout.channel.exit_status_ready() and not stderr.channel.recv_stderr_ready() and not stdout.channel.recv_ready():
                     # indicate that we're not going to read from this channel anymore
@@ -466,10 +470,13 @@ class ParamikoPlatform(Platform):
                 for s in stdout_chunks:
                     if s is not None:
                         self._ssh_output += s
-            if len(stderr_readlines) > 0:
-                Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
-                if len(stdout_chunks) <= 0:
+            for errorLine in stderr_readlines:
+                if errorLine.find("submission failed") != -1:
+                    Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                     return False
+            if not ignore_log:
+                Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+
             Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
         except BaseException as e:

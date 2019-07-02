@@ -65,7 +65,7 @@ class SlurmPlatform(ParamikoPlatform):
 
     def submit_Script(self):
         """
-        Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
+        Sends a SubmitfileScript, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
@@ -82,6 +82,7 @@ class SlurmPlatform(ParamikoPlatform):
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
             return jobs_id
         else:
+
             return None
     def update_cmds(self):
         """
@@ -118,6 +119,8 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     def get_submitted_job_id(self, outputlines):
+        if outputlines.find("failed") != -1:
+            raise Exception(outputlines)
         jobs_id = []
         for output in outputlines.splitlines():
             jobs_id.append(int(output.split(' ')[3]))
@@ -142,8 +145,9 @@ class SlurmPlatform(ParamikoPlatform):
 
     def parse_queue_reason(self, output,job_id):
         reason =[x.split(',')[1] for x in output.splitlines() if x.split(',')[0] == str(job_id)]
-
-        return reason[0]
+        if len(reason) > 0:
+            return reason[0]
+        return reason
         # output = output.split('\n')
         # if len(output) > 1:
         #     return output[1]
