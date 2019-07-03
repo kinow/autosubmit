@@ -425,8 +425,8 @@ class JobPackagerHorizontal(object):
             self.job_list = next_section_list
             package_jobs = self.build_horizontal_package(horizontal_vertical)
 
-            if package_jobs:
-                if not self.add_sectioncombo_processors(self.total_processors):
+            if package_jobs :
+                if not self.add_sectioncombo_processors(self.total_processors) and horizontal_vertical:
                     return packages
                 if max_wallclock:
                     total_wallclock = sum_str_hours(total_wallclock, wallclock)
