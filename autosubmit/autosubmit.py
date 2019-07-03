@@ -726,6 +726,8 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                      "job_packages_" + expid)
+        os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)
+
         packages_persistence.reset_table(True)
         job_list_original = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
         job_list = copy.deepcopy(job_list_original)
@@ -959,6 +961,7 @@ class Autosubmit:
                                         "job_packages_" + expid)
 
                 if as_conf.get_wrapper_type() != 'none':
+                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0664)
                     packages = packages_persistence.load()
                     for (exp_id, package_name, job_name) in packages:
                         if package_name not in job_list.packages_dict:
@@ -1310,6 +1313,7 @@ class Autosubmit:
         if as_conf.get_wrapper_type() != 'none' and check_wrapper:
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
+            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
             job_list_wrappers = copy.deepcopy(job_list)
@@ -2764,6 +2768,7 @@ class Autosubmit:
                 if as_conf.get_wrapper_type() != 'none' and check_wrapper:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                                  "job_packages_" + expid)
+                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0664)
                     packages_persistence.reset_table(True)
                     referenced_jobs_to_remove = set()
                     job_list_wrappers = copy.deepcopy(job_list)
