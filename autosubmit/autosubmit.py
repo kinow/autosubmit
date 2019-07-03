@@ -862,8 +862,7 @@ class Autosubmit:
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
-            #for jobready in job_list.get_ready():
-            #    jobready.status=Status.COMPLETED
+
             job_list.update_list(as_conf, False)
 
 
