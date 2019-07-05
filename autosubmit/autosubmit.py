@@ -796,7 +796,7 @@ class Autosubmit:
                             for job in job_list.get_job_list():
                                 if job.section == ft:
                                     jobs.append(job)
-
+#TOERASE
                     elif lst:
                         jobs_lst = lst.split()
 
