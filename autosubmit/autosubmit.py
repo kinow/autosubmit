@@ -2669,7 +2669,61 @@ class Autosubmit:
                     Log.critical('Can not run with invalid configuration')
                     return False
 
+                
+                #Verifying job sections, if filter_section has been set:
+                section_no_found = False
+                section_no_foundList = list()
+                if filter_section is not None: 
+                    if len(filter_section.split()) > 0:                    
+                        jobSections = as_conf.get_jobs_sections()
+                        for section in filter_section.split():
+                            if section not in jobSections:
+                                section_no_found = True
+                                section_no_foundList.append(section)
+                if section_no_found == True:
+                    Log.warning("Specified section(s) : [%s] not found in the experiment %s. \nProcess stopped. Comparison is case sensitive." % (map(str,section_no_foundList), expid))
+                    return False
+                
+                        
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+
+                #Verifying list of jobs, if filter_list has been set:
+                #Seems that load_job_list call is necessary before verification is executed
+                #Not case sensitive
+                job_no_found = False
+                job_no_foundList = list()
+                #Building a simple list of job names
+                jobs = list()
+                if job_list is not None:                    
+                    for job in job_list.get_job_list():
+                        jobs.append(job.name)
+
+                if lst is not None:
+                    #print(jobs)
+                    if len(lst.split()) > 0:
+                        for sentJob in lst.split():
+                            if sentJob not in jobs:
+                                job_no_found = True
+                                job_no_foundList.append(sentJob)
+
+                if job_no_found == True:
+                    Log.warning("Specified job(s) : [%s] not found in the experiment %s. \nProcess stopped. Comparison is case sensitive." % (map(str,job_no_foundList), expid))
+                    return False
+
+                #Verifying format of fc input filter_chunks. Simple format verification.
+                incorrect_fc_format = False
+                if filter_chunks is not None:
+                    count_open = filter_chunks.count("[")
+                    count_close = filter_chunks.count("]")
+                    start_sentence = filter_chunks[0]
+                    end_sentence = filter_chunks[-1]
+                    #print(start_sentence, end_sentence)
+                    if count_open == 0 or count_close == 0 or count_open != count_close or start_sentence != "[" or end_sentence != "]":
+                        Log.warning('Format for -fc chunk list input is not correct. \nProcess stopped. Review format: "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
+                        return False
+
+
+                #job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                 jobs_filtered =[]
                 final_status = Autosubmit._get_status(final)
                 if filter_section or filter_chunks:
