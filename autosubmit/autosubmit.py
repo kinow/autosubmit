@@ -522,13 +522,14 @@ class Autosubmit:
             except:
                 pass
             finally:
-                Log.info("Current owner '%s' of experiment %s does not exist anymore." % (currentOwner, expid_delete))
+                if currentOwner_id == 0:
+                    Log.info("Current owner '{0}' of experiment {1} does not exist anymore.", currentOwner, expid_delete)
 
             # Deletion workflow continues as usual, a disjunction is included for the case when 
             # force is sent, and user is eadmin
             if currentOwner_id == os.getlogin() or (force and my_user == id_eadmin):
                 if (force and my_user == id_eadmin):
-                    Log.info("Preparing deletion of experiment %s from owner: %s, as eadmin." % (expid_delete,currentOwner))
+                    Log.info("Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                 try:
                     Log.info("Removing experiment directory...")
                     shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
@@ -540,7 +541,7 @@ class Autosubmit:
                 if ret:
                     Log.result("Experiment {0} deleted".format(expid_delete))
             else:                
-                Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
+                Log.critical("Current user is not the owner of the experiment. {0} can not be deleted!",expid_delete)
             return ret
 
     @staticmethod
@@ -690,7 +691,7 @@ class Autosubmit:
 
         if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
-                print('Enter Autosubmit._delete_expid %s' % expid)
+                Log.debug('Enter Autosubmit._delete_expid {0}', expid)
                 return Autosubmit._delete_expid(expid, force)
             else:
                 Log.info("Quitting...")
