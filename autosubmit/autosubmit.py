@@ -512,8 +512,21 @@ class Autosubmit:
             Log.info("Experiment directory does not exist.")
         else:
             ret = False
-            currentOwner = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
-            if currentOwner == os.getlogin() or (force and my_user == id_eadmin):
+
+            # Handling possible failure of retrieval of current owner data
+            currentOwner_id = 0
+            currentOwner = "empty"
+            try:
+                currentOwner = os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid
+                currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
+            except:
+                pass
+            finally:
+                Log.info("Current owner '%s' of experiment %s does not exist anymore." % (currentOwner, expid_delete))
+
+            # Deletion workflow continues as usual, a disjunction is included for the case when 
+            # force is sent, and user is eadmin
+            if currentOwner_id == os.getlogin() or (force and my_user == id_eadmin):
                 if (force and my_user == id_eadmin):
                     Log.info("Preparing deletion of experiment %s from owner: %s, as eadmin." % (expid_delete,currentOwner))
                 try:
@@ -529,7 +542,7 @@ class Autosubmit:
             else:                
                 Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
             return ret
-            
+
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
