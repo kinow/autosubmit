@@ -489,22 +489,35 @@ class Autosubmit:
             return False
 
     @staticmethod
-    def _delete_expid(expid_delete):
+    def _delete_expid(expid_delete, force):
         """
         Removes an experiment from path and database
+        If current user is eadmin and -f has been sent, it deletes regardless 
+        of experiment owner
 
         :type expid_delete: str
         :param expid_delete: identifier of the experiment to delete
+        :type force: boolean
+        :param force: True if the force flag has been sent
+        :return: True if succesfully deleted, False otherwise
+        :rtype: boolean
         """
+        # Read current user uid
+        my_user = os.getuid()
+        # Read eadmin user uid
+        id_eadmin = os.popen('id -u eadmin').read()        
+
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                                                           expid_delete)):
             Log.info("Experiment directory does not exist.")
         else:
-            Log.info("Removing experiment directory...")
             ret = False
-            if pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name == os.getlogin():
+            currentOwner = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
+            if currentOwner == os.getlogin() or (force and my_user == id_eadmin):
+                if (force and my_user == id_eadmin):
+                    Log.info("Preparing deletion of experiment %s from owner: %s, as eadmin." % (expid_delete,currentOwner))
                 try:
-
+                    Log.info("Removing experiment directory...")
                     shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                 except OSError as e:
                     Log.warning('Can not delete experiment folder: {0}', e)
@@ -513,9 +526,10 @@ class Autosubmit:
                 ret = delete_experiment(expid_delete)
                 if ret:
                     Log.result("Experiment {0} deleted".format(expid_delete))
-            else:
+            else:                
                 Log.warning("Current User is not the Owner {0} can not be deleted!",expid_delete)
             return ret
+            
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
         """
@@ -654,6 +668,7 @@ class Autosubmit:
         :returns: True if succesful, False if not
         :rtype: bool
         """
+
         log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'delete.log'.format(os.getuid()))
         try:
             Log.set_file(log_path)
@@ -662,7 +677,8 @@ class Autosubmit:
 
         if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
-                return Autosubmit._delete_expid(expid)
+                print('Enter Autosubmit._delete_expid %s' % expid)
+                return Autosubmit._delete_expid(expid, force)
             else:
                 Log.info("Quitting...")
                 return False
