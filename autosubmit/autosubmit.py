@@ -2674,14 +2674,15 @@ class Autosubmit:
                 section_not_found = False
                 section_not_foundList = list()
                 if filter_section is not None: 
-                    if len(filter_section.split()) > 0:                    
+                    if len(filter_section.split()) > 0:
                         jobSections = as_conf.get_jobs_sections()
                         for section in filter_section.split():
-                            if section not in jobSections:
+                            # Provided section is not an existing section or it is not the keyword 'Any'
+                            if section not in jobSections and (section != "Any"):
                                 section_not_found = True
                                 section_not_foundList.append(section)
                 if section_not_found == True:
-                    Log.critical("Specified section(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive.", map(str,section_not_foundList), expid)
+                    Log.critical("Specified section(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive.", section_not_foundList, expid)
                     return False
                 
                         
@@ -2701,25 +2702,14 @@ class Autosubmit:
                     #print(jobs)
                     if len(lst.split()) > 0:
                         for sentJob in lst.split():
-                            if sentJob not in jobs:
+                            # Provided job does not exist or it is not the keyword 'Any'
+                            if sentJob not in jobs and (sentJob != "Any"):
                                 job_not_found = True
                                 job_not_foundList.append(sentJob)
 
                 if job_not_found == True:
-                    Log.critical("Specified job(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive." % map(str,job_not_foundList), expid)
-                    return False
-
-                #Verifying format of fc input filter_chunks. Simple format verification.                
-                if filter_chunks is not None:
-                    count_open = filter_chunks.count("[")
-                    count_close = filter_chunks.count("]")
-                    start_sentence = filter_chunks[0]
-                    end_sentence = filter_chunks[-1]
-                    #print(start_sentence, end_sentence)
-                    if count_open == 0 or count_close == 0 or count_open != count_close or start_sentence != "[" or end_sentence != "]":
-                        Log.critical('Format for -fc chunk list input is not correct. \nProcess stopped. Review format: "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
-                        return False
-
+                    Log.critical("Specified job(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive.", job_not_foundList, expid)
+                    return False                
 
 
                 jobs_filtered =[]
@@ -2796,7 +2786,6 @@ class Autosubmit:
                         wrongExpid=jobs.__len__()-expidJoblist[expid]
                     if wrongExpid > 0:
                         Log.warning("There are {0} job.name with an invalid Expid",wrongExpid)
-
 
                     if jobs == 'Any':
                         for job in job_list.get_job_list():
