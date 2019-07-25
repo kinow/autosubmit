@@ -2670,46 +2670,78 @@ class Autosubmit:
                     return False
 
                 
-                #Verifying job sections, if filter_section has been set:
-                section_not_found = False
+                #Verifying job sections, if filter_section has been set:                
+                section_validation_error = False 
+                section_error = False
                 section_not_foundList = list()
-                if filter_section is not None: 
-                    if len(filter_section.split()) > 0:
-                        jobSections = as_conf.get_jobs_sections()
-                        for section in filter_section.split():
-                            # Provided section is not an existing section or it is not the keyword 'Any'
-                            if section not in jobSections and (section != "Any"):
-                                section_not_found = True
-                                section_not_foundList.append(section)
-                if section_not_found == True:
-                    Log.critical("Specified section(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive.", section_not_foundList, expid)
-                    return False
+                section_validation_message = "\n## Section Validation Message ##"
+                if filter_section is not None:
+                    countStart = filter_section.count('[') 
+                    countEnd = filter_section.count(']')
+                    if countStart > 1 or countEnd > 1:
+                        section_validation_error = True
+                        section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
+                    if section_validation_error == False:
+                        if len(str(filter_section).strip()) > 0:
+                            if len(filter_section.split()) > 0:
+                                jobSections = as_conf.get_jobs_sections()
+                                for section in filter_section.split():
+                                    # print(section)
+                                    # Provided section is not an existing section or it is not the keyword 'Any'
+                                    if section not in jobSections and (section != "Any"):                                                                
+                                        section_error = True
+                                        section_not_foundList.append(section)
+                        else:
+                            section_validation_error = True
+                            section_validation_message += "\n\tEmpty input. No changes performed."
+                    if section_validation_error == True or section_error == True:
+                        if section_error == True:
+                            section_validation_message += "\n\tSpecified section(s) : [" + str(section_not_foundList) + \
+                                "] not found in the experiment " + str(expid) + ".\n\tProcess stopped. Comparison is case sensitive."
+                        Log.info(section_validation_message)
+                        Log.critical("Error in the supplied input for -ft.")
+                        return False
                 
                         
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
 
                 #Verifying list of jobs, if filter_list has been set:
                 #Seems that load_job_list call is necessary before verification is executed
-                job_not_found = False
+                job_validation_error = False
+                job_error = False
                 job_not_foundList = list()
                 #Building a simple list of job names
+                job_validation_message = "\n## Job Validation Message ##"
                 jobs = list()
-                if job_list is not None:                    
-                    for job in job_list.get_job_list():
-                        jobs.append(job.name)
+                if job_list is not None and lst is not None:  
+                    countStart = lst.count('[') 
+                    countEnd = lst.count(']')                    
+                    if countStart > 1 or countEnd > 1:
+                        job_validation_error = True
+                        job_validation_message += "\n\tList of jobs has a format error. Perhaps you were trying to use -fc instead."                  
+                    
+                    if job_validation_error == False:                        
+                        for job in job_list.get_job_list():
+                            jobs.append(job.name)
+                        if len(str(lst).strip()) > 0:
+                            if len(lst.split()) > 0:
+                                for sentJob in lst.split():
+                                    #print(sentJob)
+                                    # Provided job does not exist or it is not the keyword 'Any'
+                                    if sentJob not in jobs and (sentJob != "Any"):                                        
+                                        job_error = True
+                                        job_not_foundList.append(sentJob)
+                        else:
+                            job_validation_error = True
+                            job_validation_message += "\n\tEmpty input. No changes performed."
 
-                if lst is not None:
-                    #print(jobs)
-                    if len(lst.split()) > 0:
-                        for sentJob in lst.split():
-                            # Provided job does not exist or it is not the keyword 'Any'
-                            if sentJob not in jobs and (sentJob != "Any"):
-                                job_not_found = True
-                                job_not_foundList.append(sentJob)
-
-                if job_not_found == True:
-                    Log.critical("Specified job(s) : [{0}] not found in the experiment {1}. \nProcess stopped. Comparison is case sensitive.", job_not_foundList, expid)
-                    return False                
+                    if job_validation_error == True or job_error == True:
+                        if job_error == True:
+                            job_validation_message += "\n\tSpecified job(s) : [" + str(job_not_foundList) + "] not found in the experiment " + \
+                                 str(expid) + ". \n\tProcess stopped. Comparison is case sensitive."
+                        Log.info(job_validation_message)
+                        Log.critical("Error in the supplied input for -fl")
+                        return False   
 
 
                 jobs_filtered =[]
