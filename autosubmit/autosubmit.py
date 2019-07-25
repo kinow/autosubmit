@@ -2709,13 +2709,13 @@ class Autosubmit:
                     performed_changes = dict()
                     
                     # Starting Validation
-                    if len(selected_sections) == 0:
+                    if len(str(selected_sections).strip()) == 0:
                         filter_is_correct = False
                         validation_message += "\n\tMust include a section (job type). If you want to apply the changes to all sections, include 'Any'."                          
                     else:                                                    
                         for section in selected_sections: 
                             # Validating empty sections                           
-                            if len(section) == 0:
+                            if len(str(section).strip()) == 0:
                                 filter_is_correct = False
                                 validation_message += "\n\tEmpty sections are not accepted."
                                 break
