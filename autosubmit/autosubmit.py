@@ -2670,12 +2670,12 @@ class Autosubmit:
                     return False
 
                 
-                #Verifying job sections, if filter_section has been set:                
-                section_validation_error = False 
-                section_error = False
-                section_not_foundList = list()
-                section_validation_message = "\n## Section Validation Message ##"
+                # Validating job sections, if filter_section -ft has been set:                
                 if filter_section is not None:
+                    section_validation_error = False 
+                    section_error = False
+                    section_not_foundList = list()
+                    section_validation_message = "\n## Section Validation Message ##"
                     countStart = filter_section.count('[') 
                     countEnd = filter_section.count(']')
                     if countStart > 1 or countEnd > 1:
@@ -2687,7 +2687,7 @@ class Autosubmit:
                                 jobSections = as_conf.get_jobs_sections()
                                 for section in filter_section.split():
                                     # print(section)
-                                    # Provided section is not an existing section or it is not the keyword 'Any'
+                                    # Provided section is not an existing section or it is not the keyword 'Any'                                    
                                     if section not in jobSections and (section != "Any"):                                                                
                                         section_error = True
                                         section_not_foundList.append(section)
@@ -2705,15 +2705,14 @@ class Autosubmit:
                         
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
 
-                #Verifying list of jobs, if filter_list has been set:
-                #Seems that load_job_list call is necessary before verification is executed
-                job_validation_error = False
-                job_error = False
-                job_not_foundList = list()
-                #Building a simple list of job names
-                job_validation_message = "\n## Job Validation Message ##"
-                jobs = list()
-                if job_list is not None and lst is not None:  
+                # Validating list of jobs, if filter_list -fl has been set:
+                # Seems that Autosubmit.load_job_list call is necessary before verification is executed
+                if job_list is not None and lst is not None: 
+                    job_validation_error = False
+                    job_error = False
+                    job_not_foundList = list()
+                    job_validation_message = "\n## Job Validation Message ##"
+                    jobs = list() 
                     countStart = lst.count('[') 
                     countEnd = lst.count(']')                    
                     if countStart > 1 or countEnd > 1:
@@ -2740,8 +2739,63 @@ class Autosubmit:
                             job_validation_message += "\n\tSpecified job(s) : [" + str(job_not_foundList) + "] not found in the experiment " + \
                                  str(expid) + ". \n\tProcess stopped. Comparison is case sensitive."
                         Log.info(job_validation_message)
-                        Log.critical("Error in the supplied input for -fl")
+                        Log.critical("Error in the supplied input for -fl.")
                         return False   
+                    
+                # Validating fc if filter_chunks -fc has been set:
+                if filter_chunks is not None:
+                    fc_validation_message = "## -fc Validation Message ##"
+                    fc_filter_is_correct = True
+                    selected_sections = filter_chunks.split(",")[1:]
+                    selected_formula = filter_chunks.split(",")[0]
+                    current_sections = as_conf.get_jobs_sections()
+                    fc_deserializedJson = object()
+                    # Starting Validation
+                    if len(str(selected_sections).strip()) == 0:
+                        fc_filter_is_correct = False
+                        fc_validation_message += "\n\tMust include a section (job type)."                          
+                    else:                                                    
+                        for section in selected_sections: 
+                            # section = section.strip()
+                            # Validating empty sections                           
+                            if len(str(section).strip()) == 0:
+                                fc_filter_is_correct = False
+                                fc_validation_message += "\n\tEmpty sections are not accepted."
+                                break
+                            # Validating existing sections
+                            # Retrieve experiment data
+                            
+                            if section not in current_sections and section != "Any":
+                                fc_filter_is_correct = False
+                                fc_validation_message += "\n\tSection " + section + " does not exist in experiment. Remember not to include blank spaces."
+                            
+                    # Validating chunk formula                    
+                    if len(selected_formula) == 0:
+                        fc_filter_is_correct = False
+                        fc_validation_message += "\n\tA formula for chunk filtering has not been provided."
+
+                    # If everything is fine until this point
+                    if fc_filter_is_correct == True:
+                        # Retrieve experiment data
+                        current_dates = as_conf._exp_parser.get_option('experiment','DATELIST','').split()
+                        current_members = as_conf.get_member_list()
+                        # Parse json
+                        fc_deserializedJson = json.loads(Autosubmit._create_json(selected_formula))
+                        for startingDate in fc_deserializedJson['sds']:
+                            if startingDate['sd'] not in current_dates:
+                                fc_filter_is_correct = False
+                                fc_validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
+                            for member in startingDate['ms']:
+                                if member['m'] not in current_members and member['m'] != "Any":
+                                    fc_filter_is_correct = False
+                                    fc_validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
+                    
+                     # Ending validation
+                    if fc_filter_is_correct == False:
+                        Log.info(fc_validation_message)
+                        Log.critical("Error in the supplied input for -fc.")
+                        return False
+                
 
 
                 jobs_filtered =[]
