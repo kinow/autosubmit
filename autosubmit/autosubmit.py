@@ -71,6 +71,7 @@ from job.job_package_persistence import JobPackagePersistence
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_list_persistence import JobListPersistencePkl
 from job.job_grouping import JobGrouping
+# from API.testAPI import Monitor
 # noinspection PyPackageRequirements
 from bscearth.utils.log import Log
 from database.db_common import create_db
@@ -371,6 +372,7 @@ class Autosubmit:
             subparser.add_argument('-expand_status', type=str, help='Select the statuses to be expanded')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
             subparser.add_argument('-cw', '--check_wrapper', action='store_true', default=False, help='Generate possible wrapper in the current workflow')
+            subparser.add_argument('-d', '--detail', action='store_true', default=False, help='Generate detailed view of changes')
 
 
             # Test Case
@@ -462,7 +464,7 @@ class Autosubmit:
             elif args.command == 'setstatus':
                 return Autosubmit.set_status(args.expid, args.noplot, args.save, args.status_final, args.list,
                                              args.filter_chunks, args.filter_status, args.filter_type, args.filter_type_chunk, args.hide,
-                                             args.group_by, args.expand, args.expand_status, args.notransitive,args.check_wrapper)
+                                             args.group_by, args.expand, args.expand_status, args.notransitive,args.check_wrapper, args.detail)
             elif args.command == 'testcase':
                 return Autosubmit.testcase(args.copy, args.description, args.chunks, args.member, args.stardate,
                                            args.HPC, args.branch)
@@ -2628,7 +2630,7 @@ class Autosubmit:
 
     @staticmethod
     def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, filter_type_chunk, hide, group_by=None,
-                   expand=list(), expand_status=list(), notransitive=False,check_wrapper=False):
+                   expand=list(), expand_status=list(), notransitive=False,check_wrapper=False, detail=False):
         """
         Set status
 
@@ -2828,7 +2830,7 @@ class Autosubmit:
                             Autosubmit.change_status(final, final_status, job)
                     # If changes have been performed
                     if len(performed_changes.keys()) > 0:
-                        if Autosubmit._user_yes_no_query("Would you like to see an extended representation of the changes?") == True:
+                        if detail == True:
                             Log.info(job_list.print_with_status(statusChange = performed_changes))
                     else: 
                         Log.warning("No changes were performed.")
@@ -3274,6 +3276,7 @@ class Autosubmit:
 
     @staticmethod
     def load_job_list(expid, as_conf, notransitive=False,monitor=False):
+        BasicConfig.read()
         rerun = as_conf.get_rerun()
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
