@@ -2681,6 +2681,10 @@ class Autosubmit:
                     if countStart > 1 or countEnd > 1:
                         section_validation_error = True
                         section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
+                    countUnderscore = filter_section.count('_')
+                    if countUnderscore > 1:
+                        section_validation_error = True
+                        section_validation_message += "\n\tList of sections provided has a format error. Perhaps you were trying to use -fl instead."
                     if section_validation_error == False:
                         if len(str(filter_section).strip()) > 0:
                             if len(filter_section.split()) > 0:
@@ -2697,7 +2701,10 @@ class Autosubmit:
                     if section_validation_error == True or section_error == True:
                         if section_error == True:
                             section_validation_message += "\n\tSpecified section(s) : [" + str(section_not_foundList) + \
-                                "] not found in the experiment " + str(expid) + ".\n\tProcess stopped. Comparison is case sensitive."
+                                "] not found in the experiment " + str(expid) + \
+                                ".\n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
+                                "\n\tRemember that this option expects section names separated by a blank space as input."
+
                         Log.info(section_validation_message)
                         Log.critical("Error in the supplied input for -ft.")
                         return False
@@ -2737,14 +2744,15 @@ class Autosubmit:
                     if job_validation_error == True or job_error == True:
                         if job_error == True:
                             job_validation_message += "\n\tSpecified job(s) : [" + str(job_not_foundList) + "] not found in the experiment " + \
-                                 str(expid) + ". \n\tProcess stopped. Comparison is case sensitive."
+                                 str(expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
+                                 "\n\tRemember that this option expects job names separated by a blank space as input."
                         Log.info(job_validation_message)
                         Log.critical("Error in the supplied input for -fl.")
                         return False   
                     
                 # Validating fc if filter_chunks -fc has been set:
                 if filter_chunks is not None:
-                    fc_validation_message = "## -fc Validation Message ##"
+                    fc_validation_message = "## -fc Validation Message ##"                    
                     fc_filter_is_correct = True
                     selected_sections = filter_chunks.split(",")[1:]
                     selected_formula = filter_chunks.split(",")[0]
@@ -2780,15 +2788,20 @@ class Autosubmit:
                         current_dates = as_conf._exp_parser.get_option('experiment','DATELIST','').split()
                         current_members = as_conf.get_member_list()
                         # Parse json
-                        fc_deserializedJson = json.loads(Autosubmit._create_json(selected_formula))
-                        for startingDate in fc_deserializedJson['sds']:
-                            if startingDate['sd'] not in current_dates:
-                                fc_filter_is_correct = False
-                                fc_validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
-                            for member in startingDate['ms']:
-                                if member['m'] not in current_members and member['m'] != "Any":
+                        try:
+                            fc_deserializedJson = json.loads(Autosubmit._create_json(selected_formula))
+                        except: 
+                            fc_filter_is_correct = False
+                            fc_validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
+                        if fc_filter_is_correct == True:                                
+                            for startingDate in fc_deserializedJson['sds']:
+                                if startingDate['sd'] not in current_dates:
                                     fc_filter_is_correct = False
-                                    fc_validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
+                                    fc_validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
+                                for member in startingDate['ms']:
+                                    if member['m'] not in current_members and member['m'] != "Any":
+                                        fc_filter_is_correct = False
+                                        fc_validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
                     
                      # Ending validation
                     if fc_filter_is_correct == False:
@@ -2796,6 +2809,39 @@ class Autosubmit:
                         Log.critical("Error in the supplied input for -fc.")
                         return False
                 
+                # Validating status, if filter_status -fs has been set:
+                # At this point we already have job_list from where we are getting the allows STATUS
+                if filter_status is not None:                    
+                    status_validation_error = False
+                    status_validation_message = "\n## Status Validation Message ##"
+                    # Trying to identify chunk formula
+                    countStart = filter_status.count('[') 
+                    countEnd = filter_status.count(']')
+                    if countStart > 1 or countEnd > 1:
+                        status_validation_error = True
+                        status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fc instead."
+                    # Trying to identify job names, implying status names won't use more than 1 underscore _
+                    countUnderscore = filter_status.count('_')
+                    if countUnderscore > 1:
+                        status_validation_error = True
+                        status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fl instead."
+                    # If everything is fine until this point
+                    if status_validation_error == False:        
+                        status_filter = filter_status.split()
+                        status_reference = Status()
+                        status_list = list()
+                        for job in job_list.get_job_list():
+                            reference = status_reference.VALUE_TO_KEY[job.status]
+                            if reference not in status_list:
+                                status_list.append(reference)
+                        for status in status_filter:
+                            if status not in status_list:
+                                status_validation_error = True
+                                status_validation_message += "\n\t There are no jobs with status " + status + " in this experiment."
+                    if status_validation_error == True:
+                        Log.info(status_validation_message)
+                        Log.critical("Error in the supplied input for -fs.")
+                        return False
 
 
                 jobs_filtered =[]
