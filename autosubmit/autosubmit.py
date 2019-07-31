@@ -2782,7 +2782,7 @@ class Autosubmit:
                             # Validating existing sections
                             # Retrieve experiment data
                             
-                            if section not in current_sections and section != "Any":
+                            if section not in current_sections:
                                 fc_filter_is_correct = False
                                 fc_validation_message += "\n\tSection " + section + " does not exist in experiment. Remember not to include blank spaces."
                             
@@ -2808,7 +2808,7 @@ class Autosubmit:
                                     fc_filter_is_correct = False
                                     fc_validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
                                 for member in startingDate['ms']:
-                                    if member['m'] not in current_members and member['m'] != "Any":
+                                    if member['m'] not in current_members:
                                         fc_filter_is_correct = False
                                         fc_validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
                     
@@ -2911,21 +2911,28 @@ class Autosubmit:
                         current_dates = as_conf._exp_parser.get_option('experiment','DATELIST','').split()
                         current_members = as_conf.get_member_list()
                         # Parse json
-                        deserializedJson = json.loads(Autosubmit._create_json(selected_formula))
-                        for startingDate in deserializedJson['sds']:
-                            if startingDate['sd'] not in current_dates:
-                                filter_is_correct = False
-                                validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
-                            for member in startingDate['ms']:
-                                if member['m'] not in current_members and member['m'] != "Any":
-                                    filter_is_correct_ = False
-                                    validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
+                        try:
+                            deserializedJson = json.loads(Autosubmit._create_json(selected_formula))
+                        except: 
+                            filter_is_correct = False
+                            validation_message += "\n\tProvided chunk formula does not have the right format. Were you trying to use another option?"
+                        if filter_is_correct == True:           
+                            for startingDate in deserializedJson['sds']:
+                                if startingDate['sd'] not in current_dates:
+                                    filter_is_correct = False
+                                    validation_message += "\n\tStarting date " + startingDate['sd'] + " does not exist in experiment."
+                                for member in startingDate['ms']:
+                                    if member['m'] not in current_members and member['m'] != "Any":
+                                        filter_is_correct_ = False
+                                        validation_message += "\n\tMember " + member['m'] + " does not exist in experiment."
 
 
                     # Ending validation
                     if filter_is_correct == False:
-                        print(validation_message)
+                        Log.info(validation_message)
+                        Log.critical("Error in the supplied input for -ftc.")
                         return False
+
                     # If input is valid, continue.
                     record = dict()
                     final_list = []

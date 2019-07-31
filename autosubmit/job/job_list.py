@@ -1062,7 +1062,7 @@ class JobList:
         allJobs = self.get_all()
         # Header
         result = bcolors.BOLD + "## String representation of Job List [" + str(len(allJobs)) + "] with " + \
-        bcolors.OKGREEN + str(len(statusChange.keys())) + " Changes ##" + bcolors.ENDC +  bcolors.ENDC 
+        bcolors.OKGREEN + str(len(statusChange.keys())) + " Change(s) ##" + bcolors.ENDC +  bcolors.ENDC 
 
         # Find root
         root = None
