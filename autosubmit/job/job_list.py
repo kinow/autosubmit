@@ -34,7 +34,7 @@ from autosubmit.job.job import Job
 from bscearth.utils.log import Log
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
-from autosubmit.job.job_common import Status, Type
+from autosubmit.job.job_common import Status, Type, bcolors
 from bscearth.utils.date import date2str, parse_date, sum_str_hours
 from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageThread
 
@@ -1050,3 +1050,88 @@ class JobList:
         if flag:
             self.update_genealogy(notransitive=notransitive)
         del self._dic_jobs
+
+    def print_with_status(self, statusChange = None):    
+        """
+        Returns the string representation of the dependency tree of 
+        the Job List
+
+        :return: String representation
+        :rtype: String
+        """
+        allJobs = self.get_all()
+        # Header
+        result = bcolors.BOLD + "## String representation of Job List [" + str(len(allJobs)) + "] with " + \
+        bcolors.OKGREEN + str(len(statusChange.keys())) + " Changes ##" + bcolors.ENDC +  bcolors.ENDC 
+
+        # Find root
+        root = None
+        for job in allJobs:
+            if job.has_parents() == False:
+                root = job
+
+        # root exists
+        if root is not None:
+            result += self._recursion_print(root, 0, statusChange = statusChange) 
+        else: 
+            result += "\nCannot find root."
+
+        return result
+
+    def __str__(self):
+        """
+        Returns the string representation of the class.
+        Usage print(class)
+
+        :return: String representation.
+        :rtype: String
+        """
+        allJobs = self.get_all()
+        result = bcolors.BOLD + "## String representation of Job List [" + str(len(allJobs)) + "] ##" + bcolors.ENDC
+
+        # Find root
+        root = None
+        for job in allJobs:
+            if job.has_parents() == False:
+                root = job
+
+        # root exists
+        if root is not None:
+            result += self._recursion_print(root, 0) 
+        else: 
+            result += "\nCannot find root."
+
+        return result
+
+    def _recursion_print(self, job, level, statusChange = None):
+        """
+        Returns the list of children in a recursive way
+        Traverses the dependency tree
+
+        :return: parent + list of children
+        :rtype: String
+        """
+        result = ""
+        prefix = ""
+        for i in range(level):
+                prefix += "|  "
+        # Prefix + Job Name
+        result = "\n"+ prefix + bcolors.BOLD + job.name + bcolors.ENDC
+        if len(job._children) > 0:                
+            level += 1
+            children = job._children
+            total_children = len(job._children)
+            # Writes children number
+            result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ")
+            if statusChange is not None:
+                # Writes change if performed
+                result += bcolors.BOLD + bcolors.OKGREEN + statusChange[job.name] if job.name in statusChange else "" 
+                result += bcolors.ENDC + bcolors.ENDC
+            
+            for child in children:
+                # Continues recursion
+                result += self._recursion_print(child, level, statusChange=statusChange)
+        else:
+            pass
+
+        return result
