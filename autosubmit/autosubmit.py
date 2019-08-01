@@ -512,7 +512,7 @@ class Autosubmit:
         # Read current user uid
         my_user = os.getuid()
         # Read eadmin user uid
-        id_eadmin = os.popen('id -u eadmin').read()        
+        id_eadmin = os.popen('id -u eadmin').read().strip()
 
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                                                           expid_delete)):
@@ -547,8 +547,11 @@ class Autosubmit:
                 ret = delete_experiment(expid_delete)
                 if ret:
                     Log.result("Experiment {0} deleted".format(expid_delete))
-            else:                
-                Log.critical("Current user is not the owner of the experiment. {0} can not be deleted!",expid_delete)
+            else:
+                if currentOwner_id == 0:
+                    Log.critical("Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!",expid_delete)
+                else:
+                    Log.critical("Current user is not the owner of the experiment. {0} can not be deleted!",expid_delete)
             return ret
 
     @staticmethod

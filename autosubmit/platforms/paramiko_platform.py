@@ -136,6 +136,8 @@ class ParamikoPlatform(Platform):
         if self._ssh is None:
             if not self.connect():
                 return None
+        if self._ftpChannel is None:
+            self._ftpChannel = self._ssh.open_sftp()
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
