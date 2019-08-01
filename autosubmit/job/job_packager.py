@@ -218,17 +218,15 @@ class JobPackager(object):
         current_package = [horizontal_package]
         #current_package = []
         ## Get the next horizontal packages ##
-        #self._maxTotalProcessors = horizontal_packager.total_processors
-        total_processors =horizontal_packager.total_processors
-        new_package=horizontal_packager.get_next_packages(section, max_wallclock=self._platform.max_wallclock,horizontal_vertical=True,total_processors=total_processors)
+        max_procs =horizontal_packager.total_processors
+        new_package=horizontal_packager.get_next_packages(section, max_wallclock=self._platform.max_wallclock,horizontal_vertical=True,max_procs=max_procs)
         if new_package is not None:
             current_package += new_package
 
         for i in range(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
-        total_processors = self._maxTotalProcessors
 
-        return JobPackageHorizontalVertical(current_package, total_processors, total_wallclock,
+        return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
                                             jobs_resources=jobs_resources)
 
     def _build_vertical_horizontal_package(self, horizontal_packager, max_wrapped_jobs, jobs_resources):
@@ -404,7 +402,7 @@ class JobPackagerHorizontal(object):
         jobname = jobname.split('_')[-1]
         return self._sort_order_dict[jobname]
 
-    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict(),horizontal_vertical=False,total_processors=0):
+    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict(),horizontal_vertical=False,max_procs=0):
         packages = []
         job = max(self.job_list, key=attrgetter('total_wallclock'))
         wallclock = job.wallclock
@@ -427,9 +425,9 @@ class JobPackagerHorizontal(object):
             self.job_list = next_section_list
             package_jobs = self.build_horizontal_package(horizontal_vertical)
 
-            if package_jobs :
+            if package_jobs:
                 #if not self.add_sectioncombo_processors(self.total_processors) and horizontal_vertical:
-                if total_processors < self._current_processors:
+                if  self._current_processors != max_procs:
                     return packages
                 if max_wallclock:
                     total_wallclock = sum_str_hours(total_wallclock, wallclock)
@@ -459,7 +457,6 @@ class JobPackagerHorizontal(object):
             if job.section not in self._sectionList:
                 self._sectionList.append(job.section)
             if job.section not in self._components_dict:
-
                 self._components_dict[job.section] = dict()
                 self._components_dict[job.section]['COMPONENTS'] = {parameter: job.parameters[parameter]
                                                                     for parameter in job.parameters.keys()
