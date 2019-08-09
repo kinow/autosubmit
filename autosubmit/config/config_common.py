@@ -229,6 +229,15 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'USER', '').lower()
+
+    def get_current_host(self, section):
+        """
+        Returns the user to be changed from platform config file.
+
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'HOST', '').lower()
     def get_current_project(self, section):
         """
         Returns the project to be changed from platform config file.
@@ -263,7 +272,32 @@ class AutosubmitConfig(object):
             contentToMod = contentToMod.replace(re.search(r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
         open(self._platforms_parser_file, 'w').write(content)
         open(self._platforms_parser_file, 'a').write(contentToMod)
-
+    def set_new_host(self, section, new_host):
+        """
+        Sets new host for given platform
+        :param new_host:
+        :param section: platform name
+        :type: str
+        """
+        with open(self._platforms_parser_file) as p_file:
+            contentLine = p_file.readline()
+            contentToMod=""
+            content=""
+            mod=False
+            while contentLine:
+                if re.search(section, contentLine):
+                    mod=True
+                if mod:
+                    contentToMod += contentLine
+                else:
+                    content += contentLine
+                contentLine = p_file.readline()
+        if mod:
+            old_host = self.get_current_host(section)
+            contentToMod = contentToMod.replace(re.search(r'[^#]\bHOST\b =.*', contentToMod).group(0)[1:], "HOST = " + new_host)
+            contentToMod = contentToMod.replace(re.search(r'[^#]\bHOST_TO\b =.*', contentToMod).group(0)[1:], "HOST_TO = " + old_host)
+        open(self._platforms_parser_file, 'w').write(content)
+        open(self._platforms_parser_file, 'a').write(contentToMod)
     def get_migrate_project_to(self, section):
         """
         Returns the project to change to from platform config file.
@@ -272,7 +306,14 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower()
+    def get_migrate_host_to(self, section):
+        """
+        Returns the host to change to from platform config file.
 
+        :return: host_to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'HOST_TO', None).lower()
     def set_new_project(self, section, new_project):
         """
         Sets new project for given platform
