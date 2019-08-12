@@ -151,13 +151,18 @@ class AutosubmitGit:
         if git_project_commit:
             Log.info("Fetching {0} into {1}", git_project_commit + " " + git_project_origin, project_path)
             try:
-
-                command = "cd {0}; git clone --single-branch {1} {4}; cd {2}; git checkout {3};".format(project_path,
+                if git_single_branch:
+                    command = "cd {0}; git clone  {1} {4}; cd {2}; git checkout {3};".format(project_path,
+                                                                                        git_project_origin, git_path,
+                                                                                        git_project_commit,
+                                                                                        project_destination)
+                else:
+                    command = "cd {0}; git clone {1} {4}; cd {2}; git checkout {3};".format(project_path,
                                                                                         git_project_origin, git_path,
                                                                                         git_project_commit,
                                                                                         project_destination)
                 if git_project_submodules.__len__() <= 0:
-                    command += " git submodule update --depth --init --recursive"
+                    command += " git submodule update --init --recursive"
                 else:
 
                     command += " cd {0}; git submodule init;".format(project_destination)
@@ -179,27 +184,27 @@ class AutosubmitGit:
                         command += " git clone --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
                                                                                   project_destination)
                     else:
-                        command += " git clone --single-branch --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
+                        command += " git clone --single-branch  --depth=1 --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
                                                                                   project_destination)
                 else:
                     if not git_single_branch:
                         command += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
                                                                    project_destination)
                     else:
-                        command += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
+                        command += " git clone --single-branch --depth=1 -b {0} {1} {2};".format(git_project_branch,
                                                                                        git_project_origin,
                                                                                        project_destination)
 
                     command += " cd {0}; git submodule init;".format(project_destination)
                     for submodule in git_project_submodules:
-                        command += " git submodule update --depth {0};".format(submodule)
+                        command += " git submodule update  {0};".format(submodule)
                 Log.debug('{0}', command)
                 output = subprocess.check_output(command, shell=True)
                 #Log.debug('{0}:{1}', command, output)
                 #command " git config --file .gitmodules --get-regexp path | awk '{ print $2 }' " you can change path per url
                 #https://stackoverflow.com/questions/27188899/shallow-clone-with-submodules-in-git-how-to-use-pointed-commits-and-not-latest
                 #../../svn/ecearth-mirror.git
-                # git clone -n --depth 1 --separate-git-dir sources https://earth.bsc.es/svn/ecearth-mirror.git sources
+                # git clone -n --depth=1 --separate-git-dir sources https://earth.bsc.es/svn/ecearth-mirror.git sources
             except subprocess.CalledProcessError:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)
