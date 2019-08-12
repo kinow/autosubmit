@@ -196,6 +196,10 @@ class AutosubmitGit:
                 Log.debug('{0}', command)
                 output = subprocess.check_output(command, shell=True)
                 #Log.debug('{0}:{1}', command, output)
+                #command " git config --file .gitmodules --get-regexp path | awk '{ print $2 }' " you can change path per url
+                #https://stackoverflow.com/questions/27188899/shallow-clone-with-submodules-in-git-how-to-use-pointed-commits-and-not-latest
+                #../../svn/ecearth-mirror.git
+                # git clone -n --depth 1 --separate-git-dir sources https://earth.bsc.es/svn/ecearth-mirror.git sources
             except subprocess.CalledProcessError:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)

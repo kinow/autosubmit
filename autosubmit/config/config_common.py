@@ -682,7 +682,7 @@ class AutosubmitConfig(object):
         :return: fetch_single_branch(Y/N)
         :rtype: boolean
         """
-        return self._exp_parser.get_option('git', 'FETCH_SINGLE_BRANCH', 'True').lower()
+        return self._exp_parser.get_option('git', 'FETCH_SINGLE_BRANCH', 'False').lower()
     def get_project_destination(self):
         """
         Returns git commit from experiment's config file
