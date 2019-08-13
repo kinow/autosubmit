@@ -716,7 +716,14 @@ class AutosubmitConfig(object):
         """
         return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES','').split()).split()
 
-
+    def get_fetch_single_branch(self):
+        """
+        Returns fetch single branch from experiment's config file
+        Default is -single-branch
+        :return: fetch_single_branch(Y/N)
+        :rtype: boolean
+        """
+        return self._exp_parser.get_option('git', 'FETCH_SINGLE_BRANCH', 'False').lower()
     def get_project_destination(self):
         """
         Returns git commit from experiment's config file
