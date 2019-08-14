@@ -164,7 +164,6 @@ class AutosubmitGit:
                 if git_project_submodules.__len__() <= 0:
                     command += " git submodule update --init --recursive"
                 else:
-
                     command += " cd {0}; git submodule init;".format(project_destination)
                     for submodule in git_project_submodules:
                         command += " git submodule update {0};".format(submodule)
@@ -184,14 +183,14 @@ class AutosubmitGit:
                         command += " git clone --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
                                                                                   project_destination)
                     else:
-                        command += " git clone --single-branch  --depth=1 --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
+                        command += " git clone --single-branch  --recursive -b {0} {1} {2}".format(git_project_branch, git_project_origin,
                                                                                   project_destination)
                 else:
                     if not git_single_branch:
                         command += " git clone -b {0} {1} {2};".format(git_project_branch, git_project_origin,
                                                                    project_destination)
                     else:
-                        command += " git clone --single-branch --depth=1 -b {0} {1} {2};".format(git_project_branch,
+                        command += " git clone --single-branch -b {0} {1} {2};".format(git_project_branch,
                                                                                        git_project_origin,
                                                                                        project_destination)
 
