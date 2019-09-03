@@ -101,6 +101,14 @@ def signal_handler(signal_received, frame):
     Log.info('Autosubmit will interrupt at the next safe occasion')
     Autosubmit.exit = True
 
+def signal_handler_create(signal_received, frame):
+    """
+    Used to handle KeyboardInterrumpt signals while the create method is being executed
+
+    :param signal_received:
+    :param frame:
+    """
+    Log.info('Autosubmit has been closed in an unexpected way. If problems with your experiment arise, review the FAQ.')
 
 class Autosubmit:
     """
@@ -2481,118 +2489,129 @@ class Autosubmit:
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
-            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-                Log.info("Preparing .lock file to avoid multiple instances with same expid.")
-                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
+            #Encapsulating the lock
+            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1) as fh:
+                try:                                      
+                    Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+                    Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
+                    as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                    if not as_conf.check_conf_files():
+                        Log.critical('Can not create with invalid configuration')
+                        return False
+                    project_type = as_conf.get_project_type()
 
-                as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                if not as_conf.check_conf_files():
-                    Log.critical('Can not create with invalid configuration')
-                    return False
+                    if not Autosubmit._copy_code(as_conf, expid, project_type, False):
+                        return False
+                    update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
+                                                                "job_list_" + expid + ".pkl"))
+                    Autosubmit._create_project_associated_conf(as_conf, False, update_job)
 
-                project_type = as_conf.get_project_type()
+                    if project_type != "none":
+                        # Check project configuration
+                        as_conf.check_proj()
 
-                if not Autosubmit._copy_code(as_conf, expid, project_type, False):
-                    return False
-                update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
-                                                             "job_list_" + expid + ".pkl"))
-                Autosubmit._create_project_associated_conf(as_conf, False, update_job)
+                    # Load parameters
+                    Log.info("Loading parameters...")
+                    parameters = as_conf.load_parameters()
 
-                if project_type != "none":
-                    # Check project configuration
-                    as_conf.check_proj()
+                    date_list = as_conf.get_date_list()
+                    if len(date_list) != len(set(date_list)):
+                        Log.error('There are repeated start dates!')
+                        return False
+                    num_chunks = as_conf.get_num_chunks()
+                    chunk_ini = as_conf.get_chunk_ini()
+                    member_list = as_conf.get_member_list()
+                    if len(member_list) != len(set(member_list)):
+                        Log.error('There are repeated member names!')
+                        return False
+                    rerun = as_conf.get_rerun()
 
-                # Load parameters
-                Log.info("Loading parameters...")
-                parameters = as_conf.load_parameters()
+                    Log.info("\nCreating the jobs list...")
+                    job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
+                                    Autosubmit._get_job_list_persistence(expid, as_conf))
 
-                date_list = as_conf.get_date_list()
-                if len(date_list) != len(set(date_list)):
-                    Log.error('There are repeated start dates!')
-                    return False
-                num_chunks = as_conf.get_num_chunks()
-                chunk_ini = as_conf.get_chunk_ini()
-                member_list = as_conf.get_member_list()
-                if len(member_list) != len(set(member_list)):
-                    Log.error('There are repeated member names!')
-                    return False
-                rerun = as_conf.get_rerun()
-
-                Log.info("\nCreating the jobs list...")
-                job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                                   Autosubmit._get_job_list_persistence(expid, as_conf))
-
-                date_format = ''
-                if as_conf.get_chunk_size_unit() is 'hour':
-                    date_format = 'H'
-                for date in date_list:
-                    if date.hour > 1:
+                    date_format = ''
+                    if as_conf.get_chunk_size_unit() is 'hour':
                         date_format = 'H'
-                    if date.minute > 1:
-                        date_format = 'M'
-                job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
-                                  as_conf.get_retrials(),
-                                  as_conf.get_default_job_type(),
-                                  as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
+                    for date in date_list:
+                        if date.hour > 1:
+                            date_format = 'H'
+                        if date.minute > 1:
+                            date_format = 'M'
+                    job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                                    as_conf.get_retrials(),
+                                    as_conf.get_default_job_type(),
+                                    as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive)
 
-                if rerun == "true":
-                    chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-                    job_list.rerun(chunk_list, notransitive)
-                else:
-                    job_list.remove_rerun_only_jobs(notransitive)
-                Log.info("\nSaving the jobs list...")
-                job_list.save()
-                JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                      "job_packages_" + expid).reset_table()
-
-                groups_dict = dict()
-
-                if not noplot:
-                    if group_by:
-                        status = list()
-                        if expand_status:
-                            for s in expand_status.split():
-                                status.append(Autosubmit._get_status(s.upper()))
-
-                        job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list,
-                                                   expand_list=expand, expanded_status=status)
-                        groups_dict = job_grouping.group_jobs()
-                    # WRAPPERS
-                    if as_conf.get_wrapper_type() != 'none' and check_wrappers:
-                        packages_persistence = JobPackagePersistence(
-                            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
-                        packages_persistence.reset_table(True)
-                        referenced_jobs_to_remove = set()
-                        job_list_wrappers = copy.deepcopy(job_list)
-                        jobs_wr = job_list_wrappers.get_job_list()
-                        for job in jobs_wr:
-                            for child in job.children:
-                                if child not in jobs_wr:
-                                    referenced_jobs_to_remove.add(child)
-                            for parent in job.parents:
-                                if parent not in jobs_wr:
-                                    referenced_jobs_to_remove.add(parent)
-
-                        for job in jobs_wr:
-                            job.children = job.children - referenced_jobs_to_remove
-                            job.parents = job.parents - referenced_jobs_to_remove
-                        Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
-                                                                   packages_persistence, True)
-
-                        packages = packages_persistence.load(True)
+                    if rerun == "true":
+                        chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
+                        job_list.rerun(chunk_list, notransitive)
                     else:
-                        packages= None
-        
-                    Log.info("\nPlotting the jobs list...")
-                    monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(),
-                                                os.path.join(exp_path, "/tmp/LOG_", expid), output, packages, not hide,
-                                                groups=groups_dict)
+                        job_list.remove_rerun_only_jobs(notransitive)
+                    Log.info("\nSaving the jobs list...")
+                    job_list.save()
+                    JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                        "job_packages_" + expid).reset_table()
 
-                Log.result("\nJob list created successfully")
-                Log.user_warning("Remember to MODIFY the MODEL config files!")
+                    groups_dict = dict()
 
-                return True
+                    if not noplot:
+                        if group_by:
+                            status = list()
+                            if expand_status:
+                                for s in expand_status.split():
+                                    status.append(Autosubmit._get_status(s.upper()))
+
+                            job_grouping = JobGrouping(group_by, copy.deepcopy(job_list.get_job_list()), job_list,
+                                                    expand_list=expand, expanded_status=status)
+                            groups_dict = job_grouping.group_jobs()
+                        # WRAPPERS
+                        if as_conf.get_wrapper_type() != 'none' and check_wrappers:
+                            packages_persistence = JobPackagePersistence(
+                                os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
+                            packages_persistence.reset_table(True)
+                            referenced_jobs_to_remove = set()
+                            job_list_wrappers = copy.deepcopy(job_list)
+                            jobs_wr = job_list_wrappers.get_job_list()
+                            for job in jobs_wr:
+                                for child in job.children:
+                                    if child not in jobs_wr:
+                                        referenced_jobs_to_remove.add(child)
+                                for parent in job.parents:
+                                    if parent not in jobs_wr:
+                                        referenced_jobs_to_remove.add(parent)
+
+                            for job in jobs_wr:
+                                job.children = job.children - referenced_jobs_to_remove
+                                job.parents = job.parents - referenced_jobs_to_remove
+                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
+                                                                    packages_persistence, True)
+
+                            packages = packages_persistence.load(True)
+                        else:
+                            packages= None
+            
+                        Log.info("\nPlotting the jobs list...")
+                        monitor_exp = Monitor()
+                        monitor_exp.generate_output(expid, job_list.get_job_list(),
+                                                    os.path.join(exp_path, "/tmp/LOG_", expid), output, packages, not hide,
+                                                    groups=groups_dict)
+
+                    Log.result("\nJob list created successfully")
+                    Log.user_warning("Remember to MODIFY the MODEL config files!")
+                    # Terminating locking as sugested by the portalocker developer
+                    fh.flush()
+                    os.fsync(fh.fileno())
+
+                    return True
+                # catching Exception
+                except (KeyboardInterrupt, Exception) as e:
+                    # Setting signal handler to handle subsequent CTRL-C
+                    signal.signal(signal.SIGINT, signal_handler_create)
+                    # Terminating locking as sugested by the portalocker developer
+                    fh.flush()
+                    os.fsync(fh.fileno())
+                    Log.critical("An error has occurred: \n\t" + str(e))                                    
 
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
