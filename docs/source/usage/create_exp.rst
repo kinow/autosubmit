@@ -114,6 +114,8 @@ Options:
                                 prevents doing the transitive reduction when plotting the workflow
       -cw                   --check_wrapper
                                 Generate the wrapper in the current workflow
+      -d                    --detail
+                                Shows Job List view in terminal
       
 Example:
 ::

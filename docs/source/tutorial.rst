@@ -66,6 +66,7 @@ You may want to configure Autosubmit parameters for the experiment. Just edit ``
     - Maximum number of jobs to be running at the same time at the HPC.
     - Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status.
     - Number of retrials if a job fails.
+    - Default output type for some Autosubmit functions
 
 Examples:
 ::
@@ -318,6 +319,9 @@ Examples:
     # Number of retrials if a job fails. Can ve override at job level
     # Default = 0
     RETRIALS = 0
+    # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt 
+    # Default = pdf
+    OUTPUT = pdf
 
 Then, Autosubmit *create* command uses the ``expdef_cxxx.conf`` and generates the experiment:
 ::

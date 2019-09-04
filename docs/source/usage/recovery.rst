@@ -31,6 +31,8 @@ Options:
                                         prevents doing the transitive reduction when plotting the workflow
         -nl                   --no_recover_logs
                                         prevents the recovering of log files from remote platforms
+        -d                    --detail
+                                Shows Job List view in terminal
 
 Example:
 ::
