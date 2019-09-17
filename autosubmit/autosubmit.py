@@ -628,8 +628,15 @@ class Autosubmit:
                 Autosubmit._delete_expid(exp_id)
                 return ''
         else:
+            # copy_id has been set by the user
             try:
                 if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
+                    # List of allowed files from conf
+                    conf_copy_filter = ["autosubmit_" + str(copy_id) + ".conf",
+                                        "expdef_" + str(copy_id) + ".conf",
+                                        "jobs_" + str(copy_id) + ".conf",
+                                        "platforms_" + str(copy_id) + ".conf",
+                                        "proj_" + str(copy_id) + ".conf"]
                     exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
                     if exp_id == '':
                         return ''
@@ -640,10 +647,12 @@ class Autosubmit:
                     conf_copy_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf")
                     files = os.listdir(conf_copy_id)
                     for filename in files:
-                        if os.path.isfile(os.path.join(conf_copy_id, filename)):
-                            new_filename = filename.replace(copy_id, exp_id)
-                            content = open(os.path.join(conf_copy_id, filename), 'r').read()
-                            open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
+                        # Allow only those files in the list
+                        if filename in conf_copy_filter:
+                            if os.path.isfile(os.path.join(conf_copy_id, filename)):
+                                new_filename = filename.replace(copy_id, exp_id)
+                                content = open(os.path.join(conf_copy_id, filename), 'r').read()
+                                open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                     #####
                     autosubmit_config = AutosubmitConfig(copy_id, BasicConfig, ConfigParserFactory())
