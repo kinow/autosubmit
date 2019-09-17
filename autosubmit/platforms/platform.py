@@ -341,7 +341,7 @@ class Platform(object):
         """
         try:
             
-            title_job = "[AUTOSUBMIT JOB ID] = " + str(jobid)
+            title_job = "[INFO] JOBID=" + str(jobid)
 
             if os.path.exists(complete_path):                
                 file_type = complete_path[-3:]
@@ -350,7 +350,7 @@ class Platform(object):
                         # Reading into memory (Potentially slow)
                         first_line = f.readline()
                         # Not rewrite
-                        if not first_line.startswith("[AUTOSUBMIT JOB ID]"):
+                        if not first_line.startswith("[INFO] JOBID="):
                             content = f.read()                        
                             # Write again (Potentially slow)
                             #start = time()
