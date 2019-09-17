@@ -533,13 +533,17 @@ class Job(object):
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
             self.write_start_time()
-
-        if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
+        # Updating logs 
+        if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             if self.local_logs != self.remote_logs:
                 self.synchronize_logs()  # unifying names for log files
             if copy_remote_logs:
                 self.platform.get_logs_files(self.expid, self.remote_logs)
+            # Update the logs with Autosubmit Job Id Brand
+            for local_log in self.local_logs:
+                self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+
         return self.status
 
     def update_children_status(self):
@@ -963,9 +967,10 @@ class Job(object):
                 self.parents.remove(parent)
 
     def synchronize_logs(self):
-        self.platform.move_file(self.remote_logs[0], self.local_logs[0])  # .out
-        self.platform.move_file(self.remote_logs[1], self.local_logs[1])  # .err
+        self.platform.move_file(self.remote_logs[0], self.local_logs[0], self.id)  # .out
+        self.platform.move_file(self.remote_logs[1], self.local_logs[1], self.id)  # .err
         self.remote_logs = self.local_logs
+
 
 class WrapperJob(Job):
 

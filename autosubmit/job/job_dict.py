@@ -296,7 +296,7 @@ class DicJobs:
         if split > -1:
             name += "_{0}".format(split)
         name += "_" + section
-        if name in jobs_data:
+        if name in jobs_data:            
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
             job.local_logs = (jobs_data[name][8], jobs_data[name][9])
             job.remote_logs = (jobs_data[name][10], jobs_data[name][11])

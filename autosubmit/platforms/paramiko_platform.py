@@ -156,6 +156,7 @@ class ParamikoPlatform(Platform):
             Log.error('Unknown Error')
             raise
 
+    # Gets .err and .out
     def get_file(self, filename, must_exist=True, relative_path=''):
         """
         Copies a file from the current platform to experiment's tmp folder
@@ -222,9 +223,10 @@ class ParamikoPlatform(Platform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
+    # Moves .err .out
     def move_file(self, src, dest,migrate=False):
         """
-        Moves a file on the platform
+        Moves a file on the platform (includes .err and .out)
         :param src: source name
         :type src: str
         :param dest: destination name
@@ -247,6 +249,7 @@ class ParamikoPlatform(Platform):
                 except (IOError):
                     pass
             #ftp.close()
+            
             return True
         except BaseException:
             Log.debug('Could not move (rename) file {0} to {1}'.format(os.path.join(self.get_files_path(), src),
