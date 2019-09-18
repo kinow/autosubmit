@@ -1,4 +1,5 @@
 from time import sleep
+from time import time
 
 import os
 
@@ -194,10 +195,11 @@ class Platform(object):
         :rtype: bool
         """
         raise NotImplementedError
-
+    
+    # Executed when calling from Job
     def get_logs_files(self, exp_id, remote_logs):
         """
-        Get the given LOGS files
+        Get the LOGS files .err and .out
         
         :param exp_id: experiment id
         :type exp_id: str
@@ -325,3 +327,40 @@ class Platform(object):
         :rtype: autosubmit.job.job_common.Status
         """
         raise NotImplementedError
+    
+    def write_jobid(self, jobid, complete_path):
+        """
+        Writes Job id in an out file.
+
+        :param jobid: job id
+        :type jobid: str
+        :param complete_path: complete path to the file, includes filename
+        :type complete_path: str
+        :return: Modifies file and returns True, False if file could not be modified
+        :rtype: Boolean
+        """
+        try:
+            
+            title_job = "[INFO] JOBID=" + str(jobid)
+
+            if os.path.exists(complete_path):                
+                file_type = complete_path[-3:]
+                if file_type == "out" or file_type == "err":
+                    with open(complete_path, "r+") as f:
+                        # Reading into memory (Potentially slow)
+                        first_line = f.readline()
+                        # Not rewrite
+                        if not first_line.startswith("[INFO] JOBID="):
+                            content = f.read()                        
+                            # Write again (Potentially slow)
+                            #start = time()
+                            #Log.info("Attempting job identification of " + str(jobid))                            
+                            f.seek(0,0)
+                            f.write(title_job + "\n\n" + content)                                        
+                        f.close()      
+                            #finish = time()    
+                            #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
+
+        except Exception as ex:
+            Log.info("Writing Job Id Failed : " + str(ex))
+        

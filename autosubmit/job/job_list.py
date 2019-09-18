@@ -136,6 +136,7 @@ class JobList:
 
         Log.info("Creating jobs...")
         jobs_data = dict()
+        # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
             jobs_data = {str(row[0]): row for row in self.load()}
         self._create_jobs(dic_jobs, jobs_parser, priority, default_job_type, jobs_data)
