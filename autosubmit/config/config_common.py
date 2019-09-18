@@ -958,6 +958,15 @@ class AutosubmitConfig(object):
         :rtype: int
         """
         return int(self._conf_parser.get('config', 'TOTALJOBS'))
+    
+    def get_output_type(self):
+        """
+        Returns default output type, pdf if none
+
+        :return: output type
+        :rtype: string
+        """
+        return self._conf_parser.get_option('config', 'OUTPUT','pdf')
 
     def get_max_wallclock(self):
         """

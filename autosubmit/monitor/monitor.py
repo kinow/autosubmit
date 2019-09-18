@@ -243,18 +243,20 @@ class Monitor:
                                         fillcolor=self.color_status(job.status))
         return node
 
-    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False):
+    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False, job_list_object = None):
         """
         Plots graph for joblist and stores it in a file
 
         :param expid: experiment's identifier
         :type expid: str
-        :param joblist: joblist to plot
-        :type joblist: JobList
+        :param joblist: list of jobs to plot
+        :type joblist: List of Job objects
         :param output_format: file format for plot
         :type output_format: str (png, pdf, ps)
         :param show: if true, will open the new plot with the default viewer
         :type show: bool
+        :param job_list_object: Object that has the main txt generation method
+        :type job_list_object: JobList object
         """
         Log.info('Plotting...')
         now = time.localtime()
@@ -267,31 +269,47 @@ class Monitor:
         Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
-            graph.write_png(output_file)
+            graph.write_png(output_file)            
         elif output_format == "pdf":
             # noinspection PyUnresolvedReferences
-            graph.write_pdf(output_file)
+            graph.write_pdf(output_file)            
         elif output_format == "ps":
             # noinspection PyUnresolvedReferences
-            graph.write_ps(output_file)
+            graph.write_ps(output_file)            
         elif output_format == "svg":
             # noinspection PyUnresolvedReferences
-            graph.write_svg(output_file)
+            graph.write_svg(output_file) 
+        elif output_format == "txt":
+            # JobList object is needed, also it acts as a flag.
+            if job_list_object is not None:
+                self.generate_output_txt(expid, joblist, path, job_list_object=job_list_object)
         else:
             Log.error('Format {0} not supported', output_format)
             return
-        Log.result('Plot created at {0}', output_file)
-        if show:
+        if output_format != "txt":
+            Log.result('Plot created at {0}', output_file)
+        # If txt, don't open
+        if show and output_format != "txt":
             try:
                 subprocess.check_call(['xdg-open', output_file])
             except subprocess.CalledProcessError:
                 Log.error('File {0} could not be opened', output_file)
+        # If the txt has been generated, don't make it again.
+        if output_format != "txt":
+            self.generate_output_txt(expid, joblist, path, "default")
 
-        self.generate_output_txt(expid, joblist, path, "default")
-
-    def generate_output_txt(self, expid, joblist, path,classictxt=False):
+    def generate_output_txt(self, expid, joblist, path,classictxt=False, job_list_object = None):
+        """
+        Function that generates a representation of the jobs in a txt file
+        :param expid: experiment's identifier
+        :type expid: str
+        :param joblist: experiment's list of jobs
+        :type joblist: list
+        :param job_list_object: Object that has the main txt generation method
+        :type job_list_object: JobList object
+        """
         Log.info('Writing status txt...')
-
+        
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
         file_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "status", expid + "_" + output_date + ".txt")
@@ -310,9 +328,15 @@ class Monitor:
 
                 output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
                 output_file.write(output)
-        else:
-            output_file.write("Writing jobs, they're grouped by [FC and DATE] \n")
-            self.write_output_txt_recursive(joblist[0],output_file,"",file_path)
+        else:                        
+            # Replaced call to function for a call to the function of the object that
+            # was previously implemented, nocolor is set to True because we don't want
+            # strange ANSI codes in our plain text file
+            if job_list_object is not None:                
+                output_file.write(job_list_object.print_with_status(statusChange = None, nocolor=True, existingList=joblist))
+            else:
+                output_file.write("Writing jobs, they're grouped by [FC and DATE] \n")
+                self.write_output_txt_recursive(joblist[0],output_file,"",file_path)
             output_file.close()
         Log.result('Status txt created at {0}', output_file)
 

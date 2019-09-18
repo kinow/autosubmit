@@ -1051,18 +1051,28 @@ class JobList:
             self.update_genealogy(notransitive=notransitive)
         del self._dic_jobs
 
-    def print_with_status(self, statusChange = None):    
+    def print_with_status(self, statusChange = None, nocolor = False, existingList = None):    
         """
         Returns the string representation of the dependency tree of 
         the Job List
 
+        :param statusChange: List of changes in the list, supplied in set status
+        :type statusChange: List of strings
+        :param nocolor: True if the result should not include color codes
+        :type nocolor: Boolean
+        :param existingList: External List of Jobs that will be printed, this excludes the inner list of jobs.
+        :type existingList: List of Job Objects
         :return: String representation
         :rtype: String
         """
-        allJobs = self.get_all()
+        # nocolor = True
+        allJobs = self.get_all() if existingList is None else existingList
         # Header
-        result = bcolors.BOLD + "## String representation of Job List [" + str(len(allJobs)) + "] with " + \
-        bcolors.OKGREEN + str(len(statusChange.keys())) + " Change(s) ##" + bcolors.ENDC +  bcolors.ENDC 
+        result = (bcolors.BOLD if nocolor == False else '') + "## String representation of Job List [" + str(len(allJobs)) + "] " 
+        if statusChange is not None:
+            result += "with " + (bcolors.OKGREEN if nocolor == False else '') + str(len(statusChange.keys())) + " Change(s) ##" + (bcolors.ENDC +  bcolors.ENDC if nocolor == False else '')
+        else:
+            result += " ## " 
 
         # Find root
         root = None
@@ -1072,7 +1082,7 @@ class JobList:
 
         # root exists
         if root is not None:
-            result += self._recursion_print(root, 0, statusChange = statusChange) 
+            result += self._recursion_print(root, 0, statusChange = statusChange, nocolor = nocolor) 
         else: 
             result += "\nCannot find root."
 
@@ -1087,7 +1097,7 @@ class JobList:
         :rtype: String
         """
         allJobs = self.get_all()
-        result = bcolors.BOLD + "## String representation of Job List [" + str(len(allJobs)) + "] ##" + bcolors.ENDC
+        result = "## String representation of Job List [" + str(len(allJobs)) + "] ##"
 
         # Find root
         root = None
@@ -1103,7 +1113,7 @@ class JobList:
 
         return result
 
-    def _recursion_print(self, job, level, statusChange = None):
+    def _recursion_print(self, job, level, statusChange = None, nocolor = False):
         """
         Returns the list of children in a recursive way
         Traverses the dependency tree
@@ -1116,22 +1126,27 @@ class JobList:
         for i in range(level):
                 prefix += "|  "
         # Prefix + Job Name
-        result = "\n"+ prefix + bcolors.BOLD + job.name + bcolors.ENDC
+        result = "\n"+ prefix + \
+                    (bcolors.BOLD + bcolors.CODE_TO_COLOR[job.status] if nocolor == False else '') + \
+                    job.name + \
+                    (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
         if len(job._children) > 0:                
             level += 1
             children = job._children
             total_children = len(job._children)
-            # Writes children number
-            result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ")
+            # Writes children number and status if color are not being showed
+            result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ") + \
+                    ("[" +Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
             if statusChange is not None:
                 # Writes change if performed
-                result += bcolors.BOLD + bcolors.OKGREEN + statusChange[job.name] if job.name in statusChange else "" 
-                result += bcolors.ENDC + bcolors.ENDC
+                result += (bcolors.BOLD + bcolors.OKGREEN if nocolor == False else '')
+                result += (statusChange[job.name] if job.name in statusChange else "")
+                result += (bcolors.ENDC + bcolors.ENDC if nocolor == False else "")
             
             for child in children:
                 # Continues recursion
-                result += self._recursion_print(child, level, statusChange=statusChange)
+                result += self._recursion_print(child, level, statusChange=statusChange, nocolor = nocolor)
         else:
-            pass
+            result += (" [" + Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
 
         return result

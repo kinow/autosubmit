@@ -179,9 +179,9 @@ class Autosubmit:
 
             # Monitor
             subparser = subparsers.add_parser('monitor', description="plots specified experiment")
-            subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
-                                   help='chooses type of output for generated plot')
+            subparser.add_argument('expid', help='experiment identifier')            
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'),
+                                   help='chooses type of output for generated plot') ## Default -o value comes from .conf
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
                                    help='Groups the jobs automatically or by date, member, chunk or split')
             subparser.add_argument('-expand', type=str,
@@ -218,6 +218,7 @@ class Autosubmit:
                                    help='Generates only txt status file(AS < 3.12b behaviour)')
 
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            subparser.add_argument('-d', '--detail', action='store_true', default=False, help='Shows Job List view in terminal')
 
             # Stats
             subparser = subparsers.add_parser('stats', description="plots statistics for specified experiment")
@@ -260,6 +261,8 @@ class Autosubmit:
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
             subparser.add_argument('-nl', '--no_recover_logs', action='store_true', default=False,
                                    help='Disable logs recovery')
+            subparser.add_argument('-d', '--detail', action='store_true', default=False, help='Show Job List view in terminal')
+
             # Migrate
             subparser = subparsers.add_parser('migrate', description="Migrate experiments from current user to another")
             subparser.add_argument('expid', help='experiment identifier')
@@ -305,8 +308,9 @@ class Autosubmit:
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('--hide', action='store_true', default=False,
                                    help='hides plot window')
-            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'), default='pdf',
-                                   help='chooses type of output for generated plot')
+            subparser.add_argument('-d', '--detail', action='store_true', default=False, help='Show Job List view in terminal')
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'),
+                                   help='chooses type of output for generated plot') ## Default -o value comes from .conf
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
                                    help='Groups the jobs automatically or by date, member, chunk or split')
             subparser.add_argument('-expand', type=str,
@@ -346,7 +350,6 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-np', '--noplot', action='store_true', default=False, help='omit plot')
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
-
             subparser.add_argument('-t', '--status_final',
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',
                                             'QUEUING', 'RUNNING'),
@@ -439,7 +442,7 @@ class Autosubmit:
             elif args.command == 'monitor':
                 return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                           args.filter_type, args.hide, args.txt, args.group_by, args.expand,
-                                          args.expand_status, args.hide_groups, args.notransitive,args.check_wrapper,args.txt_logfiles)
+                                          args.expand_status, args.hide_groups, args.notransitive,args.check_wrapper,args.txt_logfiles, args.detail)
             elif args.command == 'stats':
                 return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                              args.notransitive)
@@ -447,7 +450,7 @@ class Autosubmit:
                 return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
             elif args.command == 'recovery':
                 return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by,
-                                           args.expand, args.expand_status, args.notransitive,args.no_recover_logs)
+                                           args.expand, args.expand_status, args.notransitive,args.no_recover_logs, args.detail)
             elif args.command == 'check':
                 return Autosubmit.check(args.expid, args.notransitive)
             elif args.command == 'inspect':
@@ -459,7 +462,7 @@ class Autosubmit:
                 return Autosubmit.migrate(args.expid, args.offer, args.pickup)
             elif args.command == 'create':
                 return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
-                                         args.expand_status, args.notransitive,args.check_wrapper)
+                                         args.expand_status, args.notransitive,args.check_wrapper, args.detail)
             elif args.command == 'configure':
                 if not args.advanced or (args.advanced and dialog is None):
                     return Autosubmit.configure(args.advanced, args.databasepath, args.databasefilename,
@@ -1243,7 +1246,7 @@ class Autosubmit:
 
     @staticmethod
     def monitor(expid, file_format, lst, filter_chunks, filter_status, filter_section, hide, txt_only=False,
-                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, check_wrapper=False, txt_logfiles=False):
+                group_by=None, expand=list(), expand_status=list(), hide_groups=False, notransitive=False, check_wrapper=False, txt_logfiles=False, detail=False):
         """
         Plots workflow graph for a given experiment with status of each job coded by node color.
         Plot is created in experiment's plot folder with name <expid>_<date>_<time>.<file_format>
@@ -1280,6 +1283,8 @@ class Autosubmit:
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
             return False
+        # Getting output type from configuration
+        output_type = as_conf.get_output_type()
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
 
@@ -1400,9 +1405,21 @@ class Autosubmit:
         monitor_exp = Monitor()
 
         if txt_only or txt_logfiles:
-            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),txt_logfiles)
+            monitor_exp.generate_output_txt(expid, jobs, os.path.join(exp_path,"/tmp/LOG_"+expid),txt_logfiles, job_list_object=job_list)
         else:
-            monitor_exp.generate_output(expid, jobs, os.path.join(exp_path, "/tmp/LOG_", expid), file_format, packages, not hide, groups_dict, hide_groups=hide_groups)
+            # if file_format is set, use file_format, otherwise use conf value
+            monitor_exp.generate_output(expid, 
+                                        jobs, 
+                                        os.path.join(exp_path, "/tmp/LOG_", expid), 
+                                        output_format= file_format if file_format is not None else output_type, 
+                                        packages=packages, 
+                                        show=not hide, 
+                                        groups=groups_dict, 
+                                        hide_groups=hide_groups,
+                                        job_list_object=job_list)
+        
+        if detail:
+            Log.info(job_list.print_with_status())
 
         return True
 
@@ -1525,7 +1542,7 @@ class Autosubmit:
 
     @staticmethod
     def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list(),
-                 notransitive=False, no_recover_logs=False):
+                 notransitive=False, no_recover_logs=False, detail=False):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the jobs list.
@@ -1552,6 +1569,8 @@ class Autosubmit:
         if not as_conf.check_conf_files():
             Log.critical('Can not run with invalid configuration')
             return False
+        
+        
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -1561,7 +1580,8 @@ class Autosubmit:
         if not as_conf.check_conf_files():
             Log.critical('Can not recover with invalid configuration')
             return False
-
+        # Getting output type provided by the user in config, 'pdf' as default
+        output_type = as_conf.get_output_type()
         hpcarch = as_conf.get_platform()
 
         submitter = Autosubmit._get_submitter(as_conf)
@@ -1636,7 +1656,17 @@ class Autosubmit:
         if not noplot:
             Log.info("\nPlotting the jobs list...")
             monitor_exp = Monitor()
-            monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide, groups=groups_dict)
+            monitor_exp.generate_output(expid, 
+                                        job_list.get_job_list(), 
+                                        os.path.join(exp_path, "/tmp/LOG_", expid),
+                                        output_format=output_type, 
+                                        packages=packages, 
+                                        show=not hide, 
+                                        groups=groups_dict, 
+                                        job_list_object=job_list)
+        
+        if detail == True:
+            Log.info(job_list.print_with_status())
 
         return True
 
@@ -2455,7 +2485,7 @@ class Autosubmit:
                                     jobs_destiny)
 
     @staticmethod
-    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False,check_wrappers=False):
+    def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False,check_wrappers=False, detail = False):
         """
         Creates job list for given experiment. Configuration files must be valid before realizing this process.
 
@@ -2499,6 +2529,8 @@ class Autosubmit:
                         Log.critical('Can not create with invalid configuration')
                         return False
                     project_type = as_conf.get_project_type()
+                    # Getting output type provided by the user in config, 'pdf' as default
+                    output_type = as_conf.get_output_type()
 
                     if not Autosubmit._copy_code(as_conf, expid, project_type, False):
                         return False
@@ -2593,15 +2625,23 @@ class Autosubmit:
             
                         Log.info("\nPlotting the jobs list...")
                         monitor_exp = Monitor()
+                        # if output is set, use output
                         monitor_exp.generate_output(expid, job_list.get_job_list(),
-                                                    os.path.join(exp_path, "/tmp/LOG_", expid), output, packages, not hide,
-                                                    groups=groups_dict)
-
+                                                    os.path.join(exp_path, "/tmp/LOG_", expid), 
+                                                    output if output is not None else output_type, 
+                                                    packages, 
+                                                    not hide,
+                                                    groups=groups_dict,
+                                                    job_list_object=job_list)
                     Log.result("\nJob list created successfully")
                     Log.user_warning("Remember to MODIFY the MODEL config files!")
                     # Terminating locking as sugested by the portalocker developer
                     fh.flush()
                     os.fsync(fh.fileno())
+
+                    # Detail after lock has been closed.
+                    if (detail == True):
+                        Log.info(job_list.print_with_status())
 
                     return True
                 # catching Exception
@@ -2763,7 +2803,8 @@ class Autosubmit:
                 if not as_conf.check_conf_files():
                     Log.critical('Can not run with invalid configuration')
                     return False
-
+                # Getting output type from configuration
+                output_type = as_conf.get_output_type()
                 
                 # Validating job sections, if filter_section -ft has been set:                
                 if filter_section is not None:
@@ -3219,7 +3260,14 @@ class Autosubmit:
                         groups_dict = job_grouping.group_jobs()
                     Log.info("\nPloting joblist...")
                     monitor_exp = Monitor()
-                    monitor_exp.generate_output(expid, job_list.get_job_list(), os.path.join(exp_path, "/tmp/LOG_", expid), packages=packages, show=not hide, groups=groups_dict)
+                    monitor_exp.generate_output(expid, 
+                                                job_list.get_job_list(), 
+                                                os.path.join(exp_path, "/tmp/LOG_", expid), 
+                                                output_format=output_type,
+                                                packages=packages, 
+                                                show=not hide, 
+                                                groups=groups_dict,
+                                                job_list_object=job_list)
 
                 return True
 
