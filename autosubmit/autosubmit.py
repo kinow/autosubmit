@@ -621,6 +621,10 @@ class Autosubmit:
                             content = open(os.path.join(BasicConfig.DEFAULT_JOBS_CONF, filename)).read()
                         else:
                             content = resource_string('autosubmit.config', 'files/' + filename)
+                        
+                        # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
+                        if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
+                            content = open(BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read() 
 
                         conf_new_filename = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id, "conf", new_filename)
                         Log.debug(conf_new_filename)
@@ -655,6 +659,11 @@ class Autosubmit:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.replace(copy_id, exp_id)
                                 content = open(os.path.join(conf_copy_id, filename), 'r').read()
+                                
+                                # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
+                                if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
+                                    content = open(BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read()     
+
                                 open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                     #####
