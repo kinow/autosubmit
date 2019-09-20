@@ -1428,7 +1428,11 @@ class Autosubmit:
                                         job_list_object=job_list)
         
         if detail:
-            Log.info(job_list.print_with_status())
+            current_length = len(job_list.get_job_list()) 
+            if current_length > 1000:
+                Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
+            else:
+                Log.info(job_list.print_with_status())
 
         return True
 
@@ -1675,7 +1679,12 @@ class Autosubmit:
                                         job_list_object=job_list)
         
         if detail == True:
-            Log.info(job_list.print_with_status())
+            current_length = len(job_list.get_job_list()) 
+            if current_length > 1000:
+                Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
+            else:
+                Log.info(job_list.print_with_status())
+            
 
         return True
 
@@ -2650,7 +2659,12 @@ class Autosubmit:
 
                     # Detail after lock has been closed.
                     if (detail == True):
-                        Log.info(job_list.print_with_status())
+                        current_length = len(job_list.get_job_list()) 
+                        if current_length > 1000:
+                            Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
+                        else:
+                            Log.info(job_list.print_with_status())
+                        
 
                     return True
                 # catching Exception
@@ -3148,7 +3162,11 @@ class Autosubmit:
                     # If changes have been performed
                     if len(performed_changes.keys()) > 0:
                         if detail == True:
-                            Log.info(job_list.print_with_status(statusChange = performed_changes))
+                            current_length = len(job_list.get_job_list()) 
+                            if current_length > 1000:
+                                Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
+                            else:
+                                Log.info(job_list.print_with_status(statusChange = performed_changes))                            
                     else: 
                         Log.warning("No changes were performed.")
                 # End of New Feature
@@ -3278,6 +3296,8 @@ class Autosubmit:
                                                 groups=groups_dict,
                                                 job_list_object=job_list)
 
+                if not filter_type_chunk and detail == True:
+                    Log.warning("-d option only works with -ftc.")
                 return True
 
         except portalocker.AlreadyLocked:
