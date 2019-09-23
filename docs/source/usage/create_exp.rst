@@ -25,6 +25,17 @@ Example:
 
     autosubmit expid --HPC ithaca --description "experiment is about..."
 
+If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.conf should be copied.
+
+In this autosubmitrc or .autosubmitrc file, include the configuration setting custom_platforms:
+
+Example:
+::
+    [conf]
+    custom_platforms=/home/Earth/user/custom.conf
+
+Where the specified path should be complete, as something you would get when executing pwd, and also include the filename of your custom platforms content.
+
 How to create a copy of an experiment
 =====================================
 This option makes a copy of an existing experiment.
@@ -43,6 +54,17 @@ Example:
     autosubmit expid -y cxxx -H ithaca -d "experiment is about..."
 
 .. warning:: You can only copy experiments created with Autosubmit 3.0 or above.
+
+If there is an autosubmitrc or .autosubmitrc file in your home directory (cd ~), you can setup a default file from where the contents of platforms_expid.conf should be copied.
+
+In this autosubmitrc or .autosubmitrc file, include the configuration setting custom_platforms:
+
+Example:
+::
+    [conf]
+    custom_platforms=/home/Earth/user/custom.conf
+
+Where the specified path should be complete, as something you would get when executing pwd, and also include the filename of your custom platforms content.
 
 How to create a dummy experiment
 ================================

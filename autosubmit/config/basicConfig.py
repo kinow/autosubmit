@@ -43,6 +43,7 @@ class BasicConfig:
     LOCAL_ASLOG_DIR = 'ASLOGS'
     LOCAL_PROJ_DIR = 'proj'
     DEFAULT_PLATFORMS_CONF = ''
+    CUSTOM_PLATFORMS_PATH = ''
     DEFAULT_JOBS_CONF = ''
     SMTP_SERVER = ''
     MAIL_FROM = ''
@@ -80,6 +81,8 @@ class BasicConfig:
             BasicConfig.LOCAL_ROOT_DIR = parser.get('local', 'path')
         if parser.has_option('conf', 'platforms'):
             BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get('conf', 'platforms')
+        if parser.has_option('conf', 'custom_platforms'):
+            BasicConfig.CUSTOM_PLATFORMS_PATH = parser.get('conf', 'custom_platforms')
         if parser.has_option('conf', 'jobs'):
             BasicConfig.DEFAULT_JOBS_CONF = parser.get('conf', 'jobs')
         if parser.has_option('mail', 'smtp_server'):
