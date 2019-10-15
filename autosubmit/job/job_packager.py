@@ -35,7 +35,7 @@ class JobPackager(object):
     :param platform: A particular platform we are dealing with, e.g. Lsf Platform.\n
     :type platform: Specific Platform Object, e.g. LsfPlatform(), EcPlatform(), ...\n
     :param jobs_list: Contains the list of the jobs, along other properties.\n
-    :type jobs_list: JobList object.\n
+    :type jobs_list: JobList object.
     """
 
     def __init__(self, as_config, platform, jobs_list):        
@@ -71,28 +71,35 @@ class JobPackager(object):
         """
         packages_to_submit = list()
         remote_dependencies_dict = dict()
-
+        # only_wrappers = False when coming from Autosubmit.submit_ready_jobs, jobs_filtered empty
         if only_generate:
             jobs_to_submit = jobs_filtered
         else:
             jobs_ready = self._jobs_list.get_ready(self._platform)
             if jobs_ready == 0:
+                # If there are no jobs ready, result is tuple of empty
                 return packages_to_submit, remote_dependencies_dict
             if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
+                # If there is no more space in platform, result is tuple of empty
                 return packages_to_submit, remote_dependencies_dict
 
+            # Sort by 6 first digits of date
             available_sorted = sorted(jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
-            list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)
+            # Sort by Priority, highest first
+            list_of_available = sorted(available_sorted, key=lambda k: k.priority, reverse=True)            
             num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
+            # Take the first num_jobs_to_submit from the list of available
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
 
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
 
         for section in jobs_to_submit_by_section:
+            # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
+            # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
             if self._platform.allow_wrappers and self.wrapper_type in ['horizontal', 'vertical', 'vertical-mixed',
                                                                        'vertical-horizontal', 'horizontal-vertical'] \
             and (self.jobs_in_wrapper == 'None' or section in self.jobs_in_wrapper):
-
+                # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
 
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
@@ -124,13 +131,15 @@ class JobPackager(object):
         The value for each key is a list() with all the jobs with the key section.
 
         :param jobs_list: list of jobs to be divided
-        :rtype: dict
+        :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
+        # .jobs_in_wrapper defined in .conf, see constructor.
         sections_split = self.jobs_in_wrapper.split()
 
         jobs_section = dict()
         for job in jobs_list:
-            section = next((s for s in sections_split if job.section in s and '&' in s), None)
+            # This iterator (questionable choice of operator) will always return None if there is no '&' defined in the section name
+            section = next((s for s in sections_split if job.section in s and '&' in s), None)            
             if section is None:
                 section = job.section
             if section not in jobs_section:
@@ -167,6 +176,14 @@ class JobPackager(object):
         return packages, remote_dependencies_dict
 
     def _build_vertical_packages(self, section_list, max_wrapped_jobs):
+        """
+
+        :param section_list: Jobs belonging to a section defined as wrappable.\n
+        :type section_list: List() of Job Objects. \n
+        :param max_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined). \n
+        :type max_wrapped_jobs: Integer. \n
+        
+        """
         packages = []
         potential_dependency = None
         remote_dependencies_dict = dict()

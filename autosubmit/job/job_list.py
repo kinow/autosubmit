@@ -119,7 +119,11 @@ class JobList:
         :param default_retrials: default retrials for ech job
         :type default_retrials: int
         :param new: is it a new generation?
-        :type new: bool
+        :type new: bool \n
+        :param wrapper_type: Type of wrapper defined by the user in autosubmit_.conf [wrapper] section. \n
+        :type wrapper type: String \n
+        :param wrapper_jobs: Job types defined in autosubmit_.conf [wrapper sections] to be wrapped. \n
+        :type wrapper_jobs: String \n
         """
         self._parameters = parameters
         self._date_list = date_list
@@ -148,7 +152,8 @@ class JobList:
         for job in self._job_list:
             job.parameters = parameters
 
-        if wrapper_type == 'vertical-mixed':
+        # Perhaps this should be done by default independent of the wrapper_type supplied
+        if wrapper_type == 'vertical-mixed':                        
             self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(wrapper_jobs)
 
 
