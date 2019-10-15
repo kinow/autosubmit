@@ -741,16 +741,20 @@ class Autosubmit:
 
     @staticmethod
     def _load_parameters(as_conf, job_list, platforms):
+        """
+
+        """
         # Load parameters
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         for platform_name in platforms:
             platform = platforms[platform_name]
+            # Call method from platform.py parent object
             platform.add_parameters(parameters)
-
+        # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
-
+        # Attach paramenters to JobList
         job_list.parameters = parameters
     @staticmethod
     def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False, check_wrapper=False):
@@ -911,27 +915,40 @@ class Autosubmit:
 
     @staticmethod
     def generate_scripts_andor_wrappers(as_conf,job_list,jobs_filtered,packages_persistence,only_wrappers=False):
+        """
+        as_conf: AutosubmitConfig object
+        job_list: JobList object
+        jobs_filtered: list of jobs 
+        packages_persistence: JobPackagePersistence object
+        only_wrappers: True
+        """
         job_list._job_list=jobs_filtered
         job_list.update_list(as_conf,False)
         submitter = Autosubmit._get_submitter(as_conf)
+        # Current choice is Paramiko Submitter
+        # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
         submitter.load_platforms(as_conf)
+        # The value is retrieves from DEFAULT.HPCARCH
         hpcarch = as_conf.get_platform()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-        platforms_to_test = set()
+        platforms_to_test = set()        
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
-            # noinspection PyTypeChecker
+            # Assign platform objects to each job
+            # noinspection PyTypeChecker            
             job.platform = submitter.platforms[job.platform_name.lower()]
+            # Add object to set
             # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
         ## case setstatus
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        # Loading parameters again
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)        
         while job_list.get_active():
+            # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
-
             job_list.update_list(as_conf, False)
 
 
@@ -1170,14 +1187,18 @@ class Autosubmit:
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
         :param as_conf: autosubmit config object
+        :type as_conf: AutosubmitConfig object
         :param job_list: job list to check
+        :type job_list: JobList object
         :param platforms_to_test: platforms used
-        :type platforms_to_test: set
+        :type platforms_to_test: set of Platform Objects, e.g. SgePlatform(), LsfPlatform().
+        :param packages_persistence: Handles database per experiment
+        :type packages_persistence: JobPackagePersistence object
         :return: True if at least one job was submitted, False otherwise
         :rtype: bool
         """
         save = False
-
+        
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()

@@ -29,18 +29,29 @@ from math import ceil
 class JobPackager(object):
     """
     The main responsibility of this class is to manage the packages of jobs that have to be submitted.
+
+    :param as_config: Autosubmit basic configuration.\n
+    :type as_config: AutosubmitConfig object.\n
+    :param platform: A particular platform we are dealing with, e.g. Lsf Platform.\n
+    :type platform: Specific Platform Object, e.g. LsfPlatform(), EcPlatform(), ...\n
+    :param jobs_list: Contains the list of the jobs, along other properties.\n
+    :type jobs_list: JobList object.\n
     """
 
-    def __init__(self, as_config, platform, jobs_list):
+    def __init__(self, as_config, platform, jobs_list):        
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
-
+        # Submitted + Queuing Jobs for specific Platform
         waiting_jobs = len(jobs_list.get_submitted(platform) + jobs_list.get_queuing(platform))
+        # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
-        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))
+        # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
+        # .total_jobs Maximum number of jobs at the same time
+        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))        
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
 
+        # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
         self.remote_dependencies = self._as_config.get_remote_dependencies()
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
