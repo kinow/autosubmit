@@ -723,7 +723,7 @@ class JobList:
 
     def get_active(self, platform=None):
         """
-        Returns a list of active jobs (In platforms, Ready)
+        Returns a list of active jobs (In platforms queue + Ready)
 
         :param platform: job platform
         :type platform: HPCPlatform

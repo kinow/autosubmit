@@ -28,7 +28,7 @@ from math import ceil
 
 class JobPackager(object):
     """
-    The main responsibility of this class is to manage the packages of jobs that have to be submitted.
+    Main class that manages Job wrapping.
 
     :param as_config: Autosubmit basic configuration.\n
     :type as_config: AutosubmitConfig object.\n
@@ -53,6 +53,7 @@ class JobPackager(object):
 
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
+        # True or False
         self.remote_dependencies = self._as_config.get_remote_dependencies()
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
@@ -66,8 +67,8 @@ class JobPackager(object):
         """
         Returns the list of the built packages to be submitted
 
-        :return: list of packages
-        :rtype list
+        :return: List of packages depending on type of package, JobPackageVertical Object for 'vertical-mixed' or 'vertical'. \n
+        :rtype: List() of JobPackageVertical
         """
         packages_to_submit = list()
         remote_dependencies_dict = dict()
@@ -90,9 +91,8 @@ class JobPackager(object):
             num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(jobs_ready), self._max_jobs_to_submit)
             # Take the first num_jobs_to_submit from the list of available
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
-
+        # print(len(jobs_to_submit))
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
-
         for section in jobs_to_submit_by_section:
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
@@ -179,15 +179,17 @@ class JobPackager(object):
         """
         Builds Vertical-Mixed or Vertical
 
-        :param section_list: Jobs belonging to a section defined as wrappable.\n
+        :param section_list: Jobs defined as wrappable belonging to a common section.\n
         :type section_list: List() of Job Objects. \n
         :param max_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
         :type max_wrapped_jobs: Integer. \n
-        
+        :return: List of Wrapper Packages, Dictionary that details dependencies. \n
+        :rtype: List() of JobPackageVertical(), Dictionary Key: String, (Dictionary Key: Variable Name, Value: String/Int)
         """
         packages = []
         potential_dependency = None
         remote_dependencies_dict = dict()
+        # True when autosubmit_.conf value [wrapper].DEPENDENCIES has been set to true 
         if self.remote_dependencies:
             remote_dependencies_dict['name_to_id'] = dict()
             remote_dependencies_dict['dependencies'] = dict()
@@ -206,15 +208,18 @@ class JobPackager(object):
                                                                             max_wrapped_jobs, self._platform.max_wallclock)
 
                     jobs_list = job_vertical_packager.build_vertical_package(job)
+                    # update max_jobs, potential_dependency is None
                     self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(jobs_list))
-                    else:
+                    else:                        
                         package = JobPackageVertical(jobs_list, potential_dependency)
                         packages.append(package)
+                        # Possible need of "if self.remote_dependencies here"
                         remote_dependencies_dict['name_to_id'][potential_dependency] = -1
                         remote_dependencies_dict['dependencies'][package.name] = potential_dependency
                     if self.remote_dependencies:
+                        # Sending last item in list of packaged
                         child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
                         if child is not None:
                             section_list.insert(section_list.index(job) + 1, child)
@@ -305,17 +310,30 @@ class JobPackagerVertical(object):
 
     def build_vertical_package(self, job):
         """
+        Goes trough the job and all the related jobs (children, or part of the same date, member ordering group), finds those suitable
+        and groups them together into a wrapper. 
 
+        :param job: Job to be wrapped. \n
+        :type job: Job Object \n
+        :return: List of jobs that are wrapped together. \n
+        :rtype: List() of Job Object \n
         """
+        # self.jobs_list starts as 1, with only, but wrapped jobs are added in the recursion
         if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.max_wrapped_jobs:
             return self.jobs_list
         child = self.get_wrappable_child(job)
+        # If not None, it is wrappable
         if child is not None:
+            # Calculate total wallclock per possible wrapper
             self.total_wallclock = sum_str_hours(self.total_wallclock, child.wallclock)
+            # Testing against max from platform
             if self.total_wallclock <= self.max_wallclock:
+                # Signaling, this is later tested in the main loop
                 child.packed = True
                 self.jobs_list.append(child)
+                # Recursive call
                 return self.build_vertical_package(child)
+        # Wrapped jobs are accumulated and returned in this list
         return self.jobs_list
 
     def get_wrappable_child(self, job):
@@ -345,6 +363,14 @@ class JobPackagerVerticalSimple(JobPackagerVertical):
         super(JobPackagerVerticalSimple, self).__init__(jobs_list, total_wallclock, max_jobs, max_wrapped_jobs, max_wallclock)
 
     def get_wrappable_child(self, job):
+        """
+        Goes through the children jobs of job, tests if wrappable using self._is_wrappable.
+
+        :param job: job to be evaluated. \n
+        :type job: Job Object \n
+        :return: job (children) that is wrappable. \n
+        :rtype: Job Object
+        """
         for child in job.children:
             if self._is_wrappable(child, job):
                 return child
@@ -352,9 +378,22 @@ class JobPackagerVerticalSimple(JobPackagerVertical):
         return None
 
     def _is_wrappable(self, job, parent=None):
+        """
+        Determines if a job (children) is wrappable. Basic condition is that the parent should have the same section as the child.
+        Also, test that the parents of the job (children) are COMPLETED.
+
+        :param job: Children Job to be tested. \n
+        :type job: Job Object \n
+        :param parent: Original Job whose children are tested. \n
+        :type parent: Job Object \n
+        :return: True if wrappable, False otherwise. \n
+        :rtype: Boolean
+        """
         if job.section != parent.section:
             return False
         for other_parent in job.parents:
+            # First part, parents should be COMPLETED.
+            # Second part, no cycles.
             if other_parent.status != Status.COMPLETED and other_parent not in self.jobs_list:
                 return False
         return True
