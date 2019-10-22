@@ -372,12 +372,6 @@ class JobList:
         filtered_jobs_list = filter(lambda job: job.section in wrapper_jobs, self._job_list)
 
         filtered_jobs_fake_date_member, fake_original_job_map = self._create_fake_dates_members(filtered_jobs_list)        
-        # print("Fake Jobs: ")
-        # for i in filtered_jobs_fake_date_member:
-        #     print(i)
-        # print("Fake Mapping: ")
-        # for k,v in fake_original_job_map:
-        #     print("Fake " + str(k) + " to " + str(v))
 
         sections_running_type_map = dict()        
         for section in wrapper_jobs.split(" "):
@@ -390,12 +384,9 @@ class JobList:
                 # Filter list of fake jobs according to date and member, result not sorted at this point
                 sorted_jobs_list = filter(lambda job: job.name.split("_")[1] == str_date and
                                                       job.name.split("_")[2] == member, filtered_jobs_fake_date_member)
-                # print("Sort of Sorted")
-                # for i in sorted_jobs_list:
-                #     print(i)
 
                 previous_job = sorted_jobs_list[0]
-                # print("Previous job " + str(previous_job))
+
                 # get RUNNING for this section
                 section_running_type = sections_running_type_map[previous_job.section]
 
@@ -413,22 +404,12 @@ class JobList:
                     # Test if RUNNING is different between sections, or if we have reached the last item in sorted_jobs_list
                     if (previous_section_running_type != None and previous_section_running_type != section_running_type) \
                       or index == len(sorted_jobs_list):
-                        
-                        # print("Jobs pre sort: ")
-                        # for i in jobs_to_sort:
-                        #     print(str(i.name) + " -> " + str(i.name.split('_')[1]) + " OR " + str(i.name.split('_')[2]) + " OR " +  str(int(i.name.split('_')[3])
-                        #                                                     if len(i.name.split('_')) == 5 else num_chunks + 1))
-
 
                         # Sorting by date, member, chunk number if it is a chunk job otherwise num_chunks from JOB TYPE (section)     
                         # Important to note that the only differentiating factor would be chunk OR num_chunks                   
                         jobs_to_sort = sorted(jobs_to_sort, key=lambda k: (k.name.split('_')[1], (k.name.split('_')[2]),
                                                                            (int(k.name.split('_')[3])
                                                                             if len(k.name.split('_')) == 5 else num_chunks + 1)))
-                        # print("Jobs to sort: ")
-                        # for i in jobs_to_sort:
-                        #     print(str(i.name) + " -> " + str(i.name.split('_')[1]) + " OR " + str(i.name.split('_')[2]) + " OR " +  str(int(i.name.split('_')[3])
-                        #                                                     if len(i.name.split('_')) == 5 else num_chunks + 1))
 
                         # Bringing back original job if identified
                         for idx in range(0, len(jobs_to_sort)):
@@ -444,12 +425,7 @@ class JobList:
 
                     jobs_to_sort.append(job)
                     previous_job = job
-        # print("Result")
-        # for k in dict_jobs.keys():
-        #     for k2 in dict_jobs[k].keys():
-        #         for i in dict_jobs[k][k2]:
-        #             print(str(k) + " -> " + str(k2) + " i: " + str(i))
-        # return False
+
         return dict_jobs
 
     def _create_fake_dates_members(self, filtered_jobs_list):

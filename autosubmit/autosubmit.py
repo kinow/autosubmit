@@ -962,6 +962,9 @@ class Autosubmit:
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
         while job_list.get_active():
+            # print("Printing Active from iter: ")
+            # for j in job_list.get_active():
+            #     print(j.name)
             # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
             job_list.update_list(as_conf, False)
@@ -1239,7 +1242,7 @@ class Autosubmit:
                             continue
                     if only_wrappers or inspect:
                         for innerJob in package._jobs:
-                            # Setting status to COMPLETED for some reason.
+                            # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
                             innerJob.status=Status.COMPLETED
 
                         if hasattr(package, "name"):
