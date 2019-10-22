@@ -932,7 +932,7 @@ class Autosubmit:
         :type jobs_filtered: List() of Job Objects \n
         :param packages_persistence: Object that handles local db persistence.  \n
         :type packages_persistence: JobPackagePersistence() Object \n
-        :param only_wrappers: True when coming from Autosubmit.create(). \n
+        :param only_wrappers: True when coming from Autosubmit.create(). False when coming from Autosubmit.inspect(), \n
         :type only_wrappers: Boolean \n
         :return: Nothing\n
         :rtype: \n
@@ -962,9 +962,6 @@ class Autosubmit:
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
         while job_list.get_active():
-            # print("Printing Active from iter: ")
-            # for j in job_list.get_active():
-            #     print(j.name)
             # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
             job_list.update_list(as_conf, False)
@@ -1214,7 +1211,7 @@ class Autosubmit:
         :type packages_persistence: JobPackagePersistence object \n
         :param inspect: True if coming from generate_scripts_andor_wrappers(). \n
         :type inspect: Boolean \n
-        :param only_wrappers: True if it comes from create -cw \n
+        :param only_wrappers: True if it comes from create -cw, False if it comes from inspect -cw. \n
         :type only_wrappers: Boolean \n
         :return: True if at least one job was submitted, False otherwise \n
         :rtype: Boolean
