@@ -972,7 +972,31 @@ class Job(object):
         self.remote_logs = self.local_logs
 
 
-class WrapperJob(Job):
+class WrapperJob(Job):    
+    """
+    Defines a wrapper from a package.
+    
+    Calls Job constructor.
+
+    :param name: Name of the Package \n
+    :type name: String \n
+    :param job_id: Id of the first Job of the package \n
+    :type job_id: Integer \n
+    :param status: 'READY' when coming from submit_ready_jobs() \n
+    :type status: String \n
+    :param priority: 0 when coming from submit_ready_jobs() \n
+    :type priority: Integer \n
+    :param job_list: List of jobs in the package \n
+    :type job_list: List() of Job() objects \n
+    :param total_wallclock: Wallclock of the package \n
+    :type total_wallclock: String Formatted \n
+    :param num_processors: Number of processors for the package \n
+    :type num_processors: Integer \n
+    :param platform: Platform object defined for the package \n
+    :type platform: Platform Object. e.g. EcPlatform() \n
+    :param as_config: Autosubmit basic configuration object \n
+    :type as_config: AutosubmitConfig object \n
+    """
 
     def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config):
         super(WrapperJob, self).__init__(name, job_id, status, priority)

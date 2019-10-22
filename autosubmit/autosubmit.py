@@ -742,7 +742,15 @@ class Autosubmit:
     @staticmethod
     def _load_parameters(as_conf, job_list, platforms):
         """
+        Add parameters from configuration files into platform objects, and into the job_list object.
 
+        :param as_conf: Basic configuration handler.\n
+        :type as_conf: AutosubmitConfig object\n
+        :param job_list: Handles the list as a unique entity.\n
+        :type job_list: JobList() object\n
+        :param platforms: List of platforms related to the experiment.\n
+        :type platforms: List() of Platform Objects. e.g EcPlatform(), SgePlatform().
+        :return: Nothing, modifies input.
         """
         # Load parameters
         Log.debug("Loading parameters...")
@@ -916,7 +924,7 @@ class Autosubmit:
     @staticmethod
     def generate_scripts_andor_wrappers(as_conf,job_list,jobs_filtered,packages_persistence,only_wrappers=False):
         """
-        :param as_conf: Class that handles basic configuration paramenters of Autosubmit. \n
+        :param as_conf: Class that handles basic configuration parameters of Autosubmit. \n
         :type as_conf: AutosubmitConfig() Object \n
         :param job_list: Representation of the jobs of the experiment, keeps the list of jobs inside. \n
         :type job_list: JobList() Object \n
@@ -935,7 +943,7 @@ class Autosubmit:
         submitter = Autosubmit._get_submitter(as_conf)
         # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
         submitter.load_platforms(as_conf)
-        # The value is retrieves from DEFAULT.HPCARCH
+        # The value is retrieved from DEFAULT.HPCARCH
         hpcarch = as_conf.get_platform()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         platforms_to_test = set()        
@@ -952,7 +960,7 @@ class Autosubmit:
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
         # Loading parameters again
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)        
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
         while job_list.get_active():
             # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
@@ -1199,8 +1207,10 @@ class Autosubmit:
         :type job_list: JobList object  \n
         :param platforms_to_test: platforms used  \n
         :type platforms_to_test: set of Platform Objects, e.g. SgePlatform(), LsfPlatform().  \n
-        :param packages_persistence: Handles database per experiment \n
+        :param packages_persistence: Handles database per experiment. \n
         :type packages_persistence: JobPackagePersistence object \n
+        :param inspect: True if coming from generate_scripts_andor_wrappers(). \n
+        :type inspect: Boolean \n
         :param only_wrappers: True if it comes from create -cw \n
         :type only_wrappers: Boolean \n
         :return: True if at least one job was submitted, False otherwise \n

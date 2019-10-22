@@ -184,7 +184,7 @@ class JobPackager(object):
         :param max_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
         :type max_wrapped_jobs: Integer. \n
         :return: List of Wrapper Packages, Dictionary that details dependencies. \n
-        :rtype: List() of JobPackageVertical(), Dictionary Key: String, (Dictionary Key: Variable Name, Value: String/Int)
+        :rtype: List() of JobPackageVertical(), Dictionary Key: String, Value: (Dictionary Key: Variable Name, Value: String/Int)
         """
         packages = []
         potential_dependency = None
@@ -310,7 +310,7 @@ class JobPackagerVertical(object):
 
     def build_vertical_package(self, job):
         """
-        Goes trough the job and all the related jobs (children, or part of the same date, member ordering group), finds those suitable
+        Goes trough the job and all the related jobs (children, or part of the same date member ordered group), finds those suitable
         and groups them together into a wrapper. 
 
         :param job: Job to be wrapped. \n
@@ -318,7 +318,7 @@ class JobPackagerVertical(object):
         :return: List of jobs that are wrapped together. \n
         :rtype: List() of Job Object \n
         """
-        # self.jobs_list starts as 1, with only, but wrapped jobs are added in the recursion
+        # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
         if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.max_wrapped_jobs:
             return self.jobs_list
         child = self.get_wrappable_child(job)
@@ -328,7 +328,7 @@ class JobPackagerVertical(object):
             self.total_wallclock = sum_str_hours(self.total_wallclock, child.wallclock)
             # Testing against max from platform
             if self.total_wallclock <= self.max_wallclock:
-                # Signaling, this is later tested in the main loop
+                # Marking, this is later tested in the main loop
                 child.packed = True
                 self.jobs_list.append(child)
                 # Recursive call
@@ -437,7 +437,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
 
     def get_wrappable_child(self, job):
         """
-        Goes through the jobs with the same date and member than the input jub, and return the first that satisfies self._is_wrappable()
+        Goes through the jobs with the same date and member than the input job, and return the first that satisfies self._is_wrappable()
 
         :param job: job to be evaluated. \n
         :type job: Job Object \n
