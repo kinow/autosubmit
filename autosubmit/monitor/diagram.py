@@ -30,6 +30,7 @@ from autosubmit.job.job import Job
 # Autosubmit stats constants
 RATIO = 4
 MAX_JOBS_PER_PLOT = 12.0
+MAX_NUM_PLOTS = 20
 
 
 def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None):
@@ -39,14 +40,23 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     num_plots = int(np.ceil(len(jobs_list) / MAX_JOBS_PER_PLOT))
     ind = np.arange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
-    # Creating stats figure
+    # Creating stats figure + sanity check
+    if (num_plots > MAX_NUM_PLOTS):
+        Log.warning("The results are too large to be shown, try narrowing your query.")  
+        Log.info("Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
+or -fp where you supply an integer that represents the number of hours into the past that should be queried, \
+suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI.")
+        raise Exception("Stats query our of bounds")
+
     fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
+
     fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
     # Variables initialization
     ax, ax2 = [], []
     rects = [None] * 6
     exp_stats = ExperimentStats(jobs_list, period_ini, period_fi)
     grid_spec = gridspec.GridSpec(RATIO * num_plots + 2, 1)
+
     for plot in range(1, num_plots + 1):
         # Calculating jobs inside the given plot
         l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
@@ -70,7 +80,7 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
         rects[3] = ax[plot - 1].bar(ind + width * 3, exp_stats.fail_queued[l1:l2], width, color='purple')
         rects[4] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='tomato')
         rects[5] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold],
-                                     "k--", label='wallclock sim')
+                                    "k--", label='wallclock sim')
 
     # Building legends subplot
     legends_plot = fig.add_subplot(grid_spec[0, 0])
