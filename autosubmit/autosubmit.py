@@ -1548,11 +1548,15 @@ class Autosubmit:
             period_ini = None
 
         if len(job_list) > 0:
-            Log.info("Plotting stats...")
-            monitor_exp = Monitor()
-            # noinspection PyTypeChecker
-            monitor_exp.generate_output_stats(expid, job_list, file_format, period_ini, period_fi, not hide)
-            Log.result("Stats plot ready")
+            try:
+                Log.info("Plotting stats...")
+                monitor_exp = Monitor()
+                # noinspection PyTypeChecker
+                monitor_exp.generate_output_stats(expid, job_list, file_format, period_ini, period_fi, not hide)
+                Log.result("Stats plot ready")
+            except Exception as ex:
+                Log.critical(str(ex))
+                return False            
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(ft, period_ini, period_fi))
         return True
