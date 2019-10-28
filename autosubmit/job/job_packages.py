@@ -76,6 +76,14 @@ class JobPackageBase(object):
         return self._platform
 
     def submit(self, configuration, parameters,only_generate=False):
+        """
+        :para configuration: Autosubmit basic configuration \n
+        :type configuration: AutosubmitConfig object \n
+        :param parameters; Parameters from joblist \n
+        :type parameters: JobList,parameters \n
+        :param only_generate: True if coming from generate_scripts_andor_wrappers(). If true, only generates scripts; otherwise, submits. \n
+        :type only_generate: Boolean 
+        """
         exit=False
         for job in self.jobs:
             if job.check.lower() == Job.CHECK_ON_SUBMISSION:
@@ -233,12 +241,16 @@ class JobPackageArray(JobPackageBase):
 class JobPackageThread(JobPackageBase):
     """
     Class to manage a thread-based package of jobs to be submitted by autosubmit
+
+    :param dependency: Name of potential dependency
+    :type dependency: String
     """
     FILE_PREFIX = 'ASThread'
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict()):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
+        # Seems like this one is not used at all in the class
         self._job_dependency = dependency
         self._common_script = None
         self._wallclock = '00:00'
@@ -408,6 +420,10 @@ class JobPackageThreadWrapped(JobPackageThread):
 class JobPackageVertical(JobPackageThread):
     """
     Class to manage a vertical thread-based package of jobs to be submitted by autosubmit
+
+    :param jobs: 
+    :type jobs:
+    :param: dependency:
     """
 
     def __init__(self, jobs, dependency=None):

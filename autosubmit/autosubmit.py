@@ -741,16 +741,28 @@ class Autosubmit:
 
     @staticmethod
     def _load_parameters(as_conf, job_list, platforms):
+        """
+        Add parameters from configuration files into platform objects, and into the job_list object.
+
+        :param as_conf: Basic configuration handler.\n
+        :type as_conf: AutosubmitConfig object\n
+        :param job_list: Handles the list as a unique entity.\n
+        :type job_list: JobList() object\n
+        :param platforms: List of platforms related to the experiment.\n
+        :type platforms: List() of Platform Objects. e.g EcPlatform(), SgePlatform().
+        :return: Nothing, modifies input.
+        """
         # Load parameters
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         for platform_name in platforms:
             platform = platforms[platform_name]
+            # Call method from platform.py parent object
             platform.add_parameters(parameters)
-
+        # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
-
+        # Attach paramenters to JobList
         job_list.parameters = parameters
     @staticmethod
     def inspect(expid,  lst, filter_chunks, filter_status, filter_section , notransitive=False, force=False, check_wrapper=False):
@@ -911,27 +923,47 @@ class Autosubmit:
 
     @staticmethod
     def generate_scripts_andor_wrappers(as_conf,job_list,jobs_filtered,packages_persistence,only_wrappers=False):
+        """
+        :param as_conf: Class that handles basic configuration parameters of Autosubmit. \n
+        :type as_conf: AutosubmitConfig() Object \n
+        :param job_list: Representation of the jobs of the experiment, keeps the list of jobs inside. \n
+        :type job_list: JobList() Object \n
+        :param jobs_filtered: list of jobs that are relevant to the process. \n 
+        :type jobs_filtered: List() of Job Objects \n
+        :param packages_persistence: Object that handles local db persistence.  \n
+        :type packages_persistence: JobPackagePersistence() Object \n
+        :param only_wrappers: True when coming from Autosubmit.create(). False when coming from Autosubmit.inspect(), \n
+        :type only_wrappers: Boolean \n
+        :return: Nothing\n
+        :rtype: \n
+        """
         job_list._job_list=jobs_filtered
         job_list.update_list(as_conf,False)
+        # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
+        # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
         submitter.load_platforms(as_conf)
+        # The value is retrieved from DEFAULT.HPCARCH
         hpcarch = as_conf.get_platform()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-        platforms_to_test = set()
+        platforms_to_test = set()        
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
-            # noinspection PyTypeChecker
+            # Assign platform objects to each job
+            # noinspection PyTypeChecker            
             job.platform = submitter.platforms[job.platform_name.lower()]
+            # Add object to set
             # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
-        ## case setstatus
+        # case setstatus
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        # Loading parameters again
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
         while job_list.get_active():
+            # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
-
             job_list.update_list(as_conf, False)
 
 
@@ -1169,15 +1201,22 @@ class Autosubmit:
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
-        :param as_conf: autosubmit config object
-        :param job_list: job list to check
-        :param platforms_to_test: platforms used
-        :type platforms_to_test: set
-        :return: True if at least one job was submitted, False otherwise
-        :rtype: bool
+        :param as_conf: autosubmit config object \n
+        :type as_conf: AutosubmitConfig object  \n
+        :param job_list: job list to check  \n
+        :type job_list: JobList object  \n
+        :param platforms_to_test: platforms used  \n
+        :type platforms_to_test: set of Platform Objects, e.g. SgePlatform(), LsfPlatform().  \n
+        :param packages_persistence: Handles database per experiment. \n
+        :type packages_persistence: JobPackagePersistence object \n
+        :param inspect: True if coming from generate_scripts_andor_wrappers(). \n
+        :type inspect: Boolean \n
+        :param only_wrappers: True if it comes from create -cw, False if it comes from inspect -cw. \n
+        :type only_wrappers: Boolean \n
+        :return: True if at least one job was submitted, False otherwise \n
+        :rtype: Boolean
         """
         save = False
-
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
             packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
@@ -1200,6 +1239,7 @@ class Autosubmit:
                             continue
                     if only_wrappers or inspect:
                         for innerJob in package._jobs:
+                            # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
                             innerJob.status=Status.COMPLETED
 
                         if hasattr(package, "name"):
@@ -1213,6 +1253,7 @@ class Autosubmit:
                             if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
                                 remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
                         if isinstance(package, JobPackageThread):
+                            # If it is instance of JobPackageThread, then it is JobPackageVertical.
                             packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                         save = True
                 except WrongTemplateException as e:
@@ -1248,6 +1289,7 @@ class Autosubmit:
                                     'name_to_id']:
                                     remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
                                 if isinstance(package, JobPackageThread):
+                                    # Saving only when it is a real multi job package
                                     packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                             i += 1
 
@@ -1379,11 +1421,17 @@ class Autosubmit:
         for job in jobs:
             job.children = job.children - referenced_jobs_to_remove
             job.parents = job.parents - referenced_jobs_to_remove
+        # for job in jobs:
+        #     print(job.name + " from " + str(job.platform_name))
+        # return False
         #WRAPPERS
         if as_conf.get_wrapper_type() != 'none' and check_wrapper:
+            # Class constructor creates table if it does not exist
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
-            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)
+            # Permissons                                                         
+            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)            
+            #Database modification
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
             job_list_wrappers = copy.deepcopy(job_list)

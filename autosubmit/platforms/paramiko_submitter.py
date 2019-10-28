@@ -56,6 +56,7 @@ class ParamikoSubmitter(Submitter):
         platforms_used = list()
         hpcarch = asconf.get_platform()
 
+        # Traverse jobs defined in jobs_.conf and add platforms found if not already included
         job_parser = asconf.jobs_parser
         for job in job_parser.sections():
             hpc = job_parser.get_option(job, 'PLATFORM', hpcarch).lower()
@@ -63,8 +64,10 @@ class ParamikoSubmitter(Submitter):
                 platforms_used.append(hpc)
 
         parser = asconf.platforms_parser
-
+        # Declare platforms dictionary, key: Platform Name, Value: Platform Object
         platforms = dict()
+
+        # Build Local Platform Object
         local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
         local_platform.max_wallclock = asconf.get_max_wallclock()
         local_platform.max_processors = asconf.get_max_processors()
@@ -74,11 +77,15 @@ class ParamikoSubmitter(Submitter):
         local_platform.temp_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
         local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.host = 'localhost'
+        # Add object to entry in dictionary
         platforms['local'] = local_platform
         platforms['LOCAL'] = local_platform
 
+        # parser is the platforms parser that represents platforms_.conf
+        # Traverse sections []
         for section in parser.sections():
-
+            
+            # Consider only those included in the list of jobs
             if section.lower() not in platforms_used:
                 continue
 
@@ -103,10 +110,11 @@ class ParamikoSubmitter(Submitter):
             except ParamikoPlatformException as e:
                 Log.error("Queue exception: {0}".format(e.message))
                 return None
-
+            # Set the type and version of the platform found
             remote_platform.type = platform_type
             remote_platform._version = platform_version
 
+            # Concatenating host + project and adding to the object
             if parser.get_option(section, 'ADD_PROJECT_TO_HOST', '').lower() == 'true':
                 host = '{0}-{1}'.format(parser.get_option(section, 'HOST', None),
                                         parser.get_option(section, 'PROJECT', None))
@@ -114,6 +122,7 @@ class ParamikoSubmitter(Submitter):
                 host = parser.get_option(section, 'HOST', None)
 
             remote_platform.host = host
+            # Retrieve more configurations settings and save them in the object
             remote_platform.max_wallclock = parser.get_option(section, 'MAX_WALLCLOCK',
                                                               asconf.get_max_wallclock())
             remote_platform.max_processors = parser.get_option(section, 'MAX_PROCESSORS',
@@ -142,10 +151,13 @@ class ParamikoSubmitter(Submitter):
                                                                    None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
                                                     remote_platform.user, remote_platform.expid)
+            # Executes update_cmds() from corresponding Platform Object
             remote_platform.update_cmds()
+            # Save platform into result dictionary
             platforms[section.lower()] = remote_platform
 
         for section in parser.sections():
+            # if this section is included in platforms
             if parser.has_option(section, 'SERIAL_PLATFORM'):
                 platforms[section.lower()].serial_platform = platforms[parser.get_option(section,
                                                                                          'SERIAL_PLATFORM',
