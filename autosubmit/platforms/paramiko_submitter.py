@@ -42,6 +42,9 @@ class ParamikoSubmitter(Submitter):
     Class to manage the experiments platform
     """
 
+    def load_platforms_migrate(self, asconf, retries=5):
+        pass #Add all info related to migrate
+
     def load_platforms(self, asconf, retries=5):
         """
         Create all the platforms object that will be used by the experiment
