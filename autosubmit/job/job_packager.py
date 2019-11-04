@@ -212,18 +212,18 @@ class JobPackager(object):
                     self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(jobs_list))
-                    else:                        
-                        package = JobPackageVertical(jobs_list, potential_dependency)
-                        packages.append(package)
-                        # Possible need of "if self.remote_dependencies here"
-                        remote_dependencies_dict['name_to_id'][potential_dependency] = -1
-                        remote_dependencies_dict['dependencies'][package.name] = potential_dependency
-                    if self.remote_dependencies:
-                        # Sending last item in list of packaged
-                        child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
-                        if child is not None:
-                            section_list.insert(section_list.index(job) + 1, child)
-                            potential_dependency = packages[-1].name
+                    else:
+                        if self.remote_dependencies:
+                            # Sending last item in list of packaged
+                            child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
+                            if child is not None:
+                                section_list.insert(section_list.index(job) + 1, child)
+                                potential_dependency = packages[-1].name
+                            package = JobPackageVertical(jobs_list, potential_dependency)
+                            packages.append(package)
+                            # Possible need of "if self.remote_dependencies here"
+                            remote_dependencies_dict['name_to_id'][potential_dependency] = -1
+                            remote_dependencies_dict['dependencies'][package.name] = potential_dependency
             else:
                 break
         return packages, remote_dependencies_dict
