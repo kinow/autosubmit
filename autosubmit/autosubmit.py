@@ -1219,20 +1219,17 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
+            packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages(hold=False)
+
             if not inspect:
                 platform.open_submit_script()
             valid_packages_to_submit = []
+            valid_packages_to_submit_held =[]
             for package in packages_to_submit:
                 try:
-                    if hasattr(package, "name"):
-                        if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
-                            remote_dependency = remote_dependencies_dict['dependencies'][package.name]
-                            remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
-                            package.set_job_dependency(remote_dependency_id)
                     if not only_wrappers:
                         try:
-                            package.submit(as_conf, job_list.parameters, inspect)
+                            package.submit(as_conf, job_list.parameters, inspect,hold=False)
                             valid_packages_to_submit.append(package)
                         except (IOError,OSError):
                             #write error file
@@ -1250,8 +1247,7 @@ class Autosubmit:
                                                      package._wallclock, package._num_processors,
                                                      package.platform, as_conf)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                            if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                                remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+
                         if isinstance(package, JobPackageThread):
                             # If it is instance of JobPackageThread, then it is JobPackageVertical.
                             packages_persistence.save(package.name, package.jobs, package._expid, inspect)
@@ -1262,12 +1258,46 @@ class Autosubmit:
                 except Exception:
                     Log.error("{0} submission failed due to Unknown error", platform.name)
                     raise
+            if as_conf.get_remote_dependencies:
+                packages_remote_dependencies = JobPackager(as_conf, platform, job_list).build_packages(hold=True)
+                for package in packages_remote_dependencies:
+                    try:
+                        if not only_wrappers:
+                            try:
+                                package.submit(as_conf, job_list.parameters, inspect,hold=True)
+                                valid_packages_to_submit_held.append(package)
+                            except (IOError, OSError):
+                                # write error file
+                                continue
+                        if only_wrappers or inspect:
+                            for innerJob in package._jobs:
+                                # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
+                                innerJob.status = Status.COMPLETED
 
+                            if hasattr(package, "name"):
+                                job_list.packages_dict[package.name] = package.jobs
+                                from job.job import WrapperJob
+                                wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.READY, 0,
+                                                         package.jobs,
+                                                         package._wallclock, package._num_processors,
+                                                         package.platform, as_conf)
+                                job_list.job_package_map[package.jobs[0].id] = wrapper_job
+
+                            if isinstance(package, JobPackageThread):
+                                # If it is instance of JobPackageThread, then it is JobPackageVertical.
+                                packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                            save = True
+                    except WrongTemplateException as e:
+                        Log.error("Invalid parameter substitution in {0} template", e.job_name)
+                        raise
+                    except Exception:
+                        Log.error("{0} submission failed due to Unknown error", platform.name)
+                        raise
             if platform.type == "slurm" and not inspect and not only_wrappers:
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:
-                        jobs_id = platform.submit_Script()
+                        jobs_id = platform.submit_Script(hold=False)
                         if jobs_id is None:
                             raise BaseException("Exiting AS being unable to get jobID")
                         i = 0
@@ -1285,23 +1315,40 @@ class Autosubmit:
                                                          package._wallclock, package._num_processors,
                                                          package.platform, as_conf)
                                 job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                                if remote_dependencies_dict and package.name in remote_dependencies_dict[
-                                    'name_to_id']:
-                                    remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
                                 if isinstance(package, JobPackageThread):
                                     # Saving only when it is a real multi job package
                                     packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                             i += 1
-
-
+                    save = True
+                    if len(valid_packages_to_submit_held) > 0:
+                        jobs_id = platform.submit_Script(hold=True)
+                        if jobs_id is None:
+                            raise BaseException("Exiting AS being unable to get jobID")
+                        i = 0
+                        for package in valid_packages_to_submit_held:
+                            for job in package.jobs:
+                                job.id = str(jobs_id[i])
+                                Log.info("{0} submitted", job.name)
+                                job.status = Status.SUBMITTED
+                                job.write_submit_time()
+                            if hasattr(package, "name"):
+                                job_list.packages_dict[package.name] = package.jobs
+                                from job.job import WrapperJob
+                                wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
+                                                         package.jobs,
+                                                         package._wallclock, package._num_processors,
+                                                         package.platform, as_conf)
+                                job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                                if isinstance(package, JobPackageThread):
+                                    # Saving only when it is a real multi job package
+                                    packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                            i += 1
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
-
-
         return save
 
     @staticmethod

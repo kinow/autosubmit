@@ -256,7 +256,7 @@ class ParamikoPlatform(Platform):
                                                                        os.path.join(self.get_files_path(), dest)))
             return False
 
-    def submit_job(self, job, script_name):
+    def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
 
@@ -264,11 +264,13 @@ class ParamikoPlatform(Platform):
         :type job: autosubmit.job.job.Job
         :param script_name: job script's name
         :rtype scriptname: str
+        :param hold: send job hold
+        :type hold: boolean
         :return: job id for the submitted job
         :rtype: int
         """
         if self.type == 'slurm':
-            self.get_submit_cmd(script_name, job)
+            self.get_submit_cmd(script_name, job, hold)
             return None
         else:
             if self.send_command(self.get_submit_cmd(script_name, job)):
@@ -277,7 +279,7 @@ class ParamikoPlatform(Platform):
                 return int(job_id)
             else:
                 return None
-    def submit_Script(self):
+    def submit_Script(self, hold=False):
         """
         Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
 
@@ -325,6 +327,7 @@ class ParamikoPlatform(Platform):
                 job_status = Status.RUNNING
             elif job_status in self.job_status['QUEUING']:
                 job_status = Status.QUEUING
+
             elif job_status in self.job_status['FAILED']:
                 job_status = Status.FAILED
             else:
@@ -392,11 +395,15 @@ class ParamikoPlatform(Platform):
                         job.new_status=Status.FAILED
                         job.update_status(remote_logs)
                         return
-                    Log.info("Job {0} is QUEUING {1}", job.name, reason)
+                    if reason is "(JobHeldUser)":
+                        job.new_status=Status.HELD
+                        Log.info("Job {0} is HELD", job.name)
+                    else:
+                        Log.info("Job {0} is QUEUING {1}", job.name, reason)
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
-                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {1}.', job_id, self.name, job_status)
+                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {1}.', job.id, self.name, job_status)
                 job.new_status=job_status
 
     def get_checkjob_cmd(self, job_id):
@@ -514,13 +521,15 @@ class ParamikoPlatform(Platform):
         pass
 
 
-    def get_submit_cmd(self, job_script, job_type):
+    def get_submit_cmd(self, job_script, job_type,hold=False):
         """
         Get command to add job to scheduler
 
         :param job_type:
         :param job_script: path to job script
         :param job_script: str
+        :param hold: submit a job in a held status
+        :param hold: boolean
         :return: command to submit job to platforms
         :rtype: str
         """

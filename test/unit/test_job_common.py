@@ -15,6 +15,8 @@ class TestJobCommon(TestCase):
         self.assertEquals('WAITING', Status.VALUE_TO_KEY[Status.WAITING])
         self.assertEquals('READY', Status.VALUE_TO_KEY[Status.READY])
         self.assertEquals('SUBMITTED', Status.VALUE_TO_KEY[Status.SUBMITTED])
+        self.assertEquals('HELD', Status.VALUE_TO_KEY[Status.HELD])
         self.assertEquals('QUEUING', Status.VALUE_TO_KEY[Status.QUEUING])
         self.assertEquals('RUNNING', Status.VALUE_TO_KEY[Status.RUNNING])
         self.assertEquals('COMPLETED', Status.VALUE_TO_KEY[Status.COMPLETED])
+

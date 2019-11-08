@@ -643,7 +643,7 @@ class JobList:
         :rtype: list
         """
         return [job for job in self._job_list]
-    def get_ready(self, platform=None):
+    def get_ready(self, platform=None, hold=False):
         """
         Returns a list of ready jobs
 
@@ -653,7 +653,7 @@ class JobList:
         :rtype: list
         """
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
-                job.status == Status.READY]
+                job.status == Status.READY and job.hold is hold]
 
     def get_waiting(self, platform=None):
         """
@@ -666,7 +666,29 @@ class JobList:
         """
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.WAITING]
+    def get_waiting(self, platform=None):
+        """
+        Returns a list of jobs waiting
 
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: waiting jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                job.status == Status.WAITING]
+
+    def get_waiting_remote_dependencies(self, platform_type='slurm'):
+        """
+        Returns a list of jobs waiting on slurm scheduler
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: waiting jobs
+        :rtype: list
+        """
+        return [job for job in self._job_list if (job.platform.type is platform_type and
+                job.status == Status.WAITING)]
     def get_unknown(self, platform=None):
         """
         Returns a list of jobs on unknown state
@@ -926,13 +948,24 @@ class JobList:
 
 
         Log.debug('Updating WAITING jobs')
-        for job in self.get_waiting():
-            if not fromSetStatus:
+        if not fromSetStatus:
+            for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     save = True
                     Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
+            if as_conf.get_remote_dependencies():
+                Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
+                for job in self.get_waiting_remote_dependencies():
+                        tmp = [parent for parent in job.parents if (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and (parent.section is job.section or parent.check.lower() is not 'on_submission')]
+                        if len(tmp) == len(job.parents):
+                            job.status = Status.READY
+                            job.hold = True
+                            save = True
+                            Log.debug("Setting job: {0} status to: READY for be held (all parents queuing, running or completed)...".format(job.name))
+                Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
+
         Log.debug('Update finished')
 
         return save

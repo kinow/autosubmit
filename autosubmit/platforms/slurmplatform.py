@@ -63,20 +63,16 @@ class SlurmPlatform(ParamikoPlatform):
         return os.path.join(BasicConfig.LOCAL_ASLOG_DIR,os.path.basename(self._submit_script_path))
 
 
-    def submit_Script(self):
+    def submit_Script(self,hold=False):
         """
-        Sends a SubmitfileScript, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
+        Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
         :return: job id for  submitted jobs
         :rtype: list(int)
         """
-
         self.send_file(self.get_submit_script(),False)
-
-        #cmd = '(cd '+self.get_files_path()+';'+' ./'+os.path.basename(self._submit_script_path)+')'
-
         cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
         if self.send_command(cmd):
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
@@ -93,6 +89,8 @@ class SlurmPlatform(ParamikoPlatform):
         self.cancel_cmd = "scancel"
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = 'sbatch -D {1} {1}/'.format(self.host, self.remote_log_dir)
+        self._submit_hold_cmd = 'sbatch -H -D {1} {1}/'.format(self.host, self.remote_log_dir)
+
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
@@ -130,8 +128,12 @@ class SlurmPlatform(ParamikoPlatform):
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
-    def get_submit_cmd(self, job_script, job):
-        self._submit_script_file.write(self._submit_cmd + job_script + "\n")
+    def get_submit_cmd(self, job_script, job, hold=False):
+        if not hold:
+            self._submit_script_file.write(self._submit_cmd + job_script + "\n")
+        else:
+            self._submit_script_file.write(self._submit_hold_cmd + job_script + "\n" )
+
 
 
     def get_checkjob_cmd(self, job_id):

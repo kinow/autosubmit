@@ -199,7 +199,7 @@ class SagaPlatform(Platform):
         except saga.DoesNotExist:
             return True
 
-    def submit_job(self, job, scriptname):
+    def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
 
@@ -210,7 +210,7 @@ class SagaPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        saga_job = self.create_saga_job(job, scriptname)
+        saga_job = self.create_saga_job(job, script_name)
         saga_job.run()
         return saga_job.id
 

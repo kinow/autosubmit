@@ -100,6 +100,7 @@ class Job(object):
         self._platform = None
         self.check = 'True'
         self.packed = False
+        self.hold = False
 
 
     def __getstate__(self):

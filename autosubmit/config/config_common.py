@@ -1049,8 +1049,7 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        return self._conf_parser.get_option('wrapper', 'DEPENDENCIES', 'false').lower() == 'true'
-
+        return self._conf_parser.get('config', 'DEPENDENCIES', 'false').lower() == 'true'
     def get_wrapper_type(self):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config

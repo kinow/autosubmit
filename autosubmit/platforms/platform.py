@@ -301,7 +301,7 @@ class Platform(object):
             path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path
 
-    def submit_job(self, job, scriptname):
+    def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
 
