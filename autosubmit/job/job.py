@@ -506,6 +506,8 @@ class Job(object):
                         self.update_status(copy_remote_logs,True)
                         return
                 Log.info("Job {0} is QUEUING {1}", self.name, reason)
+        elif self.status is Status.HELD:
+            Log.info("Job {0} is HELD", self.name)
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
         elif self.status is Status.COMPLETED:
@@ -1038,6 +1040,7 @@ class WrapperJob(Job):
                                   reason)
                         self.cancel_failed_wrapper_job()
                         return
+
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
             self.status = status
         if status in [Status.FAILED, Status.UNKNOWN]:

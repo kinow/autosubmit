@@ -48,9 +48,8 @@ class JobPackager(object):
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
         # .total_jobs Maximum number of jobs at the same time
-        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))        
+        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
-
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
         # True or False
@@ -74,7 +73,7 @@ class JobPackager(object):
         if only_generate:
             jobs_to_submit = jobs_filtered
         else:
-            jobs_ready = self._jobs_list.get_ready(self._platform,hold)
+            jobs_ready = self._jobs_list.get_ready(self._platform,hold=hold)
             if jobs_ready == 0:
                 # If there are no jobs ready, result is tuple of empty
                 return packages_to_submit

@@ -270,7 +270,7 @@ class ParamikoPlatform(Platform):
         :rtype: int
         """
         if self.type == 'slurm':
-            self.get_submit_cmd(script_name, job, hold)
+            self.get_submit_cmd(script_name, job, hold=hold)
             return None
         else:
             if self.send_command(self.get_submit_cmd(script_name, job)):
@@ -325,9 +325,10 @@ class ParamikoPlatform(Platform):
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
-            elif job_status in self.job_status['QUEUING']:
+            elif job_status in self.job_status['QUEUING'] and job.hold is False:
                 job_status = Status.QUEUING
-
+            elif job_status in self.job_status['QUEUING'] and job.hold is True:
+                job_status = Status.HELD
             elif job_status in self.job_status['FAILED']:
                 job_status = Status.FAILED
             else:
@@ -356,7 +357,7 @@ class ParamikoPlatform(Platform):
             Log.warning('Retrying check job command: {0}', cmd)
             Log.warning('Can not get job status for all jobs, retrying in 3 sec')
             sleep(3)
-        Log.debug('Successful check job command: {0}', cmd)
+        Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
             in_queue_jobs=[]
             list_queue_jobid=""
@@ -373,6 +374,10 @@ class ParamikoPlatform(Platform):
                 elif job_status in self.job_status['QUEUING']:
                     job_status = Status.QUEUING
                     if self.type == "slurm":
+                        if job.status == Status.HELD:
+                            job_status = Status.HELD
+                            if not job.hold:
+                                self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         list_queue_jobid += str(job.id) + ','
                         in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
@@ -392,18 +397,22 @@ class ParamikoPlatform(Platform):
                     if job.queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
                         self.send_command(self.platform.cancel_cmd + " {0}".format(job.id))
-                        job.new_status=Status.FAILED
+                        job.new_status = Status.FAILED
                         job.update_status(remote_logs)
                         return
-                    if reason is "(JobHeldUser)":
+                    elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
                         Log.info("Job {0} is HELD", job.name)
+                    elif reason == '(JobHeldAdmin)':
+                        Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
+                        job.new_status = Status.WAITING
+                        job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
                     else:
                         Log.info("Job {0} is QUEUING {1}", job.name, reason)
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
-                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {1}.', job.id, self.name, job_status)
+                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
                 job.new_status=job_status
 
     def get_checkjob_cmd(self, job_id):
@@ -440,9 +449,8 @@ class ParamikoPlatform(Platform):
         if self._ssh is None:
             if not self.connect():
                 return None
-        timeout = 120.0
+        timeout = 600.0
         try:
-
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
             channel.settimeout(timeout)
@@ -476,10 +484,9 @@ class ParamikoPlatform(Platform):
             stdout.close()
             stderr.close()
             self._ssh_output = ""
-            if len(stdout_chunks) > 0:
-                for s in stdout_chunks:
-                    if s is not None:
-                        self._ssh_output += s
+            for s in stdout_chunks:
+                if s is not '':
+                    self._ssh_output += s
             for errorLine in stderr_readlines:
                 if errorLine.find("submission failed") != -1:
                     Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))

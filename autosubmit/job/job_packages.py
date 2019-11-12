@@ -139,7 +139,7 @@ class JobPackageSimple(JobPackageBase):
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.id = self.platform.submit_job(job, job_scripts[job.name], hold)
+            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold)
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
@@ -169,7 +169,7 @@ class JobPackageSimpleWrapped(JobPackageSimple):
     def _do_submission(self, job_scripts=None, hold=False):
         if job_scripts is None:
             job_scripts = self._job_wrapped_scripts
-        super(JobPackageSimpleWrapped, self)._do_submission(job_scripts, hold=False)
+        super(JobPackageSimpleWrapped, self)._do_submission(job_scripts, hold=hold)
 
 
 class JobPackageArray(JobPackageBase):
@@ -226,7 +226,7 @@ class JobPackageArray(JobPackageBase):
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script, hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             return
@@ -328,7 +328,7 @@ class JobPackageThread(JobPackageBase):
                 self.platform.remove_stat_file(job.name)
                 self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script, hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             return
@@ -405,7 +405,7 @@ class JobPackageThreadWrapped(JobPackageThread):
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script, hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             raise Exception('Submission failed')
