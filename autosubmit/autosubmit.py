@@ -938,7 +938,7 @@ class Autosubmit:
         :rtype: \n
         """
         job_list._job_list=jobs_filtered
-        job_list.update_list(as_conf,False)
+
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
         # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
@@ -1219,25 +1219,26 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform,hold=hold)), platform.name)
-            packages_to_submit = JobPackager(as_conf, platform, job_list).build_packages(hold=hold)
-
+            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages(hold=hold)
             if not inspect:
                 platform.open_submit_script()
+            else:
+                packages_to_submit += JobPackager(as_conf, platform, job_list, hold=True).build_packages(hold=True)
             valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
                     if not only_wrappers:
                         try:
-                            package.submit(as_conf, job_list.parameters, inspect,hold=hold)
+                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
-                        except (IOError,OSError):
-                            #write error file
+                        except (IOError, OSError):
+                            # write error file
                             continue
                     if only_wrappers or inspect:
                         for innerJob in package._jobs:
                             # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
-                            innerJob.status=Status.COMPLETED
+                            innerJob.status = Status.COMPLETED
 
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs

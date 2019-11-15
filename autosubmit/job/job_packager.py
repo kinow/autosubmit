@@ -38,7 +38,7 @@ class JobPackager(object):
     :type jobs_list: JobList object.
     """
 
-    def __init__(self, as_config, platform, jobs_list):        
+    def __init__(self, as_config, platform, jobs_list,hold=False):
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
@@ -55,10 +55,10 @@ class JobPackager(object):
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
-        if len(jobs_list.get_ready(platform)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform)))
+        if len(jobs_list.get_ready(platform,hold=hold)) > 0:
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold)))
         self._maxTotalProcessors = 0
 
     def build_packages(self,only_generate=False, jobs_filtered=[],hold=False):

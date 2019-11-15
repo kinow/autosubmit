@@ -327,6 +327,8 @@ class JobPackageThread(JobPackageBase):
             for job in self.jobs:
                 self.platform.remove_stat_file(job.name)
                 self.platform.remove_completed_file(job.name)
+                if hold:
+                    job.hold = hold
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
@@ -404,6 +406,8 @@ class JobPackageThreadWrapped(JobPackageThread):
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
+            if hold:
+                job.hold = hold
 
         package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 

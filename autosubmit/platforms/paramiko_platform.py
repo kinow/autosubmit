@@ -372,12 +372,15 @@ class ParamikoPlatform(Platform):
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-                    job_status = Status.QUEUING
+
                     if self.type == "slurm":
                         if job.status == Status.HELD:
-                            job_status = Status.HELD
                             if not job.hold:
                                 self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                                job_status = Status.QUEUING
+                            job_status = Status.HELD
+                        else:
+                            job_status = Status.QUEUING
                         list_queue_jobid += str(job.id) + ','
                         in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
@@ -492,7 +495,8 @@ class ParamikoPlatform(Platform):
                     Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                     return False
             if not ignore_log:
-                Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+                if len(stderr_readlines) > 0:
+                    Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
 
             Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
