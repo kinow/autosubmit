@@ -1069,14 +1069,15 @@ class WrapperJob(Job):
                     self.hold = False
                     self.status = Status.QUEUING
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
-                self.update_inner_jobs_held(self.hold)
+                self.update_inner_jobs_queue(self.hold)
         else:
-            if status in [Status.FAILED, Status.UNKNOWN]:
+
+            if self.status in [Status.FAILED, Status.UNKNOWN]:
                 self.cancel_failed_wrapper_job()
                 self.update_failed_jobs()
-            elif status == Status.COMPLETED:
+            elif self.status == Status.COMPLETED:
                 self.check_inner_jobs_completed(self.job_list)
-            elif status == Status.RUNNING or status == Status.SUBMITTED:
+            elif self.status == Status.RUNNING or status == Status.SUBMITTED:
                 time.sleep(3)
                 Log.debug('Checking inner jobs status')
                 self.check_inner_job_status()
@@ -1171,13 +1172,14 @@ class WrapperJob(Job):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         for job in not_finished_jobs:
             self._check_finished_job(job)
-    def update_inner_jobs_held(self,hold):
-        jobs = [job for job in self.job_list if job.status in [ Status.SUBMITTED or Status.Held or Status.QUEUING]]
+    def update_inner_jobs_queue(self,hold):
+        jobs = [job for job in self.job_list if job.status in [ Status.SUBMITTED or Status.HELD or Status.QUEUING]]
         for job in jobs:
             if hold:
                 job.status = Status.HELD
             else:
                 job.status = Status.QUEUING
+            job.hold = hold
         jobs_held_admin = [job for job in self.job_list if job.status in [ Status.WAITING ]]
         for job in jobs_held_admin:
             if hold:
