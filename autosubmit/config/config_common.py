@@ -467,18 +467,18 @@ class AutosubmitConfig(object):
             if parser.has_option(section, 'PLATFORM'):
                 result = result and parser.check_is_choice(section, 'PLATFORM', False, platforms)
 
-            if parser.has_option(section, 'DEPENDENCIES'):
-                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
-                    if '-' in dependency:
-                        dependency = dependency.split('-')[0]
-                    elif '+' in dependency:
-                        dependency = dependency.split('+')[0]
-                    if '[' in dependency:
-                        dependency = dependency[:dependency.find('[')]
-                    if dependency not in sections:
-                        Log.error(
-                            'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
-                                                                                                         dependency))
+            # if parser.has_option(section, 'DEPENDENCIES'): #TODO if any breaks is there
+            #     for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
+            #         if '-' in dependency:
+            #             dependency = dependency.split('-')[0]
+            #         elif '+' in dependency:
+            #             dependency = dependency.split('+')[0]
+            #         if '[' in dependency:
+            #             dependency = dependency[:dependency.find('[')]
+            #         if dependency not in sections:
+            #             Log.error(
+            #                 'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
+            #                                                                                              dependency))
 
             if parser.has_option(section, 'RERUN_DEPENDENCIES'):
                 for dependency in str(parser.get_option(section, 'RERUN_DEPENDENCIES',
@@ -1049,7 +1049,11 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        return self._conf_parser.get('config', 'DEPENDENCIES', 'false').lower() == 'true'
+        config_value = self._conf_parser.get_option('config', 'DEPENDENCIES', 'false').lower()
+        if config_value is "true":
+            return True
+        else:
+            return False
     def get_wrapper_type(self):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
