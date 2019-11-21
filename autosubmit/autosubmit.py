@@ -1149,6 +1149,7 @@ class Autosubmit:
                         if platform.type == "slurm" and list_jobid!="":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
                     #END LOOP
+                    #CHECK ALL JOBS
                     for platform_jobs in slurm:
                         platform = platform_jobs[0]
                         jobs_to_check = platform_jobs[1]
@@ -1157,8 +1158,6 @@ class Autosubmit:
                         for j_Indx in xrange(0,len(platform_jobs[3])):
                             prev_status = platform_jobs[2][j_Indx]
                             job = platform_jobs[3][j_Indx]
-
-
 
                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                 if as_conf.get_notifications() == 'true':

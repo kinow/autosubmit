@@ -1050,7 +1050,7 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
         config_value = self._conf_parser.get_option('config', 'DEPENDENCIES', 'false').lower()
-        if config_value is "true":
+        if config_value == "true":
             return True
         else:
             return False

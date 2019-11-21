@@ -140,7 +140,7 @@ class SlurmPlatform(ParamikoPlatform):
         return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
 
     def get_checkAlljobs_cmd(self, jobs_id):
-        return "sacct -n -X -j  {1} -o 'jobid,State'".format(self.host, jobs_id)
+        return "sacct -n -X -j  {1} -o jobid,State".format(self.host, jobs_id)
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 

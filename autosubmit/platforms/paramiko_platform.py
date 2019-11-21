@@ -357,6 +357,7 @@ class ParamikoPlatform(Platform):
             Log.warning('Retrying check job command: {0}', cmd)
             Log.warning('Can not get job status for all jobs, retrying in 3 sec')
             sleep(3)
+        job_list_status = self.get_ssh_output()
         Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
             in_queue_jobs=[]
@@ -364,21 +365,19 @@ class ParamikoPlatform(Platform):
             for job in job_list:
                 job_id=job.id
                 job_status = Status.UNKNOWN
-
-                job_status = self.parse_Alljobs_output(self.get_ssh_output(),job_id)
+                job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
                     job_status = Status.COMPLETED
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-
                     if self.type == "slurm":
                         if job.status == Status.HELD:
+                            job_status = Status.HELD
                             if not job.hold:
                                 self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                                 job_status = Status.QUEUING
-                            job_status = Status.HELD
                         else:
                             job_status = Status.QUEUING
                         list_queue_jobid += str(job.id) + ','
@@ -395,8 +394,9 @@ class ParamikoPlatform(Platform):
             if self.type == 'slurm' and len(in_queue_jobs) > 0:
                 cmd=self.get_queue_status_cmd(list_queue_jobid)
                 self.send_command(cmd)
+                queue_status=self._ssh_output
                 for job in in_queue_jobs:
-                    reason = self.parse_queue_reason(self._ssh_output,job.id)
+                    reason = self.parse_queue_reason(queue_status,job.id)
                     if job.queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
                         self.send_command(self.platform.cancel_cmd + " {0}".format(job.id))
@@ -488,7 +488,7 @@ class ParamikoPlatform(Platform):
             stderr.close()
             self._ssh_output = ""
             for s in stdout_chunks:
-                if s is not '':
+                if s != '':
                     self._ssh_output += s
             for errorLine in stderr_readlines:
                 if errorLine.find("submission failed") != -1:
