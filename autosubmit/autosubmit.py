@@ -1801,7 +1801,7 @@ class Autosubmit:
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
 
-                if as_conf.get_migrate_host_to(platform) is not None:
+                if as_conf.get_migrate_host_to(platform) != "none":
                     Log.info("Host in platform configuration file successfully updated to {0}",as_conf.get_migrate_host_to(platform))
                     as_conf.set_new_host(platform, as_conf.get_migrate_host_to(platform))
                 else:
@@ -1831,6 +1831,7 @@ class Autosubmit:
                                 p.send_file("convertLink.sh")
                                 convertLinkPathRemote=os.path.join(p.remote_log_dir,"convertLink.sh")
                                 command = "chmod +x " + convertLinkPathRemote +" && " + convertLinkPathRemote + " && rm " + convertLinkPathRemote
+                                Log.info("Converting absolute symlinks this can take a while depending on the experiment size ")
                                 p.send_command(command,True)
                         except IOError:
                             Log.debug("The platform {0} does not contain absolute symlinks", platform)
@@ -1841,13 +1842,13 @@ class Autosubmit:
 
                         try:
                             Log.info("Moving remote files/dirs on {0}", platform)
+                            p.send_command("chmod 770 -R " + p.root_dir)
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id),True):
                                 Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                              os.path.join(p.temp_dir, experiment_id))
                                 error=True
                                 break
                         except (IOError,BaseException):
-
                             Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                          os.path.join(p.temp_dir, experiment_id))
                             error=True
@@ -1870,7 +1871,7 @@ class Autosubmit:
                     as_conf.set_new_user(platform[0], platform[1])
                     if platform[2] is not None:
                         as_conf.set_new_project(platform[0], platform[2])
-                    if as_conf.get_migrate_host_to(platform[0]) is not None:
+                    if as_conf.get_migrate_host_to(platform[0]) != "none":
                         as_conf.set_new_host(platform[0], as_conf.get_migrate_host_to(platform[0]))
                 return False
             else:
@@ -1916,7 +1917,8 @@ class Autosubmit:
                         Log.info("Copying remote files/dirs on {0}", platform)
                         Log.info("Copying from {0} to {1}", os.path.join(p.temp_dir, experiment_id),p.root_dir)
                         try:
-                            p.send_command("cp -rP " + os.path.join(p.temp_dir, experiment_id) + " " +p.root_dir,True)
+                            p.send_command("cp -rP " + os.path.join(p.temp_dir, experiment_id) + " " +p.root_dir)
+                            p.send_command("chmod 755 -R "+p.root_dir)
                             Log.result("Files/dirs on {0} have been successfully picked up", platform)
                         except (IOError, BaseException):
                             error = True
@@ -1931,12 +1933,12 @@ class Autosubmit:
                 Log.critical("The experiment cannot be picked,reverting changes.")
                 for platform in backup_files:
                     p = submitter.platforms[platform]
-                    p.send_command("rm -R " + p.root_dir,True)
+                    p.send_command("rm -R " + p.root_dir)
                 return False
             else:
                 for platform in backup_files:
                     p = submitter.platforms[platform]
-                    p.send_command("rm -R " + p.temp_dir, True)
+                    p.send_command("rm -R " + p.temp_dir+"/"+experiment_id)
                 Log.result("The experiment has been successfully picked up.")
                 #Log.info("Refreshing the experiment.")
                 #Autosubmit.refresh(experiment_id,False,False)
@@ -2418,6 +2420,7 @@ class Autosubmit:
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)))
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+
         if clean:
             # Cleaning to reduce file size.
             version = get_autosubmit_version(expid)
@@ -2517,9 +2520,9 @@ class Autosubmit:
 
         # Creating tar file
         Log.info("Unpacking tar file ... ")
+        if not os.path.isdir(exp_folder):
+            os.mkdir(exp_folder)
         try:
-            if not os.stat(exp_folder):
-                os.mkdir(exp_folder)
             with tarfile.open(os.path.join(archive_path), compress_type) as tar:
                 tar.extractall(exp_folder)
                 tar.close()
