@@ -88,7 +88,6 @@ from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
 from sets import Set
-from platforms.paramiko_platform import ParamikoTimeout
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
