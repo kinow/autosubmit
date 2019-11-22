@@ -98,6 +98,7 @@ class JobPackager(object):
             and (self.jobs_in_wrapper == 'None' or section in self.jobs_in_wrapper):
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
+                min_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()))
 
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     built_packages = self._build_vertical_packages(jobs_to_submit_by_section[section],
@@ -119,7 +120,6 @@ class JobPackager(object):
                     else:
                         package = JobPackageSimple([job])
                     packages_to_submit.append(package)
-
         return packages_to_submit
 
     def _divide_list_by_section(self, jobs_list):
@@ -174,6 +174,8 @@ class JobPackager(object):
         :type section_list: List() of Job Objects. \n
         :param max_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
         :type max_wrapped_jobs: Integer. \n
+        :param min_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
+        :type min_wrapped_jobs: Integer. \n
         :return: List of Wrapper Packages, Dictionary that details dependencies. \n
         :rtype: List() of JobPackageVertical(), Dictionary Key: String, Value: (Dictionary Key: Variable Name, Value: String/Int)
         """
