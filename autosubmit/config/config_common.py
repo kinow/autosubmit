@@ -1071,7 +1071,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
-    def get_min_wrapper_jobs(self):
+    def get_min_wrapped_jobs(self):
         """
          Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
 

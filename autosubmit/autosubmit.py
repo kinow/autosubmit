@@ -1222,8 +1222,6 @@ class Autosubmit:
             packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages(hold=hold)
             if not inspect:
                 platform.open_submit_script()
-            else:
-                packages_to_submit += JobPackager(as_conf, platform, job_list, hold=True).build_packages(hold=True)
             valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
