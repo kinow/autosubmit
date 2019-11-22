@@ -1841,7 +1841,7 @@ class Autosubmit:
 
                         try:
                             Log.info("Moving remote files/dirs on {0}", platform)
-                            p.send_command("chmod 770 -R " + p.root_dir)
+                            p.send_command("chmod 777 -R " + p.root_dir)
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id),True):
                                 Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
                                              os.path.join(p.temp_dir, experiment_id))
