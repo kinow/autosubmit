@@ -960,11 +960,11 @@ class Autosubmit:
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
         # Loading parameters again
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             # Sending only_wrappers = True
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers,hold=False)
-            job_list.update_list(as_conf, False)
+            job_list.update_list(as_conf, False,False)
 
 
 
@@ -1113,7 +1113,10 @@ class Autosubmit:
                             if job_list.job_package_map and job_id in job_list.job_package_map:
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
+                                if as_conf.get_remote_dependencies():
+                                    wrapper_job.hold = wrapper_job.job_list[0].hold
                                 check_wrapper = True
+
                                 if wrapper_job.status == Status.RUNNING:
                                     check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
@@ -1121,7 +1124,11 @@ class Autosubmit:
                                     platform.check_job(wrapper_job)
                                     Log.info(
                                         'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+
                                     wrapper_job.check_status(wrapper_job.new_status)
+                                    if wrapper_job.status == Status.WAITING: # if job failed to be held, delete it from packages table
+                                        job_list.job_package_map.pop(job_id, None)
+                                        job_list.packages_dict.pop(job_id, None)
                                     save = True
                                 else:
                                     Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
@@ -1422,8 +1429,9 @@ class Autosubmit:
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
             job_list_wrappers = copy.deepcopy(job_list)
-            jobs_wr = copy.deepcopy(jobs)
-            [job for job in jobs_wr if (job.status != Status.COMPLETED)]
+            jobs_wr_aux = copy.deepcopy(jobs)
+            jobs_wr = []
+            [jobs_wr.append(job) for job in jobs_wr_aux if (job.status == Status.READY or job.status == Status.WAITING)]
             for job in jobs_wr:
                 for child in job.children:
                     if child not in jobs_wr:
@@ -1439,6 +1447,8 @@ class Autosubmit:
                                                        packages_persistence, True)
 
             packages = packages_persistence.load(True)
+            packages+= JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                             "job_packages_" + expid).load()
         else:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                              "job_packages_" + expid).load()

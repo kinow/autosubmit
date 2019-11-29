@@ -47,7 +47,7 @@ class JobPackageBase(object):
             self._platform = jobs[0].platform
             self._custom_directives = set()
             for job in jobs:
-                if job.platform != self._platform or job.platform is None:
+                if job.platform.name != self._platform.name or job.platform is None:
                     raise Exception('Only one valid platform per package')
         except IndexError:
             raise Exception('No jobs given')

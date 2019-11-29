@@ -128,9 +128,9 @@ class JobPackager(object):
                 for p in built_packages_tmp:
                     if len(p.jobs) >= min_wrapped_jobs: # if the quantity is not enough, don't make the wrapper
                         built_packages.append(p)
-                    elif p.jobs[0].chunk > self._jobs_list._chunk_list[-1] - ( int(self._jobs_list._chunk_list[-1]) % min_wrapped_jobs): #Last case, wrap remaining jobs
+                    elif p.jobs[0].chunk >= self._jobs_list._chunk_list[-1] - ( int(self._jobs_list._chunk_list[-1]) % min_wrapped_jobs): #Last case, wrap remaining jobs
                         built_packages.append(p)
-                    else: # If a package is discarded, let their innerjob be wrapped again.
+                    else: # If a package is discarded, allow to wrap their inner jobs  again.
                         for job in p.jobs:
                             job.packed = False
                 packages_to_submit += built_packages

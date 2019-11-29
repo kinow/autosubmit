@@ -900,7 +900,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf,store_change=True,fromSetStatus=False):
+    def update_list(self, as_conf,store_change=True,fromSetStatus=False,ignoreRemoteDependency=False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -938,7 +938,7 @@ class JobList:
 
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
-            if job.synchronize is not None: #and job in self.get_active():
+            if job.synchronize is not None:
                 Log.debug('Updating SYNC jobs')
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
