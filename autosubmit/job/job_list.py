@@ -1134,10 +1134,11 @@ class JobList:
         for job in allJobs:
             if job.has_parents() == False:
                 root = job
-
+        visited = list()
+        print(root)
         # root exists
         if root is not None:
-            result += self._recursion_print(root, 0, statusChange = statusChange, nocolor = nocolor) 
+            result += self._recursion_print(root, 0, visited, statusChange = statusChange, nocolor = nocolor) 
         else: 
             result += "\nCannot find root."
 
@@ -1168,7 +1169,7 @@ class JobList:
 
         return result
 
-    def _recursion_print(self, job, level, statusChange = None, nocolor = False):
+    def _recursion_print(self, job, level, visited, statusChange = None, nocolor = False):
         """
         Returns the list of children in a recursive way
         Traverses the dependency tree
@@ -1177,31 +1178,33 @@ class JobList:
         :rtype: String
         """
         result = ""
-        prefix = ""
-        for i in range(level):
-                prefix += "|  "
-        # Prefix + Job Name
-        result = "\n"+ prefix + \
-                    (bcolors.BOLD + bcolors.CODE_TO_COLOR[job.status] if nocolor == False else '') + \
-                    job.name + \
-                    (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
-        if len(job._children) > 0:                
-            level += 1
-            children = job._children
-            total_children = len(job._children)
-            # Writes children number and status if color are not being showed
-            result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ") + \
-                    ("[" +Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
-            if statusChange is not None:
-                # Writes change if performed
-                result += (bcolors.BOLD + bcolors.OKGREEN if nocolor == False else '')
-                result += (statusChange[job.name] if job.name in statusChange else "")
-                result += (bcolors.ENDC + bcolors.ENDC if nocolor == False else "")
-            
-            for child in children:
-                # Continues recursion
-                result += self._recursion_print(child, level, statusChange=statusChange, nocolor = nocolor)
-        else:
-            result += (" [" + Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
+        if job.name not in visited:
+            visited.append(job.name)                    
+            prefix = ""
+            for i in range(level):
+                    prefix += "|  "
+            # Prefix + Job Name
+            result = "\n"+ prefix + \
+                        (bcolors.BOLD + bcolors.CODE_TO_COLOR[job.status] if nocolor == False else '') + \
+                        job.name + \
+                        (bcolors.ENDC + bcolors.ENDC if nocolor == False else '')
+            if len(job._children) > 0:                
+                level += 1
+                children = job._children
+                total_children = len(job._children)
+                # Writes children number and status if color are not being showed
+                result += " ~ [" + str(total_children) + (" children] " if total_children > 1 else " child] ") + \
+                        ("[" +Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
+                if statusChange is not None:
+                    # Writes change if performed
+                    result += (bcolors.BOLD + bcolors.OKGREEN if nocolor == False else '')
+                    result += (statusChange[job.name] if job.name in statusChange else "")
+                    result += (bcolors.ENDC + bcolors.ENDC if nocolor == False else "")
+                
+                for child in children:
+                    # Continues recursion
+                    result += self._recursion_print(child, level, visited, statusChange=statusChange, nocolor = nocolor)
+            else:
+                result += (" [" + Status.VALUE_TO_KEY[job.status] + "] " if nocolor == True else "")
 
         return result
