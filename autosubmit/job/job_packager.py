@@ -99,8 +99,14 @@ class JobPackager(object):
             and (self.jobs_in_wrapper == 'None' or section in self.jobs_in_wrapper):
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
+                if '&' not in section:
+                    dependencies_keys = self._as_config.jobs_parser.get(section, "DEPENDENCIES").split()
+                else:
+                    multiple_sections = section.split('&')
+                    dependencies_keys=[]
+                    for sectionN in multiple_sections:
+                        dependencies_keys += self._as_config.jobs_parser.get(sectionN, "DEPENDENCIES").split()
 
-                dependencies_keys = self._as_config.jobs_parser.get(section, "DEPENDENCIES").split()
                 hard_limit_wrapper = max_wrapped_jobs
                 for k in dependencies_keys:
                     if "-" in k:
@@ -111,28 +117,46 @@ class JobPackager(object):
                                 hard_limit_wrapper = number
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED",self._as_config.get_min_wrapped_jobs()),hard_limit_wrapper)
 
-
-
-
+                built_packages = []
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs)
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
+                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
                 elif self.wrapper_type == 'horizontal':
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs, section)
-
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED",self._as_config.get_min_wrapped_jobs()):  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._member_list.index(p.jobs[0].member) >= len(
+                            self._jobs_list._member_list) - (len(self._jobs_list._member_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
                 elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
-                    built_packages_tmp = self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section)
-
-                built_packages = []
-                for p in built_packages_tmp:
-                    if len(p.jobs) >= min_wrapped_jobs: # if the quantity is not enough, don't make the wrapper
-                        built_packages.append(p)
-                    elif p.jobs[0].chunk >= self._jobs_list._chunk_list[-1] - ( int(self._jobs_list._chunk_list[-1]) % min_wrapped_jobs): #Last case, wrap remaining jobs
-                        built_packages.append(p)
-                    else: # If a package is discarded, allow to wrap their inner jobs  again.
-                        for job in p.jobs:
-                            job.packed = False
+                    built_packages_tmp =[]
+                    built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section))
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
+                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
+                    built_packages=built_packages_tmp
+                else:
+                    built_packages=built_packages_tmp
                 packages_to_submit += built_packages
 
             else:

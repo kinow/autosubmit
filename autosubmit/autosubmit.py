@@ -2716,7 +2716,7 @@ class Autosubmit:
                     os.fsync(fh.fileno())
 
                     # Detail after lock has been closed.
-                    if (detail == True):
+                    if detail == True:
                         current_length = len(job_list.get_job_list()) 
                         if current_length > 1000:
                             Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
