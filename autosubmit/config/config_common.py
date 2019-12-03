@@ -313,7 +313,7 @@ class AutosubmitConfig(object):
         :return: host_to
         :rtype: str
         """
-        return self._platforms_parser.get_option(section, 'HOST_TO', None).lower()
+        return self._platforms_parser.get_option(section, 'HOST_TO', "none").lower()
     def set_new_project(self, section, new_project):
         """
         Sets new project for given platform
@@ -747,7 +747,7 @@ class AutosubmitConfig(object):
         :param as_conf: Configuration class for exteriment
         :type as_conf: AutosubmitConfig
         """
-        full_project_path = as_conf.get_project_dir()
+        full_project_path=as_conf.get_project_dir()
         try:
             output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
                                              shell=True)
