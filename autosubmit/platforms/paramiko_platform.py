@@ -453,7 +453,7 @@ class ParamikoPlatform(Platform):
         if self._ssh is None:
             if not self.connect():
                 return None
-        timeout = 600.0
+        timeout = 20.0
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
