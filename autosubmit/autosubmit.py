@@ -1114,8 +1114,10 @@ class Autosubmit:
                                 wrapper_job = job_list.job_package_map[job_id]
                                 if as_conf.get_remote_dependencies():
                                     wrapper_job.hold = wrapper_job.job_list[0].hold
+                                if as_conf.get_notifications() == 'true':
+                                    for inner_job in wrapper_job.job_list:
+                                        inner_job.prev_status= inner_job.status
                                 check_wrapper = True
-
                                 if wrapper_job.status == Status.RUNNING:
                                     check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
@@ -1129,6 +1131,14 @@ class Autosubmit:
                                         job_list.job_package_map.pop(job_id, None)
                                         job_list.packages_dict.pop(job_id, None)
                                     save = True
+                                if as_conf.get_notifications() == 'true':
+                                    for inner_job in wrapper_job.job_list:
+                                        if inner_job.prev_status != inner_job.status:
+                                            if Status.VALUE_TO_KEY[inner_job.status] in inner_job.notify_on:
+                                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, inner_job.name,
+                                                                              Status.VALUE_TO_KEY[inner_job.prev_status],
+                                                                              Status.VALUE_TO_KEY[inner_job.status],
+                                                                              as_conf.get_mails_to())
                                 else:
                                     Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
                             else:
