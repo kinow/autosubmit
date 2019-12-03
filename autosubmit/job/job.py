@@ -843,12 +843,10 @@ class Job(object):
         :rtype: bool
         """
 
-        valid=False
         out=False
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
         if template_content is not False:
-            valid = True
             variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
             out = set(parameters).issuperset(set(variables))
@@ -866,7 +864,7 @@ class Job(object):
                     Log.debug("The following set of variables are not being used in the templates: {0}",
                                 str(set(parameters)-set(variables)))
 
-        return valid
+        return out
 
     def write_submit_time(self):
         """
