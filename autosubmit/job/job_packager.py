@@ -38,7 +38,7 @@ class JobPackager(object):
     :type jobs_list: JobList object.
     """
 
-    def __init__(self, as_config, platform, jobs_list):        
+    def __init__(self, as_config, platform, jobs_list,hold=False):
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
@@ -48,22 +48,20 @@ class JobPackager(object):
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
         # .total_jobs Maximum number of jobs at the same time
-        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))        
+        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
-
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
         # True or False
-        self.remote_dependencies = self._as_config.get_remote_dependencies()
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
-        if len(jobs_list.get_ready(platform)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform)))
+        if len(jobs_list.get_ready(platform,hold=hold)) > 0:
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold)))
         self._maxTotalProcessors = 0
 
-    def build_packages(self,only_generate=False, jobs_filtered=[]):
+    def build_packages(self,only_generate=False, jobs_filtered=[],hold=False):
         """
         Returns the list of the built packages to be submitted
 
@@ -71,18 +69,17 @@ class JobPackager(object):
         :rtype: List() of JobPackageVertical
         """
         packages_to_submit = list()
-        remote_dependencies_dict = dict()
         # only_wrappers = False when coming from Autosubmit.submit_ready_jobs, jobs_filtered empty
         if only_generate:
             jobs_to_submit = jobs_filtered
         else:
-            jobs_ready = self._jobs_list.get_ready(self._platform)
+            jobs_ready = self._jobs_list.get_ready(self._platform,hold=hold)
             if jobs_ready == 0:
                 # If there are no jobs ready, result is tuple of empty
-                return packages_to_submit, remote_dependencies_dict
+                return packages_to_submit
             if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
                 # If there is no more space in platform, result is tuple of empty
-                return packages_to_submit, remote_dependencies_dict
+                return packages_to_submit
 
             # Sort by 6 first digits of date
             available_sorted = sorted(jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
@@ -93,6 +90,7 @@ class JobPackager(object):
             jobs_to_submit = list_of_available[0:num_jobs_to_submit]
         # print(len(jobs_to_submit))
         jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
+
         for section in jobs_to_submit_by_section:
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
@@ -101,19 +99,66 @@ class JobPackager(object):
             and (self.jobs_in_wrapper == 'None' or section in self.jobs_in_wrapper):
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
+                if '&' not in section:
+                    dependencies_keys = self._as_config.jobs_parser.get(section, "DEPENDENCIES").split()
+                else:
+                    multiple_sections = section.split('&')
+                    dependencies_keys=[]
+                    for sectionN in multiple_sections:
+                        dependencies_keys += self._as_config.jobs_parser.get(sectionN, "DEPENDENCIES").split()
 
+                hard_limit_wrapper = max_wrapped_jobs
+                for k in dependencies_keys:
+                    if "-" in k:
+                        k_divided = k.split("-")
+                        if k_divided[0] not in self.jobs_in_wrapper:
+                            number = int(k_divided[1].strip(" "))
+                            if number < hard_limit_wrapper:
+                                hard_limit_wrapper = number
+                min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED",self._as_config.get_min_wrapped_jobs()),hard_limit_wrapper)
+
+                built_packages = []
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
-                    built_packages, remote_dependencies_dict = self._build_vertical_packages(jobs_to_submit_by_section[section],
+                    built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs)
-                    packages_to_submit += built_packages
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
+                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
                 elif self.wrapper_type == 'horizontal':
-                    built_packages, remote_dependencies_dict = self._build_horizontal_packages(jobs_to_submit_by_section[section],
+                    built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs, section)
-                    packages_to_submit += built_packages
-
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED",self._as_config.get_min_wrapped_jobs()):  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._member_list.index(p.jobs[0].member) >= len(
+                            self._jobs_list._member_list) - (len(self._jobs_list._member_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
                 elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
-                    built_packages = self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section)
-                    packages_to_submit.append(built_packages)
+                    built_packages_tmp =[]
+                    built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section))
+                    for p in built_packages_tmp:
+                        if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
+                            built_packages.append(p)
+                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
+                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
+                            built_packages.append(p)
+                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            for job in p.jobs:
+                                job.packed = False
+                    built_packages=built_packages_tmp
+                else:
+                    built_packages=built_packages_tmp
+                packages_to_submit += built_packages
+
             else:
                 # No wrapper allowed / well-configured
                 for job in jobs_to_submit_by_section[section]:
@@ -122,8 +167,7 @@ class JobPackager(object):
                     else:
                         package = JobPackageSimple([job])
                     packages_to_submit.append(package)
-
-        return packages_to_submit, remote_dependencies_dict
+        return packages_to_submit
 
     def _divide_list_by_section(self, jobs_list):
         """
@@ -149,8 +193,6 @@ class JobPackager(object):
 
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section):
         packages = []
-        remote_dependencies_dict = dict()
-
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, max_wrapped_jobs,
                                                     self.max_jobs, self._platform.processors_per_node)
 
@@ -167,13 +209,9 @@ class JobPackager(object):
             current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources)
             packages.append(current_package)
 
-        if self.remote_dependencies and current_package:
-            remote_dependencies_dict['name_to_id'] = dict()
-            remote_dependencies_dict['dependencies'] = dict()
-            packages += horizontal_packager.get_next_packages(section, potential_dependency=current_package.name,
-                                                              remote_dependencies_dict=remote_dependencies_dict)
 
-        return packages, remote_dependencies_dict
+
+        return packages
 
     def _build_vertical_packages(self, section_list, max_wrapped_jobs):
         """
@@ -183,17 +221,12 @@ class JobPackager(object):
         :type section_list: List() of Job Objects. \n
         :param max_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
         :type max_wrapped_jobs: Integer. \n
+        :param min_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
+        :type min_wrapped_jobs: Integer. \n
         :return: List of Wrapper Packages, Dictionary that details dependencies. \n
         :rtype: List() of JobPackageVertical(), Dictionary Key: String, Value: (Dictionary Key: Variable Name, Value: String/Int)
         """
         packages = []
-        potential_dependency = None
-        remote_dependencies_dict = dict()
-        # True when autosubmit_.conf value [wrapper].DEPENDENCIES has been set to true 
-        if self.remote_dependencies:
-            remote_dependencies_dict['name_to_id'] = dict()
-            remote_dependencies_dict['dependencies'] = dict()
-
         for job in section_list:
             if self.max_jobs > 0:
                 if job.packed is False:
@@ -212,21 +245,13 @@ class JobPackager(object):
                     self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(jobs_list))
-                    else:
-                        if self.remote_dependencies:
-                            # Sending last item in list of packaged
-                            child = job_vertical_packager.get_wrappable_child(jobs_list[-1])
-                            if child is not None:
-                                section_list.insert(section_list.index(job) + 1, child)
-                                potential_dependency = packages[-1].name
-                            package = JobPackageVertical(jobs_list, potential_dependency)
-                            packages.append(package)
-                            # Possible need of "if self.remote_dependencies here"
-                            remote_dependencies_dict['name_to_id'][potential_dependency] = -1
-                            remote_dependencies_dict['dependencies'][package.name] = potential_dependency
+                    else:                        
+                        package = JobPackageVertical(jobs_list, None)
+                        packages.append(package)
+
             else:
                 break
-        return packages, remote_dependencies_dict
+        return packages
 
     def _build_hybrid_package(self, jobs_list, max_wrapped_jobs, section):
         jobs_resources = dict()
@@ -541,7 +566,7 @@ class JobPackagerHorizontal(object):
         jobname = jobname.split('_')[-1]
         return self._sort_order_dict[jobname]
 
-    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, remote_dependencies_dict=dict(),horizontal_vertical=False,max_procs=0):
+    def get_next_packages(self, jobs_sections, max_wallclock=None, potential_dependency=None, packages_remote_dependencies=list(),horizontal_vertical=False,max_procs=0):
         packages = []
         job = max(self.job_list, key=attrgetter('total_wallclock'))
         wallclock = job.wallclock
@@ -573,10 +598,7 @@ class JobPackagerHorizontal(object):
                     if total_wallclock > max_wallclock:
                         return packages
                 packages.append(package_jobs)
-                if remote_dependencies_dict:
-                    current_package = JobPackageHorizontal(package_jobs, potential_dependency)
-                    remote_dependencies_dict['name_to_id'][potential_dependency] = -1
-                    remote_dependencies_dict['dependencies'][current_package.name] = potential_dependency
+
             else:
                 break
 

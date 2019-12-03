@@ -248,7 +248,7 @@ class ParamikoPlatform(Platform):
                                                                        os.path.join(self.get_files_path(), dest)))
             return False
 
-    def submit_job(self, job, script_name):
+    def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
 
@@ -256,11 +256,13 @@ class ParamikoPlatform(Platform):
         :type job: autosubmit.job.job.Job
         :param script_name: job script's name
         :rtype scriptname: str
+        :param hold: send job hold
+        :type hold: boolean
         :return: job id for the submitted job
         :rtype: int
         """
         if self.type == 'slurm':
-            self.get_submit_cmd(script_name, job)
+            self.get_submit_cmd(script_name, job, hold=hold)
             return None
         else:
             if self.send_command(self.get_submit_cmd(script_name, job)):
@@ -269,7 +271,7 @@ class ParamikoPlatform(Platform):
                 return int(job_id)
             else:
                 return None
-    def submit_Script(self):
+    def submit_Script(self, hold=False):
         """
         Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
 
@@ -301,22 +303,25 @@ class ParamikoPlatform(Platform):
             # URi: value ?
             job.new_status= job_status
 
-        while not self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0:
+        while not ( self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0 ) or (self.get_ssh_output() == "" and retries >= 0):
             retries -= 1
             Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
             sleep(5)
-
+        output=self.get_ssh_output()
+        output_stripped=output.strip()
         if retries >= 0:
-            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retries == 0:
                 job_status = Status.COMPLETED
             elif job_status in self.job_status['RUNNING']:
                 job_status = Status.RUNNING
-            elif job_status in self.job_status['QUEUING']:
+            elif job_status in self.job_status['QUEUING'] and job.hold is False:
                 job_status = Status.QUEUING
+            elif job_status in self.job_status['QUEUING'] and job.hold is True:
+                job_status = Status.HELD
             elif job_status in self.job_status['FAILED']:
                 job_status = Status.FAILED
             else:
@@ -345,23 +350,29 @@ class ParamikoPlatform(Platform):
             Log.warning('Retrying check job command: {0}', cmd)
             Log.warning('Can not get job status for all jobs, retrying in 3 sec')
             sleep(3)
-        Log.debug('Successful check job command: {0}', cmd)
+        job_list_status = self.get_ssh_output()
+        Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
             in_queue_jobs=[]
             list_queue_jobid=""
             for job in job_list:
                 job_id=job.id
                 job_status = Status.UNKNOWN
-
-                job_status = self.parse_Alljobs_output(self.get_ssh_output(),job_id)
+                job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
                     job_status = Status.COMPLETED
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-                    job_status = Status.QUEUING
                     if self.type == "slurm":
+                        if job.status == Status.HELD:
+                            job_status = Status.HELD
+                            if not job.hold:
+                                self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                                job_status = Status.QUEUING
+                        else:
+                            job_status = Status.QUEUING
                         list_queue_jobid += str(job.id) + ','
                         in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
@@ -376,19 +387,28 @@ class ParamikoPlatform(Platform):
             if self.type == 'slurm' and len(in_queue_jobs) > 0:
                 cmd=self.get_queue_status_cmd(list_queue_jobid)
                 self.send_command(cmd)
+                queue_status=self._ssh_output
                 for job in in_queue_jobs:
-                    reason = self.parse_queue_reason(self._ssh_output,job.id)
+                    reason = self.parse_queue_reason(queue_status,job.id)
                     if job.queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", job.name, reason)
                         self.send_command(self.platform.cancel_cmd + " {0}".format(job.id))
-                        job.new_status=Status.FAILED
+                        job.new_status = Status.FAILED
                         job.update_status(remote_logs)
                         return
-                    Log.info("Job {0} is QUEUING {1}", job.name, reason)
+                    elif reason == '(JobHeldUser)':
+                        job.new_status=Status.HELD
+                        Log.info("Job {0} is HELD", job.name)
+                    elif reason == '(JobHeldAdmin)':
+                        Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
+                        job.new_status = Status.WAITING
+                        job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
+                    else:
+                        Log.info("Job {0} is QUEUING {1}", job.name, reason)
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
-                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {1}.', job_id, self.name, job_status)
+                Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
                 job.new_status=job_status
 
     def get_checkjob_cmd(self, job_id):
@@ -463,16 +483,16 @@ class ParamikoPlatform(Platform):
             stdout.close()
             stderr.close()
             self._ssh_output = ""
-            if len(stdout_chunks) > 0:
-                for s in stdout_chunks:
-                    if s is not None:
-                        self._ssh_output += s
+            for s in stdout_chunks:
+                if s != '':
+                    self._ssh_output += s
             for errorLine in stderr_readlines:
                 if errorLine.find("submission failed") != -1:
                     Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                     return False
             if not ignore_log:
-                Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+                if len(stderr_readlines) > 0:
+                    Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
 
             Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
@@ -508,13 +528,15 @@ class ParamikoPlatform(Platform):
         pass
 
 
-    def get_submit_cmd(self, job_script, job_type):
+    def get_submit_cmd(self, job_script, job_type,hold=False):
         """
         Get command to add job to scheduler
 
         :param job_type:
         :param job_script: path to job script
         :param job_script: str
+        :param hold: submit a job in a held status
+        :param hold: boolean
         :return: command to submit job to platforms
         :rtype: str
         """

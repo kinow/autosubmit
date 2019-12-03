@@ -1049,8 +1049,11 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        return self._conf_parser.get_option('wrapper', 'DEPENDENCIES', 'false').lower() == 'true'
-
+        config_value = self._conf_parser.get_option('config', 'DEPENDENCIES', 'false').lower()
+        if config_value == "true":
+            return True
+        else:
+            return False
     def get_wrapper_type(self):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
@@ -1068,16 +1071,22 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
+    def get_min_wrapped_jobs(self):
+        """
+         Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
+
+        :return: minim number of jobs (or total jobs)
+        :rtype: int
+        """
+        return int(self._conf_parser.get_option('wrapper', 'MIN_WRAPPED', 2))
 
     def get_max_wrapped_jobs(self):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
-         :rtype: string
+         :rtype: int
          """
-        #return int(self._conf_parser.get_option('wrapper', 'MAXWRAPPEDJOBS', self.get_total_jobs()))
-
         return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
     def get_wrapper_check_time(self):
         """

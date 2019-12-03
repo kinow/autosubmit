@@ -47,7 +47,7 @@ class JobPackageBase(object):
             self._platform = jobs[0].platform
             self._custom_directives = set()
             for job in jobs:
-                if job.platform != self._platform or job.platform is None:
+                if job.platform.name != self._platform.name or job.platform is None:
                     raise Exception('Only one valid platform per package')
         except IndexError:
             raise Exception('No jobs given')
@@ -75,7 +75,7 @@ class JobPackageBase(object):
         """
         return self._platform
 
-    def submit(self, configuration, parameters,only_generate=False):
+    def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
         :type configuration: AutosubmitConfig object \n
@@ -102,7 +102,7 @@ class JobPackageBase(object):
         else:
             self._create_scripts(configuration)
             self._send_files()
-            self._do_submission()
+            self._do_submission(job_scripts=None,hold=hold)
 
 
     def _create_scripts(self, configuration):
@@ -111,7 +111,7 @@ class JobPackageBase(object):
     def _send_files(self):
         raise Exception('Not implemented')
 
-    def _do_submission(self):
+    def _do_submission(self,job_scripts=None, hold=False):
         raise Exception('Not implemented')
 
 
@@ -133,13 +133,13 @@ class JobPackageSimple(JobPackageBase):
         for job in self.jobs:
             self.platform.send_file(self._job_scripts[job.name])
 
-    def _do_submission(self, job_scripts=None):
+    def _do_submission(self, job_scripts=None, hold=False):
         if job_scripts is None:
             job_scripts = self._job_scripts
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.id = self.platform.submit_job(job, job_scripts[job.name])
+            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold)
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
@@ -166,10 +166,10 @@ class JobPackageSimpleWrapped(JobPackageSimple):
         for job in self.jobs:
             self.platform.send_file(self._job_wrapped_scripts[job.name])
 
-    def _do_submission(self, job_scripts=None):
+    def _do_submission(self, job_scripts=None, hold=False):
         if job_scripts is None:
             job_scripts = self._job_wrapped_scripts
-        super(JobPackageSimpleWrapped, self)._do_submission(job_scripts)
+        super(JobPackageSimpleWrapped, self)._do_submission(job_scripts, hold=hold)
 
 
 class JobPackageArray(JobPackageBase):
@@ -221,12 +221,12 @@ class JobPackageArray(JobPackageBase):
             self.platform.send_file(self._job_inputs[job.name])
         self.platform.send_file(self._common_script)
 
-    def _do_submission(self):
+    def _do_submission(self, job_scripts=None, hold=False):
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             return
@@ -316,7 +316,7 @@ class JobPackageThread(JobPackageBase):
             self.platform.send_file(self._job_scripts[job.name], check=False)
         self.platform.send_file(self._common_script)
 
-    def _do_submission(self):
+    def _do_submission(self, job_scripts=None, hold=False):
         if callable(getattr(self.platform, 'remove_multiple_files')):
             filenames = str()
             for job in self.jobs:
@@ -327,8 +327,10 @@ class JobPackageThread(JobPackageBase):
             for job in self.jobs:
                 self.platform.remove_stat_file(job.name)
                 self.platform.remove_completed_file(job.name)
+                if hold:
+                    job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             return
@@ -400,12 +402,14 @@ class JobPackageThreadWrapped(JobPackageThread):
             self.platform.send_file(self._job_scripts[job.name])
         self.platform.send_file(self._common_script)
 
-    def _do_submission(self):
+    def _do_submission(self, job_scripts=None, hold=False):
         for job in self.jobs:
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
+            if hold:
+                job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
 
         if package_id is None:
             raise Exception('Submission failed')

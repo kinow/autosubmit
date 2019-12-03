@@ -643,7 +643,7 @@ class JobList:
         :rtype: list
         """
         return [job for job in self._job_list]
-    def get_ready(self, platform=None):
+    def get_ready(self, platform=None, hold=False):
         """
         Returns a list of ready jobs
 
@@ -653,7 +653,7 @@ class JobList:
         :rtype: list
         """
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
-                job.status == Status.READY]
+                job.status == Status.READY and job.hold is hold]
 
     def get_waiting(self, platform=None):
         """
@@ -664,8 +664,34 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.platform is platform) and
+        waiting_jobs= [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.WAITING]
+        return waiting_jobs
+
+    def get_waiting_remote_dependencies(self, platform_type='slurm'.lower()):
+        """
+        Returns a list of jobs waiting on slurm scheduler
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: waiting jobs
+        :rtype: list
+        """
+        waiting_jobs= [job for job in self._job_list if (job.platform.type == platform_type and
+                job.status == Status.WAITING)]
+        return waiting_jobs
+
+    def get_held_jobs(self,platform = None):
+        """
+        Returns a list of jobs in the platforms (Held)
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: jobs in platforms
+        :rtype: list
+        """
+        return [job for job in self._job_list if (platform is None or job.platform == platform) and
+                job.status == Status.HELD]
 
     def get_unknown(self, platform=None):
         """
@@ -693,7 +719,7 @@ class JobList:
 
     def get_in_queue(self, platform=None):
         """
-        Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown)
+        Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown,Held)
 
         :param platform: job platform
         :type platform: HPCPlatform
@@ -701,7 +727,7 @@ class JobList:
         :rtype: list
         """
         return self.get_submitted(platform) + self.get_running(platform) + self.get_queuing(
-            platform) + self.get_unknown(platform)
+            platform) + self.get_unknown(platform) + self.get_held_jobs(platform)
 
     def get_not_in_queue(self, platform=None):
         """
@@ -874,7 +900,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf,store_change=True,fromSetStatus=False):
+    def update_list(self, as_conf,store_change=True,fromSetStatus=False,ignoreRemoteDependency=False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -911,11 +937,8 @@ class JobList:
                     Log.debug("Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
 
         # if waiting jobs has all parents completed change its State to READY
-
-
         for job in self.get_completed():
-
-            if job.synchronize is not None: #and job in self.get_active():
+            if job.synchronize is not None:
                 Log.debug('Updating SYNC jobs')
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
@@ -923,16 +946,41 @@ class JobList:
                     save = True
                     Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
         Log.debug('Update finished')
-
-
         Log.debug('Updating WAITING jobs')
-        for job in self.get_waiting():
-            if not fromSetStatus:
+        if as_conf.get_remote_dependencies():
+            all_parents_completed=[]
+        if not fromSetStatus:
+            for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    job.hold = False
                     save = True
                     Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
+                    if as_conf.get_remote_dependencies():
+                        all_parents_completed.append(job.name)
+            if as_conf.get_remote_dependencies():
+                Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
+                for job in self.get_waiting_remote_dependencies('slurm'.lower()):
+                    if job.name not in all_parents_completed:
+                        tmp = [parent for parent in job.parents if (parent.status == Status.COMPLETED or (parent.status == Status.QUEUING and not parent.hold and parent.name.lower() not in "setup") or parent.status == Status.RUNNING)]
+                        if len(tmp) == len(job.parents):
+                            job.status = Status.READY
+                            job.hold = True
+                            save = True
+                            Log.debug("Setting job: {0} status to: READY for be held (all parents queuing, running or completed)...".format(job.name))
+                Log.debug('Updating Held jobs')
+                for job in self.get_held_jobs():
+                    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                    if len(tmp) == len(job.parents):
+                        job.hold = False
+                        Log.debug(
+                            "Setting job: {0} status to: Queuing (all parents completed)...".format(
+                                job.name))
+                    else:
+                        job.hold = True
+                    save= True
+
         Log.debug('Update finished')
 
         return save

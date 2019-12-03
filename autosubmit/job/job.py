@@ -100,6 +100,7 @@ class Job(object):
         self._platform = None
         self.check = 'True'
         self.packed = False
+        self.hold = False
 
 
     def __getstate__(self):
@@ -492,19 +493,31 @@ class Job(object):
             self.check_completion()
         else:
             self.status = new_status
-        if self.status is Status.QUEUING:
+        if self.status is Status.QUEUING or self.status is Status.HELD:
             if iswrapper:
                 reason = str()
                 if self.platform.type == 'slurm':
                     self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-                    reason = self.platform.parse_queue_reason(self.platform._ssh_output)
+                    reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
                     if self._queuing_reason_cancel(reason):
                         Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
                         self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                         self.new_status =Status.FAILED
                         self.update_status(copy_remote_logs,True)
                         return
-                Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                    elif reason == '(JobHeldUser)':
+                        self.new_status = Status.HELD
+                        self.hold = True
+                        Log.info("Job {0} is HELD", self.name)
+
+                    elif reason == '(JobHeldAdmin)':
+                        Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+                        self.hold = True
+                        self.new_status = Status.WAITING
+                        self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+                    else:
+                        self.hold = False
+                        Log.info("Job {0} is QUEUING {1}", self.name, reason)
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
         elif self.status is Status.COMPLETED:
@@ -549,7 +562,7 @@ class Job(object):
     def update_children_status(self):
         children = list(self.children)
         for child in children:
-            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
+            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]: #TODO add held?
                 child.status = Status.FAILED
                 children += list(child.children)
 
@@ -710,11 +723,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5'
+                template = 'sleep 8'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(5)'
+                template = 'time.sleep(8)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(5)'
+                template = 'Sys.sleep(8)'
             else:
                 template = ''
 
@@ -830,12 +843,10 @@ class Job(object):
         :rtype: bool
         """
 
-
         out=False
         parameters = self.update_parameters(as_conf, parameters)
         template_content = self.update_content(as_conf)
         if template_content is not False:
-
             variables = re.findall('%(?<!%%)\w+%(?!%%)', template_content)
             variables = [variable[1:-1] for variable in variables]
             out = set(parameters).issuperset(set(variables))
@@ -852,6 +863,7 @@ class Job(object):
                 if not set(variables).issuperset(set(parameters)):
                     Log.debug("The following set of variables are not being used in the templates: {0}",
                                 str(set(parameters)-set(variables)))
+
         return out
 
     def write_submit_time(self):
@@ -1009,6 +1021,7 @@ class WrapperJob(Job):
         self.as_config = as_config
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
+        self.hold = False
     def _queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
@@ -1025,29 +1038,45 @@ class WrapperJob(Job):
             return False
 
     def check_status(self, status):
-        if status != self.status:
-            if status == Status.QUEUING:
-                reason = str()
-                if self.platform.type == 'slurm':
-                    self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-                    reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
-
-                    if self._queuing_reason_cancel(reason):
-                        Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
-                                  reason)
-                        self.cancel_failed_wrapper_job()
-                        return
+        self.status = status
+        if status == Status.QUEUING or status == Status.HELD:
+            reason = str()
+            if self.platform.type == 'slurm':
+                self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+                reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
+                if self._queuing_reason_cancel(reason):
+                    Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
+                              reason)
+                    self.cancel_failed_wrapper_job()
+                    return
+                elif reason == '(JobHeldUser)':
+                    if self.hold is False:
+                        self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                        self.status = Status.QUEUING
+                        Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                    else:
+                        self.status = Status.HELD
+                        Log.info("Job {0} is HELD", self.name)
+                elif reason == '(JobHeldAdmin)':
+                    Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+                    self.hold = True
+                    self.status = Status.WAITING
+                    self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+                else:
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
-            self.status = status
-        if status in [Status.FAILED, Status.UNKNOWN]:
-            self.cancel_failed_wrapper_job()
-            self.update_failed_jobs()
-        elif status == Status.COMPLETED:
-            self.check_inner_jobs_completed(self.job_list)
-        elif status == Status.RUNNING:
-            time.sleep(3)
-            Log.debug('Checking inner jobs status')
-            self.check_inner_job_status()
+                self.update_inner_jobs_queue()
+        else:
+            if self.status in [Status.FAILED, Status.UNKNOWN]:
+                self.cancel_failed_wrapper_job()
+                self.update_failed_jobs()
+            elif self.status == Status.COMPLETED:
+                self.check_inner_jobs_completed(self.job_list)
+            elif self.status == Status.RUNNING:
+                #time.sleep(3)
+                #self.update_inner_jobs_queue()
+                Log.debug('Checking inner jobs status')
+                self.check_inner_job_status()
+
 
     def check_inner_job_status(self):
         self._check_running_jobs()
@@ -1123,7 +1152,7 @@ class WrapperJob(Job):
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                                 self._check_finished_job(job)
                         else:
-                            Log.debug("Job {0} is SUBMITTED and waiting for dependencies".format(jobname))
+                            Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):
@@ -1139,6 +1168,19 @@ class WrapperJob(Job):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         for job in not_finished_jobs:
             self._check_finished_job(job)
+    def update_inner_jobs_queue(self):
+        if self.status == Status.WAITING:
+            for job in self.job_list:
+                job.status = self.status
+                job.hold = True
+                job.packed = False
+        else:
+            jobs = [job for job in self.job_list if job.status in [Status.SUBMITTED or Status.HELD or Status.QUEUING]]
+            for job in jobs:
+                job.status = self.status
+                if self.status == Status.QUEUING:
+                    job.hold = False
+
 
     def _check_wrapper_status(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]

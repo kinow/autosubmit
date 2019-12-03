@@ -111,7 +111,7 @@ class EcPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script, job):
+    def get_submit_cmd(self, job_script, job, hold=False):
         return self._submit_cmd + job_script
 
     def connect(self):

@@ -218,7 +218,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -267,7 +267,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -313,7 +313,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -359,7 +359,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -398,7 +398,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -462,7 +462,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -522,7 +522,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -584,7 +584,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -645,7 +645,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -706,7 +706,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
@@ -778,7 +778,7 @@ class TestWrappers(TestCase):
 
         packages = [JobPackageVertical(package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
-        returned_packages = returned_packages[0]
+        #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 

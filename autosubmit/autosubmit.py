@@ -937,7 +937,7 @@ class Autosubmit:
         :rtype: \n
         """
         job_list._job_list=jobs_filtered
-        job_list.update_list(as_conf,False)
+
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
         # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
@@ -959,11 +959,11 @@ class Autosubmit:
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
         # Loading parameters again
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)                
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
             # Sending only_wrappers = True
-            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers)
-            job_list.update_list(as_conf, False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,True,only_wrappers,hold=False)
+            job_list.update_list(as_conf, False,False)
 
 
 
@@ -1112,7 +1112,10 @@ class Autosubmit:
                             if job_list.job_package_map and job_id in job_list.job_package_map:
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
+                                if as_conf.get_remote_dependencies():
+                                    wrapper_job.hold = wrapper_job.job_list[0].hold
                                 check_wrapper = True
+
                                 if wrapper_job.status == Status.RUNNING:
                                     check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
@@ -1120,7 +1123,11 @@ class Autosubmit:
                                     platform.check_job(wrapper_job)
                                     Log.info(
                                         'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+
                                     wrapper_job.check_status(wrapper_job.new_status)
+                                    if wrapper_job.status == Status.WAITING: # if job failed to be held, delete it from packages table
+                                        job_list.job_package_map.pop(job_id, None)
+                                        job_list.packages_dict.pop(job_id, None)
                                     save = True
                                 else:
                                     Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
@@ -1148,6 +1155,7 @@ class Autosubmit:
                         if platform.type == "slurm" and list_jobid!="":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
                     #END LOOP
+                    #CHECK ALL JOBS
                     for platform_jobs in slurm:
                         platform = platform_jobs[0]
                         jobs_to_check = platform_jobs[1]
@@ -1157,8 +1165,6 @@ class Autosubmit:
                             prev_status = platform_jobs[2][j_Indx]
                             job = platform_jobs[3][j_Indx]
 
-
-
                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                 if as_conf.get_notifications() == 'true':
                                     if Status.VALUE_TO_KEY[job.status] in job.notify_on:
@@ -1167,14 +1173,15 @@ class Autosubmit:
                                                                       Status.VALUE_TO_KEY[job.status],
                                                                       as_conf.get_mails_to())
                             save = True
-
                     if job_list.update_list(as_conf) or save:
                         job_list.save()
 
-
-
-                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence):
+                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False):
                         job_list.save()
+
+                    if as_conf.get_remote_dependencies():
+                        if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
+                            job_list.save()
 
                     if Autosubmit.exit:
                         return 2
@@ -1196,7 +1203,7 @@ class Autosubmit:
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
-                          only_wrappers=False):
+                          only_wrappers=False,hold=False):
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
@@ -1217,29 +1224,24 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform)), platform.name)
-            packages_to_submit, remote_dependencies_dict = JobPackager(as_conf, platform, job_list).build_packages()
+            Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages(hold=hold)
             if not inspect:
                 platform.open_submit_script()
             valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
-                    if hasattr(package, "name"):
-                        if remote_dependencies_dict and package.name in remote_dependencies_dict['dependencies']:
-                            remote_dependency = remote_dependencies_dict['dependencies'][package.name]
-                            remote_dependency_id = remote_dependencies_dict['name_to_id'][remote_dependency]
-                            package.set_job_dependency(remote_dependency_id)
                     if not only_wrappers:
                         try:
-                            package.submit(as_conf, job_list.parameters, inspect)
+                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
-                        except (IOError,OSError):
-                            #write error file
+                        except (IOError, OSError):
+                            # write error file
                             continue
                     if only_wrappers or inspect:
                         for innerJob in package._jobs:
                             # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
-                            innerJob.status=Status.COMPLETED
+                            innerJob.status = Status.COMPLETED
 
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
@@ -1249,8 +1251,7 @@ class Autosubmit:
                                                      package._wallclock, package._num_processors,
                                                      package.platform, as_conf)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                            if remote_dependencies_dict and package.name in remote_dependencies_dict['name_to_id']:
-                                remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
+
                         if isinstance(package, JobPackageThread):
                             # If it is instance of JobPackageThread, then it is JobPackageVertical.
                             packages_persistence.save(package.name, package.jobs, package._expid, inspect)
@@ -1266,14 +1267,13 @@ class Autosubmit:
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:
-                        jobs_id = platform.submit_Script()
+                        jobs_id = platform.submit_Script(hold=hold)
                         if jobs_id is None:
                             raise BaseException("Exiting AS being unable to get jobID")
                         i = 0
                         for package in valid_packages_to_submit:
                             for job in package.jobs:
                                 job.id = str(jobs_id[i])
-                                Log.info("{0} submitted", job.name)
                                 job.status = Status.SUBMITTED
                                 job.write_submit_time()
                             if hasattr(package, "name"):
@@ -1284,23 +1284,17 @@ class Autosubmit:
                                                          package._wallclock, package._num_processors,
                                                          package.platform, as_conf)
                                 job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                                if remote_dependencies_dict and package.name in remote_dependencies_dict[
-                                    'name_to_id']:
-                                    remote_dependencies_dict['name_to_id'][package.name] = package.jobs[0].id
                                 if isinstance(package, JobPackageThread):
                                     # Saving only when it is a real multi job package
                                     packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                             i += 1
-
-
+                    save = True
                 except WrongTemplateException as e:
                     Log.error("Invalid parameter substitution in {0} template", e.job_name)
                     raise
                 except Exception:
                     Log.error("{0} submission failed", platform.name)
                     raise
-
-
         return save
 
     @staticmethod
@@ -1434,8 +1428,9 @@ class Autosubmit:
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
             job_list_wrappers = copy.deepcopy(job_list)
-            jobs_wr = copy.deepcopy(jobs)
-            [job for job in jobs_wr if (job.status != Status.COMPLETED)]
+            jobs_wr_aux = copy.deepcopy(jobs)
+            jobs_wr = []
+            [jobs_wr.append(job) for job in jobs_wr_aux if (job.status == Status.READY or job.status == Status.WAITING)]
             for job in jobs_wr:
                 for child in job.children:
                     if child not in jobs_wr:
@@ -1451,6 +1446,8 @@ class Autosubmit:
                                                        packages_persistence, True)
 
             packages = packages_persistence.load(True)
+            packages+= JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
+                                             "job_packages_" + expid).load()
         else:
             packages = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                              "job_packages_" + expid).load()
@@ -2725,7 +2722,7 @@ class Autosubmit:
                     os.fsync(fh.fileno())
 
                     # Detail after lock has been closed.
-                    if (detail == True):
+                    if detail == True:
                         current_length = len(job_list.get_job_list()) 
                         if current_length > 1000:
                             Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
