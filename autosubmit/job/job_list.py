@@ -901,7 +901,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf,store_change=True,fromSetStatus=False,ignoreRemoteDependency=False):
+    def update_list(self, as_conf,store_change=True,fromSetStatus=False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 

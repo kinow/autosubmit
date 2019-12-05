@@ -59,7 +59,7 @@ class ParamikoPlatform(Platform):
         """
         return self._wrapper
 
-    def connect(self):
+    def connect(self,reconnect=False):
         """
         Creates ssh connection to host
 
@@ -78,7 +78,10 @@ class ParamikoPlatform(Platform):
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self.host)
             if "," in self._host_config['hostname']:
-                self._host_config['hostname'] = random.choice(self._host_config['hostname'].split(','))
+                if reconnect:
+                    self._host_config['hostname'] = random.choice(self._host_config['hostname'].split(',')[1:])
+                else:
+                    self._host_config['hostname'] = self._host_config['hostname'].split(',')[0]
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             if 'proxycommand' in self._host_config:
@@ -446,13 +449,19 @@ class ParamikoPlatform(Platform):
          
         if self._ssh is None:
             if not self.connect():
-                return None
+                retries = 2
+                connected = False
+                for retry in range(retries):
+                    if self.connect(True):
+                        connected = True
+                if not connected:
+                    return None
         if "-rP" or "mv" or "find" or "convertLink" in command:
             timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
-            timeout = 120.0
+            timeout = 20.0
         else:
-            timeout = 240.0
+            timeout = 150.0
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
