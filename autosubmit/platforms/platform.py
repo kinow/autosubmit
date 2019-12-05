@@ -227,7 +227,7 @@ class Platform(object):
             if retries == 0:
                 return False
             retries -= 1
-            sleep(3)
+            sleep(1)
 
     def remove_stat_file(self, job_name):
         """

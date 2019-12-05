@@ -5,7 +5,7 @@ import paramiko
 import datetime
 import time
 import select
-
+import random
 from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
@@ -77,6 +77,8 @@ class ParamikoPlatform(Platform):
                     # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self.host)
+            if "," in self._host_config['hostname']:
+                self._host_config['hostname'] = random.choice(self._host_config['hostname'].split(','))
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
             if 'proxycommand' in self._host_config:
@@ -447,8 +449,10 @@ class ParamikoPlatform(Platform):
                 return None
         if "-rP" or "mv" or "find" or "convertLink" in command:
             timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+        elif "rm" in command:
+            timeout = 120.0
         else:
-            timeout = 1200.0  # Max Wait 20min in the normal workflow.
+            timeout = 240.0
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
@@ -462,7 +466,7 @@ class ParamikoPlatform(Platform):
             while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready():
                 # stop if channel was closed prematurely, and there is no data in the buffers.
                 got_chunk = False
-                readq, _, _ = select.select([stdout.channel], [], [], timeout)
+                readq, _, _ = select.select([stdout.channel], [], [], 2)
                 for c in readq:
                     if c.recv_ready():
                         stdout_chunks.append(stdout.channel.recv(len(c.in_buffer)))

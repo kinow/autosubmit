@@ -693,6 +693,7 @@ class JobList:
         return [job for job in self._job_list if (platform is None or job.platform == platform) and
                 job.status == Status.HELD]
 
+
     def get_unknown(self, platform=None):
         """
         Returns a list of jobs on unknown state

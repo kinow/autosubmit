@@ -88,6 +88,7 @@ class Job(object):
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
         self.status = status
+        self.old_status = self.status
         self.new_status=status
         self.priority = priority
         self._parents = set()
@@ -1180,6 +1181,8 @@ class WrapperJob(Job):
                 job.status = self.status
                 if self.status == Status.QUEUING:
                     job.hold = False
+                elif self.status == Status.HELD:
+                    job.hold = True
 
 
     def _check_wrapper_status(self):

@@ -351,7 +351,7 @@ class Autosubmit:
             subparser.add_argument('-s', '--save', action="store_true", default=False, help='Save changes to disk')
             subparser.add_argument('-t', '--status_final',
                                    choices=('READY', 'COMPLETED', 'WAITING', 'SUSPENDED', 'FAILED', 'UNKNOWN',
-                                            'QUEUING', 'RUNNING'),
+                                            'QUEUING', 'RUNNING','HELD'),
                                    required=True,
                                    help='Supply the target status')
             group = subparser.add_mutually_exclusive_group(required=True)
@@ -1190,8 +1190,19 @@ class Autosubmit:
                         job_list.save()
 
                     if as_conf.get_remote_dependencies():
-                        if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
-                            job_list.save()
+                        jobs_in_held_status = job_list.get_held_jobs()
+                        current_held_jobs = 0
+                        wrapper_jobs_visited = []
+                        for held_job in jobs_in_held_status:
+                            if job_list.job_package_map and held_job.id in job_list.job_package_map:
+                                if held_job.id not in wrapper_jobs_visited:
+                                    current_held_jobs+=1
+                                    wrapper_jobs_visited.append(held_job.id)
+                            else:
+                                current_held_jobs+=1
+                        if current_held_jobs < 10:
+                            if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
+                                job_list.save()
 
                     if Autosubmit.exit:
                         return 2
@@ -2838,7 +2849,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def change_status(final, final_status, job):
+    def change_status(final, final_status, job , save):
         """
         Set job status to final
 
@@ -2846,6 +2857,11 @@ class Autosubmit:
         :param final_status:
         :param job:
         """
+        if ( (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD )):
+            job.hold= False
+            if job.platform_name is not None and job.platform_name.lower() != "local":
+                job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
@@ -2965,7 +2981,6 @@ class Autosubmit:
                         if len(str(lst).strip()) > 0:
                             if len(lst.split()) > 0:
                                 for sentJob in lst.split():
-                                    #print(sentJob)
                                     # Provided job does not exist or it is not the keyword 'Any'
                                     if sentJob not in jobs and (sentJob != "Any"):                                        
                                         job_error = True
@@ -3086,7 +3101,7 @@ class Autosubmit:
                         ft = filter_chunks.split(",")[1:]
                     if ft == 'Any':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(final, final_status, job)
+                            Autosubmit.change_status(final, final_status, job, save)
                     else:
                         for section in ft:
                             for job in job_list.get_job_list():
@@ -3094,7 +3109,7 @@ class Autosubmit:
                                     if filter_chunks:
                                         jobs_filtered.append(job)
                                     else:
-                                        Autosubmit.change_status(final, final_status, job)
+                                        Autosubmit.change_status(final, final_status, job, save)
                 
                 # New feature : Change status by section, member, and chunk; freely.
                 # Including inner validation. Trying to make it independent.
@@ -3232,7 +3247,7 @@ class Autosubmit:
                         if job.status != final_status:
                             # Only real changes
                             performed_changes[job.name] = str(Status.VALUE_TO_KEY[job.status]) + " -> " +  str(final)
-                            Autosubmit.change_status(final, final_status, job)
+                            Autosubmit.change_status(final, final_status, job, save)
                     # If changes have been performed
                     if len(performed_changes.keys()) > 0:
                         if detail == True:
@@ -3254,7 +3269,7 @@ class Autosubmit:
 
                     if fc == 'Any':
                         for job in jobs_filtered:
-                            Autosubmit.change_status(final, final_status, job)
+                            Autosubmit.change_status(final, final_status, job, save)
                     else:
                         # noinspection PyTypeChecker
                         data = json.loads(Autosubmit._create_json(fc))
@@ -3266,16 +3281,14 @@ class Autosubmit:
                                 member = member_json['m']
                                 jobs_member = filter(lambda j: j.member == member, jobs_date)
 
-                                #for job in filter(lambda j: j.chunk is None, jobs_member):
-                                #    Autosubmit.change_status(final, final_status, job)
 
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
                                     for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
-                                        Autosubmit.change_status(final, final_status, job)
+                                        Autosubmit.change_status(final, final_status, job, save)
 
                                     for job in filter(lambda j: j.chunk == chunk, jobs_member):
-                                        Autosubmit.change_status(final, final_status, job)
+                                        Autosubmit.change_status(final, final_status, job, save)
 
                 if filter_status:
                     status_list = filter_status.split()
@@ -3283,12 +3296,12 @@ class Autosubmit:
                     Log.debug("Filtering jobs with status {0}", filter_status)
                     if status_list == 'Any':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(final, final_status, job)
+                            Autosubmit.change_status(final, final_status, job, save)
                     else:
                         for status in status_list:
                             fs = Autosubmit._get_status(status)
                             for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                                Autosubmit.change_status(final, final_status, job)
+                                Autosubmit.change_status(final, final_status, job, save)
 
                 if lst:
                     jobs = lst.split()
@@ -3303,11 +3316,11 @@ class Autosubmit:
 
                     if jobs == 'Any':
                         for job in job_list.get_job_list():
-                            Autosubmit.change_status(final, final_status, job)
+                            Autosubmit.change_status(final, final_status, job, save)
                     else:
                         for job in job_list.get_job_list():
                             if job.name in jobs:
-                                Autosubmit.change_status(final, final_status, job)
+                                Autosubmit.change_status(final, final_status, job, save)
 
                
 
@@ -3446,12 +3459,15 @@ class Autosubmit:
         :return: status instance
         :rtype: Status
         """
+        s = s.upper()
         if s == 'READY':
             return Status.READY
         elif s == 'COMPLETED':
             return Status.COMPLETED
         elif s == 'WAITING':
             return Status.WAITING
+        elif s == 'HELD':
+            return Status.HELD
         elif s == 'SUSPENDED':
             return Status.SUSPENDED
         elif s == 'FAILED':
