@@ -170,7 +170,8 @@ class Autosubmit:
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
-
+            subparser.add_argument('-p', '--config_path', type=str, required=False,
+                                   help='defines where are located the configuration files.')
             # Delete
             subparser = subparsers.add_parser('delete', description="delete specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
@@ -435,7 +436,7 @@ class Autosubmit:
                 return Autosubmit.run_experiment(args.expid, args.notransitive)
             elif args.command == 'expid':
                 return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
-                                        args.operational) != ''
+                                        args.operational,args.config_path) != ''
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':
@@ -565,7 +566,7 @@ class Autosubmit:
             return ret
 
     @staticmethod
-    def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False):
+    def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
         """
         Creates a new experiment for given HPC
 
@@ -636,21 +637,37 @@ class Autosubmit:
         else:
             # copy_id has been set by the user
             try:
-                if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)):
+                if root_folder == '' or root_folder is None:
+                    root_folder=os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id)
+                if os.path.exists(root_folder):
                     # List of allowed files from conf
+                    conf_copy_filter_folder = []
                     conf_copy_filter = ["autosubmit_" + str(copy_id) + ".conf",
                                         "expdef_" + str(copy_id) + ".conf",
                                         "jobs_" + str(copy_id) + ".conf",
                                         "platforms_" + str(copy_id) + ".conf",
                                         "proj_" + str(copy_id) + ".conf"]
-                    exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
+                    if root_folder != os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
+                        conf_copy_filter_folder = ["autosubmit.conf",
+                                            "expdef.conf",
+                                            "jobs.conf",
+                                            "platforms.conf",
+                                            "proj.conf"]
+                        exp_id = new_experiment(description, Autosubmit.autosubmit_version, test, operational)
+                    else:
+                        exp_id = copy_experiment(copy_id, description, Autosubmit.autosubmit_version, test, operational)
+
                     if exp_id == '':
                         return ''
                     dir_exp_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
                     os.mkdir(dir_exp_id)
                     os.mkdir(dir_exp_id + '/conf')
-                    Log.info("Copying previous experiment config directories")
-                    conf_copy_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf")
+                    if root_folder == os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id):
+                        Log.info("Copying previous experiment config directories")
+                        conf_copy_id = os.path.join(BasicConfig.LOCAL_ROOT_DIR, copy_id, "conf")
+                    else:
+                        Log.info("Copying from folder: {0}",root_folder)
+                        conf_copy_id = root_folder
                     files = os.listdir(conf_copy_id)
                     for filename in files:
                         # Allow only those files in the list
@@ -664,6 +681,17 @@ class Autosubmit:
                                     content = open(BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read()     
 
                                 open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
+                        if filename in conf_copy_filter_folder:
+                            if os.path.isfile(os.path.join(conf_copy_id, filename)):
+                                new_filename = filename.split(".")[0]+"_"+exp_id+".conf"
+                                content = open(os.path.join(conf_copy_id, filename), 'r').read()
+                                # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
+                                if filename.startswith("platforms") and os.path.isfile(
+                                        BasicConfig.CUSTOM_PLATFORMS_PATH):
+                                    content = open(BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read()
+
+                                open(os.path.join(dir_exp_id, "conf", new_filename), 'w').write(content)
+
                     Autosubmit._prepare_conf_files(exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                     #####
                     autosubmit_config = AutosubmitConfig(copy_id, BasicConfig, ConfigParserFactory())
@@ -681,7 +709,7 @@ class Autosubmit:
                     return ''
             except (OSError, IOError) as e:
                 Log.error("Can not create experiment: {0}\nCleaning...".format(e))
-                Autosubmit._delete_expid(exp_id)
+                Autosubmit._delete_expid(exp_id,True)
                 return ''
 
         Log.debug("Creating temporal directory...")
