@@ -2924,6 +2924,7 @@ class Autosubmit:
         :param final_status:
         :param job:
         """
+
         if  (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED ):
             job.hold= False
             if job.platform_name is not None and job.platform_name.lower() != "local":
@@ -3032,7 +3033,14 @@ class Autosubmit:
                 
                         
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-
+                submitter = Autosubmit._get_submitter(as_conf)
+                submitter.load_platforms(as_conf)
+                hpcarch = as_conf.get_platform()
+                for job in job_list.get_job_list():
+                    if job.platform_name is None:
+                        job.platform_name = hpcarch
+                    # noinspection PyTypeChecker
+                    job.platform = submitter.platforms[job.platform_name.lower()]
                 # Validating list of jobs, if filter_list -fl has been set:
                 # Seems that Autosubmit.load_job_list call is necessary before verification is executed
                 if job_list is not None and lst is not None: 

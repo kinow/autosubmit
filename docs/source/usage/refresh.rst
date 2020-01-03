@@ -11,7 +11,7 @@ To refresh the project directory of the experiment, use the command:
 It checks experiment configuration and copy code from original repository to project directory.
 
 .. warning:: DO NOT USE THIS COMMAND IF YOU ARE NOT SURE !
-    Project directory will be overwritten and you may loose local changes.
+    Project directory ( <expid>/proj will be overwritten and you may loose local changes.
 
 
 Options:
