@@ -412,6 +412,9 @@ class Autosubmit:
                                    help='overwrite model conf file')
             subparser.add_argument('-jc', '--jobs_conf', default=False, action='store_true',
                                    help='overwrite jobs conf file')
+            # Update Version
+            subparser = subparsers.add_parser('updateversion', description='refresh experiment version')
+            subparser.add_argument('expid', help='experiment identifier')
 
             # Archive
             subparser = subparsers.add_parser('archive', description='archives an experiment')
@@ -483,6 +486,8 @@ class Autosubmit:
                 return Autosubmit.test(args.expid, args.chunks, args.member, args.stardate, args.HPC, args.branch)
             elif args.command == 'refresh':
                 return Autosubmit.refresh(args.expid, args.model_conf, args.jobs_conf)
+            elif args.command == 'updateversion':
+                return Autosubmit.update_version(args.expid)
             elif args.command == 'archive':
                 return Autosubmit.archive(args.expid)
             elif args.command == 'unarchive':
@@ -1026,7 +1031,15 @@ class Autosubmit:
         if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS:
             Log.info("\n Autosubmit run command is not allowed on this host")
             return False
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        if not as_conf.check_conf_files():
+            Log.critical('Can not run with invalid configuration')
+            return False
+        Log.info("Autosubmit is running with {0}",Autosubmit.autosubmit_version)
+        if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
+            Log.critical("Current experiment uses a different Autosubmit version ({0}) \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2}",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
 
+            return 1
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -2437,7 +2450,7 @@ class Autosubmit:
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
-            Log.critical('Can not copy with invalid configuration')
+            Log.critical('Can not refresh with invalid configuration')
             return False
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
@@ -2445,6 +2458,25 @@ class Autosubmit:
         Autosubmit._create_project_associated_conf(as_conf, model_conf, jobs_conf)
         return True
 
+    @staticmethod
+    def update_version(expid):
+        """
+        Refresh experiment version with the current autosubmit version
+        :param expid: experiment identifier
+        :type expid: str
+        """
+        BasicConfig.read()
+        Log.set_file(
+            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
+                         'refresh.log'))
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf.reload()
+        if not as_conf.check_expdef_conf():
+            Log.critical('Can not refresh with invalid configuration')
+            return False
+        Log.info("Changing {0} experiment version from {1} to  {2}",expid,as_conf.get_version(),Autosubmit.autosubmit_version)
+        as_conf.set_version(Autosubmit.autosubmit_version)
+        return True
     @staticmethod
     def archive(expid, clean=True,compress=True):
         """

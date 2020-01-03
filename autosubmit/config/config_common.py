@@ -949,7 +949,14 @@ class AutosubmitConfig(object):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
         open(self._conf_parser_file, 'w').write(content)
+    def get_version(self):
+        """
+        Returns version number of the current experiment from autosubmit's config file
 
+        :return: version
+        :rtype: str
+        """
+        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION')
     def get_total_jobs(self):
         """
         Returns max number of running jobs  from autosubmit's config file
