@@ -2924,11 +2924,16 @@ class Autosubmit:
         :param final_status:
         :param job:
         """
-        if ( (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD )):
+        if  (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED ):
             job.hold= False
             if job.platform_name is not None and job.platform_name.lower() != "local":
                 job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
-
+        elif (job.status == Status.QUEUING or job.status == Status.RUNNING or job.status == Status.SUBMITTED ) and save and (final_status == Status.SUSPENDED):
+            if job.platform_name is not None and job.platform_name.lower() != "local":
+                job.platform.send_command("scontrol hold " + "{0}".format(job.id), ignore_log=True)
+        elif (final_status == Status.QUEUING or final_status == Status.RUNNING  ) and save and (job.status == Status.SUSPENDED):
+            if job.platform_name is not None and job.platform_name.lower() != "local":
+                job.platform.send_command("scontrol release " + "{0}".format(job.id), ignore_log=True)
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
 
