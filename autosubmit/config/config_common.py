@@ -956,7 +956,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION')
+        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION','None')
     def get_total_jobs(self):
         """
         Returns max number of running jobs  from autosubmit's config file

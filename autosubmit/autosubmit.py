@@ -157,6 +157,7 @@ class Autosubmit:
             subparser = subparsers.add_parser('run', description="runs specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-nt', '--notransitive', action='store_true', default=False, help='Disable transitive reduction')
+            subparser.add_argument('-v', '--update_version', action='store_true', default=False, help='Update experiment version')
 
             # Expid
             subparser = subparsers.add_parser('expid', description="Creates a new experiment")
@@ -436,7 +437,7 @@ class Autosubmit:
             Log.set_file_level(args.logfile)
 
             if args.command == 'run':
-                return Autosubmit.run_experiment(args.expid, args.notransitive)
+                return Autosubmit.run_experiment(args.expid, args.notransitive,args.update_version)
             elif args.command == 'expid':
                 return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                         args.operational,args.config_path) != ''
@@ -1001,7 +1002,7 @@ class Autosubmit:
 
 
     @staticmethod
-    def run_experiment(expid, notransitive=False):
+    def run_experiment(expid, notransitive=False,update_version=False):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
 
@@ -1036,10 +1037,15 @@ class Autosubmit:
             Log.critical('Can not run with invalid configuration')
             return False
         Log.info("Autosubmit is running with {0}",Autosubmit.autosubmit_version)
-        if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
-            Log.critical("Current experiment uses a different Autosubmit version ({0}) \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2}",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
-
+        if update_version:
+            if as_conf.get_version() != Autosubmit.autosubmit_version:
+                Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
+                as_conf.set_version(Autosubmit.autosubmit_version)
+        if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
+            Log.critical("Current experiment uses a different Autosubmit version ({0}) \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2} \n"
+                         "Or with the -v parameter: autosubmit run {2} -v ",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
             return 1
+
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -1120,6 +1126,7 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
+                Log.info("Autosubmit is running with {0}", Autosubmit.autosubmit_version)
                 while job_list.get_active():
                     if Autosubmit.exit:
                         return 2
