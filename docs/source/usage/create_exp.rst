@@ -44,7 +44,7 @@ It registrates a new unique identifier and copies all configuration files in the
 ::
 
     autosubmit expid -y COPY -H HPCname -d Description
-    autosubmit expid -y COPY -C PATH -H HPCname -d Description
+    autosubmit expid -y COPY -c PATH -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *COPY* is the experiment identifier to copy from.
