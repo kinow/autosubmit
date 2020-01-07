@@ -16,7 +16,7 @@ prepare:
   stage: prepare
   script:
     - conda update conda
-    - conda install -n autosubmi2 coverage=4.5.4
+    - conda install -n autosubmit2 coverage=4.5.4
 
 
 test_python2:
