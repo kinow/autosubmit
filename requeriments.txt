@@ -10,4 +10,3 @@ mock>=1.3.0
 portalocker>=0.5.7
 networkx
 bscearth.utils
-coverage<5.0
