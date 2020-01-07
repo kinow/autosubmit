@@ -171,7 +171,7 @@ class Autosubmit:
                                    help='specifies the HPC to use for the experiment')
             subparser.add_argument('-d', '--description', type=str, required=True,
                                    help='sets a description for the experiment to store in the database.')
-            subparser.add_argument('-p', '--config_path', type=str, required=False,
+            subparser.add_argument('-c', '--config', type=str, required=False,
                                    help='defines where are located the configuration files.')
             # Delete
             subparser = subparsers.add_parser('delete', description="delete specified experiment")
@@ -440,7 +440,7 @@ class Autosubmit:
                 return Autosubmit.run_experiment(args.expid, args.notransitive,args.update_version)
             elif args.command == 'expid':
                 return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
-                                        args.operational,args.config_path) != ''
+                                        args.operational,args.config) != ''
             elif args.command == 'delete':
                 return Autosubmit.delete(args.expid, args.force)
             elif args.command == 'monitor':

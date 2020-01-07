@@ -19,7 +19,7 @@ Options:
         -H HPC, --HPC HPC     specifies the HPC to use for the experiment
         -d DESCRIPTION, --description DESCRIPTION
             sets a description for the experiment to store in the database.
-        -p PATH, --config_path PATH
+        -c PATH, --config PATH
             if specified, copies config files from a folder
 Example:
 ::
@@ -44,12 +44,12 @@ It registrates a new unique identifier and copies all configuration files in the
 ::
 
     autosubmit expid -y COPY -H HPCname -d Description
-    autosubmit expid -y COPY -p PATH -H HPCname -d Description
+    autosubmit expid -y COPY -C PATH -H HPCname -d Description
 
 *HPCname* is the name of the main HPC platform for the experiment: it will be the default platform for the tasks.
 *COPY* is the experiment identifier to copy from.
 *Description* is a brief experiment description.
-*Path* is a folder that exists.
+*CONFIG* is a folder that exists.
 Example:
 ::
 
