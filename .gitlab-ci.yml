@@ -16,7 +16,7 @@ prepare:
   stage: prepare
   script:
     - conda update conda
-    - conda install coverage<5.0
+    - conda install coverage=4.5.4
 
 
 
