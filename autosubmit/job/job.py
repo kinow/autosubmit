@@ -862,7 +862,7 @@ class Job(object):
             # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
-                    Log.debug("The following set of variables are not being used in the templates: {0}",
+                    Log.warning("The following set of variables are not being used in the templates: {0}",
                                 str(set(parameters)-set(variables)))
 
         return out

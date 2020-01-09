@@ -332,6 +332,8 @@ class DicJobs:
         job.file = self.get_option(section, "FILE", None)
         job.queue = self.get_option(section, "QUEUE", None)
         job.check = self.get_option(section, "CHECK", 'True').lower()
+        job.check_warnings = self.get_option(section, "SHOW_CHECK_WARNINGS", 'False').lower()
+
         job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = str(self.get_option(section, "THREADS", 1))
         job.tasks = str(self.get_option(section, "TASKS", '0'))

@@ -1025,21 +1025,18 @@ class JobList:
         out = True
 
         for job in self._job_list:
+            show_logs = job.check_warnings
             if job.check.lower() == 'on_submission':
+                Log.info('Template {0} will be checked in running time'.format(job.section))
                 continue
-            if job.check.lower() != 'true':
-                show_logs = False
-                if job.section not in self.sections_checked:
-                    Log.warning('Template {0} will be checked without logs'.format(job.section))
-            elif job.section in self.sections_checked:
-                show_logs = False
+            elif job.check.lower() != 'true':
+                Log.info('Template {0} will not be checked'.format(job.section))
+                continue
             else:
-                show_logs = True
-
+                if job.section in self.sections_checked:
+                    show_logs = False
             if not job.check_script(as_conf, self.parameters,show_logs):
                 out = False
-                if show_logs:
-                    Log.warning("Invalid parameter substitution in {0} template", job.section)
             self.sections_checked.add(job.section)
         if out:
             Log.result("Scripts OK")

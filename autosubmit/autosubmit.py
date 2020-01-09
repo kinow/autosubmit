@@ -513,6 +513,15 @@ class Autosubmit:
             return False
 
     @staticmethod
+    def _check_Ownership(expid):
+        BasicConfig.read()
+        currentUser_id = os.getlogin()
+        currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+        if currentUser_id == currentOwner_id:
+            return True
+        else:
+            return False
+    @staticmethod
     def _delete_expid(expid_delete, force):
         """
         Removes an experiment from path and database
@@ -812,6 +821,9 @@ class Autosubmit:
             Log.critical("Missing experiment id")
 
         BasicConfig.read()
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not inspect the experiment {0} because you are not the owner',expid)
+            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if os.path.exists(os.path.join(tmp_path, 'autosubmit.lock')):
@@ -1015,6 +1027,9 @@ class Autosubmit:
             Log.critical("Missing experiment id")
 
         BasicConfig.read()
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not run the experiment {0} because you are not the owner',expid)
+            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -1042,7 +1057,7 @@ class Autosubmit:
                 Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
                 as_conf.set_version(Autosubmit.autosubmit_version)
         if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
-            Log.critical("Current experiment uses a different Autosubmit version ({0}) \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2} \n"
+            Log.critical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2} \n"
                          "Or with the -v parameter: autosubmit run {2} -v ",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
             return 1
 
@@ -1696,12 +1711,15 @@ class Autosubmit:
         :type hide: bool
         """
         BasicConfig.read()
+
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
-
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not recover the experiment {0} due you are not the owner',expid)
+            return False
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'))
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1824,6 +1842,7 @@ class Autosubmit:
         :param pickup:
         :param offer:
         """
+
         error = False
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
         Log.set_file(log_file)
@@ -2452,6 +2471,9 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not refresh the experiment {0} because you are not the owner',expid)
+            return False
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'))
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -2459,6 +2481,7 @@ class Autosubmit:
         if not as_conf.check_expdef_conf():
             Log.critical('Can not refresh with invalid configuration')
             return False
+
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
@@ -2472,7 +2495,11 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not update the experiment {0} version because you are not the owner',expid)
+            return False
         BasicConfig.read()
+
         Log.set_file(
             os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
                          'refresh.log'))
@@ -2496,6 +2523,7 @@ class Autosubmit:
         :type expid: str
         """
         BasicConfig.read()
+
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist." % exp_path)
@@ -2675,7 +2703,9 @@ class Autosubmit:
 
         """
         BasicConfig.read()
-
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not create the workflow of experiment {0} because you are not the owner',expid)
+            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -2964,6 +2994,9 @@ class Autosubmit:
         :type hide: bool
         """
         BasicConfig.read()
+        if not _check_Ownership(expid):
+            Log.critical('Can not change the status of experiment {0} due you are not the owner',expid)
+            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if not os.path.exists(exp_path):
