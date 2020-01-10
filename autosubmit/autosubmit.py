@@ -73,7 +73,7 @@ from job.job_list_persistence import JobListPersistencePkl
 from job.job_grouping import JobGrouping
 # from API.testAPI import Monitor
 # noinspection PyPackageRequirements
-from bscearth.utils.log import Log
+from log.log import Log
 from database.db_common import create_db
 from experiment.experiment_common import new_experiment
 from experiment.experiment_common import copy_experiment
@@ -142,12 +142,10 @@ class Autosubmit:
             parser = argparse.ArgumentParser(description='Main executable for autosubmit. ')
             parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
                                 help="returns autosubmit's version number and exit")
-            parser.add_argument('-lf', '--logfile', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
-                                                             'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
-                                default='DEBUG', type=str,
+            parser.add_argument('-lf', '--logfile', choices=('NO_LOG','INFO','WARNING', 'DEBUG'),
+                                default='WARNING', type=str,
                                 help="sets file's log level.")
-            parser.add_argument('-lc', '--logconsole', choices=('EVERYTHING', 'DEBUG', 'INFO', 'RESULT', 'USER_WARNING',
-                                                                'WARNING', 'ERROR', 'CRITICAL', 'NO_LOG'),
+            parser.add_argument('-lc', '--logconsole', choices=('NO_LOG','INFO','WARNING', 'DEBUG'),
                                 default='INFO', type=str,
                                 help="sets console's log level")
 
@@ -432,10 +430,8 @@ class Autosubmit:
             subparsers.add_parser('changelog', description='show changelog')
 
             args = parser.parse_args()
-
             Log.set_console_level(args.logconsole)
             Log.set_file_level(args.logfile)
-
             if args.command == 'run':
                 return Autosubmit.run_experiment(args.expid, args.notransitive,args.update_version)
             elif args.command == 'expid':
@@ -516,7 +512,11 @@ class Autosubmit:
     def _check_Ownership(expid):
         BasicConfig.read()
         currentUser_id = os.getlogin()
-        currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+        try:
+            currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+        except:
+            Log.critical("The Experiment does not exist")
+            return False
         if currentUser_id == currentOwner_id:
             return True
         else:
@@ -837,6 +837,8 @@ class Autosubmit:
             return 1
         Log.info("Starting inspect command")
         Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate.log'))
+        Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate_err.log'), "err")
+
         os.system('clear')
         signal.signal(signal.SIGINT, signal_handler)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1067,6 +1069,10 @@ class Autosubmit:
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
 
                 Log.set_file(os.path.join(aslogs_path, 'run.log'))
+                Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
+                Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+
+
                 os.system('clear')
 
                 signal.signal(signal.SIGINT, signal_handler)
@@ -1414,6 +1420,9 @@ class Autosubmit:
             return 1
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor_err.log'),"err")
+
+
         Log.info("Getting job list...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1596,6 +1605,8 @@ class Autosubmit:
             return 1
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'statistics.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'statistics_err.log'),"err")
+
         Log.info("Loading jobs...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1667,6 +1678,8 @@ class Autosubmit:
 
         if create_log_file:
             Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp.log'))
+            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp_err.log'),"err")
+
         if project:
             autosubmit_config = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             if not autosubmit_config.check_conf_files():
@@ -1721,6 +1734,7 @@ class Autosubmit:
             Log.critical('Can not recover the experiment {0} due you are not the owner',expid)
             return False
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'jobs_status.log'),"status")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -1845,7 +1859,10 @@ class Autosubmit:
 
         error = False
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
+        log_file_err = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}_err.log'.format(experiment_id))
+
         Log.set_file(log_file)
+        Log.set_file(log_file_err,"err")
         if offer:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
@@ -2476,6 +2493,9 @@ class Autosubmit:
             return False
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'))
+        Log.set_file(
+            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
+                         'refresh_err.log'),"err")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
@@ -2531,6 +2551,7 @@ class Autosubmit:
             return 1
 
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}_err.log'.format(expid)),"err")
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         if clean:
@@ -2607,6 +2628,8 @@ class Autosubmit:
         """
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}_err.log'.format(expid)),"err")
+
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
 
@@ -2702,6 +2725,7 @@ class Autosubmit:
         :type output: str
 
         """
+
         BasicConfig.read()
         if not Autosubmit._check_Ownership(expid):
             Log.critical('Can not create the workflow of experiment {0} because you are not the owner',expid)
@@ -2724,6 +2748,16 @@ class Autosubmit:
                 try:                                      
                     Log.info("Preparing .lock file to avoid multiple instances with same expid.")
                     Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
+                    Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'create_exp_err.log'),"err")
+                    Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'), "status")
+                    Log.debug("Test debug")
+                    Log.warning("Test warning")
+                    Log.user_warning("Test user_warning")
+                    Log.info("Test Info")
+                    Log.result("Test Result")
+                    Log.error("Test Error")
+                    Log.critical("Test Critical ")
+                    Log.status("Test Status")
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                     if not as_conf.check_conf_files():
                         Log.critical('Can not create with invalid configuration')
@@ -3010,6 +3044,9 @@ class Autosubmit:
                 Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
                 Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status.log'))
+                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'),"status")
+                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status_err.log'),"err")
+
                 Log.debug('Exp ID: {0}', expid)
                 Log.debug('Save: {0}', save)
                 Log.debug('Final status: {0}', final)
