@@ -111,7 +111,8 @@ class AutosubmitConfig(object):
         if os.path.exists(self._proj_parser_file):
             with open(self._proj_parser_file, 'r+') as f:
                 first_line = f.readline()
-                if not re.match('[[a-zA-Z0-9]*]', first_line):
+                #if not re.match('\[[a-zA-Z0-9_]*\]', first_line):
+                if not re.match('^\[[^\[\]\# \t\n]*\][ \t]*$|^[ \t]+\[[^\[\]# \t\n]*\]', first_line):
                     content = f.read()
                     f.seek(0, 0)
                     f.write('[DEFAULT]'.rstrip('\r\n') + '\n' + first_line + content)
