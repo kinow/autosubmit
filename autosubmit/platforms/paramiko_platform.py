@@ -6,7 +6,7 @@ import datetime
 import time
 import select
 import random
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform

@@ -3,7 +3,7 @@ from time import time
 
 import os
 
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.job.job_common import Status
 
 

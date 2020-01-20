@@ -22,7 +22,7 @@ from sys import setrecursionlimit
 
 import os
 
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.database.db_manager import DbManager
 
 

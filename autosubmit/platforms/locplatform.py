@@ -25,8 +25,7 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.local_header import LocalHeader
 
 from autosubmit.config.basicConfig import BasicConfig
-from bscearth.utils.log import Log
-
+from autosubmit.log.log import Log
 
 class LocalPlatform(ParamikoPlatform):
     """

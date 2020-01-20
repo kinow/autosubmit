@@ -29,7 +29,7 @@ import subprocess
 from pyparsing import nestedExpr
 
 from bscearth.utils.date import parse_date
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 
 

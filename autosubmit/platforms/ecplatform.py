@@ -21,8 +21,7 @@ import os
 import subprocess
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from bscearth.utils.log import Log
-
+from autosubmit.log.log import Log
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader

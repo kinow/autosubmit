@@ -31,8 +31,8 @@ from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
-from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
-
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, subs_dates
+from autosubmit.log.log import Log
 
 class Job(object):
     """
@@ -269,6 +269,9 @@ class Job(object):
         """
         Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
         Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+
+        Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
     def print_parameters(self):
         """
@@ -863,7 +866,7 @@ class Job(object):
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
                     Log.warning("The following set of variables are not being used in the templates: {0}",
-                                str(set(parameters)-set(variables)))
+                                    str(set(parameters)-set(variables)))
 
         return out
 
@@ -1047,7 +1050,7 @@ class WrapperJob(Job):
                 reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
                 if self._queuing_reason_cancel(reason):
                     Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
-                              reason)
+                                  reason)
                     self.cancel_failed_wrapper_job()
                     return
                 elif reason == '(JobHeldUser)':
@@ -1153,7 +1156,7 @@ class WrapperJob(Job):
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                                 self._check_finished_job(job)
                         else:
-                            Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
+                            Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname, Status.VALUE_TO_KEY[job.status]))
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):

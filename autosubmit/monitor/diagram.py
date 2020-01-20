@@ -24,7 +24,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from autosubmit.experiment.statistics import ExperimentStats
 from autosubmit.job.job_common import Status
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.job.job import Job
 
 # Autosubmit stats constants

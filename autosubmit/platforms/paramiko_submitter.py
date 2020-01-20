@@ -22,8 +22,7 @@ import time
 
 import os
 
-from bscearth.utils.log import Log
-
+from autosubmit.log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from submitter import Submitter

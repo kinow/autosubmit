@@ -1025,16 +1025,21 @@ class Autosubmit:
         :return: True if run to the end, False otherwise
         :rtype: bool
         """
+
         if expid is None:
             Log.critical("Missing experiment id")
 
         BasicConfig.read()
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical('Can not run the experiment {0} because you are not the owner',expid)
-            return False
+
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
+        Log.set_file(os.path.join(aslogs_path, 'run.log'))
+        Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
+        Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+        if not Autosubmit._check_Ownership(expid):
+            Log.critical('Can not run the experiment {0} because you are not the owner',expid)
+            return False
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
             os.chmod(aslogs_path,0o775)
@@ -1068,13 +1073,9 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
 
-                Log.set_file(os.path.join(aslogs_path, 'run.log'))
-                Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
-                Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
 
 
                 os.system('clear')
-
                 signal.signal(signal.SIGINT, signal_handler)
 
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1149,11 +1150,14 @@ class Autosubmit:
                 # Main loop. Finishing when all jobs have been submitted
                 Log.info("Autosubmit is running with {0}", Autosubmit.autosubmit_version)
                 while job_list.get_active():
+                    Log.status("testing status bloop")
+                    Log.info("testing info bloop")
                     if Autosubmit.exit:
                         return 2
                     # reload parameters changes
                     Log.debug("Reloading parameters...")
                     as_conf.reload()
+
                     Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                     # variables to be updated on the fly
                     total_jobs = len(job_list.get_job_list())
@@ -1579,6 +1583,7 @@ class Autosubmit:
                 Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
             else:
                 Log.info(job_list.print_with_status())
+                Log.status(job_list.print_with_status())
 
         return True
 
@@ -1786,6 +1791,8 @@ class Autosubmit:
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+                Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
+
                 if not no_recover_logs:
                     try:
                         job.platform.get_logs_files(expid, job.remote_logs)
@@ -1796,6 +1803,7 @@ class Autosubmit:
                 job.status = Status.WAITING
                 job.fail_count = 0
                 Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+                Log.status("CHANGED job '{0}' status to WAITING".format(job.name))
 
 
         end = datetime.datetime.now()
@@ -1842,7 +1850,8 @@ class Autosubmit:
                 Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
             else:
                 Log.info(job_list.print_with_status())
-            
+                Log.status(job_list.print_with_status())
+
 
         return True
 
@@ -2750,14 +2759,6 @@ class Autosubmit:
                     Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'create_exp_err.log'),"err")
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'), "status")
-                    # Log.debug("Test debug")
-                    # Log.warning("Test warning")
-                    # Log.user_warning("Test user_warning")
-                    # Log.info("Test Info")
-                    # Log.result("Test Result")
-                    # Log.error("Test Error")
-                    # Log.critical("Test Critical ")
-                    # Log.status("Test Status")
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                     if not as_conf.check_conf_files():
                         Log.critical('Can not create with invalid configuration')
@@ -2880,7 +2881,7 @@ class Autosubmit:
                             Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
                         else:
                             Log.info(job_list.print_with_status())
-                        
+                            Log.status(job_list.print_with_status())
 
                     return True
                 # catching Exception
@@ -3001,8 +3002,7 @@ class Autosubmit:
                 job.platform.send_command("scontrol release " + "{0}".format(job.id), ignore_log=True)
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
-
-
+        Log.status("CHANGED: job: " + job.name + " status to: " + final)
 
     @staticmethod
     def set_status(expid, noplot, save, final, lst, filter_chunks, filter_status, filter_section, filter_type_chunk, hide, group_by=None,
@@ -3405,7 +3405,9 @@ class Autosubmit:
                             if current_length > 1000:
                                 Log.warning("-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
                             else:
-                                Log.info(job_list.print_with_status(statusChange = performed_changes))                            
+                                Log.info(job_list.print_with_status(statusChange = performed_changes))
+                                Log.status(job_list.print_with_status(statusChange = performed_changes))
+
                     else: 
                         Log.warning("No changes were performed.")
                 # End of New Feature
@@ -3946,7 +3948,10 @@ class Autosubmit:
 
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
-            #    Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+
+                Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
+                Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
+
             #elif job.status != Status.SUSPENDED:
             #    job.status = Status.WAITING
             #    job.fail_count = 0

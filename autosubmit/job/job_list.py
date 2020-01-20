@@ -31,7 +31,7 @@ from sys import setrecursionlimit
 from shutil import move
 
 from autosubmit.job.job import Job
-from bscearth.utils.log import Log
+from autosubmit.log.log import Log
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, Type, bcolors
