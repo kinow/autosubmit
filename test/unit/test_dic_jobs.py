@@ -297,7 +297,7 @@ class TestDicJobs(TestCase):
         notify_on = 'COMPLETED FAILED'
         synchronize = None
         self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True, True,
-                                                        True, True, True, True, False, True, False])
+                                                        True, True, True, True, False, True, False,False])
         self.parser_mock.get = Mock(side_effect=[frequency, delay, 'True', 'True', 'bash', platform_name, filename, queue,
                                                  'True', processors, threads, tasks, memory, memory_per_task,
                                                  wallclock, notify_on,synchronize])

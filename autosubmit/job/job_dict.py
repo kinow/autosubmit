@@ -340,12 +340,12 @@ class DicJobs:
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
-        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'False')).lower()
 
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
+        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'False')).lower()
 
         self._jobs_list.get_job_list().append(job)
 
