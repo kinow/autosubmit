@@ -2994,7 +2994,7 @@ class Autosubmit:
         :type hide: bool
         """
         BasicConfig.read()
-        if not _check_Ownership(expid):
+        if not Autosubmit._check_Ownership(expid):
             Log.critical('Can not change the status of experiment {0} due you are not the owner',expid)
             return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
