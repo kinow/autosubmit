@@ -99,8 +99,8 @@ class Job(object):
         self._tmp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
         self.write_start = False
         self._platform = None
-        self.check = 'True'
-        self.check_warnings = 'False'
+        self.check = 'true'
+        self.check_warnings = 'false'
         self.packed = False
         self.hold = False
 
