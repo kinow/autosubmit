@@ -1141,7 +1141,7 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
-                Log.info("Autosubmit is running with {0}", Autosubmit.autosubmit_version)
+                Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                 while job_list.get_active():
                     if Autosubmit.exit:
                         return 2

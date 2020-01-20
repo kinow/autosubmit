@@ -100,6 +100,7 @@ class Job(object):
         self.write_start = False
         self._platform = None
         self.check = 'True'
+        self.check_warnings = 'False'
         self.packed = False
         self.hold = False
 

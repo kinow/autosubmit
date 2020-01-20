@@ -340,7 +340,7 @@ class DicJobs:
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
-        #job.check_warnings = self.get_option(section, "SHOW_CHECK_WARNINGS", 'False').lower()
+        job.check_warnings = self.get_option(section, "SHOW_CHECK_WARNINGS", 'False')
 
         if job.retrials == -1:
             job.retrials = None
