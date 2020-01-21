@@ -58,7 +58,19 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._wrapper
-
+    def restore_conection(self):
+        if self._ssh is None:
+            if not self.connect():
+                retries = 2
+                connected = False
+                for retry in range(retries):
+                    if self.connect(True):
+                        connected = True
+                if not connected:
+                    return False
+            self._ftpChannel = self._ssh.open_sftp()
+            return True
+        return True
     def connect(self,reconnect=False):
         """
         Creates ssh connection to host
@@ -94,8 +106,10 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = self._ssh.open_sftp()
             return True
         except IOError as e:
-            Log.error('Can not create ssh or sftp connection to {0}: {1}', self.host, e.strerror)
-            return False
+            if not self.restore_conection():
+                Log.error('Can not create ssh or sftp connection to {0}: {1}', self.host, e.strerror)
+                return False
+            
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -130,9 +144,7 @@ class ParamikoPlatform(Platform):
         :type filename: str
         """
 
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        self.restore_conection()
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
@@ -176,10 +188,7 @@ class ParamikoPlatform(Platform):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        if self._ssh is None:
-            if not self.connect():
-                self._ftpChannel = self._ssh.open_sftp()
-                return None
+        self.restore_conection()
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -204,9 +213,7 @@ class ParamikoPlatform(Platform):
         :return: True if successful or file does no exists
         :rtype: bool
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        self.restore_conection()
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -230,9 +237,7 @@ class ParamikoPlatform(Platform):
         :param migrate: ignore if file exist or not
         :type dest: str
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        self.restore_conection()
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -446,16 +451,8 @@ class ParamikoPlatform(Platform):
         :return: True if executed, False if failed
         :rtype: bool
         """
-         
-        if self._ssh is None:
-            if not self.connect():
-                retries = 2
-                connected = False
-                for retry in range(retries):
-                    if self.connect(True):
-                        connected = True
-                if not connected:
-                    return None
+
+        self.restore_conection()
         if "-rP" or "mv" or "find" or "convertLink" in command:
             timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
@@ -670,10 +667,7 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
-
+        self.restore_conection()
         if self.type == "slurm":
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
@@ -681,7 +675,8 @@ class ParamikoPlatform(Platform):
                 if self.send_command(self.get_mkdir_cmd()):
                    Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
-                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+                   Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)

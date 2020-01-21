@@ -3036,10 +3036,10 @@ class Autosubmit:
                     if countStart > 1 or countEnd > 1:
                         section_validation_error = True
                         section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
-                    countUnderscore = filter_section.count('_')
-                    if countUnderscore > 1:
-                        section_validation_error = True
-                        section_validation_message += "\n\tList of sections provided has a format error. Perhaps you were trying to use -fl instead."
+                    #countUnderscore = filter_section.count('_')
+                    #if countUnderscore > 1:
+                    #    section_validation_error = True
+                    #    section_validation_message += "\n\tList of sections provided has a format error. Perhaps you were trying to use -fl instead."
                     if section_validation_error == False:
                         if len(str(filter_section).strip()) > 0:
                             if len(filter_section.split()) > 0:
