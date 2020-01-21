@@ -3182,10 +3182,10 @@ class Autosubmit:
                         status_validation_error = True
                         status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fc instead."
                     # Trying to identify job names, implying status names won't use more than 1 underscore _
-                    countUnderscore = filter_status.count('_')
-                    if countUnderscore > 1:
-                        status_validation_error = True
-                        status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fl instead."
+                    #countUnderscore = filter_status.count('_')
+                    #if countUnderscore > 1:
+                    #    status_validation_error = True
+                    #    status_validation_message += "\n\tList of status provided has a format error. Perhaps you were trying to use -fl instead."
                     # If everything is fine until this point
                     if status_validation_error == False:        
                         status_filter = filter_status.split()
