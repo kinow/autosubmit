@@ -58,19 +58,26 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._wrapper
-    def restore_conection(self):
+    def restore_connection(self):
+        connected = True
         if self._ssh is None:
             if not self.connect():
                 retries = 2
+                retry = 0
                 connected = False
-                for retry in range(retries):
+                while connected == False and retry < retries:
                     if self.connect(True):
                         connected = True
-                if not connected:
-                    return False
-            self._ftpChannel = self._ssh.open_sftp()
-            return True
-        return True
+                    retry+=1
+            if not connected:
+                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}', self.host,self.name)
+                Log.error('Please, check your expid platform.conf to see if there are mistakes in the configuration')
+                Log.error('Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)')
+                Log.critical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit')
+                exit(0)
+        return connected
+
+
     def connect(self,reconnect=False):
         """
         Creates ssh connection to host
@@ -105,10 +112,8 @@ class ParamikoPlatform(Platform):
                                   key_filename=self._host_config_id)
             self._ftpChannel = self._ssh.open_sftp()
             return True
-        except IOError as e:
-            if not self.restore_conection():
-                Log.error('Can not create ssh or sftp connection to {0}: {1}', self.host, e.strerror)
-                return False
+        except:
+            return False
             
 
     def check_completed_files(self, sections=None):
@@ -144,7 +149,8 @@ class ParamikoPlatform(Platform):
         :type filename: str
         """
 
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
@@ -188,7 +194,8 @@ class ParamikoPlatform(Platform):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -213,7 +220,8 @@ class ParamikoPlatform(Platform):
         :return: True if successful or file does no exists
         :rtype: bool
         """
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -237,11 +245,11 @@ class ParamikoPlatform(Platform):
         :param migrate: ignore if file exist or not
         :type dest: str
         """
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
-
             if not migrate:
                 self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
             else:
@@ -452,7 +460,8 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
 
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
         if "-rP" or "mv" or "find" or "convertLink" in command:
             timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
@@ -667,7 +676,8 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        self.restore_conection()
+        if not self.restore_connection():
+            return False
         if self.type == "slurm":
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
