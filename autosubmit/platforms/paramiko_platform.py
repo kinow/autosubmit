@@ -70,9 +70,7 @@ class ParamikoPlatform(Platform):
                         connected = True
                     retry+=1
             if not connected:
-                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}', self.host,self.name)
-                Log.error('Please, check your expid platform.conf to see if there are mistakes in the configuration')
-                Log.error('Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)')
+                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator', self.host,self.name)
                 Log.critical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit')
                 exit(0)
         return connected
