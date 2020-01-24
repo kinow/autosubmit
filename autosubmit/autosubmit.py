@@ -430,8 +430,9 @@ class Autosubmit:
             subparsers.add_parser('changelog', description='show changelog')
 
             args = parser.parse_args()
+
             Log.set_console_level(args.logconsole)
-            Log.set_file_level(args.logfile)
+            log_set_file_level= args.logfile
             if args.command == 'run':
                 return Autosubmit.run_experiment(args.expid, args.notransitive,args.update_version)
             elif args.command == 'expid':
@@ -603,7 +604,7 @@ class Autosubmit:
 
         log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs', 'expid.log'.format(os.getuid()))
         try:
-            Log.set_file(log_path)
+            Log.set_file(log_path,"out",Autosubmit.log_set_file_level)
         except IOError as e:
             Log.error("Can not create log file in path {0}: {1}".format(log_path, e.message))
         exp_id = None
@@ -766,7 +767,7 @@ class Autosubmit:
 
         log_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'delete.log'.format(os.getuid()))
         try:
-            Log.set_file(log_path)
+            Log.set_file(log_path,"out",Autosubmit.log_set_file_level)
         except IOError as e:
             Log.error("Can not create log file in path {0}: {1}".format(log_path, e.message))
 
@@ -836,7 +837,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
         Log.info("Starting inspect command")
-        Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate.log'))
+        Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate.log'),"out")
         Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate_err.log'), "err")
 
         os.system('clear')
@@ -1034,7 +1035,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
-        Log.set_file(os.path.join(aslogs_path, 'run.log'))
+        Log.set_file(os.path.join(aslogs_path, 'run.log'),"out")
         Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
         Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
         if not Autosubmit._check_Ownership(expid):
@@ -1423,7 +1424,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor.log'),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor_err.log'),"err")
 
 
@@ -1609,7 +1610,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'statistics.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'statistics.log'),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'statistics_err.log'),"err")
 
         Log.info("Loading jobs...")
@@ -1682,7 +1683,7 @@ class Autosubmit:
             return 1
 
         if create_log_file:
-            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp.log'))
+            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp.log'),"out")
             Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp_err.log'),"err")
 
         if project:
@@ -1738,7 +1739,7 @@ class Autosubmit:
         if not Autosubmit._check_Ownership(expid):
             Log.critical('Can not recover the experiment {0} due you are not the owner',expid)
             return False
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'jobs_status.log'),"status")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1870,7 +1871,7 @@ class Autosubmit:
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
         log_file_err = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}_err.log'.format(experiment_id))
 
-        Log.set_file(log_file)
+        Log.set_file(log_file,"out")
         Log.set_file(log_file_err,"err")
         if offer:
             Log.info('Migrating experiment {0}'.format(experiment_id))
@@ -2070,7 +2071,7 @@ class Autosubmit:
             return False
 
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'check_exp.log')
-        Log.set_file(log_file)
+        Log.set_file(log_file,"out")
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -2119,7 +2120,7 @@ class Autosubmit:
             return False
 
         log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'describe_exp.log')
-        Log.set_file(log_file)
+        Log.set_file(log_file,"out")
 
         as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -2472,7 +2473,7 @@ class Autosubmit:
 
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'install.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'install.log'),"out")
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
             qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
@@ -2501,7 +2502,7 @@ class Autosubmit:
             Log.critical('Can not refresh the experiment {0} because you are not the owner',expid)
             return False
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'),"out")
         Log.set_file(
             os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
                          'refresh_err.log'),"err")
@@ -2531,7 +2532,7 @@ class Autosubmit:
 
         Log.set_file(
             os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
-                         'refresh.log'))
+                         'refresh.log'),"out")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
@@ -2559,7 +2560,7 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}_err.log'.format(expid)),"err")
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
@@ -2636,7 +2637,7 @@ class Autosubmit:
         :type overwrite: boolean
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)))
+        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}_err.log'.format(expid)),"err")
 
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
@@ -2756,7 +2757,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1) as fh:
                 try:                                      
                     Log.info("Preparing .lock file to avoid multiple instances with same expid.")
-                    Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'))
+                    Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'),"out")
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'create_exp_err.log'),"err")
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'), "status")
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -3043,7 +3044,7 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
-                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status.log'))
+                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status.log'),"out")
                 Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'),"status")
                 Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status_err.log'),"err")
 
