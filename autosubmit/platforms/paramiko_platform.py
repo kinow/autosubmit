@@ -404,12 +404,18 @@ class ParamikoPlatform(Platform):
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
                         Log.info("Job {0} is HELD", job.name)
+                        Log.status("Job {0} is HELD", job.name)
+
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
+                        Log.status("Job {0} Failed to be HELD, canceling... ", job.name)
+
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
                     else:
                         Log.info("Job {0} is QUEUING {1}", job.name, reason)
+                        Log.status("Job {0} is QUEUING {1}", job.name, reason)
+
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN

@@ -513,17 +513,24 @@ class Job(object):
                         self.new_status = Status.HELD
                         self.hold = True
                         Log.info("Job {0} is HELD", self.name)
+                        Log.status("Job {0} is HELD", self.name)
 
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+                        Log.status("Job {0} Failed to be HELD, canceling... ", self.name)
+
                         self.hold = True
                         self.new_status = Status.WAITING
                         self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                     else:
                         self.hold = False
                         Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                        Log.status("Job {0} is QUEUING {1}", self.name, reason)
+
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
+            Log.status("Job {0} is RUNNING", self.name)
+
         elif self.status is Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.FAILED:
@@ -1058,16 +1065,24 @@ class WrapperJob(Job):
                         self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         self.status = Status.QUEUING
                         Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                        Log.status("Job {0} is QUEUING {1}", self.name, reason)
+
                     else:
                         self.status = Status.HELD
                         Log.info("Job {0} is HELD", self.name)
+                        Log.status("Job {0} is HELD", self.name)
+
                 elif reason == '(JobHeldAdmin)':
                     Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+                    Log.status("Job {0} Failed to be HELD, canceling... ", self.name)
+
                     self.hold = True
                     self.status = Status.WAITING
                     self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                 else:
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                    Log.status("Job {0} is QUEUING {1}", self.name, reason)
+
                 self.update_inner_jobs_queue()
         else:
             if self.status in [Status.FAILED, Status.UNKNOWN]:
@@ -1146,14 +1161,20 @@ class WrapperJob(Job):
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
                                 Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+                                Log.status("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+
                                 self.running_jobs_start[job] = start_time
                                 job.new_status=Status.RUNNING
                                 job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
                             elif len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
+                                Log.status("Job {0} is RUNNING".format(jobname))
+
                             else:
                                 end_time = self._check_time(out, 2)
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
+                                Log.status("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
+
                                 self._check_finished_job(job)
                         else:
                             Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname, Status.VALUE_TO_KEY[job.status]))
