@@ -982,9 +982,9 @@ class JobList:
                     else:
                         job.hold = True
                     save= True
-        if as_conf.get_wrapper_type() is not None:
-            for wrapper_id in self.job_package_map:
-                self.job_package_map[wrapper_id].update_inner_jobs_queue()
+            if as_conf.get_wrapper_type() is not None:
+                for wrapper_id in self.job_package_map:
+                    self.job_package_map[wrapper_id].update_inner_jobs_queue()
         Log.debug('Update finished')
 
         return save
