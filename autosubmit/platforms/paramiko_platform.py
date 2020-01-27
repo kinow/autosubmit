@@ -373,7 +373,6 @@ class ParamikoPlatform(Platform):
             list_queue_jobid=""
             for job in job_list:
                 job_id=job.id
-                job_status = Status.UNKNOWN
                 job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:

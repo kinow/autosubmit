@@ -495,7 +495,7 @@ class Job(object):
             self.check_completion()
         else:
             self.status = new_status
-        if self.status is Status.QUEUING or self.status is Status.HELD:
+        if self.status == Status.QUEUING or self.status == Status.HELD:
             if iswrapper:
                 reason = str()
                 if self.platform.type == 'slurm':
@@ -507,7 +507,7 @@ class Job(object):
                         self.new_status =Status.FAILED
                         self.update_status(copy_remote_logs,True)
                         return
-                    elif reason == '(JobHeldUser)':
+                    if reason == '(JobHeldUser)':
                         self.new_status = Status.HELD
                         self.hold = True
                         Log.info("Job {0} is HELD", self.name)
@@ -519,6 +519,7 @@ class Job(object):
                         self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                     else:
                         self.hold = False
+                        self.new_status = Status.QUEUING
                         Log.info("Job {0} is QUEUING {1}", self.name, reason)
         elif self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
@@ -1066,7 +1067,7 @@ class WrapperJob(Job):
                     self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                 else:
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
-                self.update_inner_jobs_queue()
+                #self.update_inner_jobs_queue()
         else:
             if self.status in [Status.FAILED, Status.UNKNOWN]:
                 self.cancel_failed_wrapper_job()
@@ -1171,19 +1172,19 @@ class WrapperJob(Job):
         for job in not_finished_jobs:
             self._check_finished_job(job)
     def update_inner_jobs_queue(self):
-        if self.status == Status.WAITING:
-            for job in self.job_list:
-                job.status = self.status
+        # if self.status == Status.WAITING:
+        #     for job in self.job_list:
+        #         job.status = self.status
+        #         job.hold = True
+        #         job.packed = False
+        # else:
+        jobs= [filter_job for filter_job in self.job_list if filter_job.status in [Status.SUBMITTED,Status.HELD ,Status.QUEUING]    ]
+        for job in jobs:
+            job.status = self.status
+            if self.status == Status.QUEUING:
+                job.hold = False
+            elif self.status == Status.HELD:
                 job.hold = True
-                job.packed = False
-        else:
-            jobs = [job for job in self.job_list if job.status in [Status.SUBMITTED or Status.HELD or Status.QUEUING]]
-            for job in jobs:
-                job.status = self.status
-                if self.status == Status.QUEUING:
-                    job.hold = False
-                elif self.status == Status.HELD:
-                    job.hold = True
 
 
     def _check_wrapper_status(self):

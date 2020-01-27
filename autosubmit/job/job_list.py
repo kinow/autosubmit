@@ -975,13 +975,16 @@ class JobList:
                     tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
                         job.hold = False
+                        job.status = Status.QUEUING
                         Log.debug(
                             "Setting job: {0} status to: Queuing (all parents completed)...".format(
                                 job.name))
                     else:
                         job.hold = True
                     save= True
-
+        if as_conf.get_wrapper_type() is not None:
+            for wrapper_id in self.job_package_map:
+                self.job_package_map[wrapper_id].update_inner_jobs_queue()
         Log.debug('Update finished')
 
         return save
