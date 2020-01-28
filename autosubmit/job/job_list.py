@@ -211,10 +211,11 @@ class JobList:
             select_chunks = []
             if select_chunks_opt is not None:
                 if '*' in select_chunks_opt:
-                    section= select_chunks_opt.split('*') #todo
-                    for section,chunk_value in select_chunks_opt.split('*'):
-                        if section == key:
-                            select_chunks.append(chunk_value)
+                    sections_chunks= select_chunks_opt.split(' ') #todo
+                    for section_chunk in sections_chunks:
+                        info=section_chunk.split('*')
+                        if info[0] == key:
+                            select_chunks.append(info[1])
 
             dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, select_chunks)
 
