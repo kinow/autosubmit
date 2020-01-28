@@ -1056,10 +1056,11 @@ class Autosubmit:
             if as_conf.get_version() != Autosubmit.autosubmit_version:
                 Log.info("The {2} experiment {0} version is being updated to {1} for match autosubmit version",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
                 as_conf.set_version(Autosubmit.autosubmit_version)
-        if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
-            Log.critical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can archive this using the command autosubmit updateversion {2} \n"
-                         "Or with the -v parameter: autosubmit run {2} -v ",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
-            return 1
+        else:
+            if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
+                Log.critical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
+                             "Or with the -v parameter: autosubmit run {2} -v ",as_conf.get_version(),Autosubmit.autosubmit_version,expid)
+                return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:

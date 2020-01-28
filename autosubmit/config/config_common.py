@@ -474,6 +474,8 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
                         dependency = dependency.split('+')[0]
+                    elif '*' in dependency:
+                        dependency = dependency.split('*')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
                     if dependency not in sections:
