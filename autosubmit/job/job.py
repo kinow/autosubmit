@@ -103,6 +103,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
+        self.min_completed_parents = 0
 
 
     def __getstate__(self):
@@ -618,6 +619,8 @@ class Job(object):
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
             parameters['SYNCHRONIZE'] = self.synchronize
+            parameters['MIN_COMPLETED_PARENTS'] = self.min_completed_parents
+
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
@@ -726,11 +729,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 30'
+                template = 'sleep 5'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(30)'
+                template = 'time.sleep(5)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(30)'
+                template = 'Sys.sleep(5)'
             else:
                 template = ''
 

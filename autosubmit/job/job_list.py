@@ -186,10 +186,15 @@ class JobList:
             splits = None
             sign = None
 
-            if '-' not in key and '+' not in key:
+            if '-' not in key and '+' not in key  and '*' not in key:
                 section = key
             else:
-                sign = '-' if '-' in key else '+'
+                if '-' in key:
+                    sign = '-'
+                elif '+' in key:
+                    sign = '+'
+                elif '*' in key:
+                    sign = '*'
                 key_split = key.split(sign)
                 section = key_split[0]
                 distance = int(key_split[1])
@@ -202,7 +207,18 @@ class JobList:
 
             dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits)
+            select_chunks_opt = dic_jobs.get_option(section, 'SELECT_CHUNKS', None)
+            select_chunks = []
+            if select_chunks_opt is not None:
+                if '*' in select_chunks_opt:
+                    sections_chunks= select_chunks_opt.split(' ') #todo
+                    for section_chunk in sections_chunks:
+                        info=section_chunk.split('*')
+                        if info[0] == key:
+                            select_chunks.append(info[1])
+
+            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, select_chunks)
+
             dependencies[key] = dependency
         return dependencies
 
@@ -234,8 +250,8 @@ class JobList:
                                                                                  dependency)
             if skip:
                 continue
-
-            for parent in dic_jobs.get_jobs(dependency.section, date, member, chunk):
+            parents_jobs=dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            for parent in parents_jobs:
                 if dependency.delay == -1 or chunk > dependency.delay:
                     if isinstance(parent, list):
                         if job.split is not None:
@@ -243,9 +259,10 @@ class JobList:
                         else:
                             if dependency.splits is not None:
                                 parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
+                    if len(dependency.select_chunks) == 0 or parent.chunk in dependency.select_chunks:
+                        job.add_parent(parent)
+                        JobList._add_edge(graph, job, parent)
 
-                    job.add_parent(parent)
-                    JobList._add_edge(graph, job, parent)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
@@ -953,13 +970,18 @@ class JobList:
         if not fromSetStatus:
             for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if len(tmp) == len(job.parents):
+                completed_parents= job.min_completed_parents
+                if completed_parents > len(job.parents) or completed_parents <= 0:
+                    completed_parents = len(job.parents)
+                if len(tmp) >= completed_parents:
                     job.status = Status.READY
                     job.hold = False
                     save = True
                     Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
+
+
             if as_conf.get_remote_dependencies():
                 Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):
