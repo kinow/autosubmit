@@ -565,7 +565,7 @@ class Job(object):
     def update_children_status(self):
         children = list(self.children)
         for child in children:
-            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]: #TODO add held?
+            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
                 child.status = Status.FAILED
                 children += list(child.children)
 
@@ -1042,14 +1042,13 @@ class WrapperJob(Job):
 
     def check_status(self, status):
         self.status = status
-        #self.update_inner_jobs_queue()
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.cancel_failed_wrapper_job()
             self.update_failed_jobs()
         elif self.status == Status.COMPLETED:
             self.check_inner_jobs_completed(self.job_list)
         elif self.status == Status.RUNNING:
-            #time.sleep(3)
+            time.sleep(3)
             #self.update_inner_jobs_queue()
             Log.debug('Checking inner jobs status')
             self.check_inner_job_status()

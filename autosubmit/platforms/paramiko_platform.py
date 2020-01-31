@@ -323,11 +323,10 @@ class ParamikoPlatform(Platform):
             retries -= 1
             Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
-            sleep(5)
+            sleep(10)
         output=self.get_ssh_output()
-        output_stripped=output.strip()
         if retries >= 0:
-            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retries == 0:
@@ -343,7 +342,6 @@ class ParamikoPlatform(Platform):
             else:
                 job_status = Status.UNKNOWN
         else:
-            # BOUOUOUOU	NOT	GOOD!
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         job.new_status = job_status

@@ -346,6 +346,7 @@ class JobPackagerVertical(object):
         # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
         if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.max_wrapped_jobs:
             return self.jobs_list
+
         child = self.get_wrappable_child(job)
         # If not None, it is wrappable
         if child is not None:
@@ -397,7 +398,7 @@ class JobPackagerVerticalSimple(JobPackagerVertical):
         :rtype: Job Object
         """
         for child in job.children:
-            if self._is_wrappable(child, job):
+            if child.status  in [Status.WAITING, Status.READY] and self._is_wrappable(child, job) :
                 return child
             continue
         return None
