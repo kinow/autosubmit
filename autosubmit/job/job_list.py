@@ -973,10 +973,7 @@ class JobList:
         if not fromSetStatus:
             for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                completed_parents= job.min_completed_parents
-                if completed_parents > len(job.parents) or completed_parents <= 0:
-                    completed_parents = len(job.parents)
-                if len(tmp) >= completed_parents:
+                if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
                     save = True

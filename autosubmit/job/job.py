@@ -103,7 +103,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
-        self.min_completed_parents = 0
+
 
 
     def __getstate__(self):
@@ -619,7 +619,6 @@ class Job(object):
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
             parameters['SYNCHRONIZE'] = self.synchronize
-            parameters['MIN_COMPLETED_PARENTS'] = self.min_completed_parents
 
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])

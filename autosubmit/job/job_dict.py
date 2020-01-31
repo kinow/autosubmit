@@ -315,7 +315,6 @@ class DicJobs:
 
         job.frequency = int(self.get_option(section, "FREQUENCY", 1))
         job.delay = int(self.get_option(section, "DELAY", -1))
-        job.min_completed_parents = int(self.get_option(section, "MIN_PARENTS", 0))
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
 
