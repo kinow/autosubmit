@@ -167,7 +167,7 @@ class JobList:
                 continue
 
             dependencies_keys = jobs_parser.get(job_section, option).split()
-            dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs)
+            dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs,job_section)
 
             for job in dic_jobs.get_jobs(job_section):
                 num_jobs = 1
@@ -179,7 +179,7 @@ class JobList:
                                                      dependencies, graph)
 
     @staticmethod
-    def _manage_dependencies(dependencies_keys, dic_jobs):
+    def _manage_dependencies(dependencies_keys, dic_jobs,job_section):
         dependencies = dict()
         for key in dependencies_keys:
             distance = None
@@ -207,14 +207,17 @@ class JobList:
 
             dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
-            select_chunks_opt = dic_jobs.get_option(section, 'SELECT_CHUNKS', None)
+            select_chunks_opt = dic_jobs.get_option(job_section, 'SELECT_CHUNKS', None)
             select_chunks = []
             if select_chunks_opt is not None:
                 if '*' in select_chunks_opt:
-                    sections_chunks= select_chunks_opt.split(' ') #todo
+                    if ',' in select_chunks_opt:
+                        sections_chunks= select_chunks_opt.split(' ')
+                    else:
+                        sections_chunks = select_chunks_opt.split(',')
                     for section_chunk in sections_chunks:
                         info=section_chunk.split('*')
-                        if info[0] == key:
+                        if info[0] in key:
                             select_chunks.append(info[1])
 
             dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, select_chunks)
@@ -259,7 +262,7 @@ class JobList:
                         else:
                             if dependency.splits is not None:
                                 parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
-                    if len(dependency.select_chunks) == 0 or parent.chunk in dependency.select_chunks:
+                    if len(dependency.select_chunks) == 0 or str(parent.chunk) in dependency.select_chunks:
                         job.add_parent(parent)
                         JobList._add_edge(graph, job, parent)
 
@@ -1106,7 +1109,7 @@ class JobList:
                 continue
 
             dependencies_keys = jobs_parser.get(job_section, "RERUN_DEPENDENCIES").split()
-            dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs)
+            dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs,job_section)
 
         for job in self._job_list:
             job.status = Status.COMPLETED
