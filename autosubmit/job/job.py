@@ -1043,6 +1043,7 @@ class WrapperJob(Job):
     def check_status(self, status):
         self.status = status
         if self.status in [Status.FAILED, Status.UNKNOWN]:
+            self.status = Status.FAILED
             self.cancel_failed_wrapper_job()
             self.update_failed_jobs()
         elif self.status == Status.COMPLETED:
