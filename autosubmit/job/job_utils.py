@@ -44,12 +44,13 @@ class Dependency(object):
 
     """
 
-    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks=list()):
+    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks_dest=list(),select_chunks_orig=list() ):
         self.section = section
         self.distance = distance
         self.running = running
         self.sign = sign
         self.delay = delay
         self.splits = splits
-        self.select_chunks = select_chunks
+        self.select_chunks_dest = select_chunks_dest
+        self.select_chunks_orig = select_chunks_orig
 

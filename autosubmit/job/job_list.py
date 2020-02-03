@@ -208,19 +208,37 @@ class JobList:
             dependency_running_type = dic_jobs.get_option(section, 'RUNNING', 'once').lower()
             delay = int(dic_jobs.get_option(section, 'DELAY', -1))
             select_chunks_opt = dic_jobs.get_option(job_section, 'SELECT_CHUNKS', None)
-            select_chunks = []
+            selected_chunks = []
             if select_chunks_opt is not None:
                 if '*' in select_chunks_opt:
-                    if ',' in select_chunks_opt:
-                        sections_chunks= select_chunks_opt.split(' ')
-                    else:
-                        sections_chunks = select_chunks_opt.split(',')
+                    sections_chunks = select_chunks_opt.split(' ')
                     for section_chunk in sections_chunks:
                         info=section_chunk.split('*')
                         if info[0] in key:
-                            select_chunks.append(info[1])
-
-            dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, select_chunks)
+                            for location in info[1].split('-'):
+                                auxiliar_chunk_list = []
+                                location = location.strip('[').strip(']')
+                                if ':' in location:
+                                    if len(location) == 3:
+                                        for chunk in range(int(location[0]),int(location[2])):
+                                            auxiliar_chunk_list.append(chunk)
+                                    elif len(location) == 2:
+                                        if ':' == location[0]:
+                                            for chunk in range(0, int(location[1])):
+                                                auxiliar_chunk_list.append(chunk)
+                                        elif ':' == location[1]:
+                                            for chunk in range(int(location[0]),dic_jobs._chunk_list.__len__-1):
+                                                auxiliar_chunk_list.append(chunk)
+                                elif ',' in location:
+                                    for chunk in location.strip(','):
+                                        auxiliar_chunk_list.append(chunk)
+                                selected_chunks.append(auxiliar_chunk_list)
+            if len(selected_chunks) == 2:
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,selected_chunks[0],selected_chunks[1] ) #[]select_chunks_dest,select_chunks_orig
+            elif len(selected_chunks) == 1:
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,selected_chunks[0],[]) #[]select_chunks_dest,select_chunks_orig
+            else:
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,[],[] ) #[]select_chunks_dest,select_chunks_orig
 
             dependencies[key] = dependency
         return dependencies
@@ -262,7 +280,7 @@ class JobList:
                         else:
                             if dependency.splits is not None:
                                 parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
-                    if len(dependency.select_chunks) == 0 or str(parent.chunk) in dependency.select_chunks:
+                    if len(dependency.select_chunks_dest) == 0 or str(parent.chunk) in dependency.select_chunks_dest:
                         job.add_parent(parent)
                         JobList._add_edge(graph, job, parent)
 
