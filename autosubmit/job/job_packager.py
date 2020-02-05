@@ -74,7 +74,25 @@ class JobPackager(object):
             jobs_to_submit = jobs_filtered
         else:
             jobs_ready = self._jobs_list.get_ready(self._platform,hold=hold)
-            if jobs_ready == 0:
+            if hold and len(jobs_ready) > 0 :
+                jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(hold)
+                current_held_jobs = 0
+                wrapper_jobs_visited = []
+
+                for held_job in jobs_in_held_status:
+                    if self._jobs_list.job_package_map and held_job.id in self._jobs_list.job_package_map:
+                        if held_job.id not in wrapper_jobs_visited:
+                            current_held_jobs += 1
+                            wrapper_jobs_visited.append(held_job.id)
+                    else:
+                        current_held_jobs += 1
+                remaining_held_slots = 10 - current_held_jobs
+                try:
+                    while len(jobs_ready) > remaining_held_slots:
+                        del jobs_ready[-1]
+                except IndexError:
+                    pass
+            if len(jobs_ready) == 0:
                 # If there are no jobs ready, result is tuple of empty
                 return packages_to_submit
             if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):

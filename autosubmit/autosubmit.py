@@ -1254,19 +1254,8 @@ class Autosubmit:
                         job_list.save()
 
                     if as_conf.get_remote_dependencies():
-                        jobs_in_held_status = job_list.get_held_jobs()
-                        current_held_jobs = 0
-                        wrapper_jobs_visited = []
-                        for held_job in jobs_in_held_status:
-                            if job_list.job_package_map and held_job.id in job_list.job_package_map:
-                                if held_job.id not in wrapper_jobs_visited:
-                                    current_held_jobs+=1
-                                    wrapper_jobs_visited.append(held_job.id)
-                            else:
-                                current_held_jobs+=1
-                        if current_held_jobs < 10:
-                            if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
-                                job_list.save()
+                        if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
+                            job_list.save()
 
                     if Autosubmit.exit:
                         return 2
@@ -1311,6 +1300,7 @@ class Autosubmit:
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
             packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages(hold=hold)
+
             if not inspect:
                 platform.open_submit_script()
             valid_packages_to_submit = []

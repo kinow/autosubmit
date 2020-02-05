@@ -72,7 +72,6 @@ class JobList:
         self.packages_id = dict()
         self.job_package_map = dict()
         self.sections_checked = set()
-
     @property
     def expid(self):
         """
@@ -594,7 +593,7 @@ class JobList:
         """
         return [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status != Status.COMPLETED]
-    def get_submitted(self, platform=None):
+    def get_submitted(self, platform=None, hold =False):
         """
         Returns a list of submitted jobs
 
@@ -603,9 +602,12 @@ class JobList:
         :return: submitted jobs
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.platform is platform) and
-                job.status == Status.SUBMITTED]
-
+        if hold:
+            return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                    job.status == Status.SUBMITTED and job.hold == hold  ]
+        else:
+            return [job for job in self._job_list if (platform is None or job.platform is platform) and
+                    job.status == Status.SUBMITTED ]
     def get_running(self, platform=None):
         """
         Returns a list of jobs running
@@ -968,9 +970,8 @@ class JobList:
                     Log.debug("Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
         Log.debug('Update finished')
         Log.debug('Updating WAITING jobs')
-        if as_conf.get_remote_dependencies():
-            all_parents_completed=[]
         if not fromSetStatus:
+            all_parents_completed = []
             for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
@@ -980,8 +981,6 @@ class JobList:
                     Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
-
-
             if as_conf.get_remote_dependencies():
                 Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):
@@ -997,7 +996,6 @@ class JobList:
                     tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
                         job.hold = False
-                        job.status = Status.QUEUING
                         Log.debug(
                             "Setting job: {0} status to: Queuing (all parents completed)...".format(
                                 job.name))

@@ -728,11 +728,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5'
+                template = 'sleep 30'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(5)'
+                template = 'time.sleep(30)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(5)'
+                template = 'Sys.sleep(30)'
             else:
                 template = ''
 
@@ -1052,7 +1052,7 @@ class WrapperJob(Job):
             self.check_inner_jobs_completed(self.job_list)
         elif self.status == Status.RUNNING:
             time.sleep(3)
-            #self.update_inner_jobs_queue()
+            self.update_inner_jobs_queue()
             Log.debug('Checking inner jobs status')
             self.check_inner_job_status()
 
@@ -1148,10 +1148,7 @@ class WrapperJob(Job):
         for job in not_finished_jobs:
             self._check_finished_job(job)
     def update_inner_jobs_queue(self):
-        jobs= [filter_job for filter_job in self.job_list if filter_job.status in [Status.SUBMITTED,Status.HELD ,Status.QUEUING]    ]
-        for job in jobs:
-            job.status = self.status
-
+        jobs= [filter_job for filter_job in self.job_list if filter_job.status in [Status.SUBMITTED,Status.HELD ,Status.QUEUING]] #UPDATE STATUS OF JOBS
         if self.status == Status.QUEUING or self.status == Status.HELD:
             reason = str()
             if self.platform.type == 'slurm':
@@ -1171,7 +1168,7 @@ class WrapperJob(Job):
                         self.status = Status.HELD
                         Log.info("Job {0} is HELD", self.name)
                 elif reason == '(JobHeldAdmin)':
-                    Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+                    Log.debug("Job {0} Failed to be HELD, canceling... ", self.name)
                     self.hold = True
                     self.status = Status.WAITING
                     self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
