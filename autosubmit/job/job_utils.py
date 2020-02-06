@@ -44,13 +44,17 @@ class Dependency(object):
 
     """
 
-    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks_dest=list(),select_chunks_orig=list() ):
+    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks=list()):
         self.section = section
         self.distance = distance
         self.running = running
         self.sign = sign
         self.delay = delay
         self.splits = splits
-        self.select_chunks_dest = select_chunks_dest
-        self.select_chunks_orig = select_chunks_orig
+        self.select_chunks_dest = list()
+        self.select_chunks_orig = list()
+        for chunk_relation in select_chunks:
+            self.select_chunks_dest.append(chunk_relation[0])
+            self.select_chunks_orig.append(chunk_relation[1])
+
 
