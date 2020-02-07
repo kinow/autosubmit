@@ -48,6 +48,7 @@ class WrapperBuilder(object):
     def __init__(self, **kwargs):
         self.header_directive = kwargs['header_directive']
         self.job_scripts = kwargs['jobs_scripts']
+        self.threads = kwargs['threads']
         self.num_procs = kwargs['num_processors']
         self.expid = kwargs['expid']
         self.jobs_resources = kwargs.get('jobs_resources', dict())

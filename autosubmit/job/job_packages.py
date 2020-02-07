@@ -363,6 +363,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         self._common_script = None
         self._wallclock = '00:00'
         self._num_processors = '0'
+        self.threads = '1'
 
     @property
     def name(self):
@@ -441,6 +442,8 @@ class JobPackageVertical(JobPackageThread):
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
+                self._threads = job.threads
+
             self._wallclock = sum_str_hours(self._wallclock, job.wallclock)
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
@@ -453,7 +456,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives)
+                                                 directives=self._custom_directives,threads=self._threads)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -463,10 +466,12 @@ class JobPackageHorizontal(JobPackageThread):
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict()):
         super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
+
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
             self._num_processors = str(int(self._num_processors) + int(job.processors))
+            self._threads = job.threads
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
                                                                                   self._num_processors,
@@ -479,7 +484,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives)
+                                                 directives=self._custom_directives,threads=self._threads)
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -490,7 +495,9 @@ class JobPackageHybrid(JobPackageThread):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
         super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources)
         self.jobs_lists = jobs
+
         self._num_processors = int(num_processors)
+        self._threads = jobs[0].threads
         self._wallclock = total_wallclock
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
@@ -522,7 +529,7 @@ class JobPackageVerticalHorizontal(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads)
 
 
 class JobPackageHorizontalVertical(JobPackageHybrid):
@@ -533,4 +540,4 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  wallclock=self._wallclock, num_processors=self._num_processors,
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
-                                                 rootdir=self.platform.root_dir, directives=self._custom_directives)
+                                                 rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads)

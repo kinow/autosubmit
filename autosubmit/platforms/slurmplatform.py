@@ -158,7 +158,7 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads):
         return """\
         #!/usr/bin/env python
         ###############################################################################
@@ -171,13 +171,14 @@ class SlurmPlatform(ParamikoPlatform):
         #SBATCH --output={0}.out
         #SBATCH --error={0}.err
         #SBATCH -t {3}:00
+        #SBATCH --cpus-per-task={7}
         #SBATCH -n {4}
         {5}
         {6}
         #
         ###############################################################################
         """.format(filename, queue, project, wallclock, num_procs, dependency,
-                   '\n'.ljust(13).join(str(s) for s in directives))
+                   '\n'.ljust(13).join(str(s) for s in directives),threads)
 
     @staticmethod
     def allocated_nodes():
