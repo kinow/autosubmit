@@ -29,7 +29,6 @@ import pickle
 from time import localtime, strftime
 from sys import setrecursionlimit
 from shutil import move
-
 from autosubmit.job.job import Job
 from bscearth.utils.log import Log
 from autosubmit.job.job_dict import DicJobs
@@ -273,24 +272,16 @@ class JobList:
                                                                                  dependency)
             if skip:
                 continue
-            relation_indx = -1
-            if  len(dependency.select_chunks_orig) > 0: # find chunk relation
-                relation_found = False
+            chunk_relations_to_add=list()
+            if len(dependency.select_chunks_orig) > 0: # find chunk relation
                 relation_indx = 0
-                while not relation_found and relation_indx < len(dependency.select_chunks_orig):
-                    if job.chunk in dependency.select_chunks_orig[relation_indx]:
-                        relation_found=True
+                while relation_indx < len(dependency.select_chunks_orig):
+                    if len(dependency.select_chunks_orig[relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[relation_indx]:
+                        chunk_relations_to_add.append(relation_indx)
                     relation_indx+=1
                 relation_indx -= 1
-                if not relation_found:
-                    relation_indx = 0
-                    while not relation_found and relation_indx < len(dependency.select_chunks_orig):
-                        if len(dependency.select_chunks_orig[relation_indx]) == 0:
-                            relation_found=True
-                        relation_indx+=1
-                    relation_indx-=1
 
-            if len(dependency.select_chunks_orig) == 0 or job.chunk is None or relation_found : #If doesn't contain select_chunks or running isn't chunk . ...
+            if len(dependency.select_chunks_orig) == 0 or job.chunk is None or len(chunk_relations_to_add) > 0 : #If doesn't contain select_chunks or running isn't chunk . ...
                 parents_jobs=dic_jobs.get_jobs(dependency.section, date, member, chunk)
                 for parent in parents_jobs:
                     if dependency.delay == -1 or chunk > dependency.delay:
@@ -300,14 +291,18 @@ class JobList:
                             else:
                                 if dependency.splits is not None:
                                     parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
-
-                        if len(dependency.select_chunks_dest) == 0 or parent.chunk is None or (relation_indx >= 0 and (parent.chunk in dependency.select_chunks_dest[relation_indx] or len(dependency.select_chunks_dest[relation_indx]) == 0) ):
-                                Log.warning("Parent:{0} actual_job:{1}", parent.name, job.name)
-                                Log.warning("{0} is in {1}",parent.chunk,dependency.select_chunks_dest)
-                                job.add_parent(parent)
-                                JobList._add_edge(graph, job, parent)
+                        if len(dependency.select_chunks_dest) <= 0 or parent.chunk is None:
+                            job.add_parent(parent)
+                            JobList._add_edge(graph, job, parent)
                         else:
-                            pass
+                            visited_parents=set()
+                            for relation_indx in chunk_relations_to_add:
+                                if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(dependency.select_chunks_dest[relation_indx]) == 0:
+                                    if parent not in visited_parents:
+                                        job.add_parent(parent)
+                                        JobList._add_edge(graph, job, parent)
+                                    visited_parents.add(parent)
+
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
     @staticmethod
