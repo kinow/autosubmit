@@ -222,15 +222,15 @@ class JobList:
                                     location = location.strip('[').strip(']')
                                     if ':' in location:
                                         if len(location) == 3:
-                                            for chunk in range(int(location[0]),int(location[2])):
-                                                auxiliar_chunk_list.append(chunk)
+                                            for chunk_number in range(int(location[0]),int(location[2])+1):
+                                                auxiliar_chunk_list.append(chunk_number)
                                         elif len(location) == 2:
                                             if ':' == location[0]:
-                                                for chunk in range(0, int(location[1]+1)):
-                                                    auxiliar_chunk_list.append(chunk)
+                                                for chunk_number in range(0, int(location[1])+1):
+                                                    auxiliar_chunk_list.append(chunk_number)
                                             elif ':' == location[1]:
-                                                for chunk in range(int(location[0]+1),dic_jobs._chunk_list.__len__-1):
-                                                    auxiliar_chunk_list.append(chunk)
+                                                for chunk_number in range(int(location[0])+1,dic_jobs._chunk_list.__len__-1):
+                                                    auxiliar_chunk_list.append(chunk_number)
                                     elif ',' in location:
                                         for chunk in location.split(','):
                                             auxiliar_chunk_list.append(int(chunk))
@@ -238,7 +238,7 @@ class JobList:
                                         auxiliar_chunk_list.append(int(location))
                                     auxiliar_relation_list.append(auxiliar_chunk_list)
                                 selected_chunks.append(auxiliar_relation_list)
-            if len(selected_chunks) == 1:
+            if len(selected_chunks) >= 1:
                 dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,selected_chunks) #[]select_chunks_dest,select_chunks_orig
             else:
                 dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,[]) #[]select_chunks_dest,select_chunks_orig
@@ -267,13 +267,13 @@ class JobList:
                                  graph):
         for key in dependencies_keys:
             dependency = dependencies[key]
-
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
                                                                                  job.member, member_list,
                                                                                  job.date, date_list,
                                                                                  dependency)
             if skip:
                 continue
+            relation_indx = -1
             if  len(dependency.select_chunks_orig) > 0: # find chunk relation
                 relation_found = False
                 relation_indx = 0
@@ -281,13 +281,15 @@ class JobList:
                     if job.chunk in dependency.select_chunks_orig[relation_indx]:
                         relation_found=True
                     relation_indx+=1
+                relation_indx -= 1
                 if not relation_found:
                     relation_indx = 0
                     while not relation_found and relation_indx < len(dependency.select_chunks_orig):
                         if len(dependency.select_chunks_orig[relation_indx]) == 0:
-                            relation_found
+                            relation_found=True
                         relation_indx+=1
-                relation_indx-=1
+                    relation_indx-=1
+
             if len(dependency.select_chunks_orig) == 0 or job.chunk is None or relation_found : #If doesn't contain select_chunks or running isn't chunk . ...
                 parents_jobs=dic_jobs.get_jobs(dependency.section, date, member, chunk)
                 for parent in parents_jobs:
@@ -298,17 +300,16 @@ class JobList:
                             else:
                                 if dependency.splits is not None:
                                     parent = filter(lambda _parent: _parent.split in dependency.splits, parent)
-                        if len(dependency.select_chunks_dest) == 0 or parent.chunk is None or parent.chunk in dependency.select_chunks_dest[relation_indx]:
+
+                        if len(dependency.select_chunks_dest) == 0 or parent.chunk is None or (relation_indx >= 0 and (parent.chunk in dependency.select_chunks_dest[relation_indx] or len(dependency.select_chunks_dest[relation_indx]) == 0) ):
                                 Log.warning("Parent:{0} actual_job:{1}", parent.name, job.name)
                                 Log.warning("{0} is in {1}",parent.chunk,dependency.select_chunks_dest)
                                 job.add_parent(parent)
                                 JobList._add_edge(graph, job, parent)
                         else:
                             pass
-
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
                                                            member_list, dependency.section, graph)
-
     @staticmethod
     def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
         skip = False

@@ -55,6 +55,11 @@ class Dependency(object):
         self.select_chunks_orig = list()
         for chunk_relation in select_chunks:
             self.select_chunks_dest.append(chunk_relation[0])
-            self.select_chunks_orig.append(chunk_relation[1])
+            if len(chunk_relation) > 1:
+                self.select_chunks_orig.append(chunk_relation[1])
+            else:
+                self.select_chunks_orig.append([])
+
+
 
 
