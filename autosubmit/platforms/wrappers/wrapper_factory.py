@@ -32,7 +32,7 @@ class WrapperFactory(object):
     def get_wrapper(self, wrapper_builder, **kwargs):
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
-        kwargs['queue'] = self.queue(kwargs['queue'])
+        kwargs['queue'] = self.queue(kwargs['queue']) #TODO
         kwargs['header_directive'] = self.header_directives(**kwargs)
 
         builder = wrapper_builder(**kwargs)

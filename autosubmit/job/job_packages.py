@@ -262,7 +262,8 @@ class JobPackageThread(JobPackageBase):
         self._num_processors = '0'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
-
+        self.queue = jobs[0]._queue
+#pipeline
     @property
     def name(self):
         return self._name
@@ -281,11 +282,16 @@ class JobPackageThread(JobPackageBase):
         return jobs_scripts
 
     @property
-    def _queue(self):
+    def queue(self):
         if str(self._num_processors) == '1':
             return self.platform.serial_platform.serial_queue
         else:
-            return self.platform.queue
+            return self._queue
+            #return self.platform.queue
+
+    @queue.setter
+    def queue(self,value):
+        self._queue = value
 
     @property
     def _project(self):
@@ -365,6 +371,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         self._num_processors = '0'
         self.threads = '1'
 
+
     @property
     def name(self):
         return self._name
@@ -377,12 +384,14 @@ class JobPackageThreadWrapped(JobPackageThread):
         return jobs_scripts
 
     @property
-    def _queue(self):
+    def queue(self):
         if str(self._num_processors) == '1':
             return self.platform.serial_platform.serial_queue
         else:
             return self.platform.queue
-
+    @queue.setter
+    def queue(self,value):
+        self._queue = value
     @property
     def _project(self):
         return self._platform.project
@@ -439,6 +448,7 @@ class JobPackageVertical(JobPackageThread):
     def __init__(self, jobs, dependency=None):
         super(JobPackageVertical, self).__init__(jobs, dependency)
         #TODO unit or regression test of the wrappers, it will fail as in issue 280
+
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
@@ -466,7 +476,7 @@ class JobPackageHorizontal(JobPackageThread):
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict()):
         super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
-
+        self._queue = self.queue
         for job in jobs:
             if job.wallclock > self._wallclock:
                 self._wallclock = job.wallclock
@@ -495,7 +505,6 @@ class JobPackageHybrid(JobPackageThread):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
         super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources)
         self.jobs_lists = jobs
-
         self._num_processors = int(num_processors)
         self._threads = jobs[0].threads
         self._wallclock = total_wallclock
