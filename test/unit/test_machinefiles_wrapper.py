@@ -59,7 +59,7 @@ class TestMachinefiles(TestCase):
 
         wrapper_builder = PythonWrapperBuilder(header_directive='', jobs_scripts=self.job_scripts,
                                                num_processors=num_processors, expid='a000',
-                                               jobs_resources=jobs_resources)
+                                               jobs_resources=jobs_resources,threads=1)
 
         nodes = self._create_nodelist(num_processors)
         cores_list = wrapper_builder.build_cores_list()
