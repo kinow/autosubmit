@@ -228,7 +228,7 @@ class JobList:
                                                 for chunk_number in range(0, int(location[1])+1):
                                                     auxiliar_chunk_list.append(chunk_number)
                                             elif ':' == location[1]:
-                                                for chunk_number in range(int(location[0])+1,dic_jobs._chunk_list.__len__-1):
+                                                for chunk_number in range(int(location[0])+1,len(dic_jobs._chunk_list)-1):
                                                     auxiliar_chunk_list.append(chunk_number)
                                     elif ',' in location:
                                         for chunk in location.split(','):
@@ -276,12 +276,12 @@ class JobList:
             if len(dependency.select_chunks_orig) > 0: # find chunk relation
                 relation_indx = 0
                 while relation_indx < len(dependency.select_chunks_orig):
-                    if len(dependency.select_chunks_orig[relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[relation_indx]:
+                    if len(dependency.select_chunks_orig[relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[relation_indx] or job.chunk is None:
                         chunk_relations_to_add.append(relation_indx)
                     relation_indx+=1
                 relation_indx -= 1
 
-            if len(dependency.select_chunks_orig) == 0 or job.chunk is None or len(chunk_relations_to_add) > 0 : #If doesn't contain select_chunks or running isn't chunk . ...
+            if len(dependency.select_chunks_orig) <= 0 or job.chunk is None or len(chunk_relations_to_add) > 0 : #If doesn't contain select_chunks or running isn't chunk . ...
                 parents_jobs=dic_jobs.get_jobs(dependency.section, date, member, chunk)
                 for parent in parents_jobs:
                     if dependency.delay == -1 or chunk > dependency.delay:
