@@ -127,6 +127,8 @@ class AutosubmitGit:
             Log.error("There isn't a correct Git configuration. Check that there's an origin and a commit or a branch")
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
+        if git_project_branch == '':
+            git_project_branch = 'master'
         git_project_commit = as_conf.get_git_project_commit()
         git_project_submodules = as_conf.get_submodules_list()
         if as_conf.get_fetch_single_branch() != "true":
