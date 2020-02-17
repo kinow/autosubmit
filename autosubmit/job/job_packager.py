@@ -52,6 +52,7 @@ class JobPackager(object):
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
+        self.wrapper_method = self._as_config.get_wrapper_method()
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
@@ -212,7 +213,7 @@ class JobPackager(object):
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section):
         packages = []
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, max_wrapped_jobs,
-                                                    self.max_jobs, self._platform.processors_per_node)
+                                                    self.max_jobs, self._platform.processors_per_node, self.wrapper_method)
 
         package_jobs = horizontal_packager.build_horizontal_package()
 
@@ -224,7 +225,7 @@ class JobPackager(object):
             if machinefile_function == 'COMPONENTS':
                 jobs_resources = horizontal_packager.components_dict
             jobs_resources['MACHINEFILES'] = machinefile_function
-            current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources)
+            current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources,method=self.wrapper_method)
             packages.append(current_package)
 
 
@@ -520,7 +521,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
 
 
 class JobPackagerHorizontal(object):
-    def __init__(self, job_list, max_processors, max_wrapped_jobs, max_jobs, processors_node):
+    def __init__(self, job_list, max_processors, max_wrapped_jobs, max_jobs, processors_node, method="ASThread"):
         self.processors_node = processors_node
         self.max_processors = max_processors
         self.max_wrapped_jobs = max_wrapped_jobs
@@ -530,6 +531,7 @@ class JobPackagerHorizontal(object):
         self._sort_order_dict = dict()
         self._components_dict = dict()
         self._section_processors = dict()
+        self.method = method
 
         self._maxTotalProcessors = 0
         self._sectionList = list()

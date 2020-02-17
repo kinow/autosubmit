@@ -158,9 +158,13 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads):
-        return """\
-        #!/usr/bin/env python
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads,method="#!/usr/bin/env python"):
+        if method =='srun':
+            language = "#!/bin/bash"
+        else:
+            language = "#!/usr/bin/env python"
+        return \
+        language+"""
         ###############################################################################
         #              {0}
         ###############################################################################

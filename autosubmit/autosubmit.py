@@ -733,11 +733,11 @@ class Autosubmit:
         os.mkdir(tmp_path)
         os.chmod(tmp_path, 0o775)
         os.mkdir(os.path.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR))
-        os.chmod(os.path.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR), 0o775)
+        os.chmod(os.path.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR), 0o755)
         Log.debug("Creating temporal remote directory...")
         remote_tmp_path = os.path.join(tmp_path,"LOG_"+exp_id)
         os.mkdir(remote_tmp_path)
-        os.chmod(remote_tmp_path, 0o775)
+        os.chmod(remote_tmp_path, 0o755)
 
 
         Log.debug("Creating pkl directory...")
@@ -745,9 +745,22 @@ class Autosubmit:
 
         Log.debug("Creating plot directory...")
         os.mkdir(os.path.join(exp_id_path, "plot"))
-        os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
+        os.chmod(os.path.join(exp_id_path, "plot"), 0o755)
         Log.result("Experiment registered successfully")
         Log.user_warning("Remember to MODIFY the config files!")
+        try:
+            Log.debug("Setting the right permissions...")
+            os.chmod(os.path.join(exp_id_path, "conf"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "pkl"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "tmp"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "plot"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" + str(exp_id) + ".conf"), 0o644)
+            os.chmod(os.path.join(exp_id_path, "conf/expdef_" + str(exp_id) + ".conf"), 0o644)
+            os.chmod(os.path.join(exp_id_path, "conf/jobs_" + str(exp_id) + ".conf"), 0o644)
+            os.chmod(os.path.join(exp_id_path, "conf/platforms_" + str(exp_id) + ".conf"), 0o644)
+            os.chmod(os.path.join(exp_id_path, "conf/proj_" + str(exp_id) + ".conf"), 0o644)
+        except:
+            pass
         return exp_id
 
     @staticmethod
@@ -852,7 +865,7 @@ class Autosubmit:
         Log.debug("Sleep: {0}", safetysleeptime)
         packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                      "job_packages_" + expid)
-        os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)
+        os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0644)
 
         packages_persistence.reset_table(True)
         job_list_original = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
@@ -1035,7 +1048,7 @@ class Autosubmit:
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
-            os.chmod(aslogs_path,0o775)
+            os.chmod(aslogs_path,0o755)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist" % exp_path)
             Log.warning("Does an experiment with the given id exist?")
@@ -1123,7 +1136,7 @@ class Autosubmit:
                                         "job_packages_" + expid)
 
                 if as_conf.get_wrapper_type() != 'none':
-                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0664)
+                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0644)
                     packages = packages_persistence.load()
                     for (exp_id, package_name, job_name) in packages:
                         if package_name not in job_list.packages_dict:
@@ -1344,7 +1357,7 @@ class Autosubmit:
                     if len(valid_packages_to_submit) > 0:
                         jobs_id = platform.submit_Script(hold=hold)
                         if jobs_id is None:
-                            raise BaseException("Exiting AS being unable to get jobID")
+                            raise BaseException("Exiting AS, AS is unable to get jobID this can be due a failure on the platform or a bad parameter on job.conf(check that queue parameter is valid for your current platform(CNS,BSC32,PRACE...)")
                         i = 0
                         for package in valid_packages_to_submit:
                             for job in package.jobs:
@@ -1498,7 +1511,7 @@ class Autosubmit:
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
             # Permissons                                                         
-            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0664)            
+            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0644)
             #Database modification
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
@@ -2551,7 +2564,7 @@ class Autosubmit:
             year_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year))
             if not os.path.exists(year_path):
                 os.mkdir(year_path)
-                os.chmod(year_path, 0o775)
+                os.chmod(year_path, 0o755)
             if compress:
                 compress_type="w:gz"
                 output_filepath = '{0}.tar.gz'.format(expid)
@@ -2561,7 +2574,7 @@ class Autosubmit:
             with tarfile.open(os.path.join(year_path, output_filepath), compress_type) as tar:
                 tar.add(exp_folder, arcname='')
                 tar.close()
-                os.chmod(os.path.join(year_path,output_filepath), 0o775)
+                os.chmod(os.path.join(year_path,output_filepath), 0o755)
         except Exception as e:
             Log.critical("Can not write tar file: {0}".format(e))
             return False
@@ -2702,7 +2715,7 @@ class Autosubmit:
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
-            os.chmod(aslogs_path,0o775)
+            os.chmod(aslogs_path,0o755)
         if not os.path.exists(exp_path):
             Log.critical("The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
@@ -3441,7 +3454,7 @@ class Autosubmit:
                 if as_conf.get_wrapper_type() != 'none' and check_wrapper:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                                  "job_packages_" + expid)
-                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0664)
+                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0644)
                     packages_persistence.reset_table(True)
                     referenced_jobs_to_remove = set()
                     job_list_wrappers = copy.deepcopy(job_list)

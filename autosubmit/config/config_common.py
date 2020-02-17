@@ -1098,6 +1098,14 @@ class AutosubmitConfig(object):
          :rtype: int
          """
         return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
+    def get_wrapper_method(self):
+        """
+         Returns the method of make the wrapper
+
+         :return: method
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'METHOD', 'ASThread')
     def get_wrapper_check_time(self):
         """
          Returns time to check the status of jobs in the wrapper

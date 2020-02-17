@@ -33,9 +33,10 @@ class WrapperDirector:
 
         header = self._builder.build_header()
         job_thread = self._builder.build_job_thread()
-
-        main = self._builder.build_main()
-
+        if "bash" not in header[0:15]:
+            main = self._builder.build_main()
+        else:
+            nodes,main = self._builder.build_main() #What to do with nodes?
         # change to WrapperScript object
         wrapper_script = header + job_thread + main
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
@@ -65,6 +66,7 @@ class WrapperBuilder(object):
 
     def build_job_thread(self):
         pass
+
 
     # hybrids
     def build_joblist_thread(self, **kwargs):
@@ -128,7 +130,7 @@ class PythonWrapperBuilder(WrapperBuilder):
         import copy
 
         # Defining scripts to be run
-        scripts = {0}
+        scripts= {0}
         """).format(str(self.job_scripts), '\n'.ljust(13))
 
     def build_job_thread(self):
@@ -395,12 +397,14 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
         return joblist_thread + nodes_list + threads_launcher
 
 
+
 class BashWrapperBuilder(WrapperBuilder):
 
     def build_imports(self):
         return ""
 
     def build_main(self):
+
         return textwrap.dedent("""
         # Initializing variables
         scripts="{0}"
@@ -464,3 +468,192 @@ class BashHorizontalWrapperBuilder(BashWrapperBuilder):
 
     def build_main(self):
         return super(BashHorizontalWrapperBuilder, self).build_main() + self.build_parallel_threads_launcher()
+
+#SRUN CLASES
+
+class SrunWrapperBuilder(WrapperBuilder):
+
+    def build_imports(self):
+        scripts_bash = "("
+
+        for script in self.job_scripts:
+            scripts_bash+=str("\""+script+"\"")+" "
+        scripts_bash += ")"
+        return textwrap.dedent("""
+
+        # Defining scripts to be run
+        declare -a scripts={0}
+        """).format(str(scripts_bash), '\n'.ljust(13))
+
+    # hybrids
+    def build_joblist_thread(self):
+        pass
+
+    def build_job_thread(self):
+        return textwrap.dedent(""" """)
+    # horizontal and hybrids
+    def build_nodes_list(self):
+        return self.get_nodes() + self.build_cores_list()
+
+    def get_nodes(self):
+
+        return textwrap.dedent("""
+        # Getting the list of allocated nodes
+        {0}
+        os.system("mkdir -p machinefiles")
+
+        with open('node_list', 'r') as file:
+             all_nodes = file.read()
+
+        all_nodes = all_nodes.split("_NEWLINE_")
+        """).format(self.allocated_nodes, '\n'.ljust(13))
+
+    def build_cores_list(self):
+        return textwrap.dedent("""
+        total_cores = {0}
+        jobs_resources = {1}
+
+        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+
+        idx = 0
+        all_cores = []
+        while total_cores > 0:
+            if processors_per_node > 0:
+                processors_per_node -= 1
+                total_cores -= 1
+                all_cores.append(all_nodes[idx])
+            else:
+                idx += 1
+                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+
+        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+        """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
+
+    def build_machinefiles(self):
+        machinefile_function = self.get_machinefile_function()
+        if machinefile_function:
+            return self.get_machinefile_function() + self._indent(self.write_machinefiles(), self.machinefiles_indent)
+        return ""
+
+    def build_machinefiles_standard(self):
+        return textwrap.dedent("""
+        machines = str()
+
+        cores = int(jobs_resources[section]['PROCESSORS'])
+        tasks = int(jobs_resources[section]['TASKS'])
+        nodes = int(ceil(int(cores)/float(tasks)))
+        if tasks < processors_per_node:
+            cores = tasks
+
+        job_cores = cores
+        while nodes > 0:
+            while cores > 0:
+                if len(all_cores) > 0:
+                    node = all_cores.pop(0)
+                    if node:
+                        machines += node +"_NEWLINE_"
+                        cores -= 1
+            for rest in range(processors_per_node-tasks):
+                if len(all_cores) > 0:
+                    all_cores.pop(0)
+            nodes -= 1
+            if tasks < processors_per_node:
+                cores = job_cores
+        """).format('\n'.ljust(13))
+
+    def _create_components_dict(self):
+        return textwrap.dedent("""
+        xio_procs = int(jobs_resources[section]['COMPONENTS']['XIO_NUMPROC'])
+        rnf_procs = int(jobs_resources[section]['COMPONENTS']['RNF_NUMPROC'])
+        ifs_procs = int(jobs_resources[section]['COMPONENTS']['IFS_NUMPROC'])
+        nem_procs = int(jobs_resources[section]['COMPONENTS']['NEM_NUMPROC'])
+
+        components = OrderedDict([
+            ('XIO', xio_procs),
+            ('RNF', rnf_procs),
+            ('IFS', ifs_procs),
+            ('NEM', nem_procs)
+        ])
+
+        jobs_resources[section]['COMPONENTS'] = components
+        """).format('\n'.ljust(13))
+
+    def build_machinefiles_components(self):
+        return textwrap.dedent("""
+        {0}
+
+        machines = str()
+        for component, cores in jobs_resources[section]['COMPONENTS'].items():        
+            while cores > 0:
+                if len(all_cores) > 0:
+                    node = all_cores.pop(0)
+                    if node:
+                        machines += node +"_NEWLINE_"
+                        cores -= 1
+        """).format(self._create_components_dict(), '\n'.ljust(13))
+
+    def write_machinefiles(self):
+        return textwrap.dedent("""
+        machines = "_NEWLINE_".join([s for s in machines.split("_NEWLINE_") if s])
+        with open("machinefiles/machinefile_"+{0}, "w") as machinefile:
+            machinefile.write(machines)
+        """).format(self.machinefiles_name, '\n'.ljust(13))
+
+    def build_srun_launcher(self, jobs_list, thread, footer=True):
+        num_procs=int(self.num_procs)/len(jobs_list)
+        srun_launcher = textwrap.dedent("""
+        i=0
+        suffix=".cmd"
+        for template in "${{{0}[@]}}"; do
+            jobname=${{template%"$suffix"}}
+            echo $(date +%s) > "${{jobname}}"_STAT
+            out="${{template}}.${{i}}.out" 
+            err="${{template}}.${{i}}.err"
+            ((i=i+1))
+            echo $template
+            srun -N 1 -n {2} $template$i$ > $out 2> $err &
+            echo $template$i$
+        """).format(jobs_list, thread,num_procs, '\n'.ljust(13))
+        if footer:
+            srun_launcher += self._indent(textwrap.dedent("""
+            suffix_completed=".COMPLETED"
+            completed_filename=${{template%"$suffix"}}
+            completed_filename="$completed_filename"_COMPLETED
+            completed_path=${{pwd}}$completed_filename
+            if [ -f "$completed_path" ];
+            then
+                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
+            else
+                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED" 
+            fi
+        done
+        wait
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)),0)
+        else:
+            srun_launcher += self._indent(textwrap.dedent("""
+        done
+        wait
+                       """).format(jobs_list, self.exit_thread, '\n'.ljust(13)),0)
+        return srun_launcher
+
+
+    # all should override -> abstract!
+    def build_main(self):
+        pass
+
+    def dependency_directive(self):
+        pass
+
+    def queue_directive(self):
+        pass
+
+    def _indent(self, text, amount, ch=' '):
+        padding = amount * ch
+        return ''.join(padding + line for line in text.splitlines(True))
+
+class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
+
+    def build_main(self):
+        nodelist = self.build_nodes_list()
+        srun_launcher = self.build_srun_launcher("scripts", "JobThread")
+        return nodelist, srun_launcher
