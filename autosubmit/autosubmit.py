@@ -57,7 +57,6 @@ from collections import defaultdict
 from pyparsing import nestedExpr
 
 sys.path.insert(0, os.path.abspath('.'))
-import saga
 # noinspection PyPackageRequirements
 from config.basicConfig import BasicConfig
 # noinspection PyPackageRequirements
@@ -83,7 +82,6 @@ from monitor.monitor import Monitor
 from bscearth.utils.date import date2str
 from notifications.mail_notifier import MailNotifier
 from notifications.notifier import Notifier
-from platforms.saga_submitter import SagaSubmitter
 from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
@@ -3639,9 +3637,7 @@ class Autosubmit:
         :rtype: Submitter
         """
         communications_library = as_conf.get_communications_library()
-        if communications_library == 'saga':
-            return SagaSubmitter()
-        elif communications_library == 'paramiko':
+        if communications_library == 'paramiko':
             return ParamikoSubmitter()
 
         # communications library not known
