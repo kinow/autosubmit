@@ -131,6 +131,7 @@ class AutosubmitConfig(object):
         :return: experiment's project directory
         :rtype: str
         """
+
         dir_templates = os.path.join(self.basic_config.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_PROJ_DIR,
                                      self.get_project_destination())
         return dir_templates
@@ -701,7 +702,6 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
-
     def get_git_project_commit(self):
         """
         Returns git commit from experiment's config file
@@ -710,6 +710,14 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
+    def get_git_remote_project_root(self):
+        """
+        Returns remote machine ROOT PATH
+
+        :return: git commit
+        :rtype: str
+        """
+        return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', 'none')
     def get_submodules_list(self):
         """
         Returns submodules list from experiment's config file

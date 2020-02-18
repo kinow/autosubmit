@@ -22,7 +22,7 @@ import os
 from shutil import rmtree
 import subprocess
 import shutil
-
+#from autosubmit import Autosubmit
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.log import Log
 
@@ -113,7 +113,7 @@ class AutosubmitGit:
 
         return True
     @staticmethod
-    def clone_repository(as_conf, force):
+    def clone_repository(as_conf, force, hpcarch):
         """
         Clones a specified git repository on the project folder
 
@@ -121,12 +121,16 @@ class AutosubmitGit:
         :type as_conf: autosubmit.config.AutosubmitConfig
         :param force: if True, it will overwrite any existing clone
         :type force: bool
+        :param hpcarch: current main platform
+        :type force: bool
         :return: True if clone was successful, False otherwise
         """
         if not as_conf.is_valid_git_repository():
             Log.error("There isn't a correct Git configuration. Check that there's an origin and a commit or a branch")
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
+        git_remote_project_path = as_conf.get_git_remote_project_root()
+
         if git_project_branch == '':
             git_project_branch = 'master'
         git_project_commit = as_conf.get_git_project_commit()
@@ -135,7 +139,6 @@ class AutosubmitGit:
             git_single_branch = False
         else:
             git_single_branch = True
-
         project_destination = as_conf.get_project_destination()
         project_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
         git_path = as_conf.get_project_dir()
@@ -149,6 +152,13 @@ class AutosubmitGit:
                 shutil.rmtree(project_path)
         os.mkdir(project_path)
         Log.debug("The project folder {0} has been created.", project_path)
+
+        if git_remote_project_path != '':
+            if git_remote_project_path[-1] == '/':
+                git_remote_path=git_remote_project_path[:-1]+project_path
+            else:
+                git_remote_project_path+=project_path
+            project_path=git_remote_project_path
 
         if git_project_commit:
             Log.info("Fetching {0} into {1}", git_project_commit + " " + git_project_origin, project_path)
@@ -169,7 +179,12 @@ class AutosubmitGit:
                     command += " cd {0}; git submodule init;".format(project_destination)
                     for submodule in git_project_submodules:
                         command += " git submodule update {0};".format(submodule)
-                output = subprocess.check_output(command, shell=True)
+                if git_remote_project_path == '':
+                    output = subprocess.check_output(command, shell=True)
+                else:
+
+                    command="cd {0} && {1}".format(git_remote_path,command)
+                    hpcarch.send_command(command)
             except subprocess.CalledProcessError:
                 Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
                 shutil.rmtree(project_path)
@@ -200,12 +215,12 @@ class AutosubmitGit:
                     for submodule in git_project_submodules:
                         command += " git submodule update  {0};".format(submodule)
                 Log.debug('{0}', command)
-                output = subprocess.check_output(command, shell=True)
-                #Log.debug('{0}:{1}', command, output)
-                #command " git config --file .gitmodules --get-regexp path | awk '{ print $2 }' " you can change path per url
-                #https://stackoverflow.com/questions/27188899/shallow-clone-with-submodules-in-git-how-to-use-pointed-commits-and-not-latest
-                #../../svn/ecearth-mirror.git
-                # git clone -n --depth=1 --separate-git-dir sources https://earth.bsc.es/svn/ecearth-mirror.git sources
+                if git_remote_project_path == '':
+                    output = subprocess.check_output(command, shell=True)
+                else:
+                    hpcarch.send_command(command)
+
+
             except subprocess.CalledProcessError:
                 Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
                 shutil.rmtree(project_path)

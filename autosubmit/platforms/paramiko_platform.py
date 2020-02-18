@@ -502,14 +502,14 @@ class ParamikoPlatform(Platform):
                 if s != '':
                     self._ssh_output += s
             for errorLine in stderr_readlines:
-                if errorLine.find("submission failed") != -1:
+                if errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1:
                     Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                     return False
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
-
-            Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
+                else:
+                    Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)

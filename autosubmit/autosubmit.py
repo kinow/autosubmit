@@ -2871,7 +2871,10 @@ class Autosubmit:
         """
         project_destination = as_conf.get_project_destination()
         if project_type == "git":
-            return AutosubmitGit.clone_repository(as_conf, force)
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            hpcarch=submitter.platforms[as_conf.get_platform().lower()]
+            return AutosubmitGit.clone_repository(as_conf, force,hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
             svn_project_revision = as_conf.get_svn_project_revision()
