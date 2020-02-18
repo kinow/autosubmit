@@ -51,5 +51,15 @@ class Dependency(object):
         self.sign = sign
         self.delay = delay
         self.splits = splits
-        self.select_chunks = select_chunks
+        self.select_chunks_dest = list()
+        self.select_chunks_orig = list()
+        for chunk_relation in select_chunks:
+            self.select_chunks_dest.append(chunk_relation[0])
+            if len(chunk_relation) > 1:
+                self.select_chunks_orig.append(chunk_relation[1])
+            else:
+                self.select_chunks_orig.append([])
+
+
+
 
