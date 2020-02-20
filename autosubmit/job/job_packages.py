@@ -208,7 +208,7 @@ class JobPackageArray(JobPackageBase):
         filename += '.{0}'.format(index)
         input_content = self._job_scripts[self.jobs[index - 1].name]
         open(os.path.join(self._tmp_path, filename), 'w').write(input_content)
-        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
+        os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
 
     def _create_common_script(self, filename):
@@ -217,7 +217,7 @@ class JobPackageArray(JobPackageBase):
                                                            directives=self.platform.custom_directives)
         filename += '.cmd'
         open(os.path.join(self._tmp_path, filename), 'w').write(script_content)
-        os.chmod(os.path.join(self._tmp_path, filename), 0o775)
+        os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
 
     def _send_files(self):
@@ -252,7 +252,7 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread'):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
@@ -263,6 +263,7 @@ class JobPackageThread(JobPackageBase):
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         self.queue = jobs[0]._queue
+        self.method = method
 #pipeline
     @property
     def name(self):
@@ -301,6 +302,7 @@ class JobPackageThread(JobPackageBase):
         self._job_dependency = dependency
 
     def _create_scripts(self, configuration):
+
         for i in range(1, len(self.jobs) + 1):
             self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
             self.jobs[i - 1].remote_logs = (
@@ -313,7 +315,7 @@ class JobPackageThread(JobPackageBase):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
         open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
-        os.chmod(os.path.join(self._tmp_path, script_file), 0o775)
+        os.chmod(os.path.join(self._tmp_path, script_file), 0o755)
         return script_file
 
     def _send_files(self):
@@ -409,7 +411,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
         open(os.path.join(self._tmp_path, script_file), 'w').write(script_content)
-        os.chmod(os.path.join(self._tmp_path, script_file), 0o775)
+        os.chmod(os.path.join(self._tmp_path, script_file), 0o755)
         return script_file
 
     def _send_files(self):
@@ -474,8 +476,9 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict()):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread'):
         super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
+        self.method = method
         self._queue = self.queue
         for job in jobs:
             if job.wallclock > self._wallclock:
@@ -494,7 +497,7 @@ class JobPackageHorizontal(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower())
 
 class JobPackageHybrid(JobPackageThread):
     """
@@ -550,3 +553,4 @@ class JobPackageHorizontalVertical(JobPackageHybrid):
                                                  jobs_scripts=self._jobs_scripts, dependency=self._job_dependency,
                                                  jobs_resources=self._jobs_resources, expid=self._expid,
                                                  rootdir=self.platform.root_dir, directives=self._custom_directives,threads=self._threads)
+

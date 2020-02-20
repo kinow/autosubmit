@@ -252,7 +252,7 @@ class ParamikoPlatform(Platform):
                 self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
             else:
                 try:
-                    self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
+                    #self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
                     self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
                 except (IOError):
                     pass

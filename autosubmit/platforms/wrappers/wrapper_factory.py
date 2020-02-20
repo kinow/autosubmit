@@ -19,7 +19,8 @@
 
 from autosubmit.platforms.wrappers.wrapper_builder import WrapperDirector, PythonVerticalWrapperBuilder, \
     PythonHorizontalWrapperBuilder, PythonHorizontalVerticalWrapperBuilder, PythonVerticalHorizontalWrapperBuilder, \
-    BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder
+    BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder, SrunHorizontalWrapperBuilder
+from autosubmit.config.config_common import AutosubmitConfig
 
 
 class WrapperFactory(object):
@@ -75,7 +76,11 @@ class SlurmWrapperFactory(WrapperFactory):
         return PythonVerticalWrapperBuilder(**kwargs)
 
     def horizontal_wrapper(self, **kwargs):
-        return PythonHorizontalWrapperBuilder(**kwargs)
+
+        if kwargs["method"] == 'srun':
+            return SrunHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonHorizontalWrapperBuilder(**kwargs)
 
     def hybrid_wrapper_horizontal_vertical(self, **kwargs):
         return PythonHorizontalVerticalWrapperBuilder(**kwargs)
@@ -86,7 +91,7 @@ class SlurmWrapperFactory(WrapperFactory):
     def header_directives(self, **kwargs):
 
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'])
+                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'])
 
     def allocated_nodes(self):
         return self.platform.allocated_nodes()

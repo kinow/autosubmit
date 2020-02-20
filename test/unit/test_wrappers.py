@@ -161,6 +161,8 @@ class TestWrappers(TestCase):
         self.config.get_wrapper_crossdate = Mock(return_value=False)
         self.config.get_remote_dependencies = Mock(return_value=False)
         self.config.get_wrapper_jobs = Mock(return_value='None')
+        self.config.get_wrapper_method = Mock(return_value='ASThread')
+
         self.job_packager = JobPackager(self.config, self.platform, self.job_list)
     
     ### ONE SECTION WRAPPER ###

@@ -40,7 +40,7 @@ class SagaPlatform(Platform):
                 destiny_path = os.path.join(self.get_files_path(), filename)
                 subprocess.check_call(['ecaccess-file-put', os.path.join(self.tmp_path, filename),
                                        '{0}:{1}'.format(self.host, destiny_path)])
-                subprocess.check_call(['ecaccess-file-chmod', '740', '{0}:{1}'.format(self.host, destiny_path)])
+                subprocess.check_call(['ecaccess-file-chmod', '750', '{0}:{1}'.format(self.host, destiny_path)])
                 return
             except subprocess.CalledProcessError:
                 raise Exception("Could't send file {0} to {1}:{2}".format(os.path.join(self.tmp_path, filename),
