@@ -52,7 +52,7 @@ class JobPackager(object):
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
-        self.wrapper_method = self._as_config.get_wrapper_method()
+        self.wrapper_method = self._as_config.get_wrapper_method().lower()
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 

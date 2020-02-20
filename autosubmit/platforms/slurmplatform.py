@@ -161,27 +161,47 @@ class SlurmPlatform(ParamikoPlatform):
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads,method="#!/usr/bin/env python"):
         if method =='srun':
             language = "#!/bin/bash"
+            return \
+                language + """
+###############################################################################
+#              {0}
+###############################################################################
+#
+#SBATCH -J {0}
+{1}
+#SBATCH -A {2}
+#SBATCH --output={0}.out
+#SBATCH --error={0}.err
+#SBATCH -t {3}:00
+#SBATCH -n {4}
+#SBATCH --cpus-per-task={7}
+{5}
+{6}
+#
+###############################################################################
+                """.format(filename, queue, project, wallclock, num_procs, dependency,
+                           '\n'.ljust(13).join(str(s) for s in directives), threads)
         else:
             language = "#!/usr/bin/env python"
-        return \
-        language+"""
-        ###############################################################################
-        #              {0}
-        ###############################################################################
-        #
-        #SBATCH -J {0}
-        {1}
-        #SBATCH -A {2}
-        #SBATCH --output={0}.out
-        #SBATCH --error={0}.err
-        #SBATCH -t {3}:00
-        #SBATCH --cpus-per-task={7}
-        #SBATCH -n {4}
-        {5}
-        {6}
-        #
-        ###############################################################################
-        """.format(filename, queue, project, wallclock, num_procs, dependency,
+            return \
+            language+"""
+###############################################################################
+#              {0}
+###############################################################################
+#
+#SBATCH -J {0}
+{1}
+#SBATCH -A {2}
+#SBATCH --output={0}.out
+#SBATCH --error={0}.err
+#SBATCH -t {3}:00
+#SBATCH --cpus-per-task={7}
+#SBATCH -n {4}
+{5}
+{6}
+#
+###############################################################################
+            """.format(filename, queue, project, wallclock, num_procs, dependency,
                    '\n'.ljust(13).join(str(s) for s in directives),threads)
 
     @staticmethod

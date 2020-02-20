@@ -599,27 +599,27 @@ class SrunWrapperBuilder(WrapperBuilder):
             machinefile.write(machines)
         """).format(self.machinefiles_name, '\n'.ljust(13))
 
-    def build_srun_launcher(self, jobs_list, thread, footer=True):
-        num_procs=int(self.num_procs)/len(jobs_list)
+    def build_srun_launcher(self, jobs_list, threads, footer=True):
         srun_launcher = textwrap.dedent("""
         i=0
         suffix=".cmd"
         for template in "${{{0}[@]}}"; do
             jobname=${{template%"$suffix"}}
-            echo $(date +%s) > "${{jobname}}"_STAT
             out="${{template}}.${{i}}.out" 
             err="${{template}}.${{i}}.err"
+            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+            sleep "0.4"
             ((i=i+1))
-            echo $template
-            srun -N 1 -n {2} $template$i$ > $out 2> $err &
-            echo $template$i$
-        """).format(jobs_list, thread,num_procs, '\n'.ljust(13))
+        done
+        wait
+        """).format(jobs_list, self.threads, '\n'.ljust(13))
         if footer:
             srun_launcher += self._indent(textwrap.dedent("""
+        for template in "${{{0}[@]}}"; do
             suffix_completed=".COMPLETED"
             completed_filename=${{template%"$suffix"}}
             completed_filename="$completed_filename"_COMPLETED
-            completed_path=${{pwd}}$completed_filename
+            completed_path=${{PWD}}/$completed_filename
             if [ -f "$completed_path" ];
             then
                 echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
@@ -627,13 +627,7 @@ class SrunWrapperBuilder(WrapperBuilder):
                 echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED" 
             fi
         done
-        wait
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)),0)
-        else:
-            srun_launcher += self._indent(textwrap.dedent("""
-        done
-        wait
-                       """).format(jobs_list, self.exit_thread, '\n'.ljust(13)),0)
         return srun_launcher
 
 
