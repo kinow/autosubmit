@@ -509,7 +509,7 @@ class JobPackageHybrid(JobPackageThread):
         super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources)
         self.jobs_lists = jobs
         self._num_processors = int(num_processors)
-        self._threads = jobs[0].threads
+        self._threads = all_jobs[0].threads
         self._wallclock = total_wallclock
         self._name = self._expid + '_' + self.FILE_PREFIX + "_{0}_{1}_{2}".format(str(int(time.time())) +
                                                                                   str(random.randint(1, 10000)),
