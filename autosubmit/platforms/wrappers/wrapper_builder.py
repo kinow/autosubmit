@@ -657,46 +657,71 @@ class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
 
 class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
     def build_imports(self):
-        scripts_bash = "("
-        for script in self.job_scripts:
-            scripts_bash+=str("\""+script+"\"")+" "
-        scripts_bash += ")"
-        return textwrap.dedent("""
-        # Defining scripts to be run
-        declare -a scripts={0}
-        """).format(str(scripts_bash), '\n'.ljust(13))
+        scripts_bash = textwrap.dedent("""
+        # Defining scripts to be run""")
+        list_index=0
+        scripts_array_vars = "( "
+        for scripts in self.job_scripts:
+            built_array = "("
+            for script in scripts:
+                built_array+= str("\"" + script + "\"") + " "
+            built_array += ")"
+            scripts_bash+=textwrap.dedent("""
+            declare -a scripts_{0}={1}
+            """).format(str(list_index),str(built_array), '\n'.ljust(13))
+            scripts_array_vars += "\"scripts_{0}\" ".format(list_index)
+            list_index += 1
+        scripts_array_vars += ")"
+        scripts_bash += textwrap.dedent("""
+                   declare -a scripts_list={0}
+                   """).format(str(scripts_array_vars), '\n'.ljust(13))
+        return scripts_bash
+
     def build_srun_launcher(self, jobs_list, footer=True):
         srun_launcher = textwrap.dedent("""
-        i=0
         suffix=".cmd"
-        for template in "${{{0}[@]}}"; do
-            jobname=${{template%"$suffix"}}
-            out="${{template}}.${{i}}.out"
-            err="${{template}}.${{i}}.err"
-            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
-            sleep "0.2"
-            ((i=i+1))
+        while (( ${{0}[@]} )); do
+            array_index=0
+            for script_list in "${{{0}[@]}}"; do
+                declare -n scripts=$script_list
+                i=0
+                for template in "${{scripts[@]}}"; do
+                    jobname=${{template%"$suffix"}}
+                    out="${{template}}.${{i}}.out"
+                    err="${{template}}.${{i}}.err"
+                    srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+                    sleep "0.2"
+                    ((i=i+1))
+                done
+                wait
+            done
         done
-        wait
         """).format(jobs_list, self.threads, '\n'.ljust(13))
         if footer:
             srun_launcher += self._indent(textwrap.dedent("""
-        for template in "${{{0}[@]}}"; do
-            suffix_completed=".COMPLETED"
-            completed_filename=${{template%"$suffix"}}
-            completed_filename="$completed_filename"_COMPLETED
-            completed_path=${{PWD}}/$completed_filename
-            if [ -f "$completed_path" ];
-            then
-                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
-            else
-                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED"
-            fi
+            
+
+        
+        for script_list in "${{{0}[@]}}"; do
+            declare -n scripts=$script_list
+            
+            for template in "${{scripts[@]}}"; do
+                suffix_completed=".COMPLETED"
+                completed_filename=${{template%"$suffix"}}
+                completed_filename="$completed_filename"_COMPLETED
+                completed_path=${{PWD}}/$completed_filename
+                if [ -f "$completed_path" ];
+                then
+                    echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
+                else
+                    echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED"
+                fi
+            done
         done
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 0)
         return srun_launcher
 
     def build_main(self):
         nodelist = self.build_nodes_list()
-        srun_launcher = self.build_srun_launcher("scripts")
+        srun_launcher = self.build_srun_launcher("scripts_list")
         return nodelist, srun_launcher
