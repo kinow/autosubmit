@@ -474,16 +474,7 @@ class BashHorizontalWrapperBuilder(BashWrapperBuilder):
 class SrunWrapperBuilder(WrapperBuilder):
 
     def build_imports(self):
-        scripts_bash = "("
-
-        for script in self.job_scripts:
-            scripts_bash+=str("\""+script+"\"")+" "
-        scripts_bash += ")"
-        return textwrap.dedent("""
-
-        # Defining scripts to be run
-        declare -a scripts={0}
-        """).format(str(scripts_bash), '\n'.ljust(13))
+        pass
 
     # hybrids
     def build_joblist_thread(self):
@@ -599,7 +590,36 @@ class SrunWrapperBuilder(WrapperBuilder):
             machinefile.write(machines)
         """).format(self.machinefiles_name, '\n'.ljust(13))
 
-    def build_srun_launcher(self, jobs_list, threads, footer=True):
+    def build_srun_launcher(self, jobs_list, footer=True):
+        pass
+
+
+    # all should override -> abstract!
+    def build_main(self):
+        pass
+
+    def dependency_directive(self):
+        pass
+
+    def queue_directive(self):
+        pass
+
+    def _indent(self, text, amount, ch=' '):
+        padding = amount * ch
+        return ''.join(padding + line for line in text.splitlines(True))
+
+class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
+    def build_imports(self):
+        scripts_bash = "("
+        for script in self.job_scripts:
+            scripts_bash+=str("\""+script+"\"")+" "
+        scripts_bash += ")"
+        return textwrap.dedent("""
+        # Defining scripts to be run
+        declare -a scripts={0}
+        """).format(str(scripts_bash), '\n'.ljust(13))
+
+    def build_srun_launcher(self, jobs_list, footer=True):
         srun_launcher = textwrap.dedent("""
         i=0
         suffix=".cmd"
@@ -608,7 +628,7 @@ class SrunWrapperBuilder(WrapperBuilder):
             out="${{template}}.${{i}}.out" 
             err="${{template}}.${{i}}.err"
             srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
-            sleep "0.4"
+            sleep "0.2"
             ((i=i+1))
         done
         wait
@@ -630,24 +650,53 @@ class SrunWrapperBuilder(WrapperBuilder):
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)),0)
         return srun_launcher
 
-
-    # all should override -> abstract!
     def build_main(self):
-        pass
+        nodelist = self.build_nodes_list()
+        srun_launcher = self.build_srun_launcher("scripts")
+        return nodelist, srun_launcher
 
-    def dependency_directive(self):
-        pass
-
-    def queue_directive(self):
-        pass
-
-    def _indent(self, text, amount, ch=' '):
-        padding = amount * ch
-        return ''.join(padding + line for line in text.splitlines(True))
-
-class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
+class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
+    def build_imports(self):
+        scripts_bash = "("
+        for script in self.job_scripts:
+            scripts_bash+=str("\""+script+"\"")+" "
+        scripts_bash += ")"
+        return textwrap.dedent("""
+        # Defining scripts to be run
+        declare -a scripts={0}
+        """).format(str(scripts_bash), '\n'.ljust(13))
+    def build_srun_launcher(self, jobs_list, footer=True):
+        srun_launcher = textwrap.dedent("""
+        i=0
+        suffix=".cmd"
+        for template in "${{{0}[@]}}"; do
+            jobname=${{template%"$suffix"}}
+            out="${{template}}.${{i}}.out"
+            err="${{template}}.${{i}}.err"
+            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+            sleep "0.2"
+            ((i=i+1))
+        done
+        wait
+        """).format(jobs_list, self.threads, '\n'.ljust(13))
+        if footer:
+            srun_launcher += self._indent(textwrap.dedent("""
+        for template in "${{{0}[@]}}"; do
+            suffix_completed=".COMPLETED"
+            completed_filename=${{template%"$suffix"}}
+            completed_filename="$completed_filename"_COMPLETED
+            completed_path=${{PWD}}/$completed_filename
+            if [ -f "$completed_path" ];
+            then
+                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
+            else
+                echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED"
+            fi
+        done
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 0)
+        return srun_launcher
 
     def build_main(self):
         nodelist = self.build_nodes_list()
-        srun_launcher = self.build_srun_launcher("scripts", "JobThread")
+        srun_launcher = self.build_srun_launcher("scripts")
         return nodelist, srun_launcher
