@@ -89,7 +89,6 @@ class SlurmWrapperFactory(WrapperFactory):
         return PythonVerticalHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
-
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
                                             kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'])
 
