@@ -356,7 +356,7 @@ class Platform(object):
                             #start = time()
                             #Log.info("Attempting job identification of " + str(jobid))                            
                             f.seek(0,0)
-                            f.write(title_job + "\n\n" + content)                                        
+                            f.write(title_job + "\n\n" + first_line + content)                                        
                         f.close()      
                             #finish = time()    
                             #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
