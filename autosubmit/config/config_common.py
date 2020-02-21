@@ -717,7 +717,7 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', 'none')
+        return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', '')
     def get_submodules_list(self):
         """
         Returns submodules list from experiment's config file
