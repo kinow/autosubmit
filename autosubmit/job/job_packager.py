@@ -325,7 +325,7 @@ class JobPackager(object):
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
 
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
-                                            jobs_resources=jobs_resources)
+                                            jobs_resources=jobs_resources,method=self.wrapper_method)
 
 
 class JobPackagerVertical(object):

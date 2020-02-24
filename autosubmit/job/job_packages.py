@@ -504,10 +504,11 @@ class JobPackageHybrid(JobPackageThread):
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict()):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread"):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
-        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources)
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method)
         self.jobs_lists = jobs
+        self.method=method
         self._num_processors = int(num_processors)
         self._threads = all_jobs[0].threads
         self._wallclock = total_wallclock
