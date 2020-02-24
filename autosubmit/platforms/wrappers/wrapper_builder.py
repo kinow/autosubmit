@@ -691,7 +691,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
             prev_completed_path=""
             for script_list in "${{{0}[@]}}"; do
                 declare -i i=${{scripts_index[$i_list]}}
-                if [ $i -ge 0 ]; then 
+                if [ $i -ne -1 ]; then 
                     declare -n scripts=$script_list
                     template=${{scripts[$i]}}
                     prev_template_index=$((i-1))
@@ -701,6 +701,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                     err="${{template}}.${{i}}.err"
                     if [ $i -eq 0 ]; then
                         completed_filename=${{template%"$suffix"}}
+                        prev_template=$template
                     else 
                         completed_filename=${{prev_template%"$suffix"}}
                     fi
@@ -709,10 +710,10 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
 
                     if [ -f "$completed_path" ];
                     then
-                        echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
+                        echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
                         if [ $i -ge "${{#scripts[@]}}" ]; then
                             unset aux_scripts[$i_list]
-                            $i=-1
+                            i="-1"
                         fi
                     fi    
                     if [ $i -lt "${{#scripts[@]}}" ]; then 
