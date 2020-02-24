@@ -661,6 +661,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         # Defining scripts to be run""")
         list_index=0
         scripts_array_vars = "( "
+        scripts_array_index = "( "
         for scripts in self.job_scripts:
             built_array = "("
             for script in scripts:
@@ -670,55 +671,65 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
             declare -a scripts_{0}={1}
             """).format(str(list_index),str(built_array), '\n'.ljust(13))
             scripts_array_vars += "\"scripts_{0}\" ".format(list_index)
+            scripts_array_index += "\"0\" ".format(list_index)
             list_index += 1
         scripts_array_vars += ")"
+        scripts_array_index += ")"
         scripts_bash += textwrap.dedent("""
                    declare -a scripts_list={0}
-                   """).format(str(scripts_array_vars), '\n'.ljust(13))
+                   declare -a scripts_index={1}
+                   """).format(str(scripts_array_vars),str(scripts_array_index), '\n'.ljust(13))
         return scripts_bash
 
     def build_srun_launcher(self, jobs_list, footer=True):
         srun_launcher = textwrap.dedent("""
         suffix=".cmd"
-        while (( ${{0}[@]} )); do
-            array_index=0
+        suffix_completed=".COMPLETED"
+        aux_scripts=("${{{0}[@]}}")
+        while [ "${{#aux_scripts[@]}}" -gt 0 ]; do
+            i_list=0
+            prev_completed_path=""
             for script_list in "${{{0}[@]}}"; do
-                declare -n scripts=$script_list
-                i=0
-                for template in "${{scripts[@]}}"; do
+                declare -i i=${{scripts_index[$i_list]}}
+                if [ $i -ge 0 ]; then 
+                    declare -n scripts=$script_list
+                    template=${{scripts[$i]}}
+                    prev_template_index=$((i-1))
+                    prev_template=${{scripts[$prev_template_index]}}
                     jobname=${{template%"$suffix"}}
                     out="${{template}}.${{i}}.out"
                     err="${{template}}.${{i}}.err"
-                    srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
-                    sleep "0.2"
-                    ((i=i+1))
-                done
-                wait
-            done
-        done
-        """).format(jobs_list, self.threads, '\n'.ljust(13))
-        if footer:
-            srun_launcher += self._indent(textwrap.dedent("""
-            
+                    if [ $i -eq 0 ]; then
+                        completed_filename=${{template%"$suffix"}}
+                    else 
+                        completed_filename=${{prev_template%"$suffix"}}
+                    fi
+                    completed_filename="$completed_filename"_COMPLETED
+                    completed_path=${{PWD}}/$completed_filename
 
-        
-        for script_list in "${{{0}[@]}}"; do
-            declare -n scripts=$script_list
-            
-            for template in "${{scripts[@]}}"; do
-                suffix_completed=".COMPLETED"
-                completed_filename=${{template%"$suffix"}}
-                completed_filename="$completed_filename"_COMPLETED
-                completed_path=${{PWD}}/$completed_filename
-                if [ -f "$completed_path" ];
-                then
-                    echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
-                else
-                    echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has FAILED"
-                fi
+                    if [ -f "$completed_path" ];
+                    then
+                        echo "`date '+%d/%m/%Y_%H:%M:%S'` $template has been COMPLETED"
+                        if [ $i -ge "${{#scripts[@]}}" ]; then
+                            unset aux_scripts[$i_list]
+                            $i=-1
+                        fi
+                    fi    
+                    if [ $i -lt "${{#scripts[@]}}" ]; then 
+                        if [ $i -eq 0 ] || [ -f "$completed_path" ] ; then
+                            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+                            ((i=i+1))
+                        fi
+                    fi
+                    sleep "0.2"
+                    scripts_index[$i_list]=$i
+                    ((i_list=i_list+1))
+                fi       
             done
         done
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 0)
+        wait
+        """).format(jobs_list, self.threads, '\n'.ljust(13))
+
         return srun_launcher
 
     def build_main(self):
