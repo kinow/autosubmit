@@ -694,8 +694,6 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                 if [ $i -ne -1 ]; then 
                     declare -n scripts=$script_list
                     template=${{scripts[$i]}}
-                    prev_template_index=$((i-1))
-                    prev_template=${{scripts[$prev_template_index]}}
                     jobname=${{template%"$suffix"}}
                     out="${{template}}.${{i}}.out"
                     err="${{template}}.${{i}}.err"
@@ -703,6 +701,8 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                         completed_filename=${{template%"$suffix"}}
                         prev_template=$template
                     else 
+                        prev_template_index=$((i-1))
+                        prev_template=${{scripts[$prev_template_index]}}
                         completed_filename=${{prev_template%"$suffix"}}
                     fi
                     completed_filename="$completed_filename"_COMPLETED
