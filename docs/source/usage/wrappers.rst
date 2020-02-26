@@ -45,8 +45,15 @@ Number of jobs in a package
 **********************
 
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
-    - If not defined, it considers the **MAXWRAPPEDJOBS** defined under [wrapper] in ``autosubmit_cxxx.conf``
-        - If **MAXWRAPPEDJOBS** is not defined, then **TOTALJOBS** is used by default
+    - If not defined, it considers the **MAX_WRAPPED** defined under [wrapper] in ``autosubmit_cxxx.conf``
+        - If **MAX_WRAPPED** is not defined, then **TOTALJOBS** is used by default
+
+.. code-block:: ini
+    [wrapper]
+    TYPE = <ANY>
+    MIN_WRAPPED = 2
+    MAX_WRAPPED = 999
+
 
 Wrapper check time
 **********************
@@ -110,11 +117,21 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
     [marenostrum4]
     ...
     MAX_PROCESSORS = 2400
+Shared-memory Experiments
+**********************
 
+There is also the possibility of setting the option **METHOD** to SRUN in the wrapper directive (**ONLY** for vertical and vertical-horizontal wrappers).
+
+This allows to use SRUN instead of rely in machinefiles to work in parallel.
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = vertical
+    METHOD = srun
 Remote dependencies
 **********************
 
-There is also the possibility of setting the option **DEPENDENCIES** to True in the wrapper directive (**ONLY** for vertical or horizontal wrappers).
+There is also the possibility of setting the option **DEPENDENCIES** to True in the wrapper directive.
 
 This allows more than one package containing wrapped jobs to be submitted at the same time, even when the dependencies between jobs aren't yet satisfied. This is only useful for cases when the job scheduler considers the time a job has been queuing to determine the job's priority (and the scheduler understands the dependencies set between the submitted packages). New packages can be created as long as the total number of jobs are below than the number defined in the **TOTALJOBS** variable.
 
@@ -123,6 +140,8 @@ This allows more than one package containing wrapped jobs to be submitted at the
     [wrapper]
     TYPE = vertical
     DEPENDENCIES = True
+
+
 
 Hybrid wrapper
 ==========================
