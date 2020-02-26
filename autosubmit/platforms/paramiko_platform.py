@@ -133,8 +133,16 @@ class ParamikoPlatform(Platform):
             return None
 
     def remove_multiple_files(self, filenames):
-        command = "rm " + filenames
+        #command = "rm " + filenames
+        command = "rm"
 
+        if "cmd" in filenames:
+            command += " "+self.remote_log_dir+"/"+"*.cmd"
+        if "COMPLETED" in filenames or "STAT" in filenames:
+            #command += " "+self.remote_log_dir+"/"+"*COMPLETED"
+            command+= " "+filenames
+        #if "STAT" in filenames:
+        #    command += " "+self.remote_log_dir+"/"+"*STAT"
         if self.send_command(command, ignore_log=True):
             return self._ssh_output
         else:
