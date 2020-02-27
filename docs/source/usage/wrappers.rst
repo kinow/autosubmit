@@ -205,13 +205,19 @@ In `autosubmit_cxxx.conf`:
 
 .. code-block:: ini
 
-    [wrapper]
-    TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
-    JOBS_IN_WRAPPER = # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
-    CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
-    DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
-    MAXWRAPPEDJOBS = # OPTIONAL. Integer value, overrides TOTALJOBS
+    # Basic Configuration of wrapper
+    #TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
+    # JOBS_IN_WRAPPER = Sections that should be wrapped together ex SIM
+    # MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2
+    # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS
 
+    [wrapper]
+    TYPE = Vertical #REQUIRED
+    JOBS_IN_WRAPPER = SIM # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
+    DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
+    MIN_WRAPPED = 2
+    MAX_WRAPPED = 9999 # OPTIONAL. Integer value, overrides TOTALJOBS
+    CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
 
 In `platforms_cxxx.conf`:
 
