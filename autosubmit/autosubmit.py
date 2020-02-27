@@ -2919,7 +2919,7 @@ class Autosubmit:
             if os.path.exists(project_path):
                 Log.info("Using project folder: {0}", project_path)
                 if  os.path.exists(local_destination):
-                    if not force:
+                    if force:
                         try:
                             cmd=["rsync -ach --info=progress2 " +local_project_path+"/* "+local_destination]
                             subprocess.call(cmd,shell=True)
