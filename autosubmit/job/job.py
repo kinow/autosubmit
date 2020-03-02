@@ -1163,6 +1163,7 @@ class WrapperJob(Job):
                     if self.hold is False:
                         self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         self.status = Status.QUEUING
+
                         Log.info("Job {0} is QUEUING {1}", self.name, reason)
                     else:
                         self.status = Status.HELD
@@ -1175,6 +1176,8 @@ class WrapperJob(Job):
                 else:
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
         for job in jobs:
+            if self.status == Status.QUEUING:
+                job.hold = False
             job.status = self.status
     def _check_wrapper_status(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
