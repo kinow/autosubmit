@@ -57,7 +57,7 @@ class JobPackager(object):
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
         Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold)))
-        Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
+        Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit) #TODO
         if len(jobs_list.get_ready(platform,hold=hold)) > 0:
             Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold)))
         self._maxTotalProcessors = 0

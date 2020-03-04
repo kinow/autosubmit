@@ -133,20 +133,19 @@ class ParamikoPlatform(Platform):
             return None
 
     def remove_multiple_files(self, filenames):
-        #command = "rm " + filenames
-        command = "rm"
+        #command = "rm"
 
-        if "cmd" in filenames:
-            command += " "+self.remote_log_dir+"/"+"*.cmd"
-        if "COMPLETED" in filenames or "STAT" in filenames:
-            #command += " "+self.remote_log_dir+"/"+"*COMPLETED"
-            command+= " "+filenames
-        #if "STAT" in filenames:
-        #    command += " "+self.remote_log_dir+"/"+"*STAT"
+        log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
+        multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
+        multiple_delete_file = open(multiple_delete_previous_run, 'w+').write("rm -f "+filenames)
+        os.chmod(multiple_delete_previous_run, 0o770)
+        self.send_file(multiple_delete_previous_run, False)
+        command = os.path.join(self.get_files_path(),"multiple_delete_previous_run.sh")
+
         if self.send_command(command, ignore_log=True):
             return self._ssh_output
         else:
-            return None
+            return ""
 
     def send_file(self, filename, check=True):
         """
@@ -262,8 +261,9 @@ class ParamikoPlatform(Platform):
                 try:
                     #self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
                     self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
+                    return True
                 except (IOError):
-                    pass
+                    return False
             #ftp.close()
             
             return True
@@ -466,12 +466,12 @@ class ParamikoPlatform(Platform):
 
         if not self.restore_connection():
             return False
-        if "-rP" or "mv" or "find" or "convertLink" in command:
-            timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+        if "-rP" in command or "find" in command or "convertLink" in command:
+            timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
-            timeout = 20.0
+            timeout = 60/2
         else:
-            timeout = 150.0
+            timeout = 60*2
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel

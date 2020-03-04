@@ -70,7 +70,7 @@ class SlurmPlatform(ParamikoPlatform):
         :param job: job object
         :type job: autosubmit.job.job.Job
         :return: job id for  submitted jobs
-        :rtype: list(int)
+        :rtype: list(str)
         """
         self.send_file(self.get_submit_script(),False)
         cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
