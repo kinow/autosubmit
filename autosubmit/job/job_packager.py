@@ -44,15 +44,13 @@ class JobPackager(object):
         self._jobs_list = jobs_list
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs_len = len(jobs_list.packages_dict.items())
-        queuing_jobs_not_wrapped = [job for job in jobs_list._job_list if (platform is None or job.platform is platform) and
-                job.status == Status.QUEUING and job.packed is False]
-        queuing_jobs_len+=len(queuing_jobs_not_wrapped)
-        waiting_jobs = len(jobs_list.get_submitted(platform)) + queuing_jobs_len
+        queuing_jobs_len += len(jobs_list.get_queuing(platform,wrapper=True))
+        waiting_jobs = len(jobs_list.get_submitted(platform,wrapper=True)) + queuing_jobs_len + len(jobs_list.packages_dict.items())
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
         # .total_jobs Maximum number of jobs at the same time
-        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform))
+        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform,wrapper=True)) + len(jobs_list.packages_dict.items())
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
@@ -60,10 +58,10 @@ class JobPackager(object):
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold,wrapper=True)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
         if len(jobs_list.get_ready(platform,hold=hold)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold)))
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold,wrapper=True)))
         self._maxTotalProcessors = 0
 
     def build_packages(self,only_generate=False, jobs_filtered=[],hold=False):
@@ -85,10 +83,12 @@ class JobPackager(object):
                 wrapper_jobs_visited = []
 
                 for held_job in jobs_in_held_status:
-                    if self._jobs_list.job_package_map and held_job.id in self._jobs_list.job_package_map:
-                        if held_job.id not in wrapper_jobs_visited:
-                            current_held_jobs += 1
-                            wrapper_jobs_visited.append(held_job.id)
+                    if self._jobs_list.job_package_map:
+                        for package in self._jobs_list.job_package_map:
+                            if held_job.id in package.id:
+                                if held_job.id not in wrapper_jobs_visited:
+                                    current_held_jobs += 1
+                                    wrapper_jobs_visited.append(held_job.id)
                     else:
                         current_held_jobs += 1
                 remaining_held_slots = 10 - current_held_jobs

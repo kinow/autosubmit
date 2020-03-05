@@ -320,7 +320,6 @@ class ParamikoPlatform(Platform):
         """
         job_id = job.id
         job_status = Status.UNKNOWN
-
         if type(job_id) is not int and type(job_id) is not str:
             # URi: logger
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)

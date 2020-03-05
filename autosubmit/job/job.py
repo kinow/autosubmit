@@ -481,7 +481,7 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
-    def update_status(self, copy_remote_logs=False,iswrapper=False):
+    def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -497,34 +497,39 @@ class Job(object):
             self.check_completion()
         else:
             self.status = new_status
-        if self.status == Status.QUEUING or self.status == Status.HELD:
-            if iswrapper:
-                reason = str()
-                if self.platform.type == 'slurm':
-                    self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-                    reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
-                    if self._queuing_reason_cancel(reason):
-                        Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
-                        self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
-                        self.new_status =Status.FAILED
-                        self.update_status(copy_remote_logs,True)
-                        return
-                    if reason == '(JobHeldUser)':
-                        self.new_status = Status.HELD
-                        self.hold = True
-                        Log.info("Job {0} is HELD", self.name)
 
-                    elif reason == '(JobHeldAdmin)':
-                        Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
-                        self.hold = True
-                        self.new_status = Status.WAITING
-                        self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
-                    else:
-                        self.hold = False
-                        self.new_status = Status.QUEUING
-                        Log.info("Job {0} is QUEUING {1}", self.name, reason)
-        elif self.status is Status.RUNNING:
+        # if self.status == Status.QUEUING or self.status == Status.HELD:
+        #     reason = str()
+        #     if self.platform.type == 'slurm':
+        #         self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+        #         reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
+        #         if self._queuing_reason_cancel(reason):
+        #             Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name, reason)
+        #             self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+        #             self.new_status =Status.FAILED
+        #             self.update_status(copy_remote_logs,True)
+        #             return
+        #         if reason == '(JobHeldUser)':
+        #             self.new_status = Status.HELD
+        #             self.hold = True
+        #             Log.info("Job {0} is HELD", self.name)
+        #
+        #         elif reason == '(JobHeldAdmin)':
+        #             Log.info("Job {0} Failed to be HELD, canceling... ", self.name)
+        #             self.hold = True
+        #             self.new_status = Status.WAITING
+        #             self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+        #         else:
+        #             self.hold = False
+        #             self.new_status = Status.QUEUING
+        #             Log.info("Job {0} is QUEUING {1}", self.name, reason)
+
+        if self.status is Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
+        elif self.status is Status.QUEUING:
+            Log.info("Job {0} is QUEUING", self.name)
+        elif self.status is Status.HELD:
+            Log.info("Job {0} is HELD", self.name)
         elif self.status is Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status is Status.FAILED:
@@ -1044,8 +1049,9 @@ class WrapperJob(Job):
             return False
 
     def check_status(self, status):
-        #self.update_inner_jobs_queue()
         self.status = status
+        self.job_package_map[self.id].update_inner_jobs_queue()
+
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
             self.cancel_failed_wrapper_job()
@@ -1096,7 +1102,6 @@ class WrapperJob(Job):
             self._check_finished_job(job)
 
     def _check_running_jobs(self):
-
         not_finished_jobs_aux = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED ] ]
         not_finished_jobs = list()
         for job in not_finished_jobs_aux:
@@ -1145,7 +1150,7 @@ done
                                 Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
                                 self.running_jobs_start[job] = start_time
                                 job.new_status=Status.RUNNING
-                                job.update_status(self.as_config.get_copy_remote_logs() == 'true',True)
+                                job.update_status(self.as_config.get_copy_remote_logs() == 'true')
                             elif len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
                             else:
@@ -1153,6 +1158,8 @@ done
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                                 self._check_finished_job(job)
                         else:
+                            job.new_status=Status.QUEUING
+                            job.update_status(False)
                             Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
 
     def _check_finished_job(self, job):

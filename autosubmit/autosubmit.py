@@ -1258,7 +1258,7 @@ class Autosubmit:
                                                                       Status.VALUE_TO_KEY[job.status],
                                                                       as_conf.get_mails_to())
                             save = True
-                    if job_list.update_list(as_conf) or save:
+                    if save or job_list.update_list(as_conf) :
                         job_list.save()
 
                     if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False):
