@@ -1020,7 +1020,7 @@ class JobList:
                 Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):
                     if job.name not in all_parents_completed:
-                        tmp = [parent for parent in job.parents if (parent.status == Status.COMPLETED or (parent.status == Status.QUEUING and not parent.hold and parent.name.lower() not in "setup") or parent.status == Status.RUNNING)]
+                        tmp = [parent for parent in job.parents if (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING and "setup" not in parent.name.lower() )]
                         if len(tmp) == len(job.parents):
                             job.status = Status.READY
                             job.hold = True

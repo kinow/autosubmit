@@ -729,11 +729,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 30'
+                template = 'sleep 10'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(30)'
+                template = 'time.sleep(10)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(30)'
+                template = 'Sys.sleep(10)'
             else:
                 template = ''
 
@@ -1044,8 +1044,7 @@ class WrapperJob(Job):
             return False
 
     def check_status(self, status):
-        self.update_inner_jobs_queue()
-
+        #self.update_inner_jobs_queue()
         self.status = status
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
@@ -1068,10 +1067,8 @@ class WrapperJob(Job):
         not_completed_jobs = [job for job in jobs if job.status != Status.COMPLETED]
         not_completed_job_names = [job.name for job in not_completed_jobs]
         job_names = ' '.join(not_completed_job_names)
-
         if job_names:
             completed_files = self.platform.check_completed_files(job_names)
-
             completed_jobs = []
             for job in not_completed_jobs:
                 if completed_files and len(completed_files) > 0:
@@ -1083,7 +1080,6 @@ class WrapperJob(Job):
                     self._check_inner_job_wallclock(job)
             for job in completed_jobs:
                 self.running_jobs_start.pop(job, None)
-
             if self.status == Status.COMPLETED:
                 not_completed_jobs = list(set(not_completed_jobs) - set(completed_jobs))
                 for job in not_completed_jobs:
@@ -1101,7 +1097,7 @@ class WrapperJob(Job):
 
     def _check_running_jobs(self):
 
-        not_finished_jobs_aux = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED, Status.SUBMITTED] ]
+        not_finished_jobs_aux = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED ] ]
         not_finished_jobs = list()
         for job in not_finished_jobs_aux:
             tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
@@ -1157,15 +1153,7 @@ done
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                                 self._check_finished_job(job)
                         else:
-                            job.status = Status.QUEUING
                             Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
-        for job in self.job_list:
-            if job.status != Status.COMPLETED and job.status != Status.FAILED:
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if job.parents is None or len(tmp) == len(job.parents):
-                    job.status = Status.RUNNING
-
-
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):
@@ -1182,7 +1170,6 @@ done
         for job in not_finished_jobs:
             self._check_finished_job(job)
     def update_inner_jobs_queue(self):
-        jobs= [filter_job for filter_job in self.job_list if filter_job.status in [Status.SUBMITTED,Status.HELD ,Status.QUEUING, Status.RUNNING]] #UPDATE STATUS OF JOBS
         if self.status == Status.QUEUING or self.status == Status.HELD :
             reason = str()
             if self.platform.type == 'slurm':
@@ -1208,19 +1195,8 @@ done
                     self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
                 else:
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
-        for job in jobs:
-            if self.status == Status.QUEUING or self.status == Status.RUNNING:
-                job.hold = False
-                if self.status == Status.RUNNING:
-                    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                    if job.parents is None or len(tmp) == len(job.parents):
-                        job.status = Status.RUNNING
-                    else:
-                        job.status = Status.QUEUING
-                else:
-                    job.status = Status.QUEUING
-            else:
-                job.status = self.status
+                for job in self.job_list:
+                    job.status = self.status
     def _check_wrapper_status(self):
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         if not self.running_jobs_start and not_finished_jobs:
