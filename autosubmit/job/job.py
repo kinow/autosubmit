@@ -1050,8 +1050,8 @@ class WrapperJob(Job):
 
     def check_status(self, status):
         self.status = status
-        self.job_package_map[self.id].update_inner_jobs_queue()
-
+        #self.job_package_map[self.id].update_inner_jobs_queue()
+        self.update_inner_jobs_queue()
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
             self.cancel_failed_wrapper_job()
