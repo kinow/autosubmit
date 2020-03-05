@@ -1060,7 +1060,6 @@ class WrapperJob(Job):
 
 
     def check_inner_job_status(self):
-        self.update_inner_jobs_queue()
         self._check_running_jobs()
         self.check_inner_jobs_completed(self.running_jobs_start.keys())
         self._check_wrapper_status()
@@ -1101,12 +1100,13 @@ class WrapperJob(Job):
             self._check_finished_job(job)
 
     def _check_running_jobs(self):
-        not_finished_jobs = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED, Status.QUEUING, Status.SUBMITTED] ]
-        #not_finished_jobs = list()
-        #for job in not_finished_jobs_aux:
-        #    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-        #    if len(tmp) == len(job.parents):
-        #        not_finished_jobs.append(job)
+
+        not_finished_jobs_aux = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED, Status.SUBMITTED] ]
+        not_finished_jobs = list()
+        for job in not_finished_jobs_aux:
+            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+            if job.parents is None or len(tmp) == len(job.parents):
+                not_finished_jobs.append(job)
         if not_finished_jobs:
             not_finished_jobs_dict = OrderedDict()
             for job in not_finished_jobs:
@@ -1115,19 +1115,18 @@ class WrapperJob(Job):
             not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
 
             remote_log_dir = self.platform.get_remote_log_dir()
-            #command = 'cd ' + remote_log_dir + '; for job in ' + not_finished_jobs_names + '; do echo ${job} $(head ${job}_STAT); done'
-            #command = 'cd ' + remote_log_dir + '; for job in ' + not_finished_jobs_names + '; do if [-f "${job}_STAT"] ; then echo ${job} $(head ${job}_STAT); else ; echo ${job} ; fi ; done'
             command = textwrap.dedent("""
+cd {1}
 for job in {0}
 do
-        if [ -f "${{job}}_STAT" ]
-        then
-                echo ${{job}} $(head ${{job}}_STAT) 
-        else
-                echo ${{job}} 
-        fi
+    if [ -f "${{job}}_STAT" ]
+    then
+            echo ${{job}} $(head ${{job}}_STAT) 
+    else
+            echo ${{job}} 
+    fi
 done
-""").format(str(not_finished_jobs_names), '\n'.ljust(13))
+""").format(str(not_finished_jobs_names),str(remote_log_dir), '\n'.ljust(13))
             log_dir = os.path.join(self._tmp_path, 'LOG_{0}'.format(self.expid))
             multiple_checker_inner_jobs = os.path.join(log_dir, "inner_jobs_checker.sh")
             open(multiple_checker_inner_jobs, 'w+').write(command)
@@ -1160,6 +1159,13 @@ done
                         else:
                             job.status = Status.QUEUING
                             Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
+        for job in self.job_list:
+            if job.status != Status.COMPLETED and job.status != Status.FAILED:
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                if job.parents is None or len(tmp) == len(job.parents):
+                    job.status = Status.RUNNING
+
+
 
     def _check_finished_job(self, job):
         if self.platform.check_completed_files(job.name):
@@ -1220,7 +1226,6 @@ done
         if not self.running_jobs_start and not_finished_jobs:
             self.status = self.platform.check_job(self)
             if self.status == Status.RUNNING:
-
                 self._check_running_jobs()
                 if not self.running_jobs_start:
                     Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")

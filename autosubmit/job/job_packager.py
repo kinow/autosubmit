@@ -43,7 +43,11 @@ class JobPackager(object):
         self._platform = platform
         self._jobs_list = jobs_list
         # Submitted + Queuing Jobs for specific Platform
-        waiting_jobs = len(jobs_list.get_submitted(platform) + jobs_list.get_queuing(platform))
+        queuing_jobs_len = len(jobs_list.packages_dict.items())
+        queuing_jobs_not_wrapped = [job for job in jobs_list._job_list if (platform is None or job.platform is platform) and
+                job.status == Status.QUEUING and job.packed is False]
+        queuing_jobs_len+=len(queuing_jobs_not_wrapped)
+        waiting_jobs = len(jobs_list.get_submitted(platform)) + queuing_jobs_len
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
@@ -57,7 +61,7 @@ class JobPackager(object):
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
         Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold)))
-        Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit) #TODO
+        Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
         if len(jobs_list.get_ready(platform,hold=hold)) > 0:
             Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold)))
         self._maxTotalProcessors = 0
