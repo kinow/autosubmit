@@ -767,8 +767,6 @@ class JobList:
         """
         waiting_jobs= [job for job in self._job_list if (platform is None or job.platform is platform) and
                 job.status == Status.WAITING]
-        return waiting_jobs
-
         if wrapper:
             return [job for job in waiting_jobs if job.packed is False]
         else:
@@ -913,6 +911,7 @@ class JobList:
                 jobs_by_id[job.id] = list()
             jobs_by_id[job.id].append(job)
         return jobs_by_id
+
 
     def get_in_ready_grouped_id(self, platform):
         jobs=[]
@@ -1079,10 +1078,9 @@ class JobList:
             all_parents_completed = []
             for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if len(tmp) == len(job.parents):
+                if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
-                    save = True
                     Log.debug("Setting job: {0} status to: READY (all parents completed)...".format(job.name))
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
@@ -1090,27 +1088,42 @@ class JobList:
                 Log.debug('Updating WAITING jobs eligible  for remote_dependencies')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):
                     if job.name not in all_parents_completed:
-                        tmp = [parent for parent in job.parents if (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING and "setup" not in parent.name.lower() )]
+                        tmp = [parent for parent in job.parents if ( (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and "setup" not in parent.name.lower() )]
                         if len(tmp) == len(job.parents):
                             job.status = Status.READY
                             job.hold = True
-                            save = True
                             Log.debug("Setting job: {0} status to: READY for be held (all parents queuing, running or completed)...".format(job.name))
                 Log.debug('Updating Held jobs')
-                for job in self.get_held_jobs():
-                    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                    if len(tmp) == len(job.parents):
-                        job.hold = False
-                        Log.debug(
-                            "Setting job: {0} status to: Queuing (all parents completed)...".format(
-                                job.name))
+
+                if self.job_package_map:
+                    held_jobs = [job for job in self.get_held_jobs('slurm'.lower()) if ( job.id not in self.job_package_map.keys() ) ]
+                    held_jobs += [wrapper_job for wrapper_job in self.job_package_map.values() if wrapper_job.status == Status.HELD ]
+                else:
+                    held_jobs = self.get_held_jobs('slurm'.lower())
+                for job in held_jobs:
+                    if self.job_package_map and job.id in self.job_package_map.keys():
+                        if wrapper_job == Status.HELD:
+                            hold_wrapper = False
+                            for job in wrapper_job.job_list:
+                                tmp = [parent for parent in inner_job.parents if parent.status == Status.COMPLETED]
+                                if len(tmp) == len(job.parents):
+                                    hold_wrapper = True
+                            if not hold_wrapper:
+                                job.hold = False
+                                Log.debug(
+                                    "Setting job: {0} status to: Queuing (all parents completed)...".format(
+                                        job.name))
                     else:
-                        job.hold = True
-                    save= True
-            #if as_conf.get_wrapper_type() is not None:
-            #    for wrapper_id in self.job_package_map:
-            #        self.job_package_map[wrapper_id].update_inner_jobs_queue()
-                save = True
+                        tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                        if len(tmp) == len(job.parents):
+                            job.hold = False
+                            Log.debug(
+                                "Setting job: {0} status to: Queuing (all parents completed)...".format(
+                                    job.name))
+                        else:
+                            job.hold = True
+
+            save = True
         Log.debug('Update finished')
 
         return save

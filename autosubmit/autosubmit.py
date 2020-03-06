@@ -1154,9 +1154,8 @@ class Autosubmit:
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
                 Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
+
                 while job_list.get_active():
-                    if Autosubmit.exit:
-                        return 2
                     # reload parameters changes
                     Log.debug("Reloading parameters...")
                     as_conf.reload()
@@ -1167,16 +1166,14 @@ class Autosubmit:
                         "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()),
                                                                      total_jobs,
                                                                      time.strftime("%H:%M")))
+
                     safetysleeptime = as_conf.get_safetysleeptime()
-                    Log.debug("Sleep: {0}", safetysleeptime)
                     default_retrials = as_conf.get_retrials()
-                    Log.debug("Number of retrials: {0}", default_retrials)
-
                     check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+                    Log.debug("Sleep: {0}", safetysleeptime)
+                    Log.debug("Number of retrials: {0}", default_retrials)
                     Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
-
                     save = False
-
                     slurm = []
                     for platform in platforms_to_test:
                         list_jobid = ""
@@ -1184,6 +1181,7 @@ class Autosubmit:
                         list_prevStatus =[]
                         queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                         for job_id, job in queuing_jobs.items():
+                            # Check Wrappers one-by-one
                             if job_list.job_package_map and job_id in job_list.job_package_map:
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
@@ -1193,6 +1191,7 @@ class Autosubmit:
                                     for inner_job in wrapper_job.job_list:
                                         inner_job.prev_status= inner_job.status
                                 check_wrapper = True
+
                                 if wrapper_job.status == Status.RUNNING:
                                     check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
@@ -1202,6 +1201,8 @@ class Autosubmit:
                                         'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
 
                                     wrapper_job.check_status(wrapper_job.new_status)
+                                    if wrapper_job.status == Status.COMPLETED:
+                                        pass
                                     if wrapper_job.status == Status.WAITING: # if job failed to be held, delete it from packages table
                                         job_list.job_package_map.pop(job_id, None)
                                         job_list.packages_dict.pop(job_id, None)
@@ -1216,17 +1217,16 @@ class Autosubmit:
                                                                               as_conf.get_mails_to())
                                 else:
                                     Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
-                            else:
+                            else: # Prepare jobs, if slurm check all active jobs at once.
                                 job = job[0]
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-
-                                if platform.type == "slurm":
+                                if platform.type == "slurm": # List for add all jobs that will be checked
                                     list_jobid += str(job_id) + ','
                                     list_prevStatus.append(prev_status)
                                     completed_joblist.append(job)
-                                else:
+                                else: # If they're not from slurm platform check one-by-one
                                     platform.check_job(job)
                                     if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                         if as_conf.get_notifications() == 'true':
@@ -1239,17 +1239,15 @@ class Autosubmit:
 
                         if platform.type == "slurm" and list_jobid!="":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
-                    #END LOOP
-                    #CHECK ALL JOBS
+                    #END Normal jobs + wrappers
+                    #CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                     for platform_jobs in slurm:
                         platform = platform_jobs[0]
                         jobs_to_check = platform_jobs[1]
                         platform.check_Alljobs(platform_jobs[3],jobs_to_check,as_conf.get_copy_remote_logs())
-
                         for j_Indx in xrange(0,len(platform_jobs[3])):
                             prev_status = platform_jobs[2][j_Indx]
                             job = platform_jobs[3][j_Indx]
-
                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                 if as_conf.get_notifications() == 'true':
                                     if Status.VALUE_TO_KEY[job.status] in job.notify_on:
@@ -1258,20 +1256,20 @@ class Autosubmit:
                                                                       Status.VALUE_TO_KEY[job.status],
                                                                       as_conf.get_mails_to())
                             save = True
-                    if save or job_list.update_list(as_conf) :
+                    #End Check Current jobs
+                    save2 = job_list.update_list(as_conf)
+                    if save or save2:
                         job_list.save()
-
-                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False):
-                        job_list.save()
-
+                    Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False)
                     if as_conf.get_remote_dependencies():
-                        if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
-                            job_list.save()
-
+                        Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True)
+                    save = job_list.update_list(as_conf)
+                    if save:
+                        job_list.save()
                     if Autosubmit.exit:
+                        job_list.save()
                         return 2
                     time.sleep(safetysleeptime)
-
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
