@@ -42,7 +42,7 @@ class SlurmPlatform(ParamikoPlatform):
         self.job_status['COMPLETED'] = ['COMPLETED']
         self.job_status['RUNNING'] = ['RUNNING']
         self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
-        self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT','OUT_OF_MEMORY','OUT_OF_ME+','OUT_OF_ME']
+        self.job_status['FAILED'] = ['FAILED', 'CANCELLED','CANCELLED+', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT','OUT_OF_MEMORY','OUT_OF_ME+','OUT_OF_ME']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self._allow_arrays = False
         self._allow_wrappers = True
@@ -137,7 +137,7 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     def get_checkjob_cmd(self, job_id):
-        return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
+        return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)
 
     def get_checkAlljobs_cmd(self, jobs_id):
         return "sacct -n -X -j  {1} -o jobid,State".format(self.host, jobs_id)

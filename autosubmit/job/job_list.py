@@ -883,10 +883,18 @@ class JobList:
         :rtype: list
         """
         active= self.get_in_queue(platform) + self.get_ready(platform)
-        if wrapper:
-            return [job for job in active if job.packed is False]
+        if len(active) == 0:
+            return []
         else:
-            return active
+            tmp = [job for job in active if job.hold]
+            if len(tmp) == len(active):
+                Log.info("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
+                return []
+
+            if wrapper:
+                return [job for job in active if job.packed is False]
+            else:
+                return active
 
 
     def get_job_by_name(self, name):
@@ -1093,27 +1101,32 @@ class JobList:
                             job.status = Status.READY
                             job.hold = True
                             Log.debug("Setting job: {0} status to: READY for be held (all parents queuing, running or completed)...".format(job.name))
-                Log.debug('Updating Held jobs')
 
+                Log.debug('Updating Held jobs')
                 if self.job_package_map:
                     held_jobs = [job for job in self.get_held_jobs('slurm'.lower()) if ( job.id not in self.job_package_map.keys() ) ]
                     held_jobs += [wrapper_job for wrapper_job in self.job_package_map.values() if wrapper_job.status == Status.HELD ]
                 else:
                     held_jobs = self.get_held_jobs('slurm'.lower())
+
                 for job in held_jobs:
-                    if self.job_package_map and job.id in self.job_package_map.keys():
-                        if wrapper_job == Status.HELD:
-                            hold_wrapper = False
-                            for job in wrapper_job.job_list:
-                                tmp = [parent for parent in inner_job.parents if parent.status == Status.COMPLETED]
-                                if len(tmp) == len(job.parents):
-                                    hold_wrapper = True
-                            if not hold_wrapper:
-                                job.hold = False
-                                Log.debug(
-                                    "Setting job: {0} status to: Queuing (all parents completed)...".format(
-                                        job.name))
-                    else:
+                    if self.job_package_map and job.id in self.job_package_map.keys(): # Wrappers and inner jobs
+                        hold_wrapper = False
+                        for inner_job in job.job_list:
+                            valid_parents = [ parent for parent in inner_job.parents if parent not in job.job_list]
+                            tmp = [parent for parent in valid_parents if parent.status == Status.COMPLETED ]
+                            if len(tmp) < len(valid_parents):
+                                inner_job.hold = True
+                                hold_wrapper = True
+                            else:
+                                hold_wrapper = False
+                                inner_job.hold = False
+                        job.hold = hold_wrapper
+                        if not job.hold:
+                            Log.debug(
+                                "Setting job: {0} status to: Queuing (all parents completed)...".format(
+                                    job.name))
+                    else: # Non-wrapped jobs
                         tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                         if len(tmp) == len(job.parents):
                             job.hold = False

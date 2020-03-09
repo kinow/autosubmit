@@ -42,6 +42,7 @@ class JobPackager(object):
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
+        self.hold = hold
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs_len = len(jobs_list.packages_dict.items())
         queuing_jobs_len += len(jobs_list.get_queuing(platform,wrapper=True))
@@ -58,13 +59,14 @@ class JobPackager(object):
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=hold,wrapper=True)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=self.hold,wrapper=True)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
-        if len(jobs_list.get_ready(platform,hold=hold)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=hold,wrapper=True)))
+        if len(jobs_list.get_ready(platform,hold=self.hold)) > 0:
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=self.hold,wrapper=True)))
         self._maxTotalProcessors = 0
 
-    def build_packages(self,only_generate=False, jobs_filtered=[],hold=False):
+
+    def build_packages(self,only_generate=False, jobs_filtered=[]):
         """
         Returns the list of the built packages to be submitted
 
@@ -76,9 +78,9 @@ class JobPackager(object):
         if only_generate:
             jobs_to_submit = jobs_filtered
         else:
-            jobs_ready = self._jobs_list.get_ready(self._platform,hold=hold)
-            if hold and len(jobs_ready) > 0 :
-                jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(hold)
+            jobs_ready = self._jobs_list.get_ready(self._platform,self.hold)
+            if self.hold and len(jobs_ready) > 0 :
+                jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(self.hold)
                 current_held_jobs = 0
                 wrapper_jobs_visited = []
 
@@ -190,6 +192,8 @@ class JobPackager(object):
                     else:
                         package = JobPackageSimple([job])
                     packages_to_submit.append(package)
+        for package in packages_to_submit:
+            package.hold = self.hold
         return packages_to_submit
 
     def _divide_list_by_section(self, jobs_list):

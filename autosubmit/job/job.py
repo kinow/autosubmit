@@ -33,7 +33,7 @@ from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPy
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
-
+from time import sleep
 
 class Job(object):
     """
@@ -995,7 +995,7 @@ class WrapperJob(Job):
     :type as_config: AutosubmitConfig object \n
     """
 
-    def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config):
+    def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config,hold):
         super(WrapperJob, self).__init__(name, job_id, status, priority)
         self.job_list = job_list
         # divide jobs in dictionary by state?
@@ -1006,7 +1006,7 @@ class WrapperJob(Job):
         self.as_config = as_config
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
-        self.hold = False
+        self.hold = hold
     def _queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
@@ -1026,28 +1026,25 @@ class WrapperJob(Job):
         prev_status = self.status
         self.status = status
         Log.debug('Checking inner jobs status')
-        if self.status in [Status.HELD, Status.QUEUING ]:
-            self.update_inner_jobs_queue(prev_status)
-        elif self.status in [Status.FAILED, Status.UNKNOWN]:
+        if self.status in [ Status.HELD, Status.QUEUING ]: # If WRAPPER is QUEUED OR HELD
+            self._check_inner_jobs_queue(prev_status)
+
+        elif self.status == Status.RUNNING:
+            if prev_status in [Status.SUBMITTED]: # IF GOES DIRECTLY INTO RUNNING
+                for job in self.job_list:
+                    job.status = Status.QUEUING
+            #Check and update inner_jobs status that are elegible as run
+            self._check_running_jobs()
+            self.check_inner_jobs_completed(self.running_jobs_start.keys())
+
+        elif self.status == Status.COMPLETED:
+            self.check_inner_jobs_completed(self.job_list)
+
+        elif self.status in [ Status.FAILED, Status.UNKNOWN ]:
             self.status = Status.FAILED
             self.cancel_failed_wrapper_job()
             self.update_failed_jobs()
-        elif self.status == Status.RUNNING:
-            if prev_status in [Status.SUBMITTED]:
-                for job in self.job_list:
-                    job.status = Status.QUEUING
-            self.check_inner_job_status()
-
-        if self.status == Status.COMPLETED:
-            self._check_wrapper_status()
-            self.check_inner_jobs_completed(self.job_list)
-
-
-    def check_inner_job_status(self):
-        self._check_running_jobs()
-        self.check_inner_jobs_completed(self.running_jobs_start.keys())
-        self._check_wrapper_status()
-
+            
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [job for job in jobs if job.status != Status.COMPLETED]
         not_completed_job_names = [job.name for job in not_completed_jobs]
@@ -1065,10 +1062,41 @@ class WrapperJob(Job):
                     self._check_inner_job_wallclock(job)
             for job in completed_jobs:
                 self.running_jobs_start.pop(job, None)
-            if self.status == Status.COMPLETED:
-                not_completed_jobs = list(set(not_completed_jobs) - set(completed_jobs))
-                for job in not_completed_jobs:
-                    self._check_finished_job(job)
+            not_completed_jobs = list(set(not_completed_jobs) - set(completed_jobs))
+
+        for job in not_completed_jobs:
+            self._check_finished_job(job)
+
+    def _check_inner_jobs_queue(self,prev_status):
+        reason = str()
+        if self.platform.type == 'slurm':
+            self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
+            reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
+            if self._queuing_reason_cancel(reason):
+                Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
+                          reason)
+                self.cancel_failed_wrapper_job()
+                self.update_failed_jobs()
+                return
+            if reason == '(JobHeldUser)':
+                if self.hold is False:
+                    self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                    self.status = Status.QUEUING
+                    Log.info("Job {0} is QUEUING {1}", self.name, reason)
+                else:
+                    self.status = Status.HELD
+                    Log.info("Job {0} is HELD", self.name)
+            elif reason == '(JobHeldAdmin)':
+                Log.debug("Job {0} Failed to be HELD, canceling... ", self.name)
+                self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
+                self.status = Status.WAITING
+            else:
+                Log.info("Job {0} is QUEUING {1}", self.name, reason)
+        #Update_submitted status
+        if prev_status == Status.SUBMITTED:
+            for job in self.job_list:
+                job.hold = self.hold
+                job.status = self.status
 
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]
@@ -1081,19 +1109,14 @@ class WrapperJob(Job):
             self._check_finished_job(job)
 
     def _check_running_jobs(self):
-        not_finished_jobs_aux = [job for job in self.job_list if job.status not in [Status.COMPLETED, Status.FAILED ] ]
-        not_finished_jobs = list()
-        for job in not_finished_jobs_aux:
-            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+        not_finished_jobs_dict = OrderedDict()
+        not_finished_jobs = [job for job in self.job_list if job.status not in [ Status.COMPLETED, Status.FAILED ] ]
+        for job in not_finished_jobs:
+            tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or self.status == Status.COMPLETED]
             if job.parents is None or len(tmp) == len(job.parents):
-                not_finished_jobs.append(job)
-        if not_finished_jobs:
-            not_finished_jobs_dict = OrderedDict()
-            for job in not_finished_jobs:
                 not_finished_jobs_dict[job.name] = job
-
+        if len(not_finished_jobs_dict.keys()) > 0: # Only running jobs will enter there
             not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
-
             remote_log_dir = self.platform.get_remote_log_dir()
             command = textwrap.dedent("""
 cd {1}
@@ -1107,42 +1130,56 @@ do
     fi
 done
 """).format(str(not_finished_jobs_names),str(remote_log_dir), '\n'.ljust(13))
+            #PREPARE SCRIPT TO SEND
             log_dir = os.path.join(self._tmp_path, 'LOG_{0}'.format(self.expid))
             multiple_checker_inner_jobs = os.path.join(log_dir, "inner_jobs_checker.sh")
             open(multiple_checker_inner_jobs, 'w+').write(command)
             os.chmod(multiple_checker_inner_jobs, 0o770)
             self._platform.send_file(multiple_checker_inner_jobs, False)
             command = os.path.join(self._platform.get_files_path(), "inner_jobs_checker.sh")
+            #
+            wait = 2
+            retries = 20
+            while len(self.running_jobs_start) == 0 and retries > 0:
+                output = self._platform.send_command(command,False)
+                if output and self.platform._ssh_output != '' : # Check Stat File from ssh output
+                    content = self.platform._ssh_output
+                    for line in content.split('\n'):
+                        out = line.split()
+                        if out:
+                            jobname = out[0]
+                            job = not_finished_jobs_dict[jobname]
+                            if len(out) > 1:
+                                if job not in self.running_jobs_start:
+                                    start_time = self._check_time(out, 1)
+                                    Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+                                    self.running_jobs_start[job] = start_time
+                                    job.new_status=Status.RUNNING
+                                    job.update_status(self.as_config.get_copy_remote_logs() == 'true')
 
-            output = self.platform.send_command(command, ignore_log=True)
+                                if len(out) == 2:
+                                    Log.info("Job {0} is RUNNING".format(jobname))
+                                else:
+                                    end_time = self._check_time(out, 2)
+                                    Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
+                                    self._check_finished_job(job)
+                sleep(wait)
+                retries-=1
+            if retries == 0:
+                self.status = status.FAILED
+                self.cancel_failed_wrapper_job()
 
-            if output:
-                content = self.platform._ssh_output
-                for line in content.split('\n'):
-                    out = line.split()
-                    if out:
-                        jobname = out[0]
-                        job = not_finished_jobs_dict[jobname]
-                        if len(out) > 1:
-                            if job not in self.running_jobs_start:
-                                start_time = self._check_time(out, 1)
-                                Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
-                                self.running_jobs_start[job] = start_time
-                                job.new_status=Status.RUNNING
-                                job.update_status(self.as_config.get_copy_remote_logs() == 'true')
-                            elif len(out) == 2:
-                                Log.info("Job {0} is RUNNING".format(jobname))
-                            else:
-                                end_time = self._check_time(out, 2)
-                                Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
-                                self._check_finished_job(job)
-                        else:
-                            job.new_status=Status.QUEUING
-                            job.update_status(False)
-                            Log.debug("Job {0} is {1} and waiting for dependencies".format(jobname,Status.VALUE_TO_KEY[job.status]))
 
     def _check_finished_job(self, job):
-        if self.platform.check_completed_files(job.name):
+        wait = 2
+        retries = 13
+        output = None
+        while (output is None or output == '') and  retries > 0:
+            output = self.platform.check_completed_files(job.name)
+            sleep(wait)
+            retries=-1
+
+        if output is not None:
             job.new_status=Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         else:
@@ -1155,59 +1192,21 @@ done
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         for job in not_finished_jobs:
             self._check_finished_job(job)
-    def update_inner_jobs_queue(self,prev_status):
-        reason = str()
 
-        if self.platform.type == 'slurm':
-            self.platform.send_command(self.platform.get_queue_status_cmd(self.id))
-            reason = self.platform.parse_queue_reason(self.platform._ssh_output,self.id)
-            if self._queuing_reason_cancel(reason):
-                Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
-                          reason)
-                self.cancel_failed_wrapper_job()
-                return
-            if reason == '(JobHeldUser)':
-                if self.hold is False:
-                    self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                    self.status = Status.QUEUING
-                    if prev_status == Status.SUBMITTED or prev_status == Status.HELD:
-                        for job in self.job_list:
-                            job.status = Status.QUEUING
-                    Log.info("Job {0} is QUEUING {1}", self.name, reason)
-                else:
-                    self.status = Status.HELD
-                    Log.info("Job {0} is HELD", self.name)
-                    if prev_status == Status.SUBMITTED:
-                        for job in self.job_list:
-                            job.status = Status.HELD
-            elif reason == '(JobHeldAdmin)':
-                Log.debug("Job {0} Failed to be HELD, canceling... ", self.name)
-                self.hold = True
-                self.status = Status.WAITING
-                self.platform.send_command(self.platform.cancel_cmd + " {0}".format(self.id))
-            else:
-                Log.info("Job {0} is QUEUING {1}", self.name, reason)
-                if prev_status == Status.SUBMITTED:
-                    for job in self.job_list:
-                        job.status = Status.QUEUING
 
-    def _check_wrapper_status(self):
-        not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
-        if not self.running_jobs_start and not_finished_jobs:
-            self.status = self.platform.check_job(self)
-            if self.status == Status.RUNNING:
-                self._check_running_jobs()
-                if not self.running_jobs_start:
-                    Log.error("It seems there are no inner jobs running in the wrapper. Cancelling...")
-                    self.cancel_failed_wrapper_job()
-            elif self.status == Status.COMPLETED:
-                Log.info("Wrapper job {0} COMPLETED. Setting all jobs to COMPLETED...".format(self.name))
-                self._check_running_jobs()
-                self._update_completed_jobs()
+    #def _check_wrapper_status(self):
+    #    not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
+    #    if not self.running_jobs_start and not_finished_jobs:
+    #        self.status = self.platform.check_job(self)
+    #        if self.status == Status.COMPLETED:
+    ##            Log.info("Wrapper job {0} COMPLETED. Setting all jobs to COMPLETED...".format(self.name))
+    #            self._check_running_jobs()
+    #            self._update_completed_jobs()
 
     def cancel_failed_wrapper_job(self):
-        Log.info("Cancelling job with id {0}".format(self.id))
+        Log.error("Cancelling job with id {0}".format(self.id))
         self.platform.send_command(self.platform.cancel_cmd + " " + str(self.id))
+
 
     def _update_completed_jobs(self):
         for job in self.job_list:
