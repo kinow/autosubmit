@@ -1162,7 +1162,7 @@ done
                                 over_wallclock = self._check_inner_job_wallclock(job)
                                 if over_wallclock:
                                     Log.error("Job {0} is FAILED".format(jobname))
-                            else:
+                            elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))

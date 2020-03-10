@@ -883,18 +883,12 @@ class JobList:
         :rtype: list
         """
         active= self.get_in_queue(platform) + self.get_ready(platform)
-        if len(active) == 0:
-            return []
-        else:
-            tmp = [job for job in active if job.hold]
-            if len(tmp) == len(active):
-                Log.info("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
-                return []
-
-            if wrapper:
-                return [job for job in active if job.packed is False]
-            else:
-                return active
+        stopped_jobs = self.get_suspended() + self.get_failed()
+        tmp = [job for job in active if job.hold]
+        if len(tmp) == len(active) and len(stopped_jobs) > 0: # IF ALL JOBS ARE SUSPENDED OR FAILED AND there are held jobs, don't continue
+            Log.warning("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
+            active = []
+        return active
 
 
     def get_job_by_name(self, name):
