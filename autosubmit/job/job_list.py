@@ -1098,10 +1098,10 @@ class JobList:
 
                 Log.debug('Updating Held jobs')
                 if self.job_package_map:
-                    held_jobs = [job for job in self.get_held_jobs('slurm'.lower()) if ( job.id not in self.job_package_map.keys() ) ]
+                    held_jobs = [job for job in self.get_held_jobs() if ( job.id not in self.job_package_map.keys() ) ]
                     held_jobs += [wrapper_job for wrapper_job in self.job_package_map.values() if wrapper_job.status == Status.HELD ]
                 else:
-                    held_jobs = self.get_held_jobs('slurm'.lower())
+                    held_jobs = self.get_held_jobs()
 
                 for job in held_jobs:
                     if self.job_package_map and job.id in self.job_package_map.keys(): # Wrappers and inner jobs

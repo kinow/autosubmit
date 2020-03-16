@@ -498,32 +498,32 @@ class Job(object):
         else:
             self.status = new_status
 
-        if self.status is Status.RUNNING:
+        if self.status == Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
-        elif self.status is Status.QUEUING:
+        elif self.status == Status.QUEUING:
             Log.info("Job {0} is QUEUING", self.name)
-        elif self.status is Status.HELD:
+        elif self.status == Status.HELD:
             Log.info("Job {0} is HELD", self.name)
-        elif self.status is Status.COMPLETED:
+        elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
-        elif self.status is Status.FAILED:
+        elif self.status == Status.FAILED:
             Log.user_warning("Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
             self.platform.get_completed_files(self.name)
             self.check_completion()
-            if self.status is Status.COMPLETED:
+            if self.status == Status.COMPLETED:
                 Log.warning('Job {0} seems to have failed but there is a COMPLETED file', self.name)
                 Log.result("Job {0} is COMPLETED", self.name)
             else:
                 self.update_children_status()
-        elif self.status is Status.UNKNOWN:
+        elif self.status == Status.UNKNOWN:
             Log.debug("Job {0} in UNKNOWN status. Checking completed files...", self.name)
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
-            if self.status is Status.UNKNOWN:
+            if self.status == Status.UNKNOWN:
                 Log.warning('Job {0} in UNKNOWN status', self.name)
-            elif self.status is Status.COMPLETED:
+            elif self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
-        elif self.status is Status.SUBMITTED:
+        elif self.status == Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
             Log.warning('Job {0} in SUBMITTED status after checking.', self.name)
 
@@ -1102,7 +1102,7 @@ class WrapperJob(Job):
             #if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
             Log.error("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name, self.name))
             job.new_status = Status.FAILED
-            job.update_status(job,self.as_config.get_copy_remote_logs() == 'true')
+            job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
         return False
 

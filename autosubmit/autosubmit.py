@@ -513,7 +513,8 @@ class Autosubmit:
     @staticmethod
     def _check_Ownership(expid):
         BasicConfig.read()
-        currentUser_id = os.getlogin()
+        #currentUser_id = os.getlogin()
+        currentUser_id = pwd.getpwuid(os.getuid())[0]
         currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
         if currentUser_id == currentOwner_id:
             return True
@@ -1218,7 +1219,7 @@ class Autosubmit:
                                                                               as_conf.get_mails_to())
                                     save = True
 
-                        if platform.type == "slurm" and list_jobid!="":
+                        if platform.type == "slurm" and list_jobid != "":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
                     #END Normal jobs + wrappers
                     #CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)

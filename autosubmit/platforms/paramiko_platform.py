@@ -321,16 +321,13 @@ class ParamikoPlatform(Platform):
         job_id = job.id
         job_status = Status.UNKNOWN
         if type(job_id) is not int and type(job_id) is not str:
-            # URi: logger
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
-            # URi: value ?
-            job.new_status= job_status
-        sleep(7)
-        while not ( self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0 ) or (self.get_ssh_output() == "" and retries >= 0): #SACCT
+            job.new_status = job_status
+        while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
-            Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
-            sleep(10)
+            Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('retries left {0}', retries)
+            sleep(5)
         if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
@@ -348,10 +345,15 @@ class ParamikoPlatform(Platform):
             else:
                 job_status = Status.UNKNOWN
         else:
+            Log.error(" check_job(), job is not on the queue system. Output was: {0}", self.get_checkjob_cmd(job_id))
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         job.new_status = job_status
-
+    def _check_jobid_in_queue(self,ssh_output,job_list_cmd):
+        for job in job_list_cmd[:-1].split(','):
+            if job not in ssh_output:
+                return False
+        return True
     def check_Alljobs(self, job_list,job_list_cmd,remote_logs, retries=5):
         """
         Checks jobs running status
@@ -364,19 +366,20 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
+
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
-        while not self.send_command(cmd) and retries >= 0:
+        while not (self.send_command(cmd) and retries >= 0) or ( not self._check_jobid_in_queue(self.get_ssh_output(),job_list_cmd) and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', cmd)
-            Log.warning('Can not get job status for all jobs, retrying in 3 sec')
-            sleep(3)
+            Log.debug('Retrying check job command: {0}', cmd)
+            Log.debug('retries left {0}', retries)
+            sleep(6)
         job_list_status = self.get_ssh_output()
         Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
-            in_queue_jobs=[]
-            list_queue_jobid=""
+            in_queue_jobs = []
+            list_queue_jobid = ""
             for job in job_list:
-                job_id=job.id
+                job_id = job.id
                 job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
@@ -384,14 +387,8 @@ class ParamikoPlatform(Platform):
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-                    if job.status == Status.QUEUING:
-                        job_status = Status.QUEUING
-                    elif job.status == Status.HELD:
-                        if not job.hold:
-                            self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                            job_status = Status.QUEUING
-                        else:
-                            job_status = Status.HELD
+                    if job.hold:
+                        job_status = Status.HELD # release?
                     else:
                         job_status = Status.QUEUING
                     list_queue_jobid += str(job.id) + ','
@@ -400,6 +397,8 @@ class ParamikoPlatform(Platform):
                     job_status = Status.FAILED
                 elif retries == 0:
                     job_status = Status.COMPLETED
+                    job.update_status(remote_logs)
+
                 else:
                     job_status = Status.UNKNOWN
                     Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
@@ -419,18 +418,20 @@ class ParamikoPlatform(Platform):
                         return
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
+                        if not job.hold:
+                            self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         Log.info("Job {0} is HELD", job.name)
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
-                    else:
-                        Log.info("Job {0} is QUEUING {1}", job.name, reason)
+
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
                 job.new_status=job_status
+
 
     def get_checkjob_cmd(self, job_id):
         """
