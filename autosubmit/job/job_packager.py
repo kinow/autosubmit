@@ -232,7 +232,7 @@ class JobPackager(object):
             if machinefile_function == 'COMPONENTS':
                 jobs_resources = horizontal_packager.components_dict
             jobs_resources['MACHINEFILES'] = machinefile_function
-            current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources,method=self.wrapper_method)
+            current_package = JobPackageHorizontal(package_jobs, jobs_resources=jobs_resources,method=self.wrapper_method,configuration=self._as_config)
             packages.append(current_package)
 
 
@@ -286,7 +286,7 @@ class JobPackager(object):
         ## READY JOBS ##
         ## Create the horizontal ##
         horizontal_packager = JobPackagerHorizontal(jobs_list, self._platform.max_processors, max_wrapped_jobs,
-                                                    self.max_jobs, self._platform.processors_per_node,configuration=self._as_config)
+                                                    self.max_jobs, self._platform.processors_per_node)
         if self.wrapper_type == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, max_wrapped_jobs, jobs_resources)
         else:
@@ -325,7 +325,7 @@ class JobPackager(object):
         for job in horizontal_package:
             job_list = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
                                                  max_wrapped_jobs,
-                                                 self._platform.max_wallclock,configuration=self._as_config).build_vertical_package(job)
+                                                 self._platform.max_wallclock).build_vertical_package(job)
             current_package.append(job_list)
 
         for job in current_package[-1]:

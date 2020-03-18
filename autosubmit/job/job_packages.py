@@ -483,7 +483,7 @@ class JobPackageHorizontal(JobPackageThread):
     """
 
     def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None):
-        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration)
+        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration=configuration)
         self.method = method
 
         self._queue = self.queue
@@ -513,7 +513,7 @@ class JobPackageHybrid(JobPackageThread):
 
     def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
-        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration)
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration=configuration)
         self.jobs_lists = jobs
         self.method=method
         self._num_processors = int(num_processors)

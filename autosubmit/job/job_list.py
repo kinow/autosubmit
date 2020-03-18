@@ -884,8 +884,9 @@ class JobList:
         """
         active = self.get_in_queue(platform) + self.get_ready(platform)
         tmp = [job for job in active if job.hold and not job.status == Status.SUBMITTED]
-        if len(tmp) == len(active): # IF only held jobs left without dependencies satisfaced
-            Log.warning("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
+        if len(tmp) == len(active): # IF only held jobs left without dependencies satisfied
+            if len(tmp) != 0 and len(active) != 0:
+                Log.warning("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
             active = []
         return active
 
