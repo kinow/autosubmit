@@ -599,7 +599,7 @@ class Job(object):
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
             parameters['SYNCHRONIZE'] = self.synchronize
-
+            parameters['PACKED'] = self.packed
             total_chunk = int(parameters['NUMCHUNKS'])
             chunk_length = int(parameters['CHUNKSIZE'])
             chunk_unit = parameters['CHUNKSIZEUNIT'].lower()
@@ -708,11 +708,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 10'
+                template = 'sleep 4'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(10)'
+                template = 'time.sleep(4)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(10)'
+                template = 'Sys.sleep(4)'
             else:
                 template = ''
 

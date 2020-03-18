@@ -419,8 +419,10 @@ class ParamikoPlatform(Platform):
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
                         if not job.hold:
-                            self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                        Log.info("Job {0} is HELD", job.name)
+                            self.send_command("scontrol release "+"{0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                            Log.info("Job {0} is being released (id:{1}) ", job.name,job.id)
+                        else:
+                            Log.info("Job {0} is HELD", job.name)
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
@@ -621,7 +623,7 @@ class ParamikoPlatform(Platform):
         :return: command to check job status script
         :rtype: str
         """
-        return 'nohup kill -0 {0} >& /dev/null; echo $?'.format(job_id)
+        return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """

@@ -1136,7 +1136,6 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
-                only_held_jobs = False
                 while job_list.get_active():
                     # reload parameters changes
                     Log.debug("Reloading parameters...")

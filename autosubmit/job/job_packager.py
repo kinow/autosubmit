@@ -80,22 +80,21 @@ class JobPackager(object):
         else:
             jobs_ready = self._jobs_list.get_ready(self._platform,self.hold)
             if self.hold and len(jobs_ready) > 0 :
-                jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(self.hold)
+                jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(self._platform,hold=self.hold)
                 current_held_jobs = 0
                 wrapper_jobs_visited = []
-
                 for held_job in jobs_in_held_status:
-                    if self._jobs_list.job_package_map:
-                        for package in self._jobs_list.job_package_map:
-                            if held_job.id in package.id:
-                                if held_job.id not in wrapper_jobs_visited:
-                                    current_held_jobs += 1
-                                    wrapper_jobs_visited.append(held_job.id)
+                    if held_job.id in self._jobs_list.job_package_map.keys():
+                        if held_job.id not in wrapper_jobs_visited:
+                            current_held_jobs += 1
+                            wrapper_jobs_visited.append(held_job.id)
                     else:
                         current_held_jobs += 1
                 remaining_held_slots = 10 - current_held_jobs
                 try:
                     while len(jobs_ready) > remaining_held_slots:
+                        if jobs_ready[-1].packed:
+                            jobs_ready[-1].packed = False
                         del jobs_ready[-1]
                 except IndexError:
                     pass
@@ -271,7 +270,7 @@ class JobPackager(object):
                     # update max_jobs, potential_dependency is None
                     self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
-                        packages.append(JobPackageVertical(jobs_list))
+                        packages.append(JobPackageVertical(jobs_list,configuration=self._as_config))
                     else:                        
                         package = JobPackageVertical(jobs_list, None)
                         packages.append(package)
@@ -287,7 +286,7 @@ class JobPackager(object):
         ## READY JOBS ##
         ## Create the horizontal ##
         horizontal_packager = JobPackagerHorizontal(jobs_list, self._platform.max_processors, max_wrapped_jobs,
-                                                    self.max_jobs, self._platform.processors_per_node)
+                                                    self.max_jobs, self._platform.processors_per_node,configuration=self._as_config)
         if self.wrapper_type == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, max_wrapped_jobs, jobs_resources)
         else:
@@ -313,7 +312,7 @@ class JobPackager(object):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
 
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
-                                            jobs_resources=jobs_resources)
+                                            jobs_resources=jobs_resources,configuration=self._as_config)
 
     def _build_vertical_horizontal_package(self, horizontal_packager, max_wrapped_jobs, jobs_resources):
         total_wallclock = '00:00'
@@ -326,14 +325,14 @@ class JobPackager(object):
         for job in horizontal_package:
             job_list = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
                                                  max_wrapped_jobs,
-                                                 self._platform.max_wallclock).build_vertical_package(job)
+                                                 self._platform.max_wallclock,configuration=self._as_config).build_vertical_package(job)
             current_package.append(job_list)
 
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
 
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
-                                            jobs_resources=jobs_resources,method=self.wrapper_method)
+                                            jobs_resources=jobs_resources,method=self.wrapper_method,configuration=self._as_config)
 
 
 class JobPackagerVertical(object):

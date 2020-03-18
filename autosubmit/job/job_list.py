@@ -606,7 +606,7 @@ class JobList:
         """
         return self._ordered_jobs_by_date_member
 
-    def get_completed(self, platform=None,wrapper=True):
+    def get_completed(self, platform=None,wrapper=False):
         """
         Returns a list of completed jobs
 
@@ -640,7 +640,7 @@ class JobList:
             return [job for job in uncompleted_jobs if job.packed is False]
         else:
             return uncompleted_jobs
-    def get_submitted(self, platform=None, hold =False , wrapper=True):
+    def get_submitted(self, platform=None, hold =False , wrapper=False):
         """
         Returns a list of submitted jobs
 
@@ -661,7 +661,7 @@ class JobList:
         else:
             return submitted
 
-    def get_running(self, platform=None,wrapper=True):
+    def get_running(self, platform=None,wrapper=False):
         """
         Returns a list of jobs running
 
@@ -706,7 +706,7 @@ class JobList:
             return [job for job in failed if job.packed is False]
         else:
             return failed
-    def get_unsubmitted(self, platform=None,wrapper=True):
+    def get_unsubmitted(self, platform=None,wrapper=False):
         """
         Returns a list of unsummited jobs
 
@@ -882,10 +882,9 @@ class JobList:
         :return: active jobs
         :rtype: list
         """
-        active= self.get_in_queue(platform) + self.get_ready(platform)
-        stopped_jobs = self.get_suspended() + self.get_failed()
-        tmp = [job for job in active if job.hold]
-        if len(tmp) == len(active) and len(stopped_jobs) > 0: # IF ALL JOBS ARE SUSPENDED OR FAILED AND there are held jobs, don't continue
+        active = self.get_in_queue(platform) + self.get_ready(platform)
+        tmp = [job for job in active if job.hold and not job.status == Status.SUBMITTED]
+        if len(tmp) == len(active): # IF only held jobs left without dependencies satisfaced
             Log.warning("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
             active = []
         return active

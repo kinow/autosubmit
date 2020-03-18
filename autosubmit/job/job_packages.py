@@ -252,7 +252,7 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread'):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
@@ -262,7 +262,13 @@ class JobPackageThread(JobPackageBase):
         self._num_processors = '0'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
-        self.queue = jobs[0]._queue
+        if configuration is not None:
+            if configuration.get_wrapper_queue() != 'None':
+                self.queue = configuration.get_wrapper_queue()
+            else:
+                self.queue = jobs[0]._queue
+        else:
+            self.queue = jobs[0]._queue
         self.method = method
 #pipeline
     @property
@@ -364,8 +370,8 @@ class JobPackageThreadWrapped(JobPackageThread):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None):
-        super(JobPackageThreadWrapped, self).__init__(jobs)
+    def __init__(self, jobs, dependency=None,configuration=None):
+        super(JobPackageThreadWrapped, self).__init__(jobs,configuration)
         self._job_scripts = {}
         self._job_dependency = dependency
         self._common_script = None
@@ -447,8 +453,8 @@ class JobPackageVertical(JobPackageThread):
     :param: dependency:
     """
 
-    def __init__(self, jobs, dependency=None):
-        super(JobPackageVertical, self).__init__(jobs, dependency)
+    def __init__(self, jobs, dependency=None,configuration=None):
+        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration)
         #TODO unit or regression test of the wrappers, it will fail as in issue 280
 
         for job in jobs:
@@ -476,9 +482,10 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread'):
-        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources)
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None):
+        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration)
         self.method = method
+
         self._queue = self.queue
         for job in jobs:
             if job.wallclock > self._wallclock:
@@ -504,9 +511,9 @@ class JobPackageHybrid(JobPackageThread):
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread"):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
-        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method)
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration)
         self.jobs_lists = jobs
         self.method=method
         self._num_processors = int(num_processors)
