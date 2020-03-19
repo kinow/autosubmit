@@ -1027,13 +1027,12 @@ class WrapperJob(Job):
         self.status = status
         Log.debug('Checking inner jobs status')
         if self.status in [ Status.HELD, Status.QUEUING ]: # If WRAPPER is QUEUED OR HELD
-            self._check_inner_jobs_queue(prev_status) # This will update the inner jobs to QUEUE or HELD (normal behaviour)
-
+            self._check_inner_jobs_queue(prev_status) # This will update the inner jobs to QUEUE or HELD (normal behaviour) or WAITING ( if they fails to be held)
         elif self.status == Status.RUNNING: # If wrapper is running
-            if prev_status in [Status.SUBMITTED]: # This will update the status from submitted to running (if safety timer is high enough or queue is fast enough)
+            if prev_status in [ Status.SUBMITTED ]: # This will update the status from submitted or hold to running (if safety timer is high enough or queue is fast enough)
                 for job in self.job_list:
-                    job.status = Status.QUEUING # Note that helds jobs can't obtain running status directly
-            self._check_running_jobs() #Check and update inner_jobs status that are elegible as run
+                    job.status = Status.QUEUING
+            self._check_running_jobs() #Check and update inner_jobs status that are elegible
 
         elif self.status == Status.COMPLETED: # Completed wrapper will always come from check function.
             self.check_inner_jobs_completed(self.job_list)
@@ -1056,8 +1055,6 @@ class WrapperJob(Job):
                         completed_jobs.append(job)
                         job.new_status=Status.COMPLETED
                         job.update_status(self.as_config.get_copy_remote_logs() == 'true')
-                #if job.status != Status.COMPLETED and job in self.running_jobs_start:
-                #    self._check_inner_job_wallclock(job)
             for job in completed_jobs:
                 self.running_jobs_start.pop(job, None)
             not_completed_jobs = list(set(not_completed_jobs) - set(completed_jobs))
@@ -1080,6 +1077,9 @@ class WrapperJob(Job):
                 if self.hold is False:
                     self.platform.send_command("scontrol release " + "{0}".format(self.id))  # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                     self.status = Status.QUEUING
+                    for job in self.job_list:
+                        job.hold = self.hold
+                        job.status = self.status
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
                 else:
                     self.status = Status.HELD
@@ -1090,11 +1090,13 @@ class WrapperJob(Job):
                 self.status = Status.WAITING
             else:
                 Log.info("Job {0} is QUEUING {1}", self.name, reason)
-        #Update_submitted status
-        if prev_status == Status.SUBMITTED:
+        if prev_status != self.status:
             for job in self.job_list:
                 job.hold = self.hold
                 job.status = self.status
+                if self.status == Status.WAITING:
+                    for job in self.job_list:
+                        job.packed = False
 
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]

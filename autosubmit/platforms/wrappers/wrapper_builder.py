@@ -688,44 +688,48 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         aux_scripts=("${{{0}[@]}}")
         while [ "${{#aux_scripts[@]}}" -gt 0 ]; do
             i_list=0
-            prev_completed_path=""
             for script_list in "${{{0}[@]}}"; do
-                declare -i i=${{scripts_index[$i_list]}}
-                if [ $i -ne -1 ]; then 
-                    declare -n scripts=$script_list
-                    template=${{scripts[$i]}}
-                    jobname=${{template%"$suffix"}}
-                    out="${{template}}.${{i}}.out"
-                    err="${{template}}.${{i}}.err"
-                    if [ $i -eq 0 ]; then
-                        completed_filename=${{template%"$suffix"}}
-                        prev_template=$template
-                    else 
-                        prev_template_index=$((i-1))
-                        prev_template=${{scripts[$prev_template_index]}}
+                declare -i job_index=${{scripts_index[$i_list]}}
+                declare -n scripts=$script_list
+                if [ $job_index -ne -1 ]; then
+                    if [ $job_index -lt "${{#scripts[@]}}" ];  then      
+                        template=${{scripts[$job_index]}}
+                        jobname=${{template%"$suffix"}}
+                        out="${{template}}.${{job_index}}.out"
+                        err="${{template}}.${{job_index}}.err"
+                        if [ $i_list -eq 0 ]; then
+                            prev_template=$template
+                        else
+                            prev_template=${{prev_horizontal_scripts[$job_index]}}
+                        fi
                         completed_filename=${{prev_template%"$suffix"}}
-                    fi
-                    completed_filename="$completed_filename"_COMPLETED
-                    completed_path=${{PWD}}/$completed_filename
-
-                    if [ -f "$completed_path" ];
-                    then
-                        echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
-                        if [ $i -ge "${{#scripts[@]}}" ]; then
-                            unset aux_scripts[$i_list]
-                            i="-1"
-                        fi
-                    fi    
-                    if [ $i -lt "${{#scripts[@]}}" ]; then 
-                        if [ $i -eq 0 ] || [ -f "$completed_path" ] ; then
+                        completed_filename="$completed_filename"_COMPLETED
+                        completed_path=${{PWD}}/$completed_filename
+                        if [ -f "$completed_path" ];
+                        then
+                            echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
+                        fi    
+                        if [ $i_list -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
                             srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
-                            ((i=i+1))
+                            ((job_index=job_index+1))
+                        fi
+                        sleep "0.2"
+                    else # last case unset list if last job of the list is completed
+                        prev_template=${{scripts[$job_index]}}
+                        completed_filename=${{prev_template%"$suffix"}}
+                        completed_filename="$completed_filename"_COMPLETED
+                        completed_path=${{PWD}}/$completed_filename
+                        echo $prev_template
+                        if [ -f "$completed_path" ]; then
+                                echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
+                                unset aux_scripts[$i_list]
+                                job_index=-1    
                         fi
                     fi
-                    sleep "0.2"
-                    scripts_index[$i_list]=$i
-                    ((i_list=i_list+1))
-                fi       
+                fi
+                declare -n prev_horizontal_scripts=$script_list
+                scripts_index[$i_list]=$job_index
+                ((i_list=i_list+1)) # check next list ( needed for save list index )
             done
         done
         wait

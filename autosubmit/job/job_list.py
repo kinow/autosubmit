@@ -1110,13 +1110,11 @@ class JobList:
                             valid_parents = [ parent for parent in inner_job.parents if parent not in job.job_list]
                             tmp = [parent for parent in valid_parents if parent.status == Status.COMPLETED ]
                             if len(tmp) < len(valid_parents):
-                                inner_job.hold = True
                                 hold_wrapper = True
-                            else:
-                                hold_wrapper = False
-                                inner_job.hold = False
                         job.hold = hold_wrapper
                         if not job.hold:
+                            for inner_job in job.job_list:
+                                inner_job.hold = False
                             Log.debug(
                                 "Setting job: {0} status to: Queuing (all parents completed)...".format(
                                     job.name))
