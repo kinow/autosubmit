@@ -705,26 +705,19 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
-                        if [ -f "$completed_path" ];
-                        then
-                            echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
-                        fi    
+                        #if [ -f "$completed_path" ];
+                        #then
+                        #    echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
+                        #fi    
                         if [ $i_list -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
                             srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
                             ((job_index=job_index+1))
+                            if [ $job_index -ge "${{#scripts[@]}}" ];  then
+                                unset aux_scripts[$i_list]
+                                job_index=-1   
+                            fi
                         fi
                         sleep "0.2"
-                    else # last case unset list if last job of the list is completed
-                        prev_template=${{scripts[$job_index]}}
-                        completed_filename=${{prev_template%"$suffix"}}
-                        completed_filename="$completed_filename"_COMPLETED
-                        completed_path=${{PWD}}/$completed_filename
-                        echo $prev_template
-                        if [ -f "$completed_path" ]; then
-                                echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
-                                unset aux_scripts[$i_list]
-                                job_index=-1    
-                        fi
                     fi
                 fi
                 declare -n prev_horizontal_scripts=$script_list
