@@ -150,11 +150,6 @@ class SlurmPlatform(ParamikoPlatform):
         if len(reason) > 0:
             return reason[0]
         return reason
-        # output = output.split('\n')
-        # if len(output) > 1:
-        #     return output[1]
-        # else:
-        #     return output
 
 
     @staticmethod

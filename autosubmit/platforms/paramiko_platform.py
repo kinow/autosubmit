@@ -323,11 +323,14 @@ class ParamikoPlatform(Platform):
         if type(job_id) is not int and type(job_id) is not str:
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
             job.new_status = job_status
+        sleep_time=5
         while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
             retries -= 1
             Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.debug('retries left {0}', retries)
-            sleep(5)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+            sleep(sleep_time)
+            sleep_time = sleep_time+5
         if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
@@ -368,11 +371,15 @@ class ParamikoPlatform(Platform):
         """
 
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
+        sleep_time=5
         while not (self.send_command(cmd) and retries >= 0) or ( not self._check_jobid_in_queue(self.get_ssh_output(),job_list_cmd) and retries >= 0):
             retries -= 1
             Log.debug('Retrying check job command: {0}', cmd)
             Log.debug('retries left {0}', retries)
-            sleep(6)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+
+            sleep(sleep_time)
+            sleep_time=sleep_time+5
         job_list_status = self.get_ssh_output()
         Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
