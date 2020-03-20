@@ -44,9 +44,9 @@ class JobPackager(object):
         self._jobs_list = jobs_list
         self.hold = hold
         # Submitted + Queuing Jobs for specific Platform
-        queuing_jobs_len = len(jobs_list.packages_dict.items())
-        queuing_jobs_len += len(jobs_list.get_queuing(platform,wrapper=True))
-        waiting_jobs = len(jobs_list.get_submitted(platform,wrapper=True)) + queuing_jobs_len + len(jobs_list.packages_dict.items())
+        queuing_jobs_len = len(jobs_list.packages_dict.items()) # get all jobs
+        queuing_jobs_len += len(jobs_list.get_queuing(platform,wrapper=True)) # get all jobs not wrapper ( missleading parameter)
+        waiting_jobs = len(jobs_list.get_submitted(platform,wrapper=True)) + queuing_jobs_len
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
