@@ -869,7 +869,7 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.platform.get_stat_file(self.name, retries=0):
+        if self.platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
             Log.warning('Could not get start time for {0}. Using current time as an approximation', self.name)
