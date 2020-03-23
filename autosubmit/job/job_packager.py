@@ -54,9 +54,9 @@ class JobPackager(object):
         submitted_by_id = dict()
         for submitted_job in submitted_jobs:
             submitted_by_id[submitted_job.id] = submitted_job
-        submitted_jobs = len(submitted_by_id.keys())
+        submitted_jobs_len = len(submitted_by_id.keys())
 
-        waiting_jobs = submitted_jobs + queuing_jobs_len
+        waiting_jobs = submitted_jobs_len + queuing_jobs_len
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
@@ -89,17 +89,14 @@ class JobPackager(object):
             jobs_to_submit = jobs_filtered
         else:
             jobs_ready = self._jobs_list.get_ready(self._platform,self.hold)
+
             if self.hold and len(jobs_ready) > 0 :
                 jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(self._platform,hold=self.hold)
-                current_held_jobs = 0
-                wrapper_jobs_visited = []
+                held_by_id = dict()
                 for held_job in jobs_in_held_status:
-                    if held_job.id in self._jobs_list.job_package_map.keys():
-                        if held_job.id not in wrapper_jobs_visited:
-                            current_held_jobs += 1
-                            wrapper_jobs_visited.append(held_job.id)
-                    else:
-                        current_held_jobs += 1
+                    held_by_id[held_job.id] = held_job
+                current_held_jobs = len(held_by_id.keys())
+
                 remaining_held_slots = 10 - current_held_jobs
                 try:
                     while len(jobs_ready) > remaining_held_slots:
@@ -191,6 +188,7 @@ class JobPackager(object):
                     built_packages=built_packages_tmp
                 else:
                     built_packages=built_packages_tmp
+                self.max_jobs = self.max_jobs -1
                 packages_to_submit += built_packages
 
             else:
@@ -200,6 +198,7 @@ class JobPackager(object):
                         package = JobPackageSimpleWrapped([job])
                     else:
                         package = JobPackageSimple([job])
+                    self.max_jobs = self.max_jobs - 1
                     packages_to_submit.append(package)
         for package in packages_to_submit:
             package.hold = self.hold
@@ -278,7 +277,7 @@ class JobPackager(object):
 
                     jobs_list = job_vertical_packager.build_vertical_package(job)
                     # update max_jobs, potential_dependency is None
-                    self.max_jobs -= len(jobs_list)
+                    #self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(jobs_list,configuration=self._as_config))
                     else:                        
@@ -559,7 +558,7 @@ class JobPackagerHorizontal(object):
             self._current_processors = 0
         for job in self.job_list:
             if self.max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
-                self.max_jobs -= 1
+                #self.max_jobs -= 1
                 if int(job.tasks) != 0 and int(job.tasks) != int(self.processors_node) and \
                         int(job.tasks) < job.total_processors:
                     nodes = int(ceil(job.total_processors / float(job.tasks)))
