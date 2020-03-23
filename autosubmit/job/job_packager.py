@@ -44,14 +44,24 @@ class JobPackager(object):
         self._jobs_list = jobs_list
         self.hold = hold
         # Submitted + Queuing Jobs for specific Platform
-        queuing_jobs_len = len(jobs_list.packages_dict.items()) # get all jobs
-        queuing_jobs_len += len(jobs_list.get_queuing(platform,wrapper=True)) # get all jobs not wrapper ( missleading parameter)
-        waiting_jobs = len(jobs_list.get_submitted(platform,wrapper=True)) + queuing_jobs_len
+        queuing_jobs = jobs_list.get_queuing(platform)
+        queued_by_id = dict()
+        for queued_job in queuing_jobs:
+            queued_by_id[queued_job.id] = queued_job
+        queuing_jobs_len = len(queued_by_id.keys())
+
+        submitted_jobs = jobs_list.get_submitted(platform)
+        submitted_by_id = dict()
+        for submitted_job in submitted_jobs:
+            submitted_by_id[submitted_job.id] = submitted_job
+        submitted_jobs = len(submitted_by_id.keys())
+
+        waiting_jobs = submitted_jobs + queuing_jobs_len
         # Calculate available space in Platform Queue
         self._max_wait_jobs_to_submit = platform.max_waiting_jobs - waiting_jobs
         # .total_jobs is defined in each section of platforms_.conf, if not from there, it comes form autosubmit_.conf
         # .total_jobs Maximum number of jobs at the same time
-        self._max_jobs_to_submit = platform.total_jobs - len(jobs_list.get_in_queue(platform,wrapper=True)) + len(jobs_list.packages_dict.items())
+        self._max_jobs_to_submit = platform.total_jobs - queuing_jobs_len
         self.max_jobs = min(self._max_wait_jobs_to_submit, self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
@@ -59,10 +69,10 @@ class JobPackager(object):
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
 
-        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=self.hold,wrapper=True)))
+        Log.debug("Number of jobs ready: {0}", len(jobs_list.get_ready(platform,hold=self.hold)))
         Log.debug("Number of jobs available: {0}", self._max_wait_jobs_to_submit)
         if len(jobs_list.get_ready(platform,hold=self.hold)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=self.hold,wrapper=True)))
+            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(jobs_list.get_ready(platform,hold=self.hold)))
         self._maxTotalProcessors = 0
 
 
