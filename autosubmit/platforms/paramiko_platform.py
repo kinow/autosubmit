@@ -121,32 +121,31 @@ class ParamikoPlatform(Platform):
         command = "find %s " % self.remote_log_dir
         if sections:
             for i, section in enumerate(sections.split()):
-                command += " -name \*%s_COMPLETED" % section
+                command += " -name *%s_COMPLETED" % section
                 if i < len(sections.split())-1:
                     command += " -o "
         else:
-            command += " -name \*_COMPLETED"
+            command += " -name *_COMPLETED"
 
-        if self.send_command(command):
+        if self.send_command(command,True):
             return self._ssh_output
         else:
             return None
 
     def remove_multiple_files(self, filenames):
-        #command = "rm " + filenames
-        command = "rm"
+        #command = "rm"
 
-        if "cmd" in filenames:
-            command += " "+self.remote_log_dir+"/"+"*.cmd"
-        if "COMPLETED" in filenames or "STAT" in filenames:
-            #command += " "+self.remote_log_dir+"/"+"*COMPLETED"
-            command+= " "+filenames
-        #if "STAT" in filenames:
-        #    command += " "+self.remote_log_dir+"/"+"*STAT"
+        log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
+        multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
+        open(multiple_delete_previous_run, 'w+').write("rm -f "+filenames)
+        os.chmod(multiple_delete_previous_run, 0o770)
+        self.send_file(multiple_delete_previous_run, False)
+        command = os.path.join(self.get_files_path(),"multiple_delete_previous_run.sh")
+
         if self.send_command(command, ignore_log=True):
             return self._ssh_output
         else:
-            return None
+            return ""
 
     def send_file(self, filename, check=True):
         """
@@ -262,8 +261,9 @@ class ParamikoPlatform(Platform):
                 try:
                     #self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
                     self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
+                    return True
                 except (IOError):
-                    pass
+                    return False
             #ftp.close()
             
             return True
@@ -320,18 +320,17 @@ class ParamikoPlatform(Platform):
         """
         job_id = job.id
         job_status = Status.UNKNOWN
-
         if type(job_id) is not int and type(job_id) is not str:
-            # URi: logger
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
-            # URi: value ?
-            job.new_status= job_status
-
-        while not ( self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0 ) or (self.get_ssh_output() == "" and retries >= 0):
+            job.new_status = job_status
+        sleep_time=5
+        while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
-            Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
-            sleep(10)
+            Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('retries left {0}', retries)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+            sleep(sleep_time)
+            sleep_time = sleep_time+5
         if retries >= 0:
             Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
@@ -349,10 +348,15 @@ class ParamikoPlatform(Platform):
             else:
                 job_status = Status.UNKNOWN
         else:
+            Log.error(" check_job(), job is not on the queue system. Output was: {0}", self.get_checkjob_cmd(job_id))
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         job.new_status = job_status
-
+    def _check_jobid_in_queue(self,ssh_output,job_list_cmd):
+        for job in job_list_cmd[:-1].split(','):
+            if job not in ssh_output:
+                return False
+        return True
     def check_Alljobs(self, job_list,job_list_cmd,remote_logs, retries=5):
         """
         Checks jobs running status
@@ -365,19 +369,24 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
+
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
-        while not self.send_command(cmd) and retries >= 0:
+        sleep_time=5
+        while not (self.send_command(cmd) and retries >= 0) or ( not self._check_jobid_in_queue(self.get_ssh_output(),job_list_cmd) and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', cmd)
-            Log.warning('Can not get job status for all jobs, retrying in 3 sec')
-            sleep(3)
+            Log.debug('Retrying check job command: {0}', cmd)
+            Log.debug('retries left {0}', retries)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+
+            sleep(sleep_time)
+            sleep_time=sleep_time+5
         job_list_status = self.get_ssh_output()
         Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
-            in_queue_jobs=[]
-            list_queue_jobid=""
+            in_queue_jobs = []
+            list_queue_jobid = ""
             for job in job_list:
-                job_id=job.id
+                job_id = job.id
                 job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
@@ -385,14 +394,8 @@ class ParamikoPlatform(Platform):
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-                    if job.status == Status.QUEUING:
-                        job_status = Status.QUEUING
-                    elif job.status == Status.HELD:
-                        if not job.hold:
-                            self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                            job_status = Status.QUEUING
-                        else:
-                            job_status = Status.HELD
+                    if job.hold:
+                        job_status = Status.HELD # release?
                     else:
                         job_status = Status.QUEUING
                     list_queue_jobid += str(job.id) + ','
@@ -401,6 +404,8 @@ class ParamikoPlatform(Platform):
                     job_status = Status.FAILED
                 elif retries == 0:
                     job_status = Status.COMPLETED
+                    job.update_status(remote_logs)
+
                 else:
                     job_status = Status.UNKNOWN
                     Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
@@ -420,18 +425,22 @@ class ParamikoPlatform(Platform):
                         return
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
-                        Log.info("Job {0} is HELD", job.name)
+                        if not job.hold:
+                            self.send_command("scontrol release "+"{0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                            Log.info("Job {0} is being released (id:{1}) ", job.name,job.id)
+                        else:
+                            Log.info("Job {0} is HELD", job.name)
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
-                    else:
-                        Log.info("Job {0} is QUEUING {1}", job.name, reason)
+
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
                 job.new_status=job_status
+
 
     def get_checkjob_cmd(self, job_id):
         """
@@ -466,12 +475,12 @@ class ParamikoPlatform(Platform):
 
         if not self.restore_connection():
             return False
-        if "-rP" or "mv" or "find" or "convertLink" in command:
-            timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+        if "-rP" in command or "find" in command or "convertLink" in command:
+            timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
-            timeout = 20.0
+            timeout = 60/2
         else:
-            timeout = 150.0
+            timeout = 60*2
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
@@ -621,7 +630,7 @@ class ParamikoPlatform(Platform):
         :return: command to check job status script
         :rtype: str
         """
-        return 'nohup kill -0 {0} >& /dev/null; echo $?'.format(job_id)
+        return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """

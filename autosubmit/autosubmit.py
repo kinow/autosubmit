@@ -513,7 +513,8 @@ class Autosubmit:
     @staticmethod
     def _check_Ownership(expid):
         BasicConfig.read()
-        currentUser_id = os.getlogin()
+        #currentUser_id = os.getlogin()
+        currentUser_id = pwd.getpwuid(os.getuid())[0]
         currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
         if currentUser_id == currentOwner_id:
             return True
@@ -1077,48 +1078,33 @@ class Autosubmit:
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
-
                 Log.set_file(os.path.join(aslogs_path, 'run.log'))
                 os.system('clear')
-
                 signal.signal(signal.SIGINT, signal_handler)
-
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                 if not as_conf.check_conf_files():
                     Log.critical('Can not run with invalid configuration')
                     return False
-
                 project_type = as_conf.get_project_type()
                 if project_type != "none":
                     # Check proj configuration
                     as_conf.check_proj()
-
                 hpcarch = as_conf.get_platform()
-
                 safetysleeptime = as_conf.get_safetysleeptime()
                 retrials = as_conf.get_retrials()
-
                 submitter = Autosubmit._get_submitter(as_conf)
                 submitter.load_platforms(as_conf)
-
                 Log.debug("The Experiment name is: {0}", expid)
                 Log.debug("Sleep: {0}", safetysleeptime)
                 Log.debug("Default retrials: {0}", retrials)
-
                 Log.info("Starting job submission...")
-
                 pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
-
                 Log.debug("Length of the jobs list: {0}", len(job_list))
-
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-
                 # check the job list script creation
                 Log.debug("Checking experiment templates...")
-
                 platforms_to_test = set()
                 for job in job_list.get_job_list():
                     if job.platform_name is None:
@@ -1127,12 +1113,9 @@ class Autosubmit:
                     job.platform = submitter.platforms[job.platform_name.lower()]
                     # noinspection PyTypeChecker
                     platforms_to_test.add(job.platform)
-
                 job_list.check_scripts(as_conf)
-
                 packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_packages_" + expid)
-
                 if as_conf.get_wrapper_type() != 'none':
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl","job_packages_" + expid+".db"), 0644)
                     packages = packages_persistence.load()
@@ -1140,23 +1123,20 @@ class Autosubmit:
                         if package_name not in job_list.packages_dict:
                             job_list.packages_dict[package_name] = []
                         job_list.packages_dict[package_name].append(job_list.get_job_by_name(job_name))
-
                     for package_name, jobs in job_list.packages_dict.items():
                         from job.job import WrapperJob
                         wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
                                                  None,
-                                                 None, jobs[0].platform, as_conf)
+                                                 None, jobs[0].platform, as_conf, jobs[0].hold)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
                 job_list.update_list(as_conf)
                 job_list.save()
+                Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
-                Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                 while job_list.get_active():
-                    if Autosubmit.exit:
-                        return 2
                     # reload parameters changes
                     Log.debug("Reloading parameters...")
                     as_conf.reload()
@@ -1168,27 +1148,23 @@ class Autosubmit:
                                                                      total_jobs,
                                                                      time.strftime("%H:%M")))
                     safetysleeptime = as_conf.get_safetysleeptime()
-                    Log.debug("Sleep: {0}", safetysleeptime)
                     default_retrials = as_conf.get_retrials()
-                    Log.debug("Number of retrials: {0}", default_retrials)
-
                     check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
+                    Log.debug("Sleep: {0}", safetysleeptime)
+                    Log.debug("Number of retrials: {0}", default_retrials)
                     Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
-
                     save = False
-
                     slurm = []
                     for platform in platforms_to_test:
                         list_jobid = ""
                         completed_joblist = []
-                        list_prevStatus =[]
+                        list_prevStatus = []
                         queuing_jobs = job_list.get_in_queue_grouped_id(platform)
                         for job_id, job in queuing_jobs.items():
+                            # Check Wrappers one-by-one
                             if job_list.job_package_map and job_id in job_list.job_package_map:
                                 Log.debug('Checking wrapper job with id ' + str(job_id))
                                 wrapper_job = job_list.job_package_map[job_id]
-                                if as_conf.get_remote_dependencies():
-                                    wrapper_job.hold = wrapper_job.job_list[0].hold
                                 if as_conf.get_notifications() == 'true':
                                     for inner_job in wrapper_job.job_list:
                                         inner_job.prev_status= inner_job.status
@@ -1197,15 +1173,23 @@ class Autosubmit:
                                     check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now() - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                 if check_wrapper:
                                     wrapper_job.checked_time = datetime.datetime.now()
-                                    platform.check_job(wrapper_job)
-                                    Log.info(
-                                        'Wrapper job ' + wrapper_job.name + ' is ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+                                    platform.check_job(wrapper_job) # This is where wrapper will be checked on the slurm platform, update takes place.
+                                    try:
+                                        if wrapper_job.status != wrapper_job.new_status:
+                                            Log.info(
+                                                'Wrapper job ' + wrapper_job.name + ' changed from ' + str(Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]) )
+                                    except:
+                                        Log.critical("Status Is UNKNOWN, (NONE) exiting autosubmit")
+                                        exit(1)
 
-                                    wrapper_job.check_status(wrapper_job.new_status)
-                                    if wrapper_job.status == Status.WAITING: # if job failed to be held, delete it from packages table
+                                    wrapper_job.check_status(wrapper_job.new_status) # New status will be saved and inner_jobs will be checked.
+                                    # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
+                                    if wrapper_job.status == Status.WAITING:
                                         job_list.job_package_map.pop(job_id, None)
                                         job_list.packages_dict.pop(job_id, None)
                                     save = True
+
+                                #Notifications e-mail
                                 if as_conf.get_notifications() == 'true':
                                     for inner_job in wrapper_job.job_list:
                                         if inner_job.prev_status != inner_job.status:
@@ -1214,19 +1198,16 @@ class Autosubmit:
                                                                               Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                               Status.VALUE_TO_KEY[inner_job.status],
                                                                               as_conf.get_mails_to())
-                                else:
-                                    Log.info("Waiting for wrapper check time: {0}\n", check_wrapper_jobs_sleeptime)
-                            else:
+                            else: # Prepare jobs, if slurm check all active jobs at once.
                                 job = job[0]
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-
-                                if platform.type == "slurm":
+                                if platform.type == "slurm": # List for add all jobs that will be checked
                                     list_jobid += str(job_id) + ','
                                     list_prevStatus.append(prev_status)
                                     completed_joblist.append(job)
-                                else:
+                                else: # If they're not from slurm platform check one-by-one
                                     platform.check_job(job)
                                     if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                         if as_conf.get_notifications() == 'true':
@@ -1237,19 +1218,17 @@ class Autosubmit:
                                                                               as_conf.get_mails_to())
                                     save = True
 
-                        if platform.type == "slurm" and list_jobid!="":
+                        if platform.type == "slurm" and list_jobid != "":
                             slurm.append([platform,list_jobid,list_prevStatus,completed_joblist])
-                    #END LOOP
-                    #CHECK ALL JOBS
+                    #END Normal jobs + wrappers
+                    #CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                     for platform_jobs in slurm:
                         platform = platform_jobs[0]
                         jobs_to_check = platform_jobs[1]
                         platform.check_Alljobs(platform_jobs[3],jobs_to_check,as_conf.get_copy_remote_logs())
-
                         for j_Indx in xrange(0,len(platform_jobs[3])):
                             prev_status = platform_jobs[2][j_Indx]
                             job = platform_jobs[3][j_Indx]
-
                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                 if as_conf.get_notifications() == 'true':
                                     if Status.VALUE_TO_KEY[job.status] in job.notify_on:
@@ -1258,20 +1237,21 @@ class Autosubmit:
                                                                       Status.VALUE_TO_KEY[job.status],
                                                                       as_conf.get_mails_to())
                             save = True
-                    if job_list.update_list(as_conf) or save:
+                    #End Check Current jobs
+                    save2 = job_list.update_list(as_conf)
+                    if save or save2:
                         job_list.save()
-
-                    if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False):
+                    Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=False)
+                    if as_conf.get_remote_dependencies() and len(job_list.get_ready(hold=True)) > 0:
+                        Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True)
+                    save = job_list.update_list(as_conf)
+                    if save:
                         job_list.save()
-
-                    if as_conf.get_remote_dependencies():
-                        if Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence,hold=True):
-                            job_list.save()
 
                     if Autosubmit.exit:
+                        job_list.save()
                         return 2
                     time.sleep(safetysleeptime)
-
                 Log.info("No more jobs to run.")
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
@@ -1310,32 +1290,32 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
-            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages(hold=hold)
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
             valid_packages_to_submit = []
             for package in packages_to_submit:
                 try:
+                    # If called from inspect command or -cw
+                    if only_wrappers or inspect:
+                        for innerJob in package._jobs:
+                            # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
+                            innerJob.status = Status.COMPLETED
+                    # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
-                            # write error file
                             continue
-                    if only_wrappers or inspect:
-                        for innerJob in package._jobs:
-                            # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
-                            innerJob.status = Status.COMPLETED
-
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
                             from job.job import WrapperJob
                             wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.READY, 0,
                                                      package.jobs,
                                                      package._wallclock, package._num_processors,
-                                                     package.platform, as_conf)
+                                                     package.platform, as_conf, hold)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
                         if isinstance(package, JobPackageThread):
@@ -1361,6 +1341,7 @@ class Autosubmit:
                             for job in package.jobs:
                                 job.id = str(jobs_id[i])
                                 job.status = Status.SUBMITTED
+                                job.hold = hold
                                 job.write_submit_time()
                             if hasattr(package, "name"):
                                 job_list.packages_dict[package.name] = package.jobs
@@ -1368,7 +1349,7 @@ class Autosubmit:
                                 wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
                                                          package.jobs,
                                                          package._wallclock, package._num_processors,
-                                                         package.platform, as_conf)
+                                                         package.platform, as_conf, hold)
                                 job_list.job_package_map[package.jobs[0].id] = wrapper_job
                                 if isinstance(package, JobPackageThread):
                                     # Saving only when it is a real multi job package

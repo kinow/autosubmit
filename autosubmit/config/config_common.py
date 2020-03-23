@@ -1089,6 +1089,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
+    def get_wrapper_queue(self):
+        """
+        Returns the wrapper queue if not defined, will be the one of the first job wrapped
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'QUEUE', 'None')
     def get_min_wrapped_jobs(self):
         """
          Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
