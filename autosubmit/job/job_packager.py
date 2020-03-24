@@ -153,6 +153,8 @@ class JobPackager(object):
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs)
                     for p in built_packages_tmp:
+                        for job in p.jobs:
+                            job.packed = True
                         if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
                             built_packages.append(p)
                         elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
@@ -165,6 +167,8 @@ class JobPackager(object):
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                                     max_wrapped_jobs, section)
                     for p in built_packages_tmp:
+                        for job in p.jobs:
+                            job.packed = True
                         if len(p.jobs) >= self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED",self._as_config.get_min_wrapped_jobs()):  # if the quantity is not enough, don't make the wrapper
                             built_packages.append(p)
                         elif self._jobs_list._member_list.index(p.jobs[0].member) >= len(
@@ -177,6 +181,8 @@ class JobPackager(object):
                     built_packages_tmp =[]
                     built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section))
                     for p in built_packages_tmp:
+                        for job in p.jobs:
+                            job.packed = True
                         if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
                             built_packages.append(p)
                         elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
@@ -299,9 +305,9 @@ class JobPackager(object):
         if self.wrapper_type == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, max_wrapped_jobs, jobs_resources)
         else:
-            return self._build_horizontal_vertical_package(horizontal_packager, section, jobs_resources)
+            return self._build_horizontal_vertical_package(horizontal_packager, section, jobs_resources, max_wrapped_jobs)
 
-    def _build_horizontal_vertical_package(self, horizontal_packager, section, jobs_resources):
+    def _build_horizontal_vertical_package(self, horizontal_packager, section, jobs_resources, max_wrapped_jobs):
         total_wallclock = '00:00'
         horizontal_package = horizontal_packager.build_horizontal_package()
         horizontal_packager.create_sections_order(section)

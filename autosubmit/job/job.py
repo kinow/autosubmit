@@ -708,11 +708,11 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 60'
+                template = ' # %PACKED% \n sleep 5\n'
             elif self.type == Type.PYTHON:
-                template = 'time.sleep(60)'
+                template = 'time.sleep(5)'
             elif self.type == Type.R:
-                template = 'Sys.sleep(60)'
+                template = 'Sys.sleep(5)'
             else:
                 template = ''
 

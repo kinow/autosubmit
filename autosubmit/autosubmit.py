@@ -1185,6 +1185,8 @@ class Autosubmit:
                                     wrapper_job.check_status(wrapper_job.new_status) # New status will be saved and inner_jobs will be checked.
                                     # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
                                     if wrapper_job.status == Status.WAITING:
+                                        for inner_job in wrapper_job.job_list:
+                                            inner_job.packed = False
                                         job_list.job_package_map.pop(job_id, None)
                                         job_list.packages_dict.pop(job_id, None)
                                     save = True
