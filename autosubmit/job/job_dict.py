@@ -331,8 +331,7 @@ class DicJobs:
             job.platform_name = job.platform_name
         job.file = self.get_option(section, "FILE", None)
         job.queue = self.get_option(section, "QUEUE", None)
-        job.check = self.get_option(section, "CHECK", 'True').lower()
-        job.check_warnings = self.get_option(section, "SHOW_CHECK_WARNINGS", 'False').lower()
+        job.check = str(self.get_option(section, "CHECK", 'True')).lower()
 
         job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = str(self.get_option(section, "THREADS", 1))
@@ -340,14 +339,13 @@ class DicJobs:
         job.memory = self.get_option(section, "MEMORY", '')
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
-
-
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
 
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
+        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'False')).lower()
 
         self._jobs_list.get_job_list().append(job)
 

@@ -19,7 +19,8 @@
 
 from autosubmit.platforms.wrappers.wrapper_builder import WrapperDirector, PythonVerticalWrapperBuilder, \
     PythonHorizontalWrapperBuilder, PythonHorizontalVerticalWrapperBuilder, PythonVerticalHorizontalWrapperBuilder, \
-    BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder
+    BashHorizontalWrapperBuilder, BashVerticalWrapperBuilder, SrunHorizontalWrapperBuilder,SrunVerticalHorizontalWrapperBuilder
+from autosubmit.config.config_common import AutosubmitConfig
 
 
 class WrapperFactory(object):
@@ -32,7 +33,7 @@ class WrapperFactory(object):
     def get_wrapper(self, wrapper_builder, **kwargs):
         kwargs['allocated_nodes'] = self.allocated_nodes()
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
-        kwargs['queue'] = self.queue(kwargs['queue'])
+        kwargs['queue'] = self.queue(kwargs['queue']) #TODO
         kwargs['header_directive'] = self.header_directives(**kwargs)
 
         builder = wrapper_builder(**kwargs)
@@ -75,17 +76,24 @@ class SlurmWrapperFactory(WrapperFactory):
         return PythonVerticalWrapperBuilder(**kwargs)
 
     def horizontal_wrapper(self, **kwargs):
-        return PythonHorizontalWrapperBuilder(**kwargs)
+
+        if kwargs["method"] == 'srun':
+            return SrunHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonHorizontalWrapperBuilder(**kwargs)
 
     def hybrid_wrapper_horizontal_vertical(self, **kwargs):
         return PythonHorizontalVerticalWrapperBuilder(**kwargs)
 
     def hybrid_wrapper_vertical_horizontal(self, **kwargs):
-        return PythonVerticalHorizontalWrapperBuilder(**kwargs)
+        if kwargs["method"] == 'srun':
+            return SrunVerticalHorizontalWrapperBuilder(**kwargs)
+        else:
+            return PythonVerticalHorizontalWrapperBuilder(**kwargs)
 
     def header_directives(self, **kwargs):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'])
+                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'],kwargs['method'])
 
     def allocated_nodes(self):
         return self.platform.allocated_nodes()
@@ -107,7 +115,7 @@ class LSFWrapperFactory(WrapperFactory):
 
     def header_directives(self, **kwargs):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
-                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'])
+                                            kwargs['num_processors'], kwargs['dependency'], kwargs['directives'],kwargs['threads'])
 
     def queue_directive(self, queue):
         return queue
@@ -127,7 +135,7 @@ class EcWrapperFactory(WrapperFactory):
     def header_directives(self, **kwargs):
         return self.platform.wrapper_header(kwargs['name'], kwargs['queue'], kwargs['project'], kwargs['wallclock'],
                                             kwargs['num_processors'], kwargs['expid'], kwargs['dependency'],
-                                            kwargs['rootdir'], kwargs['directives'])
+                                            kwargs['rootdir'], kwargs['directives'],kwargs['threads'])
 
     def queue_directive(self, queue):
         return queue

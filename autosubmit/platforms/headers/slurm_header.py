@@ -121,43 +121,43 @@ class SlurmHeader(object):
         return ""
 
     SERIAL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #%ACCOUNT_DIRECTIVE%
-            #%MEMORY_DIRECTIVE%
-            #%TASKS_PER_NODE_DIRECTIVE%
-            #%THREADS%
-            #%NUMTASK%
-            #SBATCH -n %NUMPROC%
-            #SBATCH -t %WALLCLOCK%:00
-            #SBATCH -J %JOBNAME%
-            #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-            %CUSTOM_DIRECTIVES%
-            #
-            ###############################################################################
+###############################################################################
+#                   %TASKTYPE% %EXPID% EXPERIMENT
+###############################################################################
+#
+#%QUEUE_DIRECTIVE%
+#%ACCOUNT_DIRECTIVE%
+#%MEMORY_DIRECTIVE%
+#%TASKS_PER_NODE_DIRECTIVE%
+#%THREADS%
+#%NUMTASK%
+#SBATCH -n %NUMPROC%
+#SBATCH -t %WALLCLOCK%:00
+#SBATCH -J %JOBNAME%
+#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+%CUSTOM_DIRECTIVES%
+#
+###############################################################################
            """)
 
     PARALLEL = textwrap.dedent("""\
-            ###############################################################################
-            #                   %TASKTYPE% %EXPID% EXPERIMENT
-            ###############################################################################
-            #
-            #%QUEUE_DIRECTIVE%
-            #%ACCOUNT_DIRECTIVE%
-            #%MEMORY_DIRECTIVE%
-            #%MEMORY_PER_TASK_DIRECTIVE%
-            #%TASKS_PER_NODE_DIRECTIVE%
-            #%THREADS%
-            #SBATCH -n %NUMPROC%
-            #SBATCH -t %WALLCLOCK%:00
-            #SBATCH -J %JOBNAME%
-            #SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
-            #SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
-            %CUSTOM_DIRECTIVES%
-            #
-            ###############################################################################
-            """)
+###############################################################################
+#                   %TASKTYPE% %EXPID% EXPERIMENT
+###############################################################################
+#
+#%QUEUE_DIRECTIVE%
+#%ACCOUNT_DIRECTIVE%
+#%MEMORY_DIRECTIVE%
+#%MEMORY_PER_TASK_DIRECTIVE%
+#%TASKS_PER_NODE_DIRECTIVE%
+#%THREADS%
+#SBATCH -n %NUMPROC%
+#SBATCH -t %WALLCLOCK%:00
+#SBATCH -J %JOBNAME%
+#SBATCH --output=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%OUT_LOG_DIRECTIVE%
+#SBATCH --error=%CURRENT_SCRATCH_DIR%/%CURRENT_PROJ%/%CURRENT_USER%/%EXPID%/LOG_%EXPID%/%ERR_LOG_DIRECTIVE%
+%CUSTOM_DIRECTIVES%
+#
+###############################################################################
+    """)

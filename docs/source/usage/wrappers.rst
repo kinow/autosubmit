@@ -44,9 +44,21 @@ By default, jobs of the same type will be wrapped together, as long as the const
 Number of jobs in a package
 **********************
 
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = <ANY>
+    MIN_WRAPPED = 2
+    MAX_WRAPPED = 999
+
+
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
-    - If not defined, it considers the **MAXWRAPPEDJOBS** defined under [wrapper] in ``autosubmit_cxxx.conf``
-        - If **MAXWRAPPEDJOBS** is not defined, then **TOTALJOBS** is used by default
+    - If not defined, it considers the **MAX_WRAPPED** defined under [wrapper] in ``autosubmit_cxxx.conf``
+        - If **MAX_WRAPPED** is not defined, then **TOTALJOBS** is used by default
+
+
+
+
 
 Wrapper check time
 **********************
@@ -111,10 +123,23 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
     ...
     MAX_PROCESSORS = 2400
 
+Shared-memory Experiments
+**********************
+
+There is also the possibility of setting the option **METHOD** to SRUN in the wrapper directive (**ONLY** for vertical and vertical-horizontal wrappers).
+
+This allows to use SRUN instead of rely in machinefiles to work in parallel.
+
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = vertical
+    METHOD = srun
+
 Remote dependencies
 **********************
 
-There is also the possibility of setting the option **DEPENDENCIES** to True in the wrapper directive (**ONLY** for vertical or horizontal wrappers).
+There is also the possibility of setting the option **DEPENDENCIES** to True in the wrapper directive.
 
 This allows more than one package containing wrapped jobs to be submitted at the same time, even when the dependencies between jobs aren't yet satisfied. This is only useful for cases when the job scheduler considers the time a job has been queuing to determine the job's priority (and the scheduler understands the dependencies set between the submitted packages). New packages can be created as long as the total number of jobs are below than the number defined in the **TOTALJOBS** variable.
 
@@ -123,6 +148,8 @@ This allows more than one package containing wrapped jobs to be submitted at the
     [wrapper]
     TYPE = vertical
     DEPENDENCIES = True
+
+
 
 Hybrid wrapper
 ==========================
@@ -178,13 +205,19 @@ In `autosubmit_cxxx.conf`:
 
 .. code-block:: ini
 
-    [wrapper]
-    TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
-    JOBS_IN_WRAPPER = # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
-    CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
-    DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
-    MAXWRAPPEDJOBS = # OPTIONAL. Integer value, overrides TOTALJOBS
+    # Basic Configuration of wrapper
+    #TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
+    # JOBS_IN_WRAPPER = Sections that should be wrapped together ex SIM
+    # MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2
+    # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS
 
+    [wrapper]
+    TYPE = Vertical #REQUIRED
+    JOBS_IN_WRAPPER = SIM # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
+    DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
+    MIN_WRAPPED = 2
+    MAX_WRAPPED = 9999 # OPTIONAL. Integer value, overrides TOTALJOBS
+    CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
 
 In `platforms_cxxx.conf`:
 

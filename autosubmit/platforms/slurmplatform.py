@@ -42,7 +42,7 @@ class SlurmPlatform(ParamikoPlatform):
         self.job_status['COMPLETED'] = ['COMPLETED']
         self.job_status['RUNNING'] = ['RUNNING']
         self.job_status['QUEUING'] = ['PENDING', 'CONFIGURING', 'RESIZING']
-        self.job_status['FAILED'] = ['FAILED', 'CANCELLED', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT','OUT_OF_MEMORY','OUT_OF_ME+','OUT_OF_ME']
+        self.job_status['FAILED'] = ['FAILED', 'CANCELLED','CANCELLED+', 'NODE_FAIL', 'PREEMPTED', 'SUSPENDED', 'TIMEOUT','OUT_OF_MEMORY','OUT_OF_ME+','OUT_OF_ME']
         self._pathdir = "\$HOME/LOG_" + self.expid
         self._allow_arrays = False
         self._allow_wrappers = True
@@ -70,7 +70,7 @@ class SlurmPlatform(ParamikoPlatform):
         :param job: job object
         :type job: autosubmit.job.job.Job
         :return: job id for  submitted jobs
-        :rtype: list(int)
+        :rtype: list(str)
         """
         self.send_file(self.get_submit_script(),False)
         cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
@@ -137,7 +137,7 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     def get_checkjob_cmd(self, job_id):
-        return 'sacct -n -j {1} -o "State"'.format(self.host, job_id)
+        return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)
 
     def get_checkAlljobs_cmd(self, jobs_id):
         return "sacct -n -X -j  {1} -o jobid,State".format(self.host, jobs_id)
@@ -150,34 +150,54 @@ class SlurmPlatform(ParamikoPlatform):
         if len(reason) > 0:
             return reason[0]
         return reason
-        # output = output.split('\n')
-        # if len(output) > 1:
-        #     return output[1]
-        # else:
-        #     return output
 
 
     @staticmethod
-    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
-        return """\
-        #!/usr/bin/env python
-        ###############################################################################
-        #              {0}
-        ###############################################################################
-        #
-        #SBATCH -J {0}
-        {1}
-        #SBATCH -A {2}
-        #SBATCH --output={0}.out
-        #SBATCH --error={0}.err
-        #SBATCH -t {3}:00
-        #SBATCH -n {4}
-        {5}
-        {6}
-        #
-        ###############################################################################
-        """.format(filename, queue, project, wallclock, num_procs, dependency,
-                   '\n'.ljust(13).join(str(s) for s in directives))
+    def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives, threads,method="asthreads"):
+        if method =='srun':
+            language = "#!/bin/bash"
+            return \
+                language + """
+###############################################################################
+#              {0}
+###############################################################################
+#
+#SBATCH -J {0}
+{1}
+#SBATCH -A {2}
+#SBATCH --output={0}.out
+#SBATCH --error={0}.err
+#SBATCH -t {3}:00
+#SBATCH -n {4}
+#SBATCH --cpus-per-task={7}
+{5}
+{6}
+#
+###############################################################################
+                """.format(filename, queue, project, wallclock, num_procs, dependency,
+                           '\n'.ljust(13).join(str(s) for s in directives), threads)
+        else:
+            language = "#!/usr/bin/env python"
+            return \
+            language+"""
+###############################################################################
+#              {0}
+###############################################################################
+#
+#SBATCH -J {0}
+{1}
+#SBATCH -A {2}
+#SBATCH --output={0}.out
+#SBATCH --error={0}.err
+#SBATCH -t {3}:00
+#SBATCH --cpus-per-task={7}
+#SBATCH -n {4}
+{5}
+{6}
+#
+###############################################################################
+            """.format(filename, queue, project, wallclock, num_procs, dependency,
+                   '\n'.ljust(13).join(str(s) for s in directives),threads)
 
     @staticmethod
     def allocated_nodes():

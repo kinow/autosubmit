@@ -111,7 +111,8 @@ class AutosubmitConfig(object):
         if os.path.exists(self._proj_parser_file):
             with open(self._proj_parser_file, 'r+') as f:
                 first_line = f.readline()
-                if not re.match('[[a-zA-Z0-9]*]', first_line):
+                #if not re.match('\[[a-zA-Z0-9_]*\]', first_line):
+                if not re.match('^\[[^\[\]\# \t\n]*\][ \t]*$|^[ \t]+\[[^\[\]# \t\n]*\]', first_line):
                     content = f.read()
                     f.seek(0, 0)
                     f.write('[DEFAULT]'.rstrip('\r\n') + '\n' + first_line + content)
@@ -130,6 +131,7 @@ class AutosubmitConfig(object):
         :return: experiment's project directory
         :rtype: str
         """
+
         dir_templates = os.path.join(self.basic_config.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_PROJ_DIR,
                                      self.get_project_destination())
         return dir_templates
@@ -473,6 +475,8 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
                         dependency = dependency.split('+')[0]
+                    elif '*' in dependency:
+                        dependency = dependency.split('*')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
                     if dependency not in sections:
@@ -698,7 +702,6 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
-
     def get_git_project_commit(self):
         """
         Returns git commit from experiment's config file
@@ -707,6 +710,14 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
+    def get_git_remote_project_root(self):
+        """
+        Returns remote machine ROOT PATH
+
+        :return: git commit
+        :rtype: str
+        """
+        return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', '')
     def get_submodules_list(self):
         """
         Returns submodules list from experiment's config file
@@ -1078,6 +1089,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
+    def get_wrapper_queue(self):
+        """
+        Returns the wrapper queue if not defined, will be the one of the first job wrapped
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'QUEUE', 'None')
     def get_min_wrapped_jobs(self):
         """
          Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
@@ -1095,6 +1114,14 @@ class AutosubmitConfig(object):
          :rtype: int
          """
         return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
+    def get_wrapper_method(self):
+        """
+         Returns the method of make the wrapper
+
+         :return: method
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'METHOD', 'ASThread')
     def get_wrapper_check_time(self):
         """
          Returns time to check the status of jobs in the wrapper

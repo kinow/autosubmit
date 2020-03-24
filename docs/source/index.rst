@@ -21,4 +21,5 @@ Welcome to autosubmit's documentation!
    project
    variables
    codedoc/main
+   autosubmit-gui
 
