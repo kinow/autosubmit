@@ -6,7 +6,7 @@ import datetime
 import time
 import select
 import random
-from autosubmit.log.log import Log
+from bscearth.utils.log import Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
@@ -58,6 +58,23 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._wrapper
+    def restore_connection(self):
+        connected = True
+        if self._ssh is None:
+            if not self.connect():
+                retries = 2
+                retry = 0
+                connected = False
+                while connected == False and retry < retries:
+                    if self.connect(True):
+                        connected = True
+                    retry+=1
+            if not connected:
+                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator', self.host,self.name)
+                Log.critical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit')
+                exit(0)
+        return connected
+
 
     def connect(self,reconnect=False):
         """
@@ -93,9 +110,9 @@ class ParamikoPlatform(Platform):
                                   key_filename=self._host_config_id)
             self._ftpChannel = self._ssh.open_sftp()
             return True
-        except IOError as e:
-            Log.error('Can not create ssh or sftp connection to {0}: {1}', self.host, e.strerror)
+        except:
             return False
+            
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -104,24 +121,31 @@ class ParamikoPlatform(Platform):
         command = "find %s " % self.remote_log_dir
         if sections:
             for i, section in enumerate(sections.split()):
-                command += " -name \*%s_COMPLETED" % section
+                command += " -name *%s_COMPLETED" % section
                 if i < len(sections.split())-1:
                     command += " -o "
         else:
-            command += " -name \*_COMPLETED"
+            command += " -name *_COMPLETED"
 
-        if self.send_command(command):
+        if self.send_command(command,True):
             return self._ssh_output
         else:
             return None
 
     def remove_multiple_files(self, filenames):
-        command = "rm " + filenames
+        #command = "rm"
+
+        log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
+        multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
+        open(multiple_delete_previous_run, 'w+').write("rm -f "+filenames)
+        os.chmod(multiple_delete_previous_run, 0o770)
+        self.send_file(multiple_delete_previous_run, False)
+        command = os.path.join(self.get_files_path(),"multiple_delete_previous_run.sh")
 
         if self.send_command(command, ignore_log=True):
             return self._ssh_output
         else:
-            return None
+            return ""
 
     def send_file(self, filename, check=True):
         """
@@ -130,9 +154,8 @@ class ParamikoPlatform(Platform):
         :type filename: str
         """
 
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        if not self.restore_connection():
+            return False
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
@@ -176,10 +199,8 @@ class ParamikoPlatform(Platform):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        if self._ssh is None:
-            if not self.connect():
-                self._ftpChannel = self._ssh.open_sftp()
-                return None
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -204,9 +225,8 @@ class ParamikoPlatform(Platform):
         :return: True if successful or file does no exists
         :rtype: bool
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
@@ -230,21 +250,20 @@ class ParamikoPlatform(Platform):
         :param migrate: ignore if file exist or not
         :type dest: str
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
+        if not self.restore_connection():
+            return False
 
         try:
             #ftp = self._ssh.open_sftp()
-
             if not migrate:
                 self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
             else:
                 try:
-                    self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
+                    #self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
                     self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
+                    return True
                 except (IOError):
-                    pass
+                    return False
             #ftp.close()
             
             return True
@@ -301,22 +320,19 @@ class ParamikoPlatform(Platform):
         """
         job_id = job.id
         job_status = Status.UNKNOWN
-
         if type(job_id) is not int and type(job_id) is not str:
-            # URi: logger
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
-            # URi: value ?
-            job.new_status= job_status
-
-        while not ( self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0 ) or (self.get_ssh_output() == "" and retries >= 0):
+            job.new_status = job_status
+        sleep_time=5
+        while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
-            Log.error('Can not get job status for job id ({0}), retrying in 10 sec', job_id)
-            sleep(5)
-        output=self.get_ssh_output()
-        output_stripped=output.strip()
+            Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('retries left {0}', retries)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+            sleep(sleep_time)
+            sleep_time = sleep_time+5
         if retries >= 0:
-            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retries == 0:
@@ -332,11 +348,15 @@ class ParamikoPlatform(Platform):
             else:
                 job_status = Status.UNKNOWN
         else:
-            # BOUOUOUOU	NOT	GOOD!
+            Log.error(" check_job(), job is not on the queue system. Output was: {0}", self.get_checkjob_cmd(job_id))
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
         job.new_status = job_status
-
+    def _check_jobid_in_queue(self,ssh_output,job_list_cmd):
+        for job in job_list_cmd[:-1].split(','):
+            if job not in ssh_output:
+                return False
+        return True
     def check_Alljobs(self, job_list,job_list_cmd,remote_logs, retries=5):
         """
         Checks jobs running status
@@ -349,20 +369,24 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
+
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
-        while not self.send_command(cmd) and retries >= 0:
+        sleep_time=5
+        while not (self.send_command(cmd) and retries >= 0) or ( not self._check_jobid_in_queue(self.get_ssh_output(),job_list_cmd) and retries >= 0):
             retries -= 1
-            Log.warning('Retrying check job command: {0}', cmd)
-            Log.warning('Can not get job status for all jobs, retrying in 3 sec')
-            sleep(3)
+            Log.debug('Retrying check job command: {0}', cmd)
+            Log.debug('retries left {0}', retries)
+            Log.debug('Will be retrying in {0} seconds', sleep_time)
+
+            sleep(sleep_time)
+            sleep_time=sleep_time+5
         job_list_status = self.get_ssh_output()
         Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
-            in_queue_jobs=[]
-            list_queue_jobid=""
+            in_queue_jobs = []
+            list_queue_jobid = ""
             for job in job_list:
-                job_id=job.id
-                job_status = Status.UNKNOWN
+                job_id = job.id
                 job_status = self.parse_Alljobs_output(job_list_status,job_id)
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
@@ -370,20 +394,18 @@ class ParamikoPlatform(Platform):
                 elif job_status in self.job_status['RUNNING']:
                     job_status = Status.RUNNING
                 elif job_status in self.job_status['QUEUING']:
-                    if self.type == "slurm":
-                        if job.status == Status.HELD:
-                            job_status = Status.HELD
-                            if not job.hold:
-                                self.send_command("scontrol release "+"{0}".format(job_id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                                job_status = Status.QUEUING
-                        else:
-                            job_status = Status.QUEUING
-                        list_queue_jobid += str(job.id) + ','
-                        in_queue_jobs.append(job)
+                    if job.hold:
+                        job_status = Status.HELD # release?
+                    else:
+                        job_status = Status.QUEUING
+                    list_queue_jobid += str(job.id) + ','
+                    in_queue_jobs.append(job)
                 elif job_status in self.job_status['FAILED']:
                     job_status = Status.FAILED
                 elif retries == 0:
                     job_status = Status.COMPLETED
+                    job.update_status(remote_logs)
+
                 else:
                     job_status = Status.UNKNOWN
                     Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
@@ -403,24 +425,22 @@ class ParamikoPlatform(Platform):
                         return
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
-                        Log.info("Job {0} is HELD", job.name)
-                        Log.status("Job {0} is HELD", job.name)
-
+                        if not job.hold:
+                            self.send_command("scontrol release "+"{0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
+                            Log.info("Job {0} is being released (id:{1}) ", job.name,job.id)
+                        else:
+                            Log.info("Job {0} is HELD", job.name)
                     elif reason == '(JobHeldAdmin)':
                         Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
-                        Log.status("Job {0} Failed to be HELD, canceling... ", job.name)
-
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
-                    else:
-                        Log.info("Job {0} is QUEUING {1}", job.name, reason)
-                        Log.status("Job {0} is QUEUING {1}", job.name, reason)
 
         else:
             for job in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
                 job.new_status=job_status
+
 
     def get_checkjob_cmd(self, job_id):
         """
@@ -452,22 +472,15 @@ class ParamikoPlatform(Platform):
         :return: True if executed, False if failed
         :rtype: bool
         """
-         
-        if self._ssh is None:
-            if not self.connect():
-                retries = 2
-                connected = False
-                for retry in range(retries):
-                    if self.connect(True):
-                        connected = True
-                if not connected:
-                    return None
-        if "-rP" or "mv" or "find" or "convertLink" in command:
-            timeout = 3600.0  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+
+        if not self.restore_connection():
+            return False
+        if "-rP" in command or "find" in command or "convertLink" in command:
+            timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
-            timeout = 20.0
+            timeout = 60/2
         else:
-            timeout = 150.0
+            timeout = 60*2
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
@@ -506,14 +519,14 @@ class ParamikoPlatform(Platform):
                 if s != '':
                     self._ssh_output += s
             for errorLine in stderr_readlines:
-                if errorLine.find("submission failed") != -1:
+                if errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1:
                     Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
                     return False
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
-
-            Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
+                else:
+                    Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
         except BaseException as e:
             Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)
@@ -617,7 +630,7 @@ class ParamikoPlatform(Platform):
         :return: command to check job status script
         :rtype: str
         """
-        return 'nohup kill -0 {0} >& /dev/null; echo $?'.format(job_id)
+        return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
     def get_submitted_job_id(self, output):
         """
@@ -676,10 +689,8 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        if self._ssh is None:
-            if not self.connect():
-                return None
-
+        if not self.restore_connection():
+            return False
         if self.type == "slurm":
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
@@ -687,7 +698,8 @@ class ParamikoPlatform(Platform):
                 if self.send_command(self.get_mkdir_cmd()):
                    Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
-                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+                   Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
