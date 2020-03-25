@@ -1,0 +1,361 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Wrappers &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Defining the workflow" href="../workflows.html" />
+    <link rel="prev" title="How to configure email notifications" href="configure.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../workflows.html" title="Defining the workflow"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="configure.html" title="How to configure email notifications"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" accesskey="U">Usage</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="wrappers">
+<h1>Wrappers<a class="headerlink" href="#wrappers" title="Permalink to this headline">¶</a></h1>
+<p>In order to understand the goal of this feature, please take a look at: <a class="reference external" href="https://earth.bsc.es/wiki/lib/exe/fetch.php?media=library:seminars:techniques_to_improve_the_throughput.pptx">https://earth.bsc.es/wiki/lib/exe/fetch.php?media=library:seminars:techniques_to_improve_the_throughput.pptx</a></p>
+<p>At the moment there are 4 types of wrappers that can be used depending on the experiment’s workflow:</p>
+<ul class="simple">
+<li>Vertical</li>
+<li>Vertical mixed</li>
+<li>Horizontal</li>
+<li>Hybrid (horizontal-vertical and vertical-horizontal approaches)</li>
+</ul>
+<div class="section" id="how-to-configure">
+<h2>How to configure<a class="headerlink" href="#how-to-configure" title="Permalink to this headline">¶</a></h2>
+<p>In <code class="docutils literal notranslate"><span class="pre">autosubmit_cxxx.conf</span></code>, regardless of the wrapper type, you need to make sure that the values of the variables <strong>MAXWAITINGJOBS</strong> and <strong>TOTALJOBS</strong> are increased according to the number of jobs expected to be waiting/running at the same time in your experiment.</p>
+<p>For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[config]</span>
+<span class="na">EXPID</span> <span class="o">=</span> <span class="s">....</span>
+<span class="na">AUTOSUBMIT_VERSION</span> <span class="o">=</span> <span class="s">3.12.0b</span>
+<span class="na">...</span>
+
+<span class="na">MAXWAITINGJOBS</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">TOTALJOBS</span> <span class="o">=</span> <span class="s">100</span>
+<span class="na">...</span>
+</pre></div>
+</div>
+<p>and below the [config] block, add the wrapper directive, indicating the wrapper type:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span>
+</pre></div>
+</div>
+<p>You can also specify which job types should be wrapped. This can be done using the <strong>JOBS_IN_WRAPPER</strong> parameter.
+It is only required for the vertical-mixed type (in which the specified job types will be wrapped together), so if nothing is specified, all jobs will be wrapped.
+By default, jobs of the same type will be wrapped together, as long as the constraints are satisfied.</p>
+<div class="section" id="number-of-jobs-in-a-package">
+<h3>Number of jobs in a package<a class="headerlink" href="#number-of-jobs-in-a-package" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">&lt;ANY&gt;</span>
+<span class="na">MIN_WRAPPED</span> <span class="o">=</span> <span class="s">2</span>
+<span class="na">MAX_WRAPPED</span> <span class="o">=</span> <span class="s">999</span>
+</pre></div>
+</div>
+<ul class="simple">
+<li><dl class="first docutils">
+<dt><strong>MAX_WRAPPED</strong> can be defined in <code class="docutils literal notranslate"><span class="pre">jobs_cxxx.conf</span></code> in order to limit the number of jobs wrapped for the corresponding job section</dt>
+<dd><ul class="first last">
+<li><dl class="first docutils">
+<dt>If not defined, it considers the <strong>MAX_WRAPPED</strong> defined under [wrapper] in <code class="docutils literal notranslate"><span class="pre">autosubmit_cxxx.conf</span></code></dt>
+<dd><ul class="first last">
+<li>If <strong>MAX_WRAPPED</strong> is not defined, then <strong>TOTALJOBS</strong> is used by default</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="wrapper-check-time">
+<h3>Wrapper check time<a class="headerlink" href="#wrapper-check-time" title="Permalink to this headline">¶</a></h3>
+<p>It is possible to override the <strong>SAFETYSLEEPTIME</strong> for the wrapper, by using <strong>CHECK_TIME_WRAPPER</strong> and defining a time interval (in seconds) in which the wrapper internal jobs should be checked.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">Note that the <strong>numbers</strong> shown in this documentation are examples. The actual values must be set according to the specific workflow, as well as the platform configurations.</p>
+</div>
+</div>
+</div>
+<div class="section" id="vertical-wrapper">
+<h2>Vertical wrapper<a class="headerlink" href="#vertical-wrapper" title="Permalink to this headline">¶</a></h2>
+<p>The vertical wrapper is more appropriate when there are many sequential jobs. To use it, set TYPE = vertical:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical</span>
+</pre></div>
+</div>
+<p>In order to be able to use the vertical wrapper, in <code class="docutils literal notranslate"><span class="pre">platforms_cxxx.conf</span></code> set the maximum wallclock allowed by the platform in use:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[marenostrum4]</span>
+<span class="na">...</span>
+<span class="na">MAX_WALLCLOCK</span> <span class="o">=</span> <span class="s">72:00</span>
+</pre></div>
+</div>
+<p>Remember to add to each job the corresponding WALLCLOCK time.</p>
+</div>
+<div class="section" id="vertical-mixed-wrapper">
+<h2>Vertical-mixed wrapper<a class="headerlink" href="#vertical-mixed-wrapper" title="Permalink to this headline">¶</a></h2>
+<p>This is a version of the vertical wrapper that allows jobs of different types to be wrapped together.
+Note that the solution considers the order of the sections defined in the <code class="docutils literal notranslate"><span class="pre">jobs_cxxx.conf</span></code> file, so the order of the sections given in <strong>JOBS_IN_WRAPPER</strong> is irrelevant.
+Additionally, jobs are grouped within the corresponding date, member and chunk hierarchy.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical-mixed</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">&lt;JOB_SECTION1 JOB_SECTION2&gt; # REQUIRED</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="horizontal-wrapper">
+<h2>Horizontal wrapper<a class="headerlink" href="#horizontal-wrapper" title="Permalink to this headline">¶</a></h2>
+<p>The horizontal wrapper is more appropriate when there are multiple ensemble members that can be run in parallel.</p>
+<p>If the wrapped jobs have an mpirun call, they will need machine files to specify in which nodes each job will run.
+Different cases may need specific approaches when creating the machine files. For auto-ecearth use COMPONENTS instead of STANDARD.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">horizontal</span>
+<span class="na">MACHINEFILES</span> <span class="o">=</span> <span class="s">STANDARD</span>
+</pre></div>
+</div>
+<p>In order to be able to use the horizontal wrapper, in <code class="docutils literal notranslate"><span class="pre">platforms_cxxx.conf</span></code> set the maximum number of processors allowed by the platform in use:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[marenostrum4]</span>
+<span class="na">...</span>
+<span class="na">MAX_PROCESSORS</span> <span class="o">=</span> <span class="s">2400</span>
+</pre></div>
+</div>
+<div class="section" id="shared-memory-experiments">
+<h3>Shared-memory Experiments<a class="headerlink" href="#shared-memory-experiments" title="Permalink to this headline">¶</a></h3>
+<p>There is also the possibility of setting the option <strong>METHOD</strong> to SRUN in the wrapper directive (<strong>ONLY</strong> for vertical and vertical-horizontal wrappers).</p>
+<p>This allows to use SRUN instead of rely in machinefiles to work in parallel.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical</span>
+<span class="na">METHOD</span> <span class="o">=</span> <span class="s">srun</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="remote-dependencies">
+<h3>Remote dependencies<a class="headerlink" href="#remote-dependencies" title="Permalink to this headline">¶</a></h3>
+<p>There is also the possibility of setting the option <strong>DEPENDENCIES</strong> to True in the wrapper directive.</p>
+<p>This allows more than one package containing wrapped jobs to be submitted at the same time, even when the dependencies between jobs aren’t yet satisfied. This is only useful for cases when the job scheduler considers the time a job has been queuing to determine the job’s priority (and the scheduler understands the dependencies set between the submitted packages). New packages can be created as long as the total number of jobs are below than the number defined in the <strong>TOTALJOBS</strong> variable.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">True</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="hybrid-wrapper">
+<h2>Hybrid wrapper<a class="headerlink" href="#hybrid-wrapper" title="Permalink to this headline">¶</a></h2>
+<p>The hybrid wrapper is a wrapper that works both vertically and horizontally at the same time, meaning that members and chunks can be wrapped in one single job.
+Mixed approach using a combination of horizontal and vertical wrappers and the list of jobs is a list of lists.</p>
+</div>
+<div class="section" id="horizontal-vertical">
+<h2>Horizontal-vertical<a class="headerlink" href="#horizontal-vertical" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>There is a dependency between lists. Each list runs after the previous one finishes; the jobs within the list run in parallel at the same time</li>
+<li>It is particularly suitable if there are jobs of different types in the list with different wall clocks, but dependencies between jobs of different lists; it waits for all the jobs in the list to finish before starting the next list</li>
+</ul>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">horizontal-vertical</span>
+<span class="na">MACHINEFILES</span> <span class="o">=</span> <span class="s">STANDARD</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM POST</span>
+</pre></div>
+</div>
+<div class="figure align-center" id="wrapper-horizontal-vertical">
+<a class="reference internal image-reference" href="../_images/horizontal-vertical.png"><img alt="hybrid wrapper" src="../_images/horizontal-vertical.png" style="width: 80%;" /></a>
+</div>
+</div>
+<div class="section" id="vertical-horizontal">
+<h2>Vertical-horizontal<a class="headerlink" href="#vertical-horizontal" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>In this approach, each list is independent of each other and run in parallel; jobs within the list run one after the other</li>
+<li>It is particularly suitable for running many sequential ensembles</li>
+</ul>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical-horizontal</span>
+<span class="na">MACHINEFILES</span> <span class="o">=</span> <span class="s">STANDARD</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM POST</span>
+</pre></div>
+</div>
+<div class="figure align-center" id="wrapper-vertical-horizontal">
+<a class="reference internal image-reference" href="../_images/vertical-horizontal.png"><img alt="hybrid wrapper" src="../_images/vertical-horizontal.png" style="width: 80%;" /></a>
+</div>
+</div>
+<div class="section" id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this headline">¶</a></h2>
+<p>In <cite>autosubmit_cxxx.conf</cite>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="c1"># Basic Configuration of wrapper</span>
+<span class="c1">#TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED</span>
+<span class="c1"># JOBS_IN_WRAPPER = Sections that should be wrapped together ex SIM</span>
+<span class="c1"># MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2</span>
+<span class="c1"># MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS</span>
+
+<span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">Vertical #REQUIRED</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">{True,False} # OPTIONAL. False if not specified</span>
+<span class="na">MIN_WRAPPED</span> <span class="o">=</span> <span class="s">2</span>
+<span class="na">MAX_WRAPPED</span> <span class="o">=</span> <span class="s">9999 # OPTIONAL. Integer value, overrides TOTALJOBS</span>
+<span class="na">CHECK_TIME_WRAPPER</span> <span class="o">=</span> <span class="s"># OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME</span>
+</pre></div>
+</div>
+<p>In <cite>platforms_cxxx.conf</cite>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[marenostrum4]</span>
+<span class="na">...</span>
+<span class="na">MAX_WALLCLOCK</span> <span class="o">=</span>
+<span class="na">MAX_PROCESSORS</span> <span class="o">=</span>
+<span class="na">PROCESSORS_PER_NODE</span> <span class="o">=</span> <span class="s">48</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="visualization-examples">
+<h2>Visualization examples<a class="headerlink" href="#visualization-examples" title="Permalink to this headline">¶</a></h2>
+<p>When using the wrapper, it is useful to be able to visualize which packages are being created.
+So, when executing <em>autosubmit monitor cxxx</em>, a dashed box indicates the jobs that are wrapped together in the same job package.</p>
+<div class="section" id="id1">
+<h3>Vertical-mixed wrapper<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>Considering a very simple workflow with the configurations as follows:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical-mixed</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM POST</span>
+</pre></div>
+</div>
+<div class="figure align-center" id="wrapper">
+<a class="reference internal image-reference" href="../_images/wrapper.png"><img alt="wrapped jobs" src="../_images/wrapper.png" style="width: 100%;" /></a>
+</div>
+</div>
+<div class="section" id="horizontal-wrapper-with-remote-dependencies">
+<h3>Horizontal wrapper with remote dependencies<a class="headerlink" href="#horizontal-wrapper-with-remote-dependencies" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
+<span class="na">TYPE</span> <span class="o">=</span> <span class="s">horizontal</span>
+<span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM POST</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">True</span>
+</pre></div>
+</div>
+<div class="figure align-center" id="horizontal-remote">
+<a class="reference internal image-reference" href="../_images/horizontal_remote.png"><img alt="horizontally wrapped jobs" src="../_images/horizontal_remote.png" style="width: 60%;" /></a>
+</div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Wrappers</a><ul>
+<li><a class="reference internal" href="#how-to-configure">How to configure</a><ul>
+<li><a class="reference internal" href="#number-of-jobs-in-a-package">Number of jobs in a package</a></li>
+<li><a class="reference internal" href="#wrapper-check-time">Wrapper check time</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#vertical-wrapper">Vertical wrapper</a></li>
+<li><a class="reference internal" href="#vertical-mixed-wrapper">Vertical-mixed wrapper</a></li>
+<li><a class="reference internal" href="#horizontal-wrapper">Horizontal wrapper</a><ul>
+<li><a class="reference internal" href="#shared-memory-experiments">Shared-memory Experiments</a></li>
+<li><a class="reference internal" href="#remote-dependencies">Remote dependencies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hybrid-wrapper">Hybrid wrapper</a></li>
+<li><a class="reference internal" href="#horizontal-vertical">Horizontal-vertical</a></li>
+<li><a class="reference internal" href="#vertical-horizontal">Vertical-horizontal</a></li>
+<li><a class="reference internal" href="#summary">Summary</a></li>
+<li><a class="reference internal" href="#visualization-examples">Visualization examples</a><ul>
+<li><a class="reference internal" href="#id1">Vertical-mixed wrapper</a></li>
+<li><a class="reference internal" href="#horizontal-wrapper-with-remote-dependencies">Horizontal wrapper with remote dependencies</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="configure.html"
+                        title="previous chapter">How to configure email notifications</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../workflows.html"
+                        title="next chapter">Defining the workflow</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/usage/wrappers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../workflows.html" title="Defining the workflow"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="configure.html" title="How to configure email notifications"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" >Usage</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

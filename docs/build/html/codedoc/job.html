@@ -1,0 +1,1369 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>autosubmit.job &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="autosubmit.monitor" href="monitor.html" />
+    <link rel="prev" title="autosubmit.git" href="git.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="autosubmit.monitor"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="git.html" title="autosubmit.git"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" accesskey="U">Module documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-autosubmit.job.job">
+<span id="autosubmit-job"></span><h1>autosubmit.job<a class="headerlink" href="#module-autosubmit.job.job" title="Permalink to this headline">¶</a></h1>
+<p>Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit</p>
+<dl class="class">
+<dt id="autosubmit.job.job.Job">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job.</code><code class="descname">Job</code><span class="sig-paren">(</span><em>name</em>, <em>job_id</em>, <em>status</em>, <em>priority</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle all the tasks with Jobs at HPC.
+A job is created by default with a name, a jobid, a status and a type.
+It can have children and parents. The inheritance reflects the dependency between jobs.
+If Job2 must wait until Job1 is completed then Job2 is a child of Job1. Inversely Job1 is a parent of Job2</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>str</em>) – job’s name</li>
+<li><strong>jobid</strong> (<em>int</em>) – job’s identifier</li>
+<li><strong>status</strong> (<a class="reference internal" href="#autosubmit.job.job_common.Status" title="autosubmit.job.job_common.Status"><em>Status</em></a>) – job initial status</li>
+<li><strong>priority</strong> (<em>int</em>) – job’s priority</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.job.job.Job.add_parent">
+<code class="descname">add_parent</code><span class="sig-paren">(</span><em>*parents</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.add_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add parents for the job. It also adds current job as a child for all the new parents</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parents</strong> (<a href="#id1"><span class="problematic" id="id2">*</span></a>Job) – job’s parents to add</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_completion">
+<code class="descname">check_completion</code><span class="sig-paren">(</span><em>default_status=-1</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_completion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check the presence of <em>COMPLETED</em> file.
+Change status to COMPLETED if <em>COMPLETED</em> file exists and to FAILED otherwise.
+:param default_status: status to set if job is not completed. By default is FAILED
+:type default_status: Status</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_end_time">
+<code class="descname">check_end_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_end_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns end time from stat file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">date and time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_retrials_end_time">
+<code class="descname">check_retrials_end_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_retrials_end_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of end datetime for retrials from total stats file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">date and time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list[int]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_retrials_start_time">
+<code class="descname">check_retrials_start_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_retrials_start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of start datetime for retrials from total stats file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">date and time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list[int]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_retrials_submit_time">
+<code class="descname">check_retrials_submit_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_retrials_submit_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of submit datetime for retrials from total stats file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">date and time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list[int]</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_running_after">
+<code class="descname">check_running_after</code><span class="sig-paren">(</span><em>date_limit</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_running_after" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the job was running after the given date
+:param date_limit: reference date
+:type date_limit: datetime.datetime
+:return: True if job was running after the given date, false otherwise
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_script">
+<code class="descname">check_script</code><span class="sig-paren">(</span><em>as_conf</em>, <em>parameters</em>, <em>show_logs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if script is well formed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>parameters</strong> (<em>dict</em>) – script parameters</li>
+<li><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a>) – configuration file</li>
+<li><strong>show_logs</strong> (<em>Bool</em>) – Display output</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">true if not problem has been detected, false otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_start_time">
+<code class="descname">check_start_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns job’s start time</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">start time</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.check_started_after">
+<code class="descname">check_started_after</code><span class="sig-paren">(</span><em>date_limit</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.check_started_after" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if the job started after the given date
+:param date_limit: reference date
+:type date_limit: datetime.datetime
+:return: True if job started after the given date, false otherwise
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job.Job.children">
+<code class="descname">children</code><a class="headerlink" href="#autosubmit.job.job.Job.children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing all children of the job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">child jobs</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">set</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.compare_by_id">
+<code class="descname">compare_by_id</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.compare_by_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare jobs by ID</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>Job</em></a>) – job to compare</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">comparison result</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.compare_by_name">
+<code class="descname">compare_by_name</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.compare_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare jobs by name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>Job</em></a>) – job to compare</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">comparison result</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.compare_by_status">
+<code class="descname">compare_by_status</code><span class="sig-paren">(</span><em>other</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.compare_by_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compare jobs by status value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>other</strong> (<a class="reference internal" href="#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>Job</em></a>) – job to compare</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">comparison result</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.create_script">
+<code class="descname">create_script</code><span class="sig-paren">(</span><em>as_conf</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.create_script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates script file to be run for the job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a>) – configuration object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">script’s filename</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.delete_child">
+<code class="descname">delete_child</code><span class="sig-paren">(</span><em>child</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.delete_child" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes a child from the job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>child</strong> (<a class="reference internal" href="#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>Job</em></a>) – child to remove</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.delete_parent">
+<code class="descname">delete_parent</code><span class="sig-paren">(</span><em>parent</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.delete_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a parent from the job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>parent</strong> (<a class="reference internal" href="#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>Job</em></a>) – parent to remove</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.has_children">
+<code class="descname">has_children</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.has_children" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if job has any children, else return false</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">true if job has any children, otherwise return false</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.has_parents">
+<code class="descname">has_parents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.has_parents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if job has any parents, else return false</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">true if job has any parent, otherwise return false</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.inc_fail_count">
+<code class="descname">inc_fail_count</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.inc_fail_count" title="Permalink to this definition">¶</a></dt>
+<dd><p>Increments fail count</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.is_ancestor">
+<code class="descname">is_ancestor</code><span class="sig-paren">(</span><em>job</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.is_ancestor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the given job is an ancestor
+:param job: job to be checked if is an ancestor
+:return: True if job is an ancestor, false otherwise
+:rtype bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.is_parent">
+<code class="descname">is_parent</code><span class="sig-paren">(</span><em>job</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.is_parent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the given job is a parent
+:param job: job to be checked if is a parent
+:return: True if job is a parent, false otherwise
+:rtype bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.log_job">
+<code class="descname">log_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.log_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints job information in log</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job.Job.long_name">
+<code class="descname">long_name</code><a class="headerlink" href="#autosubmit.job.job.Job.long_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Job’s long name. If not setted, returns name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">long name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job.Job.parents">
+<code class="descname">parents</code><a class="headerlink" href="#autosubmit.job.job.Job.parents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns parent jobs list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">parent jobs</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">set</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job.Job.platform">
+<code class="descname">platform</code><a class="headerlink" href="#autosubmit.job.job.Job.platform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the platform to be used by the job. Chooses between serial and parallel platforms</p>
+<p>:return HPCPlatform object for the job to use
+:rtype: HPCPlatform</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.print_job">
+<code class="descname">print_job</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.print_job" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints debug information about the job</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.print_parameters">
+<code class="descname">print_parameters</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.print_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print sjob parameters in log</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job.Job.queue">
+<code class="descname">queue</code><a class="headerlink" href="#autosubmit.job.job.Job.queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the queue to be used by the job. Chooses between serial and parallel platforms</p>
+<p>:return HPCPlatform object for the job to use
+:rtype: HPCPlatform</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.remove_redundant_parents">
+<code class="descname">remove_redundant_parents</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.remove_redundant_parents" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if a parent is also an ancestor, if true, removes the link in both directions.
+Useful to remove redundant dependencies.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.update_content">
+<code class="descname">update_content</code><span class="sig-paren">(</span><em>as_conf</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.update_content" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create the script content to be run for the job</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>as_conf</strong> (<em>config</em>) – config</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">script code</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.update_parameters">
+<code class="descname">update_parameters</code><span class="sig-paren">(</span><em>as_conf</em>, <em>parameters</em>, <em>default_parameters={'M': '%M%'</em>, <em>'M_': '%M_%'</em>, <em>'Y': '%Y%'</em>, <em>'Y_': '%Y_%'</em>, <em>'d': '%d%'</em>, <em>'d_': '%d_%'</em>, <em>'m': '%m%'</em>, <em>'m_': '%m_%'}</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.update_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh parameters value</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>default_parameters</strong> (<em>dict</em>) – </li>
+<li><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a>) – </li>
+<li><strong>parameters</strong> (<em>dict</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.update_status">
+<code class="descname">update_status</code><span class="sig-paren">(</span><em>copy_remote_logs=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.update_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates job status, checking COMPLETED file if needed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>new_status</strong> – job status retrieved from the platform</li>
+<li><strong>copy_remote_logs</strong> – should copy remote logs when finished?</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Type:</th><td class="field-body"><p class="first last"><a class="reference internal" href="#autosubmit.job.job_common.Status" title="autosubmit.job.job_common.Status">Status</a></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.write_end_time">
+<code class="descname">write_end_time</code><span class="sig-paren">(</span><em>completed</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.write_end_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes ends date and time to TOTAL_STATS file
+:param completed: True if job was completed successfully, False otherwise
+:type completed: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.write_start_time">
+<code class="descname">write_start_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.write_start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes start date and time to TOTAL_STATS file
+:return: True if succesful, False otherwise
+:rtype: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job.Job.write_submit_time">
+<code class="descname">write_submit_time</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.Job.write_submit_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes submit date and time to TOTAL_STATS file</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job.WrapperJob">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job.</code><code class="descname">WrapperJob</code><span class="sig-paren">(</span><em>name</em>, <em>job_id</em>, <em>status</em>, <em>priority</em>, <em>job_list</em>, <em>total_wallclock</em>, <em>num_processors</em>, <em>platform</em>, <em>as_config</em>, <em>hold</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job.WrapperJob" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a wrapper from a package.</p>
+<p>Calls Job constructor.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>name</strong> (<em>String</em>) – Name of the Package</li>
+<li><strong>job_id</strong> (<em>Integer</em>) – Id of the first Job of the package</li>
+<li><strong>status</strong> (<em>String</em>) – ‘READY’ when coming from submit_ready_jobs()</li>
+<li><strong>priority</strong> (<em>Integer</em>) – 0 when coming from submit_ready_jobs()</li>
+<li><strong>job_list</strong> (<em>List</em><em>(</em><em>) </em><em>of Job</em><em>(</em><em>) </em><em>objects</em>) – List of jobs in the package</li>
+<li><strong>total_wallclock</strong> (<em>String Formatted</em>) – Wallclock of the package</li>
+<li><strong>num_processors</strong> (<em>Integer</em>) – Number of processors for the package</li>
+<li><strong>platform</strong> (<em>Platform Object. e.g. EcPlatform</em><em>(</em><em>)</em>) – Platform object defined for the package</li>
+<li><strong>as_config</strong> (<em>AutosubmitConfig object</em>) – Autosubmit basic configuration object</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<span class="target" id="module-autosubmit.job.job_common"></span><dl class="class">
+<dt id="autosubmit.job.job_common.StatisticsSnippetBash">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">StatisticsSnippetBash</code><a class="headerlink" href="#autosubmit.job.job_common.StatisticsSnippetBash" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the statistics snippet of a job. It contains header and tailer for
+local and remote jobs</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job_common.StatisticsSnippetEmpty">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">StatisticsSnippetEmpty</code><a class="headerlink" href="#autosubmit.job.job_common.StatisticsSnippetEmpty" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the statistics snippet of a job. It contains header and footer for
+local and remote jobs</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job_common.StatisticsSnippetPython">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">StatisticsSnippetPython</code><a class="headerlink" href="#autosubmit.job.job_common.StatisticsSnippetPython" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the statistics snippet of a job. It contains header and tailer for
+local and remote jobs</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job_common.StatisticsSnippetR">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">StatisticsSnippetR</code><a class="headerlink" href="#autosubmit.job.job_common.StatisticsSnippetR" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the statistics snippet of a job. It contains header and tailer for
+local and remote jobs</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job_common.Status">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">Status</code><a class="headerlink" href="#autosubmit.job.job_common.Status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the status of a job</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="autosubmit.job.job_common.Type">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_common.</code><code class="descname">Type</code><a class="headerlink" href="#autosubmit.job.job_common.Type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle the status of a job</p>
+</dd></dl>
+
+<span class="target" id="module-autosubmit.job.job_list"></span><dl class="class">
+<dt id="autosubmit.job.job_list.JobList">
+<em class="property">class </em><code class="descclassname">autosubmit.job.job_list.</code><code class="descname">JobList</code><span class="sig-paren">(</span><em>expid</em>, <em>config</em>, <em>parser_factory</em>, <em>job_list_persistence</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to manage the list of jobs to be run by autosubmit</p>
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.check_scripts">
+<code class="descname">check_scripts</code><span class="sig-paren">(</span><em>as_conf</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.check_scripts" title="Permalink to this definition">¶</a></dt>
+<dd><p>When we have created the scripts, all parameters should have been substituted.
+%PARAMETER% handlers not allowed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a>) – experiment configuration</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job_list.JobList.expid">
+<code class="descname">expid</code><a class="headerlink" href="#autosubmit.job.job_list.JobList.expid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the experiment identifier</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">experiment’s identifier</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.generate">
+<code class="descname">generate</code><span class="sig-paren">(</span><em>date_list</em>, <em>member_list</em>, <em>num_chunks</em>, <em>chunk_ini</em>, <em>parameters</em>, <em>date_format</em>, <em>default_retrials</em>, <em>default_job_type</em>, <em>wrapper_type=None</em>, <em>wrapper_jobs=None</em>, <em>new=True</em>, <em>notransitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.generate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates all jobs needed for the current workflow</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>default_job_type</strong> (<em>str</em>) – default type for jobs</li>
+<li><strong>date_list</strong> (<em>list</em>) – start dates</li>
+<li><strong>member_list</strong> (<em>list</em>) – members</li>
+<li><strong>num_chunks</strong> (<em>int</em>) – number of chunks to run</li>
+<li><strong>chunk_ini</strong> (<em>int</em>) – the experiment will start by the given chunk</li>
+<li><strong>parameters</strong> (<em>dict</em>) – parameters for the jobs</li>
+<li><strong>date_format</strong> (<em>str</em>) – option to format dates</li>
+<li><strong>default_retrials</strong> (<em>int</em>) – default retrials for ech job</li>
+<li><strong>new</strong> (<em>bool</em>) – is it a new generation?</li>
+<li><strong>wrapper_type</strong> – Type of wrapper defined by the user in <a href="#id3"><span class="problematic" id="id4">autosubmit_</span></a>.conf [wrapper] section.</li>
+<li><strong>wrapper_jobs</strong> (<em>String</em>) – Job types defined in <a href="#id5"><span class="problematic" id="id6">autosubmit_</span></a>.conf [wrapper sections] to be wrapped.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_active">
+<code class="descname">get_active</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_active" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of active jobs (In platforms queue + Ready)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">active jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_all">
+<code class="descname">get_all</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">all jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_chunk_list">
+<code class="descname">get_chunk_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_chunk_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get inner chunk list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">chunk list</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_completed">
+<code class="descname">get_completed</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_completed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of completed jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">completed jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_date_list">
+<code class="descname">get_date_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_date_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get inner date list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">date list</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_failed">
+<code class="descname">get_failed</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_failed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of failed jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">failed jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_finished">
+<code class="descname">get_finished</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_finished" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs finished (Completed, Failed)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">finished jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_held_jobs">
+<code class="descname">get_held_jobs</code><span class="sig-paren">(</span><em>platform=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_held_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs in the platforms (Held)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">jobs in platforms</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_in_queue">
+<code class="descname">get_in_queue</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_in_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs in the platforms (Submitted, Running, Queuing, Unknown,Held)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">jobs in platforms</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_job_by_name">
+<code class="descname">get_job_by_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_job_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the job that its name matches parameter name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> (<em>str</em>) – name to look for</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">found job</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">job</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_job_list">
+<code class="descname">get_job_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_job_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get inner job list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">job list</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_member_list">
+<code class="descname">get_member_list</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_member_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get inner member list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">member list</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_not_in_queue">
+<code class="descname">get_not_in_queue</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_not_in_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs NOT in the platforms (Ready, Waiting)</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">jobs not in platforms</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_ordered_jobs_by_date_member">
+<code class="descname">get_ordered_jobs_by_date_member</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_ordered_jobs_by_date_member" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the dictionary of jobs ordered according to wrapper’s expression divided by date and member</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">jobs ordered divided by date and member</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">dict</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_queuing">
+<code class="descname">get_queuing</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_queuing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs queuing</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">queuedjobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_ready">
+<code class="descname">get_ready</code><span class="sig-paren">(</span><em>platform=None</em>, <em>hold=False</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_ready" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of ready jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">ready jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_running">
+<code class="descname">get_running</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_running" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs running</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">running jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_submitted">
+<code class="descname">get_submitted</code><span class="sig-paren">(</span><em>platform=None</em>, <em>hold=False</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_submitted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of submitted jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">submitted jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_suspended">
+<code class="descname">get_suspended</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_suspended" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs on unknown state</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">unknown state jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_uncompleted">
+<code class="descname">get_uncompleted</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_uncompleted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of completed jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">completed jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_unknown">
+<code class="descname">get_unknown</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_unknown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs on unknown state</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">unknown state jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_unsubmitted">
+<code class="descname">get_unsubmitted</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_unsubmitted" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of unsummited jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">all jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_waiting">
+<code class="descname">get_waiting</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_waiting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs waiting</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">waiting jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_waiting_remote_dependencies">
+<code class="descname">get_waiting_remote_dependencies</code><span class="sig-paren">(</span><em>platform_type='slurm'</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_waiting_remote_dependencies" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs waiting on slurm scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">waiting jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job_list.JobList.graph">
+<code class="descname">graph</code><a class="headerlink" href="#autosubmit.job.job_list.JobList.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the graph</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">graph</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">networkx graph</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.load">
+<code class="descname">load</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreates an stored job list from the persistence</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">loaded job list object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#autosubmit.job.job_list.JobList" title="autosubmit.job.job_list.JobList">JobList</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.job.job_list.JobList.load_file">
+<em class="property">static </em><code class="descname">load_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.load_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Recreates an stored joblist from the pickle file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – pickle file to load</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">loaded joblist object</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><a class="reference internal" href="#autosubmit.job.job_list.JobList" title="autosubmit.job.job_list.JobList">JobList</a></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="autosubmit.job.job_list.JobList.parameters">
+<code class="descname">parameters</code><a class="headerlink" href="#autosubmit.job.job_list.JobList.parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of parameters common to all jobs
+:return: parameters
+:rtype: dict</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.print_with_status">
+<code class="descname">print_with_status</code><span class="sig-paren">(</span><em>statusChange=None</em>, <em>nocolor=False</em>, <em>existingList=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.print_with_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the string representation of the dependency tree of 
+the Job List</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>statusChange</strong> (<em>List of strings</em>) – List of changes in the list, supplied in set status</li>
+<li><strong>nocolor</strong> (<em>Boolean</em>) – True if the result should not include color codes</li>
+<li><strong>existingList</strong> (<em>List of Job Objects</em>) – External List of Jobs that will be printed, this excludes the inner list of jobs.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">String representation</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">String</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.remove_rerun_only_jobs">
+<code class="descname">remove_rerun_only_jobs</code><span class="sig-paren">(</span><em>notransitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.remove_rerun_only_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all jobs to be run only in reruns</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.rerun">
+<code class="descname">rerun</code><span class="sig-paren">(</span><em>chunk_list</em>, <em>notransitive=False</em>, <em>monitor=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.rerun" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates job list to rerun the jobs specified by chunk_list</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>chunk_list</strong> (<em>str</em>) – list of chunks to rerun</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.save">
+<code class="descname">save</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.save" title="Permalink to this definition">¶</a></dt>
+<dd><p>Persists the job list</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.sort_by_id">
+<code class="descname">sort_by_id</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.sort_by_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs sorted by id</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">jobs sorted by ID</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.sort_by_name">
+<code class="descname">sort_by_name</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.sort_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs sorted by name</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">jobs sorted by name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.sort_by_status">
+<code class="descname">sort_by_status</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.sort_by_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs sorted by status</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">job sorted by status</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.sort_by_type">
+<code class="descname">sort_by_type</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.sort_by_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of jobs sorted by type</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">job sorted by type</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.update_from_file">
+<code class="descname">update_from_file</code><span class="sig-paren">(</span><em>store_change=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.update_from_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates jobs list on the fly from and update file
+:param store_change: if True, renames the update file to avoid reloading it at the next iteration</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.update_genealogy">
+<code class="descname">update_genealogy</code><span class="sig-paren">(</span><em>new=True</em>, <em>notransitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.update_genealogy" title="Permalink to this definition">¶</a></dt>
+<dd><p>When we have created the job list, every type of job is created.
+Update genealogy remove jobs that have no templates
+:param new: if it is a new job list or not
+:type new: bool</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.job.job_list.JobList.update_list">
+<code class="descname">update_list</code><span class="sig-paren">(</span><em>as_conf</em>, <em>store_change=True</em>, <em>fromSetStatus=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.update_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a>) – autosubmit config object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if job status were modified, False otherwise</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="git.html"
+                        title="previous chapter">autosubmit.git</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="monitor.html"
+                        title="next chapter">autosubmit.monitor</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/codedoc/job.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="autosubmit.monitor"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="git.html" title="autosubmit.git"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" >Module documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

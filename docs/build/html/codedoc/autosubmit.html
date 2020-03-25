@@ -1,0 +1,696 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>autosubmit &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="autosubmit.config" href="config.html" />
+    <link rel="prev" title="Module documentation" href="main.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="autosubmit.config"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="main.html" title="Module documentation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" accesskey="U">Module documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-autosubmit.autosubmit">
+<span id="autosubmit"></span><h1>autosubmit<a class="headerlink" href="#module-autosubmit.autosubmit" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="autosubmit.autosubmit.Autosubmit">
+<em class="property">class </em><code class="descclassname">autosubmit.autosubmit.</code><code class="descname">Autosubmit</code><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Interface class for autosubmit.</p>
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.archive">
+<em class="property">static </em><code class="descname">archive</code><span class="sig-paren">(</span><em>expid</em>, <em>clean=True</em>, <em>compress=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.archive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
+to tar.gz and moves to year’s folder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>clean</strong><strong>,</strong><strong>compress</strong> – </li>
+<li><strong>expid</strong> (<em>str</em>) – experiment identifier</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.change_status">
+<em class="property">static </em><code class="descname">change_status</code><span class="sig-paren">(</span><em>final</em>, <em>final_status</em>, <em>job</em>, <em>save</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.change_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set job status to final</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>final</strong> – </li>
+<li><strong>final_status</strong> – </li>
+<li><strong>job</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.check">
+<em class="property">static </em><code class="descname">check</code><span class="sig-paren">(</span><em>experiment_id</em>, <em>notransitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks experiment configuration and warns about any detected error or inconsistency.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>experiment_id</strong> (<em>str</em>) – experiment identifier:</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.clean">
+<em class="property">static </em><code class="descname">clean</code><span class="sig-paren">(</span><em>expid</em>, <em>project</em>, <em>plot</em>, <em>stats</em>, <em>create_log_file=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.clean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clean experiment’s directory to save storage space.
+It removes project directory and outdated plots or stats.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>create_log_file</strong> (<em>bool</em>) – if true, creates log file</li>
+<li><strong>expid</strong> (<em>str</em>) – identifier of experiment to clean</li>
+<li><strong>project</strong> (<em>bool</em>) – set True to delete project directory</li>
+<li><strong>plot</strong> (<em>bool</em>) – set True to delete outdated plots</li>
+<li><strong>stats</strong> (<em>bool</em>) – set True to delete outdated stats</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.configure">
+<em class="property">static </em><code class="descname">configure</code><span class="sig-paren">(</span><em>advanced</em>, <em>database_path</em>, <em>database_filename</em>, <em>local_root_path</em>, <em>platforms_conf_path</em>, <em>jobs_conf_path</em>, <em>smtp_hostname</em>, <em>mail_from</em>, <em>machine</em>, <em>local</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.configure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure several paths for autosubmit: database, local root and others. Can be configured at system,
+user or local levels. Local level configuration precedes user level and user level precedes system
+configuration.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>database_path</strong> (<em>str</em>) – path to autosubmit database</li>
+<li><strong>database_filename</strong> (<em>str</em>) – database filename</li>
+<li><strong>local_root_path</strong> (<em>str</em>) – path to autosubmit’s experiments’ directory</li>
+<li><strong>platforms_conf_path</strong> (<em>str</em>) – path to platforms conf file to be used as model for new experiments</li>
+<li><strong>jobs_conf_path</strong> (<em>str</em>) – path to jobs conf file to be used as model for new experiments</li>
+<li><strong>machine</strong> (<em>bool</em>) – True if this configuration has to be stored for all the machine users</li>
+<li><strong>local</strong> (<em>bool</em>) – True if this configuration has to be stored in the local path</li>
+<li><strong>mail_from</strong> (<em>str</em>) – </li>
+<li><strong>smtp_hostname</strong> (<em>str</em>) – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.configure_dialog">
+<em class="property">static </em><code class="descname">configure_dialog</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.configure_dialog" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configure several paths for autosubmit interactively: database, local root and others.
+Can be configured at system, user or local levels. Local level configuration precedes user level and user level
+precedes system configuration.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.create">
+<em class="property">static </em><code class="descname">create</code><span class="sig-paren">(</span><em>expid</em>, <em>noplot</em>, <em>hide</em>, <em>output='pdf'</em>, <em>group_by=None</em>, <em>expand=[]</em>, <em>expand_status=[]</em>, <em>notransitive=False</em>, <em>check_wrappers=False</em>, <em>detail=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates job list for given experiment. Configuration files must be valid before realizing this process.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment identifier</li>
+<li><strong>noplot</strong> – if True, method omits final plotting of the jobs list. Only needed on large experiments when</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>plotting time can be much larger than creation time.
+:type noplot: bool
+:return: True if successful, False if not
+:rtype: bool
+:param hide: hides plot window
+:type hide: bool
+:param hide: hides plot window
+:type hide: bool
+:param output: plot’s file format. It can be pdf, png, ps or svg
+:type output: str</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.delete">
+<em class="property">static </em><code class="descname">delete</code><span class="sig-paren">(</span><em>expid</em>, <em>force</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.delete" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes and experiment from database and experiment’s folder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>expid</strong> (<em>str</em>) – identifier of the experiment to delete</li>
+<li><strong>force</strong> (<em>bool</em>) – if True, does not ask for confirmation</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if succesful, False if not</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.describe">
+<em class="property">static </em><code class="descname">describe</code><span class="sig-paren">(</span><em>experiment_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Show details for specified experiment</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>experiment_id</strong> (<em>str</em>) – experiment identifier:</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.expid">
+<em class="property">static </em><code class="descname">expid</code><span class="sig-paren">(</span><em>hpc</em>, <em>description</em>, <em>copy_id=''</em>, <em>dummy=False</em>, <em>test=False</em>, <em>operational=False</em>, <em>root_folder=''</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.expid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new experiment for given HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>operational</strong> (<em>bool</em>) – if true, creates an operational experiment</li>
+<li><strong>hpc</strong> (<em>str</em>) – name of the main HPC for the experiment</li>
+<li><strong>description</strong> (<em>str</em>) – short experiment’s description.</li>
+<li><strong>copy_id</strong> (<em>str</em>) – experiment identifier of experiment to copy</li>
+<li><strong>dummy</strong> (<em>bool</em>) – if true, writes a default dummy configuration for testing</li>
+<li><strong>test</strong> – if true, creates an experiment for testing</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">experiment identifier. If method fails, returns ‘’.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.generate_scripts_andor_wrappers">
+<em class="property">static </em><code class="descname">generate_scripts_andor_wrappers</code><span class="sig-paren">(</span><em>as_conf</em>, <em>job_list</em>, <em>jobs_filtered</em>, <em>packages_persistence</em>, <em>only_wrappers=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.generate_scripts_andor_wrappers" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>as_conf</strong> (<a class="reference internal" href="config.html#autosubmit.config.config_common.AutosubmitConfig" title="autosubmit.config.config_common.AutosubmitConfig"><em>AutosubmitConfig</em></a><em>(</em><em>) </em><em>Object</em>) – Class that handles basic configuration parameters of Autosubmit.</li>
+<li><strong>job_list</strong> (<a class="reference internal" href="job.html#autosubmit.job.job_list.JobList" title="autosubmit.job.job_list.JobList"><em>JobList</em></a><em>(</em><em>) </em><em>Object</em>) – Representation of the jobs of the experiment, keeps the list of jobs inside.</li>
+<li><strong>jobs_filtered</strong> (<em>List</em><em>(</em><em>) </em><em>of Job Objects</em>) – list of jobs that are relevant to the process.</li>
+<li><strong>packages_persistence</strong> (<em>JobPackagePersistence</em><em>(</em><em>) </em><em>Object</em>) – Object that handles local db persistence.</li>
+<li><strong>only_wrappers</strong> (<em>Boolean</em>) – True when coming from Autosubmit.create(). False when coming from Autosubmit.inspect(),</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">Nothing</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last"></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.inspect">
+<em class="property">static </em><code class="descname">inspect</code><span class="sig-paren">(</span><em>expid</em>, <em>lst</em>, <em>filter_chunks</em>, <em>filter_status</em>, <em>filter_section</em>, <em>notransitive=False</em>, <em>force=False</em>, <em>check_wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.inspect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates cmd files experiment.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – identifier of experiment to be run</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if run to the end, False otherwise</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.install">
+<em class="property">static </em><code class="descname">install</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.install" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new database instance for autosubmit at the configured path</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.migrate">
+<em class="property">static </em><code class="descname">migrate</code><span class="sig-paren">(</span><em>experiment_id</em>, <em>offer</em>, <em>pickup</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.migrate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Migrates experiment files from current to other user.
+It takes mapping information for new user from config files.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>experiment_id</strong> – experiment identifier:</li>
+<li><strong>pickup</strong> – </li>
+<li><strong>offer</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.monitor">
+<em class="property">static </em><code class="descname">monitor</code><span class="sig-paren">(</span><em>expid</em>, <em>file_format</em>, <em>lst</em>, <em>filter_chunks</em>, <em>filter_status</em>, <em>filter_section</em>, <em>hide</em>, <em>txt_only=False</em>, <em>group_by=None</em>, <em>expand=[]</em>, <em>expand_status=[]</em>, <em>hide_groups=False</em>, <em>notransitive=False</em>, <em>check_wrapper=False</em>, <em>txt_logfiles=False</em>, <em>detail=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.monitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots workflow graph for a given experiment with status of each job coded by node color.
+Plot is created in experiment’s plot folder with name &lt;expid&gt;_&lt;date&gt;_&lt;time&gt;.&lt;file_format&gt;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – identifier of the experiment to plot</li>
+<li><strong>file_format</strong> (<em>str</em>) – plot’s file format. It can be pdf, png, ps or svg</li>
+<li><strong>lst</strong> (<em>str</em>) – list of jobs to change status</li>
+<li><strong>filter_chunks</strong> (<em>str</em>) – chunks to change status</li>
+<li><strong>filter_status</strong> (<em>str</em>) – current status of the jobs to change status</li>
+<li><strong>filter_section</strong> (<em>str</em>) – sections to change status</li>
+<li><strong>hide</strong> (<em>bool</em>) – hides plot window</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.parse_args">
+<em class="property">static </em><code class="descname">parse_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse arguments given to an executable and start execution of command given</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.recovery">
+<em class="property">static </em><code class="descname">recovery</code><span class="sig-paren">(</span><em>expid</em>, <em>noplot</em>, <em>save</em>, <em>all_jobs</em>, <em>hide</em>, <em>group_by=None</em>, <em>expand=[]</em>, <em>expand_status=[]</em>, <em>notransitive=False</em>, <em>no_recover_logs=False</em>, <em>detail=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.recovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+otherwise it will be set to WAITING. It will also update the jobs list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – identifier of the experiment to recover</li>
+<li><strong>save</strong> (<em>bool</em>) – If true, recovery saves changes to the jobs list</li>
+<li><strong>all_jobs</strong> (<em>bool</em>) – if True, it tries to get completed files for all jobs, not only active.</li>
+<li><strong>hide</strong> (<em>bool</em>) – hides plot window</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.refresh">
+<em class="property">static </em><code class="descname">refresh</code><span class="sig-paren">(</span><em>expid</em>, <em>model_conf</em>, <em>jobs_conf</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.refresh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh project folder for given experiment</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>model_conf</strong> (<em>bool</em>) – </li>
+<li><strong>jobs_conf</strong> (<em>bool</em>) – </li>
+<li><strong>expid</strong> (<em>str</em>) – experiment identifier</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.rerun_recovery">
+<em class="property">static </em><code class="descname">rerun_recovery</code><span class="sig-paren">(</span><em>expid</em>, <em>job_list</em>, <em>rerun_list</em>, <em>as_conf</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.rerun_recovery" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
+otherwise it will be set to WAITING. It will also update the jobs list.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – identifier of the experiment to recover</li>
+<li><strong>save</strong> (<em>bool</em>) – If true, recovery saves changes to the jobs list</li>
+<li><strong>all_jobs</strong> (<em>bool</em>) – if True, it tries to get completed files for all jobs, not only active.</li>
+<li><strong>hide</strong> (<em>bool</em>) – hides plot window</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.run_experiment">
+<em class="property">static </em><code class="descname">run_experiment</code><span class="sig-paren">(</span><em>expid</em>, <em>notransitive=False</em>, <em>update_version=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.run_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – identifier of experiment to be run</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if run to the end, False otherwise</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.set_status">
+<em class="property">static </em><code class="descname">set_status</code><span class="sig-paren">(</span><em>expid</em>, <em>noplot</em>, <em>save</em>, <em>final</em>, <em>lst</em>, <em>filter_chunks</em>, <em>filter_status</em>, <em>filter_section</em>, <em>filter_type_chunk</em>, <em>hide</em>, <em>group_by=None</em>, <em>expand=[]</em>, <em>expand_status=[]</em>, <em>notransitive=False</em>, <em>check_wrapper=False</em>, <em>detail=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.set_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set status</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment identifier</li>
+<li><strong>save</strong> (<em>bool</em>) – if true, saves the new jobs list</li>
+<li><strong>final</strong> (<em>str</em>) – status to set on jobs</li>
+<li><strong>lst</strong> (<em>str</em>) – list of jobs to change status</li>
+<li><strong>filter_chunks</strong> (<em>str</em>) – chunks to change status</li>
+<li><strong>filter_status</strong> (<em>str</em>) – current status of the jobs to change status</li>
+<li><strong>filter_section</strong> (<em>str</em>) – sections to change status</li>
+<li><strong>hide</strong> (<em>bool</em>) – hides plot window</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.statistics">
+<em class="property">static </em><code class="descname">statistics</code><span class="sig-paren">(</span><em>expid</em>, <em>filter_type</em>, <em>filter_period</em>, <em>file_format</em>, <em>hide</em>, <em>notransitive=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots statistics graph for a given experiment.
+Plot is created in experiment’s plot folder with name &lt;expid&gt;_&lt;date&gt;_&lt;time&gt;.&lt;file_format&gt;</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – identifier of the experiment to plot</li>
+<li><strong>filter_type</strong> – type of the jobs to plot</li>
+<li><strong>filter_period</strong> – period to plot</li>
+<li><strong>file_format</strong> (<em>str</em>) – plot’s file format. It can be pdf, png, ps or svg</li>
+<li><strong>hide</strong> (<em>bool</em>) – hides plot window</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.submit_ready_jobs">
+<em class="property">static </em><code class="descname">submit_ready_jobs</code><span class="sig-paren">(</span><em>as_conf</em>, <em>job_list</em>, <em>platforms_to_test</em>, <em>packages_persistence</em>, <em>inspect=False</em>, <em>only_wrappers=False</em>, <em>hold=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.submit_ready_jobs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets READY jobs and send them to the platforms if there is available space on the queues</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>as_conf</strong> (<em>AutosubmitConfig object</em>) – autosubmit config object</li>
+<li><strong>job_list</strong> (<em>JobList object</em>) – job list to check</li>
+<li><strong>platforms_to_test</strong> (<em>set of Platform Objects</em><em>, </em><em>e.g. SgePlatform</em><em>(</em><em>)</em><em>, </em><a class="reference internal" href="platforms.html#autosubmit.platforms.lsfplatform.LsfPlatform" title="autosubmit.platforms.lsfplatform.LsfPlatform"><em>LsfPlatform</em></a><em>(</em><em>)</em><em></em>) – platforms used</li>
+<li><strong>packages_persistence</strong> (<em>JobPackagePersistence object</em>) – Handles database per experiment.</li>
+<li><strong>inspect</strong> (<em>Boolean</em>) – True if coming from generate_scripts_andor_wrappers().</li>
+<li><strong>only_wrappers</strong> (<em>Boolean</em>) – True if it comes from create -cw, False if it comes from inspect -cw.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if at least one job was submitted, False otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">Boolean</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.test">
+<em class="property">static </em><code class="descname">test</code><span class="sig-paren">(</span><em>expid</em>, <em>chunks</em>, <em>member=None</em>, <em>start_date=None</em>, <em>hpc=None</em>, <em>branch=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to conduct a test for a given experiment. It creates a new experiment for a given experiment with a
+given number of chunks with a random start date and a random member to be run on a random HPC.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment identifier</li>
+<li><strong>chunks</strong> (<em>int</em>) – number of chunks to be run by the experiment</li>
+<li><strong>member</strong> (<em>str</em>) – member to be used by the test. If None, it uses a random one from which are defined on
+the experiment.</li>
+<li><strong>start_date</strong> (<em>str</em>) – start date to be used by the test. If None, it uses a random one from which are defined on
+the experiment.</li>
+<li><strong>hpc</strong> (<em>str</em>) – HPC to be used by the test. If None, it uses a random one from which are defined on
+the experiment.</li>
+<li><strong>branch</strong> (<em>str</em>) – branch or revision to be used by the test. If None, it uses configured branch.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if test was succesful, False otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.testcase">
+<em class="property">static </em><code class="descname">testcase</code><span class="sig-paren">(</span><em>copy_id</em>, <em>description</em>, <em>chunks=None</em>, <em>member=None</em>, <em>start_date=None</em>, <em>hpc=None</em>, <em>branch=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.testcase" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method to create a test case. It creates a new experiment whose id starts by ‘t’.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>copy_id</strong> (<em>str</em>) – experiment identifier</li>
+<li><strong>description</strong> (<em>str</em>) – test case experiment description</li>
+<li><strong>chunks</strong> (<em>int</em>) – number of chunks to be run by the experiment. If None, it uses configured chunk(s).</li>
+<li><strong>member</strong> (<em>str</em>) – member to be used by the test. If None, it uses configured member(s).</li>
+<li><strong>start_date</strong> (<em>str</em>) – start date to be used by the test. If None, it uses configured start date(s).</li>
+<li><strong>hpc</strong> (<em>str</em>) – HPC to be used by the test. If None, it uses configured HPC.</li>
+<li><strong>branch</strong> (<em>str</em>) – branch or revision to be used by the test. If None, it uses configured branch.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">test case id</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.unarchive">
+<em class="property">static </em><code class="descname">unarchive</code><span class="sig-paren">(</span><em>experiment_id</em>, <em>compress=True</em>, <em>overwrite=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.unarchive" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>experiment_id</strong> (<em>str</em>) – experiment identifier</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.autosubmit.Autosubmit.update_version">
+<em class="property">static </em><code class="descname">update_version</code><span class="sig-paren">(</span><em>expid</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.Autosubmit.update_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Refresh experiment version with the current autosubmit version
+:param expid: experiment identifier
+:type expid: str</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.autosubmit.signal_handler">
+<code class="descclassname">autosubmit.autosubmit.</code><code class="descname">signal_handler</code><span class="sig-paren">(</span><em>signal_received</em>, <em>frame</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.signal_handler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to handle interrupt signals, allowing autosubmit to clean before exit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>signal_received</strong> – </li>
+<li><strong>frame</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.autosubmit.signal_handler_create">
+<code class="descclassname">autosubmit.autosubmit.</code><code class="descname">signal_handler_create</code><span class="sig-paren">(</span><em>signal_received</em>, <em>frame</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.autosubmit.signal_handler_create" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to handle KeyboardInterrumpt signals while the create method is being executed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>signal_received</strong> – </li>
+<li><strong>frame</strong> – </li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="main.html"
+                        title="previous chapter">Module documentation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="config.html"
+                        title="next chapter">autosubmit.config</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/codedoc/autosubmit.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="autosubmit.config"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="main.html" title="Module documentation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" >Module documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

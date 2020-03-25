@@ -1,0 +1,256 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>How to change the job status stopping autosubmit &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to stop the experiment" href="stop.html" />
+    <link rel="prev" title="How to monitor job statistics" href="stats.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="stop.html" title="How to stop the experiment"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="stats.html" title="How to monitor job statistics"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" accesskey="U">Usage</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="how-to-change-the-job-status-stopping-autosubmit">
+<h1>How to change the job status stopping autosubmit<a class="headerlink" href="#how-to-change-the-job-status-stopping-autosubmit" title="Permalink to this headline">¶</a></h1>
+<p>This procedure allows you to modify the status of your jobs.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Beware that Autosubmit must be stopped to use <code class="docutils literal notranslate"><span class="pre">setstatus</span></code>.
+Otherwise a running instance of Autosubmit, at some point, will overwritte any change you may have done.</p>
+</div>
+<p>You must execute:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="n">EXPID</span> <span class="o">-</span><span class="n">fs</span> <span class="n">STATUS_ORIGINAL</span> <span class="o">-</span><span class="n">t</span> <span class="n">STATUS_FINAL</span> <span class="o">-</span><span class="n">s</span>
+</pre></div>
+</div>
+<p><em>EXPID</em> is the experiment identifier.
+<em>STATUS_ORIGINAL</em> is the original status to filter by the list of jobs.
+<em>STATUS_FINAL</em> the desired target status.</p>
+<p>Options:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">np</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">s</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">t</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">o</span> <span class="p">{</span><span class="n">pdf</span><span class="p">,</span><span class="n">png</span><span class="p">,</span><span class="n">ps</span><span class="p">,</span><span class="n">svg</span><span class="p">}]</span> <span class="p">[</span><span class="o">-</span><span class="n">fl</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">fc</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">fs</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">ft</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">group_by</span> <span class="p">{</span><span class="n">date</span><span class="p">,</span><span class="n">member</span><span class="p">,</span><span class="n">chunk</span><span class="p">,</span><span class="n">split</span><span class="p">}</span> <span class="o">-</span><span class="n">expand</span> <span class="o">-</span><span class="n">expand_status</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">cw</span><span class="p">]</span> <span class="n">expid</span>
+
+  <span class="n">expid</span>                 <span class="n">experiment</span> <span class="n">identifier</span>
+
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>            <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+  <span class="o">-</span><span class="n">o</span> <span class="p">{</span><span class="n">pdf</span><span class="p">,</span><span class="n">png</span><span class="p">,</span><span class="n">ps</span><span class="p">,</span><span class="n">svg</span><span class="p">},</span> <span class="o">--</span><span class="n">output</span> <span class="p">{</span><span class="n">pdf</span><span class="p">,</span><span class="n">png</span><span class="p">,</span><span class="n">ps</span><span class="p">,</span><span class="n">svg</span><span class="p">}</span>
+                        <span class="nb">type</span> <span class="n">of</span> <span class="n">output</span> <span class="k">for</span> <span class="n">generated</span> <span class="n">plot</span>
+  <span class="o">-</span><span class="n">np</span><span class="p">,</span> <span class="o">--</span><span class="n">noplot</span>         <span class="n">omit</span> <span class="n">plot</span>
+  <span class="o">-</span><span class="n">s</span><span class="p">,</span> <span class="o">--</span><span class="n">save</span>            <span class="n">Save</span> <span class="n">changes</span> <span class="n">to</span> <span class="n">disk</span>
+  <span class="o">-</span><span class="n">t</span><span class="p">,</span> <span class="o">--</span><span class="n">status_final</span>    <span class="n">Target</span> <span class="n">status</span>
+  <span class="o">-</span><span class="n">fl</span> <span class="n">FILTER_LIST</span><span class="p">,</span> <span class="o">--</span><span class="nb">list</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">job</span> <span class="n">names</span> <span class="n">to</span> <span class="n">be</span> <span class="n">changed</span>
+  <span class="o">-</span><span class="n">fc</span> <span class="n">FILTER_CHUNK</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_chunk</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">chunks</span> <span class="n">to</span> <span class="n">be</span> <span class="n">changed</span>
+  <span class="o">-</span><span class="n">fs</span> <span class="n">FILTER_STATUS</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_status</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">status</span> <span class="n">to</span> <span class="n">be</span> <span class="n">changed</span>
+  <span class="o">-</span><span class="n">ft</span> <span class="n">FILTER_TYPE</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_type</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">types</span> <span class="n">to</span> <span class="n">be</span> <span class="n">changed</span>
+  <span class="o">-</span><span class="n">ftc</span> <span class="n">FILTER_TYPE_CHUNK</span> <span class="o">--</span><span class="n">filter_type_chunk</span>
+                        <span class="n">Accepts</span> <span class="n">a</span> <span class="n">string</span> <span class="k">with</span> <span class="n">the</span> <span class="n">formula</span><span class="p">:</span> <span class="s2">&quot;[ 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM,SIM2&quot;</span>
+                        <span class="n">Where</span> <span class="n">SIM</span><span class="p">,</span> <span class="n">SIM2</span> <span class="n">are</span> <span class="n">section</span> <span class="p">(</span><span class="ow">or</span> <span class="n">job</span> <span class="nb">type</span><span class="p">)</span> <span class="n">names</span> <span class="n">that</span> <span class="n">also</span> <span class="n">accept</span> <span class="n">the</span> <span class="n">keyword</span> <span class="s2">&quot;Any&quot;</span> <span class="n">so</span> <span class="n">the</span> <span class="n">changes</span> <span class="n">apply</span> <span class="n">to</span> <span class="nb">all</span> <span class="n">sections</span><span class="o">.</span>
+                        <span class="n">Starting</span> <span class="n">Date</span> <span class="p">(</span><span class="mi">19601101</span><span class="p">)</span> <span class="n">does</span> <span class="ow">not</span> <span class="n">accept</span> <span class="n">the</span> <span class="n">keyword</span> <span class="s2">&quot;Any&quot;</span><span class="o">.</span>
+                        <span class="n">Member</span> <span class="n">names</span> <span class="p">(</span><span class="n">fc0</span><span class="p">)</span> <span class="n">accept</span> <span class="n">the</span> <span class="n">keyword</span> <span class="s2">&quot;Any&quot;</span><span class="p">,</span> <span class="n">so</span> <span class="n">the</span> <span class="n">chunks</span> <span class="p">([</span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">])</span> <span class="n">given</span> <span class="n">will</span> <span class="n">be</span> <span class="n">updated</span> <span class="ow">in</span> <span class="nb">all</span> <span class="n">members</span><span class="o">.</span>
+                        <span class="n">Chunks</span> <span class="n">must</span> <span class="n">be</span> <span class="ow">in</span> <span class="n">the</span> <span class="nb">format</span> <span class="s2">&quot;[1 2 3 4 n]&quot;</span> <span class="n">where</span> <span class="s2">&quot;n&quot;</span> <span class="ow">is</span> <span class="n">an</span> <span class="n">integer</span> <span class="n">representing</span> <span class="n">the</span> <span class="n">number</span> <span class="n">of</span> <span class="n">the</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">member</span><span class="p">,</span>
+                        <span class="n">no</span> <span class="nb">range</span> <span class="nb">format</span> <span class="ow">is</span> <span class="n">allowed</span><span class="o">.</span>
+  <span class="o">-</span><span class="n">d</span>                    <span class="n">When</span> <span class="n">using</span> <span class="n">the</span> <span class="n">option</span> <span class="o">-</span><span class="n">ftc</span> <span class="ow">and</span> <span class="n">sending</span> <span class="n">this</span> <span class="n">flag</span><span class="p">,</span> <span class="n">a</span> <span class="n">tree</span> <span class="n">view</span> <span class="n">of</span> <span class="n">the</span> <span class="n">experiment</span> <span class="k">with</span> <span class="n">markers</span> <span class="n">indicating</span> <span class="n">which</span> <span class="n">jobs</span>
+                        <span class="n">have</span> <span class="n">been</span> <span class="n">changed</span> <span class="n">will</span> <span class="n">be</span> <span class="n">generated</span><span class="o">.</span>
+  <span class="o">--</span><span class="n">hide</span><span class="p">,</span>               <span class="n">hide</span> <span class="n">the</span> <span class="n">plot</span>
+  <span class="o">-</span><span class="n">group_by</span> <span class="p">{</span><span class="n">date</span><span class="p">,</span><span class="n">member</span><span class="p">,</span><span class="n">chunk</span><span class="p">,</span><span class="n">split</span><span class="p">,</span><span class="n">automatic</span><span class="p">}</span>
+                        <span class="n">criteria</span> <span class="n">to</span> <span class="n">use</span> <span class="k">for</span> <span class="n">grouping</span> <span class="n">jobs</span>
+  <span class="o">-</span><span class="n">expand</span><span class="p">,</span>              <span class="nb">list</span> <span class="n">of</span> <span class="n">dates</span><span class="o">/</span><span class="n">members</span><span class="o">/</span><span class="n">chunks</span> <span class="n">to</span> <span class="n">expand</span>
+  <span class="o">-</span><span class="n">expand_status</span><span class="p">,</span>       <span class="n">status</span><span class="p">(</span><span class="n">es</span><span class="p">)</span> <span class="n">to</span> <span class="n">expand</span>
+  <span class="o">-</span><span class="n">nt</span>                   <span class="o">--</span><span class="n">notransitive</span>
+                            <span class="n">prevents</span> <span class="n">doing</span> <span class="n">the</span> <span class="n">transitive</span> <span class="n">reduction</span> <span class="n">when</span> <span class="n">plotting</span> <span class="n">the</span> <span class="n">workflow</span>
+  <span class="o">-</span><span class="n">cw</span>                   <span class="o">--</span><span class="n">check_wrapper</span>
+                            <span class="n">Generate</span> <span class="n">the</span> <span class="n">wrapper</span> <span class="ow">in</span> <span class="n">the</span> <span class="n">current</span> <span class="n">workflow</span>
+</pre></div>
+</div>
+<p>Examples:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="n">cxxx</span> <span class="o">-</span><span class="n">fl</span> <span class="s2">&quot;cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim&quot;</span> <span class="o">-</span><span class="n">t</span> <span class="n">READY</span> <span class="o">-</span><span class="n">s</span>
+<span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="n">cxxx</span> <span class="o">-</span><span class="n">fc</span> <span class="s2">&quot;[ 19601101 [ fc1 [1] ] ]&quot;</span> <span class="o">-</span><span class="n">t</span> <span class="n">READY</span> <span class="o">-</span><span class="n">s</span>
+<span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="n">cxxx</span> <span class="o">-</span><span class="n">fs</span> <span class="n">FAILED</span> <span class="o">-</span><span class="n">t</span> <span class="n">READY</span> <span class="o">-</span><span class="n">s</span>
+<span class="n">autosubmit</span> <span class="n">setstatus</span> <span class="n">cxxx</span> <span class="o">-</span><span class="n">ft</span> <span class="n">TRANSFER</span> <span class="o">-</span><span class="n">t</span> <span class="n">SUSPENDED</span> <span class="o">-</span><span class="n">s</span>
+</pre></div>
+</div>
+<p>This script has two mandatory arguments.</p>
+<p>The -t where you must specify the target status of the jobs you want to change to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">READY</span><span class="p">,</span><span class="n">COMPLETED</span><span class="p">,</span><span class="n">WAITING</span><span class="p">,</span><span class="n">SUSPENDED</span><span class="p">,</span><span class="n">FAILED</span><span class="p">,</span><span class="n">UNKNOWN</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>The second argument has four alternatives, the -fl, -fc, -fs and -ft; with those we can apply a filter for the jobs we want to change:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>The -fl variable recieves a list of jobnames separated by blank spaces: e.g.:</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;cxxx_20101101_fc3_21_sim cxxx_20111101_fc4_26_sim&quot;</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+<p>If we supply the key word “Any”, all jobs will be changed to the target status.</p>
+<ul>
+<li><dl class="first docutils">
+<dt>The variable -fc should be a list of individual chunks or ranges of chunks in the following format:</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span> <span class="mi">19601101</span> <span class="p">[</span> <span class="n">fc0</span> <span class="p">[</span><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span><span class="p">]</span> <span class="n">fc1</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">]</span> <span class="mi">19651101</span> <span class="p">[</span> <span class="n">fc0</span> <span class="p">[</span><span class="mi">16</span><span class="o">-</span><span class="mi">30</span><span class="p">]</span> <span class="p">]</span> <span class="p">]</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>The variable -fs can be the following status for job:</dt>
+<dd><div class="first last highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span><span class="n">Any</span><span class="p">,</span><span class="n">READY</span><span class="p">,</span><span class="n">COMPLETED</span><span class="p">,</span><span class="n">WAITING</span><span class="p">,</span><span class="n">SUSPENDED</span><span class="p">,</span><span class="n">FAILED</span><span class="p">,</span><span class="n">UNKNOWN</span><span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</li>
+<li><p class="first">The variable -ft can be one of the defined types of job.</p>
+</li>
+</ul>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.</p>
+</div>
+<p>In order to understand more the grouping options, which are used for visualization purposes, please check <a class="reference internal" href="groups.html#grouping"><span class="std std-ref">Grouping jobs</span></a>.</p>
+</div>
+<div class="section" id="how-to-change-the-job-status-without-stopping-autosubmit">
+<h1>How to change the job status without stopping autosubmit<a class="headerlink" href="#how-to-change-the-job-status-without-stopping-autosubmit" title="Permalink to this headline">¶</a></h1>
+<blockquote>
+<div>This procedure allows you to modify the status of your jobs without having to stop Autosubmit.</div></blockquote>
+<p>You must create a file in <code class="docutils literal notranslate"><span class="pre">&lt;experiments_directory&gt;/&lt;expid&gt;/pkl/</span></code> named:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">updated_list_</span><span class="o">&lt;</span><span class="n">expid</span><span class="o">&gt;.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<p>Format:</p>
+<p>This file should have two columns: the first one has to be the job_name and the second one the status.</p>
+<p>Options:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">READY</span><span class="p">,</span><span class="n">COMPLETED</span><span class="p">,</span><span class="n">WAITING</span><span class="p">,</span><span class="n">SUSPENDED</span><span class="p">,</span><span class="n">FAILED</span><span class="p">,</span><span class="n">UNKNOWN</span>
+</pre></div>
+</div>
+<p>Example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">vi</span> <span class="n">updated_list_cxxx</span><span class="o">.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">cxxx_20101101_fc3_21_sim    READY</span>
+<span class="na">cxxx_20111101_fc4_26_sim    READY</span>
+</pre></div>
+</div>
+<p>If Autosubmit finds the above file, it will process it. You can check that the processing was OK at a given date and time,
+if you see that the file name has changed to:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">update_list_</span><span class="o">&lt;</span><span class="n">expid</span><span class="o">&gt;</span><span class="n">_</span><span class="o">&lt;</span><span class="n">date</span><span class="o">&gt;</span><span class="n">_</span><span class="o">&lt;</span><span class="n">time</span><span class="o">&gt;.</span><span class="n">txt</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A running instance of Autosubmit will check the existance of avobe file after checking already submitted jobs.
+It may take some time, depending on the setting <code class="docutils literal notranslate"><span class="pre">SAFETYSLEEPTIME</span></code>.</p>
+</div>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Keep in mind that autosubmit reads the file automatically so it is suggested to create the file in another location like <code class="docutils literal notranslate"><span class="pre">/tmp</span></code> or <code class="docutils literal notranslate"><span class="pre">/var/tmp</span></code> and then copy/move it to the <code class="docutils literal notranslate"><span class="pre">pkl</span></code> folder. Alternativelly you can create the file with a different name an rename it when you have finished.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">How to change the job status stopping autosubmit</a></li>
+<li><a class="reference internal" href="#how-to-change-the-job-status-without-stopping-autosubmit">How to change the job status without stopping autosubmit</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="stats.html"
+                        title="previous chapter">How to monitor job statistics</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="stop.html"
+                        title="next chapter">How to stop the experiment</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/usage/setstatus.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="stop.html" title="How to stop the experiment"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="stats.html" title="How to monitor job statistics"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" >Usage</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

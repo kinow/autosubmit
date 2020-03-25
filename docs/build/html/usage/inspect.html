@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>How to generate cmd files &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to test the experiment" href="test.html" />
+    <link rel="prev" title="How to run the experiment" href="run.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test.html" title="How to test the experiment"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="run.html" title="How to run the experiment"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" accesskey="U">Usage</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="how-to-generate-cmd-files">
+<h1>How to generate cmd files<a class="headerlink" href="#how-to-generate-cmd-files" title="Permalink to this headline">¶</a></h1>
+<p>To generate  the cmd files of the current non-active jobs experiment, it is possible to use the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">inspect</span> <span class="n">EXPID</span>
+</pre></div>
+</div>
+<p>EXPID is the experiment identifier.</p>
+<div class="section" id="usage">
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<p>Options:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">autosubmit</span> <span class="n">inspect</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span>  <span class="p">[</span><span class="o">-</span><span class="n">fl</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">fc</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">fs</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">ft</span><span class="p">]</span>  <span class="p">[</span><span class="o">-</span><span class="n">cw</span><span class="p">]</span> <span class="n">expid</span>
+
+  <span class="n">expid</span>                 <span class="n">experiment</span> <span class="n">identifier</span>
+
+  <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>            <span class="n">show</span> <span class="n">this</span> <span class="n">help</span> <span class="n">message</span> <span class="ow">and</span> <span class="n">exit</span>
+
+  <span class="o">-</span><span class="n">fl</span> <span class="n">FILTER_LIST</span><span class="p">,</span> <span class="o">--</span><span class="nb">list</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">job</span> <span class="n">names</span> <span class="n">to</span> <span class="n">be</span> <span class="n">generated</span>
+  <span class="o">-</span><span class="n">fc</span> <span class="n">FILTER_CHUNK</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_chunk</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">chunks</span> <span class="n">to</span> <span class="n">be</span> <span class="n">generated</span>
+  <span class="o">-</span><span class="n">fs</span> <span class="n">FILTER_STATUS</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_status</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">status</span> <span class="n">to</span> <span class="n">be</span> <span class="n">generated</span>
+  <span class="o">-</span><span class="n">ft</span> <span class="n">FILTER_TYPE</span><span class="p">,</span> <span class="o">--</span><span class="n">filter_type</span>
+                        <span class="n">List</span> <span class="n">of</span> <span class="n">types</span> <span class="n">to</span> <span class="n">be</span> <span class="n">generated</span>
+
+  <span class="o">-</span><span class="n">cw</span>                   <span class="o">--</span><span class="n">checkwrapper</span>
+                            <span class="n">Generate</span> <span class="n">the</span> <span class="n">wrapper</span> <span class="n">cmd</span> <span class="k">with</span> <span class="n">the</span> <span class="n">current</span> <span class="n">filtered</span> <span class="n">jobs</span>
+
+  <span class="o">-</span><span class="n">f</span>                    <span class="o">--</span><span class="n">force</span>
+                            <span class="n">Generate</span> <span class="nb">all</span> <span class="n">cmd</span> <span class="n">files</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="example">
+<h2>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h2>
+<p>with autosubmit.lock present or not:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">inspect</span> <span class="n">expid</span>
+</pre></div>
+</div>
+<p>with autosubmit.lock present or not:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">inspect</span> <span class="n">expid</span> <span class="o">-</span><span class="n">f</span>
+</pre></div>
+</div>
+<p>without autosubmit.lock:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">inspect</span> <span class="n">expid</span> <span class="o">-</span><span class="n">fl</span> <span class="p">[</span><span class="o">-</span><span class="n">fc</span><span class="p">,</span><span class="o">-</span><span class="n">fs</span> <span class="ow">or</span> <span class="n">ft</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>To generate cmd for wrappers:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">inspect</span> <span class="n">expid</span> <span class="o">-</span><span class="n">cw</span> <span class="o">-</span><span class="n">f</span>
+</pre></div>
+</div>
+<p>With autosubmit.lock and no (-f) force, it will only generate all files that are not submitted.</p>
+<p>Without autosubmit.lock, it will generate all unless filtered by -fl,fc,fs or ft.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">How to generate cmd files</a><ul>
+<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="run.html"
+                        title="previous chapter">How to run the experiment</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="test.html"
+                        title="next chapter">How to test the experiment</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/usage/inspect.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="test.html" title="How to test the experiment"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="run.html" title="How to run the experiment"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" >Usage</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

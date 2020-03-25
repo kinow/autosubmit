@@ -1,0 +1,210 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Variables reference &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Module documentation" href="codedoc/main.html" />
+    <link rel="prev" title="Developing a project" href="project.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="codedoc/main.html" title="Module documentation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="project.html" title="Developing a project"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="variables-reference">
+<h1>Variables reference<a class="headerlink" href="#variables-reference" title="Permalink to this headline">¶</a></h1>
+<p>Autosubmit uses a variable substitution system to facilitate the development of the templates. This variables can be
+used on the template in the form %VARIABLE_NAME%.</p>
+<div class="section" id="job-variables">
+<h2>Job variables<a class="headerlink" href="#job-variables" title="Permalink to this headline">¶</a></h2>
+<p>This variables are relatives to the current job.</p>
+<ul class="simple">
+<li><strong>TASKTYPE</strong>: type of the job, as given on job configuration file.</li>
+<li><strong>JOBNAME</strong>: current job full name.</li>
+<li><strong>FAIL_COUNT</strong>: number of failed attempts to run this job.</li>
+<li><strong>SDATE</strong>: current startdate.</li>
+<li><strong>MEMBER</strong>: current member.</li>
+<li><strong>CHUNK</strong>: current chunk.</li>
+<li><strong>SPLIT</strong>: current split.</li>
+<li><strong>DELAY</strong>: current delay.</li>
+<li><strong>DAY_BEFORE</strong>: day before the startdate</li>
+<li><strong>Chunk_End_IN_DAYS</strong>: chunk’s length in days</li>
+<li><strong>Chunk_START_DATE</strong>: chunk’s start date</li>
+<li><strong>Chunk_START_YEAR</strong>: chunk’s start year</li>
+<li><strong>Chunk_START_MONTH</strong>: chunk’s start month</li>
+<li><strong>Chunk_START_DAY</strong>: chunk’s start day</li>
+<li><strong>Chunk_START_HOUR</strong>: chunk’s start hout</li>
+<li><strong>Chunk_END_DATE</strong>: chunk’s end date</li>
+<li><strong>Chunk_END_YEAR</strong>: chunk’s end year</li>
+<li><strong>Chunk_END_MONTH</strong>: chunk’s end month</li>
+<li><strong>Chunk_END_DAY</strong>: chunk’s end day</li>
+<li><strong>Chunk_END_HOUR</strong>: chunk’s end hour</li>
+<li><strong>PREV</strong>: days since startdate at the chunk’s start</li>
+<li><strong>Chunk_FIRST</strong>: True if the current chunk is the first, false otherwise.</li>
+<li><strong>Chunk_LAST</strong>: True if the current chunk is the last, false otherwise.</li>
+<li><strong>NUMPROC</strong>: Number of processors that the job will use.</li>
+<li><strong>NUMTHREADS</strong>: Number of threads that the job will use.</li>
+<li><strong>NUMTASK</strong>: Number of tasks that the job will use.</li>
+<li><strong>WALLCLOCK</strong>: Number of processors that the job will use.</li>
+<li><strong>SCRATCH_FREE_SPACE</strong>: Percentage of free space required on the <code class="docutils literal notranslate"><span class="pre">scratch</span></code>.</li>
+<li><strong>NOTIFY_ON</strong>: Determine the job statuses you want to be notified.</li>
+<li><strong>WRAPPER</strong>: Wrapper type, None if wrapper is not being used</li>
+</ul>
+</div>
+<div class="section" id="platform-variables">
+<h2>Platform variables<a class="headerlink" href="#platform-variables" title="Permalink to this headline">¶</a></h2>
+<p>This variables are relative to the platoforms defined on the jobs conf. A full set of the next variables are defined for
+each platform defined on the platforms configuration file, substituting {PLATFORM_NAME} for each platform’s name. Also, a
+suite of variables is defined for the current platform where {PLATFORM_NAME} is substituted by CURRENT.</p>
+<ul class="simple">
+<li><strong>{PLATFORM_NAME}_ARCH</strong>: Platform name</li>
+<li><strong>{PLATFORM_NAME}_HOST</strong>: Platform url</li>
+<li><strong>{PLATFORM_NAME}_USER</strong>: Platform user</li>
+<li><strong>{PLATFORM_NAME}_PROJ</strong>: Platform project</li>
+<li><strong>{PLATFORM_NAME}_BUDG</strong>: Platform budget</li>
+<li><strong>{PLATFORM_NAME}_RESERVATION</strong>: You can configure your reservation id for the given platform.</li>
+<li><strong>{PLATFORM_NAME}_EXCLUSIVITY</strong>: True if you want to request exclusivity nodes.</li>
+<li><strong>{PLATFORM_NAME}_TYPE</strong>: Platform scheduler type</li>
+<li><strong>{PLATFORM_NAME}_VERSION</strong>: Platform scheduler version</li>
+<li><strong>{PLATFORM_NAME}_SCRATCH_DIR</strong>: Platform’s scratch folder path</li>
+<li><strong>{PLATFORM_NAME}_ROOTDIR</strong>: Platform’s experiment folder path</li>
+<li><strong>{PLATFORM_NAME}_CUSTOM_DIRECTIVES</strong>: Platform’s custom directives for the resource manager.</li>
+</ul>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">The variables <code class="docutils literal notranslate"><span class="pre">_USER</span></code>, <code class="docutils literal notranslate"><span class="pre">_PROJ</span></code> and <code class="docutils literal notranslate"><span class="pre">_BUDG</span></code> has no value on the LOCAL platform.</p>
+</div>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">Until now, the variables <code class="docutils literal notranslate"><span class="pre">_RESERVATION</span></code> and <code class="docutils literal notranslate"><span class="pre">_EXCLUSIVITY</span></code> are only available for MN.</p>
+</div>
+<p>It is also defined a suite of variables for the experiment’s default platform:</p>
+<ul class="simple">
+<li><strong>HPCARCH</strong>: Default HPC platform name</li>
+<li><strong>HPCHOST</strong>: Default HPC platform url</li>
+<li><strong>HPCUSER</strong>: Default HPC platform user</li>
+<li><strong>HPCPROJ</strong>: Default HPC platform project</li>
+<li><strong>HPCBUDG</strong>: Default HPC platform budget</li>
+<li><strong>HPCTYPE</strong>: Default HPC platform scheduler type</li>
+<li><strong>HPCVERSION</strong>: Default HPC platform scheduler version</li>
+<li><strong>SCRATCH_DIR</strong>: Default HPC platform scratch folder path</li>
+<li><strong>HPCROOTDIR</strong>: Default HPC platform experiment’s folder path</li>
+</ul>
+</div>
+<div class="section" id="project-variables">
+<h2>Project variables<a class="headerlink" href="#project-variables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><strong>NUMMEMBERS</strong>: number of members of the experiment</li>
+<li><strong>NUMCHUNKS</strong>: number of chunks of the experiment</li>
+<li><strong>CHUNKSIZE</strong>: size of each chunk</li>
+<li><strong>CHUNKSIZEUNIT</strong>: unit of the chuk size. Can be hour, day, month or year.</li>
+<li><strong>CALENDAR</strong>: calendar used for the experiment. Can be standard or noleap.</li>
+<li><strong>ROOTDIR</strong>: local path to experiment’s folder</li>
+<li><strong>PROJDIR</strong>: local path to experiment’s proj folder</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Variables reference</a><ul>
+<li><a class="reference internal" href="#job-variables">Job variables</a></li>
+<li><a class="reference internal" href="#platform-variables">Platform variables</a></li>
+<li><a class="reference internal" href="#project-variables">Project variables</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="project.html"
+                        title="previous chapter">Developing a project</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="codedoc/main.html"
+                        title="next chapter">Module documentation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/variables.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="codedoc/main.html" title="Module documentation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="project.html" title="Developing a project"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>
