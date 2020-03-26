@@ -62,5 +62,7 @@ As you might infer, the logic is fairly straightforward: Start your string with 
 
 You can extend this funcionality considering that date, member, section, chunk names start with the symbol ``_`` and finish with the same symbol.
 
+.. important:: This view is designed to show a structured view of your experiment, if you want a more dependency oriented view that shows better the execution sequence of your jobs, you can refer to :ref:`graphRepresentation`.
+
 
 

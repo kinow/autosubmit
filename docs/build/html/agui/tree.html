@@ -19,7 +19,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="Graph Representation" href="graph.html" />
-    <link rel="prev" title="Experiment View" href="experiment.html" /> 
+    <link rel="prev" title="Experiment Information" href="experiment.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
@@ -34,7 +34,7 @@
           <a href="graph.html" title="Graph Representation"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="experiment.html" title="Experiment View"
+          <a href="experiment.html" title="Experiment Information"
              accesskey="P">previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../autosubmit-gui.html" accesskey="U">Autosubmit GUI</a> &#187;</li> 
@@ -94,6 +94,10 @@
 </ul>
 <p>As you might infer, the logic is fairly straightforward: Start your string with the word or part of the word you are looking for, then add <code class="docutils literal notranslate"><span class="pre">*</span></code> and the word or part of the word that follows, and so on. The algorithm will split your string by <code class="docutils literal notranslate"><span class="pre">*</span></code> and then search for each part in order, once it finds the part in the title of the job, it takes a substring of the job title to not repeat the next search in the same string, it continues looking for the next part in the new reduced string, and so on.</p>
 <p>You can extend this funcionality considering that date, member, section, chunk names start with the symbol <code class="docutils literal notranslate"><span class="pre">_</span></code> and finish with the same symbol.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">This view is designed to show a structured view of your experiment, if you want a more dependency oriented view that shows better the execution sequence of your jobs, you can refer to <a class="reference internal" href="graph.html#graphrepresentation"><span class="std std-ref">Graph Representation</span></a>.</p>
+</div>
 </div>
 </div>
 
@@ -115,7 +119,7 @@
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="experiment.html"
-                        title="previous chapter">Experiment View</a></p>
+                        title="previous chapter">Experiment Information</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="graph.html"
                         title="next chapter">Graph Representation</a></p>
@@ -155,7 +159,7 @@
           <a href="graph.html" title="Graph Representation"
              >next</a> |</li>
         <li class="right" >
-          <a href="experiment.html" title="Experiment View"
+          <a href="experiment.html" title="Experiment Information"
              >previous</a> |</li>
         <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
           <li class="nav-item nav-item-1"><a href="../autosubmit-gui.html" >Autosubmit GUI</a> &#187;</li> 

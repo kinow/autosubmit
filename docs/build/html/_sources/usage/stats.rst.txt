@@ -1,3 +1,5 @@
+.. _autoStatistics:
+
 How to monitor job statistics
 =============================
 The following command could be adopted to generate the plots for visualizing the jobs statistics of the experiment at any instance:
