@@ -128,13 +128,14 @@ class LsfHeader(object):
                 def run(self):
                     out = str(self.template) + '.' + str(self.id_run) + '.out'
                     err = str(self.template) + '.' + str(self.id_run) + '.err'
+                    
                     command = str(self.template) + ' ' + str(self.id_run) + ' ' + os.getcwd()
                     (self.status) = getstatusoutput(command + ' > ' + out + ' 2> ' + err)
 
             scripts = {3}
 
             for i in range(len(scripts)):
-                current = JobThread(scripts[i], i)
+                current = JobThread(scripts[i], i+self.id_run)
                 current.start()
                 current.join()
                 completed_filename = scripts[i].replace('.cmd', '_COMPLETED')

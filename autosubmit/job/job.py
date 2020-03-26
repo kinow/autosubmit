@@ -708,7 +708,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = ' # %PACKED% \n sleep 5\n'
+                template = ' # %PACKED% \n sleep 5\n echo "Dummy_Template"'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -964,8 +964,8 @@ class Job(object):
                 self.parents.remove(parent)
 
     def synchronize_logs(self):
-        self.platform.move_file(self.remote_logs[0], self.local_logs[0], self.id)  # .out
-        self.platform.move_file(self.remote_logs[1], self.local_logs[1], self.id)  # .err
+        self.platform.move_file(self.remote_logs[0], self.local_logs[0], True)  # .out
+        self.platform.move_file(self.remote_logs[1], self.local_logs[1], True)  # .err
         self.remote_logs = self.local_logs
 
 
