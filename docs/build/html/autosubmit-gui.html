@@ -49,24 +49,32 @@
 <h1>Autosubmit GUI<a class="headerlink" href="#autosubmit-gui" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="autosubmit-gui-main-page">
 <span id="autosubmitguimp"></span><h2>Autosubmit GUI Main Page<a class="headerlink" href="#autosubmit-gui-main-page" title="Permalink to this headline">¶</a></h2>
-<p>Inside the Barcelona Supercomputing Network, you can go to: <a class="reference external" href="http://bscesweb04.bsc.es/autosubmitapp/">http://bscesweb04.bsc.es/autosubmitapp/</a> to get access to a graphic user interface that allows you to easily monitor your experiments and those of your colleagues. This Web App introduces many useful features for experiment monitoring, and we are continuously improving it.</p>
+<p>Inside the Barcelona Supercomputing Internal Network you can find the latest version of Autosubmit GUI deployed for BSC users. It can be accessed by following the url <a class="reference external" href="http://bscesweb04.bsc.es/autosubmitapp/">http://bscesweb04.bsc.es/autosubmitapp/</a>. This is a graphic user interface that allows you to easily monitor your experiments and those of your colleagues. This Web App introduces many useful features for experiment monitoring, and we are continuously improving it.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The Web App can also be accessed through the VPN Client provided by BSC.</p>
+</div>
 <p>When you enter the site, you will be presented with the following page:</p>
 <div class="figure align-center" id="first-page">
 <a class="reference internal image-reference" href="_images/fig1_gui.png"><img alt="autosubmit guide" src="_images/fig1_gui.png" style="width: 100%;" /></a>
 <p class="caption"><span class="caption-number">37 </span><span class="caption-text">Welcome page</span></p>
 </div>
-<p>From here you can insert text in the Search input box and press <strong>Search</strong>, the search engine will look for coincidences of your input string to the descripcion, owner, or name of the experiment. The results will be shown below ordered by status, experiments <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> will be shown in the first rows. You can also click on the <code class="docutils literal notranslate"><span class="pre">Running</span></code> button, and all the experiments that are currently running will be listed. The results will look like:</p>
+<p>Here you can search for any ongoing or past experiment by typing some text in the Search input box and pressing <strong>Search</strong>: the search engine will look for coincidences between your input string and any of the description, owner or name of the experiment fields. The results will be shown below ordered by status, experiments <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> will be shown in the first rows. You can also click on the <code class="docutils literal notranslate"><span class="pre">Running</span></code> button, and all the experiments that are currently running will be listed. The results will look like:</p>
 <div class="figure align-center" id="first-page-search">
 <a class="reference internal image-reference" href="_images/fig2_gui.png"><img alt="result search" src="_images/fig2_gui.png" style="width: 100%;" /></a>
 <p class="caption"><span class="caption-number">38 </span><span class="caption-text">Search Result</span></p>
 </div>
-<p>If you click on <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">Detailed</span> <span class="pre">Data</span></code>, summary data for each experiment (result) will be loaded. This will add some data to each experiment as well as change some colors depending on conditions that are explained below.</p>
+<p>If you click on <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">Detailed</span> <span class="pre">Data</span></code>, summary data for each experiment (result) will be loaded. These are data details from the experiment run, useful to see its status at a glance. Progress bars and status will use different colors to highlight the important information.</p>
 <div class="figure align-center" id="first-page-search-plus">
 <a class="reference internal image-reference" href="_images/fig3_gui.png"><img alt="result search plus" src="_images/fig3_gui.png" style="width: 100%;" /></a>
 <p class="caption"><span class="caption-number">39 </span><span class="caption-text">Search Result plus Detailed Data</span></p>
 </div>
 <p>For each experiment, you see the following data:</p>
-<ul class="simple">
+<div class="figure align-center" id="first-page-search-plus-description">
+<a class="reference internal image-reference" href="_images/fig4_gui.jpg"><img alt="result search plus description" src="_images/fig4_gui.jpg" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">40 </span><span class="caption-text">Description of Detailed Data</span></p>
+</div>
+<ol class="arabic simple">
 <li><em>Experiment Name</em></li>
 <li><em>Progress Bar</em>: Shows completed jobs / total jobs. It turns red when there are <strong>failed</strong> jobs in the experiment, but <strong>Show Detailed Data</strong> should have been requested.</li>
 <li><em>Experiment Status</em>: <em>RUNNING</em> or <em>NOT RUNNING</em>.</li>
@@ -81,7 +89,7 @@
 <li><em>Number of Submitted Jobs</em></li>
 <li><em>Number of Suspended Jobs</em></li>
 <li><em>Number of Failed Jobs</em>: If there are Failed jobs, a list of the names of those jobs will be displayed.</li>
-</ul>
+</ol>
 <p>After clicking on the <strong>MORE</strong> button, you will be presented with the <strong>Experiment Page</strong>, which is the main view that Autosubmit provides. These are its main components:</p>
 <div class="toctree-wrapper compound">
 <ul>

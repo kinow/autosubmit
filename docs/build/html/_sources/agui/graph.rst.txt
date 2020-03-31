@@ -15,7 +15,7 @@ The Graph Representation of the experiment offers a dependency oriented view.
 
 This view offers a graph representation of the experiments where a node represents a job and an edge represents a directed dependency relationship between nodes. To open it you must click on the button ``Classic``, which is the basic representation that uses either ``GraphViz`` or an heuristic approach depending on experiment complexity; we explain the other options later. 
 
-Once the graph representation is loaded, it will focus on a relevant node according to some established rules. The color of each node represents the status of the job it represents, you can see a color guide at the bottom of the page in the form of buttons, if you click in any of those buttons, the graph will focus on the last node with that status, except in the case of ``WAITING`` where the graph will focus in the first one. You can navigate the graph in this way, but there are other navigation buttons at the left and right corners of the graph canvas, you can also use your mouse or trackpad to navigate the graph, zoom in or zoom out. Below each node you can see the ``job name`` of the job it represents. 
+Once the graph representation is loaded, it will focus on a relevant node according to some established rules. The color of each node represents the status of the job it represents: you can see a color guide at the bottom of the page in the form of buttons. If you click in any of those buttons, the graph will focus on the last node with that status, except in the case of ``WAITING`` where the graph will focus on the first one. You can navigate the graph in this way, but there are other navigation buttons at the left and right corners of the graph canvas. You can also use your mouse or trackpad to navigate the graph, zoom in or zoom out. Below each node you can see the ``job name`` of the job it represents. 
 
 .. important:: For some experiments you will get a well distributed and generally good looking graph representation, for others you get a more straightforward representation. It depends on the size and dependency complexity of your experiments, not all experiments can be modeled as a good looking graph in reasonable time.
 
@@ -51,7 +51,7 @@ Wrappers are an important feature of Autosubmit, and as such, it should be possi
    Wrapper Graph Representation
 
 
-Wrappers are represented by nodes that have dashed border, hexagon or square shape (no difference between them), and that share green background edges. On the right side of the graph you can find the **Wrappers Tab**, it will display a list of the existing wrappers as buttons, if you click on any of these buttons, the nodes that belong to that wrapper will be highlighted.
+Wrappers are represented by nodes that have dashed border, hexagon or square shape (no difference between them), and that share green background edges. On the right side of the graph you can find the **Wrappers Tab** and it will display a list of the existing wrappers as buttons. If you click on any of these buttons, the nodes that belong to that wrapper will be highlighted.
 
 Monitoring
 ----------
