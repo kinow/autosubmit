@@ -114,20 +114,18 @@ class LocalPlatform(ParamikoPlatform):
             raise
         return True
 
+    def check_file_exists(self,filename):
+        return True
     def get_file(self, filename, must_exist=True, relative_path=''):
-
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)
-
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
 
         command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
                                        file_path)
-
-
         try:        
             subprocess.check_call(command, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'), shell=True)                      
         except subprocess.CalledProcessError:

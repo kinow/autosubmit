@@ -91,7 +91,7 @@ class JobListPersistencePkl(JobListPersistence):
                       job.priority, job.section, job.date,
                       job.member, job.chunk,
                       job.local_logs[0], job.local_logs[1],
-                      job.remote_logs[0], job.remote_logs[1]) for job in job_list]
+                      job.remote_logs[0], job.remote_logs[1],job.log_retrieved) for job in job_list]
         pickle.dump(jobs_data, fd)
         Log.debug('Job list saved')
 
@@ -107,7 +107,7 @@ class JobListPersistenceDb(JobListPersistence):
     TABLE_FIELDS = ['name', 'id', 'status', 'priority',
                     'section', 'date', 'member', 'chunk',
                     'local_out', 'local_err',
-                    'remote_out', 'remote_err']
+                    'remote_out', 'remote_err','log_retrieved']
 
     def __init__(self, persistence_path, persistence_file):
         self.db_manager = DbManager(persistence_path, persistence_file, self.VERSION)
@@ -134,7 +134,7 @@ class JobListPersistenceDb(JobListPersistence):
                       job.priority, job.section, job.date,
                       job.member, job.chunk,
                       job.local_logs[0], job.local_logs[1],
-                      job.remote_logs[0], job.remote_logs[1]) for job in job_list]
+                      job.remote_logs[0], job.remote_logs[1],job.log_retrieved) for job in job_list]
         self.db_manager.insertMany(self.JOB_LIST_TABLE, jobs_data)
 
     def _reset_table(self):

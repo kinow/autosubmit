@@ -175,6 +175,9 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.error('Unknown Error')
             raise
+        except:
+            Log.error('Unknown Error')
+            raise
 
     # Gets .err and .out
     def get_file(self, filename, must_exist=True, relative_path=''):
@@ -194,36 +197,16 @@ class ParamikoPlatform(Platform):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)
-
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
-
         if not self.restore_connection():
             return False
-        file_exist = False
-        sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), filename)
-        retries = 0
-        while not file_exist and retries < 2:
-            try:
-                self._ftpChannel.stat(remote_path) # This return IOError if path doesn't exist
-                file_exist = True
-            except IOError: # File doesn't exist, retry in sleeptime
-                Log.info("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
-                         1 - retries,remote_path)
-                sleep(sleeptime)
-                sleeptime= sleeptime+5
-                retries= retries+1
-            except: # Unrecoverable error
-                file_exist = False # won't exist
-                retries = 999 # no more retries
-        if file_exist:
+        try:
             self._ftpChannel.get(remote_path, file_path)
             return True
-        else:
-            if os.path.exists(file_path): # ftp.get creates a local file anyway
-                os.remove(file_path)
+        except:
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             else:
@@ -254,9 +237,9 @@ class ParamikoPlatform(Platform):
             return False
 
     # Moves .err .out
-    def move_file(self, src, dest,must_exist=False):
+    def check_file_exists(self, src):
         """
-        Moves a file on the platform (includes .err and .out)
+        check if a file on the platform
         :param src: source name
         :type src: str
         :param dest: destination name
@@ -270,7 +253,7 @@ class ParamikoPlatform(Platform):
         sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), os.path.join(self.get_files_path(), src))
         retries = 0
-        while not file_exist and retries < 2:
+        while not file_exist and retries < 5:
             try:
                 self._ftpChannel.stat(os.path.join(self.get_files_path(), src))  # This return IOError if path doesn't exist
                 file_exist = True
@@ -283,11 +266,25 @@ class ParamikoPlatform(Platform):
             except:  # Unrecoverable error
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
-        if file_exist:
+        return file_exist
+
+
+    def move_file(self, src, dest,must_exist=False):
+        """
+        Moves a file on the platform (includes .err and .out)
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :param must_exist: ignore if file exist or not
+        :type dest: str
+        """
+        if not self.restore_connection():
+            return False
+        try:
             self._ftpChannel.rename(os.path.join(self.get_files_path(), src),
                                     os.path.join(self.get_files_path(), dest))
             return True
-        else:
+        except:
             if must_exist:
                 raise Exception('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)))
             else:
@@ -721,7 +718,8 @@ class ParamikoPlatform(Platform):
                    Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
-
+            except:
+                Log.debug("Garbage  detected")
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)

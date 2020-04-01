@@ -873,6 +873,12 @@ class JobList:
             return [job for job in finished if job.packed is False]
         else:
             return finished
+
+    def get_finished_not_logged(self, platform=None):
+        finished= self.get_completed(platform) + self.get_failed(platform)
+        return [job for job in finished if job.log_retrieved is False]
+
+
     def get_active(self, platform=None, wrapper=False):
         """
         Returns a list of active jobs (In platforms queue + Ready)
@@ -889,6 +895,7 @@ class JobList:
                 Log.warning("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
             active = []
         return active
+
 
 
     def get_job_by_name(self, name):

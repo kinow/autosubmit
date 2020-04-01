@@ -34,6 +34,16 @@ from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
+from threading import Thread
+
+
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.start()
+        return thread
+    return wrapper
+
 
 class Job(object):
     """
@@ -88,6 +98,7 @@ class Job(object):
         self.file = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
+        self.log_retrieved = False
         self.status = status
         self.old_status = self.status
         self.new_status=status
@@ -104,7 +115,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
-
+        self._running_thread = False
 
 
     def __getstate__(self):
@@ -481,6 +492,28 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
+    @threaded
+    def retrieve_logfiles(self,copy_remote_logs):
+        out_exist = False
+        err_exist = False
+        retries = 10
+        sleeptime = 5
+        i= 0
+        while not out_exist and not err_exist and i < retries:
+            out_exist = self.platform.check_file_exists(self.remote_logs[0])
+            err_exist = self.platform.check_file_exists(self.remote_logs[1])
+            sleeptime = sleeptime + 5
+            i = i + 1
+        if out_exist and err_exist:
+            if copy_remote_logs:
+                if self.local_logs != self.remote_logs:
+                    self.synchronize_logs()  # unifying names for log files
+                if self.platform.get_logs_files(self.expid, self.remote_logs):
+                    self.log_retrieved = True
+            # Update the logs with Autosubmit Job Id Brand
+            for local_log in self.local_logs:
+                self.platform.write_jobid(self.id,os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+
     def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
@@ -533,14 +566,10 @@ class Job(object):
         # Updating logs 
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
-            if self.local_logs != self.remote_logs:
-                self.synchronize_logs()  # unifying names for log files
-            if copy_remote_logs:
-                self.platform.get_logs_files(self.expid, self.remote_logs)
-            # Update the logs with Autosubmit Job Id Brand
-            for local_log in self.local_logs:
-                self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-
+            #New thread, check if file exist
+            if not self._running_thread:
+                thread = self.retrieve_logfiles(copy_remote_logs)
+                self._running_thread=True
         return self.status
 
     def update_children_status(self):
@@ -708,7 +737,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = ' # %PACKED% \n sleep 5\n echo "Dummy_Template"'
+                template = 'sleep 5'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -1007,6 +1036,7 @@ class WrapperJob(Job):
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
         self.hold = hold
+
     def _queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
