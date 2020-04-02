@@ -27,7 +27,7 @@ import json
 import datetime
 import textwrap
 from collections import OrderedDict
-
+import copy
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
@@ -98,7 +98,7 @@ class Job(object):
         self.file = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
-        self.log_retrieved = False
+        self.retrieving_log = False
         self.status = status
         self.old_status = self.status
         self.new_status=status
@@ -115,7 +115,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
-        self._running_thread = False
+
 
 
     def __getstate__(self):
@@ -493,27 +493,34 @@ class Job(object):
         return retrials_list
 
     @threaded
-    def retrieve_logfiles(self,copy_remote_logs):
+    def retrieve_logfiles(self,copy_remote_logs,platform):
+        self.retrieving_log = True
+        while self.retrieving_log:
+            pass
+            sleep(2)
+        job = copy.deepcopy(self)
+        job.platform = platform
+        #job.platform.connect(True)
         out_exist = False
         err_exist = False
         retries = 10
         sleeptime = 5
-        i= 0
+        i = 0
         while not out_exist and not err_exist and i < retries:
-            out_exist = self.platform.check_file_exists(self.remote_logs[0])
-            err_exist = self.platform.check_file_exists(self.remote_logs[1])
+            out_exist = job.platform.check_file_exists(job.remote_logs[0])
+            err_exist = job.platform.check_file_exists(job.remote_logs[1])
             sleeptime = sleeptime + 5
             i = i + 1
         if out_exist and err_exist:
             if copy_remote_logs:
-                if self.local_logs != self.remote_logs:
-                    self.synchronize_logs()  # unifying names for log files
-                if self.platform.get_logs_files(self.expid, self.remote_logs):
-                    self.log_retrieved = True
+                if job.local_logs != job.remote_logs:
+                    job.synchronize_logs()  # unifying names for log files
+                    self.remote_logs = job.remote_logs
+                #if job.platform.get_logs_files(job.expid, job.remote_logs):
             # Update the logs with Autosubmit Job Id Brand
-            for local_log in self.local_logs:
-                self.platform.write_jobid(self.id,os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-
+            for local_log in job.local_logs:
+                job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
+        self.retrieving_log = False
     def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
@@ -567,9 +574,7 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             #New thread, check if file exist
-            if not self._running_thread:
-                thread = self.retrieve_logfiles(copy_remote_logs)
-                self._running_thread=True
+            self.retrieve_logfiles(copy_remote_logs,self.platform)
         return self.status
 
     def update_children_status(self):

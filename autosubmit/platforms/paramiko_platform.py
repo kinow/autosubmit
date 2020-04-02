@@ -206,7 +206,10 @@ class ParamikoPlatform(Platform):
         try:
             self._ftpChannel.get(remote_path, file_path)
             return True
-        except:
+        except Exception as e:
+            if str(e).lower.contain("Garbage"):
+                Log.critical("Critical Error,seems that the user is invalid")
+                raise
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
             else:
@@ -233,6 +236,9 @@ class ParamikoPlatform(Platform):
         except IOError:
             return False
         except BaseException as e:
+            if e.lower().contains("garbage"):
+                Log.error("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ")
+                raise
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
@@ -266,6 +272,7 @@ class ParamikoPlatform(Platform):
             except:  # Unrecoverable error
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
+
         return file_exist
 
 
@@ -719,7 +726,8 @@ class ParamikoPlatform(Platform):
                 else:
                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
             except:
-                Log.debug("Garbage  detected")
+                Log.critical("Garbage  detected")
+                raise
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)

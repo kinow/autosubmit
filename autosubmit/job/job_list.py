@@ -874,9 +874,7 @@ class JobList:
         else:
             return finished
 
-    def get_finished_not_logged(self, platform=None):
-        finished= self.get_completed(platform) + self.get_failed(platform)
-        return [job for job in finished if job.log_retrieved is False]
+
 
 
     def get_active(self, platform=None, wrapper=False):
