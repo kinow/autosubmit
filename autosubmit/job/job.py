@@ -664,6 +664,7 @@ class Job(object):
         parameters['MEMORY'] = self.memory
         parameters['MEMORY_PER_TASK'] = self.memory_per_task
         parameters['NUMTHREADS'] = self.threads
+        parameters['THREADS'] = self.threads
         parameters['NUMTASK'] = self.tasks
         parameters['WALLCLOCK'] = self.wallclock
         parameters['TASKTYPE'] = self.section
