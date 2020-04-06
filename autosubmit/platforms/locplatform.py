@@ -134,6 +134,38 @@ class LocalPlatform(ParamikoPlatform):
             return False
         return True
 
+    # Moves .err .out
+    def check_file_exists(self, src):
+        """
+        Moves a file on the platform
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :param must_exist: ignore if file exist or not
+        :type dest: str
+        """
+
+        file_exist = False
+        sleeptime = 5
+        remote_path = os.path.join(self.get_files_path(), src)
+        retries = 0
+        while not file_exist and retries < 5:
+            try:
+                file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
+                if not file_exist:  # File doesn't exist, retry in sleeptime
+                    Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                             1 - retries, remote_path)
+                    os.sleep(sleeptime)
+                    sleeptime = sleeptime + 5
+                    retries = retries + 1
+            except BaseException as e:  # Unrecoverable error
+                Log.critical("Crashed while retrieving  logs: {0}",e)
+
+                file_exist = False  # won't exist
+                retries = 999  # no more retries
+
+        return file_exist
+
     def delete_file(self, filename):
         command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:

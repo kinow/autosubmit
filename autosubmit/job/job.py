@@ -494,23 +494,26 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self,copy_remote_logs,platform):
-        self.retrieving_log = True
         while self.retrieving_log:
             pass
             sleep(2)
+        self.retrieving_log = True
         job = copy.deepcopy(self)
-        job.platform = platform
-        #job.platform.connect(True)
+        job.platform = copy.copy(platform)
+        job.platform._ssh = None
+        job.platform._ftpChannel = None
+        job.platform.connect()
         out_exist = False
         err_exist = False
-        retries = 10
+        retries = 2
         sleeptime = 5
         i = 0
         while not out_exist and not err_exist and i < retries:
-            out_exist = job.platform.check_file_exists(job.remote_logs[0])
-            err_exist = job.platform.check_file_exists(job.remote_logs[1])
+            out_exist = job.platform.check_file_exists(job.remote_logs[0]) # will do 5 retries
+            err_exist = job.platform.check_file_exists(job.remote_logs[1]) # will do 5 retries
             sleeptime = sleeptime + 5
             i = i + 1
+            sleep(sleeptime)
         if out_exist and err_exist:
             if copy_remote_logs:
                 if job.local_logs != job.remote_logs:

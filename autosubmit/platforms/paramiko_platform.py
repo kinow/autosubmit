@@ -161,17 +161,17 @@ class ParamikoPlatform(Platform):
             self.delete_file(filename)
 
         try:
-            #ftp = self._ssh.open_sftp()
+            local_path = os.path.join(os.path.join(self.tmp_path, filename))
+            remote_path = os.path.join(self.get_files_path(), os.path.basename(filename))
+            self._ftpChannel.put(local_path, remote_path)
+            self._ftpChannel.chmod(remote_path,os.stat(local_path).st_mode)
 
-            self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), os.path.basename(filename)))
-            self._ftpChannel.chmod(os.path.join(self.get_files_path(), os.path.basename(filename)),
-                      os.stat(os.path.join(self.tmp_path, filename)).st_mode)
-            #ftp.close()
+
             return True
-        except (OSError,IOError) as er:
-            Log.warning('Can not send file {0} to {1} due file not found skipping until next iteration', os.path.join(self.tmp_path, filename),
+        except BaseException as e:
+            Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
                       os.path.join(self.get_files_path(), filename))
-            raise (IOError)
+            raise
         except BaseException as e:
             Log.error('Unknown Error')
             raise
@@ -197,6 +197,7 @@ class ParamikoPlatform(Platform):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)
+
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -242,34 +243,22 @@ class ParamikoPlatform(Platform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
-    # Moves .err .out
-    def check_file_exists(self, src):
-        """
-        check if a file on the platform
-        :param src: source name
-        :type src: str
-        :param dest: destination name
-        :param must_exist: ignore if file exist or not
-        :type dest: str
-        """
-        if not self.restore_connection():
-            return False
-
+    def check_file_exists(self,filename):
         file_exist = False
         sleeptime = 5
-        remote_path = os.path.join(self.get_files_path(), os.path.join(self.get_files_path(), src))
         retries = 0
         while not file_exist and retries < 5:
             try:
-                self._ftpChannel.stat(os.path.join(self.get_files_path(), src))  # This return IOError if path doesn't exist
+                self._ftpChannel.stat(os.path.join(self.get_files_path(), filename))  # This return IOError if path doesn't exist
                 file_exist = True
             except IOError:  # File doesn't exist, retry in sleeptime
-                Log.info("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
-                         1 - retries, remote_path)
+                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                          1 - retries, os.path.join(self.get_files_path(),filename))
                 sleep(sleeptime)
                 sleeptime = sleeptime + 5
                 retries = retries + 1
-            except:  # Unrecoverable error
+            except BaseException as e:  # Unrecoverable error
+                Log.critical("Crashed while retrieving remote logs: {0}", e)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 
