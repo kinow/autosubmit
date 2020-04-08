@@ -198,15 +198,15 @@ class JobPackageArray(JobPackageBase):
 
     def _create_scripts(self, configuration):
         timestamp = str(int(time.time()))
-        for i in range(1, len(self.jobs) + 1):
-            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
-            self._job_inputs[self.jobs[i - 1].name] = self._create_i_input(timestamp, i)
-            self.jobs[i - 1].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
+        for i in range(0, len(self.jobs)):
+            self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
+            self._job_inputs[self.jobs[i].name] = self._create_i_input(timestamp, i)
+            self.jobs[i].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
         self._common_script = self._create_common_script(timestamp)
 
     def _create_i_input(self, filename, index):
         filename += '.{0}'.format(index)
-        input_content = self._job_scripts[self.jobs[index - 1].name]
+        input_content = self._job_scripts[self.jobs[index].name]
         open(os.path.join(self._tmp_path, filename), 'w').write(input_content)
         os.chmod(os.path.join(self._tmp_path, filename), 0o755)
         return filename
@@ -236,11 +236,11 @@ class JobPackageArray(JobPackageBase):
         if package_id is None:
             return
 
-        for i in range(1, len(self.jobs) + 1):
-            Log.info("{0} submitted", self.jobs[i - 1].name)
-            self.jobs[i - 1].id = str(package_id) + '[{0}]'.format(i)
-            self.jobs[i - 1].status = Status.SUBMITTED
-            self.jobs[i - 1].write_submit_time()
+        for i in range(0, len(self.jobs)):
+            Log.info("{0} submitted", self.jobs[i].name)
+            self.jobs[i].id = str(package_id) + '[{0}]'.format(i)
+            self.jobs[i].status = Status.SUBMITTED
+            self.jobs[i].write_submit_time()
 
 
 class JobPackageThread(JobPackageBase):
@@ -309,11 +309,11 @@ class JobPackageThread(JobPackageBase):
 
     def _create_scripts(self, configuration):
 
-        for i in range(1, len(self.jobs) + 1):
-            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
-            self.jobs[i - 1].remote_logs = (
-                self._job_scripts[self.jobs[i - 1].name] + ".{0}.out".format(i - 1),
-                self._job_scripts[self.jobs[i - 1].name] + ".{0}.err".format(i - 1)
+        for i in range(0, len(self.jobs)):
+            self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
+            self.jobs[i].remote_logs = (
+                self._job_scripts[self.jobs[i].name] + ".{0}.out".format(i),
+                self._job_scripts[self.jobs[i].name] + ".{0}.err".format(i)
             )
         self._common_script = self._create_common_script()
 
@@ -354,11 +354,11 @@ class JobPackageThread(JobPackageBase):
         if package_id is None:
             return
 
-        for i in range(1, len(self.jobs) + 1):
-            Log.info("{0} submitted", self.jobs[i - 1].name)
-            self.jobs[i - 1].id = str(package_id)
-            self.jobs[i - 1].status = Status.SUBMITTED
-            self.jobs[i - 1].write_submit_time()
+        for i in range(0, len(self.jobs) ):
+            Log.info("{0} submitted", self.jobs[i].name)
+            self.jobs[i].id = str(package_id)
+            self.jobs[i].status = Status.SUBMITTED
+            self.jobs[i].write_submit_time()
 
     def _common_script_content(self):
         pass
@@ -405,11 +405,11 @@ class JobPackageThreadWrapped(JobPackageThread):
         return self._platform.project
 
     def _create_scripts(self, configuration):
-        for i in range(1, len(self.jobs) + 1):
-            self._job_scripts[self.jobs[i - 1].name] = self.jobs[i - 1].create_script(configuration)
-            self.jobs[i - 1].remote_logs = (
-                self._job_scripts[self.jobs[i - 1].name] + ".{0}.out".format(i - 1),
-                self._job_scripts[self.jobs[i - 1].name] + ".{0}.err".format(i - 1)
+        for i in range(0, len(self.jobs)):
+            self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
+            self.jobs[i].remote_logs = (
+                self._job_scripts[self.jobs[i].name] + ".{0}.out".format(i),
+                self._job_scripts[self.jobs[i].name] + ".{0}.err".format(i)
             )
         self._common_script = self._create_common_script()
 
@@ -437,11 +437,11 @@ class JobPackageThreadWrapped(JobPackageThread):
         if package_id is None:
             raise Exception('Submission failed')
 
-        for i in range(1, len(self.jobs) + 1):
-            Log.info("{0} submitted", self.jobs[i - 1].name)
-            self.jobs[i - 1].id = str(package_id)
-            self.jobs[i - 1].status = Status.SUBMITTED
-            self.jobs[i - 1].write_submit_time()
+        for i in range(0, len(self.jobs)):
+            Log.info("{0} submitted", self.jobs[i].name)
+            self.jobs[i].id = str(package_id)
+            self.jobs[i].status = Status.SUBMITTED
+            self.jobs[i].write_submit_time()
 
 
 class JobPackageVertical(JobPackageThread):

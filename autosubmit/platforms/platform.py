@@ -221,13 +221,12 @@ class Platform(object):
         :return: True if successful, false otherwise
         :rtype: bool
         """
-        while True:
+        if self.check_file_exists('{0}_COMPLETED'.format(job_name)):
             if self.get_file('{0}_COMPLETED'.format(job_name), False):
                 return True
-            if retries == 0:
+            else:
                 return False
-            retries -= 1
-            sleep(1)
+
 
     def remove_stat_file(self, job_name):
         """
@@ -258,6 +257,8 @@ class Platform(object):
             Log.debug('{0} been removed', filename)
             return True
         return False
+    def check_file_exists(self, src):
+        return True
 
     def get_stat_file(self, job_name, retries=0):
         """
@@ -274,17 +275,10 @@ class Platform(object):
         stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
-
-        while True:
+        if self.check_file_exists(filename):
             if self.get_file(filename, False):
                 Log.debug('{0}_STAT file have been transfered', job_name)
                 return True
-            if retries == 0:
-                break
-            retries -= 1
-            # wait five seconds to check get file
-            sleep(5)
-
         Log.debug('Something did not work well when transferring the STAT file')
         return False
 
