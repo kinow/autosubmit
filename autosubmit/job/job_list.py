@@ -910,6 +910,9 @@ class JobList:
         else:
             return finished
 
+
+
+
     def get_active(self, platform=None, wrapper=False):
         """
         Returns a list of active jobs (In platforms queue + Ready)
@@ -929,6 +932,8 @@ class JobList:
                     "Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
             active = []
         return active
+
+
 
     def get_job_by_name(self, name):
         """

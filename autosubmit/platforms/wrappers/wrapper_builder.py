@@ -146,6 +146,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + "." + str(self.id_run) + ".out"
                 err = str(self.template) + "." + str(self.id_run) + ".err"
+                print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
         """).format('\n'.ljust(13))
@@ -294,7 +295,8 @@ class PythonWrapperBuilder(WrapperBuilder):
 
             {2}
 
-            current = {1}({0}[i], i)
+            current = {1}({0}[i], i+self.id_run)
+            print(self.id_run)
             pid_list.append(current)
             current.start()
 
@@ -392,7 +394,7 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
         nodes_list = self.build_nodes_list()
         self.exit_thread = "os._exit(1)"
         joblist_thread = self.build_joblist_thread()
-        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i, "
+        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts)-1), "
                                                                              "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
 

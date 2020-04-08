@@ -161,18 +161,21 @@ class ParamikoPlatform(Platform):
             self.delete_file(filename)
 
         try:
-            #ftp = self._ssh.open_sftp()
+            local_path = os.path.join(os.path.join(self.tmp_path, filename))
+            remote_path = os.path.join(self.get_files_path(), os.path.basename(filename))
+            self._ftpChannel.put(local_path, remote_path)
+            self._ftpChannel.chmod(remote_path,os.stat(local_path).st_mode)
 
-            self._ftpChannel.put(os.path.join(self.tmp_path, filename), os.path.join(self.get_files_path(), os.path.basename(filename)))
-            self._ftpChannel.chmod(os.path.join(self.get_files_path(), os.path.basename(filename)),
-                      os.stat(os.path.join(self.tmp_path, filename)).st_mode)
-            #ftp.close()
+
             return True
-        except (OSError,IOError) as er:
-            Log.warning('Can not send file {0} to {1} due file not found skipping until next iteration', os.path.join(self.tmp_path, filename),
-                      os.path.join(self.get_files_path(), filename))
-            raise (IOError)
         except BaseException as e:
+            Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
+                      os.path.join(self.get_files_path(), filename))
+            raise
+        except BaseException as e:
+            Log.error('Unknown Error')
+            raise
+        except:
             Log.error('Unknown Error')
             raise
 
@@ -198,23 +201,20 @@ class ParamikoPlatform(Platform):
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
-
         if not self.restore_connection():
             return False
-
+        remote_path = os.path.join(self.get_files_path(), filename)
         try:
-            #ftp = self._ssh.open_sftp()
-
-            self._ftpChannel.get(os.path.join(self.get_files_path(), filename), file_path)
-            #ftp.close()
+            self._ftpChannel.get(remote_path, file_path)
             return True
-        except BaseException:
-            # ftp.get creates a local file anyway
-            if os.path.exists(file_path):
-                os.remove(file_path)
+        except Exception as e:
+            if str(e).lower.contain("Garbage"):
+                Log.critical("Critical Error,seems that the user is invalid")
+                raise
             if must_exist:
                 raise Exception('File {0} does not exists'.format(filename))
-            return False
+            else:
+                return False
 
     def delete_file(self, filename):
         """
@@ -237,40 +237,36 @@ class ParamikoPlatform(Platform):
         except IOError:
             return False
         except BaseException as e:
+            if e.lower().contains("garbage"):
+                Log.error("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ")
+                raise
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
-    # Moves .err .out
-    def move_file(self, src, dest,migrate=False):
+
+
+
+    def move_file(self, src, dest,must_exist=False):
         """
         Moves a file on the platform (includes .err and .out)
         :param src: source name
         :type src: str
         :param dest: destination name
-        :param migrate: ignore if file exist or not
+        :param must_exist: ignore if file exist or not
         :type dest: str
         """
         if not self.restore_connection():
             return False
-
         try:
-            #ftp = self._ssh.open_sftp()
-            if not migrate:
-                self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(), dest))
-            else:
-                try:
-                    #self._ftpChannel.chdir((os.path.join(self.get_files_path(), src)))
-                    self._ftpChannel.rename(os.path.join(self.get_files_path(), src), os.path.join(self.get_files_path(),dest))
-                    return True
-                except (IOError):
-                    return False
-            #ftp.close()
-            
+            self._ftpChannel.rename(os.path.join(self.get_files_path(), src),
+                                    os.path.join(self.get_files_path(), dest))
             return True
-        except BaseException:
-            Log.debug('Could not move (rename) file {0} to {1}'.format(os.path.join(self.get_files_path(), src),
-                                                                       os.path.join(self.get_files_path(), dest)))
-            return False
+        except:
+            if must_exist:
+                raise Exception('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)))
+            else:
+                return False
+
 
     def submit_job(self, job, script_name, hold=False):
         """
@@ -699,7 +695,9 @@ class ParamikoPlatform(Platform):
                    Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
-
+            except:
+                Log.critical("Garbage  detected")
+                raise
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
