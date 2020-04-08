@@ -243,26 +243,7 @@ class ParamikoPlatform(Platform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
-    def check_file_exists(self,filename):
-        file_exist = False
-        sleeptime = 5
-        retries = 0
-        while not file_exist and retries < 5:
-            try:
-                self._ftpChannel.stat(os.path.join(self.get_files_path(), filename))  # This return IOError if path doesn't exist
-                file_exist = True
-            except IOError:  # File doesn't exist, retry in sleeptime
-                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
-                          1 - retries, os.path.join(self.get_files_path(),filename))
-                sleep(sleeptime)
-                sleeptime = sleeptime + 5
-                retries = retries + 1
-            except BaseException as e:  # Unrecoverable error
-                Log.critical("Crashed while retrieving remote logs: {0}", e)
-                file_exist = False  # won't exist
-                retries = 999  # no more retries
 
-        return file_exist
 
 
     def move_file(self, src, dest,must_exist=False):

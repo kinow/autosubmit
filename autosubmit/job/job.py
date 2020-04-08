@@ -511,15 +511,16 @@ class Job(object):
         while not out_exist and not err_exist and i < retries:
             out_exist = job.platform.check_file_exists(job.remote_logs[0]) # will do 5 retries
             err_exist = job.platform.check_file_exists(job.remote_logs[1]) # will do 5 retries
-            sleeptime = sleeptime + 5
-            i = i + 1
-            sleep(sleeptime)
+            if not out_exist or not err_exist:
+                sleeptime = sleeptime + 5
+                i = i + 1
+                sleep(sleeptime)
         if out_exist and err_exist:
             if copy_remote_logs:
                 if job.local_logs != job.remote_logs:
                     job.synchronize_logs()  # unifying names for log files
                     self.remote_logs = job.remote_logs
-                #if job.platform.get_logs_files(job.expid, job.remote_logs):
+                job.platform.get_logs_files(job.expid, job.remote_logs)
             # Update the logs with Autosubmit Job Id Brand
             for local_log in job.local_logs:
                 job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
