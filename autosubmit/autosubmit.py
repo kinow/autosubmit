@@ -87,6 +87,8 @@ from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
 from sets import Set
 
+
+
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
     """
@@ -1762,7 +1764,6 @@ class Autosubmit:
                         job.platform.get_logs_files(expid, job.remote_logs)
                     except:
                         pass
-                        #Log.warning("Unable to retrieve the log file of {0} in platform {1}",job.name,job.platform.name)
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
