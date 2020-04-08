@@ -349,7 +349,39 @@ class PythonWrapperBuilder(WrapperBuilder):
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
+    def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
+        parallel_threads_launcher = textwrap.dedent("""
+        pid_list = []
 
+        for i in range(len({0})):
+            if type({0}[i]) != list:
+                job = {0}[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+
+            {2}
+            current = {1}({0}[i], i)
+            pid_list.append(current)
+            current.start()
+
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
+
+        if footer:
+            parallel_threads_launcher += self._indent(textwrap.dedent("""
+            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+            completed_path = os.path.join(os.getcwd(), completed_filename)
+            if os.path.exists(completed_path):
+                print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            else:
+                print datetime.now(), "The job ", pid.template," has FAILED"
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+
+        return parallel_threads_launcher
     # all should override -> abstract!
     def build_main(self):
         pass
@@ -401,7 +433,9 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
         self.exit_thread = "sys.exit()"
         joblist_thread = self.build_joblist_thread()
         nodes_list = self.build_nodes_list()
-        threads_launcher = self.build_parallel_threads_launcher("scripts", "JobListThread", footer=False)
+        #threads_launcher = self.build_parallel_threads_launcher("scripts", "JobListThread", footer=False)
+        threads_launcher = self.build_parallel_threads_launcher_vertical_horizontal("scripts", "JobListThread", footer=False)
+
         return joblist_thread + nodes_list + threads_launcher
 
 
