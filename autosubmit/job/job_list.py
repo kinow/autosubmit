@@ -1242,17 +1242,18 @@ class JobList:
                 # print(current_structure)
                 Log.info("Updating structure persistence...")
                 self.graph = transitive_reduction(self.graph)
-                for job in self._job_list:
-                    children_to_remove = [
-                        child for child in job.children if child.name not in self.graph.neighbors(job.name)]
-                    for child in children_to_remove:
-                        job.children.remove(child)
-                        child.parents.remove(job)
-                try:
-                    DbStructure.save_structure(
-                        self.graph, self.expid, self._config.LOCAL_ROOT_DIR)
-                except Exception as exp:
-                    pass
+                if self.graph:
+                    for job in self._job_list:
+                        children_to_remove = [
+                            child for child in job.children if child.name not in self.graph.neighbors(job.name)]
+                        for child in children_to_remove:
+                            job.children.remove(child)
+                            child.parents.remove(job)
+                    try:
+                        DbStructure.save_structure(
+                            self.graph, self.expid, self._config.LOCAL_ROOT_DIR)
+                    except Exception as exp:
+                        pass
 
         for job in self._job_list:
             if not job.has_parents() and new:
