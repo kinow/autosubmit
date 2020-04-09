@@ -199,7 +199,7 @@ class Platform(object):
     # Executed when calling from Job
     def get_logs_files(self, exp_id, remote_logs):
         """
-        Get the LOGS files .err and .out
+        Get the given LOGS files
         
         :param exp_id: experiment id
         :type exp_id: str
@@ -209,7 +209,7 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=0):
+    def get_completed_files(self, job_name, retries=0,recovery=False):
         """
         Get the COMPLETED file of the given job
 
@@ -221,6 +221,11 @@ class Platform(object):
         :return: True if successful, false otherwise
         :rtype: bool
         """
+        if recovery:
+            if self.get_file('{0}_COMPLETED'.format(job_name), False):
+                return True
+            else:
+                return False
         if self.check_file_exists('{0}_COMPLETED'.format(job_name)):
             if self.get_file('{0}_COMPLETED'.format(job_name), False):
                 return True

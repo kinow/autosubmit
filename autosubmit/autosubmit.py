@@ -35,7 +35,7 @@ try:
     import dialog
 except Exception:
     dialog = None
-
+from time import sleep
 import argparse
 import subprocess
 import json
@@ -86,7 +86,7 @@ from platforms.paramiko_submitter import ParamikoSubmitter
 from job.job_exceptions import WrongTemplateException
 from job.job_packager import JobPackager
 from sets import Set
-
+import threading
 
 
 # noinspection PyUnusedLocal
@@ -1039,7 +1039,7 @@ class Autosubmit:
         """
         if expid is None:
             Log.critical("Missing experiment id")
-
+        active_threads = threading.activeCount()
         BasicConfig.read()
         if not Autosubmit._check_Ownership(expid):
             Log.critical('Can not run the experiment {0} because you are not the owner',expid)
@@ -1257,6 +1257,10 @@ class Autosubmit:
                         return 2
                     time.sleep(safetysleeptime)
                 Log.info("No more jobs to run.")
+                non_daemon_threads = 9999
+                while threading.activeCount() != non_daemon_threads:
+                    sleep(5)
+                    non_daemon_threads = threading.activeCount()
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
@@ -1756,7 +1760,7 @@ class Autosubmit:
             # noinspection PyTypeChecker
             job.platform = platforms[job.platform_name.lower()]
 
-            if job.platform.get_completed_files(job.name, 0):
+            if job.platform.get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
                 if not no_recover_logs:

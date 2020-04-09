@@ -208,7 +208,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.get(remote_path, file_path)
             return True
         except Exception as e:
-            if str(e).lower.contain("Garbage"):
+            if str(e) in "Garbage":
                 Log.critical("Critical Error,seems that the user is invalid")
                 raise
             if must_exist:

@@ -21,6 +21,7 @@
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
 import os
+import sys
 import re
 import time
 import json
@@ -525,6 +526,7 @@ class Job(object):
             for local_log in job.local_logs:
                 job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
         self.retrieving_log = False
+        sys.exit()
     def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
