@@ -1259,7 +1259,7 @@ class Autosubmit:
                 Log.info("No more jobs to run.")
                 non_daemon_threads = 9999
                 while threading.activeCount() != non_daemon_threads:
-                    sleep(5)
+                    sleep(10)
                     non_daemon_threads = threading.activeCount()
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")

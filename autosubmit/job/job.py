@@ -20,6 +20,7 @@
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
+
 import os
 import sys
 import re
@@ -36,7 +37,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
-
+import threading
 
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -99,7 +100,7 @@ class Job(object):
         self.file = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
-        self.retrieving_log = False
+
         self.status = status
         self.old_status = self.status
         self.new_status=status
@@ -116,8 +117,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
-
-
+        self.job_replica = copy.deepcopy(self)
 
     def __getstate__(self):
         odict = self.__dict__
@@ -494,22 +494,17 @@ class Job(object):
         return retrials_list
 
     @threaded
-    def retrieve_logfiles(self,copy_remote_logs,platform):
-        while self.retrieving_log:
-            pass
-            sleep(2)
-        self.retrieving_log = True
-        job = copy.deepcopy(self)
+    def retrieve_logfiles(self,copy_remote_logs,platform,job):
         job.platform = copy.copy(platform)
         job.platform._ssh = None
         job.platform._ftpChannel = None
         job.platform.connect()
         out_exist = False
         err_exist = False
-        retries = 2
+        retries = 3
         sleeptime = 5
         i = 0
-        while not out_exist and not err_exist and i < retries:
+        while (not out_exist or not err_exist) and i < retries:
             out_exist = job.platform.check_file_exists(job.remote_logs[0]) # will do 5 retries
             err_exist = job.platform.check_file_exists(job.remote_logs[1]) # will do 5 retries
             if not out_exist or not err_exist:
@@ -520,13 +515,12 @@ class Job(object):
             if copy_remote_logs:
                 if job.local_logs != job.remote_logs:
                     job.synchronize_logs()  # unifying names for log files
-                    self.remote_logs = job.remote_logs
+                    self.remote_logs = copy.deepcopy(job.remote_logs)
                 job.platform.get_logs_files(job.expid, job.remote_logs)
             # Update the logs with Autosubmit Job Id Brand
             for local_log in job.local_logs:
                 job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
-        self.retrieving_log = False
-        sys.exit()
+        return
     def update_status(self, copy_remote_logs=False):
         """
         Updates job status, checking COMPLETED file if needed
@@ -580,7 +574,10 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             #New thread, check if file exist
-            self.retrieve_logfiles(copy_remote_logs,self.platform)
+            self.job_replica.remote_logs = copy.deepcopy(self.remote_logs)
+            self.job_replica.local_logs = copy.deepcopy(self.local_logs)
+            self.retrieve_logfiles(copy_remote_logs,self.platform,self.job_replica)
+            pass
         return self.status
 
     def update_children_status(self):

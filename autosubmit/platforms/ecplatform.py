@@ -27,6 +27,7 @@ from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
+from time import sleep
 
 
 class EcPlatform(ParamikoPlatform):

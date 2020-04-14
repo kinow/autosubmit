@@ -258,8 +258,9 @@ class ParamikoPlatform(Platform):
         if not self.restore_connection():
             return False
         try:
-            self._ftpChannel.rename(os.path.join(self.get_files_path(), src),
-                                    os.path.join(self.get_files_path(), dest))
+            path_root=self.get_files_path()
+            self._ftpChannel.rename(os.path.join(path_root, src),
+                                    os.path.join(path_root, dest))
             return True
         except:
             if must_exist:

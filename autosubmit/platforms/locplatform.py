@@ -26,6 +26,7 @@ from autosubmit.platforms.headers.local_header import LocalHeader
 
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.log import Log
+from time import sleep
 
 
 class LocalPlatform(ParamikoPlatform):
@@ -144,7 +145,6 @@ class LocalPlatform(ParamikoPlatform):
         :param must_exist: ignore if file exist or not
         :type dest: str
         """
-
         file_exist = False
         sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), src)
@@ -155,7 +155,7 @@ class LocalPlatform(ParamikoPlatform):
                 if not file_exist:  # File doesn't exist, retry in sleeptime
                     Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
                              1 - retries, remote_path)
-                    os.sleep(sleeptime)
+                    sleep(sleeptime)
                     sleeptime = sleeptime + 5
                     retries = retries + 1
             except BaseException as e:  # Unrecoverable error
