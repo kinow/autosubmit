@@ -494,7 +494,9 @@ class Job(object):
         return retrials_list
 
     @threaded
-    def retrieve_logfiles(self,copy_remote_logs,platform,job):
+    def retrieve_logfiles(self,copy_remote_logs,platform,job,local_logs,remote_logs):
+        job.local_logs = local_logs
+        job.remote_logs = remote_logs
         job.platform = copy.copy(platform)
         job.platform._ssh = None
         job.platform._ftpChannel = None
@@ -574,10 +576,11 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             #New thread, check if file exist
-            self.job_replica.remote_logs = copy.deepcopy(self.remote_logs)
-            self.job_replica.local_logs = copy.deepcopy(self.local_logs)
-            self.retrieve_logfiles(copy_remote_logs,self.platform,self.job_replica)
-            pass
+            #remote_logs = copy.deepcopy(self.remote_logs)
+            #local_logs = copy.deepcopy(self.local_logs)
+            #self.job_replica.remote_logs = remote_logs
+            #self.job_replica.local_logs = local_logs
+            self.retrieve_logfiles(copy_remote_logs,self.platform,self.job_replica,self.local_logs,self.remote_logs)
         return self.status
 
     def update_children_status(self):
