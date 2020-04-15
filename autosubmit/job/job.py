@@ -43,6 +43,7 @@ def threaded(fn):
     def wrapper(*args, **kwargs):
         thread = Thread(target=fn, args=args, kwargs=kwargs)
         thread.start()
+        thread.join(timeout=60)
         return thread
     return wrapper
 
@@ -522,8 +523,10 @@ class Job(object):
             # Update the logs with Autosubmit Job Id Brand
             for local_log in job.local_logs:
                 job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
-        job.platform._ftpChannel.close()
-        job.platform._ssh.close()
+        if job.platform._ftpChannel is not None:
+            job.platform._ftpChannel.close()
+        if job.platform._ssh is not None:
+            job.platform._ssh.close()
         return
     def update_status(self, copy_remote_logs=False):
         """
@@ -578,10 +581,6 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             #New thread, check if file exist
-            #remote_logs = copy.deepcopy(self.remote_logs)
-            #local_logs = copy.deepcopy(self.local_logs)
-            #self.job_replica.remote_logs = remote_logs
-            #self.job_replica.local_logs = local_logs
             self.retrieve_logfiles(copy_remote_logs,self.platform,self.job_replica,self.local_logs,self.remote_logs)
         return self.status
 

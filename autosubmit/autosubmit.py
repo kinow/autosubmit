@@ -1039,7 +1039,6 @@ class Autosubmit:
         """
         if expid is None:
             Log.critical("Missing experiment id")
-        active_threads = threading.activeCount()
         BasicConfig.read()
         if not Autosubmit._check_Ownership(expid):
             Log.critical('Can not run the experiment {0} because you are not the owner',expid)
@@ -1257,10 +1256,10 @@ class Autosubmit:
                         return 2
                     time.sleep(safetysleeptime)
                 Log.info("No more jobs to run.")
-                non_daemon_threads = 9999
-                while threading.activeCount() != non_daemon_threads:
+                timeout=0
+                while threading.activeCount() > 5 and timeout < 360:
                     sleep(10)
-                    non_daemon_threads = threading.activeCount()
+                    timeout=10+timeout
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False

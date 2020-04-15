@@ -778,7 +778,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                         #    echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
                         #fi    
                         if [ $i_list -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
-                            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+                            srun -N1 --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
                             ((job_index=job_index+1))
                             if [ $job_index -ge "${{#scripts[@]}}" ];  then
                                 unset aux_scripts[$i_list]
