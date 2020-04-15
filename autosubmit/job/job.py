@@ -522,6 +522,8 @@ class Job(object):
             # Update the logs with Autosubmit Job Id Brand
             for local_log in job.local_logs:
                 job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
+        job.platform._ftpChannel.close()
+        job.platform._ssh.close()
         return
     def update_status(self, copy_remote_logs=False):
         """
