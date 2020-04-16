@@ -1256,8 +1256,21 @@ class Autosubmit:
                         return 2
                     time.sleep(safetysleeptime)
                 Log.info("No more jobs to run.")
+
                 timeout=0
-                while threading.activeCount() > 5 and timeout < 360:
+                for platform in platforms_to_test:
+                    platform.closeConnection()
+                active_threads = True
+                all_threads=threading.enumerate()
+                while active_threads and timeout < 360:
+                    active_threads = False
+                    threads_active = 0
+                    for thread in all_threads:
+                        if "Thread-" in thread.name:
+                            if thread.isAlive():
+                                active_threads = True
+                                threads_active= threads_active+1
+                    Log.warning("{0}",threads_active)
                     sleep(10)
                     timeout=10+timeout
                 if len(job_list.get_failed()) > 0:
@@ -1739,6 +1752,7 @@ class Autosubmit:
 
         platforms_to_test = set()
         for job in job_list.get_job_list():
+            job.submitter = submitter
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker

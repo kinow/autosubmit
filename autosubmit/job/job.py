@@ -30,6 +30,10 @@ import datetime
 import textwrap
 from collections import OrderedDict
 import copy
+
+from bscearth.utils.config_parser import ConfigParserFactory
+
+from autosubmit.config.config_common import AutosubmitConfig
 from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
@@ -38,12 +42,12 @@ from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_da
 from time import sleep
 from threading import Thread
 import threading
+from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 
 def threaded(fn):
     def wrapper(*args, **kwargs):
         thread = Thread(target=fn, args=args, kwargs=kwargs)
         thread.start()
-        thread.join(timeout=60)
         return thread
     return wrapper
 
@@ -118,7 +122,7 @@ class Job(object):
         self.check_warnings = 'false'
         self.packed = False
         self.hold = False
-        self.job_replica = copy.deepcopy(self)
+
 
     def __getstate__(self):
         odict = self.__dict__
@@ -495,38 +499,36 @@ class Job(object):
         return retrials_list
 
     @threaded
-    def retrieve_logfiles(self,copy_remote_logs,platform,job,local_logs,remote_logs):
-        job.local_logs = local_logs
-        job.remote_logs = remote_logs
-        job.platform = copy.copy(platform)
-        job.platform._ssh = None
-        job.platform._ftpChannel = None
-        job.platform.connect()
+    def retrieve_logfiles(self,copy_remote_logs,local_logs,remote_logs,expid,platform_name):
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf.reload()
+        submitter = self._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        platform = submitter.platforms[platform_name]
+        platform.connect()
         out_exist = False
         err_exist = False
         retries = 3
         sleeptime = 5
         i = 0
         while (not out_exist or not err_exist) and i < retries:
-            out_exist = job.platform.check_file_exists(job.remote_logs[0]) # will do 5 retries
-            err_exist = job.platform.check_file_exists(job.remote_logs[1]) # will do 5 retries
+            out_exist = platform.check_file_exists(remote_logs[0]) # will do 5 retries
+            err_exist = platform.check_file_exists(remote_logs[1]) # will do 5 retries
             if not out_exist or not err_exist:
                 sleeptime = sleeptime + 5
                 i = i + 1
                 sleep(sleeptime)
         if out_exist and err_exist:
             if copy_remote_logs:
-                if job.local_logs != job.remote_logs:
-                    job.synchronize_logs()  # unifying names for log files
-                    self.remote_logs = copy.deepcopy(job.remote_logs)
-                job.platform.get_logs_files(job.expid, job.remote_logs)
+                if local_logs != remote_logs:
+                    self.synchronize_logs(platform,remote_logs,local_logs)  # unifying names for log files
+                    remote_logs = local_logs
+                platform.get_logs_files(self.expid, remote_logs)
             # Update the logs with Autosubmit Job Id Brand
-            for local_log in job.local_logs:
-                job.platform.write_jobid(job.id,os.path.join(job._tmp_path, 'LOG_' + str(job.expid), local_log))
-        if job.platform._ftpChannel is not None:
-            job.platform._ftpChannel.close()
-        if job.platform._ssh is not None:
-            job.platform._ssh.close()
+            for local_log in local_logs:
+                platform.write_jobid(self.id,os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+        platform.closeConnection()
+        sleep(2)
         return
     def update_status(self, copy_remote_logs=False):
         """
@@ -581,9 +583,28 @@ class Job(object):
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:            
             self.write_end_time(self.status == Status.COMPLETED)
             #New thread, check if file exist
-            self.retrieve_logfiles(copy_remote_logs,self.platform,self.job_replica,self.local_logs,self.remote_logs)
-        return self.status
+            expid = copy.deepcopy(self.expid)
+            platform_name = copy.deepcopy(self.platform_name.lower())
+            local_logs = copy.deepcopy(self.local_logs)
+            remote_logs = copy.deepcopy(self.remote_logs)
+            self.retrieve_logfiles(copy_remote_logs,local_logs,remote_logs,expid,platform_name)
 
+        return self.status
+    @staticmethod
+    def _get_submitter(as_conf):
+        """
+        Returns the submitter corresponding to the communication defined on autosubmit's config file
+
+        :return: submitter
+        :rtype: Submitter
+        """
+        communications_library = as_conf.get_communications_library()
+        if communications_library == 'paramiko':
+            return ParamikoSubmitter()
+
+        # communications library not known
+        Log.error('You have defined a not valid communications library on the configuration file')
+        raise Exception('Communications library not known')
     def update_children_status(self):
         children = list(self.children)
         for child in children:
@@ -1005,10 +1026,12 @@ class Job(object):
                 parent.children.remove(self)
                 self.parents.remove(parent)
 
-    def synchronize_logs(self):
-        self.platform.move_file(self.remote_logs[0], self.local_logs[0], True)  # .out
-        self.platform.move_file(self.remote_logs[1], self.local_logs[1], True)  # .err
-        self.remote_logs = self.local_logs
+    def synchronize_logs(self,platform,remote_logs,local_logs):
+        platform.move_file(remote_logs[0], local_logs[0], True)  # .out
+        platform.move_file(remote_logs[1], local_logs[1], True)  # .err
+        self.local_logs = local_logs
+        self.remote_logs = copy.deepcopy(local_logs)
+
 
 
 class WrapperJob(Job):    
@@ -1188,8 +1211,9 @@ done
             content = ''
             while content == '' and retries > 0:
                 self._platform.send_command(command,False)
-                content = self.platform._ssh_output
-                for line in content.split('\n'):
+                content = self.platform._ssh_output.split('\n')
+                content.reverse()
+                for line in content[1:]:
                     out = line.split()
                     if out:
                         jobname = out[0]
@@ -1211,8 +1235,9 @@ done
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
                                 Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
-                sleep(wait)
-                retries= retries -1
+                if content == '':
+                    sleep(wait)
+                    retries= retries -1
 
             if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
@@ -1221,11 +1246,12 @@ done
         wait = 2
         retries = 5
         output = ''
-        while output == '' and  retries > 0:
+        while output == '' and retries > 0:
             output = self.platform.check_completed_files(job.name)
-            sleep(wait)
-            retries=retries-1
-        if output != '':
+            if output is None or output == '':
+                sleep(wait)
+                retries=retries-1
+        if output is not None and output != '' and 'COMPLETED' in output:
             job.new_status=Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         else:
@@ -1249,7 +1275,7 @@ done
                 self.running_jobs_start.pop(job, None)
                 Log.debug('Setting job {0} to COMPLETED'.format(job.name))
                 job.new_status = Status.COMPLETED
-                job.update_status(self.as_config.get_copy_remote_logs() == 'true', True)
+                job.update_status(self.as_config.get_copy_remote_logs() == 'true')
 
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)

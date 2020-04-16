@@ -101,6 +101,7 @@ class ParamikoPlatform(Platform):
                     self._host_config['hostname'] = self._host_config['hostname'].split(',')[0]
             if 'identityfile' in self._host_config:
                 self._host_config_id = self._host_config['identityfile']
+
             if 'proxycommand' in self._host_config:
                 self._proxy = paramiko.ProxyCommand(self._host_config['proxycommand'])
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
@@ -108,6 +109,8 @@ class ParamikoPlatform(Platform):
             else:
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                                   key_filename=self._host_config_id)
+            self.transport = paramiko.Transport((self._host_config['hostname'], 22))
+            self.transport.connect(username=self.user)
             self._ftpChannel = self._ssh.open_sftp()
             return True
         except:
@@ -681,6 +684,15 @@ class ParamikoPlatform(Platform):
         if hasattr(self.header, 'get_hyperthreading_directive'):
             header = header.replace('%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
+    def closeConnection(self):
+        if self._ftpChannel is not None:
+            self._ftpChannel.close()
+        #if self._ssh is not None:
+        self._ssh.close()
+        self.transport.close()
+        self.transport.stop_thread()
+        self.transport.sys.exit(0)
+
 
     def check_remote_log_dir(self):
         """

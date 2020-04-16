@@ -326,7 +326,8 @@ class Platform(object):
         :rtype: autosubmit.job.job_common.Status
         """
         raise NotImplementedError
-    
+    def closeConnection(self):
+        return
     def write_jobid(self, jobid, complete_path):
         """
         Writes Job id in an out file.
