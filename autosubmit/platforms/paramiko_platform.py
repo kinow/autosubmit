@@ -687,11 +687,11 @@ class ParamikoPlatform(Platform):
     def closeConnection(self):
         if self._ftpChannel is not None:
             self._ftpChannel.close()
-        #if self._ssh is not None:
-        self._ssh.close()
-        self.transport.close()
-        self.transport.stop_thread()
-        self.transport.sys.exit(0)
+        if self._ssh is not None:
+            self._ssh.close()
+            self.transport.close()
+            self.transport.stop_thread()
+            self.transport.sys.exit(0)
 
 
     def check_remote_log_dir(self):
