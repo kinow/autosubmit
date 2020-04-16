@@ -30,14 +30,17 @@ Options:
       -ft FILTER_TYPE, --filter_type
                             type to be filtered
       --hide,               hide the plot
-      --txt,                generates only txt status file
-      -txtlog, --txt_logfiles  generates only txt status file(AS <3.12 behaviour)
+      -txt, --text          
+                            generates a tree view format that includes job name, children number, and status in /status/
+      -txtlog, --txt_logfiles  
+                            generates a list of job names, status, .out path, and .err path as a file in /status/ (AS <3.12 behaviour)
       -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
       -cw                   --check_wrapper
                                 Generate the wrapper in the current workflow
       -d                    --detail
                                 Shows Job List view in terminal
+                                
 Example:
 ::
 
