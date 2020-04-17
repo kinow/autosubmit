@@ -756,7 +756,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         aux_scripts=("${{{0}[@]}}")
         prev_script="empty"
         as_index=0
-        
+        horizontal_size=${{#scripts_index[@]}}
         while [ "${{#aux_scripts[@]}}" -gt 0 ]; do
             i_list=0
             for script_list in "${{{0}[@]}}"; do
@@ -767,19 +767,22 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                     for horizontal_job in "${{scripts[@]:$job_index}}"; do
                         template=$horizontal_job
                         jobname=${{template%"$suffix"}}
-                        as_index=$(( $i_list*${{#{0}[@]}}+$job_index ))
-                        #echo "$as_index = $i_list * ${{#{0}[@]}} + $job_index $template"
+                        #as_index=$(( $i_list*${{#scripts_list[@]}}+$job_index ))
+                        #as_index=$(($job_index*$horizontal_size+$i_list))
+                        as_index=$(($i_list*$horizontal_size+$job_index))
                         out="${{template}}.${{as_index}}.out"
                         err="${{template}}.${{as_index}}.err"
-                        if [ $i_list -eq 0 ]; then
+                        if [ $job_index -eq 0 ]; then
                             prev_template=$template
                         else
-                            prev_template=${{prev_horizontal_scripts[$job_index]}}
+                            #prev_template=${{prev_horizontal_scripts[$job_index]}}
+                            prev_template=${{scripts[((job_index-1))]}}
                         fi
+                        echo "$as_index = $job_index*$horizontal_size+$i_list $template $prev_template"
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
-                        if [ $i_list -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
+                        if [ $job_index -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
                             srun -N1 --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
                             job_index=$(($job_index+1))
                             

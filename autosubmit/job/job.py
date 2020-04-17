@@ -1212,7 +1212,7 @@ done
             while content == '' and retries > 0:
                 self._platform.send_command(command,False)
                 content = self.platform._ssh_output.split('\n')
-                content.reverse()
+                #content.reverse()
                 for line in content[1:]:
                     out = line.split()
                     if out:
