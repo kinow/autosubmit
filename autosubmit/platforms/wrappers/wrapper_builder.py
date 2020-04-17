@@ -778,7 +778,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                             #prev_template=${{prev_horizontal_scripts[$job_index]}}
                             prev_template=${{scripts[((job_index-1))]}}
                         fi
-                        echo "$as_index = $job_index*$horizontal_size+$i_list $template $prev_template"
+                        #echo "$as_index = $job_index*$horizontal_size+$i_list $template $prev_template"
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
