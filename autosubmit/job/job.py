@@ -1213,7 +1213,7 @@ done
                 self._platform.send_command(command,False)
                 content = self.platform._ssh_output.split('\n')
                 #content.reverse()
-                for line in content[1:]:
+                for line in content[:-1]:
                     out = line.split()
                     if out:
                         jobname = out[0]
