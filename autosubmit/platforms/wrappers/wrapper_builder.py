@@ -757,28 +757,30 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         prev_script="empty"
         as_index=0
         horizontal_size=${{#scripts_index[@]}}
+        scripts_size=${{#scripts_0[@]}}
         while [ "${{#aux_scripts[@]}}" -gt 0 ]; do
             i_list=0
             for script_list in "${{{0}[@]}}"; do
                 declare -i job_index=${{scripts_index[$i_list]}}
                 declare -n scripts=$script_list
+                
                 declare -n prev_horizontal_scripts=$prev_script
                 if [ $job_index -ne -1 ]; then
                     for horizontal_job in "${{scripts[@]:$job_index}}"; do
                         template=$horizontal_job
                         jobname=${{template%"$suffix"}}
-                        #as_index=$(( $i_list*${{#scripts_list[@]}}+$job_index ))
-                        #as_index=$(($job_index*$horizontal_size+$i_list))
-                        as_index=$(($i_list*$horizontal_size+$job_index))
-                        out="${{template}}.${{as_index}}.out"
-                        err="${{template}}.${{as_index}}.err"
+                        as_index=0
+                        multiplication_result=$(($i_list*$scripts_size))
+                        as_index=$((multiplication_result+$job_index))
+                        out="${{template}}.$as_index.out"
+                        err="${{template}}.$as_index.err"
                         if [ $job_index -eq 0 ]; then
                             prev_template=$template
                         else
                             #prev_template=${{prev_horizontal_scripts[$job_index]}}
                             prev_template=${{scripts[((job_index-1))]}}
                         fi
-                        #echo "$as_index = $job_index*$horizontal_size+$i_list $template $prev_template"
+                        echo "$as_index = $job_index*$horizontal_size+$i_list $out"
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
