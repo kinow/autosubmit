@@ -146,10 +146,10 @@ class LocalPlatform(ParamikoPlatform):
         :type dest: str
         """
         file_exist = False
-        sleeptime = 5
+        sleeptime = 10
         remote_path = os.path.join(self.get_files_path(), src)
         retries = 0
-        while not file_exist and retries < 5:
+        while not file_exist and retries < 6:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
                 if not file_exist:  # File doesn't exist, retry in sleeptime
