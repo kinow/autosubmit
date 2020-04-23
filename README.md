@@ -36,7 +36,7 @@ HOW TO DEPLOY/SETUP AUTOSUBMIT FRAMEWORK
    * ARCHER (EPCC machine)
 
 - Pre-requisites: These packages (bash, python2, sqlite3, git-scm > 1.8.2, subversion, dialog*) must be available at local
-  machine. These packages (argparse, dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko, saga-python,
+  machine. These packages (argparse, dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko,
   python2-pythondialog*, mock, portalocker) must be available for python runtime. And the machine is also able to access
   HPC platforms via password-less ssh.
 
