@@ -174,6 +174,8 @@ class TestSagaPlatform(TestCase):
 
     @patch('autosubmit.platforms.platform.sleep')
     def test_that_get_completed_makes_the_right_number_of_retries_when_not_found(self, mock_sleep):
+        # Retries set to 0 to satisfy assert
+
         retries = 0
         self.platform.get_file = Mock(return_value=False)
 
