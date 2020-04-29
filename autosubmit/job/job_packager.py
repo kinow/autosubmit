@@ -210,7 +210,7 @@ class JobPackager(object):
                     built_packages = built_packages_tmp
                 else:
                     built_packages = built_packages_tmp
-                # self.max_jobs = self.max_jobs -1
+                self.max_jobs = self.max_jobs - 1
                 packages_to_submit += built_packages
 
             else:
@@ -220,7 +220,7 @@ class JobPackager(object):
                         package = JobPackageSimpleWrapped([job])
                     else:
                         package = JobPackageSimple([job])
-                    # self.max_jobs = self.max_jobs - 1
+                    self.max_jobs = self.max_jobs - 1
                     packages_to_submit.append(package)
         for package in packages_to_submit:
             package.hold = self.hold
@@ -300,7 +300,7 @@ class JobPackager(object):
                     jobs_list = job_vertical_packager.build_vertical_package(
                         job)
                     # update max_jobs, potential_dependency is None
-                    self.max_jobs -= len(jobs_list)
+                    # self.max_jobs -= len(jobs_list)
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(
                             jobs_list, configuration=self._as_config))
@@ -590,7 +590,7 @@ class JobPackagerHorizontal(object):
             self._current_processors = 0
         for job in self.job_list:
             if self.max_jobs > 0 and len(current_package) < self.max_wrapped_jobs:
-                self.max_jobs -= 1
+                # self.max_jobs -= 1
                 if int(job.tasks) != 0 and int(job.tasks) != int(self.processors_node) and \
                         int(job.tasks) < job.total_processors:
                     nodes = int(ceil(job.total_processors / float(job.tasks)))
