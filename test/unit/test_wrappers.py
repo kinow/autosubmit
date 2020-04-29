@@ -292,7 +292,7 @@ class TestWrappers(TestCase):
                 print(job.name)
             print("Build for test")
             for _job in packages[i]._jobs:
-            print(_job.name)
+                print(_job.name)
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
     def test_returned_packages_max_wrapped_jobs(self):
