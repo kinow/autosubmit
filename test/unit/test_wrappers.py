@@ -637,21 +637,22 @@ class TestWrappers(TestCase):
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
-        package_m2_s2_s3 = [d1_m2_1_s2, d1_m2_1_s3]
+        package_m2_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
+                            d1_m1_4_s3]
 
         packages = [JobPackageVertical(
             package_m1_s2_s3), JobPackageVertical(package_m2_s2_s3)]
 
         #returned_packages = returned_packages[0]
-        print("test_returned_packages_max_jobs_mixed_wrapper")
+        # print("test_returned_packages_max_jobs_mixed_wrapper")
         for i in range(0, len(returned_packages)):
-            print("Element " + str(i))
-            print("Returned from packager")
-            for job in returned_packages[i]._jobs:
-                print(job.name)
-            print("Build for test")
-            for _job in packages[i]._jobs:
-                print(_job.name)
+            # print("Element " + str(i))
+            # print("Returned from packager")
+            # for job in returned_packages[i]._jobs:
+            #     print(job.name)
+            # print("Build for test")
+            # for _job in packages[i]._jobs:
+            #     print(_job.name)
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
     def test_returned_packages_max_wrapped_jobs_mixed_wrapper(self):
