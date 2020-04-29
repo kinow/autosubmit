@@ -132,8 +132,8 @@ class Job(object):
             del odict['_platform']  # remove filehandle entry
         return odict
 
-    def __str__(self):
-        return self.name
+    # def __str__(self):
+    #     return self.name
 
     def print_job(self):
         """
@@ -1070,6 +1070,7 @@ class Job(object):
         platform.move_file(remote_logs[1], local_logs[1], True)  # .err
         self.local_logs = local_logs
         self.remote_logs = copy.deepcopy(local_logs)
+
 
 class WrapperJob(Job):
     """

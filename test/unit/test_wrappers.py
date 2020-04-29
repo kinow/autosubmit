@@ -279,8 +279,8 @@ class TestWrappers(TestCase):
                          d1_m1_9_s2, d1_m1_10_s2]
         package_m2_s2 = [d1_m2_1_s2, d1_m2_2_s2]
 
-        packages = [JobPackageVertical(
-            package_m1_s2), JobPackageVertical(package_m2_s2)]
+        packages = [JobPackageVertical(package_m2_s2), JobPackageVertical(
+            package_m1_s2)]
 
         #returned_packages = returned_packages[0]
         for i in range(0, len(returned_packages)):
@@ -1282,6 +1282,7 @@ class TestWrappers(TestCase):
         job = Job(name, job_id, Status.WAITING, 0)
         job.type = randrange(0, 2)
         job.packed = False
+        job.hold = False
         job.wallclock = total_wallclock
         job.platform = self.platform
 
