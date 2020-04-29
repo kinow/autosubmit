@@ -18,7 +18,6 @@ prepare:
     - conda update conda
     - conda install -n autosubmit2 coverage=4.5.4
 
-
 test_python2:
   stage: test
   script:
@@ -26,7 +25,7 @@ test_python2:
     - git submodule update --init --recursive
     - conda env update -f environment.yml -n autosubmit2 python=2
     - source activate autosubmit2
-    - nosetests --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml test
+    - nosetests --nocapture --exclude=regression --with-coverage --cover-package=autosubmit --cover-inclusive --cover-xml --cover-xml-file=test/coverage.xml test
 
 # test_python3:
 #   stage: test
@@ -43,7 +42,6 @@ report_codacy:
     - source activate autosubmit2
     - pip install codacy-coverage --upgrade
     - python-codacy-coverage -r test/coverage.xml
-    
 
 clean:
   stage: clean
