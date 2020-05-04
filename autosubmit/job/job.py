@@ -832,18 +832,11 @@ class Job(object):
 
     def _get_template_content(self, as_conf, snippet, template):
         communications_library = as_conf.get_communications_library()
-        if communications_library == 'saga':
-            return self._get_saga_template(snippet, template)
-        elif communications_library == 'paramiko':
+        if communications_library == 'paramiko':
             return self._get_paramiko_template(snippet, template)
         else:
             Log.error('You have to define a template on Job class')
             raise Exception('Job template content not found')
-
-    def _get_saga_template(self, snippet, template):
-        return ''.join([snippet.as_header(''),
-                        template,
-                        snippet.as_tailer()])
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.platform
