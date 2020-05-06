@@ -1403,7 +1403,7 @@ class Autosubmit:
                         job_list.save()
                     Autosubmit.submit_ready_jobs(
                         as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
-                    if as_conf.get_remote_dependencies() and len(job_list.get_ready(hold=True)) > 0:
+                    if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                         Autosubmit.submit_ready_jobs(
                             as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
                     save = job_list.update_list(as_conf)
@@ -1468,10 +1468,14 @@ class Autosubmit:
         """
         save = False
         for platform in platforms_to_test:
-            Log.debug("\nJobs ready for {1}: {0}", len(
-                job_list.get_ready(platform, hold=hold)), platform.name)
-            packages_to_submit = JobPackager(
-                as_conf, platform, job_list, hold=hold).build_packages()
+            if not hold:
+                Log.debug("\nJobs ready for {1}: {0}", len(
+                    job_list.get_ready(platform, hold=hold)), platform.name)
+            else:
+                Log.debug("\nJobs prepared for {1}: {0}", len(
+                    job_list.get_prepared(platform)), platform.name)
+
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()

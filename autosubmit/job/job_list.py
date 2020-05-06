@@ -788,7 +788,18 @@ class JobList:
             return [job for job in ready if job.packed is False]
         else:
             return ready
+    def get_prepared(self, platform=None):
+        """
+        Returns a list of prepared jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: prepared jobs
+        :rtype: list
+        """
+        prepared = [job for job in self._job_list if (platform is None or job.platform == platform) and
+                 job.status == Status.PREPARED]
+        return prepared
     def get_waiting(self, platform=None, wrapper=False):
         """
         Returns a list of jobs waiting
@@ -1147,10 +1158,10 @@ class JobList:
                         tmp = [parent for parent in job.parents if (
                             (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and "setup" not in parent.name.lower())]
                         if len(tmp) == len(job.parents):
-                            job.status = Status.READY
+                            job.status = Status.PREPARED
                             job.hold = True
                             Log.debug(
-                                "Setting job: {0} status to: READY for be held (all parents queuing, running or completed)...".format(job.name))
+                                "Setting job: {0} status to: Prepared for be held (all parents queuing, running or completed)...".format(job.name))
 
                 Log.debug('Updating Held jobs')
                 if self.job_package_map:

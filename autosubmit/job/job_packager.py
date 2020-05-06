@@ -79,7 +79,8 @@ class JobPackager(object):
                 jobs_list.get_ready(platform, hold=self.hold)))
         self._maxTotalProcessors = 0
 
-    def build_packages(self, only_generate=False, jobs_filtered=[]):
+    #def build_packages(self, only_generate=False, jobs_filtered=[]):
+    def build_packages(self):
         """
         Returns the list of the built packages to be submitted
 
@@ -88,44 +89,43 @@ class JobPackager(object):
         """
         packages_to_submit = list()
         # only_wrappers = False when coming from Autosubmit.submit_ready_jobs, jobs_filtered empty
-        if only_generate:
-            jobs_to_submit = jobs_filtered
+        if self.hold:
+            jobs_ready = self._jobs_list.get_prepared(self._platform)
         else:
             jobs_ready = self._jobs_list.get_ready(self._platform, self.hold)
 
-            if self.hold and len(jobs_ready) > 0:
-                jobs_in_held_status = self._jobs_list.get_held_jobs(
-                ) + self._jobs_list.get_submitted(self._platform, hold=self.hold)
-                held_by_id = dict()
-                for held_job in jobs_in_held_status:
-                    held_by_id[held_job.id] = held_job
-                current_held_jobs = len(held_by_id.keys())
+        if self.hold and len(jobs_ready) > 0:
+            jobs_in_held_status = self._jobs_list.get_held_jobs(
+            ) + self._jobs_list.get_submitted(self._platform, hold=self.hold)
+            held_by_id = dict()
+            for held_job in jobs_in_held_status:
+                held_by_id[held_job.id] = held_job
+            current_held_jobs = len(held_by_id.keys())
+            remaining_held_slots = 10 - current_held_jobs
+            try:
+                while len(jobs_ready) > remaining_held_slots:
+                    if jobs_ready[-1].packed:
+                        jobs_ready[-1].packed = False
+                    del jobs_ready[-1]
+            except IndexError:
+                pass
+        if len(jobs_ready) == 0:
+            # If there are no jobs ready, result is tuple of empty
+            return packages_to_submit
+        if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
+            # If there is no more space in platform, result is tuple of empty
+            return packages_to_submit
 
-                remaining_held_slots = 10 - current_held_jobs
-                try:
-                    while len(jobs_ready) > remaining_held_slots:
-                        if jobs_ready[-1].packed:
-                            jobs_ready[-1].packed = False
-                        del jobs_ready[-1]
-                except IndexError:
-                    pass
-            if len(jobs_ready) == 0:
-                # If there are no jobs ready, result is tuple of empty
-                return packages_to_submit
-            if not (self._max_wait_jobs_to_submit > 0 and self._max_jobs_to_submit > 0):
-                # If there is no more space in platform, result is tuple of empty
-                return packages_to_submit
-
-            # Sort by 6 first digits of date
-            available_sorted = sorted(
-                jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
-            # Sort by Priority, highest first
-            list_of_available = sorted(
-                available_sorted, key=lambda k: k.priority, reverse=True)
-            num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(
-                jobs_ready), self._max_jobs_to_submit)
-            # Take the first num_jobs_to_submit from the list of available
-            jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+        # Sort by 6 first digits of date
+        available_sorted = sorted(
+            jobs_ready, key=lambda k: k.long_name.split('_')[1][:6])
+        # Sort by Priority, highest first
+        list_of_available = sorted(
+            available_sorted, key=lambda k: k.priority, reverse=True)
+        num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(
+            jobs_ready), self._max_jobs_to_submit)
+        # Take the first num_jobs_to_submit from the list of available
+        jobs_to_submit = list_of_available[0:num_jobs_to_submit]
         # print(len(jobs_to_submit))
         jobs_to_submit_by_section = self._divide_list_by_section(
             jobs_to_submit)
