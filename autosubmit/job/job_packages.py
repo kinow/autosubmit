@@ -87,13 +87,13 @@ class JobPackageBase(object):
         """
         exit=False
         for job in self.jobs:
-            if job.check.lower() == Job.CHECK_ON_SUBMISSION:
+            if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
                 if only_generate:
                     exit=True
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
                     raise WrongTemplateException(job.name)
-                if not job.check_script(configuration, parameters,show_logs=False):
+                if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
                     Log.warning("Script {0} check failed",job.name)
                     Log.user_warning("On submission script has some empty variables")
                 else:
