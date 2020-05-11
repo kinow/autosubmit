@@ -1063,12 +1063,12 @@ class AutosubmitConfig(object):
 
     def get_remote_dependencies(self):
         """
-        Returns if the user has enabled the remote dependencies from autosubmit's config file
+        Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
 
         :return: if remote dependencies
         :rtype: bool
         """
-        config_value = self._conf_parser.get_option('config', 'DEPENDENCIES', 'false').lower()
+        config_value = self._conf_parser.get_option('config', 'PRESUBMISSION', 'false').lower()
         if config_value == "true":
             return True
         else:

@@ -1152,7 +1152,7 @@ class JobList:
                         all_parents_completed.append(job.name)
             if as_conf.get_remote_dependencies():
                 Log.debug(
-                    'Updating WAITING jobs eligible  for remote_dependencies')
+                    'Updating WAITING jobs eligible for be prepared')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):
                     if job.name not in all_parents_completed:
                         tmp = [parent for parent in job.parents if (

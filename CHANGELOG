@@ -1,26 +1,19 @@
-3.12.1b
-    Perfomance issues has been solved
+3.13.0b - This has been the Autosubmit development versions for many months, so it provides a lot of improvements,
+specially in terms of efficiency and stability. It also brings a full refactor of the wrappers module.
+    Multi-threaded wrappers were introduced in this version.
+    It provides the possibility to specify multiple hosts for the same platform (in a list) so it is more robust against connection issues / login failures.
+    In general, big experiments, with many startdates/members or featuring very big wrappers run much more efficiently with 3.12.1b.
+    A completely new implementation of remote dependencies (PreSubmission) were introduced in this version. It helps to speed up the jobs in a Slurm platform by sending the next 10 Waiting jobs in advance to the queues.
+    Workflows have more flexibility by the inclusion of a new way to define dependencies for specific chunks.
+    Changes were made to the algorithm that handles the maximum active jobs by platform. From this version, wrapped jobs count as a single job for Autosubmit, and the maximum number of inner jobs can be defined with new wrapper parameters.
+    There is a new log (.err, .out, COMPLETED, STAT files) recover system, that performs re-tries (in background threads) of the log files transfer from the remote platforms in case of failure.
 
-3.12.0b
-    Hotfixed in 3.11.0 , now you are unable to erase other user experiments. 
-    Now you can select which submodules uses your experiment.
-    New command called inspect that generates  cmd files in local expid folder.
-    Autosubmit monitor -txt was improved.
-    Autosubmit expid copy now is capable of detect if there are commits pending.
-    Rerun jobs now are working properly with sync jobs.
-    Some minor tweaks to autosubmit monitor.
-    Now autosubmit recovery also copies the log.
-    Added rsync when updates a local proyect.
-    Delay and synchronize now is exportable in job.conf.
-    Changes to some warning/error messages.
-    Autosubmit treats THREADS in mn4 as if it is #SBATCH --cpus-per-task=n
-    Some bug fixes:
-        -minor issues.
-        -Bug fix for mail notifier.
-        -Bug fix related to update_list.txt.
-        -Bugs fixes to synchronize jobs.
-        -Bug fix for ec-gate
-    Improves to hybrid wrappers
+3.12.0 - Shortly, this will be the Autosubmit default. Therefore, it is the recommended software to run any kind of experiments unless there is a
+necessity only covered by the development versions.
+    In this version vertical and horizontal wrappers are fully supported.
+    Horizontal-vertical wrappers are supported too. They were first developed in this Autosubmit version and they have been used in production together.
+    Due to technical limitations, we don't recommend to run experiments having many startdates/members (increased concurrency) or very large wrappers with 3.12.0b. As a rule of thumb, experiments with more than 10-20 members in total or wrappers with more than 50 jobs (the user can always reduce the wrapper size) may experience delays in the Autosubmit refresh cycle and generating the monitor views.
+    In this version, inner jobs inside QUEUING wrappers show a SUBMITTED status. This is fixed in 3.12.1b.
    
         
 3.11.1

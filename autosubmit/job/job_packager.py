@@ -69,14 +69,20 @@ class JobPackager(object):
         self.wrapper_method = self._as_config.get_wrapper_method().lower()
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
-
-        Log.debug("Number of jobs ready: {0}", len(
-            jobs_list.get_ready(platform, hold=self.hold)))
         Log.debug(
             "Number of jobs available: {0}", self._max_wait_jobs_to_submit)
-        if len(jobs_list.get_ready(platform, hold=self.hold)) > 0:
-            Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
-                jobs_list.get_ready(platform, hold=self.hold)))
+        if self.hold:
+            Log.debug("Number of jobs prepared: {0}", len(
+                jobs_list.get_prepared(platform)))
+            if len(jobs_list.get_prepared(platform)) > 0:
+                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                    jobs_list.get_prepared(platform)))
+        else:
+            Log.debug("Number of jobs ready: {0}", len(
+                jobs_list.get_ready(platform, hold=False)))
+            if len(jobs_list.get_ready(platform)) > 0:
+                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                    jobs_list.get_ready(platform)))
         self._maxTotalProcessors = 0
 
     #def build_packages(self, only_generate=False, jobs_filtered=[]):
@@ -92,7 +98,7 @@ class JobPackager(object):
         if self.hold:
             jobs_ready = self._jobs_list.get_prepared(self._platform)
         else:
-            jobs_ready = self._jobs_list.get_ready(self._platform, self.hold)
+            jobs_ready = self._jobs_list.get_ready(self._platform)
 
         if self.hold and len(jobs_ready) > 0:
             jobs_in_held_status = self._jobs_list.get_held_jobs(
