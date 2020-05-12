@@ -345,7 +345,11 @@ class DicJobs:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
-        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'False')).lower()
+        job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'false')).lower()
+        if job.check_warnings == 'true':
+            job.check_warnings = True
+        else:
+            job.check_warnings = False
 
         self._jobs_list.get_job_list().append(job)
 

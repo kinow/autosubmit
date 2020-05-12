@@ -232,6 +232,9 @@ class Platform(object):
             else:
                 return False
 
+        else:
+            return False
+
 
     def remove_stat_file(self, job_name):
         """
