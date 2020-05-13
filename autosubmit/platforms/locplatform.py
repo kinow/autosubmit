@@ -103,7 +103,7 @@ class LocalPlatform(ParamikoPlatform):
 
     def send_file(self, filename):
         self.check_remote_log_dir()
-        self.delete_file(filename)
+        self.delete_file(filename,previous_run=True)
         command = '{0} {1} {2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
                                        os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:
@@ -117,6 +117,7 @@ class LocalPlatform(ParamikoPlatform):
 
     def check_file_exists(self,filename):
         return True
+
     def get_file(self, filename, must_exist=True, relative_path=''):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
@@ -166,12 +167,15 @@ class LocalPlatform(ParamikoPlatform):
 
         return file_exist
 
-    def delete_file(self, filename):
-        command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,'LOG_' + self.expid, filename))
+    def delete_file(self, filename,previous_run = False):
+        if previous_run:
+            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,"LOG_"+self.expid, filename))
+        else:
+            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, filename))
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
+            Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, filename)))
             return False
         return True
 

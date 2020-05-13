@@ -232,7 +232,7 @@ class TestJob(TestCase):
         self.job.check_completion()
 
         # assert
-        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path,"LOG_" + self.experiment_id, self.job.name + '_COMPLETED'))
+        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
         self.assertEquals(Status.COMPLETED, self.job.status)
 
     def test_completed_file_not_exists_then_sets_status_to_failed(self):
@@ -244,7 +244,7 @@ class TestJob(TestCase):
         self.job.check_completion()
 
         # assert
-        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path,"LOG_" + self.experiment_id, self.job.name + '_COMPLETED'))
+        exists_mock.assert_called_once_with(os.path.join(self.job._tmp_path, self.job.name + '_COMPLETED'))
         self.assertEquals(Status.FAILED, self.job.status)
 
     def test_job_script_checking_contains_the_right_default_variables(self):
