@@ -231,7 +231,6 @@ class Platform(object):
                 return True
             else:
                 return False
-
         else:
             return False
 

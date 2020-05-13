@@ -146,21 +146,21 @@ class LocalPlatform(ParamikoPlatform):
         :type dest: str
         """
         file_exist = False
-        sleeptime = 10
+        sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), src)
         retries = 0
-        while not file_exist and retries < 6:
+        max_retries = 2
+        while not file_exist and retries < max_retries:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
                 if not file_exist:  # File doesn't exist, retry in sleeptime
                     Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
-                             1 - retries, remote_path)
+                             max_retries - retries, remote_path)
                     sleep(sleeptime)
                     sleeptime = sleeptime + 5
                     retries = retries + 1
             except BaseException as e:  # Unrecoverable error
                 Log.critical("Crashed while retrieving  logs: {0}",e)
-
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 
