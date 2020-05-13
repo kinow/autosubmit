@@ -636,7 +636,7 @@ class Job(object):
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
-        log_name = os.path.join(self._tmp_path,"LOG_" + self.expid,self.name + '_COMPLETED')
+        log_name = os.path.join(self._tmp_path,'LOG_' + self.expid,self.name + '_COMPLETED')
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
@@ -800,7 +800,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5; exit 1'
+                template = 'sleep 5;'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
