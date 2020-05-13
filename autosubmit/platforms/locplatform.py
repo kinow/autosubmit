@@ -103,7 +103,7 @@ class LocalPlatform(ParamikoPlatform):
 
     def send_file(self, filename):
         self.check_remote_log_dir()
-        self.delete_file(filename,previous_run=True)
+        self.delete_file(filename,del_cmd=True)
         command = '{0} {1} {2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
                                        os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:
@@ -167,11 +167,12 @@ class LocalPlatform(ParamikoPlatform):
 
         return file_exist
 
-    def delete_file(self, filename,previous_run = False):
-        if previous_run:
+    def delete_file(self, filename,del_cmd  = False):
+        if del_cmd:
             command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,"LOG_"+self.expid, filename))
         else:
-            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, filename))
+            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,"LOG_"+self.expid, filename))
+            command += ' ; {0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, filename))
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:

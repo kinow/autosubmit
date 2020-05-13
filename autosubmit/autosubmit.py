@@ -1429,7 +1429,6 @@ class Autosubmit:
                             if thread.isAlive():
                                 active_threads = True
                                 threads_active= threads_active+1
-                    Log.warning("{0}",threads_active)
                     sleep(10)
                     timeout=10+timeout
                 if len(job_list.get_failed()) > 0:
