@@ -695,7 +695,7 @@ class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
             jobname=${{template%"$suffix"}}
             out="${{template}}.${{i}}.out" 
             err="${{template}}.${{i}}.err"
-            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+            srun --ntasks=1 --cpus-per-task={1} --cpu-bind=cores --distribution=block:block $template > $out 2> $err &
             sleep "0.2"
             ((i=i+1))
         done
@@ -785,7 +785,7 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
                         if [ $job_index -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
-                            srun -N1 --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+                            srun -N1 --ntasks=1 --cpus-per-task={1} --cpu-bind=cores --distribution=block:block $template > $out 2> $err &
                             job_index=$(($job_index+1))
                             
                         else
