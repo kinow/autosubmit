@@ -551,7 +551,11 @@ class Job(object):
         new_status = self.new_status
         if new_status == Status.COMPLETED:
             Log.debug("This job seems to have completed: checking...")
-            self.platform.get_completed_files(self.name)
+
+
+            if not self.platform.get_completed_files(self.name):
+                log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
+
             self.check_completion()
         else:
             self.status = new_status
@@ -637,6 +641,7 @@ class Job(object):
         :type default_status: Status
         """
         log_name = os.path.join(self._tmp_path,self.name + '_COMPLETED')
+
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
@@ -800,7 +805,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5'
+                template = 'sleep 5; exit 1'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:

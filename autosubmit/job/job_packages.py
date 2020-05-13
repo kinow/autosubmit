@@ -142,6 +142,13 @@ class JobPackageSimple(JobPackageBase):
         if job_scripts is None:
             job_scripts = self._job_scripts
         for job in self.jobs:
+            #CLEANS PREVIOUS RUN ON LOCAL
+            log_completed = os.path.join(self._tmp_path, job.name + '_COMPLETED')
+            log_stat = os.path.join(self._tmp_path, job.name + '_STAT')
+            if os.path.exists(log_completed):
+                os.remove(log_completed)
+            if os.path.exists(log_stat):
+                os.remove(log_stat)
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
             job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold)
