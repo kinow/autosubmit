@@ -65,6 +65,16 @@ For each experiment, you see the following data:
 13. *Number of Suspended Jobs*
 14. *Number of Failed Jobs*: If there are Failed jobs, a list of the names of those jobs will be displayed.
 
+.. figure:: /agui/fig5_gui.jpg
+   :name: first_page_search_plus_description_sim
+   :width: 100%
+   :align: center
+   :alt: result search plus description + sim
+
+   Average Times Feature
+
+In experiments that include ``SIM`` jobs, you will also see the average queuing and running time for these jobs. In the latest version the time format has been updated to ``HH:mm:ss``. The text for the ``SIM`` average follows the format ``avg. queue HH:mm:ss (M) | run HH:mm:ss (N)`` where ``M`` is the number of jobs considered for the ``avg. queue`` calculation and ``N`` is the number of jobs considered for ``run`` calculation. 
+
 After clicking on the **MORE** button, you will be presented with the **Experiment Page**, which is the main view that Autosubmit provides. These are its main components:
 
 .. toctree::
@@ -73,3 +83,5 @@ After clicking on the **MORE** button, you will be presented with the **Experime
    agui/graph
    agui/log
    agui/statistics
+
+.. important:: To improve response times, Autosubmit GUI will try to store the dependency structure of your experiment in a database filed called ``structure_expid.db`` where ``expid`` is the name of your experiment. This file will be located in ``/esarchive/autosubmit/expid/pkl/``.

@@ -52,15 +52,15 @@
 of a communications library. There are multiple implementations, so you can choose any of them.</p>
 <div class="admonition hint">
 <p class="first admonition-title">Hint</p>
-<p class="last">At this moment there are two available communications libraries which are <code class="docutils literal notranslate"><span class="pre">saga</span></code> and <code class="docutils literal notranslate"><span class="pre">paramiko</span></code>.</p>
+<p class="last">At this moment there are one available communication library which is <code class="docutils literal notranslate"><span class="pre">paramiko</span></code>.</p>
 </div>
 <p>To change the communications library, open the &lt;experiments_directory&gt;/cxxx/conf/autosubmit_cxxx.conf file
 where cxxx is the experiment identifier and change the value of the API configuration variable in the communications
 section:</p>
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[communications]</span>
-<span class="c1"># Communications library used to connect with platforms: paramiko or saga.</span>
+<span class="c1"># Communications library used to connect with platforms: paramiko.</span>
 <span class="c1"># Default = paramiko</span>
-<span class="na">API</span> <span class="o">=</span> <span class="s">saga</span>
+<span class="na">API</span> <span class="o">=</span> <span class="s">paramiko</span>
 </pre></div>
 </div>
 </div>

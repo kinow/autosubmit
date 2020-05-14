@@ -820,6 +820,17 @@
 </tbody>
 </table>
 <dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.check_file_exists">
+<code class="descname">check_file_exists</code><span class="sig-paren">(</span><em>src</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.check_file_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Moves a file on the platform
+:param src: source name
+:type src: str
+:param dest: destination name
+:param must_exist: ignore if file exist or not
+:type dest: str</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="autosubmit.platforms.locplatform.LocalPlatform.connect">
 <code class="descname">connect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.connect" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates ssh connection to host</p>
@@ -837,7 +848,7 @@
 
 <dl class="method">
 <dt id="autosubmit.platforms.locplatform.LocalPlatform.delete_file">
-<code class="descname">delete_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.delete_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">delete_file</code><span class="sig-paren">(</span><em>filename</em>, <em>del_cmd=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.delete_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deletes a file from this platform</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

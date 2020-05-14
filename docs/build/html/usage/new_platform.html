@@ -64,10 +64,7 @@ identifier and add this text:</p>
 </div>
 <p>This will create a platform named “new_platform”. The options specified are all mandatory:</p>
 <ul class="simple">
-<li>TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM and</li>
-</ul>
-<p>also the options supported by saga-python library.</p>
-<ul class="simple">
+<li>TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM.</li>
 <li>HOST: hostname of the platform</li>
 <li>PROJECT: project for the machine scheduler</li>
 <li>USER: user for the machine scheduler</li>
@@ -79,11 +76,6 @@ identifier and add this text:</p>
 <p class="last">With some platform types, Autosubmit may also need the version, forcing you to add the parameter
 VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler).</p>
 </div>
-<div class="admonition hint">
-<p class="first admonition-title">Hint</p>
-<p class="last">If you want to run on <code class="docutils literal notranslate"><span class="pre">marenostrum3</span></code> with <code class="docutils literal notranslate"><span class="pre">saga</span></code> communications library, you have to set the</p>
-</div>
-<p>platform type as <code class="docutils literal notranslate"><span class="pre">lsf</span></code> and the platform version as <code class="docutils literal notranslate"><span class="pre">mn</span></code>.</p>
 <p>Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:</p>
 <ul class="simple">
