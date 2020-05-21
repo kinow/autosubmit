@@ -90,6 +90,11 @@
 <li><em>Number of Suspended Jobs</em></li>
 <li><em>Number of Failed Jobs</em>: If there are Failed jobs, a list of the names of those jobs will be displayed.</li>
 </ol>
+<div class="figure align-center" id="first-page-search-plus-description-sim">
+<a class="reference internal image-reference" href="_images/fig5_gui.jpg"><img alt="result search plus description + sim" src="_images/fig5_gui.jpg" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">41 </span><span class="caption-text">Average Times Feature</span></p>
+</div>
+<p>In experiments that include <code class="docutils literal notranslate"><span class="pre">SIM</span></code> jobs, you will also see the average queuing and running time for these jobs. In the latest version the time format has been updated to <code class="docutils literal notranslate"><span class="pre">HH:mm:ss</span></code>. The text for the <code class="docutils literal notranslate"><span class="pre">SIM</span></code> average follows the format <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">queue</span> <span class="pre">HH:mm:ss</span> <span class="pre">(M)</span> <span class="pre">|</span> <span class="pre">run</span> <span class="pre">HH:mm:ss</span> <span class="pre">(N)</span></code> where <code class="docutils literal notranslate"><span class="pre">M</span></code> is the number of jobs considered for the <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">queue</span></code> calculation and <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of jobs considered for <code class="docutils literal notranslate"><span class="pre">run</span></code> calculation.</p>
 <p>After clicking on the <strong>MORE</strong> button, you will be presented with the <strong>Experiment Page</strong>, which is the main view that Autosubmit provides. These are its main components:</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -112,6 +117,10 @@
 <li class="toctree-l1"><a class="reference internal" href="agui/log.html">Autosubmit Log</a></li>
 <li class="toctree-l1"><a class="reference internal" href="agui/statistics.html">Autosubmit Statistics</a></li>
 </ul>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">To improve response times, Autosubmit GUI will try to store the dependency structure of your experiment in a database filed called <code class="docutils literal notranslate"><span class="pre">structure_expid.db</span></code> where <code class="docutils literal notranslate"><span class="pre">expid</span></code> is the name of your experiment. This file will be located in <code class="docutils literal notranslate"><span class="pre">/esarchive/autosubmit/expid/pkl/</span></code>.</p>
 </div>
 </div>
 </div>
