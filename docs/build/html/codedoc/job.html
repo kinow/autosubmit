@@ -916,6 +916,24 @@ local and remote jobs</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="autosubmit.job.job_list.JobList.get_prepared">
+<code class="descname">get_prepared</code><span class="sig-paren">(</span><em>platform=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_prepared" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of prepared jobs</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>platform</strong> (<em>HPCPlatform</em>) – job platform</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">prepared jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
 <dt id="autosubmit.job.job_list.JobList.get_queuing">
 <code class="descname">get_queuing</code><span class="sig-paren">(</span><em>platform=None</em>, <em>wrapper=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.get_queuing" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of jobs queuing</p>
@@ -1156,7 +1174,7 @@ local and remote jobs</p>
 <dl class="method">
 <dt id="autosubmit.job.job_list.JobList.print_with_status">
 <code class="descname">print_with_status</code><span class="sig-paren">(</span><em>statusChange=None</em>, <em>nocolor=False</em>, <em>existingList=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.job.job_list.JobList.print_with_status" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the string representation of the dependency tree of 
+<dd><p>Returns the string representation of the dependency tree of
 the Job List</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />

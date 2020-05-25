@@ -1344,8 +1344,19 @@ done
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
         wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
-        wallclock_delta = datetime.timedelta(hours=wallclock.hour, minutes=wallclock.minute,
-                                             seconds=wallclock.second)
+        total = 0.0
+        if wallclock.hour > 0:
+            total = wallclock.hour
+        if wallclock.minute > 0:
+            total += wallclock.minute/60.0
+        if wallclock.second > 0:
+            total += wallclock.second/60.0/60.0
+        total = total * 1.15
+        hour = int(total)
+        minute = int((total - int(total)) * 60.0)
+        second = int(((total - int(total)) * 60 - int((total - int(total)) * 60.0)) * 60.0)
+        wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
+                                             seconds=second)
         if elapsed > wallclock_delta:
             return True
         return False

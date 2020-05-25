@@ -18,7 +18,7 @@
     
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="Defining the workflow" href="../workflows.html" />
+    <link rel="next" title="Remote Dependencies" href="remote_dependencies.html" />
     <link rel="prev" title="How to configure email notifications" href="configure.html" /> 
   </head><body>
     <div class="related" role="navigation" aria-label="related navigation">
@@ -31,7 +31,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../workflows.html" title="Defining the workflow"
+          <a href="remote_dependencies.html" title="Remote Dependencies"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="configure.html" title="How to configure email notifications"
@@ -165,16 +165,6 @@ Different cases may need specific approaches when creating the machine files. Fo
 </pre></div>
 </div>
 </div>
-<div class="section" id="remote-dependencies">
-<h3>Remote dependencies<a class="headerlink" href="#remote-dependencies" title="Permalink to this headline">¶</a></h3>
-<p>There is also the possibility of setting the option <strong>DEPENDENCIES</strong> to True in the wrapper directive.</p>
-<p>This allows more than one package containing wrapped jobs to be submitted at the same time, even when the dependencies between jobs aren’t yet satisfied. This is only useful for cases when the job scheduler considers the time a job has been queuing to determine the job’s priority (and the scheduler understands the dependencies set between the submitted packages). New packages can be created as long as the total number of jobs are below than the number defined in the <strong>TOTALJOBS</strong> variable.</p>
-<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
-<span class="na">TYPE</span> <span class="o">=</span> <span class="s">vertical</span>
-<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">True</span>
-</pre></div>
-</div>
-</div>
 </div>
 <div class="section" id="hybrid-wrapper">
 <h2>Hybrid wrapper<a class="headerlink" href="#hybrid-wrapper" title="Permalink to this headline">¶</a></h2>
@@ -261,7 +251,6 @@ So, when executing <em>autosubmit monitor cxxx</em>, a dashed box indicates the 
 <div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[wrapper]</span>
 <span class="na">TYPE</span> <span class="o">=</span> <span class="s">horizontal</span>
 <span class="na">JOBS_IN_WRAPPER</span> <span class="o">=</span> <span class="s">SIM POST</span>
-<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">True</span>
 </pre></div>
 </div>
 <div class="figure align-center" id="horizontal-remote">
@@ -289,7 +278,6 @@ So, when executing <em>autosubmit monitor cxxx</em>, a dashed box indicates the 
 <li><a class="reference internal" href="#vertical-mixed-wrapper">Vertical-mixed wrapper</a></li>
 <li><a class="reference internal" href="#horizontal-wrapper">Horizontal wrapper</a><ul>
 <li><a class="reference internal" href="#shared-memory-experiments">Shared-memory Experiments</a></li>
-<li><a class="reference internal" href="#remote-dependencies">Remote dependencies</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#hybrid-wrapper">Hybrid wrapper</a></li>
@@ -309,8 +297,8 @@ So, when executing <em>autosubmit monitor cxxx</em>, a dashed box indicates the 
   <p class="topless"><a href="configure.html"
                         title="previous chapter">How to configure email notifications</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="../workflows.html"
-                        title="next chapter">Defining the workflow</a></p>
+  <p class="topless"><a href="remote_dependencies.html"
+                        title="next chapter">Remote Dependencies</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -344,7 +332,7 @@ So, when executing <em>autosubmit monitor cxxx</em>, a dashed box indicates the 
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="../workflows.html" title="Defining the workflow"
+          <a href="remote_dependencies.html" title="Remote Dependencies"
              >next</a> |</li>
         <li class="right" >
           <a href="configure.html" title="How to configure email notifications"

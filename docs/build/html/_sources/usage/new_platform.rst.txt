@@ -19,8 +19,7 @@ identifier and add this text:
 
 This will create a platform named "new_platform". The options specified are all mandatory:
 
-* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM and
-also the options supported by saga-python library.
+* TYPE: queue type for the platform. Options supported are PBS, SGE, PS, LSF, ecaccess and SLURM.
 
 * HOST: hostname of the platform
 
@@ -35,8 +34,6 @@ also the options supported by saga-python library.
 .. warning:: With some platform types, Autosubmit may also need the version, forcing you to add the parameter
     VERSION. These platforms are PBS (options: 10, 11, 12) and ecaccess (options: pbs, loadleveler).
 
-.. hint:: If you want to run on ``marenostrum3`` with ``saga`` communications library, you have to set the
-platform type as ``lsf`` and the platform version as ``mn``.
 
 Some platforms may require to run serial jobs in a different queue or platform. To avoid changing the job
 configuration, you can specify what platform or queue to use to run serial jobs assigned to this platform:

@@ -53,8 +53,10 @@
 </pre></div>
 </div>
 <p><em>EXPID</em> is the experiment identifier.</p>
-<p>It checks experiment configuration and warns about any detected error or inconsistency.</p>
-<p>Options:</p>
+<p>It checks experiment configuration and warns about any detected error or inconsistency.
+It is used to check if the script is well-formed.
+If any template has an inconsistency it will replace them for an empty value on the cmd generated.
+Options:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">autosubmit</span> <span class="n">check</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span> <span class="o">-</span><span class="n">nt</span><span class="p">]</span> <span class="n">expid</span>
 
   <span class="n">expid</span>                 <span class="n">experiment</span> <span class="n">identifier</span>
@@ -68,6 +70,38 @@
 </pre></div>
 </div>
 </div>
+<div class="section" id="how-to-use-check-in-running-time">
+<h1>How to use check in running time:<a class="headerlink" href="#how-to-use-check-in-running-time" title="Permalink to this headline">¶</a></h1>
+<p>In <code class="docutils literal notranslate"><span class="pre">jobs_cxxx.conf</span></code> , you can set check(default true) to check the scripts during autosubmit run cxx.</p>
+<p>There are two parameters related to check:
+.. code-block:: ini</p>
+<blockquote>
+<div>CHECK = TRUE or FALSE or ON_SUBMISSION
+SHOW_CHECK_WARNINGS = TRUE or FALSE</div></blockquote>
+<p>Check = TRUE is used to substitute empty variables (if the template exists)
+Check = on_submission is used to substitute empty variables if the template will be generated on running_time by another job.
+Check = FALSE is used to disable this substitution.</p>
+<p>SHOW_CHECK_WARNINGS = False is used for avoid a big text warn message.</p>
+<p>For example:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[LOCAL_SETUP]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">filepath_that_exists</span>
+<span class="na">PLATFORM</span> <span class="o">=</span> <span class="s">LOCAL</span>
+<span class="na">WALLCLOCK</span> <span class="o">=</span> <span class="s">05:00</span>
+<span class="na">CHECK</span> <span class="o">=</span> <span class="s">TRUE</span>
+<span class="na">SHOW_CHECK_WARNINGS</span> <span class="o">=</span> <span class="s">TRUE</span>
+<span class="na">...</span>
+<span class="k">[SIM]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">filepath_that_no_exists_until_setup_is_processed</span>
+<span class="na">PLATFORM</span> <span class="o">=</span> <span class="s">bsc_es</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">LOCAL_SETUP SIM - 1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+<span class="na">WALLCLOCK</span> <span class="o">=</span> <span class="s">05:00</span>
+<span class="na">CHECK</span> <span class="o">=</span> <span class="s">on_submission</span>
+<span class="na">SHOW_CHECK_WARNINGS</span> <span class="o">=</span> <span class="s">False</span>
+<span class="na">...</span>
+</pre></div>
+</div>
+</div>
 
 
           </div>
@@ -75,6 +109,12 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">How to check the experiment configuration</a></li>
+<li><a class="reference internal" href="#how-to-use-check-in-running-time">How to use check in running time:</a></li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="create_exp.html"
                         title="previous chapter">How to create an experiment</a></p>

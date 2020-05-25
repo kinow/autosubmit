@@ -51,7 +51,7 @@
 <p>The Graph Representation of the experiment offers a dependency oriented view.</p>
 <div class="figure align-center" id="experiment-graph">
 <a class="reference internal image-reference" href="../_images/fig_graph_2.jpg"><img alt="Experiment Graph 1" src="../_images/fig_graph_2.jpg" style="width: 100%;" /></a>
-<p class="caption"><span class="caption-number">43 </span><span class="caption-text">Experiment Graph Representation</span></p>
+<p class="caption"><span class="caption-number">44 </span><span class="caption-text">Experiment Graph Representation</span></p>
 </div>
 <p>This view offers a graph representation of the experiments where a node represents a job and an edge represents a directed dependency relationship between nodes. To open it you must click on the button <code class="docutils literal notranslate"><span class="pre">Classic</span></code>, which is the basic representation that uses either <code class="docutils literal notranslate"><span class="pre">GraphViz</span></code> or an heuristic approach depending on experiment complexity; we explain the other options later.</p>
 <p>Once the graph representation is loaded, it will focus on a relevant node according to some established rules. The color of each node represents the status of the job it represents: you can see a color guide at the bottom of the page in the form of buttons. If you click in any of those buttons, the graph will focus on the last node with that status, except in the case of <code class="docutils literal notranslate"><span class="pre">WAITING</span></code> where the graph will focus on the first one. You can navigate the graph in this way, but there are other navigation buttons at the left and right corners of the graph canvas. You can also use your mouse or trackpad to navigate the graph, zoom in or zoom out. Below each node you can see the <code class="docutils literal notranslate"><span class="pre">job</span> <span class="pre">name</span></code> of the job it represents.</p>
@@ -82,7 +82,7 @@
 <p>Wrappers are an important feature of Autosubmit, and as such, it should be possible to visualize them in the graph representation.</p>
 <div class="figure align-center" id="experiment-graph-wr">
 <a class="reference internal image-reference" href="../_images/fig_graph_3.jpg"><img alt="Experiment Graph Wrapper" src="../_images/fig_graph_3.jpg" style="width: 100%;" /></a>
-<p class="caption"><span class="caption-number">44 </span><span class="caption-text">Wrapper Graph Representation</span></p>
+<p class="caption"><span class="caption-number">45 </span><span class="caption-text">Wrapper Graph Representation</span></p>
 </div>
 <p>Wrappers are represented by nodes that have dashed border, hexagon or square shape (no difference between them), and that share green background edges. On the right side of the graph you can find the <strong>Wrappers Tab</strong> and it will display a list of the existing wrappers as buttons. If you click on any of these buttons, the nodes that belong to that wrapper will be highlighted.</p>
 </div>
@@ -98,7 +98,7 @@
 <h2>Job Search<a class="headerlink" href="#job-search" title="Permalink to this headline">¶</a></h2>
 <div class="figure align-center" id="experiment-graph-search">
 <a class="reference internal image-reference" href="../_images/fig_graph_4.jpg"><img alt="Job Search" src="../_images/fig_graph_4.jpg" style="width: 100%;" /></a>
-<p class="caption"><span class="caption-number">45 </span><span class="caption-text">Job Search in Graph</span></p>
+<p class="caption"><span class="caption-number">46 </span><span class="caption-text">Job Search in Graph</span></p>
 </div>
 <p>On top of the graph you will see an input text box following by the button <code class="docutils literal notranslate"><span class="pre">Seach</span> <span class="pre">by</span> <span class="pre">Job</span> <span class="pre">Name</span></code>. Insert into that box the string that you want to find and the engine will build an internal list of those jobs whose name coincides with that string. For example <code class="docutils literal notranslate"><span class="pre">_LOCAL_</span></code> will show only jobs whose title contain the that string. Buttons <code class="docutils literal notranslate"><span class="pre">Previous</span></code> and <code class="docutils literal notranslate"><span class="pre">Next</span></code> will appear and next to them the number of jobs that coincide with your search, you can use these buttons to traverse the graph highlighting the nodes included in the resulting internal list.</p>
 </div>
