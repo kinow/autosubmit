@@ -1344,12 +1344,13 @@ done
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
         wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
+        total = 0.0
         if wallclock.hour > 0:
             total = wallclock.hour
-        if wallclock.minutes > 0:
-            total += wallclock.minutes/60
+        if wallclock.minute > 0:
+            total += wallclock.minute/60.0
         if wallclock.second > 0:
-            total += wallclock.second/60/60
+            total += wallclock.second/60.0/60.0
         total = total * 1.15
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
