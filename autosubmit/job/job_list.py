@@ -788,6 +788,7 @@ class JobList:
             return [job for job in ready if job.packed is False]
         else:
             return ready
+
     def get_prepared(self, platform=None):
         """
         Returns a list of prepared jobs
@@ -798,8 +799,9 @@ class JobList:
         :rtype: list
         """
         prepared = [job for job in self._job_list if (platform is None or job.platform == platform) and
-                 job.status == Status.PREPARED]
+                    job.status == Status.PREPARED]
         return prepared
+
     def get_waiting(self, platform=None, wrapper=False):
         """
         Returns a list of jobs waiting
@@ -921,9 +923,6 @@ class JobList:
         else:
             return finished
 
-
-
-
     def get_active(self, platform=None, wrapper=False):
         """
         Returns a list of active jobs (In platforms queue + Ready)
@@ -943,8 +942,6 @@ class JobList:
                     "Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
             active = []
         return active
-
-
 
     def get_job_by_name(self, name):
         """
@@ -1225,7 +1222,7 @@ class JobList:
             current_structure = None
             try:
                 current_structure = DbStructure.get_structure(
-                    self.expid, self._config.LOCAL_ROOT_DIR)
+                    self.expid, self._config.STRUCTURES_DIR)
             except Exception as exp:
                 pass
             # print("Lengths : " + str(len(self._job_list)) + "\t" +
@@ -1262,7 +1259,7 @@ class JobList:
                             child.parents.remove(job)
                     try:
                         DbStructure.save_structure(
-                            self.graph, self.expid, self._config.LOCAL_ROOT_DIR)
+                            self.graph, self.expid, self._config.STRUCTURES_DIR)
                     except Exception as exp:
                         pass
 

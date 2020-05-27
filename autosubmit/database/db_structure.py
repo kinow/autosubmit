@@ -13,7 +13,7 @@ from networkx import DiGraph
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
 
 
-def get_structure(exp_id, exp_path):
+def get_structure(exp_id, structures_path):
     """
     Creates file of database and table of experiment structure if it does not exist. Returns current structure.
 
@@ -21,10 +21,10 @@ def get_structure(exp_id, exp_path):
     :rtype: Dictionary Key: String, Value: List(of String)
     """
     try:
-        pkl_path = os.path.join(exp_path, exp_id, "pkl")
-        if os.path.exists(pkl_path):
+        #pkl_path = os.path.join(exp_path, exp_id, "pkl")
+        if os.path.exists(structures_path):
             db_structure_path = os.path.join(
-                pkl_path, "structure_" + exp_id + ".db")
+                structures_path, "structure_" + exp_id + ".db")
             if not os.path.exists(db_structure_path):
                 open(db_structure_path, "w")
             # print(db_structure_path)
@@ -55,7 +55,7 @@ def get_structure(exp_id, exp_path):
                 return None
         else:
             # pkl folder not found
-            raise Exception("pkl folder not found " + str(pkl_path))
+            raise Exception("pkl folder not found " + str(structures_path))
     except Exception as exp:
         print(traceback.format_exc())
 
@@ -105,14 +105,14 @@ def _get_exp_structure(path):
         return dict()
 
 
-def save_structure(graph, exp_id, exp_path):
+def save_structure(graph, exp_id, structures_path):
     """
     Saves structure if path is valid
     """
-    pkl_path = os.path.join(exp_path, exp_id, "pkl")
-    if os.path.exists(pkl_path):
+    #pkl_path = os.path.join(exp_path, exp_id, "pkl")
+    if os.path.exists(structures_path):
         db_structure_path = os.path.join(
-            pkl_path, "structure_" + exp_id + ".db")
+            structures_path, "structure_" + exp_id + ".db")
         # with open(db_structure_path, "w"):
         conn = create_connection(db_structure_path)
         _delete_table_content(conn)
@@ -123,7 +123,7 @@ def save_structure(graph, exp_id, exp_path):
         conn.commit()
     else:
         # pkl folder not found
-        raise Exception("pkl folder not found " + str(pkl_path))
+        raise Exception("pkl folder not found " + str(structures_path))
 
 
 def _create_edge(conn, u, v):
