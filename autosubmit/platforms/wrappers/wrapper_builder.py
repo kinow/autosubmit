@@ -752,25 +752,28 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
 
         total_threads = float(len(self.job_scripts))
         n_threads = float(self.threads)
-        cpu_values = []
+        core = []
         for thread in range(int(n_threads)):
-            cpu_values.append(0x0)
+            core.append(0x0)
+
+        core[0] = 0x1
         horizontal_wrapper_size=int(total_threads)
-        thr_mask = 0x1
         srun_mask_values = []
-        for job in range(horizontal_wrapper_size):
-            job_mask = 0x0
-            cpu_values[0] = thr_mask
+        for job_id in range(horizontal_wrapper_size):
             for thread in range(1, int(n_threads)):
-                thr_mask = thr_mask + thr_mask
-                cpu_values[thread] = thr_mask
-                #print "#{0} cpu-mask is {1}: ".format(thread, hex(thr_mask))
-            for thr_mask in cpu_values:
+                core[thread] = core[thread-1]*2
+                print "#{0} cpu-mask is {1}: ".format(thread, hex(core[thread]))
+            job_mask = 0x0
+            for thr_mask in core:
                 job_mask = job_mask + thr_mask
             srun_mask_values.append(str(hex(job_mask)))
-            #print "#{0} cpu-id is {1}: ".format(0, hex(thr_mask))
-            thr_mask = job_mask + 0x1
-            #print "{0} mask-id is {1}: ".format(job, hex(job_mask))
+            print "#{0} job_mask is {1}: ".format(thread, hex(job_mask))
+            if job_id > 0:
+                    core[0]=core[0] << int(n_threads)
+            else:
+                    core[0]=job_mask+0x1
+            print "#{0} cpu-mask is {1}: ".format(0, hex(core[0]))
+
         mask_array = "( "
         for mask in srun_mask_values:
             mask_array += str("\"" + mask + "\"") + " "
