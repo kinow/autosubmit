@@ -41,7 +41,7 @@ from diagram import create_bar_diagram
 
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
-    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),(Status.PREPARED, 'lightsalmon'),
+    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),(Status.PREPARED, 'skyblue'),
                    (Status.SUBMITTED, 'cyan'), (Status.HELD, 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
                    (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
 
