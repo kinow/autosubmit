@@ -24,7 +24,7 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
     JobPackageSimpleWrapped, JobPackageHorizontalVertical, JobPackageVerticalHorizontal
 from operator import attrgetter
 from math import ceil
-
+import operator
 
 class JobPackager(object):
     """
@@ -85,7 +85,6 @@ class JobPackager(object):
                     jobs_list.get_ready(platform)))
         self._maxTotalProcessors = 0
 
-    #def build_packages(self, only_generate=False, jobs_filtered=[]):
     def build_packages(self):
         """
         Returns the list of the built packages to be submitted
@@ -101,6 +100,10 @@ class JobPackager(object):
             jobs_ready = self._jobs_list.get_ready(self._platform)
 
         if self.hold and len(jobs_ready) > 0:
+            for job in jobs_ready:
+                job.compute_weight()
+            sorted_jobs = sorted(jobs_ready, key=operator.attrgetter('distance_weight'))
+
             jobs_in_held_status = self._jobs_list.get_held_jobs(
             ) + self._jobs_list.get_submitted(self._platform, hold=self.hold)
             held_by_id = dict()
