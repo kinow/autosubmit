@@ -1063,20 +1063,6 @@ class Job(object):
                 parent.children.remove(self)
                 self.parents.remove(parent)
 
-    def compute_weight(self):
-        job = self
-        parent_not_completed = True
-        while job.has_parents() > 1 and parent_not_completed:
-            tmp_parents = list(self.parents)[1:]
-            for parent in tmp_parents:
-                Log.info("Job name is {0}, while parent is {1}", job.name,parent.name)
-                if parent.status == Status.COMPLETED:
-                    parent_not_completed = False
-            if parent_not_completed:
-                self.distance_weight=self.distance_weight+1
-                job = tmp_parents[0] # first parent
-
-
     def synchronize_logs(self, platform, remote_logs, local_logs):
         platform.move_file(remote_logs[0], local_logs[0], True)  # .out
         platform.move_file(remote_logs[1], local_logs[1], True)  # .err
