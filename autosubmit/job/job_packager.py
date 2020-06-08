@@ -152,9 +152,11 @@ class JobPackager(object):
                         sorted_jobs[-1].packed = False
                     del sorted_jobs[-1]
                 for job in sorted_jobs:
-                    if job.distance_weight > 4:
+                    if job.distance_weight > 3:
                         sorted_jobs.remove(job)
+                    #Log.warning("Job {1} have a weight of {0}", job.distance_weight,job.name)
                 jobs_ready = sorted_jobs
+                pass
             except IndexError:
                 pass
         if len(jobs_ready) == 0:
