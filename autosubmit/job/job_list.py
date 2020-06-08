@@ -1148,6 +1148,22 @@ class JobList:
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
             if as_conf.get_remote_dependencies():
+                for job in self.get_prepared():
+                    tmp = [
+                        parent for parent in job.parents if parent.status == Status.COMPLETED]
+                    if len(tmp) == len(job.parents):
+                        job.status = Status.READY
+                        job.packed = False
+                        save = True
+                        Log.debug(
+                            "Resetting job: {0} status to: READY for retrial...".format(job.name))
+                    if len(tmp) == len(job.parents):
+                        job.status = Status.READY
+                        job.packed = False
+                        job.hold = False
+                        save = True
+                        Log.debug(
+                            "A job in prepared status has all parent completed, job: {0} status set to: READY ...".format(job.name))
                 Log.debug(
                     'Updating WAITING jobs eligible for be prepared')
                 for job in self.get_waiting_remote_dependencies('slurm'.lower()):

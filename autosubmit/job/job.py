@@ -124,7 +124,7 @@ class Job(object):
         self.check_warnings = False
         self.packed = False
         self.hold = False
-
+        self.distance_weight = 0
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -805,7 +805,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5'
+                template = 'sleep 30'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -1370,3 +1370,6 @@ done
         time = int(output[index])
         time = self._parse_timestamp(time)
         return time
+
+
+

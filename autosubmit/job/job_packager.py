@@ -24,7 +24,7 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
     JobPackageSimpleWrapped, JobPackageHorizontalVertical, JobPackageVerticalHorizontal
 from operator import attrgetter
 from math import ceil
-
+import operator
 
 class JobPackager(object):
     """
@@ -84,8 +84,42 @@ class JobPackager(object):
                 Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_ready(platform)))
         self._maxTotalProcessors = 0
+    def compute_weight(self,job_list):
+        job = self
+        jobs_by_section = dict()
+        held_jobs = self._jobs_list.get_held_jobs()
+        jobs_held_by_section = dict()
+        for job in held_jobs:
+            if job.section not in jobs_held_by_section:
+                jobs_held_by_section[job.section] = []
+            jobs_held_by_section[job.section].append(job)
+        for job in job_list:
+            if job.section not in jobs_by_section:
+                jobs_by_section[job.section] = []
+            jobs_by_section[job.section].append(job)
 
-    #def build_packages(self, only_generate=False, jobs_filtered=[]):
+        for section in jobs_by_section:
+            if section in jobs_held_by_section.keys():
+                weight=len(jobs_held_by_section[section])+1
+            else:
+                weight = 1
+            highest_completed=[]
+
+            for job in sorted(jobs_by_section[section], key=operator.attrgetter('chunk')):
+                weight=weight+1
+                job.distance_weight = weight
+                completed_jobs = 9999
+                if job.has_parents() > 1:
+                    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                    if len(tmp) > completed_jobs:
+                        completed_jobs=len(tmp)
+                        highest_completed = [job]
+                    else:
+                        highest_completed.append(job)
+            for job in highest_completed:
+                job.distance_weight = job.distance_weight-1
+
+
     def build_packages(self):
         """
         Returns the list of the built packages to be submitted
@@ -101,18 +135,28 @@ class JobPackager(object):
             jobs_ready = self._jobs_list.get_ready(self._platform)
 
         if self.hold and len(jobs_ready) > 0:
+            self.compute_weight(jobs_ready)
+            sorted_jobs = sorted(jobs_ready, key=operator.attrgetter('distance_weight'))
             jobs_in_held_status = self._jobs_list.get_held_jobs(
             ) + self._jobs_list.get_submitted(self._platform, hold=self.hold)
             held_by_id = dict()
             for held_job in jobs_in_held_status:
-                held_by_id[held_job.id] = held_job
+                if held_job.id not in held_by_id:
+                    held_by_id[held_job.id] = []
+                held_by_id[held_job.id].append(held_job)
             current_held_jobs = len(held_by_id.keys())
             remaining_held_slots = 10 - current_held_jobs
             try:
-                while len(jobs_ready) > remaining_held_slots:
-                    if jobs_ready[-1].packed:
-                        jobs_ready[-1].packed = False
-                    del jobs_ready[-1]
+                while len(sorted_jobs) > remaining_held_slots:
+                    if sorted_jobs[-1].packed:
+                        sorted_jobs[-1].packed = False
+                    del sorted_jobs[-1]
+                for job in sorted_jobs:
+                    if job.distance_weight > 3:
+                        sorted_jobs.remove(job)
+                    #Log.warning("Job {1} have a weight of {0}", job.distance_weight,job.name)
+                jobs_ready = sorted_jobs
+                pass
             except IndexError:
                 pass
         if len(jobs_ready) == 0:
