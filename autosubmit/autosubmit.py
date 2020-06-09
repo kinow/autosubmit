@@ -1179,7 +1179,9 @@ class Autosubmit:
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
-            os.chmod(aslogs_path, 0o755)
+            os.chmod(aslogs_path, 0o775)
+        else:
+            os.chmod(aslogs_path, 0o775)
         if not os.path.exists(exp_path):
             Log.critical(
                 "The directory %s is needed and does not exist" % exp_path)
