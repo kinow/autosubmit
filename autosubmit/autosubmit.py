@@ -855,7 +855,7 @@ class Autosubmit:
 
         Log.debug("Creating plot directory...")
         os.mkdir(os.path.join(exp_id_path, "plot"))
-        os.chmod(os.path.join(exp_id_path, "plot"), 0o755)
+        os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
         Log.result("Experiment registered successfully")
         Log.user_warning("Remember to MODIFY the config files!")
         try:
@@ -863,7 +863,7 @@ class Autosubmit:
             os.chmod(os.path.join(exp_id_path, "conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "pkl"), 0o755)
             os.chmod(os.path.join(exp_id_path, "tmp"), 0o755)
-            os.chmod(os.path.join(exp_id_path, "plot"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
             os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" +
                                   str(exp_id) + ".conf"), 0o644)
             os.chmod(os.path.join(exp_id_path, "conf/expdef_" +
@@ -2991,7 +2991,9 @@ class Autosubmit:
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
-            os.chmod(aslogs_path, 0o755)
+            os.chmod(aslogs_path, 0o775)
+        else:
+            os.chmod(aslogs_path, 0o775)
         if not os.path.exists(exp_path):
             Log.critical(
                 "The directory %s is needed and does not exist." % exp_path)
