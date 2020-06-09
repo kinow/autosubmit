@@ -370,3 +370,4 @@ class DicJobs:
             return self._parser.get(section, option)
         else:
             return default
+

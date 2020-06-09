@@ -36,6 +36,8 @@ class BasicConfig:
         pass
 
     DB_DIR = os.path.join(os.path.expanduser('~'), 'debug', 'autosubmit')
+    STRUCTURES_DIR = os.path.join(
+        '/esarchive', 'autosubmit', 'as_metadata', 'structures')
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
@@ -55,7 +57,8 @@ class BasicConfig:
         Updates commonly used composed paths
         """
         # Just one needed for the moment.
-        BasicConfig.DB_PATH = os.path.join(BasicConfig.DB_DIR, BasicConfig.DB_FILE)
+        BasicConfig.DB_PATH = os.path.join(
+            BasicConfig.DB_DIR, BasicConfig.DB_FILE)
 
     @staticmethod
     def __read_file_config(file_path):
@@ -80,9 +83,11 @@ class BasicConfig:
         if parser.has_option('local', 'path'):
             BasicConfig.LOCAL_ROOT_DIR = parser.get('local', 'path')
         if parser.has_option('conf', 'platforms'):
-            BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get('conf', 'platforms')
+            BasicConfig.DEFAULT_PLATFORMS_CONF = parser.get(
+                'conf', 'platforms')
         if parser.has_option('conf', 'custom_platforms'):
-            BasicConfig.CUSTOM_PLATFORMS_PATH = parser.get('conf', 'custom_platforms')
+            BasicConfig.CUSTOM_PLATFORMS_PATH = parser.get(
+                'conf', 'custom_platforms')
         if parser.has_option('conf', 'jobs'):
             BasicConfig.DEFAULT_JOBS_CONF = parser.get('conf', 'jobs')
         if parser.has_option('mail', 'smtp_server'):
@@ -91,6 +96,8 @@ class BasicConfig:
             BasicConfig.MAIL_FROM = parser.get('mail', 'mail_from')
         if parser.has_option('hosts', 'whitelist'):
             BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
+        if parser.has_option('structures', 'path'):
+            BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
 
     @staticmethod
     def read():
@@ -101,7 +108,8 @@ class BasicConfig:
         filename = 'autosubmitrc'
 
         BasicConfig.__read_file_config(os.path.join('/etc', filename))
-        BasicConfig.__read_file_config(os.path.join(os.path.expanduser('~'), '.' + filename))
+        BasicConfig.__read_file_config(os.path.join(
+            os.path.expanduser('~'), '.' + filename))
         BasicConfig.__read_file_config(os.path.join('.', '.' + filename))
 
         BasicConfig._update_config()

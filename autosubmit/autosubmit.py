@@ -932,6 +932,9 @@ class Autosubmit:
             # Call method from platform.py parent object
             platform.add_parameters(parameters)
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
+        if as_conf.get_platform().lower() not in platforms.keys():
+            raise NameError("Specified platform in expdef_.conf " + str(as_conf.get_platform(
+            ).lower()) + " is not a valid platform defined in platforms_.conf.")
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
         # Attach paramenters to JobList
@@ -1418,11 +1421,11 @@ class Autosubmit:
                     time.sleep(safetysleeptime)
                 Log.info("No more jobs to run.")
 
-                timeout=0
+                timeout = 0
                 for platform in platforms_to_test:
                     platform.closeConnection()
                 active_threads = True
-                all_threads=threading.enumerate()
+                all_threads = threading.enumerate()
                 while active_threads and timeout < 360:
                     active_threads = False
                     threads_active = 0
@@ -1430,9 +1433,9 @@ class Autosubmit:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
-                                threads_active= threads_active+1
+                                threads_active = threads_active+1
                     sleep(10)
-                    timeout=10+timeout
+                    timeout = 10+timeout
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
@@ -1445,6 +1448,10 @@ class Autosubmit:
 
         except WrongTemplateException:
             return False
+
+        except NameError as exp:
+            Log.critical(str(exp))
+            Log.critical("Stopping Autosubmit.")
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
@@ -1476,7 +1483,8 @@ class Autosubmit:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(
+                as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()

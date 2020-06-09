@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import textwrap
-
+import math
 
 class WrapperDirector:
     """
@@ -57,6 +57,8 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
+
+
 
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -747,7 +749,42 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                    declare -a scripts_list={0}
                    declare -a scripts_index={1}
                    """).format(str(scripts_array_vars),str(scripts_array_index), '\n'.ljust(13))
+
+        total_threads = float(len(self.job_scripts))
+        n_threads = float(self.threads)
+        core = []
+        for thread in range(int(n_threads)):
+            core.append(0x0)
+
+        core[0] = 0x1
+        horizontal_wrapper_size=int(total_threads)
+        srun_mask_values = []
+        for job_id in range(horizontal_wrapper_size):
+            for thread in range(1, int(n_threads)):
+                core[thread] = core[thread-1]*2
+                print "#{0} cpu-mask is {1}: ".format(thread, hex(core[thread]))
+            job_mask = 0x0
+            for thr_mask in core:
+                job_mask = job_mask + thr_mask
+            srun_mask_values.append(str(hex(job_mask)))
+            print "#{0} job_mask is {1}: ".format(thread, hex(job_mask))
+            if job_id > 0:
+                    core[0]=core[0] << int(n_threads)
+            else:
+                    core[0]=job_mask+0x1
+            print "#{0} cpu-mask is {1}: ".format(0, hex(core[0]))
+
+        mask_array = "( "
+        for mask in srun_mask_values:
+            mask_array += str("\"" + mask + "\"") + " "
+        mask_array += ")"
+        scripts_bash += textwrap.dedent("""
+                declare -a job_mask_array={0}
+                """).format(mask_array, '\n'.ljust(13))
+
         return scripts_bash
+
+
 
     def build_srun_launcher(self, jobs_list, footer=True):
         srun_launcher = textwrap.dedent("""
@@ -780,12 +817,11 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                             #prev_template=${{prev_horizontal_scripts[$job_index]}}
                             prev_template=${{scripts[((job_index-1))]}}
                         fi
-                        echo "$as_index = $job_index*$horizontal_size+$i_list $out"
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
                         if [ $job_index -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
-                            srun -N1 --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
+                            srun -N1 --ntasks=1 --cpus-per-task={1} --cpu-bind=verbose,mask_cpu:job_mask_array[$job_index]  --distribution=block:block $template > $out 2> $err &
                             job_index=$(($job_index+1))
                             
                         else
