@@ -1236,13 +1236,12 @@ class JobList:
         if not notransitive:
             # Transitive reduction required
             current_structure = None
-            try:
-                current_structure = DbStructure.get_structure(
-                    self.expid, self._config.STRUCTURES_DIR)
-            except Exception as exp:
-                pass
-            # print("Lengths : " + str(len(self._job_list)) + "\t" +
-            #       str(len(current_structure.keys())))
+            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR,"structure_"+self.expid+".db")):
+                try:
+                    current_structure = DbStructure.get_structure(
+                        self.expid, self._config.STRUCTURES_DIR)
+                except Exception as exp:
+                    pass
             structure_valid = False
             if ((current_structure) and (len(self._job_list) == len(current_structure.keys()))):
                 structure_valid = True
@@ -1274,7 +1273,7 @@ class JobList:
                             job.children.remove(child)
                             child.parents.remove(job)
                     try:
-                        DbStructure.save_structure(
+                        DbStructure.save_strucexiture(
                             self.graph, self.expid, self._config.STRUCTURES_DIR)
                     except Exception as exp:
                         pass
