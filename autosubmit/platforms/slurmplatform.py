@@ -211,7 +211,7 @@ class SlurmPlatform(ParamikoPlatform):
         file_exist = False
         sleeptime = 5
         retries = 0
-        max_retries = 5
+        max_retries = 3
         while not file_exist and retries < max_retries:
             try:
                 self._ftpChannel.stat(os.path.join(self.get_files_path(), filename))  # This return IOError if path doesn't exist

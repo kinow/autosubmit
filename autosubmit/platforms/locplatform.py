@@ -150,7 +150,7 @@ class LocalPlatform(ParamikoPlatform):
         sleeptime = 5
         remote_path = os.path.join(self.get_files_path(), src)
         retries = 0
-        max_retries = 2
+        max_retries = 3
         while not file_exist and retries < max_retries:
             try:
                 file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))

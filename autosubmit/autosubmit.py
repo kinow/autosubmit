@@ -200,7 +200,7 @@ class Autosubmit:
                                    help='Supply the list of dates/members/chunks to filter the list of jobs. Default = "Any". '
                                    'LIST = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"')
             subparser.add_argument(
-                '-expand_status', type=str, help='Select the statuses to be expanded')
+                '-expand_status', type=str, help='Select the stat uses to be expanded')
             subparser.add_argument('--hide_groups', action='store_true',
                                    default=False, help='Hides the groups from the plot')
             subparser.add_argument('-cw', '--check_wrapper', action='store_true',
@@ -844,7 +844,7 @@ class Autosubmit:
         os.mkdir(tmp_path)
         os.chmod(tmp_path, 0o775)
         os.mkdir(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR))
-        os.chmod(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR), 0o755)
+        os.chmod(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR), 0o775)
         Log.debug("Creating temporal remote directory...")
         remote_tmp_path = os.path.join(tmp_path, "LOG_"+exp_id)
         os.mkdir(remote_tmp_path)
@@ -1131,6 +1131,7 @@ class Autosubmit:
         :rtype: \n
         """
         job_list._job_list = jobs_filtered
+        job_list.update_list(as_conf,False)
 
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
@@ -1155,10 +1156,10 @@ class Autosubmit:
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
-            # Sending only_wrappers = True
-            Autosubmit.submit_ready_jobs(
-                as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
-            job_list.update_list(as_conf, False, False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            job_list.update_list(as_conf, False)
+
+
 
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False):
@@ -1483,8 +1484,7 @@ class Autosubmit:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(
-                as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1493,9 +1493,19 @@ class Autosubmit:
                 try:
                     # If called from inspect command or -cw
                     if only_wrappers or inspect:
+                        if hasattr(package, "name"):
+                            job_list.packages_dict[package.name] = package.jobs
+                            from job.job import WrapperJob
+                            wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.READY, 0,
+                                                     package.jobs,
+                                                     package._wallclock, package._num_processors,
+                                                     package.platform, as_conf, hold)
+                            job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                            packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                         for innerJob in package._jobs:
                             # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
                             innerJob.status = Status.COMPLETED
+
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
@@ -1513,11 +1523,10 @@ class Autosubmit:
                                                      package.platform, as_conf, hold)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
 
-                        if isinstance(package, JobPackageThread):
-                            # If it is instance of JobPackageThread, then it is JobPackageVertical.
-                            packages_persistence.save(
-                                package.name, package.jobs, package._expid, inspect)
-                        save = True
+                    if isinstance(package, JobPackageThread):
+                        # If it is instance of JobPackageThread, then it is JobPackageVertical.
+                        packages_persistence.save(
+                            package.name, package.jobs, package._expid, inspect)
                 except WrongTemplateException as e:
                     Log.error(
                         "Invalid parameter substitution in {0} template", e.job_name)
@@ -3106,8 +3115,7 @@ class Autosubmit:
                             for job in jobs_wr:
                                 job.children = job.children - referenced_jobs_to_remove
                                 job.parents = job.parents - referenced_jobs_to_remove
-                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
-                                                                       packages_persistence, True)
+                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,packages_persistence, True)
 
                             packages = packages_persistence.load(True)
                         else:
@@ -3796,7 +3804,7 @@ class Autosubmit:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                                  "job_packages_" + expid)
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                          expid, "pkl", "job_packages_" + expid+".db"), 0644)
+                                          expid, "pkl", "job_packages_" + expid+".db"), 0775)
                     packages_persistence.reset_table(True)
                     referenced_jobs_to_remove = set()
                     job_list_wrappers = copy.deepcopy(job_list)
