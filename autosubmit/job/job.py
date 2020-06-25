@@ -93,7 +93,7 @@ class Job(object):
         self.split = None
         self.delay = None
         self.synchronize = None
-
+        self.repacked = 0
         self._long_name = None
         self.long_name = name
         self.date_format = ''
