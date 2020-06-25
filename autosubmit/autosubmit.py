@@ -818,7 +818,7 @@ class Autosubmit:
                         exp_id, hpc, Autosubmit.autosubmit_version, dummy)
                     #####
                     autosubmit_config = AutosubmitConfig(
-                        copy_id, BasicConfig, ConfigParserFactory())
+                        exp_id, BasicConfig, ConfigParserFactory())
                     if autosubmit_config.check_conf_files():
                         project_type = autosubmit_config.get_project_type()
                         if project_type == "git":
@@ -865,15 +865,15 @@ class Autosubmit:
             os.chmod(os.path.join(exp_id_path, "tmp"), 0o755)
             os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
             os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" +
-                                  str(exp_id) + ".conf"), 0o644)
+                                  str(exp_id) + ".conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/expdef_" +
-                                  str(exp_id) + ".conf"), 0o644)
+                                  str(exp_id) + ".conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/jobs_" +
-                                  str(exp_id) + ".conf"), 0o644)
+                                  str(exp_id) + ".conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/platforms_" +
-                                  str(exp_id) + ".conf"), 0o644)
+                                  str(exp_id) + ".conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/proj_" +
-                                  str(exp_id) + ".conf"), 0o644)
+                                  str(exp_id) + ".conf"), 0o755)
         except:
             pass
         return exp_id

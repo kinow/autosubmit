@@ -220,7 +220,7 @@ class JobPackager(object):
                         # if the quantity is not enough, don't make the wrapper
                         if len(p.jobs) >= min_wrapped_jobs:
                             built_packages.append(p)
-                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
+                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk)+1 >= len(self._jobs_list._chunk_list) - (
                                 len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
                             built_packages.append(p)
                         else:  # If a package is discarded, allow to wrap their inner jobs  again.
@@ -235,7 +235,7 @@ class JobPackager(object):
                         # if the quantity is not enough, don't make the wrapper
                         if len(p.jobs) >= self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()):
                             built_packages.append(p)
-                        elif self._jobs_list._member_list.index(p.jobs[0].member) >= len(
+                        elif self._jobs_list._member_list.index(p.jobs[0].member)+1 >= len(
                                 self._jobs_list._member_list) - (len(self._jobs_list._member_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
                             built_packages.append(p)
                         else:  # If a package is discarded, allow to wrap their inner jobs  again.
@@ -262,7 +262,6 @@ class JobPackager(object):
                     built_packages = built_packages_tmp
                 self.max_jobs = self.max_jobs - 1
                 packages_to_submit += built_packages
-
             else:
                 # No wrapper allowed / well-configured
                 for job in jobs_to_submit_by_section[section]:
