@@ -223,9 +223,13 @@ class JobPackager(object):
                         elif self._jobs_list._chunk_list.index(p.jobs[0].chunk)+1 >= len(self._jobs_list._chunk_list) - (
                                 len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
                             built_packages.append(p)
-                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
-                            for job in p.jobs:
-                                job.packed = False
+                        else:
+                            if job.repacked > 10: # too many tries, imposible to wrap this job
+                                built_packages.append(p)
+                            else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                                job.repacked = job.repacked + 1
+                                for job in p.jobs:
+                                    job.packed = False
                 elif self.wrapper_type == 'horizontal':
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                          max_wrapped_jobs, section)
