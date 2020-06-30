@@ -25,7 +25,7 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
-from time import os 
+from time import sleep
 class JobPackager(object):
     """
     Main class that manages Job wrapping.
