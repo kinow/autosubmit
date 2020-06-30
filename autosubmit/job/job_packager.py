@@ -25,6 +25,7 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
+from os import sleep
 
 class JobPackager(object):
     """
@@ -184,6 +185,7 @@ class JobPackager(object):
             jobs_to_submit)
 
         for job in jobs_to_submit_seq: #Failed jobs at least one time
+            job.packed = False
             if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
                 package = JobPackageSimpleWrapped([job])
             else:
@@ -216,7 +218,7 @@ class JobPackager(object):
                         k_divided = k.split("-")
                         if k_divided[0] not in self.jobs_in_wrapper:
                             number = int(k_divided[1].strip(" "))
-                            if number < hard_limit_wrapper:
+                            if number < max_wrapped_jobs:
                                 hard_limit_wrapper = number
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
@@ -254,16 +256,21 @@ class JobPackager(object):
                             if len(tmp) != len(job.parents):
                                 deadlock = False
                         if deadlock and self.wrapper_policy == "strict":
-                            Log.critical("Wrapper policy is set to strict and there is a deadlock, exiting AS")
+                            Log.debug("Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
+                            sleep(30)
                             for job in p.jobs:
                                 job.packed = False
-                            exit(-1)
                         elif deadlock and self.wrapper_policy != "strict":
-                            Log.warning(
-                                "Wrapper policy is set to flexible and there is a deadlock, As will submit the wrapper with less Quantity of jobs")
+                            Log.debug("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
                             for job in p.jobs:
                                 job.packed = False
-                        elif not deadlock:  # Treat Max-wrapped as well and last case
+                                if job.status == Status.READY:
+                                    if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                        package = JobPackageSimpleWrapped([job])
+                                    else:
+                                        package = JobPackageSimple([job])
+                                    packages_to_submit.append(package)
+                        elif not deadlock:  # last case
                             last_inner_job = False
                             for job in p.jobs:
                                 all_children_out_wrapper = True
