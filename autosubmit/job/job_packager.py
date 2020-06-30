@@ -176,11 +176,19 @@ class JobPackager(object):
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(
             jobs_ready), self._max_jobs_to_submit)
         # Take the first num_jobs_to_submit from the list of available
-        jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+        jobs_to_submit_tmp = list_of_available[0:num_jobs_to_submit]
         # print(len(jobs_to_submit))
+        jobs_to_submit = [fresh_job for fresh_job in jobs_to_submit_tmp if fresh_job.fail_count == 0]
+        jobs_to_submit_seq = [failed_job for failed_job in jobs_to_submit_tmp if failed_job.fail_count > 0]
         jobs_to_submit_by_section = self._divide_list_by_section(
             jobs_to_submit)
 
+        for job in jobs_to_submit_seq: #Failed jobs at least one time
+            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                package = JobPackageSimpleWrapped([job])
+            else:
+                package = JobPackageSimple([job])
+            packages_to_submit.append(package)
 
         for section in jobs_to_submit_by_section:
             wrapped = False
