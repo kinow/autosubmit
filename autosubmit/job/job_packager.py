@@ -66,6 +66,7 @@ class JobPackager(object):
                             self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
+        self.wrapper_policy = self._as_config.get_wrapper_policy()
         self.wrapper_method = self._as_config.get_wrapper_method().lower()
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
@@ -220,16 +221,32 @@ class JobPackager(object):
                         # if the quantity is not enough, don't make the wrapper
                         if len(p.jobs) >= min_wrapped_jobs:
                             built_packages.append(p)
-                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk)+1 >= len(self._jobs_list._chunk_list) - (
-                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
-                            built_packages.append(p)
                         else:
-                            if job.repacked > 10: # too many tries, imposible to wrap this job
-                                built_packages.append(p)
-                            else:  # If a package is discarded, allow to wrap their inner jobs  again.
-                                job.repacked = job.repacked + 1
+                            deadlock = True
+                            for job in p.jobs:
+                                independent_innerjob = True
+                                for parent in job.parents:
+                                    if parent in p.jobs and parent.name != job.name: # This job depends on others inner jobs? T/F
+                                        independent_innerjob = False
+                                        break
+                                tmp = [parent for parent in job.parents if independent_innerjob and  parent.status == Status.COMPLETED ]
+                                if len(tmp) != len(job.parents):
+                                    deadlock = False
+                            if deadlock and self.wrapper_policy == "strict":
+                                Log.critical("Wrapper policy is set to strict and there is a deadlock, exiting AS")
+                                exit(-1)
+                            elif deadlock and self.wrapper_policy != "strict":
+                                Log.warning("Wrapper policy is set to flexible and there is a deadlock, As will submit the wrapper with less Quantity of jobs")
+                            elif not deadlock:# Treat Max-wrapped as well and last case
+                                last_inner_job = True
                                 for job in p.jobs:
-                                    job.packed = False
+                                    for child in job.children: #Check if job is considered child
+                                        if child in p.jobs and child.name != job.name:
+                                            last_inner_job = False
+                                if last_inner_job:
+                                    built_packages.append(p)
+                            for job in p.jobs:
+                                job.packed = False
                 elif self.wrapper_type == 'horizontal':
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                          max_wrapped_jobs, section)
@@ -246,7 +263,7 @@ class JobPackager(object):
                             for job in p.jobs:
                                 job.packed = False
                 elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
-                    built_packages_tmp = []
+                    built_packages_tmp = list()
                     built_packages_tmp.append(self._build_hybrid_package(
                         jobs_to_submit_by_section[section], max_wrapped_jobs, section))
                     for p in built_packages_tmp:

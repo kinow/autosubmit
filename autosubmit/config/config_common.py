@@ -1081,6 +1081,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
+    def get_wrapper_type(self):
+        """
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
+
+        :return: wrapper type (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'POLICY', 'flexible').lower()
 
     def get_wrapper_jobs(self):
         """
