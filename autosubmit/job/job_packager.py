@@ -181,7 +181,9 @@ class JobPackager(object):
         jobs_to_submit_by_section = self._divide_list_by_section(
             jobs_to_submit)
 
+
         for section in jobs_to_submit_by_section:
+            wrapped = False
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
             if self._platform.allow_wrappers and self.wrapper_type in ['horizontal', 'vertical', 'vertical-mixed',
@@ -210,7 +212,6 @@ class JobPackager(object):
                                 hard_limit_wrapper = number
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
-                wrapped = False
                 packages_to_submit = []
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     wrapped = True
