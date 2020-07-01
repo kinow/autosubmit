@@ -256,7 +256,6 @@ class JobPackager(object):
                                 deadlock = False
                         if deadlock and self.wrapper_policy == "strict":
                             Log.debug("Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
-                            sleep(30)
                             for job in p.jobs:
                                 job.packed = False
                         elif deadlock and self.wrapper_policy != "strict":
