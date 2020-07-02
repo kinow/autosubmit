@@ -140,8 +140,8 @@ class ParamikoPlatform(Platform):
 
         log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
         multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
-        if os.path.exists(multiple_delete_previous_run):
-            open(multiple_delete_previous_run, 'w+').write("rm -f "+filenames)
+        if os.path.exists(log_dir):
+            open(multiple_delete_previous_run, 'w+').write("rm -f"+filenames)
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),"multiple_delete_previous_run.sh")

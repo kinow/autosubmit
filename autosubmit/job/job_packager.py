@@ -25,7 +25,7 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
-
+from time import sleep
 class JobPackager(object):
     """
     Main class that manages Job wrapping.
@@ -66,6 +66,7 @@ class JobPackager(object):
                             self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
         self.wrapper_type = self._as_config.get_wrapper_type()
+        self.wrapper_policy = self._as_config.get_wrapper_policy()
         self.wrapper_method = self._as_config.get_wrapper_method().lower()
         # True or False
         self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
@@ -175,12 +176,23 @@ class JobPackager(object):
         num_jobs_to_submit = min(self._max_wait_jobs_to_submit, len(
             jobs_ready), self._max_jobs_to_submit)
         # Take the first num_jobs_to_submit from the list of available
-        jobs_to_submit = list_of_available[0:num_jobs_to_submit]
+        jobs_to_submit_tmp = list_of_available[0:num_jobs_to_submit]
         # print(len(jobs_to_submit))
+        jobs_to_submit = [fresh_job for fresh_job in jobs_to_submit_tmp if fresh_job.fail_count == 0]
+        jobs_to_submit_seq = [failed_job for failed_job in jobs_to_submit_tmp if failed_job.fail_count > 0]
         jobs_to_submit_by_section = self._divide_list_by_section(
             jobs_to_submit)
 
+        for job in jobs_to_submit_seq: #Failed jobs at least one time
+            job.packed = False
+            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                package = JobPackageSimpleWrapped([job])
+            else:
+                package = JobPackageSimple([job])
+            packages_to_submit.append(package)
+
         for section in jobs_to_submit_by_section:
+            wrapped = False
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
             if self._platform.allow_wrappers and self.wrapper_type in ['horizontal', 'vertical', 'vertical-mixed',
@@ -205,78 +217,84 @@ class JobPackager(object):
                         k_divided = k.split("-")
                         if k_divided[0] not in self.jobs_in_wrapper:
                             number = int(k_divided[1].strip(" "))
-                            if number < hard_limit_wrapper:
+                            if number < max_wrapped_jobs:
                                 hard_limit_wrapper = number
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
-
-                built_packages = []
+                packages_to_submit = []
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
+                    wrapped = True
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                        max_wrapped_jobs)
-                    for p in built_packages_tmp:
-                        for job in p.jobs:
-                            job.packed = True
-                        # if the quantity is not enough, don't make the wrapper
-                        if len(p.jobs) >= min_wrapped_jobs:
-                            built_packages.append(p)
-                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk)+1 >= len(self._jobs_list._chunk_list) - (
-                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
-                            built_packages.append(p)
-                        else:
-                            if job.repacked > 10: # too many tries, imposible to wrap this job
-                                built_packages.append(p)
-                            else:  # If a package is discarded, allow to wrap their inner jobs  again.
-                                job.repacked = job.repacked + 1
-                                for job in p.jobs:
-                                    job.packed = False
                 elif self.wrapper_type == 'horizontal':
+                    wrapped = True
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                          max_wrapped_jobs, section)
-                    for p in built_packages_tmp:
-                        for job in p.jobs:
-                            job.packed = True
-                        # if the quantity is not enough, don't make the wrapper
-                        if len(p.jobs) >= self._as_config.jobs_parser.get_option(section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()):
-                            built_packages.append(p)
-                        elif self._jobs_list._member_list.index(p.jobs[0].member)+1 >= len(
-                                self._jobs_list._member_list) - (len(self._jobs_list._member_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
-                            built_packages.append(p)
-                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
-                            for job in p.jobs:
-                                job.packed = False
+
                 elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
-                    built_packages_tmp = []
+                    wrapped = True
+                    built_packages_tmp = list()
                     built_packages_tmp.append(self._build_hybrid_package(
                         jobs_to_submit_by_section[section], max_wrapped_jobs, section))
-                    for p in built_packages_tmp:
+            if wrapped:
+                for p in built_packages_tmp:
+                    for job in p.jobs:
+                        job.packed = True
+                    if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is not enough, don't make the wrapper
+                        packages_to_submit.append(p)
+                    else:
+                        deadlock = True
                         for job in p.jobs:
-                            job.packed = True
-                        # if the quantity is not enough, don't make the wrapper
-                        if len(p.jobs) >= min_wrapped_jobs:
-                            built_packages.append(p)
-                        elif self._jobs_list._chunk_list.index(p.jobs[0].chunk) >= len(self._jobs_list._chunk_list) - (
-                                len(self._jobs_list._chunk_list) % min_wrapped_jobs):  # Last case, wrap remaining jobs
-                            built_packages.append(p)
-                        else:  # If a package is discarded, allow to wrap their inner jobs  again.
+                            independent_inner_job = True
+                            for parent in job.parents:
+                                if parent in p.jobs and parent.name != job.name:  # This job depends on others inner jobs? T/F
+                                    independent_inner_job = False
+                                    break
+                            tmp = [parent for parent in job.parents if
+                                   independent_inner_job and parent.status == Status.COMPLETED]
+                            if len(tmp) != len(job.parents):
+                                deadlock = False
+                        if deadlock and self.wrapper_policy == "strict":
+                            Log.debug("Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
                             for job in p.jobs:
                                 job.packed = False
-                    built_packages = built_packages_tmp
-                else:
-                    built_packages = built_packages_tmp
-                self.max_jobs = self.max_jobs - 1
-                packages_to_submit += built_packages
+                        elif deadlock and self.wrapper_policy != "strict":
+                            Log.debug("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
+                            for job in p.jobs:
+                                job.packed = False
+                                if job.status == Status.READY:
+                                    if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                        package = JobPackageSimpleWrapped([job])
+                                    else:
+                                        package = JobPackageSimple([job])
+                                    packages_to_submit.append(package)
+                        elif not deadlock:  # last case
+                            last_inner_job = False
+                            for job in p.jobs:
+                                all_children_out_wrapper = True
+                                for child in job.children:  # Check if job is considered child
+                                    if child in p.jobs and child.name != job.name:
+                                        all_children_out_wrapper = False
+                                if all_children_out_wrapper:
+                                    last_inner_job = True
+                                    break
+                            if last_inner_job:  # Last case
+                                packages_to_submit.append(p)
+                        else:
+                            for job in p.jobs:
+                                job.packed = False
             else:
-                # No wrapper allowed / well-configured
                 for job in jobs_to_submit_by_section[section]:
                     if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
                         package = JobPackageSimpleWrapped([job])
                     else:
                         package = JobPackageSimple([job])
-                    self.max_jobs = self.max_jobs - 1
                     packages_to_submit.append(package)
+
         for package in packages_to_submit:
+            self.max_jobs = self.max_jobs - 1
             package.hold = self.hold
+
         return packages_to_submit
 
     def _divide_list_by_section(self, jobs_list):
