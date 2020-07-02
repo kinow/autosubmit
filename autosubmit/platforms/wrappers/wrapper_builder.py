@@ -493,7 +493,7 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
         nodes_list = self.build_nodes_list()
         self.exit_thread = "os._exit(1)"
         joblist_thread = self.build_joblist_thread()
-        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts)), "
+        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts[i])), "
                                                                              "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
 
