@@ -789,16 +789,22 @@ class Autosubmit:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.replace(
                                     copy_id, exp_id)
+                                # Using readlines for replacement handling
                                 content = open(os.path.join(
-                                    conf_copy_id, filename), 'r').read()
+                                    conf_copy_id, filename), 'r').readlines()
 
                                 # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
                                 if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
                                     content = open(
-                                        BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read()
-
+                                        BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').readlines()
+                                # Setting email notifications to false
+                                if filename == str("autosubmit_" + str(copy_id) + ".conf"):
+                                    content = ["NOTIFICATIONS = False\n" if line.startswith(
+                                        ("NOTIFICATIONS =", "notifications =")) else line for line in content]
+                                # Putting content together before writing
+                                sep = ""
                                 open(os.path.join(dir_exp_id, "conf",
-                                                  new_filename), 'w').write(content)
+                                                  new_filename), 'w').write(sep.join(content))
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.split(
@@ -1131,7 +1137,7 @@ class Autosubmit:
         :rtype: \n
         """
         job_list._job_list = jobs_filtered
-        job_list.update_list(as_conf,False)
+        job_list.update_list(as_conf, False)
 
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
@@ -1156,10 +1162,9 @@ class Autosubmit:
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         while job_list.get_active():
-            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            Autosubmit.submit_ready_jobs(
+                as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
-
-
 
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False):
@@ -1484,7 +1489,8 @@ class Autosubmit:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(
+                as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1501,7 +1507,8 @@ class Autosubmit:
                                                      package._wallclock, package._num_processors,
                                                      package.platform, as_conf, hold)
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                            packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                            packages_persistence.save(
+                                package.name, package.jobs, package._expid, inspect)
                         for innerJob in package._jobs:
                             # Setting status to COMPLETED so it does not get stuck in the loop that calls this function
                             innerJob.status = Status.COMPLETED
@@ -3115,7 +3122,8 @@ class Autosubmit:
                             for job in jobs_wr:
                                 job.children = job.children - referenced_jobs_to_remove
                                 job.parents = job.parents - referenced_jobs_to_remove
-                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,packages_persistence, True)
+                            Autosubmit.generate_scripts_andor_wrappers(
+                                as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
 
                             packages = packages_persistence.load(True)
                         else:
