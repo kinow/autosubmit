@@ -238,7 +238,8 @@ class TestJobList(TestCase):
         job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock,
                                                            graph_mock)
         # Adding flag update structure
-        job_list.update_genealogy.assert_called_once_with(True, False, True)
+        job_list.update_genealogy.assert_called_once_with(
+            True, False, update_structure=True)
         for job in job_list._job_list:
             self.assertEquals(parameters, job.parameters)
 
