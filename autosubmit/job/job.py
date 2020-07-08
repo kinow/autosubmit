@@ -92,6 +92,7 @@ class Job(object):
         self.name = name
         self.split = None
         self.delay = None
+        self.frequency = None
         self.synchronize = None
         self.repacked = 0
         self._long_name = None
@@ -683,6 +684,7 @@ class Job(object):
             parameters['CHUNK'] = chunk
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
+            parameters['FREQUENCY'] = self.frequency
             parameters['SYNCHRONIZE'] = self.synchronize
             parameters['PACKED'] = self.packed
             total_chunk = int(parameters['NUMCHUNKS'])
