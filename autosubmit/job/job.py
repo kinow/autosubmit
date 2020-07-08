@@ -92,6 +92,7 @@ class Job(object):
         self.name = name
         self.split = None
         self.delay = None
+        self.frequency = None
         self.synchronize = None
         self.repacked = 0
         self._long_name = None
