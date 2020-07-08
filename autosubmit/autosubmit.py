@@ -789,16 +789,22 @@ class Autosubmit:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.replace(
                                     copy_id, exp_id)
+                                # Using readlines for replacement handling
                                 content = open(os.path.join(
-                                    conf_copy_id, filename), 'r').read()
+                                    conf_copy_id, filename), 'r').readlines()
 
                                 # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
                                 if filename.startswith("platforms") and os.path.isfile(BasicConfig.CUSTOM_PLATFORMS_PATH):
                                     content = open(
-                                        BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').read()
-
+                                        BasicConfig.CUSTOM_PLATFORMS_PATH, 'r').readlines()
+                                # Setting email notifications to false
+                                if filename == str("autosubmit_" + str(copy_id) + ".conf"):
+                                    content = ["NOTIFICATIONS = False\n" if line.startswith(
+                                        ("NOTIFICATIONS =", "notifications =")) else line for line in content]
+                                # Putting content together before writing
+                                sep = ""
                                 open(os.path.join(dir_exp_id, "conf",
-                                                  new_filename), 'w').write(content)
+                                                  new_filename), 'w').write(sep.join(content))
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.split(
