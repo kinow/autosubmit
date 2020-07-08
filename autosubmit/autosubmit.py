@@ -1366,19 +1366,23 @@ class Autosubmit:
                                 prev_status = job.status
                                 if job.status == Status.FAILED:
                                     continue
-                                if platform.type == "slurm":  # List for add all jobs that will be checked
-                                    list_jobid += str(job_id) + ','
-                                    list_prevStatus.append(prev_status)
-                                    completed_joblist.append(job)
-                                else:  # If they're not from slurm platform check one-by-one
-                                    platform.check_job(job)
-                                    if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
-                                        if as_conf.get_notifications() == 'true':
-                                            if Status.VALUE_TO_KEY[job.status] in job.notify_on:
-                                                Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
-                                                                              Status.VALUE_TO_KEY[prev_status],
-                                                                              Status.VALUE_TO_KEY[job.status],
-                                                                              as_conf.get_mails_to())
+                                # If exist key has been pressed and previous status was running, do not check
+                                if not (Autosubmit.exit == True and prev_status == Status.RUNNING):
+                                    if platform.type == "slurm":  # List for add all jobs that will be checked
+                                        # Do not check if Autosubmit exit is True and the previous status was running.
+                                        # if not (Autosubmit.exit == True and prev_status == Status.RUNNING):
+                                        list_jobid += str(job_id) + ','
+                                        list_prevStatus.append(prev_status)
+                                        completed_joblist.append(job)
+                                    else:  # If they're not from slurm platform check one-by-one
+                                        platform.check_job(job)
+                                        if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                            if as_conf.get_notifications() == 'true':
+                                                if Status.VALUE_TO_KEY[job.status] in job.notify_on:
+                                                    Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
+                                                                                  Status.VALUE_TO_KEY[prev_status],
+                                                                                  Status.VALUE_TO_KEY[job.status],
+                                                                                  as_conf.get_mails_to())
                                     save = True
 
                         if platform.type == "slurm" and list_jobid != "":
