@@ -59,7 +59,7 @@ Number of jobs in a package
     - If not defined, it considers that **MIN_WRAPPED** is 2.
     - If **POLICY** is flexible and it doesn't reach the **MIN_WRAPPED** value, it will submit the a inner job as an independent job.
     - If **POLICY** is strict and it doesn't reach the **MIN_WRAPPED** value, The wrapper inner jobs will be blocked until it can contain **MIN_WRAPPED** jobs inside.
-        -strict policy can cause deadlocks.
+     - strict policy can cause deadlocks.
 
 
 Wrapper check time
