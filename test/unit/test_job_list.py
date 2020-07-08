@@ -223,7 +223,7 @@ class TestJobList(TestCase):
         job_list.graph = graph_mock
         # act
         job_list.generate(date_list, member_list, num_chunks,
-                          1, parameters, 'H', 9999, Type.BASH, 'None')
+                          1, parameters, 'H', 9999, Type.BASH, 'None', update_structure=True)
 
         # assert
         self.assertEquals(job_list.parameters, parameters)
@@ -238,7 +238,7 @@ class TestJobList(TestCase):
         job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock,
                                                            graph_mock)
         # Adding flag update structure
-        job_list.update_genealogy.assert_called_once_with(True, False, False)
+        job_list.update_genealogy.assert_called_once_with(True, False, True)
         for job in job_list._job_list:
             self.assertEquals(parameters, job.parameters)
 
