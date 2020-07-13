@@ -965,7 +965,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.now(), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk)
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
 
     def write_start_time(self):
         """
@@ -987,7 +987,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk)
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
         return True
 
     def write_end_time(self, completed):
@@ -1019,7 +1019,7 @@ class Job(object):
             final_status = "FAILED"
             f.write('FAILED')
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk)
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform)
 
     def check_started_after(self, date_limit):
         """

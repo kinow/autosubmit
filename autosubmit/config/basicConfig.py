@@ -100,6 +100,8 @@ class BasicConfig:
             BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
         if parser.has_option('structures', 'path'):
             BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
+        if parser.has_option('historicdb', 'path'):
+            BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
 
     @staticmethod
     def read():
