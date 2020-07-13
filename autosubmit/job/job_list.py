@@ -99,7 +99,7 @@ class JobList:
         self._graph = value
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False):
         """
         Creates all jobs needed for the current workflow
 
@@ -152,7 +152,8 @@ class JobList:
                                chunk_list, dic_jobs, jobs_parser, self.graph)
 
         Log.info("Removing redundant dependencies...")
-        self.update_genealogy(new, notransitive)
+        self.update_genealogy(
+            new, notransitive, update_structure=update_structure)
         for job in self._job_list:
             job.parameters = parameters
 
@@ -1218,7 +1219,7 @@ class JobList:
 
         return save
 
-    def update_genealogy(self, new=True, notransitive=False):
+    def update_genealogy(self, new=True, notransitive=False, update_structure=False):
         """
         When we have created the job list, every type of job is created.
         Update genealogy remove jobs that have no templates
@@ -1236,14 +1237,14 @@ class JobList:
         if not notransitive:
             # Transitive reduction required
             current_structure = None
-            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR,"structure_"+self.expid+".db")):
+            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR, "structure_"+self.expid+".db")):
                 try:
                     current_structure = DbStructure.get_structure(
                         self.expid, self._config.STRUCTURES_DIR)
                 except Exception as exp:
                     pass
             structure_valid = False
-            if ((current_structure) and (len(self._job_list) == len(current_structure.keys()))):
+            if ((current_structure) and (len(self._job_list) == len(current_structure.keys())) and update_structure == False):
                 structure_valid = True
                 # print(current_structure.keys())
                 # Structure exists and is valid, use it as a source of dependencies
@@ -1273,9 +1274,10 @@ class JobList:
                             job.children.remove(child)
                             child.parents.remove(job)
                     try:
-                        DbStructure.save_strucexiture(
+                        DbStructure.save_structure(
                             self.graph, self.expid, self._config.STRUCTURES_DIR)
                     except Exception as exp:
+                        Log.warning(exp)
                         pass
 
         for job in self._job_list:
