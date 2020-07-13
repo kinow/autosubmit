@@ -57,8 +57,8 @@ Number of jobs in a package
         - If **MAX_WRAPPED** is not defined, then **TOTALJOBS** is used by default
 - **MIN_WRAPPED** can be defined in ``autosubmit_cxxx.conf`` in order to limit the minimum number of jobs that a wrapper can contain
     - If not defined, it considers that **MIN_WRAPPED** is 2.
-    - If **POLICY** is flexible and it doesn't reach the **MIN_WRAPPED** value, it will submit the  inner job as an independent job.
-    - If **POLICY** is strict and it doesn't reach the **MIN_WRAPPED** value, The wrapper inner jobs will be blocked until it can contain **MIN_WRAPPED** jobs inside.
+    - If **POLICY** is flexible and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will be submitted as individual jobs, as long as the condition is not satisfied.
+    - If **POLICY** is strict and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will not be submitted until there are enough tasks to build a package.
      - strict policy can cause deadlocks.
 
 
