@@ -347,7 +347,7 @@ class JobDataStructure():
                     try:
                         if type(platform_object) is not str:
                             if platform_object.type == "slurm":
-                                print("Checking Slurm for " + str(job_name))
+                                #print("Checking Slurm for " + str(job_name))
                                 submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(job_id)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
