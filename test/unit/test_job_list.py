@@ -176,7 +176,8 @@ class TestJobList(TestCase):
         sorted_by_name = self.job_list.sort_by_name()
 
         for i in xrange(len(sorted_by_name) - 1):
-            self.assertTrue(sorted_by_name[i].name <= sorted_by_name[i + 1].name)
+            self.assertTrue(
+                sorted_by_name[i].name <= sorted_by_name[i + 1].name)
 
     def test_sort_by_id_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_id = self.job_list.sort_by_id()
@@ -188,13 +189,15 @@ class TestJobList(TestCase):
         sorted_by_type = self.job_list.sort_by_type()
 
         for i in xrange(len(sorted_by_type) - 1):
-            self.assertTrue(sorted_by_type[i].type <= sorted_by_type[i + 1].type)
+            self.assertTrue(
+                sorted_by_type[i].type <= sorted_by_type[i + 1].type)
 
     def test_sort_by_status_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_status = self.job_list.sort_by_status()
 
         for i in xrange(len(sorted_by_status) - 1):
-            self.assertTrue(sorted_by_status[i].status <= sorted_by_status[i + 1].status)
+            self.assertTrue(
+                sorted_by_status[i].status <= sorted_by_status[i + 1].status)
 
     def test_that_create_method_makes_the_correct_calls(self):
         parser_mock = Mock()
@@ -203,7 +206,8 @@ class TestJobList(TestCase):
         factory = ConfigParserFactory()
         factory.create_parser = Mock(return_value=parser_mock)
 
-        job_list = JobList(self.experiment_id, FakeBasicConfig, factory, JobListPersistenceDb('.', '.'))
+        job_list = JobList(self.experiment_id, FakeBasicConfig,
+                           factory, JobListPersistenceDb('.', '.'))
         job_list._create_jobs = Mock()
         job_list._add_dependencies = Mock()
         job_list.update_genealogy = Mock()
@@ -218,7 +222,8 @@ class TestJobList(TestCase):
         graph_mock = Mock()
         job_list.graph = graph_mock
         # act
-        job_list.generate(date_list, member_list, num_chunks, 1, parameters, 'H', 9999, Type.BASH, 'None')
+        job_list.generate(date_list, member_list, num_chunks,
+                          1, parameters, 'H', 9999, Type.BASH, 'None', update_structure=True)
 
         # assert
         self.assertEquals(job_list.parameters, parameters)
@@ -232,7 +237,9 @@ class TestJobList(TestCase):
         self.assertEquals(0, cj_args[2])
         job_list._add_dependencies.assert_called_once_with(date_list, member_list, chunk_list, cj_args[0], parser_mock,
                                                            graph_mock)
-        job_list.update_genealogy.assert_called_once_with(True, False)
+        # Adding flag update structure
+        job_list.update_genealogy.assert_called_once_with(
+            True, False, update_structure=True)
         for job in job_list._job_list:
             self.assertEquals(parameters, job.parameters)
 
@@ -248,8 +255,10 @@ class TestJobList(TestCase):
         JobList._create_jobs(dic_mock, parser_mock, 0, Type.BASH)
 
         # arrange
-        dic_mock.read_section.assert_any_call('fake-section-1', 0, Type.BASH, dict())
-        dic_mock.read_section.assert_any_call('fake-section-2', 1, Type.BASH, dict())
+        dic_mock.read_section.assert_any_call(
+            'fake-section-1', 0, Type.BASH, dict())
+        dic_mock.read_section.assert_any_call(
+            'fake-section-2', 1, Type.BASH, dict())
 
     def _createDummyJobWithStatus(self, status):
         job_name = str(randrange(999999, 999999999))

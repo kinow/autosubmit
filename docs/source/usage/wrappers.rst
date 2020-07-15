@@ -22,7 +22,7 @@ For example:
 
     [config]
     EXPID = ....
-    AUTOSUBMIT_VERSION = 3.12.0b
+    AUTOSUBMIT_VERSION = 3.13.1b
     ...
 
     MAXWAITINGJOBS = 100
@@ -49,14 +49,17 @@ Number of jobs in a package
     TYPE = <ANY>
     MIN_WRAPPED = 2
     MAX_WRAPPED = 999
+    POLICY = flexible #default is flexible. Values: flexible,strict
 
 
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
     - If not defined, it considers the **MAX_WRAPPED** defined under [wrapper] in ``autosubmit_cxxx.conf``
         - If **MAX_WRAPPED** is not defined, then **TOTALJOBS** is used by default
-
-
-
+- **MIN_WRAPPED** can be defined in ``autosubmit_cxxx.conf`` in order to limit the minimum number of jobs that a wrapper can contain
+    - If not defined, it considers that **MIN_WRAPPED** is 2.
+    - If **POLICY** is flexible and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will be submitted as individual jobs, as long as the condition is not satisfied.
+    - If **POLICY** is strict and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will not be submitted until there are enough tasks to build a package.
+     - strict policy can cause deadlocks.
 
 
 Wrapper check time
@@ -127,13 +130,13 @@ Shared-memory Experiments
 
 There is also the possibility of setting the option **METHOD** to SRUN in the wrapper directive (**ONLY** for vertical and vertical-horizontal wrappers).
 
-This allows to use SRUN instead of rely in machinefiles to work in parallel.
+This allows to form a wrapper with shared-memory paradigm instead of rely in machinefiles to work in parallel.
 
 .. code-block:: ini
 
     [wrapper]
     TYPE = vertical
-    METHOD = srun
+    METHOD = srun # default ASTHREAD
 
 Hybrid wrapper
 ==========================

@@ -442,7 +442,38 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
 
 
 class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
+    def build_parallel_threads_launcher_horizontal_vertical(self, jobs_list, thread, footer=True):
+        parallel_threads_launcher = textwrap.dedent("""
+        pid_list = []
 
+        for i in range(len({0})):
+            if type({0}[i]) != list:
+                job = {0}[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+
+            {2}
+            current = {1}({0}[i], i+self.id_run)
+            pid_list.append(current)
+            current.start()
+
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
+        if footer:
+            parallel_threads_launcher += self._indent(textwrap.dedent("""
+            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+            completed_path = os.path.join(os.getcwd(), completed_filename)
+            if os.path.exists(completed_path):
+                print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            else:
+                print datetime.now(), "The job ", pid.template," has FAILED"
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+
+        return parallel_threads_launcher
     def build_joblist_thread(self):
         return textwrap.dedent("""
         class JobListThread(Thread):
@@ -456,13 +487,13 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
                 all_cores = self.all_cores
                 {0}
         """).format(
-            self._indent(self.build_parallel_threads_launcher("self.jobs_list", "JobThread"), 8), '\n'.ljust(13))
+            self._indent(self.build_parallel_threads_launcher_horizontal_vertical("self.jobs_list", "JobThread"), 8), '\n'.ljust(13))
 
     def build_main(self):
         nodes_list = self.build_nodes_list()
         self.exit_thread = "os._exit(1)"
         joblist_thread = self.build_joblist_thread()
-        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts)-1), "
+        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts[i])), "
                                                                              "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
 

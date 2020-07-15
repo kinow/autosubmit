@@ -93,6 +93,7 @@ class Job(object):
         self.name = name
         self.split = None
         self.delay = None
+        self.frequency = None
         self.synchronize = None
         self.repacked = 0
         self._long_name = None
@@ -685,6 +686,7 @@ class Job(object):
             parameters['CHUNK'] = chunk
             parameters['SPLIT'] = self.split
             parameters['DELAY'] = self.delay
+            parameters['FREQUENCY'] = self.frequency
             parameters['SYNCHRONIZE'] = self.synchronize
             parameters['PACKED'] = self.packed
             total_chunk = int(parameters['NUMCHUNKS'])
@@ -807,7 +809,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 30'
+                template = 'sleep 5'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
