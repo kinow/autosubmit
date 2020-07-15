@@ -28,14 +28,16 @@ import sqlite3
 import copy
 import collections
 from datetime import datetime
+from json import dumps
 from networkx import DiGraph
 from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 
 
-_debug = False
+CURRENT_DB_VERSION = 10
+_debug = True
 JobItem = collections.namedtuple('JobItem', ['id', 'counter', 'job_name', 'created', 'modified', 'submit', 'start', 'finish',
-                                             'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 'chunk', 'last', 'platform', 'job_id'])
+                                             'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 'chunk', 'last', 'platform', 'job_id','extra_data'])
 
 # JobItem = collections.namedtuple(
 #     'JobItem', 'id counter job_name created modified submit start finish status rowtype ncpus wallclock qos energy date section member chunk last platform')
@@ -45,7 +47,7 @@ class JobData():
     """Job Data object
     """
 
-    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, status="UNKNOWN", rowtype=1, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", member="", chunk=0, last=1, platform="NA", job_id=0):
+    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, status="UNKNOWN", rowtype=1, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", member="", chunk=0, last=1, platform="NA", job_id=0, extra_data=dict()):
         """[summary]
 
         Args:
@@ -93,6 +95,7 @@ class JobData():
         self._platform = platform if platform and len(
             platform) > 0 else "NA"
         self.job_id = job_id if job_id else 0
+        self.extra_data = dumps(extra_data)
 
     @property
     def submit(self):
@@ -188,12 +191,15 @@ class JobDataStructure():
             last INTEGER NOT NULL,
             platform TEXT NOT NULL,
             job_id INTEGER NOT NULL,
+            extra_data TEXT NOT NULL,
             UNIQUE(counter,job_name)
             );''')
         if not os.path.exists(self.database_path):
             open(self.database_path, "w")
             self.conn = self.create_connection(self.database_path)
             self.create_table()
+            if self._set_pragma_version(CURRENT_DB_VERSION):
+                Log.info("Database version set.")
         else:
             self.conn = self.create_connection(self.database_path)
 
@@ -242,6 +248,7 @@ class JobDataStructure():
             # Insert new last
             rowid = self._insert_job_data(JobData(
                 0, current_counter, job_name, None, None, submit, 0, 0, status, 1, ncpus, wallclock, qos, 0, date, member, section, chunk, 1, platform, job_id))
+            # print(rowid)
             if rowid:
                 return True
             else:
@@ -285,14 +292,16 @@ class JobDataStructure():
                     job_data_last.status = status
                     job_data_last.job_id = job_id
                     job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-                    rowid = self._update_start_job_data(job_data_last)
-                    return rowid
+                    _updated = self._update_start_job_data(job_data_last)
+                    return _updated
             # It is necessary to create a new row
             submit_inserted = self.write_submit_time(
                 job_name, start, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id)
             if submit_inserted:
+                # print("retro start")
                 self.write_start_time(job_name, start, status,
                                       ncpus, wallclock, qos, date, member, section, chunk, platform, job_id)
+                return True
             else:
                 return None
         except Exception as exp:
@@ -327,6 +336,7 @@ class JobDataStructure():
             job_data_last = self.get_job_data_last(job_name)
             energy = 0
             submit_time = start_time = finish_time = 0
+            extra_data = dict()
             # Updating existing row
             if job_data_last:
                 job_data_last = job_data_last[0]
@@ -338,7 +348,7 @@ class JobDataStructure():
                         if type(platform_object) is not str:
                             if platform_object.type == "slurm":
                                 print("Checking Slurm for " + str(job_name))
-                                submit_time, start_time, finish_time, energy = platform_object.check_job_energy(job_id)
+                                submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(job_id)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
@@ -347,6 +357,7 @@ class JobDataStructure():
                 job_data_last.status = status
                 job_data_last.job_id = job_id
                 job_data_last.energy = energy
+                job_data_last.extra_data = dumps(extra_data)
                 job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
                 if submit_time > 0 and start_time > 0:
                     job_data_last.submit = int(submit_time)
@@ -360,9 +371,12 @@ class JobDataStructure():
                 job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id)
             write_inserted = self.write_start_time(job_name, finish, status, ncpus,
                                                    wallclock, qos, date, member, section, chunk, platform, job_id)
+            #print(submit_inserted)
+            #print(write_inserted)
             if submit_inserted and write_inserted:
+                #print("retro finish")
                 self.write_finish_time(
-                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id)
+                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object)
             else:
                 return None
         except Exception as exp:
@@ -386,7 +400,7 @@ class JobDataStructure():
                     # _id, _counter, _job_name, _created, _modified, _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform = item
                     job_item = JobItem(*item)
                     self.jobdata_list.add_jobdata(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
-                                                          job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id))
+                                                          job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data))
 
             else:
                 raise Exception("Job data folder not found :" +
@@ -417,7 +431,7 @@ class JobDataStructure():
                     # _id, _counter, _job_name, _created, _modified, _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform = item
                     job_item = JobItem(*item)
                     job_data.append(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
-                                            job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id))
+                                            job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data))
                     # job_data.append(JobData(_id, _counter, _job_name, _created, _modified,
                     #                         _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform))
                 return job_data
@@ -453,7 +467,7 @@ class JobDataStructure():
                         # return JobData(_id, _counter, _job_name, _created, _modified,
                         #                _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform)
                         jobdata.append(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
-                                               job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id))
+                                               job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data))
                         return jobdata
                 else:
                     return None
@@ -507,7 +521,7 @@ class JobDataStructure():
                 cur.execute(sql, (int(jobdata.start),
                                   jobdata.modified, jobdata.job_id, jobdata.status, jobdata._id))
                 self.conn.commit()
-                return cur.lastrowid
+                return True
             return None
         except sqlite3.Error as e:
             if _debug == True:
@@ -526,10 +540,10 @@ class JobDataStructure():
         """
         try:
             if self.conn:
-                sql = ''' UPDATE job_data SET submit=?, start=?, finish=?, modified=?, job_id=?, status=?, energy=? WHERE id=? '''
+                sql = ''' UPDATE job_data SET submit=?, start=?, finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=? WHERE id=? '''
                 cur = self.conn.cursor()
                 cur.execute(sql, (jobdata.submit, jobdata.start, jobdata.finish, jobdata.modified, jobdata.job_id,
-                                  jobdata.status, jobdata.energy, jobdata._id))
+                                  jobdata.status, jobdata.energy, jobdata.extra_data, jobdata._id))
                 self.conn.commit()
                 return cur.lastrowid
             return None
@@ -551,10 +565,10 @@ class JobDataStructure():
         try:
             if self.conn:
                 # print("Updating finish time")
-                sql = ''' UPDATE job_data SET finish=?, modified=?, job_id=?, status=?, energy=? WHERE id=? '''
+                sql = ''' UPDATE job_data SET finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=? WHERE id=? '''
                 cur = self.conn.cursor()
                 cur.execute(sql, (jobdata.finish, jobdata.modified, jobdata.job_id,
-                                  jobdata.status, jobdata.energy, jobdata._id))
+                                  jobdata.status, jobdata.energy, jobdata.extra_data, jobdata._id))
                 self.conn.commit()
                 return cur.lastrowid
             return None
@@ -576,9 +590,9 @@ class JobDataStructure():
         try:
             if self.conn:
                 #print("preparing to insert")
-                sql = ''' INSERT INTO job_data(counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) '''
+                sql = ''' INSERT INTO job_data(counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) '''
                 tuplerow = (jobdata.counter, jobdata.job_name, jobdata.created, jobdata.modified, jobdata.submit, jobdata.start,
-                            jobdata.finish, jobdata.status, jobdata.rowtype, jobdata.ncpus, jobdata.wallclock, jobdata.qos, jobdata.energy, jobdata.date, jobdata.section, jobdata.member, jobdata.chunk, jobdata.last, jobdata.platform, jobdata.job_id)
+                            jobdata.finish, jobdata.status, jobdata.rowtype, jobdata.ncpus, jobdata.wallclock, jobdata.qos, jobdata.energy, jobdata.date, jobdata.section, jobdata.member, jobdata.chunk, jobdata.last, jobdata.platform, jobdata.job_id, jobdata.extra_data)
                 cur = self.conn.cursor()
                 #print("pre insert")
                 cur.execute(sql, tuplerow)
@@ -607,7 +621,7 @@ class JobDataStructure():
                 self.conn.text_factory = str
                 cur = self.conn.cursor()
                 cur.execute(
-                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id FROM job_data")
+                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data FROM job_data")
                 rows = cur.fetchall()
                 return rows
             else:
@@ -632,7 +646,7 @@ class JobDataStructure():
                 self.conn.text_factory = str
                 cur = self.conn.cursor()
                 cur.execute(
-                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id FROM job_data WHERE job_name=? ORDER BY counter DESC", (job_name,))
+                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data FROM job_data WHERE job_name=? ORDER BY counter DESC", (job_name,))
                 rows = cur.fetchall()
                 # print(rows)
                 return rows
@@ -658,7 +672,7 @@ class JobDataStructure():
                 self.conn.text_factory = str
                 cur = self.conn.cursor()
                 cur.execute(
-                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id FROM job_data WHERE last=1 and job_name=? ORDER BY counter DESC", (job_name,))
+                    "SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data FROM job_data WHERE last=1 and job_name=? ORDER BY counter DESC", (job_name,))
                 rows = cur.fetchall()
                 if rows and len(rows) > 0:
                     return rows
@@ -670,6 +684,28 @@ class JobDataStructure():
             if _debug == True:
                 Log.info(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
+            return None
+    
+    def _set_pragma_version(self, version = 2):
+        """Sets current version of the schema
+
+        Args:
+            version (int, optional): Current Version. Defaults to 1.
+
+        Returns:
+            Boolean/None: True if success, None if error
+        """
+        try:
+            if self.conn:
+                self.conn.text_factory = str
+                cur = self.conn.cursor()
+                cur.execute("pragma user_version={v:d}".format(v=version))
+                self.conn.commit()
+                return True
+        except sqlite3.Error as e:
+            if _debug == True:
+                Log.info(traceback.format_exc())
+            Log.warning("Error on version : " + str(type(e).__name__))
             return None
 
     def _get_maxcounter_jobdata(self):
@@ -716,7 +752,7 @@ class JobDataStructure():
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
-            Log.warning("Error on Insert : " + str(type(e).__name__))
+            Log.warning("Error on create table : " + str(type(e).__name__))
             return None
 
     def create_connection(self, db_file):

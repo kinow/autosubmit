@@ -119,31 +119,30 @@ class SlurmPlatform(ParamikoPlatform):
     
     def parse_job_finish_data(self, output, job_id):
         try:
+            detailed_data = dict()
+            output = output.strip()
             lines = output.split("\n")
             if len(lines) > 0:
+                for line in lines:
+                    line = line.strip().split()
+                    if len(line) > 0:
+                        name = str(line[0])
+                        extra_data = { "energy" : str(line[5] if len(line) > 5 else "NA"), "MaxRSS" : str(line[6] if len(line) > 6 else "NA"), "AveRSS" : str(line[7] if len(line) > 6 else "NA")} 
+                        detailed_data[name] = extra_data
+            
                 line = lines[0].strip().split()
                 submit = int(mktime(datetime.strptime(line[2], "%Y-%m-%dT%H:%M:%S").timetuple()))
                 start = int(mktime(datetime.strptime(line[3], "%Y-%m-%dT%H:%M:%S").timetuple()))
                 finish = int(mktime(datetime.strptime(line[4], "%Y-%m-%dT%H:%M:%S").timetuple()))
                 joules = int(float(str(line[5])[:-1]) * 1000 if len(line[5]) > 0 else 0)
-                return (submit, start, finish, joules)
-            # for line in output.split("\n"):
-            #     ilist = line.strip().split()
-            #     #print(type(line))
-            #     print(job_id)
-            #     print(ilist)
-            #     if int(ilist[0]) == job_id:
-            #         submit = int(mktime(datetime.strptime(ilist[2], "%Y-%m-%dT%H:%M:%S").timetuple()))
-            #         start = int(mktime(datetime.strptime(ilist[3], "%Y-%m-%dT%H:%M:%S").timetuple()))
-            #         finish = int(mktime(datetime.strptime(ilist[4], "%Y-%m-%dT%H:%M:%S").timetuple()))
-            #         joules = int(float(str(ilist[5])[:-1]) * 1000 if len(ilist[5]) > 0 else 0)
+                # print(detailed_data)
+                return (submit, start, finish, joules, detailed_data)
 
-            #         return (submit, start, finish, int(joules))
-            return (0,0,0,0)
+            return (0,0,0,0, dict())
         except Exception as exp:
             # On error return 4*0
             Log.warning(str(exp))
-            return (0,0,0,0)
+            return (0,0,0,0, dict())
         
         #return str(output)
 
@@ -185,7 +184,7 @@ class SlurmPlatform(ParamikoPlatform):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
     def get_job_energy_cmd(self, job_id):
-        return 'sacct -n -j {0} -o JobId,State,Submit,Start,End,ConsumedEnergy'.format(job_id)
+        return 'sacct -n -j {0} -o JobId%20,State,Submit,Start,End,ConsumedEnergy,MaxRSS,AveRSS'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
         reason = [x.split(',')[1] for x in output.splitlines()
