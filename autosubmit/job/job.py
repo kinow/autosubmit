@@ -807,7 +807,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 5'
+                template = 'sleep 90'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -1346,7 +1346,7 @@ done
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
 
-        (h, m, s) = wallclock.split(':')
+        (h, m) = wallclock.split(':')
         total = 0.0
         if h > 0:
             total = h
