@@ -1,5 +1,5 @@
 from time import sleep
-
+import sys
 import os
 import paramiko
 import datetime
@@ -11,7 +11,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
-
+import Xlib.support.connect as xlib_connect
 
 class ParamikoPlatform(Platform):
     """
@@ -37,6 +37,7 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self.submit_cmd = ""
         self._ftpChannel = None
+        self.channels = {}
 
 
     @property
@@ -111,7 +112,10 @@ class ParamikoPlatform(Platform):
                                   key_filename=self._host_config_id)
             self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
+            self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+
             self._ftpChannel = self._ssh.open_sftp()
+
             return True
         except:
             return False
@@ -465,6 +469,30 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+
+    poller = select.poll()
+
+    def flush_out(session):
+        while session.recv_ready():
+            sys.stdout.write(session.recv(4096))
+        while session.recv_stderr_ready():
+            sys.stderr.write(sessionF.recv_stderr(4096))
+
+    def x11_handler(self,channel):
+        '''handler for incoming x11 connections
+        for each x11 incoming connection,
+        - get a connection to the local display
+        - maintain bidirectional map of remote x11 channel to local x11 channel
+        - add the descriptors to the poller
+        - queue the channel (use transport.accept())'''
+        x11_chanfd = channel.fileno()
+        local_x11_socket = xlib_connect.get_socket(*self.local_x11_display[:4])
+        local_x11_socket_fileno = local_x11_socket.fileno()
+        self.channels[x11_chanfd] = channel, local_x11_socket
+        self.channels[local_x11_socket_fileno] = local_x11_socket, channel
+        self.poller.register(x11_chanfd, select.POLLIN)
+        self.poller.register(local_x11_socket, select.POLLIN)
+        self.transport._queue_incoming_channel(channel)
     def send_command(self, command, ignore_log=False):
         """
         Sends given command to HPC
@@ -484,7 +512,16 @@ class ParamikoPlatform(Platform):
         else:
             timeout = 60*2
         try:
-            stdin, stdout, stderr = self._ssh.exec_command(command)
+            session = self._ssh.get_transport().open_session()
+            session.request_x11(handler=self.x11_handler)
+            stdin = session.makefile('wb')
+            stdout = session.makefile('rb')
+            stderr = session.makefile_stderr('rb')
+            session.exec_command(command)
+            session_fileno = session.fileno()
+            self.poller.register(session_fileno, select.POLLIN)
+            self.transport.accept()
+            #stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
             channel.settimeout(timeout)
             stdin.close()
