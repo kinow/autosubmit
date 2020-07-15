@@ -38,6 +38,7 @@ from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.database.db_jobdata import JobDataStructure
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
@@ -126,6 +127,7 @@ class Job(object):
         self.packed = False
         self.hold = False
         self.distance_weight = 0
+
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -553,9 +555,9 @@ class Job(object):
         if new_status == Status.COMPLETED:
             Log.debug("This job seems to have completed: checking...")
 
-
             if not self.platform.get_completed_files(self.name):
-                log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
+                log_name = os.path.join(
+                    self._tmp_path, self.name + '_COMPLETED')
 
             self.check_completion()
         else:
@@ -641,7 +643,7 @@ class Job(object):
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
-        log_name = os.path.join(self._tmp_path,self.name + '_COMPLETED')
+        log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
@@ -963,6 +965,9 @@ class Job(object):
         else:
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
+        # Writing database
+        JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
 
     def write_start_time(self):
         """
@@ -982,6 +987,9 @@ class Job(object):
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
+        # Writing database
+        JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
         return True
 
     def write_end_time(self, completed):
@@ -995,16 +1003,25 @@ class Job(object):
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')
+        finish_time = None
+        final_status = None
         if end_time > 0:
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
+            # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
+            finish_time = end_time
         else:
             f.write(date2str(datetime.datetime.now(), 'S'))
+            finish_time = time.time()  # date2str(datetime.datetime.now(), 'S')
         f.write(' ')
         if completed:
+            final_status = "COMPLETED"
             f.write('COMPLETED')
         else:
+            final_status = "FAILED"
             f.write('FAILED')
+        JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform)
 
     def check_started_after(self, date_limit):
         """
@@ -1356,7 +1373,8 @@ done
         total = total * 1.15
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
-        second = int(((total - int(total)) * 60 - int((total - int(total)) * 60.0)) * 60.0)
+        second = int(((total - int(total)) * 60 -
+                      int((total - int(total)) * 60.0)) * 60.0)
         wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
                                              seconds=second)
         if elapsed > wallclock_delta:
@@ -1372,6 +1390,3 @@ done
         time = int(output[index])
         time = self._parse_timestamp(time)
         return time
-
-
-
