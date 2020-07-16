@@ -65,7 +65,7 @@ class ParamikoPlatform(Platform):
                 retries = 2
                 retry = 0
                 connected = False
-                while connected == False and retry < retries:
+                while connected is False and retry < retries:
                     if self.connect(True):
                         connected = True
                     retry+=1
@@ -465,6 +465,47 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         raise NotImplementedError
+    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3,x11=False):
+        """
+        Execute a command on the SSH server.  A new `.Channel` is opened and
+        the requested command is executed.  The command's input and output
+        streams are returned as Python ``file``-like objects representing
+        stdin, stdout, and stderr.
+
+        :param str command: the command to execute
+        :param int bufsize:
+            interpreted the same way as by the built-in ``file()`` function in
+            Python
+        :param int timeout:
+            set command's channel timeout. See `Channel.settimeout`.settimeout
+        :return:
+            the stdin, stdout, and stderr of the executing command, as a
+            3-tuple
+
+        :raises SSHException: if the server fails to execute the command
+        """
+        while retries > 0:
+            try:
+                chan = self._ssh._transport.open_session()
+                if get_pty:
+                    chan.get_pty()
+                if x11:
+                    chan.request_x11()
+                chan.settimeout(timeout)
+                chan.exec_command(command)
+                stdin = chan.makefile('wb', bufsize)
+                stdout = chan.makefile('r', bufsize)
+                stderr = chan.makefile_stderr('r', bufsize)
+                return stdin, stdout, stderr
+            except paramiko.SSHException as e:
+                if str(e) in "SSH session not active":
+                    self._ssh = None
+                    self.restore_connection()
+                timeout = timeout + 60
+                retries = retries - 1
+        if retries <= 0:
+            return False , False, False
+
     def send_command(self, command, ignore_log=False):
         """
         Sends given command to HPC
@@ -478,15 +519,16 @@ class ParamikoPlatform(Platform):
         if not self.restore_connection():
             return False
         if "-rP" in command or "find" in command or "convertLink" in command:
-            timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+            timeout = 60*60
         elif "rm" in command:
             timeout = 60/2
         else:
             timeout = 60*2
         try:
-            stdin, stdout, stderr = self._ssh.exec_command(command)
+            stdin, stdout, stderr = self.exec_command(command,timeout=timeout)
+            if not stdin and not stdout and not stderr:
+                raise
             channel = stdout.channel
-            channel.settimeout(timeout)
             stdin.close()
             channel.shutdown_write()
             stdout_chunks = []

@@ -807,7 +807,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 90'
+                template = 'sleep 5'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -1347,7 +1347,7 @@ done
         elapsed = datetime.datetime.now() - parse_date(start_time)
         splited = wallclock.split(':')
         if len(splited) == 3:
-            total = int(splited[0]) +int(splited[1]) +int(splited[2])
+            total = int(splited[0]) + int(splited[1]) + int(splited[2])
         elif len(splited) == 2:
             total = int(splited[0]) + int(splited[1])
         elif len(splited) == 1:
