@@ -1345,15 +1345,16 @@ done
 
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
-
-        (h, m) = wallclock.split(':')
-        total = 0.0
-        if h > 0:
-            total = h
-        if m > 0:
-            total += m/60.0
-        if s > 0:
-            total += s/60.0/60.0
+        splited = wallclock.split(':')
+        if len(splited) == 3:
+            total = int(splited[1]) +int(splited[2]) +int(splited[3])
+        elif len(splited) == 2:
+            total = int(splited[0]) + int(splited[1]) + int(splited[2])
+        elif len(splited) == 1:
+            total = int(splited[0])
+        else:
+            total = 0
+     
         total = total * 1.15
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
