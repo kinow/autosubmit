@@ -27,7 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
-from networkx import DiGraph
+# from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
 
@@ -134,13 +134,19 @@ def save_structure(graph, exp_id, structures_path):
         db_structure_path = os.path.join(
             structures_path, "structure_" + exp_id + ".db")
         # with open(db_structure_path, "w"):
-        conn = create_connection(db_structure_path)
-        _delete_table_content(conn)
-        for u, v in graph.edges():
-            # save
-            _create_edge(conn, u, v)
-            #print("Created edge " + str(u) + str(v))
-        conn.commit()
+        conn = None
+        if os.path.exists(db_structure_path):
+            conn = create_connection(db_structure_path)
+            _delete_table_content(conn)
+        else:
+            open(db_structure_path, "w")
+            conn = create_connection(db_structure_path)
+        if conn:
+            for u, v in graph.edges():
+                # save
+                _create_edge(conn, u, v)
+                #print("Created edge " + str(u) + str(v))
+            conn.commit()
     else:
         # pkl folder not found
         raise Exception("pkl folder not found " + str(structures_path))
