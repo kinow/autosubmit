@@ -38,6 +38,8 @@ class BasicConfig:
     DB_DIR = os.path.join(os.path.expanduser('~'), 'debug', 'autosubmit')
     STRUCTURES_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'as_metadata', 'structures')
+    JOBDATA_DIR = os.path.join(
+        '/esarchive', 'autosubmit', 'as_metadata', 'data')
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
@@ -98,6 +100,8 @@ class BasicConfig:
             BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
         if parser.has_option('structures', 'path'):
             BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
+        if parser.has_option('historicdb', 'path'):
+            BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
 
     @staticmethod
     def read():

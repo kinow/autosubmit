@@ -17,38 +17,11 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 # pipeline_test
-from __future__ import print_function
-import threading
-from sets import Set
-from job.job_packager import JobPackager
-from job.job_exceptions import WrongTemplateException
-from platforms.paramiko_submitter import ParamikoSubmitter
-from notifications.notifier import Notifier
-from notifications.mail_notifier import MailNotifier
-from bscearth.utils.date import date2str
-from monitor.monitor import Monitor
-from database.db_common import get_autosubmit_version
-from database.db_common import delete_experiment
-from experiment.experiment_common import copy_experiment
-from experiment.experiment_common import new_experiment
-from database.db_common import create_db
-from bscearth.utils.log import Log
-from job.job_grouping import JobGrouping
-from job.job_list_persistence import JobListPersistencePkl
-from job.job_list_persistence import JobListPersistenceDb
-from job.job_package_persistence import JobPackagePersistence
-from job.job_packages import JobPackageThread
-from job.job_list import JobList
-from git.autosubmit_git import AutosubmitGit
-from job.job_common import Status
-from bscearth.utils.config_parser import ConfigParserFactory
-from config.config_common import AutosubmitConfig
-from config.basicConfig import BasicConfig
 
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
-
+from __future__ import print_function
 try:
     # noinspection PyCompatibility
     from configparser import SafeConfigParser
@@ -77,16 +50,44 @@ import random
 import signal
 import datetime
 import portalocker
+import threading
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
+
+
+from sets import Set
 
 sys.path.insert(0, os.path.abspath('.'))
 # noinspection PyPackageRequirements
 # noinspection PyPackageRequirements
 # from API.testAPI import Monitor
 # noinspection PyPackageRequirements
+from job.job_packager import JobPackager
+from job.job_exceptions import WrongTemplateException
+from platforms.paramiko_submitter import ParamikoSubmitter
+from notifications.notifier import Notifier
+from notifications.mail_notifier import MailNotifier
+from bscearth.utils.date import date2str
+from monitor.monitor import Monitor
+from database.db_common import get_autosubmit_version
+from database.db_common import delete_experiment
+from experiment.experiment_common import copy_experiment
+from experiment.experiment_common import new_experiment
+from database.db_common import create_db
+from bscearth.utils.log import Log
+from job.job_grouping import JobGrouping
+from job.job_list_persistence import JobListPersistencePkl
+from job.job_list_persistence import JobListPersistenceDb
+from job.job_package_persistence import JobPackagePersistence
+from job.job_packages import JobPackageThread
+from job.job_list import JobList
+from git.autosubmit_git import AutosubmitGit
+from job.job_common import Status
+from bscearth.utils.config_parser import ConfigParserFactory
+from config.config_common import AutosubmitConfig
+from config.basicConfig import BasicConfig
 
 
 # noinspection PyUnusedLocal

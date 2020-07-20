@@ -22,7 +22,8 @@ class Platform(object):
         self.expid = expid
         self.name = name
         self.config = config
-        self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
+        self.tmp_path = os.path.join(
+            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
         self._serial_queue = None
         self._default_queue = None
@@ -195,21 +196,22 @@ class Platform(object):
         :rtype: bool
         """
         raise NotImplementedError
-    
+
     # Executed when calling from Job
     def get_logs_files(self, exp_id, remote_logs):
         """
         Get the given LOGS files
-        
+
         :param exp_id: experiment id
         :type exp_id: str
         :param remote_logs: names of the log files
         :type remote_logs: (str, str)
         """
         (job_out_filename, job_err_filename) = remote_logs
-        self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
+        self.get_files([job_out_filename, job_err_filename],
+                       False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=0,recovery=False):
+    def get_completed_files(self, job_name, retries=0, recovery=False):
         """
         Get the COMPLETED file of the given job
 
@@ -233,7 +235,6 @@ class Platform(object):
                 return False
         else:
             return False
-
 
     def remove_stat_file(self, job_name):
         """
@@ -264,6 +265,7 @@ class Platform(object):
             Log.debug('{0} been removed', filename)
             return True
         return False
+
     def check_file_exists(self, src):
         return True
 
@@ -279,7 +281,8 @@ class Platform(object):
         :rtype: bool
         """
         filename = job_name + '_STAT'
-        stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
+        stat_local_path = os.path.join(
+            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
@@ -297,7 +300,8 @@ class Platform(object):
         :rtype: str
         """
         if self.type == "local":
-            path = os.path.join(self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
+            path = os.path.join(
+                self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
             path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path
@@ -328,8 +332,19 @@ class Platform(object):
         :rtype: autosubmit.job.job_common.Status
         """
         raise NotImplementedError
+
     def closeConnection(self):
         return
+
+    def retrieve_energy_data(self, jobid):
+        """
+        Retrieves energy data from job
+
+        :return: 4-tuple (submit, start, finish, energy)
+        :rtype: 4-tuple(int, int, int, int)
+        """
+        raise NotImplementedError
+
     def write_jobid(self, jobid, complete_path):
         """
         Writes Job id in an out file.
@@ -342,10 +357,10 @@ class Platform(object):
         :rtype: Boolean
         """
         try:
-            
+
             title_job = "[INFO] JOBID=" + str(jobid)
 
-            if os.path.exists(complete_path):                
+            if os.path.exists(complete_path):
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
                     with open(complete_path, "r+") as f:
@@ -353,16 +368,15 @@ class Platform(object):
                         first_line = f.readline()
                         # Not rewrite
                         if not first_line.startswith("[INFO] JOBID="):
-                            content = f.read()                        
+                            content = f.read()
                             # Write again (Potentially slow)
                             #start = time()
-                            #Log.info("Attempting job identification of " + str(jobid))                            
-                            f.seek(0,0)
-                            f.write(title_job + "\n\n" + first_line + content)                                        
-                        f.close()      
-                            #finish = time()    
-                            #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
+                            #Log.info("Attempting job identification of " + str(jobid))
+                            f.seek(0, 0)
+                            f.write(title_job + "\n\n" + first_line + content)
+                        f.close()
+                        #finish = time()
+                        #Log.info("Job correctly identified in " + str(finish - start) + " seconds")
 
         except Exception as ex:
             Log.info("Writing Job Id Failed : " + str(ex))
-        
