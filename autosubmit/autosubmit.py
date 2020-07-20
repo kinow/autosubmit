@@ -1455,6 +1455,7 @@ class Autosubmit:
                     return True
 
         except portalocker.AlreadyLocked:
+
             Autosubmit.show_lock_warning(expid)
 
         except WrongTemplateException:
@@ -3164,6 +3165,10 @@ class Autosubmit:
                     return True
                 # catching Exception
                 except (KeyboardInterrupt, Exception) as e:
+                    all_threads = threading.enumerate()
+                    for thread in all_threads:
+                        thread.join()
+
                     # Setting signal handler to handle subsequent CTRL-C
                     signal.signal(signal.SIGINT, signal_handler_create)
                     # Terminating locking as sugested by the portalocker developer
