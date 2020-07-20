@@ -494,7 +494,7 @@ class ParamikoPlatform(Platform):
         self.poller.register(local_x11_socket, select.POLLIN)
         self.transport._queue_incoming_channel(channel)
 
-    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3,x11=False):
+    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3,x11=True):
         """
         Execute a command on the SSH server.  A new `.Channel` is opened and
         the requested command is executed.  The command's input and output
@@ -518,7 +518,7 @@ class ParamikoPlatform(Platform):
                 chan = self._ssh._transport.open_session()
                 if get_pty:
                     chan.get_pty()
-                if x11:
+                if x11 and "submit_marenostrum4" in command:
                     chan.request_x11()
                 chan.settimeout(timeout)
                 chan.exec_command(command)
@@ -535,7 +535,7 @@ class ParamikoPlatform(Platform):
         if retries <= 0:
             return False , False, False
 
-    def send_command(self, command, ignore_log=False):
+    def send_command(self, command, ignore_log=False, x11 = False):
         """
         Sends given command to HPC
 
