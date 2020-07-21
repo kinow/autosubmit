@@ -38,7 +38,7 @@ class ParamikoPlatform(Platform):
         self.submit_cmd = ""
         self._ftpChannel = None
         self.channels = {}
-
+        self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
 
     @property
     def header(self):
@@ -69,14 +69,12 @@ class ParamikoPlatform(Platform):
                 while connected is False and retry < retries:
                     if self.connect(True):
                         connected = True
-                    retry+=1
+                    retry += 1
             if not connected:
-                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator', self.host,self.name)
+                Log.error(' Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator ', self.host,self.name)
                 Log.critical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit')
                 exit(0)
         return connected
-
-
     def connect(self,reconnect=False):
         """
         Creates ssh connection to host
@@ -92,7 +90,6 @@ class ParamikoPlatform(Platform):
             self._user_config_file = os.path.expanduser("~/.ssh/config")
             if os.path.exists(self._user_config_file):
                 with open(self._user_config_file) as f:
-                    # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self.host)
             if "," in self._host_config['hostname']:
@@ -112,14 +109,12 @@ class ParamikoPlatform(Platform):
                                   key_filename=self._host_config_id)
             self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
-            self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
 
             self._ftpChannel = self._ssh.open_sftp()
 
             return True
         except:
             return False
-            
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -140,8 +135,6 @@ class ParamikoPlatform(Platform):
             return None
 
     def remove_multiple_files(self, filenames):
-        #command = "rm"
-
         log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
         multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
@@ -156,7 +149,7 @@ class ParamikoPlatform(Platform):
                 return ""
         return ""
 
-    def send_file(self, filename, check=True):
+    def send_file(self, filename, check = True):
         """
         Sends a local file to the platform
         :param filename: name of the file to send
@@ -236,12 +229,8 @@ class ParamikoPlatform(Platform):
         """
         if not self.restore_connection():
             return False
-
         try:
-            #ftp = self._ssh.open_sftp()
-
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
-            #ftp.close()
             return True
         except IOError:
             return False
@@ -267,7 +256,7 @@ class ParamikoPlatform(Platform):
         if not self.restore_connection():
             return False
         try:
-            path_root=self.get_files_path()
+            path_root = self.get_files_path()
             self._ftpChannel.rename(os.path.join(path_root, src),
                                     os.path.join(path_root, dest))
             return True
@@ -276,8 +265,6 @@ class ParamikoPlatform(Platform):
                 raise Exception('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)))
             else:
                 return False
-
-
     def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
@@ -476,9 +463,9 @@ class ParamikoPlatform(Platform):
         while session.recv_ready():
             sys.stdout.write(session.recv(4096))
         while session.recv_stderr_ready():
-            sys.stderr.write(sessionF.recv_stderr(4096))
+            sys.stderr.write(session.recv_stderr(4096))
 
-    def x11_handler(self, channel):
+    def x11_handler(self, channel, (src_addr, src_port)):
         '''handler for incoming x11 connections
         for each x11 incoming connection,
         - get a connection to the local display
@@ -513,15 +500,45 @@ class ParamikoPlatform(Platform):
 
         :raises SSHException: if the server fails to execute the command
         """
+
+
         while retries > 0:
             try:
                 chan = self._ssh._transport.open_session()
                 if get_pty:
                     chan.get_pty()
                 if x11 and "submit_marenostrum4" in command:
-                    chan.request_x11()
+                    chan.request_x11(handler=self.x11_handler)
                 chan.settimeout(timeout)
-                chan.exec_command(command)
+                chan.exec_command("xterm")
+                if x11 and "submit_marenostrum4" in command:
+                    timeout = 5
+                    chan_fileno = chan.fileno()
+                    self.poller.register(chan_fileno, select.POLLIN)
+                    while not chan.exit_status_ready():
+                        poll = self.poller.poll()
+                        # accept subsequent x11 connections if any
+                        if len(self._ssh._transport.server_accepts) > 0:
+                            self._ssh._transport.accept()
+                        if not poll:
+                            break
+                        for fd, event in poll:
+                            if fd == chan_fileno:
+                                self.flush_out(chan)
+                            # data either on local/remote x11 socket
+                            if fd in self.channels.keys():
+                                channel, counterpart = self.channels[fd]
+                                try:
+                                    # forward data between local/remote x11 socket.
+                                    data = channel.recv(4096)
+                                    counterpart.sendall(data)
+                                except self.socket.error:
+                                    channel.close()
+                                    counterpart.close()
+                                    del self.channels[fd]
+                        Log.info('Exit status:{0}', chan.recv_exit_status())
+                        self.flush_out(chan)
+                        chan.close()
                 stdin = chan.makefile('wb', bufsize)
                 stdout = chan.makefile('r', bufsize)
                 stderr = chan.makefile_stderr('r', bufsize)
@@ -532,7 +549,10 @@ class ParamikoPlatform(Platform):
                     self.restore_connection()
                 timeout = timeout + 60
                 retries = retries - 1
+                Log.info("The connection seems to be lost, retrying")
         if retries <= 0:
+            if len(e.message) > 0:
+                Log.error(e.message)
             return False , False, False
 
     def send_command(self, command, ignore_log=False, x11 = False):
@@ -554,16 +574,7 @@ class ParamikoPlatform(Platform):
         else:
             timeout = 60*2
         try:
-            #session = self._ssh.get_transport().open_session()
-            #session.request_x11(handler=self.x11_handler)
-            #stdin = session.makefile('wb')
-            #stdout = session.makefile('rb')
-            #stderr = session.makefile_stderr('rb')
-            #session.exec_command(command)
-            #session_fileno = session.fileno()
-            #self.poller.register(session_fileno, select.POLLIN)
-            #self.transport.accept()
-            # stdin, stdout, stderr = self._ssh.exec_command(command)
+
 
             stdin, stdout, stderr = self.exec_command(command,timeout=timeout)
             if not stdin and not stdout and not stderr:
