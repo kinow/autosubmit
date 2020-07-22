@@ -1,0 +1,1117 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>autosubmit.platform &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Autosubmit GUI" href="../autosubmit-gui.html" />
+    <link rel="prev" title="autosubmit.monitor" href="monitor.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../autosubmit-gui.html" title="Autosubmit GUI"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="autosubmit.monitor"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" accesskey="U">Module documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-autosubmit.platforms.ecplatform">
+<span id="autosubmit-platform"></span><h1>autosubmit.platform<a class="headerlink" href="#module-autosubmit.platforms.ecplatform" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.ecplatform.</code><code class="descname">EcPlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em>, <em>scheduler</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage queues with ecaccess</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment’s identifier</li>
+<li><strong>scheduler</strong> (<em>str</em><em> (</em><em>pbs</em><em>, </em><em>loadleveler</em><em>)</em>) – scheduler to use</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.connect">
+<code class="descname">connect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>In this case, it does nothing because connection is established foe each command</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.delete_file">
+<code class="descname">delete_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.delete_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes a file from this platform</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – file name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if successful or file does no exists</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_file">
+<code class="descname">get_file</code><span class="sig-paren">(</span><em>filename</em>, <em>must_exist=True</em>, <em>relative_path=''</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a file from the current platform to experiment’s tmp folder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>str</em>) – file name</li>
+<li><strong>must_exist</strong> (<em>bool</em>) – If True, raises an exception if file can not be copied</li>
+<li><strong>relative_path</strong> (<em>str</em>) – path inside the tmp folder</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if file is copied successfully, false otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_ssh_output">
+<code class="descname">get_ssh_output</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_ssh_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets output from last command executed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">output from last command</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em>, <em>hold=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.jobs_in_queue">
+<code class="descname">jobs_in_queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.jobs_in_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns empty list because ecacces does not support this command</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">empty list</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">list</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.send_command">
+<code class="descname">send_command</code><span class="sig-paren">(</span><em>command</em>, <em>ignore_log=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.send_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends given command to HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>command</strong> (<em>str</em>) – command to send</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if executed, False if failed</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.send_file">
+<code class="descname">send_file</code><span class="sig-paren">(</span><em>filename</em>, <em>check=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.send_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a local file to the platform
+:param filename: name of the file to send
+:type filename: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.ecplatform.EcPlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.ecplatform.EcPlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-autosubmit.platforms.lsfplatform"></span><dl class="class">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.lsfplatform.</code><code class="descname">LsfPlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage jobs to host using LSF scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.lsfplatform.LsfPlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.lsfplatform.LsfPlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-autosubmit.platforms.pbsplatform"></span><dl class="class">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.pbsplatform.</code><code class="descname">PBSPlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em>, <em>version</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage jobs to host using PBS scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment’s identifier</li>
+<li><strong>version</strong> (<em>str</em>) – scheduler version</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.pbsplatform.PBSPlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.pbsplatform.PBSPlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-autosubmit.platforms.sgeplatform"></span><dl class="class">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.sgeplatform.</code><code class="descname">SgePlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage jobs to host using SGE scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.sgeplatform.SgePlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.sgeplatform.SgePlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-autosubmit.platforms.slurmplatform"></span><dl class="class">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.slurmplatform.</code><code class="descname">SlurmPlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage jobs to host using SLURM scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.get_checkAlljobs_cmd">
+<code class="descname">get_checkAlljobs_cmd</code><span class="sig-paren">(</span><em>jobs_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.get_checkAlljobs_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check jobs status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>jobs_id</strong> – id of jobs to check</li>
+<li><strong>job_id</strong> – str</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em>, <em>hold=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>outputlines</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.parse_Alljobs_output">
+<code class="descname">parse_Alljobs_output</code><span class="sig-paren">(</span><em>output</em>, <em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.parse_Alljobs_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check jobs command output so it can be interpreted by autosubmit
+:param output: output to parse
+:param job_id: select the job to parse
+:type output: str
+:return: job status
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.submit_Script">
+<code class="descname">submit_Script</code><span class="sig-paren">(</span><em>hold=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.submit_Script" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>job</strong> (<a class="reference internal" href="job.html#autosubmit.job.job.Job" title="autosubmit.job.job.Job"><em>autosubmit.job.job.Job</em></a>) – job object</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job id for  submitted jobs</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">list(str)</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.slurmplatform.SlurmPlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.slurmplatform.SlurmPlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-autosubmit.platforms.locplatform"></span><dl class="class">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform">
+<em class="property">class </em><code class="descclassname">autosubmit.platforms.locplatform.</code><code class="descname">LocalPlatform</code><span class="sig-paren">(</span><em>expid</em>, <em>name</em>, <em>config</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">autosubmit.platforms.paramiko_platform.ParamikoPlatform</span></code></p>
+<p>Class to manage jobs to localhost</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.check_file_exists">
+<code class="descname">check_file_exists</code><span class="sig-paren">(</span><em>src</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.check_file_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Moves a file on the platform
+:param src: source name
+:type src: str
+:param dest: destination name
+:param must_exist: ignore if file exist or not
+:type dest: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.connect">
+<code class="descname">connect</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.connect" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates ssh connection to host</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">True if connection is created, False otherwise</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.delete_file">
+<code class="descname">delete_file</code><span class="sig-paren">(</span><em>filename</em>, <em>del_cmd=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.delete_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deletes a file from this platform</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> (<em>str</em>) – file name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if successful or file does no exists</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_checkjob_cmd">
+<code class="descname">get_checkjob_cmd</code><span class="sig-paren">(</span><em>job_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_checkjob_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns command to check job status on remote platforms</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_id</strong> – id of job to check</li>
+<li><strong>job_id</strong> – int</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to check job status</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_file">
+<code class="descname">get_file</code><span class="sig-paren">(</span><em>filename</em>, <em>must_exist=True</em>, <em>relative_path=''</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copies a file from the current platform to experiment’s tmp folder</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>filename</strong> (<em>str</em>) – file name</li>
+<li><strong>must_exist</strong> (<em>bool</em>) – If True, raises an exception if file can not be copied</li>
+<li><strong>relative_path</strong> (<em>str</em>) – path inside the tmp folder</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">True if file is copied successfully, false otherwise</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_logs_files">
+<code class="descname">get_logs_files</code><span class="sig-paren">(</span><em>exp_id</em>, <em>remote_logs</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_logs_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Overriding the parent’s implementation.
+Do nothing because the log files are already in the local platform (redundancy).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>exp_id</strong> (<em>str</em>) – experiment id</li>
+<li><strong>remote_logs</strong> (<em>(</em><em>str</em><em>, </em><em>str</em><em>)</em>) – names of the log files</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_mkdir_cmd">
+<code class="descname">get_mkdir_cmd</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_mkdir_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets command to create directories on HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">command to create directories on HPC</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_ssh_output">
+<code class="descname">get_ssh_output</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_ssh_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets output from last command executed</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">output from last command</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_submit_cmd">
+<code class="descname">get_submit_cmd</code><span class="sig-paren">(</span><em>job_script</em>, <em>job</em>, <em>hold=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_submit_cmd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get command to add job to scheduler</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>job_type</strong> – </li>
+<li><strong>job_script</strong> – path to job script</li>
+<li><strong>job_script</strong> – str</li>
+<li><strong>hold</strong> – submit a job in a held status</li>
+<li><strong>hold</strong> – boolean</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">command to submit job to platforms</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.get_submitted_job_id">
+<code class="descname">get_submitted_job_id</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.get_submitted_job_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses submit command output to extract job id
+:param output: output to parse
+:type output: str
+:return: job id
+:rtype: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.parse_job_output">
+<code class="descname">parse_job_output</code><span class="sig-paren">(</span><em>output</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.parse_job_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parses check job command output so it can be interpreted by autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>output</strong> (<em>str</em>) – output to parse</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">job status</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.send_command">
+<code class="descname">send_command</code><span class="sig-paren">(</span><em>command</em>, <em>ignore_log=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.send_command" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends given command to HPC</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>command</strong> (<em>str</em>) – command to send</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if executed, False if failed</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.send_file">
+<code class="descname">send_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.send_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sends a local file to the platform
+:param filename: name of the file to send
+:type filename: str</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.platforms.locplatform.LocalPlatform.update_cmds">
+<code class="descname">update_cmds</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.platforms.locplatform.LocalPlatform.update_cmds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates commands for platforms</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="monitor.html"
+                        title="previous chapter">autosubmit.monitor</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../autosubmit-gui.html"
+                        title="next chapter">Autosubmit GUI</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/codedoc/platforms.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../autosubmit-gui.html" title="Autosubmit GUI"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="monitor.html" title="autosubmit.monitor"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" >Module documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

@@ -41,7 +41,7 @@ from diagram import create_bar_diagram
 
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
-    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),
+    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),(Status.PREPARED, 'skyblue'),
                    (Status.SUBMITTED, 'cyan'), (Status.HELD, 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
                    (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
 
@@ -59,6 +59,8 @@ class Monitor:
             return Monitor._table[Status.WAITING]
         elif status == Status.READY:
             return Monitor._table[Status.READY]
+        elif status == Status.PREPARED:
+            return Monitor._table[Status.PREPARED]
         elif status == Status.SUBMITTED:
             return Monitor._table[Status.SUBMITTED]
         elif status == Status.HELD:
@@ -99,6 +101,8 @@ class Monitor:
                                        fillcolor=self._table[Status.WAITING]))
         legend.add_node(pydotplus.Node(name='READY', shape='box', style="filled",
                                        fillcolor=self._table[Status.READY]))
+        legend.add_node(pydotplus.Node(name='PREPARED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.PREPARED]))
         legend.add_node(pydotplus.Node(name='SUBMITTED', shape='box', style="filled",
                                        fillcolor=self._table[Status.SUBMITTED]))
         legend.add_node(pydotplus.Node(name='HELD', shape='box', style="filled",

@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Tree Representation &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Graph Representation" href="graph.html" />
+    <link rel="prev" title="Experiment Information" href="experiment.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph.html" title="Graph Representation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="experiment.html" title="Experiment Information"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../autosubmit-gui.html" accesskey="U">Autosubmit GUI</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tree-representation">
+<span id="treerepresentation"></span><h1>Tree Representation<a class="headerlink" href="#tree-representation" title="Permalink to this headline">¶</a></h1>
+<p>The Tree Representation offers a structured view of the experiment.</p>
+<div class="figure align-center" id="experiment-tree">
+<a class="reference internal image-reference" href="../_images/fig_tree_2.jpg"><img alt="Experiment Tree 1" src="../_images/fig_tree_2.jpg" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">43 </span><span class="caption-text">Experiment Tree Representation</span></p>
+</div>
+<p>The view is organized in groups by <code class="docutils literal notranslate"><span class="pre">date</span></code>, and <code class="docutils literal notranslate"><span class="pre">date-member</span></code>. Each group has a folder icon, and next to the icon you can find the progress of the group as <code class="docutils literal notranslate"><span class="pre">completed</span> <span class="pre">/</span> <span class="pre">total</span></code> jobs (when all the jobs in a group have been completed, a check symbol will appear); then, an indicator of how many jobs inside that group are <strong>RUNNING</strong>, <strong>QUEUING</strong>, or have <strong>FAILED</strong>. Furthermore, if wrappers exist in the experiment, independent groups will be added for each wrapper that will contain the list of jobs included in the corresponding wrapper. This implies that a job can be repeated: once inside its <code class="docutils literal notranslate"><span class="pre">date-member</span></code> group and once in its wrapper group.</p>
+<p>Inside each group you will find the list of jobs that belong to that group. The jobs are shown following this format: <em>job name</em> + # <em>job status</em> + ( + <em>queuing time</em> + ) + <em>running time</em>. Jobs that belong to a wrapper have also a badge with the code of the wrapper.</p>
+<p>When you click on a Job, you can see on the right panel (<strong>Selection Panel</strong>) the following information:</p>
+<ul class="simple">
+<li><em>Initial</em>: Initial date as in the one used for grouping.</li>
+<li><em>Real</em>: Real date after adding to the initial date the number of chunk units depending on chunk size.</li>
+<li><em>Section</em>: Also known as job type.</li>
+<li><em>Member</em></li>
+<li><em>Chunk</em></li>
+<li><em>Platform</em>: HPC Platform.</li>
+<li><em>Processors</em>: Number of processors required by the job.</li>
+<li><em>Wallclock</em>: Time requested by the job.</li>
+<li><em>Queue</em>: Time spent in queue, in minutes.</li>
+<li><em>Run</em>: Time spent running, in minutes.</li>
+<li><em>Status</em>: Job status.</li>
+<li><em>Out</em>: Button that opens a list of jobs that depend on the one selected.</li>
+<li><em>In</em>: Button that opens a list of jobs on which the selected job depends.</li>
+<li><em>Wrapper</em>: If the job belongs to a wrapper, the name of the wrapper will be shown.</li>
+<li><em>Code</em>: Code of the wrapper the job belongs to, for easy searching.</li>
+<li><em>out path</em>: Path to the .out log file.</li>
+<li><em>err path</em>: Path to the .err log file.</li>
+</ul>
+<div class="section" id="monitoring">
+<h2>Monitoring<a class="headerlink" href="#monitoring" title="Permalink to this headline">¶</a></h2>
+<p>If the experiment status is <strong>RUNNING</strong>, you will see a button called <strong>Refresh</strong> at the top right corner. This button will update the information of the jobs in the tree if necessary. Next to this button, you will see the button <strong>Start Job Monitor</strong>. When you click on it, a live <strong>Job Monitor</strong> will be initialized and the status of the jobs and wrappers will be queried every minute, any change will be updated in the <strong>Tree View</strong>. Also, if the <strong>Job Monitor</strong> is running, the detected changes will be listed in a panel <strong>Monitor Panel</strong> below the <strong>Selection Panel</strong>. You can stop this process by clicking on the button <strong>Stop Job Monitor</strong>.</p>
+<p>The button <strong>Clear Tree View</strong> will clear the Tree Representation. It is also a valid way to refresh the Tree View.</p>
+</div>
+<div class="section" id="filter">
+<h2>Filter<a class="headerlink" href="#filter" title="Permalink to this headline">¶</a></h2>
+<p>At the top left you can find the <strong>Filter text</strong> input box. Insert any string and the list will show only those jobs whose description coincides with that string. For example <code class="docutils literal notranslate"><span class="pre">#COMPLETED</span></code> will show only completed jobs, <code class="docutils literal notranslate"><span class="pre">Wrapped</span></code> will show only those jobs that belong to a wrapper, <code class="docutils literal notranslate"><span class="pre">_fc0_</span></code> will show only those jobs that belong to the fc0 member. Press <strong>Clear</strong> to reset the filter. On the right side of this bar, you will see the total number of jobs, and the chunk unit used in the experiment.</p>
+</div>
+<div class="section" id="advanced-filter">
+<h2>Advanced Filter<a class="headerlink" href="#advanced-filter" title="Permalink to this headline">¶</a></h2>
+<p>It is possible to use the keychar <code class="docutils literal notranslate"><span class="pre">*</span></code> to separate keywords in the name of the job, in order. For example:</p>
+<ul class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">1850*fc0*_1_</span></code>: List all the jobs that have the string <code class="docutils literal notranslate"><span class="pre">1850</span></code> and then at least 1 occurrence of the string <code class="docutils literal notranslate"><span class="pre">fc0</span></code> and then at least 1 occurrence of the string <code class="docutils literal notranslate"><span class="pre">_1_</span></code>. This will effectively list all the jobs for the DATE that starts with <code class="docutils literal notranslate"><span class="pre">1850</span></code> for the member <code class="docutils literal notranslate"><span class="pre">fc0</span></code> and the chunk <code class="docutils literal notranslate"><span class="pre">_1_</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">000*_5</span></code>: List all the jobs that have the string <code class="docutils literal notranslate"><span class="pre">000</span></code> followed by at least one occurrence of the string <code class="docutils literal notranslate"><span class="pre">_5</span></code>. This will effectively list all the jobs that have member <code class="docutils literal notranslate"><span class="pre">000</span></code> and chunk number that starts with the digit <code class="docutils literal notranslate"><span class="pre">5</span></code>.</li>
+<li><code class="docutils literal notranslate"><span class="pre">000*_5*PREPROCVAR</span></code>: It will also add the filter for jobs of type <code class="docutils literal notranslate"><span class="pre">PREPROCVAR</span></code>.</li>
+</ul>
+<p>As you might infer, the logic is fairly straightforward: Start your string with the word or part of the word you are looking for, then add <code class="docutils literal notranslate"><span class="pre">*</span></code> and the word or part of the word that follows, and so on. The algorithm will split your string by <code class="docutils literal notranslate"><span class="pre">*</span></code> and then search for each part in order, once it finds the part in the title of the job, it takes a substring of the job title to not repeat the next search in the same string, it continues looking for the next part in the new reduced string, and so on.</p>
+<p>You can extend this funcionality considering that date, member, section, chunk names start with the symbol <code class="docutils literal notranslate"><span class="pre">_</span></code> and finish with the same symbol.</p>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">This view is designed to show a structured view of your experiment, if you want a more dependency oriented view that shows better the execution sequence of your jobs, you can refer to <a class="reference internal" href="graph.html#graphrepresentation"><span class="std std-ref">Graph Representation</span></a>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tree Representation</a><ul>
+<li><a class="reference internal" href="#monitoring">Monitoring</a></li>
+<li><a class="reference internal" href="#filter">Filter</a></li>
+<li><a class="reference internal" href="#advanced-filter">Advanced Filter</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="experiment.html"
+                        title="previous chapter">Experiment Information</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="graph.html"
+                        title="next chapter">Graph Representation</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/agui/tree.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="graph.html" title="Graph Representation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="experiment.html" title="Experiment Information"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../autosubmit-gui.html" >Autosubmit GUI</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

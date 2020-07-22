@@ -18,13 +18,15 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import os
+from time import sleep
 
 from xml.dom.minidom import parseString
 
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
-from autosubmit.config.basicConfig import BasicConfig
+from bscearth.utils.log import Log
+
 
 class SlurmPlatform(ParamikoPlatform):
     """
@@ -47,10 +49,10 @@ class SlurmPlatform(ParamikoPlatform):
         self._allow_arrays = False
         self._allow_wrappers = True
         self.update_cmds()
-
-        exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+        self.config = config
+        exp_id_path = os.path.join(config.LOCAL_ROOT_DIR, self.expid)
         tmp_path = os.path.join(exp_id_path, "tmp")
-        self._submit_script_path = os.path.join(tmp_path , BasicConfig.LOCAL_ASLOG_DIR,"submit_"+self.name+".sh")
+        self._submit_script_path = os.path.join(tmp_path , config.LOCAL_ASLOG_DIR,"submit_"+self.name+".sh")
         self._submit_script_file = open(self._submit_script_path, 'w').close()
 
     def open_submit_script(self):
@@ -60,7 +62,7 @@ class SlurmPlatform(ParamikoPlatform):
     def get_submit_script(self):
         self._submit_script_file.close()
         os.chmod(self._submit_script_path, 0o750)
-        return os.path.join(BasicConfig.LOCAL_ASLOG_DIR,os.path.basename(self._submit_script_path))
+        return os.path.join(self.config.LOCAL_ASLOG_DIR,os.path.basename(self._submit_script_path))
 
 
     def submit_Script(self,hold=False):
@@ -202,3 +204,27 @@ class SlurmPlatform(ParamikoPlatform):
     @staticmethod
     def allocated_nodes():
         return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")"""
+
+    def check_file_exists(self,filename):
+        if not self.restore_connection():
+            return False
+        file_exist = False
+        sleeptime = 5
+        retries = 0
+        max_retries = 3
+        while not file_exist and retries < max_retries:
+            try:
+                self._ftpChannel.stat(os.path.join(self.get_files_path(), filename))  # This return IOError if path doesn't exist
+                file_exist = True
+            except IOError:  # File doesn't exist, retry in sleeptime
+                Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                          max_retries - retries, os.path.join(self.get_files_path(),filename))
+                sleep(sleeptime)
+                sleeptime = sleeptime + 5
+                retries = retries + 1
+            except BaseException as e:  # Unrecoverable error
+                Log.critical("Crashed while retrieving remote logs: {0}", e)
+                file_exist = False  # won't exist
+                retries = 999  # no more retries
+
+        return file_exist

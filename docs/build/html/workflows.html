@@ -1,0 +1,458 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Defining the workflow &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Troubleshooting" href="troubleshoot.html" />
+    <link rel="prev" title="Remote Dependencies" href="usage/remote_dependencies.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="troubleshoot.html" title="Troubleshooting"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="usage/remote_dependencies.html" title="Remote Dependencies"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="defining-the-workflow">
+<h1>Defining the workflow<a class="headerlink" href="#defining-the-workflow" title="Permalink to this headline">¶</a></h1>
+<p>One of the most important step that you have to do when planning to use autosubmit for an experiment is the definition
+of the workflow the experiment will use. In this section you will learn about the workflow definition syntax so you will
+be able to exploit autosubmit’s full potential</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">This section is NOT intended to show how to define your jobs. Please go to <a class="reference internal" href="tutorial.html"><span class="doc">Tutorial</span></a> section for a comprehensive
+list of job options.</p>
+</div>
+<div class="section" id="simple-workflow">
+<h2>Simple workflow<a class="headerlink" href="#simple-workflow" title="Permalink to this headline">¶</a></h2>
+<p>The simplest workflow that can be defined it is a sequence of two jobs, with the second one triggering at the end of
+the first. To define it, we define the two jobs and then add a DEPENDECIES attribute on the second job referring to the
+first one.</p>
+<p>It is important to remember when defining workflows that DEPENDENCIES on autosubmit always refer to jobs that should
+be finished before launching the job that has the DEPENDENCIES attribute.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[One]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">one.sh</span>
+
+<span class="k">[Two]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">two.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">One</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#simple"><span class="std std-numref">25</span></a></p>
+<div class="figure align-center" id="simple">
+<a class="reference internal image-reference" href="_images/simple.png"><img alt="simple workflow plot" src="_images/simple.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">25 </span><span class="caption-text">Example showing a simple workflow with two sequential jobs</span></p>
+</div>
+</div>
+<div class="section" id="running-jobs-once-per-startdate-member-or-chunk">
+<h2>Running jobs once per startdate, member or chunk<a class="headerlink" href="#running-jobs-once-per-startdate-member-or-chunk" title="Permalink to this headline">¶</a></h2>
+<p>Autosubmit is capable of running ensembles made of various startdates and members. It also has the capability to
+divide member execution on different chunks.</p>
+<p>To set at what level a job has to run you have to use the RUNNING attribute. It has four possible values: once, date,
+member and chunk corresponding to running once, once per startdate, once per member or once per chunk respectively.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[once]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">Once.sh</span>
+
+<span class="k">[date]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">date.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">once</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">date</span>
+
+<span class="k">[member]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">Member.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">date</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[chunk]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">Chunk.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">member</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#running"><span class="std std-numref">26</span></a> for a experiment with 2 startdates, 2 members and 2 chunks.</p>
+<div class="figure align-center" id="running">
+<a class="reference internal image-reference" href="_images/running.png"><img alt="simple workflow plot" src="_images/running.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">26 </span><span class="caption-text">Example showing how to run jobs once per startdate, member or chunk.</span></p>
+</div>
+</div>
+<div class="section" id="dependencies">
+<h2>Dependencies<a class="headerlink" href="#dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Dependencies on autosubmit were introduced on the first example, but in this section you will learn about some special
+cases that will be very useful on your workflows.</p>
+<div class="section" id="dependencies-with-previous-jobs">
+<h3>Dependencies with previous jobs<a class="headerlink" href="#dependencies-with-previous-jobs" title="Permalink to this headline">¶</a></h3>
+<p>Autosubmit can manage dependencies between jobs that are part of different chunks, members or startdates. The next
+example will show how to make a simulation job wait for the previous chunk of the simulation. To do that, we add
+sim-1 on the DEPENDENCIES attribute. As you can see, you can add as much dependencies as you like separated by spaces</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini sim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[postprocess]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">postprocess.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#dprevious"><span class="std std-numref">27</span></a></p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Autosubmit simplifies the dependencies, so the final graph usually does not show all the lines that you may expect to
+see. In this example you can see that there are no lines between the ini and the sim jobs for chunks 2 to 5 because
+that dependency is redundant with the one on the previous sim</p>
+</div>
+<div class="figure align-center" id="dprevious">
+<a class="reference internal image-reference" href="_images/dependencies_previous.png"><img alt="simple workflow plot" src="_images/dependencies_previous.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">27 </span><span class="caption-text">Example showing dependencies between sim jobs on different chunks.</span></p>
+</div>
+</div>
+<div class="section" id="dependencies-between-running-levels">
+<h3>Dependencies between running levels<a class="headerlink" href="#dependencies-between-running-levels" title="Permalink to this headline">¶</a></h3>
+<p>On the previous examples we have seen that when a job depends on a job on a higher level (a running chunk job depending
+on a member running job) all jobs wait for the higher running level job to be finished. That is the case on the ini sim dependency
+on the next example.</p>
+<p>In the other case, a job depending on a lower running level job, the higher level job will wait for ALL the lower level
+jobs to be finished. That is the case of the postprocess combine dependency on the next example.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini sim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[postprocess]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">postprocess.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[combine]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">combine.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">postprocess</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#id1"><span class="std std-numref">28</span></a></p>
+<div class="figure align-center" id="id1">
+<a class="reference internal image-reference" href="_images/dependencies_running.png"><img alt="simple workflow plot" src="_images/dependencies_running.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">28 </span><span class="caption-text">Example showing dependencies between jobs running at different levels.</span></p>
+</div>
+</div>
+</div>
+<div class="section" id="job-frequency">
+<h2>Job frequency<a class="headerlink" href="#job-frequency" title="Permalink to this headline">¶</a></h2>
+<p>Some times you just don’t need a job to be run on every chunk or member. For example, you may want to launch the postprocessing
+job after various chunks have completed. This behaviour can be achieved using the FREQUENCY attribute. You can specify
+an integer I for this attribute and the job will run only once for each I iterations on the running level.</p>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">You don’t need to adjust the frequency to be a divisor of the total jobs. A job will always execute at the last
+iteration of its running level</p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini sim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[postprocess]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">postprocess.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+<span class="na">FREQUENCY</span> <span class="o">=</span> <span class="s">3</span>
+
+<span class="k">[combine]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">combine.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">postprocess</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#frequency"><span class="std std-numref">29</span></a></p>
+<div class="figure align-center" id="frequency">
+<a class="reference internal image-reference" href="_images/frequency.png"><img alt="simple workflow plot" src="_images/frequency.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">29 </span><span class="caption-text">Example showing dependencies between jobs running at different frequencies.</span></p>
+</div>
+</div>
+<div class="section" id="job-synchronize">
+<h2>Job synchronize<a class="headerlink" href="#job-synchronize" title="Permalink to this headline">¶</a></h2>
+<p>For jobs running at chunk level, and this job has dependencies, you could want
+not to run a job for each experiment chunk, but to run once for all member/date dependencies, maintaining
+the chunk granularity. In this cases you can use the SYNCHRONIZE job parameter to determine which kind
+of synchronization do you want. See the below examples with and without this parameter.</p>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">This job parameter works with jobs with RUNNING parameter equals to ‘chunk’.</p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">INI SIM-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[ASIM]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">asim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">SIM</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#nosync"><span class="std std-numref">30</span></a></p>
+<div class="figure align-center" id="nosync">
+<a class="reference internal image-reference" href="_images/no-synchronize.png"><img alt="simple workflow plot" src="_images/no-synchronize.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">30 </span><span class="caption-text">Example showing dependencies between chunk jobs running without synchronize.</span></p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ASIM]</span>
+<span class="na">SYNCHRONIZE</span> <span class="o">=</span> <span class="s">member</span>
+</pre></div>
+</div>
+<p>The resulting workflow of setting SYNCHRONIZE parameter to ‘member’ can be seen in Figure <a class="reference internal" href="#msynchronize"><span class="std std-numref">31</span></a></p>
+<div class="figure align-center" id="msynchronize">
+<a class="reference internal image-reference" href="_images/member-synchronize.png"><img alt="simple workflow plot" src="_images/member-synchronize.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">31 </span><span class="caption-text">Example showing dependencies between chunk jobs running with member synchronize.</span></p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ASIM]</span>
+<span class="na">SYNCHRONIZE</span> <span class="o">=</span> <span class="s">date</span>
+</pre></div>
+</div>
+<p>The resulting workflow of setting SYNCHRONIZE parameter to ‘date’ can be seen in Figure <a class="reference internal" href="#dsynchronize"><span class="std std-numref">32</span></a></p>
+<div class="figure align-center" id="dsynchronize">
+<a class="reference internal image-reference" href="_images/date-synchronize.png"><img alt="simple workflow plot" src="_images/date-synchronize.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">32 </span><span class="caption-text">Example showing dependencies between chunk jobs running with date synchronize.</span></p>
+</div>
+</div>
+<div class="section" id="job-split">
+<h2>Job split<a class="headerlink" href="#job-split" title="Permalink to this headline">¶</a></h2>
+<p>For jobs running at chunk level, it may be useful to split each chunk into different parts.
+This behaviour can be achieved using the SPLITS attribute to specify the number of parts.
+It is possible to define dependencies to specific splits within [], as well as to a list/range of splits,
+in the format [1:3,7,10] or [1,2,3]</p>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">This job parameter works with jobs with RUNNING parameter equals to ‘chunk’.</p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini sim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[asim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">asim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+<span class="na">SPLITS</span> <span class="o">=</span> <span class="s">3</span>
+
+<span class="k">[post]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">post.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">asim[1] asim[1]+1</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#split"><span class="std std-numref">33</span></a></p>
+<div class="figure align-center" id="split">
+<a class="reference internal image-reference" href="_images/split.png"><img alt="simple workflow plot" src="_images/split.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">33 </span><span class="caption-text">Example showing the job ASIM divided into 3 parts for each chunk.</span></p>
+</div>
+</div>
+<div class="section" id="job-delay">
+<h2>Job delay<a class="headerlink" href="#job-delay" title="Permalink to this headline">¶</a></h2>
+<p>Some times you need a job to be run after a certain number of chunks. For example, you may want to launch the asim
+job after various chunks have completed. This behaviour can be achieved using the DELAY attribute. You can specify
+an integer N for this attribute and the job will run only after N chunks.</p>
+<div class="admonition hint">
+<p class="first admonition-title">Hint</p>
+<p class="last">This job parameter works with jobs with RUNNING parameter equals to ‘chunk’.</p>
+</div>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini sim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[asim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">asim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim asim-1</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+<span class="na">DELAY</span> <span class="o">=</span> <span class="s">2</span>
+
+<span class="k">[post]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">post.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim asim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#delay"><span class="std std-numref">34</span></a></p>
+<div class="figure align-center" id="delay">
+<a class="reference internal image-reference" href="_images/experiment_delay_doc.png"><img alt="simple workflow with delay option" src="_images/experiment_delay_doc.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">34 </span><span class="caption-text">Example showing the asim job starting only from chunk 3.</span></p>
+</div>
+</div>
+<div class="section" id="rerun-dependencies">
+<h2>Rerun dependencies<a class="headerlink" href="#rerun-dependencies" title="Permalink to this headline">¶</a></h2>
+<p>Autosubmit has the possibility to rerun some chunks of the experiment without affecting everything else. In this case,
+autosubmit will automatically rerun all jobs of that chunk. If some of this jobs need another one on the workflow you
+have to add the RERUN_DEPENDENCIES attribute and specify which jobs to rerun.</p>
+<p>It is also usual that you will have some code that it is needed only in the case of a rerun. You can add this jobs to
+the workflow as usual and set the attribute RERUN_ONLY to true. This jobs will be omitted from the workflow in the normal
+case, but will appear on the reruns.</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[prepare_rerun]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">prepare_rerun.sh</span>
+<span class="na">RERUN_ONLY</span> <span class="o">=</span> <span class="s">true</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[ini]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">ini.sh</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+
+<span class="k">[sim]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">sim.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">ini combine prepare_rerun</span>
+<span class="na">RERUN_DEPENDENCIES</span> <span class="o">=</span> <span class="s">combine prepare_rerun</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[postprocess]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">postprocess.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">sim</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">chunk</span>
+
+<span class="k">[combine]</span>
+<span class="na">FILE</span> <span class="o">=</span> <span class="s">combine.sh</span>
+<span class="na">DEPENDENCIES</span> <span class="o">=</span> <span class="s">postprocess</span>
+<span class="na">RUNNING</span> <span class="o">=</span> <span class="s">member</span>
+</pre></div>
+</div>
+<p>The resulting workflow can be seen in Figure <a class="reference internal" href="#rerun"><span class="std std-numref">35</span></a> for a rerun of chunks 2 and 3 of member 2.</p>
+<div class="figure align-center" id="rerun">
+<a class="reference internal image-reference" href="_images/rerun.png"><img alt="simple workflow plot" src="_images/rerun.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">35 </span><span class="caption-text">Example showing a rerun workflow for chunks 2 and 3.</span></p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Defining the workflow</a><ul>
+<li><a class="reference internal" href="#simple-workflow">Simple workflow</a></li>
+<li><a class="reference internal" href="#running-jobs-once-per-startdate-member-or-chunk">Running jobs once per startdate, member or chunk</a></li>
+<li><a class="reference internal" href="#dependencies">Dependencies</a><ul>
+<li><a class="reference internal" href="#dependencies-with-previous-jobs">Dependencies with previous jobs</a></li>
+<li><a class="reference internal" href="#dependencies-between-running-levels">Dependencies between running levels</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#job-frequency">Job frequency</a></li>
+<li><a class="reference internal" href="#job-synchronize">Job synchronize</a></li>
+<li><a class="reference internal" href="#job-split">Job split</a></li>
+<li><a class="reference internal" href="#job-delay">Job delay</a></li>
+<li><a class="reference internal" href="#rerun-dependencies">Rerun dependencies</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="usage/remote_dependencies.html"
+                        title="previous chapter">Remote Dependencies</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="troubleshoot.html"
+                        title="next chapter">Troubleshooting</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/workflows.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="troubleshoot.html" title="Troubleshooting"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="usage/remote_dependencies.html" title="Remote Dependencies"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

@@ -960,6 +960,7 @@ class AutosubmitConfig(object):
             content = content.replace(re.search('AUTOSUBMIT_VERSION =.*', content).group(0),
                                       "AUTOSUBMIT_VERSION = " + autosubmit_version)
         open(self._conf_parser_file, 'w').write(content)
+
     def get_version(self):
         """
         Returns version number of the current experiment from autosubmit's config file
@@ -967,7 +968,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION','None')
+        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION' , 'None')
     def get_total_jobs(self):
         """
         Returns max number of running jobs  from autosubmit's config file
@@ -1062,12 +1063,12 @@ class AutosubmitConfig(object):
 
     def get_remote_dependencies(self):
         """
-        Returns if the user has enabled the remote dependencies from autosubmit's config file
+        Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
 
         :return: if remote dependencies
         :rtype: bool
         """
-        config_value = self._conf_parser.get_option('config', 'DEPENDENCIES', 'false').lower()
+        config_value = self._conf_parser.get_option('config', 'PRESUBMISSION', 'false').lower()
         if config_value == "true":
             return True
         else:
@@ -1080,6 +1081,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
+    def get_wrapper_policy(self):
+        """
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
+
+        :return: wrapper type (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('wrapper', 'POLICY', 'flexible').lower()
 
     def get_wrapper_jobs(self):
         """
@@ -1194,7 +1203,7 @@ class AutosubmitConfig(object):
 
     def is_valid_communications_library(self):
         library = self.get_communications_library()
-        return library in ['paramiko', 'saga']
+        return library in ['paramiko']
 
     def is_valid_storage_type(self):
         storage_type = self.get_storage_type()

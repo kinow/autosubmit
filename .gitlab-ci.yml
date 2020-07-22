@@ -18,7 +18,6 @@ prepare:
     - conda update conda
     - conda install -n autosubmit2 coverage=4.5.4
 
-
 test_python2:
   stage: test
   script:
@@ -43,7 +42,6 @@ report_codacy:
     - source activate autosubmit2
     - pip install codacy-coverage --upgrade
     - python-codacy-coverage -r test/coverage.xml
-    
 
 clean:
   stage: clean

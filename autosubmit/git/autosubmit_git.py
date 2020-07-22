@@ -155,10 +155,10 @@ class AutosubmitGit:
 
         if git_remote_project_path != '':
             if git_remote_project_path[-1] == '/':
-                git_remote_path=git_remote_project_path[:-1]+project_path
+                git_remote_path=os.path.join(git_remote_project_path[:-1], as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
             else:
-                git_remote_project_path+=project_path
-            project_path=git_remote_project_path
+                git_remote_path=os.path.join(git_remote_project_path, as_conf.expid, BasicConfig.LOCAL_PROJ_DIR)
+            project_path=git_remote_path
 
         if git_project_commit:
             Log.info("Fetching {0} into {1}", git_project_commit + " " + git_project_origin, project_path)

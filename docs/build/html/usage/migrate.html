@@ -1,0 +1,143 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>How to migrate an experiment &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="How to configure email notifications" href="configure.html" />
+    <link rel="prev" title="How to unarchive an experiment" href="unarchive.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="configure.html" title="How to configure email notifications"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="unarchive.html" title="How to unarchive an experiment"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" accesskey="U">Usage</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="how-to-migrate-an-experiment">
+<h1>How to migrate an experiment<a class="headerlink" href="#how-to-migrate-an-experiment" title="Permalink to this headline">¶</a></h1>
+<p>To migrate an experiment from one user to another, you need to add two parameters for each platform in the platforms configuration file:</p>
+<blockquote>
+<div><ul class="simple">
+<li>USER_TO = &lt;user&gt;</li>
+<li>TEMP_DIR = &lt;hpc_temporary_directory&gt;</li>
+<li>PROJECT_TO = &lt;project&gt;</li>
+<li>HOST_TO = &lt;cluster_ip&gt; (optional)</li>
+</ul>
+</div></blockquote>
+<p>Then, just run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">migrate</span> <span class="o">--</span><span class="n">offer</span> <span class="n">expid</span>
+</pre></div>
+</div>
+<p>Local files will be archived and remote files put in the HPC temporary directory.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">The temporary directory must be readable by both users (old owner and new owner)
+Example for a RES account to BSC account the tmp folder must have rwx|rwx|— permisions.
+The temporary directory must be in the same filesystem.</p>
+</div>
+<p>Then the new owner will have to run the command:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">autosubmit</span> <span class="n">migrate</span> <span class="o">--</span><span class="n">pickup</span> <span class="n">expid</span>
+</pre></div>
+</div>
+<p>Local files will be unarchived and remote files copied from the temporal location.</p>
+<div class="admonition warning">
+<p class="first admonition-title">Warning</p>
+<p class="last">Be sure that there is no folder named as the expid before do the pick.
+The old owner might need to remove temporal files and archive.
+To Run the experiment the queue may need to be change.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="unarchive.html"
+                        title="previous chapter">How to unarchive an experiment</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="configure.html"
+                        title="next chapter">How to configure email notifications</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/usage/migrate.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="configure.html" title="How to configure email notifications"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="unarchive.html" title="How to unarchive an experiment"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../usage.html" >Usage</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

@@ -19,13 +19,14 @@
 
 import os
 import subprocess
-
+from time import sleep
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
 from autosubmit.log.log import Log
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
+from time import sleep
 
 
 class EcPlatform(ParamikoPlatform):
@@ -157,14 +158,27 @@ class EcPlatform(ParamikoPlatform):
         command = '{0} {3}:{2} {1}'.format(self.get_cmd, file_path, os.path.join(self.get_files_path(), filename),
                                            self.host)
         try:
-            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
-            out, _ = process.communicate()
-            process_ok = False if 'No such file' in out or process.returncode != 0 else True
-        except Exception:
+            retries = 0
+            sleeptime = 5
             process_ok = False
-
+            while not process_ok and retries < 2:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+                out, _ = process.communicate()
+                if 'No such file' in out or process.returncode != 0:
+                    retries = retries + 1
+                    process_ok = False
+                    sleeptime = sleeptime + 5
+                    sleep(sleeptime)
+                else:
+                    process_ok = True
+        except Exception as e:
+            Log.error("Not recovered,{0}", e)
+            Log.error("command: , {0} ",command)
+            process_ok = False
         if not process_ok and must_exist:
             raise Exception('File {0} does not exists'.format(filename))
+        if not process_ok:
+            Log.warning("File not transferred {0}, output: {1}",command,out)
         return process_ok
 
     def delete_file(self, filename):

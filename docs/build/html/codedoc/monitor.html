@@ -1,0 +1,245 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>autosubmit.monitor &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="autosubmit.platform" href="platforms.html" />
+    <link rel="prev" title="autosubmit.job" href="job.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="platforms.html" title="autosubmit.platform"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="job.html" title="autosubmit.job"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" accesskey="U">Module documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-autosubmit.monitor.monitor">
+<span id="autosubmit-monitor"></span><h1>autosubmit.monitor<a class="headerlink" href="#module-autosubmit.monitor.monitor" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="autosubmit.monitor.monitor.Monitor">
+<em class="property">class </em><code class="descclassname">autosubmit.monitor.monitor.</code><code class="descname">Monitor</code><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class to handle monitoring of Jobs at HPC.</p>
+<dl class="staticmethod">
+<dt id="autosubmit.monitor.monitor.Monitor.clean_plot">
+<em class="property">static </em><code class="descname">clean_plot</code><span class="sig-paren">(</span><em>expid</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.clean_plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory.
+Removes all plots except last two.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.monitor.monitor.Monitor.clean_stats">
+<em class="property">static </em><code class="descname">clean_stats</code><span class="sig-paren">(</span><em>expid</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.clean_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function to clean space on BasicConfig.LOCAL_ROOT_DIR/plot directory.
+Removes all stats’ plots except last two.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – experiment’s identifier</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="autosubmit.monitor.monitor.Monitor.color_status">
+<em class="property">static </em><code class="descname">color_status</code><span class="sig-paren">(</span><em>status</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.color_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return color associated to given status</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>status</strong> (<a class="reference internal" href="job.html#autosubmit.job.job_common.Status" title="autosubmit.job.job_common.Status"><em>Status</em></a>) – status</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">color</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.monitor.monitor.Monitor.create_tree_list">
+<code class="descname">create_tree_list</code><span class="sig-paren">(</span><em>expid</em>, <em>joblist</em>, <em>packages</em>, <em>groups</em>, <em>hide_groups=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.create_tree_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create graph from joblist</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment’s identifier</li>
+<li><strong>joblist</strong> (<a class="reference internal" href="job.html#autosubmit.job.job_list.JobList" title="autosubmit.job.job_list.JobList"><em>JobList</em></a>) – joblist to plot</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">created graph</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">pydotplus.Dot</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.monitor.monitor.Monitor.generate_output">
+<code class="descname">generate_output</code><span class="sig-paren">(</span><em>expid</em>, <em>joblist</em>, <em>path</em>, <em>output_format='pdf'</em>, <em>packages=None</em>, <em>show=False</em>, <em>groups={}</em>, <em>hide_groups=False</em>, <em>job_list_object=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.generate_output" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots graph for joblist and stores it in a file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment’s identifier</li>
+<li><strong>joblist</strong> (<em>List of Job objects</em>) – list of jobs to plot</li>
+<li><strong>output_format</strong> (<em>str</em><em> (</em><em>png</em><em>, </em><em>pdf</em><em>, </em><em>ps</em><em>)</em>) – file format for plot</li>
+<li><strong>show</strong> (<em>bool</em>) – if true, will open the new plot with the default viewer</li>
+<li><strong>job_list_object</strong> (<em>JobList object</em>) – Object that has the main txt generation method</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.monitor.monitor.Monitor.generate_output_stats">
+<code class="descname">generate_output_stats</code><span class="sig-paren">(</span><em>expid</em>, <em>joblist</em>, <em>output_format='pdf'</em>, <em>period_ini=None</em>, <em>period_fi=None</em>, <em>show=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.generate_output_stats" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots stats for joblist and stores it in a file</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>expid</strong> (<em>str</em>) – experiment’s identifier</li>
+<li><strong>joblist</strong> (<a class="reference internal" href="job.html#autosubmit.job.job_list.JobList" title="autosubmit.job.job_list.JobList"><em>JobList</em></a>) – joblist to plot</li>
+<li><strong>output_format</strong> (<em>str</em><em> (</em><em>png</em><em>, </em><em>pdf</em><em>, </em><em>ps</em><em>)</em>) – file format for plot</li>
+<li><strong>period_ini</strong> (<em>datetime</em>) – initial datetime of filtered period</li>
+<li><strong>period_fi</strong> (<em>datetime</em>) – final datetime of filtered period</li>
+<li><strong>show</strong> (<em>bool</em>) – if true, will open the new plot with the default viewer</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="autosubmit.monitor.monitor.Monitor.generate_output_txt">
+<code class="descname">generate_output_txt</code><span class="sig-paren">(</span><em>expid</em>, <em>joblist</em>, <em>path</em>, <em>classictxt=False</em>, <em>job_list_object=None</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.monitor.monitor.Monitor.generate_output_txt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Function that generates a representation of the jobs in a txt file
+:param expid: experiment’s identifier
+:type expid: str
+:param joblist: experiment’s list of jobs
+:type joblist: list
+:param job_list_object: Object that has the main txt generation method
+:type job_list_object: JobList object</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="job.html"
+                        title="previous chapter">autosubmit.job</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="platforms.html"
+                        title="next chapter">autosubmit.platform</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/codedoc/monitor.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="platforms.html" title="autosubmit.platform"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="job.html" title="autosubmit.job"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" >Module documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

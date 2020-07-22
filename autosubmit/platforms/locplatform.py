@@ -26,6 +26,7 @@ from autosubmit.platforms.headers.local_header import LocalHeader
 
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.log.log import Log
+from time import sleep
 
 class LocalPlatform(ParamikoPlatform):
     """
@@ -101,7 +102,7 @@ class LocalPlatform(ParamikoPlatform):
 
     def send_file(self, filename):
         self.check_remote_log_dir()
-        self.delete_file(filename)
+        self.delete_file(filename,del_cmd=True)
         command = '{0} {1} {2}'.format(self.put_cmd, os.path.join(self.tmp_path, filename),
                                        os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
         try:
@@ -113,20 +114,19 @@ class LocalPlatform(ParamikoPlatform):
             raise
         return True
 
-    def get_file(self, filename, must_exist=True, relative_path=''):
+    def check_file_exists(self,filename):
+        return True
 
+    def get_file(self, filename, must_exist=True, relative_path=''):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)
-
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
 
         command = '{0} {1} {2}'.format(self.get_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename),
                                        file_path)
-
-
         try:        
             subprocess.check_call(command, stdout=open(os.devnull, 'w'), stderr=open(os.devnull, 'w'), shell=True)                      
         except subprocess.CalledProcessError:
@@ -135,12 +135,47 @@ class LocalPlatform(ParamikoPlatform):
             return False
         return True
 
-    def delete_file(self, filename):
-        command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, 'LOG_' + self.expid, filename))
+    # Moves .err .out
+    def check_file_exists(self, src):
+        """
+        Moves a file on the platform
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :param must_exist: ignore if file exist or not
+        :type dest: str
+        """
+        file_exist = False
+        sleeptime = 5
+        remote_path = os.path.join(self.get_files_path(), src)
+        retries = 0
+        max_retries = 3
+        while not file_exist and retries < max_retries:
+            try:
+                file_exist = os.path.isfile(os.path.join(self.get_files_path(),src))
+                if not file_exist:  # File doesn't exist, retry in sleeptime
+                    Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
+                             max_retries - retries, remote_path)
+                    sleep(sleeptime)
+                    sleeptime = sleeptime + 5
+                    retries = retries + 1
+            except BaseException as e:  # Unrecoverable error
+                Log.critical("Crashed while retrieving  logs: {0}",e)
+                file_exist = False  # won't exist
+                retries = 999  # no more retries
+
+        return file_exist
+
+    def delete_file(self, filename,del_cmd  = False):
+        if del_cmd:
+            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,"LOG_"+self.expid, filename))
+        else:
+            command = '{0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path,"LOG_"+self.expid, filename))
+            command += ' ; {0} {1}'.format(self.del_cmd, os.path.join(self.tmp_path, filename))
         try:
             subprocess.check_call(command, shell=True)
         except subprocess.CalledProcessError:
-            Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, 'LOG_' + self.expid, filename)))
+            Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, filename)))
             return False
         return True
 

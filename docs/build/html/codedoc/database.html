@@ -1,0 +1,286 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>autosubmit.database &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="autosubmit.git" href="git.html" />
+    <link rel="prev" title="autosubmit.config" href="config.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="git.html" title="autosubmit.git"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="autosubmit.config"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" accesskey="U">Module documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-autosubmit.database.db_common">
+<span id="autosubmit-database"></span><h1>autosubmit.database<a class="headerlink" href="#module-autosubmit.database.db_common" title="Permalink to this headline">¶</a></h1>
+<p>Module containing functions to manage autosubmit’s database.</p>
+<dl class="exception">
+<dt id="autosubmit.database.db_common.DbException">
+<em class="property">exception </em><code class="descclassname">autosubmit.database.db_common.</code><code class="descname">DbException</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.DbException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exception class for database errors</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.check_db">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">check_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.check_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if database file exist</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">None if exists, terminates program if not</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.check_experiment_exists">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">check_experiment_exists</code><span class="sig-paren">(</span><em>name</em>, <em>error_on_inexistence=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.check_experiment_exists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks if exist an experiment with the given name.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>error_on_inexistence</strong> (<em>bool</em>) – if True, adds an error log if experiment does not exists</li>
+<li><strong>name</strong> (<em>str</em>) – Experiment name</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">If experiment exists returns true, if not returns false</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">bool</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.close_conn">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">close_conn</code><span class="sig-paren">(</span><em>conn</em>, <em>cursor</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.close_conn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Commits changes and close connection to database</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>conn</strong> (<em>sqlite3.Connection</em>) – connection to close</li>
+<li><strong>cursor</strong> (<em>sqlite3.Cursor</em>) – cursor to close</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.create_db">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">create_db</code><span class="sig-paren">(</span><em>qry</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.create_db" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new database for autosubmit</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>qry</strong> (<em>str</em>) – query to create the new database</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.delete_experiment">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">delete_experiment</code><span class="sig-paren">(</span><em>experiment_id</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.delete_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes experiment from database</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>experiment_id</strong> (<em>str</em>) – experiment identifier</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if delete is succesful</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.get_autosubmit_version">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">get_autosubmit_version</code><span class="sig-paren">(</span><em>expid</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.get_autosubmit_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the minimun autosubmit version needed for the experiment</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>expid</strong> (<em>str</em>) – Experiment name</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">If experiment exists returns the autosubmit version for it, if not returns None</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">str</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.last_name_used">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">last_name_used</code><span class="sig-paren">(</span><em>test=False</em>, <em>operational=False</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.last_name_used" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets last experiment identifier used</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>test</strong> (<em>bool</em>) – flag for test experiments</li>
+<li><strong>operational</strong> – flag for operational experiments</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">last experiment identifier used, ‘empty’ if there is none</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">str</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.open_conn">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">open_conn</code><span class="sig-paren">(</span><em>check_version=True</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.open_conn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a connection to database</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>check_version</strong> (<em>bool</em>) – If true, check if the database is compatible with this autosubmit version</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">connection object, cursor object</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">sqlite3.Connection, sqlite3.Cursor</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="autosubmit.database.db_common.save_experiment">
+<code class="descclassname">autosubmit.database.db_common.</code><code class="descname">save_experiment</code><span class="sig-paren">(</span><em>name</em>, <em>description</em>, <em>version</em><span class="sig-paren">)</span><a class="headerlink" href="#autosubmit.database.db_common.save_experiment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores experiment in database</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>version</strong> (<em>str</em>) – </li>
+<li><strong>name</strong> (<em>str</em>) – experiment’s name</li>
+<li><strong>description</strong> (<em>str</em>) – experiment’s description</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="config.html"
+                        title="previous chapter">autosubmit.config</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="git.html"
+                        title="next chapter">autosubmit.git</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/codedoc/database.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="git.html" title="autosubmit.git"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="config.html" title="autosubmit.config"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">autosubmit 3.9.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="main.html" >Module documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

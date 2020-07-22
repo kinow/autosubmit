@@ -1,0 +1,194 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Autosubmit GUI &#8212; autosubmit 3.9.1 documentation</title>
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Experiment Information" href="agui/experiment.html" />
+    <link rel="prev" title="autosubmit.platform" href="codedoc/platforms.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="agui/experiment.html" title="Experiment Information"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="codedoc/platforms.html" title="autosubmit.platform"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="autosubmit-gui">
+<h1>Autosubmit GUI<a class="headerlink" href="#autosubmit-gui" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="autosubmit-gui-main-page">
+<span id="autosubmitguimp"></span><h2>Autosubmit GUI Main Page<a class="headerlink" href="#autosubmit-gui-main-page" title="Permalink to this headline">¶</a></h2>
+<p>Inside the Barcelona Supercomputing Internal Network you can find the latest version of Autosubmit GUI deployed for BSC users. It can be accessed by following the url <a class="reference external" href="http://bscesweb04.bsc.es/autosubmitapp/">http://bscesweb04.bsc.es/autosubmitapp/</a>. This is a graphic user interface that allows you to easily monitor your experiments and those of your colleagues. This Web App introduces many useful features for experiment monitoring, and we are continuously improving it.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">The Web App can also be accessed through the VPN Client provided by BSC.</p>
+</div>
+<p>When you enter the site, you will be presented with the following page:</p>
+<div class="figure align-center" id="first-page">
+<a class="reference internal image-reference" href="_images/fig1_gui.png"><img alt="autosubmit guide" src="_images/fig1_gui.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">37 </span><span class="caption-text">Welcome page</span></p>
+</div>
+<p>Here you can search for any ongoing or past experiment by typing some text in the Search input box and pressing <strong>Search</strong>: the search engine will look for coincidences between your input string and any of the description, owner or name of the experiment fields. The results will be shown below ordered by status, experiments <code class="docutils literal notranslate"><span class="pre">RUNNING</span></code> will be shown in the first rows. You can also click on the <code class="docutils literal notranslate"><span class="pre">Running</span></code> button, and all the experiments that are currently running will be listed. The results will look like:</p>
+<div class="figure align-center" id="first-page-search">
+<a class="reference internal image-reference" href="_images/fig2_gui.png"><img alt="result search" src="_images/fig2_gui.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">38 </span><span class="caption-text">Search Result</span></p>
+</div>
+<p>If you click on <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">Detailed</span> <span class="pre">Data</span></code>, summary data for each experiment (result) will be loaded. These are data details from the experiment run, useful to see its status at a glance. Progress bars and status will use different colors to highlight the important information.</p>
+<div class="figure align-center" id="first-page-search-plus">
+<a class="reference internal image-reference" href="_images/fig3_gui.png"><img alt="result search plus" src="_images/fig3_gui.png" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">39 </span><span class="caption-text">Search Result plus Detailed Data</span></p>
+</div>
+<p>For each experiment, you see the following data:</p>
+<div class="figure align-center" id="first-page-search-plus-description">
+<a class="reference internal image-reference" href="_images/fig4_gui.jpg"><img alt="result search plus description" src="_images/fig4_gui.jpg" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">40 </span><span class="caption-text">Description of Detailed Data</span></p>
+</div>
+<ol class="arabic simple">
+<li><em>Experiment Name</em></li>
+<li><em>Progress Bar</em>: Shows completed jobs / total jobs. It turns red when there are <strong>failed</strong> jobs in the experiment, but <strong>Show Detailed Data</strong> should have been requested.</li>
+<li><em>Experiment Status</em>: <em>RUNNING</em> or <em>NOT RUNNING</em>.</li>
+<li><em>Owner</em></li>
+<li><em>Experiment Description</em></li>
+<li><em>Refresh button</em>: It will say <em>Summary</em> when the detailed data has not been requested. If it says <em>Summary</em> and you click on it, it will load datailed data for that experiment, otherwise it will refresh the existing detailed data.</li>
+<li><em>More button</em>: Opens the <strong>Experiment Page</strong>.</li>
+<li><em>Average Queue Time</em> for all jobs.</li>
+<li><em>Average Run Time</em> for all jobs.</li>
+<li><em>Number of Running Jobs</em></li>
+<li><em>Number of Queuing Jobs</em></li>
+<li><em>Number of Submitted Jobs</em></li>
+<li><em>Number of Suspended Jobs</em></li>
+<li><em>Number of Failed Jobs</em>: If there are Failed jobs, a list of the names of those jobs will be displayed.</li>
+</ol>
+<div class="figure align-center" id="first-page-search-plus-description-sim">
+<a class="reference internal image-reference" href="_images/fig5_gui.jpg"><img alt="result search plus description + sim" src="_images/fig5_gui.jpg" style="width: 100%;" /></a>
+<p class="caption"><span class="caption-number">41 </span><span class="caption-text">Average Times Feature</span></p>
+</div>
+<p>In experiments that include <code class="docutils literal notranslate"><span class="pre">SIM</span></code> jobs, you will also see the average queuing and running time for these jobs. In the latest version the time format has been updated to <code class="docutils literal notranslate"><span class="pre">HH:mm:ss</span></code>. The text for the <code class="docutils literal notranslate"><span class="pre">SIM</span></code> average follows the format <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">queue</span> <span class="pre">HH:mm:ss</span> <span class="pre">(M)</span> <span class="pre">|</span> <span class="pre">run</span> <span class="pre">HH:mm:ss</span> <span class="pre">(N)</span></code> where <code class="docutils literal notranslate"><span class="pre">M</span></code> is the number of jobs considered for the <code class="docutils literal notranslate"><span class="pre">avg.</span> <span class="pre">queue</span></code> calculation and <code class="docutils literal notranslate"><span class="pre">N</span></code> is the number of jobs considered for <code class="docutils literal notranslate"><span class="pre">run</span></code> calculation.</p>
+<p>After clicking on the <strong>MORE</strong> button, you will be presented with the <strong>Experiment Page</strong>, which is the main view that Autosubmit provides. These are its main components:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="agui/experiment.html">Experiment Information</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agui/tree.html">Tree Representation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="agui/tree.html#monitoring">Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/tree.html#filter">Filter</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/tree.html#advanced-filter">Advanced Filter</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agui/graph.html">Graph Representation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#wrappers-representation">Wrappers Representation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#monitoring">Monitoring</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#job-search">Job Search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#grouped-by-date-member">Grouped by Date Member</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#grouped-by-status">Grouped by Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="agui/graph.html#laplacian">Laplacian</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="agui/log.html">Autosubmit Log</a></li>
+<li class="toctree-l1"><a class="reference internal" href="agui/statistics.html">Autosubmit Statistics</a></li>
+</ul>
+</div>
+<div class="admonition important">
+<p class="first admonition-title">Important</p>
+<p class="last">To improve response times, Autosubmit GUI will try to store the dependency structure of your experiment in a database filed called <code class="docutils literal notranslate"><span class="pre">structure_expid.db</span></code> where <code class="docutils literal notranslate"><span class="pre">expid</span></code> is the name of your experiment. This file will be located in <code class="docutils literal notranslate"><span class="pre">/esarchive/autosubmit/expid/pkl/</span></code>.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Autosubmit GUI</a><ul>
+<li><a class="reference internal" href="#autosubmit-gui-main-page">Autosubmit GUI Main Page</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="codedoc/platforms.html"
+                        title="previous chapter">autosubmit.platform</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="agui/experiment.html"
+                        title="next chapter">Experiment Information</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/autosubmit-gui.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="agui/experiment.html" title="Experiment Information"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="codedoc/platforms.html" title="autosubmit.platform"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">autosubmit 3.9.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2018, Barcelona Supercomputing Center, BSC.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.8.5.
+    </div>
+  </body>
+</html>

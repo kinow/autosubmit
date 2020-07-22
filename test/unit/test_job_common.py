@@ -19,4 +19,3 @@ class TestJobCommon(TestCase):
         self.assertEquals('QUEUING', Status.VALUE_TO_KEY[Status.QUEUING])
         self.assertEquals('RUNNING', Status.VALUE_TO_KEY[Status.RUNNING])
         self.assertEquals('COMPLETED', Status.VALUE_TO_KEY[Status.COMPLETED])
-

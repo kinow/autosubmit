@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import textwrap
-
+import math
 
 class WrapperDirector:
     """
@@ -57,6 +57,8 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
+
+
 
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -146,6 +148,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + "." + str(self.id_run) + ".out"
                 err = str(self.template) + "." + str(self.id_run) + ".err"
+                print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
         """).format('\n'.ljust(13))
@@ -293,7 +296,39 @@ class PythonWrapperBuilder(WrapperBuilder):
                 section = jobname.split('_')[-1]
 
             {2}
+            current = {1}({0}[i], i+self.id_run)
+            pid_list.append(current)
+            current.start()
 
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
+
+        if footer:
+            parallel_threads_launcher += self._indent(textwrap.dedent("""
+            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+            completed_path = os.path.join(os.getcwd(), completed_filename)
+            if os.path.exists(completed_path):
+                print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            else:
+                print datetime.now(), "The job ", pid.template," has FAILED"
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+
+        return parallel_threads_launcher
+    def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
+        parallel_threads_launcher = textwrap.dedent("""
+        pid_list = []
+
+        for i in range(len({0})):
+            if type({0}[i]) != list:
+                job = {0}[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+
+            {2}
             current = {1}({0}[i], i)
             pid_list.append(current)
             current.start()
@@ -316,7 +351,39 @@ class PythonWrapperBuilder(WrapperBuilder):
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
+    def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
+        parallel_threads_launcher = textwrap.dedent("""
+        pid_list = []
 
+        for i in range(len({0})):
+            if type({0}[i]) != list:
+                job = {0}[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+
+            {2}
+            current = {1}({0}[i], i)
+            pid_list.append(current)
+            current.start()
+
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
+
+        if footer:
+            parallel_threads_launcher += self._indent(textwrap.dedent("""
+            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+            completed_path = os.path.join(os.getcwd(), completed_filename)
+            if os.path.exists(completed_path):
+                print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            else:
+                print datetime.now(), "The job ", pid.template," has FAILED"
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+
+        return parallel_threads_launcher
     # all should override -> abstract!
     def build_main(self):
         pass
@@ -343,7 +410,8 @@ class PythonHorizontalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):
         nodelist = self.build_nodes_list()
-        threads_launcher = self.build_parallel_threads_launcher("scripts", "JobThread")
+        #threads_launcher = self.build_parallel_threads_launcher("scripts", "JobThread")
+        threads_launcher = self.build_parallel_threads_launcher_horizontal("scripts", "JobThread")
         return nodelist + threads_launcher
 
 
@@ -367,12 +435,45 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
         self.exit_thread = "sys.exit()"
         joblist_thread = self.build_joblist_thread()
         nodes_list = self.build_nodes_list()
-        threads_launcher = self.build_parallel_threads_launcher("scripts", "JobListThread", footer=False)
+        #threads_launcher = self.build_parallel_threads_launcher("scripts", "JobListThread", footer=False)
+        threads_launcher = self.build_parallel_threads_launcher_vertical_horizontal("scripts", "JobListThread", footer=False)
+
         return joblist_thread + nodes_list + threads_launcher
 
 
 class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
+    def build_parallel_threads_launcher_horizontal_vertical(self, jobs_list, thread, footer=True):
+        parallel_threads_launcher = textwrap.dedent("""
+        pid_list = []
 
+        for i in range(len({0})):
+            if type({0}[i]) != list:
+                job = {0}[i]
+                jobname = job.replace(".cmd", '')
+                section = jobname.split('_')[-1]
+
+            {2}
+            current = {1}({0}[i], i+self.id_run)
+            pid_list.append(current)
+            current.start()
+
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
+        if footer:
+            parallel_threads_launcher += self._indent(textwrap.dedent("""
+            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+            completed_path = os.path.join(os.getcwd(), completed_filename)
+            if os.path.exists(completed_path):
+                print datetime.now(), "The job ", pid.template," has been COMPLETED"
+            else:
+                print datetime.now(), "The job ", pid.template," has FAILED"
+                {1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+
+        return parallel_threads_launcher
     def build_joblist_thread(self):
         return textwrap.dedent("""
         class JobListThread(Thread):
@@ -386,13 +487,13 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
                 all_cores = self.all_cores
                 {0}
         """).format(
-            self._indent(self.build_parallel_threads_launcher("self.jobs_list", "JobThread"), 8), '\n'.ljust(13))
+            self._indent(self.build_parallel_threads_launcher_horizontal_vertical("self.jobs_list", "JobThread"), 8), '\n'.ljust(13))
 
     def build_main(self):
         nodes_list = self.build_nodes_list()
         self.exit_thread = "os._exit(1)"
         joblist_thread = self.build_joblist_thread()
-        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i, "
+        threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts[i])), "
                                                                              "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
 
@@ -679,50 +780,93 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                    declare -a scripts_list={0}
                    declare -a scripts_index={1}
                    """).format(str(scripts_array_vars),str(scripts_array_index), '\n'.ljust(13))
+
+        total_threads = float(len(self.job_scripts))
+        n_threads = float(self.threads)
+        core = []
+        for thread in range(int(n_threads)):
+            core.append(0x0)
+
+        core[0] = 0x1
+        horizontal_wrapper_size=int(total_threads)
+        srun_mask_values = []
+        for job_id in range(horizontal_wrapper_size):
+            for thread in range(1, int(n_threads)):
+                core[thread] = core[thread-1]*2
+                print "#{0} cpu-mask is {1}: ".format(thread, hex(core[thread]))
+            job_mask = 0x0
+            for thr_mask in core:
+                job_mask = job_mask + thr_mask
+            srun_mask_values.append(str(hex(job_mask)))
+            print "#{0} job_mask is {1}: ".format(thread, hex(job_mask))
+            if job_id > 0:
+                    core[0]=core[0] << int(n_threads)
+            else:
+                    core[0]=job_mask+0x1
+            print "#{0} cpu-mask is {1}: ".format(0, hex(core[0]))
+
+        mask_array = "( "
+        for mask in srun_mask_values:
+            mask_array += str("\"" + mask + "\"") + " "
+        mask_array += ")"
+        scripts_bash += textwrap.dedent("""
+                declare -a job_mask_array={0}
+                """).format(mask_array, '\n'.ljust(13))
+
         return scripts_bash
+
+
 
     def build_srun_launcher(self, jobs_list, footer=True):
         srun_launcher = textwrap.dedent("""
         suffix=".cmd"
         suffix_completed=".COMPLETED"
         aux_scripts=("${{{0}[@]}}")
+        prev_script="empty"
+        as_index=0
+        horizontal_size=${{#scripts_index[@]}}
+        scripts_size=${{#scripts_0[@]}}
         while [ "${{#aux_scripts[@]}}" -gt 0 ]; do
             i_list=0
             for script_list in "${{{0}[@]}}"; do
                 declare -i job_index=${{scripts_index[$i_list]}}
                 declare -n scripts=$script_list
+                
+                declare -n prev_horizontal_scripts=$prev_script
                 if [ $job_index -ne -1 ]; then
-                    if [ $job_index -lt "${{#scripts[@]}}" ];  then      
-                        template=${{scripts[$job_index]}}
+                    for horizontal_job in "${{scripts[@]:$job_index}}"; do
+                        template=$horizontal_job
                         jobname=${{template%"$suffix"}}
-                        out="${{template}}.${{job_index}}.out"
-                        err="${{template}}.${{job_index}}.err"
-                        if [ $i_list -eq 0 ]; then
+                        as_index=0
+                        multiplication_result=$(($i_list*$scripts_size))
+                        as_index=$((multiplication_result+$job_index))
+                        out="${{template}}.$as_index.out"
+                        err="${{template}}.$as_index.err"
+                        if [ $job_index -eq 0 ]; then
                             prev_template=$template
                         else
-                            prev_template=${{prev_horizontal_scripts[$job_index]}}
+                            #prev_template=${{prev_horizontal_scripts[$job_index]}}
+                            prev_template=${{scripts[((job_index-1))]}}
                         fi
                         completed_filename=${{prev_template%"$suffix"}}
                         completed_filename="$completed_filename"_COMPLETED
                         completed_path=${{PWD}}/$completed_filename
-                        #if [ -f "$completed_path" ];
-                        #then
-                        #    echo "`date '+%d/%m/%Y_%H:%M:%S'` $prev_template has been COMPLETED"
-                        #fi    
-                        if [ $i_list -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
-                            srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
-                            ((job_index=job_index+1))
-                            if [ $job_index -ge "${{#scripts[@]}}" ];  then
-                                unset aux_scripts[$i_list]
-                                job_index=-1   
-                            fi
+                        if [ $job_index -eq 0 ] || [ -f "$completed_path" ]; then #If first horizontal wrapper or last wrapper is completed
+                            srun -N1 --ntasks=1 --cpus-per-task={1} --cpu-bind=verbose,mask_cpu:job_mask_array[$job_index]  --distribution=block:block $template > $out 2> $err &
+                            job_index=$(($job_index+1))
+                            
+                        else
+                            break
                         fi
-                        sleep "0.2"
+                    done
+                    if [ $job_index -ge "${{#scripts[@]}}" ];  then
+                        unset aux_scripts[$i_list]
+                        job_index=-1
                     fi
                 fi
-                declare -n prev_horizontal_scripts=$script_list
+                prev_script=("${{script_list[@]}}")
                 scripts_index[$i_list]=$job_index
-                ((i_list=i_list+1)) # check next list ( needed for save list index )
+                i_list=$((i_list+1)) # check next list ( needed for save list index )
             done
         done
         wait
