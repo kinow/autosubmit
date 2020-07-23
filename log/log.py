@@ -1,7 +1,30 @@
 import logging, os, sys
 from datetime import datetime
 
+
+class AutosubmitError(Exception):
+    """Exception raised for Autosubmit errors .
+    Attributes:
+        errorcode -- Classified error
+        message -- explanation of the error
+    """
+    def __init__(self, error_code=1000, message="Unhandled Error"):
+        self.error_code = error_code
+        self.message = message
+        super(self.message).__init__()
+
+    def __str__(self):
+        if 4000 <= self.error_code < 8000:
+            Log.warning("e{0}:{1}", self.error_code,self.message)
+        elif self.error_code < 9000:
+            Log.error("e{0}:{1}", self.error_code,self.message)
+        elif self.error_code == 1000 or self.error_code >= 9000:
+            Log.critical("e{0}:{1}", self.error_code,self.message)
+        else:
+            Log.info("e{0}:{1}", self.error_code, self.message)
+
 class LogFormatter:
+
     """
     Class to format log output.
 
@@ -83,15 +106,15 @@ class Log:
     """
     __module__ = __name__
     EVERYTHING = 0
-    STATUS = 100
-    DEBUG = 101
-    WARNING = 102
-    USER_WARNING = 103
-    INFO = 104
-    RESULT = 105
-    ERROR = 106
-    CRITICAL = 107
-    NO_LOG = CRITICAL + 1
+    STATUS = 2000
+    DEBUG = 3000
+    WARNING = 4000
+    USER_WARNING = 5000
+    INFO = 6000
+    RESULT = 7000
+    ERROR = 8000
+    CRITICAL = 9000
+    NO_LOG = CRITICAL + 1000
     logging.basicConfig()
     if 'Autosubmit' in logging.Logger.manager.loggerDict.keys():
         log = logging.getLogger('Autosubmit')

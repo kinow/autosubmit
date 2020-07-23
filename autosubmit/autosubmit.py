@@ -81,12 +81,8 @@ from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
 from log.log import Log
+from log.log import AutosubmitError
 sys.path.insert(0, os.path.abspath('.'))
-# noinspection PyPackageRequirements
-# noinspection PyPackageRequirements
-# from API.testAPI import Monitor
-# noinspection PyPackageRequirements
-
 
 # noinspection PyUnusedLocal
 def signal_handler(signal_received, frame):
@@ -114,14 +110,14 @@ class Autosubmit:
     """
     sys.setrecursionlimit(500000)
     # Get the version number from the relevant file. If not, from autosubmit package
-    scriptdir = os.path.abspath(os.path.dirname(__file__))
+    script_dir = os.path.abspath(os.path.dirname(__file__))
 
-    if not os.path.exists(os.path.join(scriptdir, 'VERSION')):
-        scriptdir = os.path.join(scriptdir, os.path.pardir)
+    if not os.path.exists(os.path.join(script_dir, 'VERSION')):
+        script_dir = os.path.join(script_dir, os.path.pardir)
 
-    version_path = os.path.join(scriptdir, 'VERSION')
-    readme_path = os.path.join(scriptdir, 'README')
-    changes_path = os.path.join(scriptdir, 'CHANGELOG')
+    version_path = os.path.join(script_dir, 'VERSION')
+    readme_path = os.path.join(script_dir, 'README')
+    changes_path = os.path.join(script_dir, 'CHANGELOG')
     if os.path.isfile(version_path):
         with open(version_path) as f:
             autosubmit_version = f.read().strip()
@@ -571,6 +567,7 @@ class Autosubmit:
                         return True
                 return False
         except Exception as e:
+            raise(   )
             from traceback import format_exc
             Log.critical(
                 'Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
