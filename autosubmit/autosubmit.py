@@ -73,6 +73,7 @@ from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
 from database.db_common import get_autosubmit_version
 from database.db_common import delete_experiment
+from database.db_jobdata import ExperimentStatus
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db
@@ -809,7 +810,7 @@ class Autosubmit:
                         if filename in conf_copy_filter_folder:
                             if os.path.isfile(os.path.join(conf_copy_id, filename)):
                                 new_filename = filename.split(
-                                    ".")[0]+"_"+exp_id+".conf"
+                                    ".")[0] + "_" + exp_id + ".conf"
                                 content = open(os.path.join(
                                     conf_copy_id, filename), 'r').read()
                                 # If autosubmitrc [conf] custom_platforms has been set and file exists, replace content
@@ -853,7 +854,7 @@ class Autosubmit:
         os.mkdir(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR))
         os.chmod(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR), 0o775)
         Log.debug("Creating temporal remote directory...")
-        remote_tmp_path = os.path.join(tmp_path, "LOG_"+exp_id)
+        remote_tmp_path = os.path.join(tmp_path, "LOG_" + exp_id)
         os.mkdir(remote_tmp_path)
         os.chmod(remote_tmp_path, 0o755)
 
@@ -948,7 +949,7 @@ class Autosubmit:
         job_list.parameters = parameters
 
     @staticmethod
-    def inspect(expid,  lst, filter_chunks, filter_status, filter_section, notransitive=False, force=False, check_wrapper=False):
+    def inspect(expid, lst, filter_chunks, filter_status, filter_section, notransitive=False, force=False, check_wrapper=False):
         """
          Generates cmd files experiment.
 
@@ -1272,7 +1273,7 @@ class Autosubmit:
                                                              "job_packages_" + expid)
                 if as_conf.get_wrapper_type() != 'none':
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                          expid, "pkl", "job_packages_" + expid+".db"), 0644)
+                                          expid, "pkl", "job_packages_" + expid + ".db"), 0644)
                     packages = packages_persistence.load()
                     for (exp_id, package_name, job_name) in packages:
                         if package_name not in job_list.packages_dict:
@@ -1292,6 +1293,8 @@ class Autosubmit:
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
+                # Update RUNNING database
+                ExperimentStatus(expid).update_running_status()
                 # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
                     # reload parameters changes
@@ -1444,9 +1447,9 @@ class Autosubmit:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
-                                threads_active = threads_active+1
+                                threads_active = threads_active + 1
                     sleep(10)
-                    timeout = 10+timeout
+                    timeout = 10 + timeout
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                     return False
@@ -1762,7 +1765,7 @@ class Autosubmit:
 
         if txt_only or txt_logfiles:
             monitor_exp.generate_output_txt(expid, jobs, os.path.join(
-                exp_path, "/tmp/LOG_"+expid), txt_logfiles, job_list_object=job_list)
+                exp_path, "/tmp/LOG_" + expid), txt_logfiles, job_list_object=job_list)
         else:
             # if file_format is set, use file_format, otherwise use conf value
             monitor_exp.generate_output(expid,
@@ -2265,7 +2268,7 @@ class Autosubmit:
                         try:
                             p.send_command(
                                 "cp -rP " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir)
-                            p.send_command("chmod 755 -R "+p.root_dir)
+                            p.send_command("chmod 755 -R " + p.root_dir)
                             Log.result(
                                 "Files/dirs on {0} have been successfully picked up", platform)
                         except (IOError, BaseException):
@@ -2288,7 +2291,7 @@ class Autosubmit:
             else:
                 for platform in backup_files:
                     p = submitter.platforms[platform]
-                    p.send_command("rm -R " + p.temp_dir+"/"+experiment_id)
+                    p.send_command("rm -R " + p.temp_dir + "/" + experiment_id)
                 Log.result("The experiment has been successfully picked up.")
                 #Log.info("Refreshing the experiment.")
                 # Autosubmit.refresh(experiment_id,False,False)
@@ -2882,10 +2885,10 @@ class Autosubmit:
                 try:
                     tmp_folder = os.path.join(
                         BasicConfig.LOCAL_ROOT_DIR, "tmp")
-                    tmp_expid = os.path.join(tmp_folder, expid+"_to_delete")
+                    tmp_expid = os.path.join(tmp_folder, expid + "_to_delete")
                     os.rename(exp_folder, tmp_expid)
                     Log.warning("Experiment folder renamed to: {0}".format(
-                        exp_folder+"_to_delete "))
+                        exp_folder + "_to_delete "))
                 except Exception as e:
                     Log.critical(
                         "Can not remove or rename experiments folder: {0}".format(e))
@@ -3239,7 +3242,7 @@ class Autosubmit:
                     if force:
                         try:
                             cmd = ["rsync -ach --info=progress2 " +
-                                   local_project_path+"/* "+local_destination]
+                                   local_project_path + "/* " + local_destination]
                             subprocess.call(cmd, shell=True)
                         except subprocess.CalledProcessError:
                             Log.error(
@@ -3791,7 +3794,7 @@ class Autosubmit:
                         expidJoblist[str(x[0:4])] += 1
 
                     if str(expid) in expidJoblist:
-                        wrongExpid = jobs.__len__()-expidJoblist[expid]
+                        wrongExpid = jobs.__len__() - expidJoblist[expid]
                     if wrongExpid > 0:
                         Log.warning(
                             "There are {0} job.name with an invalid Expid", wrongExpid)
@@ -3822,7 +3825,7 @@ class Autosubmit:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                                  "job_packages_" + expid)
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                          expid, "pkl", "job_packages_" + expid+".db"), 0775)
+                                          expid, "pkl", "job_packages_" + expid + ".db"), 0775)
                     packages_persistence.reset_table(True)
                     referenced_jobs_to_remove = set()
                     job_list_wrappers = copy.deepcopy(job_list)
