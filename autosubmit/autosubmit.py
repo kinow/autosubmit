@@ -80,7 +80,7 @@ from pkg_resources import require, resource_listdir, resource_exists, resource_s
 from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
-
+from log.log import Log
 sys.path.insert(0, os.path.abspath('.'))
 # noinspection PyPackageRequirements
 # noinspection PyPackageRequirements
