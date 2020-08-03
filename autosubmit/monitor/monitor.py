@@ -33,7 +33,7 @@ import subprocess
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-from autosubmit.log.log import Log
+from log.log import Log
 from bscearth.utils.config_parser import ConfigParserFactory
 
 from diagram import create_bar_diagram

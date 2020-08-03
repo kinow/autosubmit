@@ -17,15 +17,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from autosubmit.experiment.statistics import ExperimentStats
-from autosubmit.job.job_common import Status
-from autosubmit.log.log import Log
-from autosubmit.job.job import Job
+from log.log import Log
 
 # Autosubmit stats constants
 RATIO = 4

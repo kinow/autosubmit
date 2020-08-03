@@ -19,8 +19,8 @@
 
 import os
 
-from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from autosubmit.log.log import Log
+from autosubmit.platforms.paramiko_platform import ParamikoPlatform
+from log.log import Log
 
 from autosubmit.platforms.headers.pbs10_header import Pbs10Header
 from autosubmit.platforms.headers.pbs11_header import Pbs11Header

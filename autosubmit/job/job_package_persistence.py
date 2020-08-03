@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
-from autosubmit.log.log import Log
 from autosubmit.database.db_manager import DbManager
 
 

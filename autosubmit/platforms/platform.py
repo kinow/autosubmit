@@ -1,9 +1,6 @@
-from time import sleep
-from time import time
-
 import os
 
-from autosubmit.log.log import Log
+from log.log import Log
 from autosubmit.job.job_common import Status
 
 

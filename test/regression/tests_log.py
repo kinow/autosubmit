@@ -62,7 +62,7 @@ class LogFormatter:
         if record.levelno == Log.RESULT:
             if not self._file:
                 header = LogFormatter.RESULT
-        elif record.levelno == Log.USER_WARNING:
+        elif record.levelno == Log.warning:
             if not self._file:
                 header = LogFormatter.WARNING
         elif record.levelno == Log.WARNING:

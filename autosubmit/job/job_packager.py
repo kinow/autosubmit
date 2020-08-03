@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-from autosubmit.log.log import Log
+from log.log import Log
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import sum_str_hours
 from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, JobPackageHorizontal, \
@@ -25,7 +25,8 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
-from time import sleep
+
+
 class JobPackager(object):
     """
     Main class that manages Job wrapping.

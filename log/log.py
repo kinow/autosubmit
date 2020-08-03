@@ -1,27 +1,19 @@
 import logging, os, sys
 from datetime import datetime
 
-
 class AutosubmitError(Exception):
-    """Exception raised for Autosubmit errors .
+    """Exception raised for Autosubmit critical errors .
     Attributes:
-        errorcode -- Classified error
+        errorcode -- Classified code
         message -- explanation of the error
     """
-    def __init__(self, error_code=1000, message="Unhandled Error"):
-        self.error_code = error_code
+    def __init__(self, code=8000, message="Unhandled Error"):
+        self.code = code
         self.message = message
-        super(self.message).__init__()
 
     def __str__(self):
-        if 4000 <= self.error_code < 8000:
-            Log.warning("e{0}:{1}", self.error_code,self.message)
-        elif self.error_code < 9000:
-            Log.error("e{0}:{1}", self.error_code,self.message)
-        elif self.error_code == 1000 or self.error_code >= 9000:
-            Log.critical("e{0}:{1}", self.error_code,self.message)
-        else:
-            Log.info("e{0}:{1}", self.error_code, self.message)
+        Log.critical("{{e{0}}}{1}", self.code,self.message)
+        return " "
 
 class LogFormatter:
 
@@ -63,9 +55,6 @@ class LogFormatter:
         if record.levelno == Log.RESULT:
             if not self._file:
                 header = LogFormatter.RESULT
-        elif record.levelno == Log.USER_WARNING:
-            if not self._file:
-                header = LogFormatter.WARNING
         elif record.levelno == Log.WARNING:
             if not self._file:
                 header = LogFormatter.WARNING
@@ -94,26 +83,20 @@ class Log:
     """
     Static class to manage the log for the application. Messages will be sent to console and to file if it is
     configured. Levels can be set for each output independently. These levels are (from lower to higher priority):
-        - EVERYTHING
-        - INFO
-        - RESULT
-        - ERROR
-        - CRITICAL
-        - USER_WARNING
-        - WARNING
-        - DEBUG
-        - NO_LOG : this level is just defined to remove every output
     """
+
+    def __init__(self):
+        pass
+
     __module__ = __name__
     EVERYTHING = 0
-    STATUS = 2000
-    DEBUG = 3000
-    WARNING = 4000
-    USER_WARNING = 5000
-    INFO = 6000
-    RESULT = 7000
-    ERROR = 8000
-    CRITICAL = 9000
+    STATUS = 1000
+    DEBUG = 2000
+    WARNING = 3000
+    INFO = 4000
+    RESULT = 5000
+    ERROR = 6000
+    CRITICAL = 7000
     NO_LOG = CRITICAL + 1000
     logging.basicConfig()
     if 'Autosubmit' in logging.Logger.manager.loggerDict.keys():
@@ -218,15 +201,6 @@ class Log:
         """
         Log.log.log(Log.RESULT, msg.format(*args))
 
-    @staticmethod
-    def user_warning(msg, *args):
-        """
-        Sends warnings for the user to the log. It will be shown in yellow in the console.
-
-        :param msg: message to show
-        :param args: arguments for message formating (it will be done using format() method on str)
-        """
-        Log.log.log(Log.USER_WARNING, msg.format(*args))
 
     @staticmethod
     def warning(msg, *args):
@@ -267,3 +241,19 @@ class Log:
         :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.log(Log.STATUS, msg.format(*args))
+
+    @staticmethod
+    def printlog(message="Generic message",code=4000):
+        """Log management for Autosubmit messages .
+        Attributes:
+            errorcode -- Classified code
+            message -- explanation
+        """
+        if 4000 <= code < 5000:
+            Log.info("{0}", message)
+        elif 5000 <= code < 6000:
+            Log.result("{0}", message)
+        elif 3000 <= code < 4000:
+            Log.warning("", code, message)
+        elif 6000 <= code < 7000:
+            Log.error("{1} [ErrorCode={0}]", code, message)

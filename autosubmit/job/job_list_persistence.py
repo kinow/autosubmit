@@ -22,7 +22,7 @@ from sys import setrecursionlimit
 
 import os
 
-from autosubmit.log.log import Log
+from log.log import Log
 from autosubmit.database.db_manager import DbManager
 
 

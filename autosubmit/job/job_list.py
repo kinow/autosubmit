@@ -27,15 +27,13 @@ import re
 import os
 import pickle
 from time import localtime, strftime
-from sys import setrecursionlimit
 from shutil import move
 from autosubmit.job.job import Job
-from autosubmit.log.log import Log
+from log.log import Log
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
-from autosubmit.job.job_common import Status, Type, bcolors
-from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageThread
+from autosubmit.job.job_common import Status, bcolors
+from bscearth.utils.date import date2str, parse_date
 import autosubmit.database.db_structure as DbStructure
 
 from networkx import DiGraph
@@ -1316,7 +1314,7 @@ class JobList:
             Log.result("Scripts OK")
         else:
             Log.warning("Scripts check failed")
-            Log.user_warning(
+            Log.warning(
                 "Running after failed scripts check is at your own risk!")
         return out
 

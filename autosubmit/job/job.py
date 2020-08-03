@@ -22,7 +22,6 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 """
 
 import os
-import sys
 import re
 import time
 import json
@@ -41,9 +40,8 @@ from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
-import threading
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
-from autosubmit.log.log import Log
+from log.log import Log
 
 
 def threaded(fn):
@@ -573,7 +571,7 @@ class Job(object):
         elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
-            Log.user_warning(
+            Log.warning(
                 "Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
             self.platform.get_completed_files(self.name)
             self.check_completion()

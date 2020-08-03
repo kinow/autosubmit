@@ -24,7 +24,7 @@ import subprocess
 import shutil
 #from autosubmit import Autosubmit
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.log.log import Log
+from log.log import Log
 
 
 class AutosubmitGit:
@@ -59,14 +59,14 @@ class AutosubmitGit:
                     return False
                 if output:
                     Log.info("Changes not committed detected... SKIPPING!")
-                    Log.user_warning("Commit needed!")
+                    Log.warning("Commit needed!")
                     return False
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
                                                      shell=True)
                     if output:
                         Log.info("Changes not pushed detected... SKIPPING!")
-                        Log.user_warning("Synchronization needed!")
+                        Log.warning("Synchronization needed!")
                         return False
                     else:
                         if not as_conf.set_git_project_commit(as_conf):

@@ -22,7 +22,7 @@ Module containing functions to manage autosubmit's experiments.
 """
 import string
 import autosubmit.database.db_common as db_common
-from autosubmit.log.log import Log
+from log.log import Log
 
 def new_experiment(description, version, test=False, operational=False):
     """

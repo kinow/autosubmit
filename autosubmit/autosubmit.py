@@ -18,7 +18,6 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 import threading
-from sets import Set
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
 from platforms.paramiko_submitter import ParamikoSubmitter
@@ -31,7 +30,6 @@ from database.db_common import delete_experiment
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db
-from bscearth.utils.log import Log
 from job.job_grouping import JobGrouping
 from job.job_list_persistence import JobListPersistencePkl
 from job.job_list_persistence import JobListPersistenceDb
@@ -43,7 +41,6 @@ from job.job_common import Status
 from bscearth.utils.config_parser import ConfigParserFactory
 from config.config_common import AutosubmitConfig
 from config.basicConfig import BasicConfig
-
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -77,11 +74,12 @@ import signal
 import datetime
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
-from distutils.util import strtobool
+#from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
 from log.log import Log
 from log.log import AutosubmitError
+
 sys.path.insert(0, os.path.abspath('.'))
 
 # noinspection PyUnusedLocal
@@ -567,7 +565,7 @@ class Autosubmit:
                         return True
                 return False
         except Exception as e:
-            raise(   )
+
             from traceback import format_exc
             Log.critical(
                 'Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
@@ -575,16 +573,19 @@ class Autosubmit:
             return False
 
     @staticmethod
-    def _check_Ownership(expid):
-        BasicConfig.read()
-        #currentUser_id = os.getlogin()
-        currentUser_id = pwd.getpwuid(os.getuid())[0]
-        currentOwner_id = pwd.getpwuid(os.stat(os.path.join(
-            BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
-        if currentUser_id == currentOwner_id:
-            return True
-        else:
-            return False
+    def _check_ownership(expid):
+        if expid is None:
+            raise AutosubmitError(9001, "The expid {0} does not exists .".format(expid))
+        try:
+            BasicConfig.read()
+            current_user_id = pwd.getpwuid(os.getuid())[0]
+            current_owner_id = pwd.getpwuid(os.stat(os.path.join(
+                BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+            if current_user_id != current_owner_id:
+                raise AutosubmitError(9003, "You don't own the experiment {0}.".format(expid))
+        except BaseException as e:
+            raise AutosubmitError(9000, "{0}.".format(e.message))
+
 
     @staticmethod
     def _delete_expid(expid_delete, force):
@@ -676,7 +677,7 @@ class Autosubmit:
         log_path = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, 'ASlogs', 'expid.log'.format(os.getuid()))
         try:
-            Log.set_file(log_path,"out",Autosubmit.log_set_file_level)
+            Log.set_file(log_path,"out",log.log_set_file_level)
         except IOError as e:
             Log.error("Can not create log file in path {0}: {1}".format(
                 log_path, e.message))
@@ -854,7 +855,7 @@ class Autosubmit:
         os.mkdir(os.path.join(exp_id_path, "plot"))
         os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
         Log.result("Experiment registered successfully")
-        Log.user_warning("Remember to MODIFY the config files!")
+        Log.warning("Remember to MODIFY the config files!")
         try:
             Log.debug("Setting the right permissions...")
             os.chmod(os.path.join(exp_id_path, "conf"), 0o755)
@@ -892,7 +893,7 @@ class Autosubmit:
         log_path = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'delete.log'.format(os.getuid()))
         try:
-            Log.set_file(log_path,"out",Autosubmit.log_set_file_level)
+            Log.set_file(log_path,"out",log.log_set_file_level)
         except IOError as e:
             Log.error("Can not create log file in path {0}: {1}".format(
                 log_path, e.message))
@@ -947,14 +948,8 @@ class Autosubmit:
          :rtype: bool
          """
 
-        if expid is None:
-            Log.critical("Missing experiment id")
-
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not inspect the experiment {0} because you are not the owner', expid)
-            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if os.path.exists(os.path.join(tmp_path, 'autosubmit.lock')):
@@ -1166,40 +1161,32 @@ class Autosubmit:
         :rtype: bool
         """
 
-        if expid is None:
-            Log.critical("Missing experiment id")
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
         Log.set_file(os.path.join(aslogs_path, 'run.log'),"out")
         Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
         Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not run the experiment {0} because you are not the owner', expid)
-            return False
+        if not os.path.exists(exp_path):
+            raise AutosubmitError(9002,"There is not a folder for the experiment {0}. Does {0} exists?".format(expid))
+
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
             os.chmod(aslogs_path, 0o775)
         else:
             os.chmod(aslogs_path, 0o775)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory %s is needed and does not exist" % exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
-
         # checking host whitelist
         import platform
         host = platform.node()
+
         if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS:
-            Log.info("\n Autosubmit run command is not allowed on this host")
-            return False
+            raise AutosubmitError(9004, "The current host is not allowed to run Autosubmit")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
-            Log.critical('Can not run with invalid configuration')
             return False
         Log.info(
             "Autosubmit is running with {0}", Autosubmit.autosubmit_version)
@@ -1283,15 +1270,12 @@ class Autosubmit:
                         job_list.job_package_map[jobs[0].id] = wrapper_job
                 job_list.update_list(as_conf)
                 job_list.save()
-                Log.info(
-                    "Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
+                Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
-                    Log.status("testing status bloop")
-                    Log.info("testing info bloop")
                     if Autosubmit.exit:
                         return 2
                     # reload parameters changes
@@ -1708,9 +1692,6 @@ class Autosubmit:
         for job in jobs:
             job.children = job.children - referenced_jobs_to_remove
             job.parents = job.parents - referenced_jobs_to_remove
-        # for job in jobs:
-        #     print(job.name + " from " + str(job.platform_name))
-        # return False
         # WRAPPERS
         if as_conf.get_wrapper_type() != 'none' and check_wrapper:
             # Class constructor creates table if it does not exist
@@ -1937,18 +1918,15 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
-
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         if not os.path.exists(exp_path):
             Log.critical(
                 "The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not recover the experiment {0} due you are not the owner', expid)
-            return False
+
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'),"out")
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'jobs_status.log'),"status")
 
@@ -2765,10 +2743,7 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not refresh the experiment {0} because you are not the owner', expid)
-            return False
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
         Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'),"out")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -2791,10 +2766,7 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not update the experiment {0} version because you are not the owner', expid)
-            return False
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
 
         Log.set_file(
@@ -3010,11 +2982,8 @@ class Autosubmit:
         :type output: str
 
         """
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not create the workflow of experiment {0} because you are not the owner', expid)
-            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -3034,15 +3003,13 @@ class Autosubmit:
             # Encapsulating the lock
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1) as fh:
                 try:                                      
-                    Log.info("Preparing .lock file to avoid multiple instances with same expid.")
                     Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'),"out")
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'create_exp_err.log'),"err")
                     Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'), "status")
+                    Log.info("Preparing .lock file to avoid multiple instances with same expid.")
+
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                    if not as_conf.check_conf_files():
-                        Log.critical(
-                            'Can not create with invalid configuration')
-                        return False
+                    as_conf.check_conf_files()
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
                     output_type = as_conf.get_output_type()
@@ -3153,7 +3120,7 @@ class Autosubmit:
                                                     groups=groups_dict,
                                                     job_list_object=job_list)
                     Log.result("\nJob list created successfully")
-                    Log.user_warning(
+                    Log.warning(
                         "Remember to MODIFY the MODEL config files!")
                     # Terminating locking as sugested by the portalocker developer
                     fh.flush()
@@ -3326,11 +3293,8 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
+        Autosubmit._check_ownership(expid)
         BasicConfig.read()
-        if not Autosubmit._check_Ownership(expid):
-            Log.critical(
-                'Can not change the status of experiment {0} due you are not the owner', expid)
-            return False
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if not os.path.exists(exp_path):
@@ -3885,27 +3849,27 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
 
-    @staticmethod
-    def _user_yes_no_query(question):
-        """
-        Utility function to ask user a yes/no question
-
-        :param question: question to ask
-        :type question: str
-        :return: True if answer is yes, False if it is no
-        :rtype: bool
-        """
-        sys.stdout.write('{0} [y/n]\n'.format(question))
-        while True:
-            try:
-                if sys.version_info[0] == 3:
-                    answer = raw_input()
-                else:
-                    # noinspection PyCompatibility
-                    answer = raw_input()
-                return strtobool(answer.lower())
-            except ValueError:
-                sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
+    # @staticmethod
+    # def _user_yes_no_query(question):
+    #     """
+    #     Utility function to ask user a yes/no question
+    #
+    #     :param question: question to ask
+    #     :type question: str
+    #     :return: True if answer is yes, False if it is no
+    #     :rtype: bool
+    #     """
+    #     sys.stdout.write('{0} [y/n]\n'.format(question))
+    #     while True:
+    #         try:
+    #             if sys.version_info[0] == 3:
+    #                 answer = raw_input()
+    #             else:
+    #                 # noinspection PyCompatibility
+    #                 answer = raw_input()
+    #             return strtobool(answer.lower())
+    #         except ValueError:
+    #             sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
     @staticmethod
     def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):

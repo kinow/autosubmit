@@ -29,6 +29,7 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 from autosubmit.autosubmit import Autosubmit
 
 
+
 # noinspection PyProtectedMember
 def main():
     if not Autosubmit.parse_args():

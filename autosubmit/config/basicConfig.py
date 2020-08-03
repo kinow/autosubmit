@@ -24,7 +24,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 import os
 
-from autosubmit.log.log import Log
+from log.log import Log
 
 class BasicConfig:
     """
