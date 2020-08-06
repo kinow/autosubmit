@@ -38,7 +38,7 @@ from job.job_packages import JobPackageThread
 from job.job_list import JobList
 from git.autosubmit_git import AutosubmitGit
 from job.job_common import Status
-from bscearth.utils.config_parser import ConfigParserFactory
+from config.config_parser import ConfigParserFactory
 from config.config_common import AutosubmitConfig
 from config.basicConfig import BasicConfig
 """
@@ -74,7 +74,6 @@ import signal
 import datetime
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
-#from distutils.util import strtobool
 from collections import defaultdict
 from pyparsing import nestedExpr
 from log.log import Log
@@ -131,7 +130,6 @@ class Autosubmit:
         """
         try:
             BasicConfig.read()
-
             parser = argparse.ArgumentParser(
                 description='Main executable for autosubmit. ')
             parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
@@ -491,9 +489,11 @@ class Autosubmit:
             subparsers.add_parser('changelog', description='show changelog')
 
             args = parser.parse_args()
+            expid = "None"
+            if  hasattr(args, 'expid'):
+                expid=args.expid
+            Autosubmit._init_logs(args.command,args.logconsole,args.logfile,expid)
 
-            Log.set_console_level(args.logconsole)
-            log_set_file_level= args.logfile
             if args.command == 'run':
                 return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version)
             elif args.command == 'expid':
@@ -564,13 +564,30 @@ class Autosubmit:
                         print(f.read())
                         return True
                 return False
-        except Exception as e:
+        except BaseException as e:
+            print(e)
+            Log.printlog("Wrong arguments, revise Autosubmit usage on readthedocs.",7001)
 
-            from traceback import format_exc
-            Log.critical(
-                'Unhandled exception on Autosubmit: {0}\n{1}', e, format_exc(10))
+    @staticmethod
+    def _init_logs(command,console_level='INFO',log_level='DEBUG',expid='None'):
+        Log.set_console_level(console_level)
+        BasicConfig.read()
+        if expid != 'None':
+            Autosubmit._check_ownership(expid)
+            exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+            tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+            aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
+            if not os.path.exists(tmp_path):
+                os.mkdir(tmp_path)
+            if not os.path.exists(aslogs_path):
+                os.mkdir(aslogs_path)
 
-            return False
+            Log.set_file(os.path.join(aslogs_path, command + '.log'), "out", log_level)
+            Log.set_file(os.path.join(aslogs_path, command + '_err.log'), "err")
+            Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+        else:
+            Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '.log'), "out", log_level)
+            Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '_err.log'), "err")
 
     @staticmethod
     def _check_ownership(expid):
@@ -673,14 +690,6 @@ class Autosubmit:
         :rtype: str
         """
         BasicConfig.read()
-
-        log_path = os.path.join(
-            BasicConfig.LOCAL_ROOT_DIR, 'ASlogs', 'expid.log'.format(os.getuid()))
-        try:
-            Log.set_file(log_path,"out",log.log_set_file_level)
-        except IOError as e:
-            Log.error("Can not create log file in path {0}: {1}".format(
-                log_path, e.message))
         exp_id = None
         if description is None:
             Log.error("Missing experiment description.")
@@ -890,14 +899,6 @@ class Autosubmit:
         :rtype: bool
         """
 
-        log_path = os.path.join(
-            BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'delete.log'.format(os.getuid()))
-        try:
-            Log.set_file(log_path,"out",log.log_set_file_level)
-        except IOError as e:
-            Log.error("Can not create log file in path {0}: {1}".format(
-                log_path, e.message))
-
         if os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)):
             if force or Autosubmit._user_yes_no_query("Do you want to delete " + expid + " ?"):
                 Log.debug('Enter Autosubmit._delete_expid {0}', expid)
@@ -963,7 +964,6 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
         Log.info("Starting inspect command")
-        Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'generate.log'),"out")
         os.system('clear')
         signal.signal(signal.SIGINT, signal_handler)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1168,11 +1168,8 @@ class Autosubmit:
 
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
-        Log.set_file(os.path.join(aslogs_path, 'run.log'),"out")
-        Log.set_file(os.path.join(aslogs_path, 'run_err.log'), "err")
-        Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
         if not os.path.exists(exp_path):
-            raise AutosubmitError(9002,"There is not a folder for the experiment {0}. Does {0} exists?".format(expid))
+            raise AutosubmitError("There is not a folder for the experiment {0}. Does {0} exists?".format(expid),9002)
 
         if not os.path.exists(aslogs_path):
             os.mkdir(aslogs_path)
@@ -1184,7 +1181,7 @@ class Autosubmit:
         host = platform.node()
 
         if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS:
-            raise AutosubmitError(9004, "The current host is not allowed to run Autosubmit")
+            raise AutosubmitError("The current host is not allowed to run Autosubmit",9004)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
             return False
@@ -1197,8 +1194,8 @@ class Autosubmit:
                 as_conf.set_version(Autosubmit.autosubmit_version)
         else:
             if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
-                Log.critical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
-                             "Or with the -v parameter: autosubmit run {2} -v ", as_conf.get_version(), Autosubmit.autosubmit_version, expid)
+                raise AutosubmitError("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
+                             "Or with the -v parameter: autosubmit run {2} -v ".format(), as_conf.get_version(), Autosubmit.autosubmit_version, expid)
                 return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
@@ -1206,21 +1203,12 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
 
-
-
                 os.system('clear')
-
                 signal.signal(signal.SIGINT, signal_handler)
 
                 as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                if not as_conf.check_conf_files():
-                    Log.critical('Can not run with invalid configuration')
-                    return False
+                as_conf.check_conf_files()
 
-                project_type = as_conf.get_project_type()
-                if project_type != "none":
-                    # Check proj configuration
-                    as_conf.check_proj()
                 hpcarch = as_conf.get_platform()
                 safetysleeptime = as_conf.get_safetysleeptime()
                 retrials = as_conf.get_retrials()
@@ -1283,7 +1271,6 @@ class Autosubmit:
                     as_conf.reload()
 
                     Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-                                       # variables to be updated on the fly
                     total_jobs = len(job_list.get_job_list())
                     Log.info(
                         "\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()),
@@ -1323,16 +1310,12 @@ class Autosubmit:
                                     platform.check_job(wrapper_job)
                                     try:
                                         if wrapper_job.status != wrapper_job.new_status:
-                                            Log.info(
-                                                'Wrapper job ' + wrapper_job.name + ' changed from ' + str(Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
+                                            Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
                                     except:
-                                        Log.critical(
-                                            "Status Is UNKNOWN, (NONE) exiting autosubmit")
-                                        exit(1)
+                                        raise AutosubmitError("Wrapper is in Unknown Status couldn't get wrapper parameters",8000)
 
                                     # New status will be saved and inner_jobs will be checked.
-                                    wrapper_job.check_status(
-                                        wrapper_job.new_status)
+                                    wrapper_job.check_status(wrapper_job.new_status)
                                     # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
                                     if wrapper_job.status == Status.WAITING:
                                         for inner_job in wrapper_job.job_list:
@@ -1358,7 +1341,7 @@ class Autosubmit:
                                 if job.status == Status.FAILED:
                                     continue
                                 # If exist key has been pressed and previous status was running, do not check
-                                if not (Autosubmit.exit == True and prev_status == Status.RUNNING):
+                                if not (Autosubmit.exit is True and prev_status == Status.RUNNING):
                                     if platform.type == "slurm":  # List for add all jobs that will be checked
                                         # Do not check if Autosubmit exit is True and the previous status was running.
                                         # if not (Autosubmit.exit == True and prev_status == Status.RUNNING):
@@ -1414,8 +1397,8 @@ class Autosubmit:
                         job_list.save()
                         return 2
                     time.sleep(safetysleeptime)
-                Log.info("No more jobs to run.")
-
+                Log.result("No more jobs to run.")
+                # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
                 for platform in platforms_to_test:
                     platform.closeConnection()
@@ -1601,9 +1584,6 @@ class Autosubmit:
                 "The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
-
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor.log'),"out")
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'monitor_err.log'),"err")
 
 
         Log.info("Getting job list...")
@@ -1792,9 +1772,6 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'statistics.log'),"out")
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'statistics_err.log'),"err")
-
         Log.info("Loading jobs...")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1845,7 +1822,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def clean(expid, project, plot, stats, create_log_file=True):
+    def clean(expid, project, plot, stats):
         """
         Clean experiment's directory to save storage space.
         It removes project directory and outdated plots or stats.
@@ -1869,9 +1846,6 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        if create_log_file:
-            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp.log'),"out")
-            Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'clean_exp_err.log'),"err")
 
         if project:
             autosubmit_config = AutosubmitConfig(
@@ -1926,9 +1900,6 @@ class Autosubmit:
                 "The directory %s is needed and does not exist." % exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return 1
-
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'recovery.log'),"out")
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'jobs_status.log'),"status")
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         if not as_conf.check_conf_files():
@@ -2058,11 +2029,6 @@ class Autosubmit:
         """
 
         error = False
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}.log'.format(experiment_id))
-        log_file_err = os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'migrate_{0}_err.log'.format(experiment_id))
-
-        Log.set_file(log_file,"out")
-        Log.set_file(log_file_err,"err")
         if offer:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             as_conf = AutosubmitConfig(
@@ -2298,8 +2264,6 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return False
 
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'check_exp.log')
-        Log.set_file(log_file,"out")
 
         as_conf = AutosubmitConfig(
             experiment_id, BasicConfig, ConfigParserFactory())
@@ -2350,9 +2314,6 @@ class Autosubmit:
                 "The directory {0} is needed and does not exist.", exp_path)
             Log.warning("Does an experiment with the given id exist?")
             return False
-
-        log_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR, 'describe_exp.log')
-        Log.set_file(log_file,"out")
 
         as_conf = AutosubmitConfig(
             experiment_id, BasicConfig, ConfigParserFactory())
@@ -2718,7 +2679,6 @@ class Autosubmit:
 
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'install.log'),"out")
         if not os.path.exists(BasicConfig.DB_PATH):
             Log.info("Creating autosubmit database...")
             qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
@@ -2745,7 +2705,6 @@ class Autosubmit:
         """
         Autosubmit._check_ownership(expid)
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR,BasicConfig.LOCAL_ASLOG_DIR,'refresh.log'),"out")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
@@ -2769,9 +2728,6 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         BasicConfig.read()
 
-        Log.set_file(
-            os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, BasicConfig.LOCAL_TMP_DIR, BasicConfig.LOCAL_ASLOG_DIR,
-                         'refresh.log'),"out")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         if not as_conf.check_expdef_conf():
@@ -2802,8 +2758,6 @@ class Autosubmit:
             Log.warning("Does an experiment with the given id exist?")
             return 1
 
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}.log'.format(expid)),"out")
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'archive_{0}_err.log'.format(expid)),"err")
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         if clean:
@@ -2884,9 +2838,6 @@ class Autosubmit:
         :type overwrite: boolean
         """
         BasicConfig.read()
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}.log'.format(experiment_id)),"out")
-        Log.set_file(os.path.join(BasicConfig.LOCAL_ROOT_DIR, "ASlogs", 'unarchive_{0}_err.log'.format(expid)),"err")
-
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
 
         # Searching by year. We will store it on database
@@ -3002,10 +2953,7 @@ class Autosubmit:
         try:
             # Encapsulating the lock
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1) as fh:
-                try:                                      
-                    Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'create_exp.log'),"out")
-                    Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'create_exp_err.log'),"err")
-                    Log.set_file(os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'), "status")
+                try:
                     Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -3138,13 +3086,13 @@ class Autosubmit:
 
                     return True
                 # catching Exception
-                except (KeyboardInterrupt, Exception) as e:
+                except (KeyboardInterrupt) as e:
                     # Setting signal handler to handle subsequent CTRL-C
                     signal.signal(signal.SIGINT, signal_handler_create)
-                    # Terminating locking as sugested by the portalocker developer
                     fh.flush()
                     os.fsync(fh.fileno())
-                    Log.critical("An error has occurred: \n\t" + str(e))
+                except AutosubmitError as e:
+                    Log.critical("{1}[eCode={0}]", e.code, e.message)
 
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
@@ -3308,10 +3256,6 @@ class Autosubmit:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
                 Log.info(
                     "Preparing .lock file to avoid multiple instances with same expid.")
-
-                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status.log'),"out")
-                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'jobs_status.log'),"status")
-                Log.set_file(os.path.join(tmp_path,BasicConfig.LOCAL_ASLOG_DIR, 'set_status_err.log'),"err")
 
                 Log.debug('Exp ID: {0}', expid)
                 Log.debug('Save: {0}', save)

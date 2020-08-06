@@ -7,13 +7,13 @@ class AutosubmitError(Exception):
         errorcode -- Classified code
         message -- explanation of the error
     """
-    def __init__(self, code=8000, message="Unhandled Error"):
+    def __init__(self,  message="Unhandled Error",code=8000):
         self.code = code
         self.message = message
-
     def __str__(self):
-        Log.critical("{{e{0}}}{1}", self.code,self.message)
+        #Log.critical("{1}[eCode={0}]", self.code, self.message)
         return " "
+        #Log.critical("{1}[eCode={0}]", self.code, self.message)
 
 class LogFormatter:
 
@@ -29,6 +29,7 @@ class LogFormatter:
     ERROR = '\x1b[31m'
     CRITICAL = '\x1b[1m \x1b[31m'
     DEFAULT = '\x1b[0m\x1b[39m'
+    ERROR = '\033[38;5;214m'
 
     def __init__(self, to_file=False):
         """
@@ -65,7 +66,7 @@ class LogFormatter:
             header += '[ERROR] '
         elif record.levelno == Log.CRITICAL:
             if not self._file:
-                header = LogFormatter.ERROR
+                header = LogFormatter.CRITICAL
             header += '[CRITICAL] '
         msg = self._formatter.format(record)
         if header != '' and not self._file:
@@ -249,11 +250,16 @@ class Log:
             errorcode -- Classified code
             message -- explanation
         """
-        if 4000 <= code < 5000:
+        if 4000 >= code < 5000:
             Log.info("{0}", message)
-        elif 5000 <= code < 6000:
+        elif 5000 >= code < 6000:
             Log.result("{0}", message)
-        elif 3000 <= code < 4000:
-            Log.warning("", code, message)
-        elif 6000 <= code < 7000:
-            Log.error("{1} [ErrorCode={0}]", code, message)
+        elif 3000 >= code < 4000:
+            Log.warning("{1}[eCode={0}]", code, message)
+        elif 6000 >= code < 7000:
+            Log.error("{1}[eCode={0}]", code, message)
+        elif code >= 7000:
+            Log.critical("{1}[eCode={0}]", code, message)
+        else:
+            Log.info("{0}", message)
+

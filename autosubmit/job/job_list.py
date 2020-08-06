@@ -1313,9 +1313,7 @@ class JobList:
         if out:
             Log.result("Scripts OK")
         else:
-            Log.warning("Scripts check failed")
-            Log.warning(
-                "Running after failed scripts check is at your own risk!")
+            Log.printlog("Scripts check failed\n Running after failed scripts is at your own risk!",3000)
         return out
 
     def _remove_job(self, job):
