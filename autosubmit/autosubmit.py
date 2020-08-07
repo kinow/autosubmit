@@ -18,6 +18,8 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 import threading
+from bscearth.utils import strtobool
+
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
 from platforms.paramiko_submitter import ParamikoSubmitter
@@ -1426,7 +1428,8 @@ class Autosubmit:
 
         except WrongTemplateException:
             return False
-
+        except AutosubmitError:
+            Log.critical(e.message, 8000)
         except NameError as exp:
             Log.critical(str(exp))
             Log.critical("Stopping Autosubmit.")
@@ -3793,27 +3796,27 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             Autosubmit.show_lock_warning(expid)
 
-    # @staticmethod
-    # def _user_yes_no_query(question):
-    #     """
-    #     Utility function to ask user a yes/no question
-    #
-    #     :param question: question to ask
-    #     :type question: str
-    #     :return: True if answer is yes, False if it is no
-    #     :rtype: bool
-    #     """
-    #     sys.stdout.write('{0} [y/n]\n'.format(question))
-    #     while True:
-    #         try:
-    #             if sys.version_info[0] == 3:
-    #                 answer = raw_input()
-    #             else:
-    #                 # noinspection PyCompatibility
-    #                 answer = raw_input()
-    #             return strtobool(answer.lower())
-    #         except ValueError:
-    #             sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
+    @staticmethod
+    def _user_yes_no_query(question):
+         """
+         Utility function to ask user a yes/no question
+
+         :param question: question to ask
+         :type question: str
+         :return: True if answer is yes, False if it is no
+         :rtype: bool
+         """
+         sys.stdout.write('{0} [y/n]\n'.format(question))
+         while True:
+             try:
+                 if sys.version_info[0] == 3:
+                     answer = raw_input()
+                 else:
+                     # noinspection PyCompatibility
+                     answer = raw_input()
+                 return strtobool(answer.lower())
+             except ValueError:
+                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
     @staticmethod
     def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):
