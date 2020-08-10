@@ -166,6 +166,11 @@ class Platform(object):
         """
         raise NotImplementedError
 
+    def test_connection(self):
+        """
+        Test if the connection is still alive, reconnect if not.
+        """
+        pass
     def get_files(self, files, must_exist=True, relative_path=''):
         """
         Copies some files from the current platform to experiment's tmp folder

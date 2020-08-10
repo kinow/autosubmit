@@ -3,7 +3,6 @@ from time import sleep
 import os
 import paramiko
 import datetime
-import time
 import select
 import random
 from bscearth.utils.log import Log
@@ -11,7 +10,7 @@ from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
-
+from log.log import AutosubmitError,AutosubmitCritical
 
 class ParamikoPlatform(Platform):
     """
@@ -25,8 +24,8 @@ class ParamikoPlatform(Platform):
         :param expid:
         :param name:
         """
+        self.connected = False
         Platform.__init__(self, expid, name, config)
-
         self._default_queue = None
         self.job_status = None
         self._ssh = None
@@ -37,8 +36,7 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self.submit_cmd = ""
         self._ftpChannel = None
-
-
+        self.transport = None
     @property
     def header(self):
         """
@@ -58,25 +56,39 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._wrapper
+
+    def test_connection(self):
+        """
+        Test if the connection is still alive, reconnect if not.
+        """
+        try:
+            if self._ssh is not None and self._ssh.get_transport() is not None:
+                transport = self._ssh.get_transport()
+                transport.send_ignore()
+        except BaseException as e:
+            try:
+                self._ssh = None
+                self.restore_connection()
+                transport = self._ssh.get_transport()
+                transport.send_ignore()
+            except EOFError as e:
+                raise AutosubmitCritical("Even before a reconnection, platform is still not alive.",7000)
+
     def restore_connection(self):
-        connected = True
+        self.connected = True
         if self._ssh is None:
-            if not self.connect():
-                retries = 2
-                retry = 0
-                connected = False
-                while connected == False and retry < retries:
-                    if self.connect(True):
-                        connected = True
-                    retry+=1
-            if not connected:
-                Log.error('Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator', self.host,self.name)
-                Log.critical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit')
-                exit(0)
-        return connected
+            retries = 2
+            retry = 0
+            self.connected = False
+            while self.connected is False and retry < retries:
+                if self.connect(True):
+                    self.connected = True
+                retry += 1
+            if not self.connected:
+                trace='Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator'.format(self.host, self.name)
+                raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7000,trace)
 
-
-    def connect(self,reconnect=False):
+    def connect(self, reconnect=False):
         """
         Creates ssh connection to host
 
@@ -112,15 +124,16 @@ class ParamikoPlatform(Platform):
             self.transport = paramiko.Transport((self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
             self._ftpChannel = self._ssh.open_sftp()
-            return True
-        except:
-            return False
-            
+            self.connected = True
+        except BaseException as e:
+            if not reconnect and "," in self._host_config['hostname']:
+                self.restore_connection(reconnect=True)
+            else:
+                raise AutosubmitCritical("Couldn't establish a connection to the specified host, wrong configuration",7000,e.message)
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
             return None
-
         command = "find %s " % self.remote_log_dir
         if sections:
             for i, section in enumerate(sections.split()):
@@ -159,8 +172,6 @@ class ParamikoPlatform(Platform):
         :type filename: str
         """
 
-        if not self.restore_connection():
-            return False
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
@@ -232,12 +243,8 @@ class ParamikoPlatform(Platform):
         """
         if not self.restore_connection():
             return False
-
         try:
-            #ftp = self._ssh.open_sftp()
-
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
-            #ftp.close()
             return True
         except IOError:
             return False
@@ -263,7 +270,7 @@ class ParamikoPlatform(Platform):
         if not self.restore_connection():
             return False
         try:
-            path_root=self.get_files_path()
+            path_root = self.get_files_path()
             self._ftpChannel.rename(os.path.join(path_root, src),
                                     os.path.join(path_root, dest))
             return True

@@ -7,13 +7,27 @@ class AutosubmitError(Exception):
         errorcode -- Classified code
         message -- explanation of the error
     """
-    def __init__(self,  message="Unhandled Error",code=8000):
+    def __init__(self,  message="Unhandled Error",code=6000,trace = None):
         self.code = code
         self.message = message
+        self.trace = trace
+
     def __str__(self):
-        #Log.critical("{1}[eCode={0}]", self.code, self.message)
         return " "
-        #Log.critical("{1}[eCode={0}]", self.code, self.message)
+
+class AutosubmitCritical(Exception):
+    """Exception raised for Autosubmit critical errors .
+    Attributes:
+        errorcode -- Classified code
+        message -- explanation of the error
+    """
+    def __init__(self,  message="Unhandled Error",code=7000,trace = None):
+        self.code = code
+        self.message = message
+        self.trace = trace
+
+    def __str__(self):
+        return " "
 
 class LogFormatter:
 

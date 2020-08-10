@@ -21,6 +21,8 @@
 import os
 import sys
 
+from log.log import Log,AutosubmitError,AutosubmitCritical
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
@@ -32,10 +34,19 @@ from autosubmit.autosubmit import Autosubmit
 
 # noinspection PyProtectedMember
 def main():
-    if not Autosubmit.parse_args():
+    try:
+        Autosubmit.parse_args()
+        os._exit(0)
+    except AutosubmitCritical as e:
+        if e.trace is not None:
+            Log.error("Trace: {0}", e.trace)
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
         os._exit(1)
-
-    os._exit(0)
+    except BaseException as e:
+        Log.error("Trace: {0}", e.message)
+        Log.critical("Unhandled error, if you see this message report it in autosubmit git")
+        os._exit(1)
 
 if __name__ == "__main__":
     main()
+

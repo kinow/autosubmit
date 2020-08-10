@@ -31,7 +31,7 @@ from pyparsing import nestedExpr
 from bscearth.utils.date import parse_date
 from log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
-from log.log import AutosubmitError
+from log.log import AutosubmitCritical
 from collections import defaultdict
 class AutosubmitConfig(object):
     """
@@ -390,7 +390,7 @@ class AutosubmitConfig(object):
                 for parameter in self.wrong_config[section]:
                     message += "\n{0} with value of {1}".format(parameter[0], parameter[1])
                 message += "\n"
-            raise AutosubmitError(message,9000)
+            raise AutosubmitCritical(message,7000)
 
     def check_autosubmit_conf(self):
         """
