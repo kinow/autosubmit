@@ -1116,7 +1116,6 @@ class Autosubmit:
                 as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
 
-
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False):
         """
@@ -1221,7 +1220,6 @@ class Autosubmit:
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
                         as_conf.reload()
-
                         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                         total_jobs = len(job_list.get_job_list())
                         Log.info("\n\n{0} of {1} jobs remaining ({2})".format(total_jobs - len(job_list.get_completed()),total_jobs,time.strftime("%H:%M")))
@@ -1230,8 +1228,7 @@ class Autosubmit:
                         check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
                         Log.debug("Sleep: {0}", safetysleeptime)
                         Log.debug("Number of retrials: {0}", default_retrials)
-                        Log.debug('WRAPPER CHECK TIME = {0}'.format(
-                            check_wrapper_jobs_sleeptime))
+                        Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
                         save = False
                         slurm = []
                         for platform in platforms_to_test:
@@ -1333,8 +1330,11 @@ class Autosubmit:
                         save2 = job_list.update_list(as_conf)
                         if save or save2:
                             job_list.save()
-                        Autosubmit.submit_ready_jobs(
-                            as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
+                        if len(job_list.get_ready) > 0:
+                            for platform in platforms_to_test:
+                                platform.test_connection()
+                            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
+
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
@@ -1343,16 +1343,15 @@ class Autosubmit:
                             job_list.save()
                         if Autosubmit.exit:
                             job_list.save()
+
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
                         Log.error("{1} [eCode={0}]",e.message,6000)
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
-                        if save:
-                            job_list.save()
                         if main_loop_retrials < 5:
-                            #restore_autosubmit()
+                            restore_autosubmit(platforms_to_test)
                             main_loop_retrials = main_loop_retrials - 1
                         else:
                             raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000)
@@ -1382,7 +1381,11 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
 
-
+    @staticmethod
+    def restore_autosubmit(platform_to_test):
+        for platform in platform_to_test:
+            platform.reset()
+            platform.test_connection()
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,

@@ -5,7 +5,7 @@ import paramiko
 import datetime
 import select
 import random
-from bscearth.utils.log import Log
+from log.log import AutosubmitCritical,AutosubmitError,Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
@@ -150,7 +150,6 @@ class ParamikoPlatform(Platform):
 
     def remove_multiple_files(self, filenames):
         #command = "rm"
-
         log_dir = os.path.join(self.tmp_path, 'LOG_{0}'.format(self.expid))
         multiple_delete_previous_run = os.path.join(log_dir,"multiple_delete_previous_run.sh")
         if os.path.exists(log_dir):
@@ -158,7 +157,6 @@ class ParamikoPlatform(Platform):
             os.chmod(multiple_delete_previous_run, 0o770)
             self.send_file(multiple_delete_previous_run, False)
             command = os.path.join(self.get_files_path(),"multiple_delete_previous_run.sh")
-
             if self.send_command(command, ignore_log=True):
                 return self._ssh_output
             else:
@@ -175,25 +173,18 @@ class ParamikoPlatform(Platform):
         if check:
             self.check_remote_log_dir()
             self.delete_file(filename)
-
         try:
             local_path = os.path.join(os.path.join(self.tmp_path, filename))
             remote_path = os.path.join(self.get_files_path(), os.path.basename(filename))
             self._ftpChannel.put(local_path, remote_path)
             self._ftpChannel.chmod(remote_path,os.stat(local_path).st_mode)
-
-
             return True
-        except BaseException as e:
+        except IOError as e:
             Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
                       os.path.join(self.get_files_path(), filename))
-            raise
+            return False
         except BaseException as e:
-            Log.error('Unknown Error')
-            raise
-        except:
-            Log.error('Unknown Error')
-            raise
+            raise AutosubmitError('Send file failed. Connection seems to no be active',6000)
 
     # Gets .err and .out
     def get_file(self, filename, must_exist=True, relative_path=''):
@@ -217,8 +208,6 @@ class ParamikoPlatform(Platform):
         file_path = os.path.join(local_path, filename)
         if os.path.exists(file_path):
             os.remove(file_path)
-        if not self.restore_connection():
-            return False
         remote_path = os.path.join(self.get_files_path(), filename)
         try:
             self._ftpChannel.get(remote_path, file_path)
@@ -228,8 +217,9 @@ class ParamikoPlatform(Platform):
                 Log.critical("Critical Error,seems that the user is invalid")
                 raise
             if must_exist:
-                raise Exception('File {0} does not exists'.format(filename))
+                raise AutosubmitCritical('A critical file couldn''t be retrieved, File {0} does not exists'.format(filename),7000)
             else:
+                Log.error("file couldn't be retrieved")
                 return False
 
     def delete_file(self, filename):

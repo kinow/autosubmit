@@ -199,7 +199,6 @@ class ConfigParser(ConfPar, object):
         if self.has_option(section, option):
             return True
         else:
-            #Log.error('Option {0} in section {1} not found'.format(option, section))
             return False
 
     def check_is_boolean(self, section, option, must_exist):
@@ -216,10 +215,8 @@ class ConfigParser(ConfPar, object):
         :rtype: bool
         """
         if must_exist and not self.check_exists(section, option):
-            #Log.error('Option {0} in section {1} must exist'.format(option, section))
             return False
         if self.get_option(section, option, 'false').lower() not in ['false', 'true']:
-            #Log.error('Option {0} in section {1} must be true or false'.format(option, section))
             return False
         return True
 
@@ -244,7 +241,6 @@ class ConfigParser(ConfPar, object):
             return False
         value = self.get_option(section, option, choices[0])
         if value not in choices:
-            #Log.error('Value {2} in option {0} in section {1} is not a valid choice'.format(option, section, value))
             return False
         return True
 
@@ -269,7 +265,6 @@ class ConfigParser(ConfPar, object):
         try:
             int(value)
         except ValueError:
-            #Log.error('Option {0} in section {1} is not valid an integer'.format(option, section))
             return False
         return True
 
@@ -295,7 +290,6 @@ class ConfigParser(ConfPar, object):
         prog = re.compile(regex)
         value = self.get_option(section, option, '1')
         if not prog.match(value):
-            #Log.error('Option {0} in section {1} is not valid: {2}'.format(option, section, value))
             return False
         return True
 
@@ -316,7 +310,6 @@ class ConfigParser(ConfPar, object):
             nestedExpr('[', ']').parseString(value).asList()
             return True
         except:
-            #Log.error("Invalid value {0}: {1}", key, value)
             return False
 
 

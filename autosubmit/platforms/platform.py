@@ -166,11 +166,6 @@ class Platform(object):
         """
         raise NotImplementedError
 
-    def test_connection(self):
-        """
-        Test if the connection is still alive, reconnect if not.
-        """
-        pass
     def get_files(self, files, must_exist=True, relative_path=''):
         """
         Copies some files from the current platform to experiment's tmp folder
@@ -344,9 +339,7 @@ class Platform(object):
         :rtype: Boolean
         """
         try:
-            
             title_job = "[INFO] JOBID=" + str(jobid)
-
             if os.path.exists(complete_path):                
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
@@ -366,5 +359,5 @@ class Platform(object):
                             #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
 
         except Exception as ex:
-            Log.info("Writing Job Id Failed : " + str(ex))
+           Log.error("Writing Job Id Failed : " + str(ex))
         

@@ -77,6 +77,7 @@ class PBSPlatform(ParamikoPlatform):
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
 
+
     def get_remote_log_dir(self):
         return self.remote_log_dir
 
@@ -84,8 +85,6 @@ class PBSPlatform(ParamikoPlatform):
         return self.mkdir_cmd
 
     def parse_job_output(self, output):
-        # job_state = output.split('\n')[2].split()[4]
-        # return job_state
         return output
 
     def get_submitted_job_id(self, output):

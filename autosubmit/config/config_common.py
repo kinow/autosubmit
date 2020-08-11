@@ -477,8 +477,19 @@ class AutosubmitConfig(object):
             self.wrong_config["Jobs"] += [["Global", "There are repeated job names"]]
 
         for section in sections:
-            if not  parser.check_exists(section, 'FILE'):
-                self.wrong_config["Jobs"]+=[[ section, "Mandatory FILE parameter not found"]]
+            if not parser.check_exists(section, 'FILE'):
+                self.wrong_config["Jobs"] += [[ section, "Mandatory FILE parameter not found"]]
+            else:
+                section_file_path = parser.get_option(section,'FILE')
+                if not os.path.exists(section_file_path):
+                    if parser.check_exists(section, 'CHECK'):
+                        if parser.get_option(section, 'CHECK') in "on_submission":
+                            self.warn_config["Jobs"] += [[section, "FILE path doesn't exists, but check in on_submission value"]]
+                        else:
+                            self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists, check parameter is found however is not in on_submission value"]]
+                    else:
+                        self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists"]]
+
             if not  parser.check_is_boolean(section, 'RERUN_ONLY', False):
                 self.wrong_config["Jobs"]+=[[ section, "Mandatory RERUN_ONLY parameter not found or non-bool"]]
             if parser.has_option(section, 'PLATFORM'):

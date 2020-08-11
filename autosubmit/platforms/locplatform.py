@@ -87,7 +87,11 @@ class LocalPlatform(ParamikoPlatform):
         return self.get_pscall(job_id)
 
     def connect(self):
-        return True
+        self.connected = True
+    def test_connection(self):
+        self.connected = True
+    def restore_connection(self):
+        self.connected = True
 
     def send_command(self, command,ignore_log=False):
         try:

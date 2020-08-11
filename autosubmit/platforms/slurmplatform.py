@@ -25,8 +25,7 @@ from xml.dom.minidom import parseString
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
-from bscearth.utils.log import Log
-
+from log.log import AutosubmitCritical,AutosubmitError,Log
 
 class SlurmPlatform(ParamikoPlatform):
     """
@@ -74,14 +73,19 @@ class SlurmPlatform(ParamikoPlatform):
         :return: job id for  submitted jobs
         :rtype: list(str)
         """
-        self.send_file(self.get_submit_script(),False)
-        cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
-        if self.send_command(cmd):
-            jobs_id = self.get_submitted_job_id(self.get_ssh_output())
-            return jobs_id
-        else:
+        try:
+            self.send_file(self.get_submit_script(),False)
+            cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
+            if self.send_command(cmd):
+                jobs_id = self.get_submitted_job_id(self.get_ssh_output())
+                return jobs_id
+            else:
+                raise AutosubmitError("Jobs couldn't be submitted, retry again in next iteration",6000)
+        except IOError as e:
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6000, e.message)
+        except BaseException as e:
+            raise AutosubmitError("Job couldn't be submitted, retry again in next AS iteration", 6000, e.message)
 
-            return None
     def update_cmds(self):
         """
         Updates commands for platforms
@@ -111,7 +115,10 @@ class SlurmPlatform(ParamikoPlatform):
         return output.strip().split(' ')[0].strip()
 
     def parse_Alljobs_output(self, output,job_id):
-        status =[x.split()[1] for x in output.splitlines() if x.split()[0] == str(job_id)]
+        try:
+            status = [x.split()[1] for x in output.splitlines() if x.split()[0] == str(job_id)]
+        except BaseException as e:
+            return status
         if len(status) == 0:
             return status
         return status[0]
@@ -119,12 +126,15 @@ class SlurmPlatform(ParamikoPlatform):
 
 
     def get_submitted_job_id(self, outputlines):
-        if outputlines.find("failed") != -1:
-            raise Exception(outputlines)
-        jobs_id = []
-        for output in outputlines.splitlines():
-            jobs_id.append(int(output.split(' ')[3]))
-        return jobs_id
+        try:
+            if outputlines.find("failed") != -1:
+                raise Exception(outputlines)
+            jobs_id = []
+            for output in outputlines.splitlines():
+                jobs_id.append(int(output.split(' ')[3]))
+            return jobs_id
+        except IndexError:
+            raise AutosubmitCritical("Submission failed, There are issues on your config file",7000)
     def jobs_in_queue(self):
         dom = parseString('')
         jobs_xml = dom.getElementsByTagName("JB_job_number")
