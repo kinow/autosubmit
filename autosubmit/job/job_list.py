@@ -1262,8 +1262,6 @@ class JobList:
                             child.parents.remove(job)
             if structure_valid == False:
                 # Structure does not exist or it is not be updated, attempt to create it.
-                # print("Current: ")
-                # print(current_structure)
                 Log.info("Updating structure persistence...")
                 self.graph = transitive_reduction(self.graph)
                 if self.graph:
@@ -1277,7 +1275,7 @@ class JobList:
                         DbStructure.save_structure(
                             self.graph, self.expid, self._config.STRUCTURES_DIR)
                     except Exception as exp:
-                        Log.warning(exp)
+                        Log.debug(exp)
                         pass
 
         for job in self._job_list:
