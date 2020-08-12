@@ -1171,11 +1171,9 @@ class Autosubmit:
                     BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                 job_list = Autosubmit.load_job_list(
                     expid, as_conf, notransitive=notransitive)
-                Log.debug(
-                    "Starting from job list restored from {0} files", pkl_dir)
+                Log.debug("Starting from job list restored from {0} files", pkl_dir)
                 Log.debug("Length of the jobs list: {0}", len(job_list))
-                Autosubmit._load_parameters(
-                    as_conf, job_list, submitter.platforms)
+                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                 # check the job list script creation
                 Log.debug("Checking experiment templates...")
                 platforms_to_test = set()
@@ -1214,7 +1212,7 @@ class Autosubmit:
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
                 main_loop_retrials = 5 # Hard limit of tries (change to 100)
-                Autosubmit.restore_autosubmit(platforms_to_test) # establish the connection to all platforms
+                Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
                 while job_list.get_active():
                     try:
                         if Autosubmit.exit:
@@ -1333,27 +1331,28 @@ class Autosubmit:
                         if save or save2:
                             job_list.save()
                         if len(job_list.get_ready()) > 0:
-                            #for platform in platforms_to_test:
-                            #    platform.test_connection()
                             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
-
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
-                            Autosubmit.submit_ready_jobs(
-                                as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
+                            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
                         if Autosubmit.exit:
                             job_list.save()
-
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
                         Log.error("{1} [eCode={0}]",e.code, e.message)
+                        #if "submitted" in e.message:
+                        #    del submitted job ids
+                        #    submitted again
+                        #elif
+                        #   restore_job_list
+                        #
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
                         if main_loop_retrials > 0:
-                            #restore_autosubmit(platforms_to_test)
+                            Autosubmit.restore_platforms(platforms_to_test)
                             main_loop_retrials = main_loop_retrials - 1
                         else:
                             raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000)
@@ -1393,11 +1392,9 @@ class Autosubmit:
             raise
 
     @staticmethod
-    def restore_autosubmit(platform_to_test):
+    def restore_platforms(platform_to_test):
         for platform in platform_to_test:
-            platform.reset()
             platform.test_connection()
-
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
                           only_wrappers=False, hold=False):

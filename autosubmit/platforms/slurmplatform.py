@@ -216,8 +216,6 @@ class SlurmPlatform(ParamikoPlatform):
         return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")"""
 
     def check_file_exists(self,filename):
-        if not self.restore_connection():
-            return False
         file_exist = False
         sleeptime = 5
         retries = 0

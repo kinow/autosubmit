@@ -110,3 +110,27 @@ class LsfPlatform(ParamikoPlatform):
         ###############################################################################
         """.format(filename, queue, project, wallclock, num_procs, dependency,
                    '\n'.ljust(13).join(str(s) for s in directives))
+    def connect(self):
+        """
+        In this case, it does nothing because connection is established foe each command
+
+        :return: True
+        :rtype: bool
+        """
+        self.connected = True
+    def restore_connection(self):
+        """
+        In this case, it does nothing because connection is established foe each command
+
+        :return: True
+        :rtype: bool
+        """
+        self.connected = True
+    def test_connection(self):
+        """
+        In this case, it does nothing because connection is established foe each command
+
+        :return: True
+        :rtype: bool
+        """
+        self.connected = True

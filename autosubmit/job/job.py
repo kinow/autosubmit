@@ -552,8 +552,7 @@ class Job(object):
         previous_status = self.status
         new_status = self.new_status
         if new_status == Status.COMPLETED:
-            Log.debug("This job seems to have completed: checking...")
-
+            Log.debug("{0} job seems to have completed: checking...".format(self.name))
 
             if not self.platform.get_completed_files(self.name):
                 log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
@@ -647,7 +646,7 @@ class Job(object):
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.warning(
+            Log.error(
                 "Job {0} completion check failed. There is no COMPLETED file", self.name)
             self.status = default_status
 

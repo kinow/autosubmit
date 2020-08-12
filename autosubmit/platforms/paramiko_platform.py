@@ -5,12 +5,11 @@ import paramiko
 import datetime
 import select
 import random
-from log.log import AutosubmitCritical,AutosubmitError,Log
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
-from log.log import AutosubmitError,AutosubmitCritical
+from log.log import AutosubmitError,AutosubmitCritical,Log
 
 class ParamikoPlatform(Platform):
     """
@@ -24,8 +23,9 @@ class ParamikoPlatform(Platform):
         :param expid:
         :param name:
         """
-        self.connected = False
+
         Platform.__init__(self, expid, name, config)
+        self.connected = False
         self._default_queue = None
         self.job_status = None
         self._ssh = None
@@ -56,23 +56,31 @@ class ParamikoPlatform(Platform):
         :rtype: object
         """
         return self._wrapper
-
+    def reset(self):
+        self.connected = False
+        self._ssh = None
+        self._ssh_config = None
+        self._ssh_output = None
+        self._user_config_file = None
+        self._host_config = None
+        self._host_config_id = None
+        self._ftpChannel = None
+        self.transport = None
     def test_connection(self):
         """
         Test if the connection is still alive, reconnect if not.
         """
         try:
-            if self._ssh is not None and self._ssh.get_transport() is not None:
-                transport = self._ssh.get_transport()
-                transport.send_ignore()
+            transport = self._ssh.get_transport()
+            transport.send_ignore()
         except BaseException as e:
             try:
-                self._ssh = None
+                self.reset()
                 self.restore_connection()
                 transport = self._ssh.get_transport()
                 transport.send_ignore()
             except EOFError as e:
-                raise AutosubmitCritical("Even before a reconnection, platform is still not alive.",7000)
+                raise AutosubmitError("After a reconnection procedure, the platform is still not alive.",6000)
 
     def restore_connection(self):
         self.connected = True
@@ -129,7 +137,7 @@ class ParamikoPlatform(Platform):
             if not reconnect and "," in self._host_config['hostname']:
                 self.restore_connection(reconnect=True)
             else:
-                raise AutosubmitCritical("Couldn't establish a connection to the specified host, wrong configuration",7000,e.message)
+                raise AutosubmitError("Couldn't establish a connection to the specified host, wrong configuration?",6000,e.message)
 
     def check_completed_files(self, sections=None):
         if self.host == 'localhost':
@@ -180,9 +188,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.chmod(remote_path,os.stat(local_path).st_mode)
             return True
         except IOError as e:
-            Log.error('Can not send file {0} to {1}', os.path.join(self.tmp_path, filename),
-                      os.path.join(self.get_files_path(), filename))
-            return False
+            raise AutosubmitError('Can not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename)), os.path.join(self.get_files_path(), filename), 6000, e.message)
         except BaseException as e:
             raise AutosubmitError('Send file failed. Connection seems to no be active',6000)
 
@@ -214,12 +220,11 @@ class ParamikoPlatform(Platform):
             return True
         except Exception as e:
             if str(e) in "Garbage":
-                raise AutosubmitCritical('A critical file couldn''t be retrieved, session not active'.format(filename),7000,e.message)
-
+                raise AutosubmitError('Files couldn''t be retrieved, session not active'.format(filename),6000,e.message)
             if must_exist:
-                raise AutosubmitCritical('A critical file couldn''t be retrieved, File {0} does not exists'.format(filename),7000)
+                raise AutosubmitError('A critical file couldn''t be retrieved, File {0} does not exists'.format(filename),6000,e.message)
             else:
-                Log.error("file couldn't be retrieved")
+                Log.printlog("Log file couldn't be retrieved: {0}".format(filename),5000)
                 return False
 
     def delete_file(self, filename):
@@ -235,13 +240,14 @@ class ParamikoPlatform(Platform):
         try:
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             return True
-        except IOError:
+        except IOError as e:
+            Log.printlog('{0} couldn''t be retrieved, session not active'.format(os.path.join(self.get_files_path(), filename)),5000)
             return False
+            #raise AutosubmitError('Files couldn''t be retrieved, session not active'.format(filename), 6000, e.message)
         except BaseException as e:
+            Log.error('Could not remove file {0} due a wrong configuration'.format(os.path.join(self.get_files_path(), filename)))
             if e.lower().contains("garbage"):
                 raise AutosubmitCritical("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ",7000,e.message)
-            Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
-            return False
 
 
 
@@ -260,12 +266,15 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.rename(os.path.join(path_root, src),
                                     os.path.join(path_root, dest))
             return True
-        except:
-            if must_exist:
-                raise Exception('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)))
-            else:
-                return False
 
+        except (Exception,IOError) as e:
+            if str(e) in "Garbage":
+                raise AutosubmitError('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)),6000,e.message)
+            if must_exist:
+                raise AutosubmitError('A critical file couldn''t be retrieved, File {0} does not exists'.format(os.path.join(self.get_files_path(), src)),6000,e.message)
+            else:
+                Log.printlog("Log file couldn't be moved: {0}".format(os.path.join(self.get_files_path(), src)),5000)
+                return False
 
     def submit_job(self, job, script_name, hold=False):
         """
@@ -434,7 +443,8 @@ class ParamikoPlatform(Platform):
             for job in job_list:
                 job_status = Status.UNKNOWN
                 Log.warning('check_job() The job id ({0}) from platform {1} has an status of {2}.', job.id, self.name, job_status)
-                job.new_status=job_status
+            raise AutosubmitError("Some Jobs are in Unknown status",6000)
+                #job.new_status=job_status
 
 
     def get_checkjob_cmd(self, job_id):
@@ -513,17 +523,15 @@ class ParamikoPlatform(Platform):
                     self._ssh_output += s
             for errorLine in stderr_readlines:
                 if errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1:
-                    Log.critical('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
-                    return False
+                    raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines),6000))
             if not ignore_log:
                 if len(stderr_readlines) > 0:
-                    Log.warning('Command {0} in {1} warning: {2}', command, self.host, '\n'.join(stderr_readlines))
+                    Log.printlog('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6000)
                 else:
                     Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
         except BaseException as e:
-            Log.error('Can not send command {0} to {1}: {2}', command, self.host, e.message)
-            return False
+            raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6000,e.message)
 
     def parse_job_output(self, output):
         """
@@ -677,6 +685,7 @@ class ParamikoPlatform(Platform):
         if hasattr(self.header, 'get_hyperthreading_directive'):
             header = header.replace('%HYPERTHREADING_DIRECTIVE%', self.header.get_hyperthreading_directive(job))
         return header
+
     def closeConnection(self):
         if self._ftpChannel is not None:
             self._ftpChannel.close()
@@ -684,7 +693,10 @@ class ParamikoPlatform(Platform):
             self._ssh.close()
             self.transport.close()
             self.transport.stop_thread()
-            self.transport.sys.exit(0)
+            try:
+                self.transport.sys.exit(0)
+            except:
+                Log.debug("Transport already closed")
 
 
     def check_remote_log_dir(self):
@@ -696,17 +708,23 @@ class ParamikoPlatform(Platform):
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
             except IOError:
-                if self.send_command(self.get_mkdir_cmd()):
-                   Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
-                else:
-                   Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
-            except:
-                raise AutosubmitError("SFTP session not active ",6000)
+                try:
+                    if self.send_command(self.get_mkdir_cmd()):
+                        Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+                    else:
+                        raise AutosubmitError("SFTP session not active ", 6000,"Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host)".format(self.remote_log_dir, self.host))
+                except BaseException as e:
+                    raise AutosubmitError("SFTP session not active ", 6000,e.message)
         else:
-            if self.send_command(self.get_mkdir_cmd()):
-                Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
-            else:
-                Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+            try:
+                if self.send_command(self.get_mkdir_cmd()):
+                    Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
+                else:
+                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+            except BaseException as e:
+                raise AutosubmitError("Couldn''t send the file", 6000, e.message)
+
+
 class ParamikoPlatformException(Exception):
     """
     Exception raised from HPC queues
