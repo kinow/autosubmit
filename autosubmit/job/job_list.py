@@ -169,7 +169,7 @@ class JobList:
             if not jobs_parser.has_option(job_section, option):
                 continue
 
-            dependencies_keys = jobs_parser.get(job_section, option).split()
+            dependencies_keys = jobs_parser.get(job_section, option).upper().split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, dic_jobs, job_section)
 
@@ -1353,7 +1353,7 @@ class JobList:
                 continue
 
             dependencies_keys = jobs_parser.get(
-                job_section, "RERUN_DEPENDENCIES").split()
+                job_section, "RERUN_DEPENDENCIES").upper().split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, self._dic_jobs, job_section)
 

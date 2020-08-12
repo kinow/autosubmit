@@ -1208,11 +1208,13 @@ class Autosubmit:
                 job_list.update_list(as_conf)
                 job_list.save()
                 Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
-                main_loop_retrials = 5
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
+                main_loop_retrials = 5 # Hard limit of tries (change to 100)
+                Autosubmit.restore_autosubmit(platforms_to_test) # establish the connection to all platforms
                 while job_list.get_active():
                     try:
                         if Autosubmit.exit:
@@ -1330,9 +1332,9 @@ class Autosubmit:
                         save2 = job_list.update_list(as_conf)
                         if save or save2:
                             job_list.save()
-                        if len(job_list.get_ready) > 0:
-                            for platform in platforms_to_test:
-                                platform.test_connection()
+                        if len(job_list.get_ready()) > 0:
+                            #for platform in platforms_to_test:
+                            #    platform.test_connection()
                             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
 
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
@@ -1346,15 +1348,20 @@ class Autosubmit:
 
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
-                        Log.error("{1} [eCode={0}]",e.message,6000)
+                        Log.error("{1} [eCode={0}]",e.code, e.message)
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
-                        if main_loop_retrials < 5:
-                            restore_autosubmit(platforms_to_test)
+                        if main_loop_retrials > 0:
+                            #restore_autosubmit(platforms_to_test)
                             main_loop_retrials = main_loop_retrials - 1
                         else:
                             raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000)
+                    except AutosubmitCritical as e:
+                        raise AutosubmitCritical(e.message, e.code, e.trace)
+                    except BaseException as e:
+                        raise
+
                 #end main
                 #############################################################################3
                 Log.result("No more jobs to run.")
@@ -1380,6 +1387,10 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
+        except AutosubmitCritical as e:
+            raise AutosubmitCritical(e.message, e.code, e.trace)
+        except BaseException as e:
+            raise
 
     @staticmethod
     def restore_autosubmit(platform_to_test):
@@ -1444,8 +1455,7 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(
-                                as_conf, job_list.parameters, inspect, hold=hold)
+                            package.submit( as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             continue
@@ -1463,12 +1473,10 @@ class Autosubmit:
                         packages_persistence.save(
                             package.name, package.jobs, package._expid, inspect)
                 except WrongTemplateException as e:
-                    Log.error(
-                        "Invalid parameter substitution in {0} template", e.job_name)
-                    raise
-                except Exception:
-                    Log.error(
-                        "{0} submission failed due to Unknown error", platform.name)
+                    raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7000)
+                except AutosubmitCritical as e:
+                    raise AutosubmitCritical(e.message,e.code,e.trace)
+                except Exception as e:
                     raise
 
             if platform.type == "slurm" and not inspect and not only_wrappers:

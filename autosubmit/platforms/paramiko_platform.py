@@ -214,8 +214,8 @@ class ParamikoPlatform(Platform):
             return True
         except Exception as e:
             if str(e) in "Garbage":
-                Log.critical("Critical Error,seems that the user is invalid")
-                raise
+                raise AutosubmitCritical('A critical file couldn''t be retrieved, session not active'.format(filename),7000,e.message)
+
             if must_exist:
                 raise AutosubmitCritical('A critical file couldn''t be retrieved, File {0} does not exists'.format(filename),7000)
             else:
@@ -231,8 +231,7 @@ class ParamikoPlatform(Platform):
         :return: True if successful or file does no exists
         :rtype: bool
         """
-        if not self.restore_connection():
-            return False
+
         try:
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             return True
@@ -240,8 +239,7 @@ class ParamikoPlatform(Platform):
             return False
         except BaseException as e:
             if e.lower().contains("garbage"):
-                Log.error("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ")
-                raise
+                raise AutosubmitCritical("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ",7000,e.message)
             Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
             return False
 
@@ -257,8 +255,6 @@ class ParamikoPlatform(Platform):
         :param must_exist: ignore if file exist or not
         :type dest: str
         """
-        if not self.restore_connection():
-            return False
         try:
             path_root = self.get_files_path()
             self._ftpChannel.rename(os.path.join(path_root, src),
@@ -472,8 +468,6 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
 
-        if not self.restore_connection():
-            return False
         if "-rP" in command or "find" in command or "convertLink" in command:
             timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
@@ -697,8 +691,7 @@ class ParamikoPlatform(Platform):
         """
         Creates log dir on remote host
         """
-        if not self.restore_connection():
-            return False
+
         if self.type == "slurm":
             try:
                 self._ftpChannel.chdir(self.remote_log_dir)  # Test if remote_path exists
@@ -708,8 +701,7 @@ class ParamikoPlatform(Platform):
                 else:
                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
             except:
-                Log.critical("Garbage  detected")
-                raise
+                raise AutosubmitError("SFTP session not active ",6000)
         else:
             if self.send_command(self.get_mkdir_cmd()):
                 Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)

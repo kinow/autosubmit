@@ -60,7 +60,8 @@ class AutosubmitConfig(object):
         self._proj_parser = None
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
-        self.check_proj_file()
+        #self.check_proj_file()
+        self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
 
@@ -362,11 +363,13 @@ class AutosubmitConfig(object):
         """
         Log.info('\nChecking configuration files...')
         self.reload()
+        project_type = self.get_project_type()
+        self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()
         self.check_autosubmit_conf()
-        self.check_expdef_conf()
-        project_type = self.get_project_type()
+
+
         if project_type != "none":
             # Check proj configuration
             self.check_proj()
@@ -379,7 +382,7 @@ class AutosubmitConfig(object):
             for section in self.warn_config:
                 message += "Issues on [{0}] config file:".format(section)
                 for parameter in self.warn_config[section]:
-                    message += "\n{0} with value of {1} ".format(parameter[0],parameter[1])
+                    message += "\n[{0}] {1} ".format(parameter[0],parameter[1])
                 message += "\n"
             Log.printlog(message,6000)
 
@@ -388,7 +391,7 @@ class AutosubmitConfig(object):
             for section in self.wrong_config:
                 message += "Critical Issues on [{0}] config file:".format(section)
                 for parameter in self.wrong_config[section]:
-                    message += "\n{0} with value of {1}".format(parameter[0], parameter[1])
+                    message += "\n[{0}] {1}".format(parameter[0], parameter[1])
                 message += "\n"
             raise AutosubmitCritical(message,7000)
 
@@ -425,6 +428,8 @@ class AutosubmitConfig(object):
                     self.wrong_config["Autosubmit"]+=[['mail', "Some of the configured e-mail is not valid"]]
         if  "Autosubmit" not in  self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._conf_parser_file)))
+        else:
+            Log.warning('{0} Issues'.format(os.path.basename(self._conf_parser_file)))
 
 
     def check_platforms_conf(self):
@@ -472,7 +477,7 @@ class AutosubmitConfig(object):
         sections = parser.sections()
         platforms = self._platforms_parser.sections()
         platforms.append('LOCAL')
-
+        platforms.append('local')
         if len(sections) != len(set(sections)):
             self.wrong_config["Jobs"] += [["Global", "There are repeated job names"]]
 
@@ -481,14 +486,14 @@ class AutosubmitConfig(object):
                 self.wrong_config["Jobs"] += [[ section, "Mandatory FILE parameter not found"]]
             else:
                 section_file_path = parser.get_option(section,'FILE')
-                if not os.path.exists(section_file_path):
-                    if parser.check_exists(section, 'CHECK'):
-                        if parser.get_option(section, 'CHECK') in "on_submission":
-                            self.warn_config["Jobs"] += [[section, "FILE path doesn't exists, but check in on_submission value"]]
+
+                if not self.ignore_file_path:
+                    if not os.path.exists(section_file_path):
+                        if parser.check_exists(section, 'CHECK'):
+                            if not parser.get_option(section, 'CHECK') in "on_submission":
+                                self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists, check parameter is found however is not in on_submission value"]]
                         else:
-                            self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists, check parameter is found however is not in on_submission value"]]
-                    else:
-                        self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists"]]
+                            self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists"]]
 
             if not  parser.check_is_boolean(section, 'RERUN_ONLY', False):
                 self.wrong_config["Jobs"]+=[[ section, "Mandatory RERUN_ONLY parameter not found or non-bool"]]
@@ -497,7 +502,7 @@ class AutosubmitConfig(object):
                     self.wrong_config["Jobs"] += [[section, "PLATFORM parameter is invalid, this platform is not configured"]]
 
             if parser.has_option(section, 'DEPENDENCIES'):
-                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
+                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).upper().split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
@@ -573,9 +578,11 @@ class AutosubmitConfig(object):
             elif project_type == 'local':
                 if not  parser.check_exists('local', 'PROJECT_PATH'):
                     self.wrong_config["Expdef"]+=[['local', "PROJECT_PATH parameter is invalid"]]
+            elif project_type == 'none': #debug propouses
+                self.ignore_file_path = True
 
             if project_type != 'none':
-                if not  parser.check_exists('project_files', 'FILE_PROJECT_CONF'):
+                if not parser.check_exists('project_files', 'FILE_PROJECT_CONF'):
                     self.wrong_config["Expdef"]+=[['project_files', "FILE_PROJECT_CONF parameter is invalid"]]
         else:
             self.wrong_config["Expdef"]+=[['project', "Mandatory project choice is invalid"]]
@@ -1247,7 +1254,7 @@ class AutosubmitConfig(object):
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()
-            for section in expression.split(" "):
+            for section in expression.upper().split(" "):
                 if "&" in section:
                     for inner_section in section.split("&"):
                         if inner_section not in sections:

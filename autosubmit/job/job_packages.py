@@ -28,7 +28,7 @@ import os
 import time
 import random
 from autosubmit.job.job_common import Status
-from log.log import Log
+from log.log import Log,AutosubmitCritical,AutosubmitError
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
 from bscearth.utils.date import sum_str_hours
@@ -92,7 +92,7 @@ class JobPackageBase(object):
                     exit=True
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                    raise WrongTemplateException(job.name)
+                    raise AutosubmitCritical("check=on_submission parameter didn't generate the template {0}".format(job.name),7000)
                 if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
                     Log.warning("Script {0} check failed",job.name)
                     Log.warning("On submission script has some empty variables")

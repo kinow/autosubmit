@@ -39,7 +39,7 @@ class ConfigParser(ConfPar, object):
         :rtype: str
         """
         if self.has_option(section, option):
-            return self.get(section, option)
+            return self.get(section, option).lower()
         else:
             return default
 
