@@ -27,6 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
+from bscearth.utils.date import Log
 # from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
@@ -77,7 +78,8 @@ def get_structure(exp_id, structures_path):
             raise Exception("Structures folder not found " +
                             str(structures_path))
     except Exception as exp:
-        print(traceback.format_exc())
+        Log.warning("Get structure error: {0}".format(str(exp)))
+        Log.debug(traceback.format_exc())
 
 
 def create_connection(db_file):
@@ -103,7 +105,7 @@ def create_table(conn, create_table_sql):
         c = conn.cursor()
         c.execute(create_table_sql)
     except Exception as e:
-        print(e)
+        Log.warning("Create table error {0}".format(str(e)))
 
 
 def _get_exp_structure(path):
@@ -121,7 +123,8 @@ def _get_exp_structure(path):
         rows = cur.fetchall()
         return rows
     except Exception as exp:
-        print(traceback.format_exc())
+        Log.warning("Get structure error {0}".format(str(exp)))
+        Log.debug(traceback.format_exc())
         return dict()
 
 
@@ -129,27 +132,30 @@ def save_structure(graph, exp_id, structures_path):
     """
     Saves structure if path is valid
     """
-    #pkl_path = os.path.join(exp_path, exp_id, "pkl")
+    conn = None
+    # Path to structures folder exists
     if os.path.exists(structures_path):
+        # Path to structure file
         db_structure_path = os.path.join(
             structures_path, "structure_" + exp_id + ".db")
-        # with open(db_structure_path, "w"):
-        conn = None
+        # Path to structure file exists -> delete
         if os.path.exists(db_structure_path):
             conn = create_connection(db_structure_path)
             _delete_table_content(conn)
         else:
-            open(db_structure_path, "w")
+            # Path to structure file does not edxist -> Initialize structure
+            get_structure(exp_id, structures_path)
             conn = create_connection(db_structure_path)
         if conn:
+            # Save structure
             for u, v in graph.edges():
                 # save
                 _create_edge(conn, u, v)
-                #print("Created edge " + str(u) + str(v))
             conn.commit()
     else:
-        # pkl folder not found
-        raise Exception("pkl folder not found " + str(structures_path))
+        # Structure Folder not found
+        raise Exception(
+            "Structures folder not found {0}".format(structures_path))
 
 
 def _create_edge(conn, u, v):
@@ -162,7 +168,8 @@ def _create_edge(conn, u, v):
         cur.execute(sql, (u, v))
         # return cur.lastrowid
     except sqlite3.Error as e:
-        print("Error on Insert : " + str(type(e).__name__))
+        Log.debug(traceback.format_exc())
+        Log.warning("Error on Insert : {0}".format(str(type(e).__name__)))
 
 
 def _delete_table_content(conn):
@@ -175,5 +182,5 @@ def _delete_table_content(conn):
         cur.execute(sql)
         conn.commit()
     except sqlite3.Error as e:
-        print(traceback.format_exc())
-        print("Error on Delete : " + str(type(e).__name__))
+        Log.debug(traceback.format_exc())
+        Log.warning("Error on Delete : {0}".format(str(type(e).__name__)))
