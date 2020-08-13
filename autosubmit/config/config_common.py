@@ -425,7 +425,7 @@ class AutosubmitConfig(object):
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
                     self.wrong_config["Autosubmit"]+=[['mail', "Some of the configured e-mail is not valid"]]
-        if  "Autosubmit" not in  self.wrong_config:
+        if "Autosubmit" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._conf_parser_file)))
             return True
         else:
@@ -591,7 +591,7 @@ class AutosubmitConfig(object):
         else:
             self.wrong_config["Expdef"]+=[['project', "Mandatory project choice is invalid"]]
 
-        if "Jobs" not in self.wrong_config:
+        if "Expdef" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._exp_parser_file)))
             return True
         return False
@@ -609,8 +609,10 @@ class AutosubmitConfig(object):
                 self._proj_parser = None
             else:
                 self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
+            return True
         except Exception as e:
             self.wrong_config["Proj"]+=[['project_files', "FILE_PROJECT_CONF parameter is invalid"]]
+            return False
     def check_wrapper_conf(self):
         if not self.is_valid_jobs_in_wrapper():
             self.wrong_config["Wrapper"]+=[['wrapper', "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
