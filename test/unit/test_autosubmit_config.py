@@ -400,7 +400,7 @@ class TestAutosubmitConfig(TestCase):
         config2.check_platforms_conf = truth_mock
         config2.check_jobs_conf = truth_mock
         config2.check_expdef_conf = Mock(return_value=False)
-        config.check_proj = truth_mock
+        config2.check_proj = truth_mock
         # act
         should_be_true = config.check_conf_files()
         should_be_false = config2.check_conf_files()
