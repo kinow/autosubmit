@@ -428,9 +428,11 @@ class AutosubmitConfig(object):
                     self.wrong_config["Autosubmit"]+=[['mail', "Some of the configured e-mail is not valid"]]
         if  "Autosubmit" not in  self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._conf_parser_file)))
+            return True
         else:
             Log.warning('{0} Issues'.format(os.path.basename(self._conf_parser_file)))
-
+            return True
+        return False
 
     def check_platforms_conf(self):
         """
@@ -465,7 +467,8 @@ class AutosubmitConfig(object):
                 self.wrong_config["Platform"]+=[[ section, "Mandatory TOTAL_JOBS parameter not found or non-integer"]]
         if "Platform" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
-
+            return True
+        return False
     def check_jobs_conf(self):
         """
         Checks experiment's jobs configuration file.
@@ -527,6 +530,8 @@ class AutosubmitConfig(object):
                 self.wrong_config["Jobs"]+=[[section, "Mandatory RUNNING parameter is invalid"]]
         if "Jobs" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._jobs_parser_file)))
+            return True
+        return False
 
     def check_expdef_conf(self):
         """
@@ -589,8 +594,8 @@ class AutosubmitConfig(object):
 
         if "Jobs" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._exp_parser_file)))
-
-
+            return True
+        return False
     def check_proj(self):
 
 
@@ -620,7 +625,7 @@ class AutosubmitConfig(object):
                 self.wrong_config["Wrapper"]+=[['wrapper', "MAX_WALLCLOCK no exists in the vertical-wrapper platform"]]
         if "Wrapper"  not in self.wrong_config:
             Log.result('wrappers OK')
-
+            return True
 
 
 
