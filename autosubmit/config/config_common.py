@@ -363,12 +363,12 @@ class AutosubmitConfig(object):
         """
         Log.info('\nChecking configuration files...')
         self.reload()
-        project_type = self.get_project_type()
         self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()
         self.check_autosubmit_conf()
 
+        project_type = self.get_project_type()
 
         if project_type != "none":
             # Check proj configuration
