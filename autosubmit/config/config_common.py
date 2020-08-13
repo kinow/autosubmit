@@ -368,9 +368,8 @@ class AutosubmitConfig(object):
         self.check_jobs_conf()
         self.check_autosubmit_conf()
 
-        project_type = self.get_project_type()
 
-        if project_type != "none":
+        if self.get_project_type() != "none":
             # Check proj configuration
             self.check_proj()
         if len(self.warn_config.keys()) == 0 and len(self.wrong_config.keys()) == 0:
