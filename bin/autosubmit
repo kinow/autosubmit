@@ -44,7 +44,10 @@ def main():
         os._exit(1)
     except BaseException as e:
         Log.error("Trace: {0}", e.message)
-        Log.critical("Unhandled error, if you see this message report it in autosubmit git")
+        if "temporarily unavailable" in e.message:
+            Log.critical("Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock",7000)
+        else:
+            Log.critical("Unhandled error, if you see this message report it in autosubmit git")
         os._exit(1)
 
 if __name__ == "__main__":

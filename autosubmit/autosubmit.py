@@ -1169,8 +1169,12 @@ class Autosubmit:
                 Log.info("Starting job submission...")
                 pkl_dir = os.path.join(
                     BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
-                job_list = Autosubmit.load_job_list(
-                    expid, as_conf, notransitive=notransitive)
+                try:
+                    job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                except BaseException as e:
+                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7000,e.message)
+
+
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
                 Log.debug("Length of the jobs list: {0}", len(job_list))
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1186,12 +1190,20 @@ class Autosubmit:
                     # noinspection PyTypeChecker
                     platforms_to_test.add(job.platform)
                 job_list.check_scripts(as_conf)
-                packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
-                                                             "job_packages_" + expid)
+                try:
+                    packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
+                except BaseException as e:
+                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",7000,e.message)
                 if as_conf.get_wrapper_type() != 'none':
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                           expid, "pkl", "job_packages_" + expid+".db"), 0644)
-                    packages = packages_persistence.load()
+                    try:
+                        packages = packages_persistence.load()
+                    except BaseException as e:
+                        raise AutosubmitCritical(
+                            "Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",
+                            7000, e.message)
+
                     for (exp_id, package_name, job_name) in packages:
                         if package_name not in job_list.packages_dict:
                             job_list.packages_dict[package_name] = []
@@ -1204,17 +1216,20 @@ class Autosubmit:
                                                  None, jobs[0].platform, as_conf, jobs[0].hold)
                         job_list.job_package_map[jobs[0].id] = wrapper_job
                 job_list.update_list(as_conf)
+
                 job_list.save()
                 Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
-
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
                 main_loop_retrials = 5 # Hard limit of tries (change to 100)
                 Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
+                save = True
                 while job_list.get_active():
+
                     try:
+
                         if Autosubmit.exit:
                             return 0
                         # reload parameters changes
@@ -1229,6 +1244,8 @@ class Autosubmit:
                         Log.debug("Sleep: {0}", safetysleeptime)
                         Log.debug("Number of retrials: {0}", default_retrials)
                         Log.debug('WRAPPER CHECK TIME = {0}'.format(check_wrapper_jobs_sleeptime))
+                        if save: # previous iteration
+                            job_list.backup_save()
                         save = False
                         slurm = []
                         for platform in platforms_to_test:
@@ -1342,26 +1359,36 @@ class Autosubmit:
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
                         Log.error("{1} [eCode={0}]",e.code, e.message)
-                        #if "submitted" in e.message:
-                        #    del submitted job ids
-                        #    submitted again
-                        #elif
-                        #   restore_job_list
-                        #
-                        save = job_list.update_list(as_conf)
-                        if save:
-                            job_list.save()
-                        if main_loop_retrials > 0:
+                        #Save job_list if not is a failed submitted job
+                        if "submitted" not in e.message:
+                            try:
+                                save = job_list.update_list(as_conf)
+                                if save:
+                                    job_list.save()
+                            except BaseException as e: #Restore from file
+                                try:
+                                    job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                                except BaseException as e:
+                                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7000,
+                                                             e.message)
+                        else: # Restore from files
+                            try:
+                                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                            except BaseException as e:
+                                raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7000,
+                                                         e.message)
+                        if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                             Autosubmit.restore_platforms(platforms_to_test)
                             main_loop_retrials = main_loop_retrials - 1
                         else:
-                            raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000)
-                    except AutosubmitCritical as e:
+                            raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000,e.message)
+                    except AutosubmitCritical as e: # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
-                    except BaseException as e:
+                    except portalocker.AlreadyLocked:
+                        message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
+                        raise AutosubmitCritical(message, 7000)
+                    except BaseException as e: # If this happens, there is a bug in the code or an exception not-well caught
                         raise
-
-                #end main
                 #############################################################################3
                 Log.result("No more jobs to run.")
                 # Wait for all remaining threads of I/O, close remaining connections
@@ -3861,11 +3888,7 @@ class Autosubmit:
         elif storage_type == 'db':
             return JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_list_" + expid)
-
-        # communications library not known
-        Log.error(
-            'You have defined a not valid storage type on the configuration file')
-        raise Exception('Storage type not known')
+        raise AutosubmitCritical('Storage type not known',7000)
 
     @staticmethod
     def _create_json(text):
@@ -4025,8 +4048,10 @@ class Autosubmit:
     @staticmethod
     def load_job_list(expid, as_conf, notransitive=False, monitor=False):
         rerun = as_conf.get_rerun()
+
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
+
         date_list = as_conf.get_date_list()
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':

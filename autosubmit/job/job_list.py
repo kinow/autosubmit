@@ -142,7 +142,11 @@ class JobList:
         jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
-            jobs_data = {str(row[0]): row for row in self.load()}
+
+            try:
+                jobs_data = {str(row[0]): row for row in self.load()}
+            except:
+                jobs_data = {str(row[0]): row for row in self.backup_load()}
         self._create_jobs(dic_jobs, jobs_parser, priority,
                           default_job_type, jobs_data)
         Log.info("Adding dependencies...")
@@ -1039,13 +1043,27 @@ class JobList:
         """
         Log.info("Loading JobList")
         return self._persistence.load(self._persistence_path, self._persistence_file)
+    def backup_load(self):
+        """
+        Recreates an stored job list from the persistence
 
+        :return: loaded job list object
+        :rtype: JobList
+        """
+        Log.info("Loading backup JobList")
+        return self._persistence.load(self._persistence_path, self._persistence_file+"_backup")
     def save(self):
         """
         Persists the job list
         """
         self._persistence.save(self._persistence_path,
                                self._persistence_file, self._job_list)
+    def backup_save(self):
+        """
+        Persists the job list
+        """
+        self._persistence.save(self._persistence_path,
+                               self._persistence_file+"_backup", self._job_list)
 
     def update_from_file(self, store_change=True):
         """
