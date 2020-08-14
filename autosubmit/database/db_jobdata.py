@@ -190,7 +190,8 @@ class MainDataBase():
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
-            Log.warning("Error on create table : " + str(type(e).__name__))
+            Log.debug(str(type(e).__name__))
+            Log.warning("Error on create table . create_table")
             return None
 
 
@@ -280,7 +281,9 @@ class ExperimentStatus(MainDataBase):
                 return int(row[0])
             return None
         except Exception as exp:
-            Log.warning(exp)
+            Log.debug("From _get_id_db: {0}".format(str(exp)))
+            Log.warning(
+                "Autosubmit couldn't retrieve experiment database information. _get_id_db")
             return None
 
     def _get_exp_status(self):
@@ -300,7 +303,9 @@ class ExperimentStatus(MainDataBase):
                 return rows
             return None
         except Exception as exp:
-            print(traceback.format_exc())
+            Log.debug("From _get_exp_status: {0}".format(str(exp)))
+            Log.warning(
+                "Autosubmit couldn't retrieve experiment status database information. _get_exp_status")
             return None
 
     def test_running(self, time_condition=600):
@@ -343,7 +348,10 @@ class ExperimentStatus(MainDataBase):
                 self.conn.commit()
                 return cur.lastrowid
         except sqlite3.Error as e:
-            Log.warning("Error on Insert : " + str(type(e).__name__))
+            Log.debug("From _create_exp_status: {0}".format(
+                str(type(e).__name__)))
+            Log.warning(
+                "Autosubmit couldn't insert information into status database. _create_exp_status")
 
     def _update_exp_status(self, status="RUNNING"):
         """
@@ -369,10 +377,11 @@ class ExperimentStatus(MainDataBase):
                 return cur.lastrowid
             return None
         except sqlite3.Error as e:
-            Log.warning("Error while trying to update " +
-                        str(expid) + " in experiment_status.")
-            Log.warning(traceback.format_exc())
-            Log.warning("Error on Update: " + str(type(e).__name__))
+            Log.warning(
+                "Error while trying to update {0} in experiment_status.".format(str(expid)))
+            Log.debug("From _update_exp_status: {0}".format(
+                traceback.format_exc()))
+            # Log.warning("Error on Update: " + str(type(e).__name__))
             return None
 
 
@@ -481,9 +490,9 @@ class JobDataStructure(MainDataBase):
             else:
                 return None
         except Exception as exp:
-            if _debug == True:
-                Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't write submit time.")
             return None
 
         # if rowid > 0:
@@ -532,9 +541,9 @@ class JobDataStructure(MainDataBase):
             else:
                 return None
         except Exception as exp:
-            if _debug == True:
-                Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't write start time.")
             return None
 
     def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None):
@@ -609,9 +618,8 @@ class JobDataStructure(MainDataBase):
             else:
                 return None
         except Exception as exp:
-            if _debug == True:
-                Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning("Autosubmit couldn't write finish time.")
             return None
 
     def get_all_job_data(self):
@@ -635,9 +643,9 @@ class JobDataStructure(MainDataBase):
                 raise Exception("Job data folder not found :" +
                                 str(self.jobdata_path))
         except Exception as exp:
-            if _debug == True:
-                Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't retrieve job data. get_all_job_data")
             return None
 
     def get_job_data(self, job_name):
@@ -668,9 +676,8 @@ class JobDataStructure(MainDataBase):
                 raise Exception("Job data folder not found :" +
                                 str(self.jobdata_path))
         except Exception as exp:
-            if _debug == True:
-                Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning("Autosubmit couldn't retrieve job data. get_job_data")
             return None
 
     def get_job_data_last(self, job_name):
@@ -706,7 +713,9 @@ class JobDataStructure(MainDataBase):
         except Exception as exp:
             if _debug == True:
                 Log.info(traceback.format_exc())
-            Log.warning(str(exp))
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't retrieve job data. get_job_data_last")
             return None
 
     def _deactivate_current_last(self, jobdata):
@@ -730,6 +739,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Insert : " + str(type(e).__name__))
             return None
 
@@ -755,6 +765,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Insert : " + str(type(e).__name__))
             return None
 
@@ -779,6 +790,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Update : " + str(type(e).__name__))
             return None
 
@@ -804,6 +816,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Update : " + str(type(e).__name__))
             return None
 
@@ -834,6 +847,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Insert : " + str(type(e).__name__) +
                         "\t " + str(jobdata.job_name) + "\t" + str(jobdata.counter))
             return None
@@ -858,6 +872,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
             return list()
 
@@ -884,6 +899,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
             return None
 
@@ -912,6 +928,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
             return None
 
@@ -934,6 +951,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on version : " + str(type(e).__name__))
             return None
 
@@ -960,5 +978,6 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
             Log.warning("Error on Select Max : " + str(type(e).__name__))
             return None
