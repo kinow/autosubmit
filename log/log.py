@@ -123,6 +123,16 @@ class Log:
     console_handler.setFormatter(LogFormatter(False))
     log.addHandler(console_handler)
 
+    @staticmethod
+    def get_logger(name="Autosubmit"):
+        """
+        Configure the file to store the log. If another file was specified earlier, new messages will only go to the
+        new file.
+
+        :param file_path: file to store the log
+        :type file_path: str
+        """
+        logging.getLogger(name)
 
     @staticmethod
     def set_file(file_path, type='out', level=WARNING):

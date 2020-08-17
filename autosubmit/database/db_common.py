@@ -24,6 +24,7 @@ import os
 import sqlite3
 
 from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 from autosubmit.config.basicConfig import BasicConfig
 
 CURRENT_DATABASE_VERSION = 1

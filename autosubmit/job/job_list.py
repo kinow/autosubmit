@@ -1056,7 +1056,7 @@ class JobList:
         """
         Persists the job list
         """
-        #self.update_status_log()
+        self.update_status_log()
         self._persistence.save(self._persistence_path,
                                self._persistence_file, self._job_list)
     def backup_save(self):
@@ -1065,6 +1065,13 @@ class JobList:
         """
         self._persistence.save(self._persistence_path,
                                self._persistence_file+"_backup", self._job_list)
+    def update_status_log(self):
+        job_list = self.get_completed() + self.get_in_queue()
+        Log.status("\n{0}\t\t\t{1}\t\t{2}", "Job Name", "Job Id", "Job Status")
+        for job in job_list:
+
+            Log.status("{0}\t{1}\t{2}", job.name, job.id, Status().VALUE_TO_KEY[job.status])
+
 
     def update_from_file(self, store_change=True):
         """

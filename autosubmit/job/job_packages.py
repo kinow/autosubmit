@@ -29,6 +29,7 @@ import time
 import random
 from autosubmit.job.job_common import Status
 from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
 from bscearth.utils.date import sum_str_hours

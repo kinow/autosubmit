@@ -589,9 +589,6 @@ class Autosubmit:
             Log.set_file(os.path.join(aslogs_path, command + '.log'), "out", log_level)
             Log.set_file(os.path.join(aslogs_path, command + '_err.log'), "err")
             Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
-            Log.info("test")
-            Log.status("Status")
-            Log.error("errorr")
         else:
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '.log'), "out", log_level)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '_err.log'), "err")

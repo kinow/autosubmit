@@ -42,6 +42,7 @@ from time import sleep
 from threading import Thread
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 
 def threaded(fn):

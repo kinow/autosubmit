@@ -23,6 +23,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from autosubmit.experiment.statistics import ExperimentStats
 from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 # Autosubmit stats constants
 RATIO = 4

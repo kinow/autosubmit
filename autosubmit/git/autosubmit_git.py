@@ -25,6 +25,7 @@ import shutil
 #from autosubmit import Autosubmit
 from autosubmit.config.basicConfig import BasicConfig
 from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 
 class AutosubmitGit:
