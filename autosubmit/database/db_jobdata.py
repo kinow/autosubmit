@@ -194,6 +194,25 @@ class MainDataBase():
             Log.warning("Error on create table . create_table")
             return None
 
+    def create_index(self):
+        """ Creates index
+        """
+        try:
+            if self.conn:
+                c = self.conn.cursor()
+                c.execute(self.create_index_query)
+            else:
+                raise IOError("Not a valid connection")
+        except IOError as exp:
+            Log.warning(exp)
+            return None
+        except sqlite3.Error as e:
+            if _debug == True:
+                Log.info(traceback.format_exc())
+            Log.debug(str(type(e).__name__))
+            Log.warning("Error on create index . create_index")
+            return None
+
 
 class ExperimentStatus(MainDataBase):
     def __init__(self, expid):
@@ -426,14 +445,17 @@ class JobDataStructure(MainDataBase):
             platform TEXT NOT NULL,
             job_id INTEGER NOT NULL,
             extra_data TEXT NOT NULL,
-            UNIQUE(counter,job_name),
-            INDEX 
+            UNIQUE(counter,job_name)
             );
-            CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);''')
+            ''')
+        self.create_index_query = textwrap.dedent(''' 
+            CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);
+            ''')
         if not os.path.exists(self.database_path):
             open(self.database_path, "w")
             self.conn = self.create_connection(self.database_path)
             self.create_table()
+            self.create_index()
             if self._set_pragma_version(CURRENT_DB_VERSION):
                 Log.info("Database version set.")
         else:
@@ -546,7 +568,7 @@ class JobDataStructure(MainDataBase):
                 "Autosubmit couldn't write start time.")
             return None
 
-    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None):
+    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False):
         """Writes the finish time into the database
 
         Args:
@@ -583,9 +605,16 @@ class JobDataStructure(MainDataBase):
                     try:
                         if type(platform_object) is not str:
                             if platform_object.type == "slurm":
-                                #print("Checking Slurm for " + str(job_name))
+                                # print("Checking Slurm for " + str(job_name))
                                 submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(
-                                    job_id)
+                                    job_id, packed)
+                                # print(job_id)
+                                # print(packed)
+                                # print(submit_time)
+                                # print(start_time)
+                                # print(finish_time)
+                                # print(energy)
+                                # print(extra_data)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))

@@ -950,7 +950,7 @@ class Job(object):
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
                     Log.warning("The following set of variables are not being used in the templates: {0}",
-                                str(set(parameters)-set(variables)))
+                                str(set(parameters) - set(variables)))
 
         return out
 
@@ -1021,7 +1021,7 @@ class Job(object):
             final_status = "FAILED"
             f.write('FAILED')
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform)
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed)
 
     def check_started_after(self, date_limit):
         """
@@ -1329,7 +1329,7 @@ done
             output = self.platform.check_completed_files(job.name)
             if output is None or output == '':
                 sleep(wait)
-                retries = retries-1
+                retries = retries - 1
         if output is not None and output != '' and 'COMPLETED' in output:
             job.new_status = Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')

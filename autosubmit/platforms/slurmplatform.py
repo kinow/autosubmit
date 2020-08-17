@@ -21,6 +21,7 @@ import os
 from time import sleep
 from time import mktime
 from datetime import datetime
+import traceback
 
 from xml.dom.minidom import parseString
 
@@ -56,7 +57,7 @@ class SlurmPlatform(ParamikoPlatform):
         exp_id_path = os.path.join(config.LOCAL_ROOT_DIR, self.expid)
         tmp_path = os.path.join(exp_id_path, "tmp")
         self._submit_script_path = os.path.join(
-            tmp_path, config.LOCAL_ASLOG_DIR, "submit_"+self.name+".sh")
+            tmp_path, config.LOCAL_ASLOG_DIR, "submit_" + self.name + ".sh")
         self._submit_script_file = open(self._submit_script_path, 'w').close()
 
     def open_submit_script(self):
@@ -116,35 +117,111 @@ class SlurmPlatform(ParamikoPlatform):
 
     def parse_job_output(self, output):
         return output.strip().split(' ')[0].strip()
-    
-    def parse_job_finish_data(self, output, job_id):
+
+    def parse_job_finish_data(self, output, job_id, packed):
+        """Parses the context of the sacct query to SLURM for a single job.
+
+        :param output: The sacct output
+        :type output: str
+        :param job_id: Id in SLURM for the job
+        :type job_id: int
+        :param packed: true if job belongs to package
+        :type packed: bool
+        :return: submit, start, finish, joules, detailed_data
+        :rtype: int, int, int, int, json object (str)
+        """
         try:
+            # Storing detail for posterity
             detailed_data = dict()
+            # No blank spaces after or before
             output = output.strip()
             lines = output.split("\n")
+            # If there is output, list exists
             if len(lines) > 0:
+                # Collecting information from all output
                 for line in lines:
                     line = line.strip().split()
                     if len(line) > 0:
+                        # Collecting detailed data
                         name = str(line[0])
-                        extra_data = { "energy" : str(line[5] if len(line) > 5 else "NA"), "MaxRSS" : str(line[6] if len(line) > 6 else "NA"), "AveRSS" : str(line[7] if len(line) > 6 else "NA")} 
+                        extra_data = {"energy": str(line[5] if len(line) > 5 else "NA"), "MaxRSS": str(
+                            line[6] if len(line) > 6 else "NA"), "AveRSS": str(line[7] if len(line) > 6 else "NA")}
                         detailed_data[name] = extra_data
-            
-                line = lines[0].strip().split()
-                submit = int(mktime(datetime.strptime(line[2], "%Y-%m-%dT%H:%M:%S").timetuple()))
-                start = int(mktime(datetime.strptime(line[3], "%Y-%m-%dT%H:%M:%S").timetuple()))
-                finish = int(mktime(datetime.strptime(line[4], "%Y-%m-%dT%H:%M:%S").timetuple()))
-                joules = int(float(str(line[5])[:-1]) * 1000 if len(line[5]) > 0 else 0)
+                submit = start = finish = joules = 0
+                status = "UNKNOWN"
+                line = None
+                if packed == False:
+                    line = lines[0].strip().split()
+                    #print("Unpacked {0}".format(line))
+                    status = line[1]
+                    if status != "COMPLETED":
+                        packed == True
+                if packed == True:
+                    i = -1
+                    while (status != "COMPLETED"):
+                        if len(lines) >= i * -1:
+                            line = lines[i].strip().split()
+                            #print("Packed output {0}".format(output))
+                            #print("Packed lines {0}".format(lines))
+                            status = line[1]
+                            ave_rss = line[6] if len(line) > 6 and len(
+                                line[6].strip()) > 0 else "NA"
+                            if (ave_rss == "NA"):
+                                status = "UNKNOWN"
+                            i -= 1
+                        else:
+                            break
+                # print(line)
+                try:
+                    submit = int(mktime(datetime.strptime(
+                        line[2], "%Y-%m-%dT%H:%M:%S").timetuple()))
+                    start = int(mktime(datetime.strptime(
+                        line[3], "%Y-%m-%dT%H:%M:%S").timetuple()))
+                    finish = int(mktime(datetime.strptime(
+                        line[4], "%Y-%m-%dT%H:%M:%S").timetuple())) if len(line) > 4 and line[4] != "Unknown" else datetime.now().timestamp()
+                    joules = self.parse_output_number(
+                        line[5]) if len(line) > 5 and len(line[5]) > 0 else -1
+                except Exception as exp:
+                    # Log.info(str(exp))
+                    Log.info("Parsing error on SLURM output.")
+                    # print(lines)
+                    pass
+
                 # print(detailed_data)
                 return (submit, start, finish, joules, detailed_data)
 
-            return (0,0,0,0, dict())
+            return (0, 0, 0, 0, dict())
         except Exception as exp:
             # On error return 4*0
-            Log.warning(str(exp))
-            return (0,0,0,0, dict())
-        
-        #return str(output)
+            # print(exp)
+            print("From _update_exp_status: {0}".format(
+                traceback.format_exc()))
+            return (0, 0, 0, 0, dict())
+
+    def parse_output_number(self, string_number):
+        """[summary]
+
+        Args:
+            string_number ([type]): [description]
+        """
+        number = 0.0
+        if (string_number):
+            last_letter = string_number.strip()[-1]
+            multiplier = 1
+            if last_letter == "G":
+                multiplier = 1000000
+                number = string_number[:-1]
+            elif last_letter == "K" or last_letter == "M":
+                multiplier = 1000
+                number = string_number[:-1]
+            else:
+                number = string_number
+            try:
+                number = float(number) * multiplier
+            except Exception as exp:
+                number = 0.0
+                pass
+        return number
 
     def parse_Alljobs_output(self, output, job_id):
         status = [x.split()[1] for x in output.splitlines()
@@ -184,7 +261,7 @@ class SlurmPlatform(ParamikoPlatform):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
     def get_job_energy_cmd(self, job_id):
-        return 'sacct -n -j {0} -o JobId%20,State,Submit,Start,End,ConsumedEnergy,MaxRSS,AveRSS'.format(job_id)
+        return 'sacct -n -j {0} -o JobId%20,State,Submit,Start,End,ConsumedEnergy,MaxRSS%20,AveRSS%20'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
         reason = [x.split(',')[1] for x in output.splitlines()
@@ -220,7 +297,7 @@ class SlurmPlatform(ParamikoPlatform):
         else:
             language = "#!/usr/bin/env python"
             return \
-                language+"""
+                language + """
 ###############################################################################
 #              {0}
 ###############################################################################
