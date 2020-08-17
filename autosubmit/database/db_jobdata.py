@@ -417,10 +417,9 @@ class JobDataStructure(MainDataBase):
             platform TEXT NOT NULL,
             job_id INTEGER NOT NULL,
             extra_data TEXT NOT NULL,
-            UNIQUE(counter,job_name),
-            INDEX 
+            UNIQUE(counter,job_name)
             );
-            CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);''')
+            ''')
         if not os.path.exists(self.database_path):
             open(self.database_path, "w")
             self.conn = self.create_connection(self.database_path)
