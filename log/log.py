@@ -123,6 +123,7 @@ class Log:
     console_handler.setFormatter(LogFormatter(False))
     log.addHandler(console_handler)
 
+
     @staticmethod
     def set_file(file_path, type='out', level=WARNING):
         """

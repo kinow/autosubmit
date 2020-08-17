@@ -23,7 +23,7 @@ Module containing functions to manage autosubmit's database.
 import os
 import sqlite3
 
-from log.log import Log
+from log.log import Log,AutosubmitCritical,AutosubmitError
 from autosubmit.config.basicConfig import BasicConfig
 
 CURRENT_DATABASE_VERSION = 1
@@ -39,15 +39,14 @@ def create_db(qry):
     try:
         (conn, cursor) = open_conn(False)
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
-        return False
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+
 
     try:
         cursor.executescript(qry)
-    except sqlite3.Error:
+    except sqlite3.Error as e:
         close_conn(conn, cursor)
-        Log.error('The database can not be created.' + 'DB file:' + BasicConfig.DB_PATH)
-        return False
+        raise AutosubmitCritical('Database can not be created',7000,e.message)
 
     conn.commit()
     close_conn(conn, cursor)
@@ -62,8 +61,7 @@ def check_db():
     """
 
     if not os.path.exists(BasicConfig.DB_PATH):
-        Log.error('Some problem has happened...check the database file.' + 'DB file:' + BasicConfig.DB_PATH)
-        return False
+        raise AutosubmitCritical('DB path does not exists: {0}'.format(BasicConfig.DB_PATH),7000)
     return True
 
 
@@ -101,14 +99,12 @@ def open_conn(check_version=True):
         # If database version is not the expected, update database....
         if version < CURRENT_DATABASE_VERSION:
             if not _update_database(version, cursor):
-                raise DbException('Database version could not be updated')
+                raise AutosubmitCritical('Database version doesn''t match', 7000)
 
         # ... or ask for autosubmit upgrade
         elif version > CURRENT_DATABASE_VERSION:
-            Log.critical('Database version is not compatible with this autosubmit version. Please execute pip install '
-                         'autosubmit --upgrade')
-            raise DbException('Database version not compatible')
-
+            raise AutosubmitCritical('Database version is not compatible with this autosubmit version. Please execute pip install '
+                         'autosubmit --upgrade', 7000)
     return conn, cursor
 
 
@@ -143,16 +139,15 @@ def save_experiment(name, description, version):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
-        return False
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
                        {'name': name, 'description': description, 'version': version})
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
-        Log.error('Could not register experiment: {0}'.format(e))
-        return False
+        raise AutosubmitCritical('Couldn''t register experiment',7000,e.message)
+
 
     conn.commit()
     close_conn(conn, cursor)
@@ -175,8 +170,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
-        return False
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -187,7 +181,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     close_conn(conn, cursor)
     if row is None:
         if error_on_inexistence:
-            Log.error('The experiment name "{0}" does not exist yet!!!', name)
+            raise AutosubmitCritical('The experiment name "{0}" does not exist yet!!!', 7000)
         return False
     return True
 
@@ -207,8 +201,7 @@ def get_autosubmit_version(expid):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
-        return False
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -218,8 +211,7 @@ def get_autosubmit_version(expid):
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:
-        Log.error('The experiment "{0}" does not exist yet!!!', expid)
-        return None
+        raise AutosubmitCritical('The experiment "{0}" does not exist'.format(expid),7000)
     return row[0]
 
 
@@ -239,8 +231,7 @@ def last_name_used(test=False, operational=False):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
-        return ''
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
     conn.text_factory = str
     if test:
         cursor.execute('SELECT name '
@@ -289,7 +280,7 @@ def delete_experiment(experiment_id):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        Log.error('Connection to database could not be established: {0}', e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
         return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})
@@ -325,8 +316,7 @@ def _update_database(version, cursor):
                                  'WHERE autosubmit_version NOT NULL;')
         cursor.execute('UPDATE db_version SET version={0};'.format(CURRENT_DATABASE_VERSION))
     except sqlite3.Error as e:
-        Log.critical('Can not update database: {0}', e)
-        return False
+        raise AutosubmitCritical('unable to update database version', 7000,e.message)
     Log.info("Update completed")
     return True
 

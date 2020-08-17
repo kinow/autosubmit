@@ -26,7 +26,6 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
 from log.log import AutosubmitCritical,AutosubmitError,Log
-
 class SlurmPlatform(ParamikoPlatform):
     """
     Class to manage jobs to host using SLURM scheduler

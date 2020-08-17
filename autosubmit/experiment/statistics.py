@@ -20,7 +20,7 @@
 import datetime
 from autosubmit.job.job import Job
 from autosubmit.monitor.utils import FixedSizeList
-from log.log import Log
+from log.log import Log,AutosubmitError,AutosubmitCritical
 
 
 def timedelta2hours(deltatime):

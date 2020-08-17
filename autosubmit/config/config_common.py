@@ -29,9 +29,9 @@ import subprocess
 from pyparsing import nestedExpr
 
 from bscearth.utils.date import parse_date
-from log.log import Log
+from log.log import Log, AutosubmitError,AutosubmitCritical
+
 from autosubmit.config.basicConfig import BasicConfig
-from log.log import AutosubmitCritical
 from collections import defaultdict
 class AutosubmitConfig(object):
     """
@@ -813,17 +813,16 @@ class AutosubmitConfig(object):
         try:
             output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
                                              shell=True)
-        except subprocess.CalledProcessError:
-            Log.critical("Failed to retrieve project branch...")
-            return False
+        except subprocess.CalledProcessError as e:
+            raise AutosubmitCritical("Failed to retrieve project branch...",7000,e.message)
 
         project_branch = output
         Log.debug("Project branch is: " + project_branch)
         try:
             output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
-        except subprocess.CalledProcessError:
+        except subprocess.CalledProcessError as e:
+            raise AutosubmitCritical("Failed to retrieve project commit SHA...", 7000,e.message)
             Log.critical("Failed to retrieve project commit SHA...")
-            return False
         project_sha = output
         Log.debug("Project commit SHA is: " + project_sha)
 

@@ -29,7 +29,6 @@ import pickle
 from time import localtime, strftime
 from shutil import move
 from autosubmit.job.job import Job
-from log.log import Log
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, bcolors
@@ -38,7 +37,7 @@ import autosubmit.database.db_structure as DbStructure
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
-
+from log.log import AutosubmitCritical,AutosubmitError,Log
 
 class JobList:
     """
@@ -941,8 +940,7 @@ class JobList:
                Status.SUBMITTED and not job.status == Status.READY]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
             if len(tmp) != 0 and len(active) != 0:
-                Log.warning(
-                    "Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
+                raise AutosubmitCritical("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)",7000)
             active = []
         return active
 
@@ -958,7 +956,6 @@ class JobList:
         for job in self._job_list:
             if job.name == name:
                 return job
-        Log.warning("We could not find that job {0} in the list!!!!", name)
 
     def get_in_queue_grouped_id(self, platform):
         jobs = self.get_in_queue(platform)
@@ -1027,11 +1024,14 @@ class JobList:
         :return: loaded joblist object
         :rtype: JobList
         """
-        if os.path.exists(filename):
-            fd = open(filename, 'rw')
-            return pickle.load(fd)
-        else:
-            Log.critical('File {0} does not exist'.format(filename))
+        try:
+            if os.path.exists(filename):
+                fd = open(filename, 'rw')
+                return pickle.load(fd)
+            else:
+                return list()
+        except IOError:
+            Log.printlog("Autosubmit will use a backup for recover the job_list",6000)
             return list()
 
     def load(self):
@@ -1056,6 +1056,7 @@ class JobList:
         """
         Persists the job list
         """
+        #self.update_status_log()
         self._persistence.save(self._persistence_path,
                                self._persistence_file, self._job_list)
     def backup_save(self):
@@ -1232,7 +1233,6 @@ class JobList:
 
             save = True
         Log.debug('Update finished')
-
         return save
 
     def update_genealogy(self, new=True, notransitive=False, update_structure=False):

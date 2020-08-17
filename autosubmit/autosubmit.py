@@ -78,8 +78,8 @@ import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from collections import defaultdict
 from pyparsing import nestedExpr
-from log.log import Log, AutosubmitError
-from log.log import AutosubmitCritical
+from log.log import Log, AutosubmitError,AutosubmitCritical
+
 
 sys.path.insert(0, os.path.abspath('.'))
 
@@ -589,6 +589,9 @@ class Autosubmit:
             Log.set_file(os.path.join(aslogs_path, command + '.log'), "out", log_level)
             Log.set_file(os.path.join(aslogs_path, command + '_err.log'), "err")
             Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+            Log.info("test")
+            Log.status("Status")
+            Log.error("errorr")
         else:
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '.log'), "out", log_level)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '_err.log'), "err")

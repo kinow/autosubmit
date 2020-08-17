@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from autosubmit.experiment.statistics import ExperimentStats
-from log.log import Log
+from log.log import Log,AutosubmitCritical,AutosubmitError
 
 # Autosubmit stats constants
 RATIO = 4
@@ -38,12 +38,11 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
     ind = np.arange(int(MAX_JOBS_PER_PLOT))
     width = 0.16
     # Creating stats figure + sanity check
-    if (num_plots > MAX_NUM_PLOTS):
-        Log.warning("The results are too large to be shown, try narrowing your query.")  
-        Log.info("Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
+    if num_plots > MAX_NUM_PLOTS:
+        message = "The results are too large to be shown, try narrowing your query. \n Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
 or -fp where you supply an integer that represents the number of hours into the past that should be queried, \
-suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI.")
-        raise Exception("Stats query our of bounds")
+suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
+        raise AutosubmitCritical("Stats query our of bounds",7000,message)
 
     fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
 

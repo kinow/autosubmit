@@ -24,7 +24,7 @@ import subprocess
 import shutil
 #from autosubmit import Autosubmit
 from autosubmit.config.basicConfig import BasicConfig
-from log.log import Log
+from log.log import Log,AutosubmitCritical,AutosubmitError
 
 
 class AutosubmitGit:
@@ -54,20 +54,17 @@ class AutosubmitGit:
                 try:
                     output = subprocess.check_output("cd {0}; git diff-index HEAD --".format(dirname_path),
                                                      shell=True)
-                except subprocess.CalledProcessError:
-                    Log.error("Failed to retrieve git info...")
-                    return False
+                except subprocess.CalledProcessError as e:
+                    raise AutosubmitCritical("Failed to retrieve git info ...",7000,e.message)
                 if output:
                     Log.info("Changes not committed detected... SKIPPING!")
-                    Log.warning("Commit needed!")
-                    return False
+                    raise AutosubmitCritical("Commit needed!",7000)
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
                                                      shell=True)
                     if output:
                         Log.info("Changes not pushed detected... SKIPPING!")
-                        Log.warning("Synchronization needed!")
-                        return False
+                        raise AutosubmitCritical("Synchronization needed!", 7000)
                     else:
                         if not as_conf.set_git_project_commit(as_conf):
                             return False
@@ -99,13 +96,13 @@ class AutosubmitGit:
                     return True
 
                 if output:
-                    Log.warning( "There are local changes not commited to Git" )
+                    Log.printlog("There are local changes not commited to git",3000)
                     return True
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
                                                      shell=True)
                     if output:
-                        Log.warning("Last commits are not pushed to Git")
+                        Log.printlog("There are local changes not pushed to git", 3000)
                         return True
                     else:
                         Log.info("Model Git repository is updated")
@@ -126,7 +123,7 @@ class AutosubmitGit:
         :return: True if clone was successful, False otherwise
         """
         if not as_conf.is_valid_git_repository():
-            Log.error("There isn't a correct Git configuration. Check that there's an origin and a commit or a branch")
+            raise AutosubmitCritical("Incorrect Git Configuration, check origin,commit and branch settings of expdef file", 7000)
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_remote_project_path = as_conf.get_git_remote_project_root()
@@ -185,11 +182,9 @@ class AutosubmitGit:
 
                     command="cd {0} && {1}".format(git_remote_path,command)
                     hpcarch.send_command(command)
-            except subprocess.CalledProcessError:
-                Log.error("Can not checkout commit {0}: {1}", git_project_commit, output)
+            except subprocess.CalledProcessError as e:
                 shutil.rmtree(project_path)
-                return False
-
+                raise AutosubmitCritical("Can not checkout commit {0}: {1}".format(git_project_commit, output))
         else:
             Log.info("Cloning {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
             try:
@@ -221,9 +216,7 @@ class AutosubmitGit:
                     hpcarch.send_command(command)
 
 
-            except subprocess.CalledProcessError:
-                Log.error("Can not clone {0} into {1}", git_project_branch + " " + git_project_origin, project_path)
+            except subprocess.CalledProcessError as e:
                 shutil.rmtree(project_path)
-                return False
-
+                raise AutosubmitCritical("Can not clone {0} into {1}".format(git_project_branch + " " + git_project_origin, project_path), 7000,e.message)
         return True
