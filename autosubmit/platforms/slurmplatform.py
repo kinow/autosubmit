@@ -153,25 +153,19 @@ class SlurmPlatform(ParamikoPlatform):
                 if packed == False:
                     line = lines[0].strip().split()
                     #print("Unpacked {0}".format(line))
-                    status = line[1]
+                    status = str(line[1])
                     if status != "COMPLETED":
                         packed == True
                 if packed == True:
                     i = -1
+                    # It can happen that after this loop, there is no COMPLETED job information
                     while (status != "COMPLETED"):
                         if len(lines) >= i * -1:
                             line = lines[i].strip().split()
-                            #print("Packed output {0}".format(output))
-                            #print("Packed lines {0}".format(lines))
-                            status = line[1]
-                            ave_rss = line[6] if len(line) > 6 and len(
-                                line[6].strip()) > 0 else "NA"
-                            if (ave_rss == "NA"):
-                                status = "UNKNOWN"
-                            i -= 1
+                            status = str(line[1])
                         else:
                             break
-                # print(line)
+
                 try:
                     submit = int(mktime(datetime.strptime(
                         line[2], "%Y-%m-%dT%H:%M:%S").timetuple()))
@@ -182,9 +176,7 @@ class SlurmPlatform(ParamikoPlatform):
                     joules = self.parse_output_number(
                         line[5]) if len(line) > 5 and len(line[5]) > 0 else -1
                 except Exception as exp:
-                    # Log.info(str(exp))
-                    Log.info("Parsing error on SLURM output.")
-                    # print(lines)
+                    Log.info("Parsing mishandling. Further attempt is necessary.")
                     pass
 
                 # print(detailed_data)
@@ -194,15 +186,17 @@ class SlurmPlatform(ParamikoPlatform):
         except Exception as exp:
             # On error return 4*0
             # print(exp)
-            print("From _update_exp_status: {0}".format(
-                traceback.format_exc()))
+            Log.warning("From _update_exp_status: {0}".format(str(exp)))
             return (0, 0, 0, 0, dict())
 
     def parse_output_number(self, string_number):
-        """[summary]
+        """
+        Parses number in format 1.0K 1.0M 1.0G
 
-        Args:
-            string_number ([type]): [description]
+        :param string_number: String representation of number
+        :type string_number: str
+        :return: number in float format
+        :rtype: float
         """
         number = 0.0
         if (string_number):
