@@ -494,6 +494,7 @@ class Autosubmit:
         except BaseException as e:
             if type(e) is SystemExit:
                 if e.message == 0: # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
+                    print(Autosubmit.autosubmit_version)
                     os._exit(0)
             raise AutosubmitCritical("Incorrect arguments for this command",7000)
 
@@ -505,8 +506,6 @@ class Autosubmit:
 
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version)
-        elif args.command == 'version':
-            return Autosubmit.autosubmit_version
         elif args.command == 'expid':
             return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                     args.operational, args.config) != ''
