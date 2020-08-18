@@ -135,8 +135,8 @@ class Autosubmit:
             BasicConfig.read()
             parser = argparse.ArgumentParser(
                 description='Main executable for autosubmit. ')
-            parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version,
-                                help="returns autosubmit's version number and exit")
+
+            parser.add_argument('-v', '--version', action='version', version=Autosubmit.autosubmit_version)
             parser.add_argument('-lf', '--logfile', choices=('NO_LOG','INFO','WARNING', 'DEBUG'),
                                 default='WARNING', type=str,
                                 help="sets file's log level.")
@@ -145,7 +145,6 @@ class Autosubmit:
                                 help="sets console's log level")
 
             subparsers = parser.add_subparsers(dest='command')
-
             # Run
             subparser = subparsers.add_parser(
                 'run', description="runs specified experiment")
@@ -491,7 +490,11 @@ class Autosubmit:
             # Changelog
             subparsers.add_parser('changelog', description='show changelog')
             args = parser.parse_args()
+
         except BaseException as e:
+            if type(e) is SystemExit:
+                if e.message == 0: # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
+                    os._exit(0)
             raise AutosubmitCritical("Incorrect arguments for this command",7000)
 
 
@@ -502,6 +505,8 @@ class Autosubmit:
 
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version)
+        elif args.command == 'version':
+            return Autosubmit.autosubmit_version
         elif args.command == 'expid':
             return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                     args.operational, args.config) != ''
