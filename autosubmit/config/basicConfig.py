@@ -24,7 +24,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 import os
 
-from bscearth.utils.log import Log
+from log.log import Log, AutosubmitError,AutosubmitCritical
 
 
 class BasicConfig:
@@ -38,6 +38,8 @@ class BasicConfig:
     DB_DIR = os.path.join(os.path.expanduser('~'), 'debug', 'autosubmit')
     STRUCTURES_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'as_metadata', 'structures')
+    GLOBAL_LOG_DIR = os.path.join(
+        '/esarchive', 'autosubmit', 'Aslogs')
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
@@ -98,7 +100,8 @@ class BasicConfig:
             BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
         if parser.has_option('structures', 'path'):
             BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
-
+        if parser.has_option('globallogs', 'path'):
+            BasicConfig.GLOBAL_LOG_DIR = parser.get('globallogs', 'path')
     @staticmethod
     def read():
         """

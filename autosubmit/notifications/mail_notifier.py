@@ -20,8 +20,7 @@
 import smtplib
 import email.utils
 from email.mime.text import MIMEText
-from bscearth.utils.log import Log
-
+from log.log import Log
 
 class MailNotifier:
     def __init__(self, basic_config):
@@ -36,8 +35,8 @@ class MailNotifier:
             message['To'] = email.utils.formataddr((mail, mail))
             try:
                 self._send_mail(self.config.MAIL_FROM, mail, message)
-            except:
-                Log.warning('An error occurred while sending a mail for the job {0}', job_name)
+            except BaseException as e:
+                Log.printlog('An error occurred while sending a mail for the job {0}', job_name,6000)
 
     def _send_mail(self, mail_from, mail_to, message):
         server = smtplib.SMTP_SSL(self.config.SMTP_SERVER)

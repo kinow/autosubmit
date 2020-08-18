@@ -22,7 +22,6 @@ Main module for autosubmit. Only contains an interface class to all functionalit
 """
 
 import os
-import sys
 import re
 import time
 import json
@@ -41,8 +40,9 @@ from autosubmit.config.basicConfig import BasicConfig
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
-import threading
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
+from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 
 def threaded(fn):
@@ -51,7 +51,6 @@ def threaded(fn):
         thread.start()
         return thread
     return wrapper
-
 
 class Job(object):
     """
@@ -294,6 +293,9 @@ class Job(object):
         """
         Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
         Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+
+        Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
     def print_parameters(self):
         """
@@ -551,8 +553,7 @@ class Job(object):
         previous_status = self.status
         new_status = self.new_status
         if new_status == Status.COMPLETED:
-            Log.debug("This job seems to have completed: checking...")
-
+            Log.debug("{0} job seems to have completed: checking...".format(self.name))
 
             if not self.platform.get_completed_files(self.name):
                 log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
@@ -570,29 +571,25 @@ class Job(object):
         elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
-            Log.user_warning(
-                "Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
+            Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(self.name),3000)
             self.platform.get_completed_files(self.name)
             self.check_completion()
             if self.status == Status.COMPLETED:
-                Log.warning(
-                    'Job {0} seems to have failed but there is a COMPLETED file', self.name)
+                Log.printlog(" there is a COMPLETED file.",3000)
                 Log.result("Job {0} is COMPLETED", self.name)
             else:
                 self.update_children_status()
         elif self.status == Status.UNKNOWN:
-            Log.debug(
-                "Job {0} in UNKNOWN status. Checking completed files...", self.name)
+            Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),3000)
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
-                Log.warning('Job {0} in UNKNOWN status', self.name)
+                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6000)
             elif self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
-            Log.warning(
-                'Job {0} in SUBMITTED status after checking.', self.name)
+            Log.printlog("Job {0} in SUBMITTED. This should never happen on this step..".format(self.name),6000)
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
@@ -621,11 +618,8 @@ class Job(object):
         communications_library = as_conf.get_communications_library()
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
-
         # communications library not known
-        Log.error(
-            'You have defined a not valid communications library on the configuration file')
-        raise Exception('Communications library not known')
+        raise AutosubmitCritical( 'You have defined a not valid communications library on the configuration file', 7000)
 
     def update_children_status(self):
         children = list(self.children)
@@ -646,8 +640,7 @@ class Job(object):
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.warning(
-                "Job {0} completion check failed. There is no COMPLETED file", self.name)
+            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6000)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
@@ -842,8 +835,7 @@ class Job(object):
         if communications_library == 'paramiko':
             return self._get_paramiko_template(snippet, template)
         else:
-            Log.error('You have to define a template on Job class')
-            raise Exception('Job template content not found')
+            raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7000)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.platform
@@ -941,15 +933,13 @@ class Job(object):
             if not out:
                 self.undefined_variables = set(variables) - set(parameters)
                 if show_logs:
-                    Log.warning("The following set of variables to be substituted in template script is not part of "
-                                "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
+                    Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(self.undefined_variables),3000)
+
 
             # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
-                    Log.warning("The following set of variables are not being used in the templates: {0}",
-                                str(set(parameters)-set(variables)))
-
+                    Log.printlog("The following set of variables are not being used in the templates: {0}".format(str(set(parameters)-set(variables))),3000)
         return out
 
     def write_submit_time(self):
@@ -973,8 +963,7 @@ class Job(object):
         if self.platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
-            Log.warning(
-                'Could not get start time for {0}. Using current time as an approximation', self.name)
+            Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(self.name),3000)
             start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -1181,8 +1170,7 @@ class WrapperJob(Job):
             reason = self.platform.parse_queue_reason(
                 self.platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
-                Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
-                          reason)
+                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6000)
                 self.cancel_failed_wrapper_job()
                 self.update_failed_jobs()
                 return
@@ -1219,8 +1207,7 @@ class WrapperJob(Job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
             # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.error("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(
-                job.name, self.name))
+            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name,self.name),6000)
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
@@ -1278,8 +1265,8 @@ done
                         if len(out) > 1:
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
-                                Log.info("Job {0} started at {1}".format(
-                                    jobname, str(parse_date(start_time))))
+                                Log.status("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+
                                 self.running_jobs_start[job] = start_time
                                 job.new_status = Status.RUNNING
                                 job.update_status(
@@ -1290,8 +1277,9 @@ done
                                 over_wallclock = self._check_inner_job_wallclock(
                                     job)
                                 if over_wallclock:
-                                    Log.error(
-                                        "Job {0} is FAILED".format(jobname))
+                                    Log.printlog(
+                                        "Job {0} is FAILED".format(jobname),6000)
+
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
@@ -1331,6 +1319,7 @@ done
 
     def cancel_failed_wrapper_job(self):
         Log.error("Cancelling job with id {0}".format(self.id))
+        Log.printlog("Cancelling job with id {0}".format(self.id),6000)
         self.platform.send_command(
             self.platform.cancel_cmd + " " + str(self.id))
 

@@ -1,9 +1,6 @@
-from time import sleep
-from time import time
-
 import os
 
-from bscearth.utils.log import Log
+from log.log import Log
 from autosubmit.job.job_common import Status
 
 
@@ -342,9 +339,7 @@ class Platform(object):
         :rtype: Boolean
         """
         try:
-            
             title_job = "[INFO] JOBID=" + str(jobid)
-
             if os.path.exists(complete_path):                
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
@@ -364,5 +359,5 @@ class Platform(object):
                             #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
 
         except Exception as ex:
-            Log.info("Writing Job Id Failed : " + str(ex))
+           Log.error("Writing Job Id Failed : " + str(ex))
         

@@ -18,12 +18,9 @@
 # along with Autosubmit.  If not, see <http: www.gnu.org / licenses / >.
 
 
-import time
-
 import os
 
-from bscearth.utils.log import Log
-
+from log.log import Log
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
 from submitter import Submitter
