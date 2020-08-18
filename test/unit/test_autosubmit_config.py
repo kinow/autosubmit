@@ -323,9 +323,14 @@ class TestAutosubmitConfig(TestCase):
         config.reload()
 
         # TODO: reorganize act & improve the assertions
-        should_be_false = config.set_git_project_commit(config)
-        should_be_false2 = config.set_git_project_commit(config)
-
+        try:
+            should_be_false = config.set_git_project_commit(config)
+        except:
+            should_be_false = False
+        try:
+            should_be_false2 = config.set_git_project_commit(config)
+        except:
+            should_be_false2 = False
         open_mock = mock_open(read_data='PROJECT_BRANCH = dummy \n PROJECT_COMMIT = dummy')
         with patch.object(builtins, "open", open_mock):
             # act
