@@ -195,7 +195,7 @@ class MainDataBase():
             return None
 
     def create_index(self):
-        """ Creates index
+        """ Creates index from statement defined in child class
         """
         try:
             if self.conn:
@@ -448,9 +448,11 @@ class JobDataStructure(MainDataBase):
             UNIQUE(counter,job_name)
             );
             ''')
+        # Index creation should be in a different statement
         self.create_index_query = textwrap.dedent(''' 
             CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);
             ''')
+
         if not os.path.exists(self.database_path):
             open(self.database_path, "w")
             self.conn = self.create_connection(self.database_path)
