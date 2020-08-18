@@ -491,7 +491,7 @@ class Autosubmit:
             subparsers.add_parser('changelog', description='show changelog')
             args = parser.parse_args()
 
-        except BaseException as e:
+        except Exception as e:
             if type(e) is SystemExit:
                 if e.message == 0: # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
                     print(Autosubmit.autosubmit_version)
