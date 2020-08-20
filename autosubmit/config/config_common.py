@@ -353,7 +353,7 @@ class AutosubmitConfig(object):
         """
         return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
 
-    def check_conf_files(self):
+    def check_conf_files(self,check_file=True):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
@@ -362,6 +362,7 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
         Log.info('\nChecking configuration files...')
+        self.ignore_file_path = check_file
         self.reload()
         self.check_expdef_conf()
         self.check_platforms_conf()

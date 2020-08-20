@@ -87,7 +87,7 @@ class SgePlatform(ParamikoPlatform):
 
     def connect(self):
         """
-        In this case, it does nothing because connection is established foe each command
+        In this case, it does nothing because connection is established for each command
 
         :return: True
         :rtype: bool
@@ -95,7 +95,7 @@ class SgePlatform(ParamikoPlatform):
         self.connected = True
     def restore_connection(self):
         """
-        In this case, it does nothing because connection is established foe each command
+        In this case, it does nothing because connection is established for each command
 
         :return: True
         :rtype: bool
@@ -103,7 +103,7 @@ class SgePlatform(ParamikoPlatform):
         self.connected = True
     def test_connection(self):
         """
-        In this case, it does nothing because connection is established foe each command
+        In this case, it does nothing because connection is established for each command
 
         :return: True
         :rtype: bool

@@ -21,7 +21,7 @@
 import os
 import sys
 
-from log.log import Log,AutosubmitError,AutosubmitCritical
+from log.log import Log,AutosubmitCritical
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -47,7 +47,7 @@ def main():
         if "temporarily unavailable" in str(e.message):
             Log.critical("Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock",7000)
         else:
-            Log.critical("Unhandled error, if you see this message report it in autosubmit git")
+            Log.critical("Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
         os._exit(1)
 
 if __name__ == "__main__":

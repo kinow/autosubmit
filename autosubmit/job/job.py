@@ -101,7 +101,7 @@ class Job(object):
         self.scratch_free_space = None
         self.custom_directives = []
         self.undefined_variables = None
-
+        self.log_retries = 5
         self.id = job_id
         self.file = None
         self._local_logs = ('', '')
@@ -518,27 +518,41 @@ class Job(object):
         retries = 3
         sleeptime = 5
         i = 0
-        while (not out_exist or not err_exist) and i < retries:
-            out_exist = platform.check_file_exists(
-                remote_logs[0])  # will do 5 retries
-            err_exist = platform.check_file_exists(
-                remote_logs[1])  # will do 5 retries
-            if not out_exist or not err_exist:
-                sleeptime = sleeptime + 5
-                i = i + 1
-                sleep(sleeptime)
-        if out_exist and err_exist:
-            if copy_remote_logs:
-                if local_logs != remote_logs:
-                    # unifying names for log files
-                    self.synchronize_logs(platform, remote_logs, local_logs)
-                    remote_logs = local_logs
-                platform.get_logs_files(self.expid, remote_logs)
-            # Update the logs with Autosubmit Job Id Brand
-            for local_log in local_logs:
-                platform.write_jobid(self.id, os.path.join(
-                    self._tmp_path, 'LOG_' + str(self.expid), local_log))
-        platform.closeConnection()
+        try:
+            while (not out_exist or not err_exist) and i < retries:
+                out_exist = platform.check_file_exists(
+                    remote_logs[0])  # will do 5 retries
+                err_exist = platform.check_file_exists(
+                    remote_logs[1])  # will do 5 retries
+                if not out_exist or not err_exist:
+                    sleeptime = sleeptime + 5
+                    i = i + 1
+                    sleep(sleeptime)
+            if out_exist and err_exist:
+                if copy_remote_logs:
+                    if local_logs != remote_logs:
+                        # unifying names for log files
+                        self.synchronize_logs(platform, remote_logs, local_logs)
+                        remote_logs = local_logs
+                    platform.get_logs_files(self.expid, remote_logs)
+                # Update the logs with Autosubmit Job Id Brand
+                for local_log in local_logs:
+                    platform.write_jobid(self.id, os.path.join(
+                        self._tmp_path, 'LOG_' + str(self.expid), local_log))
+        except AutosubmitError as e:
+            Log.error("{1} [eCode={0}]", e.code, e.message)
+            # Save job_list if not is a failed submitted job
+            try:
+                platform.test_connection()
+                self.retrieve_logfiles()
+            except Exception:
+                Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6000)
+        except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6000)
+        try:
+            platform.closeConnection()
+        except:
+            pass
         sleep(2)
         return
 
@@ -1092,6 +1106,7 @@ class WrapperJob(Job):
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
+
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
         self.platform = platform

@@ -629,7 +629,7 @@ class Autosubmit:
         id_eadmin = os.popen('id -u eadmin').read().strip()
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                                                           expid_delete)):
-            Log.info("Experiment directory does not exist.")
+            Log.result("Experiment directory does not exist.")
         else:
             ret = False
             # Handling possible failure of retrieval of current owner data
@@ -940,7 +940,7 @@ class Autosubmit:
         os.system('clear')
         signal.signal(signal.SIGINT, signal_handler)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(False)
         project_type = as_conf.get_project_type()
         if project_type != "none":
             # Check proj configuration
@@ -1158,9 +1158,6 @@ class Autosubmit:
                 Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
                 os.system('clear')
                 signal.signal(signal.SIGINT, signal_handler)
-
-                as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                as_conf.check_conf_files()
 
                 hpcarch = as_conf.get_platform()
                 safetysleeptime = as_conf.get_safetysleeptime()
@@ -1382,10 +1379,13 @@ class Autosubmit:
                                 raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7000,
                                                          e.message)
                         if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
-                            Autosubmit.restore_platforms(platforms_to_test)
-                            main_loop_retrials = main_loop_retrials - 1
+                            try:
+                                Autosubmit.restore_platforms(platforms_to_test)
+                            except:
+                                raise AutosubmitCritical("Autosubmit couldn't recover the platforms",7000, e.message)
+                                main_loop_retrials = main_loop_retrials - 1
                         else:
-                            raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7000,e.message)
+                            raise AutosubmitCritical("Autosubmit Encounter too much e  rrors during running time",7000,e.message)
                     except AutosubmitCritical as e: # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
@@ -1571,7 +1571,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         Log.info("Getting job list...")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(False)
         # Getting output type from configuration
         output_type = as_conf.get_output_type()
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -1745,7 +1745,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         Log.info("Loading jobs...")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(False)
 
 
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -1782,9 +1782,8 @@ class Autosubmit:
                 monitor_exp.generate_output_stats(
                     expid, job_list, file_format, period_ini, period_fi, not hide)
                 Log.result("Stats plot ready")
-            except Exception as ex:
-                Log.critical(str(ex))
-                return False
+            except Exception as e:
+                raise AutosubmitCritical("Stats couldn't be shown",7000,e.message)
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(
                 ft, period_ini, period_fi))
@@ -1856,7 +1855,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(False)
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -1864,7 +1863,7 @@ class Autosubmit:
             expid, as_conf, notransitive=notransitive, monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(False)
 
         # Getting output type provided by the user in config, 'pdf' as default
         output_type = as_conf.get_output_type()
@@ -1982,7 +1981,7 @@ class Autosubmit:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             as_conf = AutosubmitConfig(
                 experiment_id, BasicConfig, ConfigParserFactory())
-            as_conf.check_conf_files()
+            as_conf.check_conf_files(False)
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             if submitter.platforms is None:
@@ -1998,8 +1997,8 @@ class Autosubmit:
                 Log.info(
                     "Checking [{0}] from platforms configuration...", platform)
                 if not as_conf.get_migrate_user_to(platform):
-                    Log.critical(
-                        "Missing directive USER_TO in [{0}]", platform)
+                    Log.printlog(
+                        "Missing directive USER_TO in [{0}]".format( platform),7000)
                     error = True
                     break
                 if as_conf.get_migrate_project_to(platform):
@@ -2071,8 +2070,8 @@ class Autosubmit:
                             Log.debug(
                                 "The platform {0} does not contain absolute symlinks", platform)
                         except BaseException:
-                            Log.warning(
-                                "Absolute symlinks failed to convert, check user in platform.conf")
+                            Log.printlog(
+                                "Absolute symlinks failed to convert, check user in platform.conf",3000)
                             error = True
                             break
 
@@ -2081,13 +2080,14 @@ class Autosubmit:
                                 "Moving remote files/dirs on {0}", platform)
                             p.send_command("chmod 777 -R " + p.root_dir)
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), True):
-                                Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
-                                             os.path.join(p.temp_dir, experiment_id))
+                                Log.printlog(
+                                    "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
+                                             os.path.join(p.temp_dir, experiment_id), 6000))
                                 error = True
                                 break
-                        except (IOError, BaseException):
-                            Log.critical("The files/dirs on {0} cannot be moved to {1}.", p.root_dir,
-                                         os.path.join(p.temp_dir, experiment_id))
+                        except (IOError, BaseException) as e:
+                            Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
+                                         os.path.join(p.temp_dir, experiment_id)),6000)
                             error = True
                             break
 
@@ -2097,11 +2097,11 @@ class Autosubmit:
                 Log.result("[{0}] from platforms configuration OK", platform)
 
             if error:
-                Log.critical(
-                    "The experiment cannot be offered, reverting changes")
+                Log.printlog(
+                    "The experiment cannot be offered, reverting changes",7000)
                 as_conf = AutosubmitConfig(
                     experiment_id, BasicConfig, ConfigParserFactory())
-                as_conf.check_conf_files()
+                as_conf.check_conf_files(False)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
                     p.move_file(os.path.join(
@@ -2116,8 +2116,8 @@ class Autosubmit:
                 return False
             else:
                 if not Autosubmit.archive(experiment_id, False, False):
-                    Log.critical(
-                        "The experiment cannot be offered,reverting changes.")
+                    Log.printlog(
+                        "The experiment cannot be offered, reverting changes", 7000)
                     for platform in backup_files:
                         p = submitter.platforms[platform]
                         p.move_file(os.path.join(
@@ -2136,12 +2136,11 @@ class Autosubmit:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
             if not Autosubmit.unarchive(experiment_id, False):
-                Log.critical("The experiment cannot be picked up")
-                return False
+                raise AutosubmitCritical("The experiment cannot be picked up",7000)
             Log.info("Local files/dirs have been successfully picked up")
             as_conf = AutosubmitConfig(
                 experiment_id, BasicConfig, ConfigParserFactory())
-            as_conf.check_conf_files()
+            as_conf.check_conf_files(False)
             Log.info("Checking remote platforms")
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
@@ -2167,8 +2166,7 @@ class Autosubmit:
                                 "Files/dirs on {0} have been successfully picked up", platform)
                         except (IOError, BaseException):
                             error = True
-                            Log.critical("The files/dirs on {0} cannot be copied to {1}.",
-                                         os.path.join(p.temp_dir, experiment_id), p.root_dir)
+                            Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(os.path.join(p.temp_dir, experiment_id), p.root_dir),6000)
                             break
                         backup_files.append(platform)
                     else:
@@ -2176,8 +2174,8 @@ class Autosubmit:
                             "Files/dirs on {0} have been successfully picked up", platform)
             if error:
                 Autosubmit.archive(experiment_id, False, False)
-                Log.critical(
-                    "The experiment cannot be picked,reverting changes.")
+                Log.printlog(
+                    "The experiment cannot be picked,reverting changes.",7000)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
                     p.send_command("rm -R " + p.root_dir)
@@ -2200,17 +2198,11 @@ class Autosubmit:
         :type experiment_id: str
         """
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory {0} is needed and does not exist.", exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return False
-
 
         as_conf = AutosubmitConfig(
             experiment_id, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
-            return False
+        as_conf.check_conf_files(False)
+
 
         project_type = as_conf.get_project_type()
         if project_type != "none":
@@ -2250,16 +2242,11 @@ class Autosubmit:
 
         Log.info("Describing {0}", experiment_id)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory {0} is needed and does not exist.", exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return False
 
         as_conf = AutosubmitConfig(
             experiment_id, BasicConfig, ConfigParserFactory())
-        if not as_conf.check_conf_files():
-            return False
+        as_conf.check_conf_files(False)
+
         user = os.stat(as_conf.experiment_file).st_uid
         try:
             user = pwd.getpwuid(user).pw_name
@@ -2389,8 +2376,7 @@ class Autosubmit:
             config_file.close()
             Log.result("Configuration file written successfully")
         except (IOError, OSError) as e:
-            Log.critical("Can not write config file: {0}".format(e.message))
-            return False
+            raise AutosubmitCritical("Can not write config file: {0}",7000,e.message)
         return True
 
     @staticmethod
@@ -2410,12 +2396,9 @@ class Autosubmit:
             d = dialog.Dialog(
                 dialog="dialog", autowidgetsize=True, screen_color='GREEN')
         except dialog.DialogError:
-            Log.critical(not_enough_screen_size_msg)
-            return False
+            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
         except Exception:
-            Log.critical("Missing package 'dialog', please install it with: 'apt-get install dialog'"
-                         "or provide configure arguments")
-            return False
+            raise AutosubmitCritical("Dialog libs aren't found in your Operational system",7000)
 
         d.set_background_title("Autosubmit configure utility")
         if os.geteuid() == 0:
@@ -2437,8 +2420,7 @@ class Autosubmit:
                 os.system('clear')
                 return False
         except dialog.DialogError:
-            Log.critical(not_enough_screen_size_msg)
-            return False
+            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
 
         filename = '.autosubmitrc'
         if level == 'All':
@@ -2475,19 +2457,16 @@ class Autosubmit:
                     jobs_conf_path = parser.get('conf', 'jobs')
 
         except (IOError, OSError) as e:
-            Log.critical("Can not read config file: {0}".format(e.message))
-            return False
+            raise AutosubmitCritical("Can not read config file",7000,e.message)
 
         while True:
             try:
                 code, database_path = d.dselect(database_path, width=80, height=20,
                                                 title='\Zb\Z1Select path to database\Zn', colors='enable')
             except dialog.DialogError:
-                Log.critical(not_enough_screen_size_msg)
-                return False
-
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7000)
             if Autosubmit._requested_exit(code, d):
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7000)
             elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
@@ -2502,11 +2481,11 @@ class Autosubmit:
                                                   title='\Zb\Z1Select path to experiments repository\Zn',
                                                   colors='enable')
             except dialog.DialogError:
-                Log.critical(not_enough_screen_size_msg)
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
+
 
             if Autosubmit._requested_exit(code, d):
-                return False
+                raise AutosubmitCritical("Graphical visualization failed,requested exit",7000)
             elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
@@ -2527,11 +2506,10 @@ class Autosubmit:
                                      form_height=10,
                                      title='\Zb\Z1Just a few more options:\Zn', colors='enable')
             except dialog.DialogError:
-                Log.critical(not_enough_screen_size_msg)
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
 
             if Autosubmit._requested_exit(code, d):
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, _requested_exit", 7000)
             elif code == dialog.Dialog.OK:
                 database_filename = tag[0]
                 platforms_conf_path = tag[1]
@@ -2562,11 +2540,10 @@ class Autosubmit:
                                      form_height=10,
                                      title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
             except dialog.DialogError:
-                Log.critical(not_enough_screen_size_msg)
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7000)
 
             if Autosubmit._requested_exit(code, d):
-                return False
+                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7000)
             elif code == dialog.Dialog.OK:
                 smtp_hostname = tag[0]
                 mail_from = tag[1]
@@ -2598,9 +2575,7 @@ class Autosubmit:
                      width=50, height=5)
             os.system('clear')
         except (IOError, OSError) as e:
-            Log.critical("Can not write config file: {0}".format(e.message))
-            os.system('clear')
-            return False
+            raise AutosubmitCritical("Can not write config file", 7000,e.message)
         return True
 
     @staticmethod
@@ -2623,12 +2598,10 @@ class Autosubmit:
             Log.info("Creating autosubmit database...")
             qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
             if not create_db(qry):
-                Log.critical("Can not write database file")
-                return False
+                raise AutosubmitCritical("Can not write database file", 7000)
             Log.result("Autosubmit database created successfully")
         else:
-            Log.error("Database already exists.")
-            return False
+            raise AutosubmitCritical("Database already exists.", 7000)
         return True
 
     @staticmethod
@@ -2646,9 +2619,8 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        if not as_conf.check_expdef_conf():
-            Log.critical('Can not refresh with invalid configuration')
-            return False
+        as_conf.check_expdef_conf()
+
 
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
@@ -2668,9 +2640,8 @@ class Autosubmit:
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        if not as_conf.check_expdef_conf():
-            Log.critical('Can not refresh with invalid configuration')
-            return False
+        as_conf.check_expdef_conf()
+
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
@@ -2689,11 +2660,6 @@ class Autosubmit:
         """
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory %s is needed and does not exist." % exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
 
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
@@ -2701,8 +2667,7 @@ class Autosubmit:
             # Cleaning to reduce file size.
             version = get_autosubmit_version(expid)
             if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
-                Log.critical("Can not archive project. Clean not successful")
-                return False
+                raise AutosubmitCritical("Can not archive project. Clean not successful", 7000)
 
         # Getting year of last completed. If not, year of expid folder
         year = None
@@ -2737,8 +2702,8 @@ class Autosubmit:
                 tar.close()
                 os.chmod(os.path.join(year_path, output_filepath), 0o755)
         except Exception as e:
-            Log.critical("Can not write tar file: {0}".format(e))
-            return False
+            raise AutosubmitCritical("Can not write tar file", 7000,e.message)
+
 
         Log.info("Tar file created!")
 
@@ -2756,10 +2721,9 @@ class Autosubmit:
                     Log.warning("Experiment folder renamed to: {0}".format(
                         exp_folder+"_to_delete "))
                 except Exception as e:
-                    Log.critical(
-                        "Can not remove or rename experiments folder: {0}".format(e))
+
                     Autosubmit.unarchive(expid, compress, True)
-                    return False
+                    raise AutosubmitCritical("Can not remove or rename experiments folder",7000,e.message)
 
         Log.result("Experiment archived successfully")
         return True
@@ -2807,7 +2771,7 @@ class Autosubmit:
                 tar.close()
         except Exception as e:
             shutil.rmtree(exp_folder, ignore_errors=True)
-            Log.critical("Can not extract tar file: {0}".format(e))
+            Log.printlog("Can not extract tar file: {0}".format(e),6000)
             return False
 
         Log.info("Unpacking finished")
@@ -2815,7 +2779,7 @@ class Autosubmit:
         try:
             os.remove(archive_path)
         except Exception as e:
-            Log.error("Can not remove archived file folder: {0}".format(e))
+            Log.printlog("Can not remove archived file folder: {0}".format(e),7000)
             return False
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)
@@ -2878,11 +2842,6 @@ class Autosubmit:
             os.chmod(aslogs_path, 0o775)
         else:
             os.chmod(aslogs_path, 0o775)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory %s is needed and does not exist." % exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -2892,7 +2851,7 @@ class Autosubmit:
                     Log.info("Preparing .lock file to avoid multiple instances with same expid.")
 
                     as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-                    as_conf.check_conf_files()
+                    as_conf.check_conf_files(False)
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
                     output_type = as_conf.get_output_type()
@@ -2920,8 +2879,7 @@ class Autosubmit:
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
                     if len(member_list) != len(set(member_list)):
-                        Log.error('There are repeated member names!')
-                        return False
+                        raise AutosubmitCritical("There are repeated member names!")
                     rerun = as_conf.get_rerun()
 
                     Log.info("\nCreating the jobs list...")
@@ -3072,10 +3030,10 @@ class Autosubmit:
                                                  svn_project_revision + " " + svn_project_url + " " +
                                                  project_destination, shell=True)
             except subprocess.CalledProcessError:
-                Log.error("Can not check out revision {0} into {1}", svn_project_revision + " " + svn_project_url,
-                          project_path)
+
                 shutil.rmtree(project_path, ignore_errors=True)
-                return False
+                raise AutosubmitCritical("Can not check out revision {0} into {1}".format(svn_project_revision + " " + svn_project_url,
+                          project_path),7000)
             Log.debug("{0}", output)
 
         elif project_type == "local":
@@ -3093,19 +3051,17 @@ class Autosubmit:
                                    local_project_path+"/* "+local_destination]
                             subprocess.call(cmd, shell=True)
                         except subprocess.CalledProcessError:
-                            Log.error(
-                                "Can not synchronize {0} into {1}. Exiting...", local_project_path, project_path)
-                            return False
+                            raise AutosubmitCritical("Can not rsync {0} into {1}. Exiting...".format(
+                                local_project_path, project_path), 7000)
                 else:
                     os.mkdir(local_destination)
                     try:
                         output = subprocess.check_output(
                             "cp -R " + local_project_path + "/* " + local_destination, shell=True)
                     except subprocess.CalledProcessError:
-                        Log.error(
-                            "Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                         shutil.rmtree(project_path)
-                        return False
+                        raise AutosubmitCritical("Can not copy {0} into {1}. Exiting...".format(
+                            local_project_path, project_path), 7000)
             else:
                 os.mkdir(project_path)
                 os.mkdir(local_destination)
@@ -3117,10 +3073,9 @@ class Autosubmit:
                     output = subprocess.check_output(
                         "cp -R " + local_project_path + "/* " + local_destination, shell=True)
                 except subprocess.CalledProcessError:
-                    Log.error(
-                        "Can not copy {0} into {1}. Exiting...", local_project_path, project_path)
                     shutil.rmtree(project_path)
-                    return False
+                    raise AutosubmitCritical(
+                        "Can not copy {0} into {1}. Exiting...".format( local_project_path, project_path), 7000)
                 Log.debug("{0}", output)
         return True
 
@@ -3177,12 +3132,6 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-        if not os.path.exists(exp_path):
-            Log.critical(
-                "The directory %s is needed and does not exist." % exp_path)
-            Log.warning("Does an experiment with the given id exist?")
-            return 1
-
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -3199,9 +3148,8 @@ class Autosubmit:
                 wrongExpid = 0
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, ConfigParserFactory())
-                if not as_conf.check_conf_files():
-                    Log.critical('Can not run with invalid configuration')
-                    return False
+                as_conf.check_conf_files(False)
+
                 # Getting output type from configuration
                 output_type = as_conf.get_output_type()
 
@@ -3240,10 +3188,7 @@ class Autosubmit:
                                 ".\n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
                                 "\n\tRemember that this option expects section names separated by a blank space as input."
 
-                        Log.info(section_validation_message)
-                        Log.critical("Error in the supplied input for -ft.")
-                        return False
-
+                        raise AutosubmitCritical("Error in the supplied input for -ft.",7000,section_validation_message)
                 job_list = Autosubmit.load_job_list(
                     expid, as_conf, notransitive=notransitive)
                 submitter = Autosubmit._get_submitter(as_conf)
@@ -3288,9 +3233,7 @@ class Autosubmit:
                             job_validation_message += "\n\tSpecified job(s) : [" + str(job_not_foundList) + "] not found in the experiment " + \
                                 str(expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
                                 "\n\tRemember that this option expects job names separated by a blank space as input."
-                        Log.info(job_validation_message)
-                        Log.critical("Error in the supplied input for -fl.")
-                        return False
+                        raise AutosubmitCritical("Error in the supplied input for -ft.",7000,section_validation_message)
 
                 # Validating fc if filter_chunks -fc has been set:
                 if filter_chunks is not None:
@@ -3354,10 +3297,7 @@ class Autosubmit:
 
                      # Ending validation
                     if fc_filter_is_correct == False:
-                        Log.info(fc_validation_message)
-                        Log.critical("Error in the supplied input for -fc.")
-                        return False
-
+                        raise AutosubmitCritical("Error in the supplied input for -fc.",7000,section_validation_message)
                 # Validating status, if filter_status -fs has been set:
                 # At this point we already have job_list from where we are getting the allows STATUS
                 if filter_status is not None:
@@ -3389,9 +3329,8 @@ class Autosubmit:
                                 status_validation_message += "\n\t There are no jobs with status " + \
                                     status + " in this experiment."
                     if status_validation_error == True:
-                        Log.info(status_validation_message)
-                        Log.critical("Error in the supplied input for -fs.")
-                        return False
+                        raise AutosubmitCritical("Error in the supplied input for -fs.",7000,section_validation_message)
+
                 jobs_filtered = []
                 final_status = Autosubmit._get_status(final)
                 if filter_section or filter_chunks:
@@ -3476,9 +3415,7 @@ class Autosubmit:
 
                     # Ending validation
                     if filter_is_correct == False:
-                        Log.info(validation_message)
-                        Log.critical("Error in the supplied input for -ftc.")
-                        return False
+                        raise AutosubmitCritical("Error in the supplied input for -ftc.", 7000, section_validation_message)
 
                     # If input is valid, continue.
                     record = dict()
@@ -3576,8 +3513,6 @@ class Autosubmit:
                                     "-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
                             else:
                                 Log.info(job_list.print_with_status(statusChange = performed_changes))
-                                Log.status(job_list.print_with_status(statusChange = performed_changes))
-
                     else: 
                         Log.warning("No changes were performed.")
                 # End of New Feature
@@ -3658,12 +3593,8 @@ class Autosubmit:
                 if save and wrongExpid == 0:
                     job_list.save()
                 else:
-                    Log.warning(
-                        "Changes NOT saved to the JobList!!!!:  use -s option to save")
-                    if wrongExpid > 0:
-
-                        Log.error(
-                            "Save disabled due invalid  expid, please check <expid> or/and jobs expid name")
+                    Log.printlog(
+                        "Changes NOT saved to the JobList!!!!:  use -s option to save",3000)
 
                 if as_conf.get_wrapper_type() != 'none' and check_wrapper:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
@@ -3872,11 +3803,8 @@ class Autosubmit:
         communications_library = as_conf.get_communications_library()
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
-
-        # communications library not known
-        Log.error(
-            'You have defined a not valid communications library on the configuration file')
-        raise Exception('Communications library not known')
+        else:
+            return ParamikoSubmitter()# only paramiko is avaliable right now so..
 
     @staticmethod
     def _get_job_list_persistence(expid, as_conf):
@@ -4000,8 +3928,7 @@ class Autosubmit:
         exp_parser = as_conf.get_parser(
             ConfigParserFactory(), as_conf.experiment_file)
         if exp_parser.get_bool_option('rerun', "RERUN", True):
-            Log.error('Can not test a RERUN experiment')
-            return False
+            raise AutosubmitCritical('Can not test a RERUN experiment',7000)
 
         content = open(as_conf.experiment_file).read()
         if random_select:
@@ -4013,8 +3940,8 @@ class Autosubmit:
                     if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
                         test_platforms.append(section)
                 if len(test_platforms) == 0:
-                    Log.critical('No test HPC defined')
-                    return False
+                    raise AutosubmitCritical("Missing hpcarch setting in expdef",7000)
+
                 hpc = random.choice(test_platforms)
             if member is None:
                 member = random.choice(exp_parser.get(
@@ -4109,9 +4036,12 @@ class Autosubmit:
 
         hpcarch = as_conf.get_platform()
         submitter = Autosubmit._get_submitter(as_conf)
-        submitter.load_platforms(as_conf)
-        if submitter.platforms is None:
-            raise AutosubmitCritical("platforms couldn't be loaded",7000)
+        try:
+            submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                raise AutosubmitCritical("platforms couldn't be loaded",7000)
+        except:
+            raise AutosubmitCritical("platforms couldn't be loaded", 7000)
         platforms = submitter.platforms
 
         platforms_to_test = set()
@@ -4138,18 +4068,7 @@ class Autosubmit:
 
             if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
-
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-                Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
-
-            #elif job.status != Status.SUSPENDED:
-            #    job.status = Status.WAITING
-            #    job.fail_count = 0
-            #    Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
 
             job.platform.get_logs_files(expid, job.remote_logs)
-
-        #end = datetime.datetime.now()
-        #Log.info("Time spent: '{0}'".format(end - start))
-        #Log.info("Updating the jobs list")
         return job_list

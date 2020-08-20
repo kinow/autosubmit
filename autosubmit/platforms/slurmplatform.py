@@ -133,7 +133,7 @@ class SlurmPlatform(ParamikoPlatform):
                 jobs_id.append(int(output.split(' ')[3]))
             return jobs_id
         except IndexError:
-            raise AutosubmitCritical("Submission failed, There are issues on your config file",7000)
+            raise AutosubmitCritical("Submission failed. There are issues on your config file",7000)
     def jobs_in_queue(self):
         dom = parseString('')
         jobs_xml = dom.getElementsByTagName("JB_job_number")

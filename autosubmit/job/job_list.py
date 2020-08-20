@@ -940,7 +940,7 @@ class JobList:
                Status.SUBMITTED and not job.status == Status.READY]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
             if len(tmp) != 0 and len(active) != 0:
-                raise AutosubmitCritical("Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)",7000)
+                raise AutosubmitCritical("Only Held Jobs active. Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)",7000)
             active = []
         return active
 
