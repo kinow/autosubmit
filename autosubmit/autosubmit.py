@@ -2847,9 +2847,6 @@ class Autosubmit:
                     Autosubmit._create_project_associated_conf(
                         as_conf, False, update_job)
 
-                    if project_type != "none":
-                        # Check project configuration
-                        as_conf.check_proj(False)
 
                     # Load parameters
                     Log.info("Loading parameters...")
@@ -2971,6 +2968,8 @@ class Autosubmit:
         except portalocker.AlreadyLocked:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
+        except AutosubmitCritical as e:
+            raise
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):

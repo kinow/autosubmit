@@ -493,7 +493,7 @@ class AutosubmitConfig(object):
             else:
                 section_file_path = parser.get_option(section,'FILE')
                 try:
-                    if not self.ignore_file_path:
+                    if  self.ignore_file_path:
                         if not os.path.exists(section_file_path):
                             if parser.check_exists(section, 'CHECK'):
                                 if not parser.get_option(section, 'CHECK') in "on_submission":
