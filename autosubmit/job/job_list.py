@@ -232,16 +232,16 @@ class JobList:
                                     location = location.strip('[').strip(']')
                                     if ':' in location:
                                         if len(location) == 3:
-                                            for chunk_number in range(int(location[0]), int(location[2])+1):
+                                            for chunk_number in range(int(location[0]), int(location[2]) + 1):
                                                 auxiliar_chunk_list.append(
                                                     chunk_number)
                                         elif len(location) == 2:
                                             if ':' == location[0]:
-                                                for chunk_number in range(0, int(location[1])+1):
+                                                for chunk_number in range(0, int(location[1]) + 1):
                                                     auxiliar_chunk_list.append(
                                                         chunk_number)
                                             elif ':' == location[1]:
-                                                for chunk_number in range(int(location[0])+1, len(dic_jobs._chunk_list)-1):
+                                                for chunk_number in range(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
                                                     auxiliar_chunk_list.append(
                                                         chunk_number)
                                     elif ',' in location:
@@ -275,7 +275,7 @@ class JobList:
                 numbers = str_split.split(":")
                 # change this to be checked in job_common.py
                 max_splits = min(int(numbers[1]), max_splits)
-                for count in range(int(numbers[0]), max_splits+1):
+                for count in range(int(numbers[0]), max_splits + 1):
                     splits.append(int(str(count).zfill(len(numbers[0]))))
             else:
                 if int(str_split) <= max_splits:
@@ -1237,7 +1237,7 @@ class JobList:
         if not notransitive:
             # Transitive reduction required
             current_structure = None
-            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR, "structure_"+self.expid+".db")):
+            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR, "structure_" + self.expid + ".db")):
                 try:
                     current_structure = DbStructure.get_structure(
                         self.expid, self._config.STRUCTURES_DIR)

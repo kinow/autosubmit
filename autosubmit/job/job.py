@@ -967,7 +967,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.now(), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
 
     def write_start_time(self):
         """
@@ -989,7 +989,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
         return True
 
     def write_end_time(self, completed):

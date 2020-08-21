@@ -73,7 +73,7 @@ from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
 from database.db_common import get_autosubmit_version
 from database.db_common import delete_experiment
-from database.db_jobdata import ExperimentStatus
+from database.db_jobdata import ExperimentStatus, JobDataStructure
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db

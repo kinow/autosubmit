@@ -31,11 +31,20 @@ from datetime import datetime
 from json import dumps
 #from networkx import DiGraph
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.job.job_package_persistence import JobPackagePersistence
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 
 
 CURRENT_DB_VERSION = 10
-_debug = True
+# Defining RowType standard
+
+
+class RowType:
+    NORMAL = 2
+    #PACKED = 2
+
+
+_debug = False
 JobItem = collections.namedtuple('JobItem', ['id', 'counter', 'job_name', 'created', 'modified', 'submit', 'start', 'finish',
                                              'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 'chunk', 'last', 'platform', 'job_id', 'extra_data'])
 
@@ -47,7 +56,7 @@ class JobData():
     """Job Data object
     """
 
-    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, status="UNKNOWN", rowtype=1, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", member="", chunk=0, last=1, platform="NA", job_id=0, extra_data=dict()):
+    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, status="UNKNOWN", rowtype=0, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", member="", chunk=0, last=1, platform="NA", job_id=0, extra_data=dict()):
         """[summary]
 
         Args:
@@ -276,9 +285,10 @@ class ExperimentStatus(MainDataBase):
         result = list()
         # print(current_table)
         # print(type(current_table))
-        for item in current_table:
-            #exp_id, expid, status, seconds = item
-            result.append(ExperimentRow(*item))
+        if current_table:
+            for item in current_table:
+                #exp_id, expid, status, seconds = item
+                result.append(ExperimentRow(*item))
         return result
 
     def _get_id_db(self):
@@ -415,11 +425,14 @@ class JobDataStructure(MainDataBase):
         MainDataBase.__init__(self, expid)
         BasicConfig.read()
         #self.expid = expid
+        self.basic_conf = BasicConfig
+        self.expid = expid
         self.folder_path = BasicConfig.JOBDATA_DIR
         self.database_path = os.path.join(
             self.folder_path, "job_data_" + str(expid) + ".db")
         #self.conn = None
         self.jobdata_list = JobDataList(self.expid)
+        # We use rowtype to identify a packed job
         self.create_table_query = textwrap.dedent(
             '''CREATE TABLE
             IF NOT EXISTS job_data (
@@ -463,7 +476,63 @@ class JobDataStructure(MainDataBase):
         else:
             self.conn = self.create_connection(self.database_path)
 
-    def write_submit_time(self, job_name, submit=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0):
+    def determine_rowtype(self, code):
+        """
+        Determines rowtype based on job information.
+
+        :param packed: True if job belongs to wrapper, False otherwise
+        :type packed: boolean
+        :return: rowtype, 2 packed, 1 normal
+        :rtype: int
+        """
+        if code:
+            return code
+        else:
+            return RowType.NORMAL
+
+    def get_job_package_code(self, current_job_name):
+        """
+        Finds the package code and retrieves it. None if no package.
+
+        :param BasicConfig: Basic configuration 
+        :type BasicConfig: Configuration Object
+        :param expid: Experiment Id
+        :type expid: String
+        :param current_job_name: Name of job
+        :type current_jobs: string
+        :return: package code, None if not found
+        :rtype: int or None
+        """
+        packages = None
+        try:
+            packages = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),
+                                             "job_packages_" + self.expid).load(wrapper=False)
+        except Exception as ex:
+            Log.debug(
+                "Wrapper table not found, trying packages. JobDataStructure.retrieve_packages")
+            packages = None
+            try:
+                packages = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),
+                                                 "job_packages_" + self.expid).load(wrapper=True)
+            except Exception as exp2:
+                packages = None
+
+        if (packages):
+            try:
+                for exp, package_name, job_name in packages:
+                    #print("Looking for {0}".format(current_job_name))
+                    if current_job_name == job_name:
+                        # print(package_name)
+                        code = int(package_name.split("_")[2])
+                        return code
+            except Exception as ex:
+                Log.warning(
+                    "Package parse error. JobDataStructure.retrieve_packages")
+                Log.debug(traceback.format_exc())
+                return None
+        return None
+
+    def write_submit_time(self, job_name, submit=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, packed=False):
         """Writes submit time of job.
 
         Args:
@@ -483,16 +552,11 @@ class JobDataStructure(MainDataBase):
         Returns:
             [type]: [description]
         """
-        #print("Saving write submit " + job_name)
         try:
             job_data = self.get_job_data(job_name)
             current_counter = 1
             max_counter = self._get_maxcounter_jobdata()
-            #submit = parse_date(submit) if submit > 0 else 0
-            #print("submit job data " + str(job_data))
             if job_data and len(job_data) > 0:
-                # print("job data has 1 element")
-                # max_counter = self._get_maxcounter_jobdata()
                 job_max_counter = max(job.counter for job in job_data)
                 current_last = [
                     job for job in job_data if job.counter == job_max_counter]
@@ -507,7 +571,7 @@ class JobDataStructure(MainDataBase):
                 current_counter = max_counter
             # Insert new last
             rowid = self._insert_job_data(JobData(
-                0, current_counter, job_name, None, None, submit, 0, 0, status, 1, ncpus, wallclock, qos, 0, date, member, section, chunk, 1, platform, job_id))
+                0, current_counter, job_name, None, None, submit, 0, 0, status, self.determine_rowtype(self.get_job_package_code(job_name)), ncpus, wallclock, qos, 0, date, member, section, chunk, 1, platform, job_id))
             # print(rowid)
             if rowid:
                 return True
@@ -522,7 +586,7 @@ class JobDataStructure(MainDataBase):
         # if rowid > 0:
         #     print("Successfully inserted")
 
-    def write_start_time(self, job_name, start=0, status="UNKWNONW", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0):
+    def write_start_time(self, job_name, start=0, status="UNKWNONW", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, packed=False):
         """Writes start time into the database
 
         Args:
@@ -600,7 +664,6 @@ class JobDataStructure(MainDataBase):
             # Updating existing row
             if job_data_last:
                 job_data_last = job_data_last[0]
-                # if job_data_last.finish == 0:
                 # Call Slurm here, update times.
                 if platform_object:
                     # print("There is platform object")
@@ -610,23 +673,17 @@ class JobDataStructure(MainDataBase):
                                 # print("Checking Slurm for " + str(job_name))
                                 submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(
                                     job_id, packed)
-                                # print(job_id)
-                                # print(packed)
-                                # print(submit_time)
-                                # print(start_time)
-                                # print(finish_time)
-                                # print(energy)
-                                # print(extra_data)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
-                        energy = 0
-                job_data_last.finish = int(
-                    finish_time) if finish_time > 0 else int(finish)
+                        #energy = 0
+                job_data_last.finish = finish_time if finish_time > 0 else int(
+                    finish)
                 job_data_last.status = status
                 job_data_last.job_id = job_id
                 job_data_last.energy = energy
-                job_data_last.extra_data = dumps(extra_data)
+                job_data_last.extra_data = dumps(
+                    extra_data) if extra_data else "NA"
                 job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
                 if submit_time > 0 and start_time > 0:
                     job_data_last.submit = int(submit_time)
@@ -637,20 +694,62 @@ class JobDataStructure(MainDataBase):
                 return True
             # It is necessary to create a new row
             submit_inserted = self.write_submit_time(
-                job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id)
+                job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, packed)
             write_inserted = self.write_start_time(job_name, finish, status, ncpus,
-                                                   wallclock, qos, date, member, section, chunk, platform, job_id)
+                                                   wallclock, qos, date, member, section, chunk, platform, job_id, packed)
             # print(submit_inserted)
             # print(write_inserted)
             if submit_inserted and write_inserted:
                 #print("retro finish")
                 self.write_finish_time(
-                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object)
+                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object, packed)
             else:
                 return None
         except Exception as exp:
             Log.debug(traceback.format_exc())
             Log.warning("Autosubmit couldn't write finish time.")
+            return None
+
+    def retry_incompleted_data(self, list_jobs):
+        """
+        Retries retrieval of data that might be incompleted. 
+
+        :param list_jobs: list of jobs in experiment
+        :type list_jobs: list()
+
+        :return: None (Modifies database)
+        """
+        try:
+            pending_jobs = self.get_pending_data()
+            if pending_jobs:
+                for item in pending_jobs:
+                    job_object = section = next(
+                        (job for job in list_jobs if job.name == item), None)
+                    if (job_object):
+                        platform_object = job_object.platform
+                        if type(platform_object) is not str:
+                            if platform_object.type == "slurm":
+                                # print("Checking Slurm for " + str(job_name))
+                                Log.info("Attempting to complete information for {0}".format(
+                                    job_object.name))
+                                submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(
+                                    job_object.id, job_object.packed)
+                                if submit_time > 0 and start_time > 0:
+                                    job_data_last = self.get_job_data_last(
+                                        job_object.name)[0]
+                                    job_data_last.submit = int(submit_time)
+                                    job_data_last.start = int(start_time)
+                                    job_data_last.energy = energy
+                                    job_data_last.extra_data = dumps(
+                                        extra_data)
+                                    job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+                                    rowid = self._update_finish_job_data_plus(
+                                        job_data_last)
+                                    Log.info("Historic data successfully retrieved and updated for: {0} {1}".format(
+                                        job_object.name, rowid))
+        except Exception as exp:
+            print(traceback.format_exc())
+            Log.warning(str(exp))
             return None
 
     def get_all_job_data(self):
@@ -709,6 +808,30 @@ class JobDataStructure(MainDataBase):
         except Exception as exp:
             Log.debug(traceback.format_exc())
             Log.warning("Autosubmit couldn't retrieve job data. get_job_data")
+            return None
+
+    def get_pending_data(self):
+        """[summary]
+        """
+        try:
+            job_names_list = list()
+            if os.path.exists(self.folder_path):
+                current_pending = self._get_job_data_pending()
+                if current_pending:
+                    for item in current_pending:
+                        job_id, job_name, job_rowtype = item
+                        job_names_list.append(job_name)
+                        # job_name_to_detail[job_name] = (job_id, job_rowtype)
+                        # jobid_list.append(job_id)
+                    return job_names_list
+                else:
+                    return None
+        except Exception as exp:
+            if _debug == True:
+                Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't retrieve job data. get_job_data_last")
             return None
 
     def get_job_data_last(self, job_name):
@@ -961,6 +1084,28 @@ class JobDataStructure(MainDataBase):
                 Log.info(traceback.format_exc())
             Log.debug(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
+            return None
+
+    def _get_job_data_pending(self):
+        """
+        Gets the list of job_id, job_name of those jobs that have pending information.
+        """
+        try:
+            if self.conn:
+                self.conn.text_factory = str
+                cur = self.conn.cursor()
+                cur.execute(
+                    "SELECT job_id, job_name, rowtype FROM job_data WHERE last=1 and platform='marenostrum4' and energy <= 0 and (status = 'COMPLETED' or status = 'FAILED')")
+                rows = cur.fetchall()
+                if rows and len(rows) > 0:
+                    return rows
+                else:
+                    return None
+        except sqlite3.Error as e:
+            if _debug == True:
+                Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
+            Log.warning("Error on historic database retrieval.")
             return None
 
     def _set_pragma_version(self, version=2):
