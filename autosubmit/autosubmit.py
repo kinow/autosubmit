@@ -1138,7 +1138,7 @@ class Autosubmit:
 
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files()
+        as_conf.check_conf_files(True)
         Log.info("Autosubmit is running with {0}", Autosubmit.autosubmit_version)
         if update_version:
             if as_conf.get_version() != Autosubmit.autosubmit_version:
@@ -2609,7 +2609,7 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        as_conf.check_expdef_conf(False)
+        as_conf.check_expdef_conf()
 
 
         project_type = as_conf.get_project_type()

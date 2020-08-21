@@ -60,7 +60,6 @@ class AutosubmitConfig(object):
         self._proj_parser = None
         self._proj_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "proj_" + expid + ".conf")
-        #self.check_proj_file()
         self.ignore_file_path = False
         self.wrong_config = defaultdict(list)
         self.warn_config = defaultdict(list)
@@ -353,7 +352,7 @@ class AutosubmitConfig(object):
         """
         return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
 
-    def check_conf_files(self,check_file=True):
+    def check_conf_files(self,check_file=False):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
