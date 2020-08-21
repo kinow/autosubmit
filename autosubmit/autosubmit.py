@@ -942,9 +942,6 @@ class Autosubmit:
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.check_conf_files(False)
         project_type = as_conf.get_project_type()
-        if project_type != "none":
-            # Check proj configuration
-            as_conf.check_proj()
         safetysleeptime = as_conf.get_safetysleeptime()
         Log.debug("The Experiment name is: {0}", expid)
         Log.debug("Sleep: {0}", safetysleeptime)
@@ -1815,7 +1812,6 @@ class Autosubmit:
 
             project_type = autosubmit_config.get_project_type()
             if project_type == "git":
-                autosubmit_config.check_proj()
                 Log.info("Registering commit SHA...")
                 autosubmit_config.set_git_project_commit(autosubmit_config)
                 autosubmit_git = AutosubmitGit(expid[0])
@@ -2205,9 +2201,6 @@ class Autosubmit:
 
 
         project_type = as_conf.get_project_type()
-        if project_type != "none":
-            if not as_conf.check_proj():
-                return False
 
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
@@ -2258,9 +2251,6 @@ class Autosubmit:
             os.path.getmtime(as_conf.experiment_file))
 
         project_type = as_conf.get_project_type()
-        if project_type != "none":
-            if not as_conf.check_proj():
-                return False
         if (as_conf.get_svn_project_url()):
             model = as_conf.get_svn_project_url()
             branch = as_conf.get_svn_project_url()
@@ -2837,11 +2827,6 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
-        if not os.path.exists(aslogs_path):
-            os.mkdir(aslogs_path)
-            os.chmod(aslogs_path, 0o775)
-        else:
-            os.chmod(aslogs_path, 0o775)
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -2865,7 +2850,7 @@ class Autosubmit:
 
                     if project_type != "none":
                         # Check project configuration
-                        as_conf.check_proj()
+                        as_conf.check_proj(False)
 
                     # Load parameters
                     Log.info("Loading parameters...")
