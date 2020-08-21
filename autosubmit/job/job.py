@@ -1021,7 +1021,7 @@ class Job(object):
             final_status = "FAILED"
             f.write('FAILED')
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed)
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])
 
     def check_started_after(self, date_limit):
         """

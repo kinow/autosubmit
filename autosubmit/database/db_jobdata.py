@@ -634,7 +634,7 @@ class JobDataStructure(MainDataBase):
                 "Autosubmit couldn't write start time.")
             return None
 
-    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False):
+    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=[]):
         """Writes the finish time into the database
 
         Args:
@@ -677,6 +677,13 @@ class JobDataStructure(MainDataBase):
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
                         #energy = 0
+                try:
+                    extra_data["parents"] =[int(item) for item in parent_id_list] 
+                except Exception as inner_exp:
+                    Log.debug("Parent Id List couldn't be parsed to array of int. Using default values.")
+                    extra_data["parents"] = parent_id_list
+                    pass
+                
                 job_data_last.finish = finish_time if finish_time > 0 else int(
                     finish)
                 job_data_last.status = status
