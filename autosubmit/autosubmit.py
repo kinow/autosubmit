@@ -813,7 +813,7 @@ class Autosubmit:
                     #####
                     autosubmit_config = AutosubmitConfig(
                         exp_id, BasicConfig, ConfigParserFactory())
-                    autosubmit_config.check_conf_files()
+                    autosubmit_config.check_conf_files(False)
                     project_type = autosubmit_config.get_project_type()
                     if project_type == "git":
                         autosubmit_git = AutosubmitGit(copy_id[0])
@@ -1808,7 +1808,7 @@ class Autosubmit:
         if project:
             autosubmit_config = AutosubmitConfig(
                 expid, BasicConfig, ConfigParserFactory())
-            autosubmit_config.check_conf_files()
+            autosubmit_config.check_conf_files(False)
 
             project_type = autosubmit_config.get_project_type()
             if project_type == "git":
@@ -2609,7 +2609,7 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        as_conf.check_expdef_conf()
+        as_conf.check_expdef_conf(False)
 
 
         project_type = as_conf.get_project_type()
@@ -2630,7 +2630,7 @@ class Autosubmit:
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        as_conf.check_expdef_conf()
+        as_conf.check_expdef_conf(False)
 
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
