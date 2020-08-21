@@ -2826,7 +2826,6 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-        aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
