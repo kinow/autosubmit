@@ -111,11 +111,12 @@ class AutosubmitConfig(object):
         if os.path.exists(self._proj_parser_file):
             with open(self._proj_parser_file, 'r+') as f:
                 first_line = f.readline()
-                #if not re.match('\[[a-zA-Z0-9_]*\]', first_line):
+                # if not re.match('\[[a-zA-Z0-9_]*\]', first_line):
                 if not re.match('^\[[^\[\]\# \t\n]*\][ \t]*$|^[ \t]+\[[^\[\]# \t\n]*\]', first_line):
                     content = f.read()
                     f.seek(0, 0)
-                    f.write('[DEFAULT]'.rstrip('\r\n') + '\n' + first_line + content)
+                    f.write('[DEFAULT]'.rstrip('\r\n') +
+                            '\n' + first_line + content)
 
     @property
     def jobs_file(self):
@@ -155,6 +156,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._jobs_parser.get_option(section, 'SYNCHRONIZE', '')
+
     def get_processors(self, section):
         """
         Gets processors needed for the given job type
@@ -223,6 +225,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+
     def get_current_user(self, section):
         """
         Returns the user to be changed from platform config file.
@@ -240,6 +243,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'HOST', '').lower()
+
     def get_current_project(self, section):
         """
         Returns the project to be changed from platform config file.
@@ -248,6 +252,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'PROJECT', '').lower()
+
     def set_new_user(self, section, new_user):
         """
         Sets new user for given platform
@@ -257,12 +262,12 @@ class AutosubmitConfig(object):
         """
         with open(self._platforms_parser_file) as p_file:
             contentLine = p_file.readline()
-            contentToMod=""
-            content=""
-            mod=False
+            contentToMod = ""
+            content = ""
+            mod = False
             while contentLine:
                 if re.search(section, contentLine):
-                    mod=True
+                    mod = True
                 if mod:
                     contentToMod += contentLine
                 else:
@@ -270,10 +275,13 @@ class AutosubmitConfig(object):
                 contentLine = p_file.readline()
         if mod:
             old_user = self.get_current_user(section)
-            contentToMod = contentToMod.replace(re.search(r'[^#]\bUSER\b =.*', contentToMod).group(0)[1:], "USER = " + new_user)
-            contentToMod = contentToMod.replace(re.search(r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
+            contentToMod = contentToMod.replace(re.search(
+                r'[^#]\bUSER\b =.*', contentToMod).group(0)[1:], "USER = " + new_user)
+            contentToMod = contentToMod.replace(re.search(
+                r'[^#]\bUSER_TO\b =.*', contentToMod).group(0)[1:], "USER_TO = " + old_user)
         open(self._platforms_parser_file, 'w').write(content)
         open(self._platforms_parser_file, 'a').write(contentToMod)
+
     def set_new_host(self, section, new_host):
         """
         Sets new host for given platform
@@ -283,12 +291,12 @@ class AutosubmitConfig(object):
         """
         with open(self._platforms_parser_file) as p_file:
             contentLine = p_file.readline()
-            contentToMod=""
-            content=""
-            mod=False
+            contentToMod = ""
+            content = ""
+            mod = False
             while contentLine:
                 if re.search(section, contentLine):
-                    mod=True
+                    mod = True
                 if mod:
                     contentToMod += contentLine
                 else:
@@ -296,10 +304,13 @@ class AutosubmitConfig(object):
                 contentLine = p_file.readline()
         if mod:
             old_host = self.get_current_host(section)
-            contentToMod = contentToMod.replace(re.search(r'[^#]\bHOST\b =.*', contentToMod).group(0)[1:], "HOST = " + new_host)
-            contentToMod = contentToMod.replace(re.search(r'[^#]\bHOST_TO\b =.*', contentToMod).group(0)[1:], "HOST_TO = " + old_host)
+            contentToMod = contentToMod.replace(re.search(
+                r'[^#]\bHOST\b =.*', contentToMod).group(0)[1:], "HOST = " + new_host)
+            contentToMod = contentToMod.replace(re.search(
+                r'[^#]\bHOST_TO\b =.*', contentToMod).group(0)[1:], "HOST_TO = " + old_host)
         open(self._platforms_parser_file, 'w').write(content)
         open(self._platforms_parser_file, 'a').write(contentToMod)
+
     def get_migrate_project_to(self, section):
         """
         Returns the project to change to from platform config file.
@@ -308,6 +319,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'PROJECT_TO', '').lower()
+
     def get_migrate_host_to(self, section):
         """
         Returns the host to change to from platform config file.
@@ -316,6 +328,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'HOST_TO', "none").lower()
+
     def set_new_project(self, section, new_project):
         """
         Sets new project for given platform
@@ -325,12 +338,12 @@ class AutosubmitConfig(object):
         """
         with open(self._platforms_parser_file) as p_file:
             contentLine = p_file.readline()
-            contentToMod=""
-            content=""
-            mod=False
+            contentToMod = ""
+            content = ""
+            mod = False
             while contentLine:
                 if re.search(section, contentLine):
-                    mod=True
+                    mod = True
                 if mod:
                     contentToMod += contentLine
                 else:
@@ -338,11 +351,12 @@ class AutosubmitConfig(object):
                 contentLine = p_file.readline()
         if mod:
             old_project = self.get_current_project(section)
-            contentToMod = contentToMod.replace(re.search(r"[^#]\bPROJECT\b =.*", contentToMod).group(0)[1:], "PROJECT = " + new_project)
-            contentToMod = contentToMod.replace(re.search(r"[^#]\bPROJECT_TO\b =.*", contentToMod).group(0)[1:], "PROJECT_TO = " + old_project)
+            contentToMod = contentToMod.replace(re.search(
+                r"[^#]\bPROJECT\b =.*", contentToMod).group(0)[1:], "PROJECT = " + new_project)
+            contentToMod = contentToMod.replace(re.search(
+                r"[^#]\bPROJECT_TO\b =.*", contentToMod).group(0)[1:], "PROJECT_TO = " + old_project)
         open(self._platforms_parser_file, 'w').write(content)
         open(self._platforms_parser_file, 'a').write(contentToMod)
-
 
     def get_custom_directives(self, section):
         """
@@ -385,12 +399,18 @@ class AutosubmitConfig(object):
         result = True
 
         self._conf_parser.read(self._conf_parser_file)
-        result = result and self._conf_parser.check_exists('config', 'AUTOSUBMIT_VERSION')
-        result = result and self._conf_parser.check_is_int('config', 'MAXWAITINGJOBS', True)
-        result = result and self._conf_parser.check_is_int('config', 'TOTALJOBS', True)
-        result = result and self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True)
-        result = result and self._conf_parser.check_is_int('config', 'RETRIALS', True)
-        result = result and self._conf_parser.check_is_boolean('mail', 'NOTIFICATIONS', False)
+        result = result and self._conf_parser.check_exists(
+            'config', 'AUTOSUBMIT_VERSION')
+        result = result and self._conf_parser.check_is_int(
+            'config', 'MAXWAITINGJOBS', True)
+        result = result and self._conf_parser.check_is_int(
+            'config', 'TOTALJOBS', True)
+        result = result and self._conf_parser.check_is_int(
+            'config', 'SAFETYSLEEPTIME', True)
+        result = result and self._conf_parser.check_is_int(
+            'config', 'RETRIALS', True)
+        result = result and self._conf_parser.check_is_boolean(
+            'mail', 'NOTIFICATIONS', False)
         result = result and self.is_valid_communications_library()
         result = result and self.is_valid_storage_type()
         if self.get_wrapper_type() != 'None':
@@ -399,11 +419,13 @@ class AutosubmitConfig(object):
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
-                    Log.warning('One or more of the email addresses configured for the mail notifications are wrong')
+                    Log.warning(
+                        'One or more of the email addresses configured for the mail notifications are wrong')
                     break
 
         if not result:
-            Log.critical("{0} is not a valid config file".format(os.path.basename(self._conf_parser_file)))
+            Log.critical("{0} is not a valid config file".format(
+                os.path.basename(self._conf_parser_file)))
         else:
             Log.info('{0} OK'.format(os.path.basename(self._conf_parser_file)))
         return result
@@ -423,25 +445,35 @@ class AutosubmitConfig(object):
             Log.error('There are repeated platforms names')
 
         for section in self._platforms_parser.sections():
-            result = result and self._platforms_parser.check_exists(section, 'TYPE')
-            platform_type = self._platforms_parser.get_option(section, 'TYPE', '').lower()
+            result = result and self._platforms_parser.check_exists(
+                section, 'TYPE')
+            platform_type = self._platforms_parser.get_option(
+                section, 'TYPE', '').lower()
             if platform_type != 'ps':
-                result = result and self._platforms_parser.check_exists(section, 'PROJECT')
-                result = result and self._platforms_parser.check_exists(section, 'USER')
+                result = result and self._platforms_parser.check_exists(
+                    section, 'PROJECT')
+                result = result and self._platforms_parser.check_exists(
+                    section, 'USER')
 
-            result = result and self._platforms_parser.check_exists(section, 'HOST')
-            result = result and self._platforms_parser.check_exists(section, 'SCRATCH_DIR')
+            result = result and self._platforms_parser.check_exists(
+                section, 'HOST')
+            result = result and self._platforms_parser.check_exists(
+                section, 'SCRATCH_DIR')
             result = result and self._platforms_parser.check_is_boolean(section,
                                                                         'ADD_PROJECT_TO_HOST', False)
-            result = result and self._platforms_parser.check_is_boolean(section, 'TEST_SUITE', False)
+            result = result and self._platforms_parser.check_is_boolean(
+                section, 'TEST_SUITE', False)
             result = result and self._platforms_parser.check_is_int(section, 'MAX_WAITING_JOBS',
                                                                     False)
-            result = result and self._platforms_parser.check_is_int(section, 'TOTAL_JOBS', False)
+            result = result and self._platforms_parser.check_is_int(
+                section, 'TOTAL_JOBS', False)
 
         if not result:
-            Log.critical("{0} is not a valid config file".format(os.path.basename(self._platforms_parser_file)))
+            Log.critical("{0} is not a valid config file".format(
+                os.path.basename(self._platforms_parser_file)))
         else:
-            Log.info('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
+            Log.info('{0} OK'.format(
+                os.path.basename(self._platforms_parser_file)))
         return result
 
     def check_jobs_conf(self):
@@ -464,10 +496,12 @@ class AutosubmitConfig(object):
 
         for section in sections:
             result = result and parser.check_exists(section, 'FILE')
-            result = result and parser.check_is_boolean(section, 'RERUN_ONLY', False)
+            result = result and parser.check_is_boolean(
+                section, 'RERUN_ONLY', False)
 
             if parser.has_option(section, 'PLATFORM'):
-                result = result and parser.check_is_choice(section, 'PLATFORM', False, platforms)
+                result = result and parser.check_is_choice(
+                    section, 'PLATFORM', False, platforms)
 
             if parser.has_option(section, 'DEPENDENCIES'):
                 for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
@@ -496,10 +530,11 @@ class AutosubmitConfig(object):
                             'Job {0} depends on job {1} that is not defined. It will be ignored.'.format(section,
                                                                                                          dependency))
             result = result and parser.check_is_choice(section, 'RUNNING', False,
-                                                                 ['once', 'date', 'member', 'chunk'])
+                                                       ['once', 'date', 'member', 'chunk'])
 
         if not result:
-            Log.critical("{0} is not a valid config file".format(os.path.basename(self._jobs_parser_file)))
+            Log.critical("{0} is not a valid config file".format(
+                os.path.basename(self._jobs_parser_file)))
         else:
             Log.info('{0} OK'.format(os.path.basename(self._jobs_parser_file)))
 
@@ -522,8 +557,10 @@ class AutosubmitConfig(object):
         result = result and parser.check_exists('experiment', 'MEMBERS')
         result = result and parser.check_is_choice('experiment', 'CHUNKSIZEUNIT', True,
                                                    ['year', 'month', 'day', 'hour'])
-        result = result and parser.check_is_int('experiment', 'CHUNKSIZE', True)
-        result = result and parser.check_is_int('experiment', 'NUMCHUNKS', True)
+        result = result and parser.check_is_int(
+            'experiment', 'CHUNKSIZE', True)
+        result = result and parser.check_is_int(
+            'experiment', 'NUMCHUNKS', True)
         result = result and parser.check_is_choice('experiment', 'CALENDAR', True,
                                                    ['standard', 'noleap'])
 
@@ -534,22 +571,28 @@ class AutosubmitConfig(object):
             project_type = parser.get_option('project', 'PROJECT_TYPE', '')
 
             if project_type == 'git':
-                result = result and parser.check_exists('git', 'PROJECT_ORIGIN')
-                result = result and parser.check_exists('git', 'PROJECT_BRANCH')
+                result = result and parser.check_exists(
+                    'git', 'PROJECT_ORIGIN')
+                result = result and parser.check_exists(
+                    'git', 'PROJECT_BRANCH')
 
             elif project_type == 'svn':
                 result = result and parser.check_exists('svn', 'PROJECT_URL')
-                result = result and parser.check_exists('svn', 'PROJECT_REVISION')
+                result = result and parser.check_exists(
+                    'svn', 'PROJECT_REVISION')
             elif project_type == 'local':
-                result = result and parser.check_exists('local', 'PROJECT_PATH')
+                result = result and parser.check_exists(
+                    'local', 'PROJECT_PATH')
 
             if project_type != 'none':
-                result = result and parser.check_exists('project_files', 'FILE_PROJECT_CONF')
+                result = result and parser.check_exists(
+                    'project_files', 'FILE_PROJECT_CONF')
         else:
             result = False
 
         if not result:
-            Log.critical("{0} is not a valid config file".format(os.path.basename(self._exp_parser_file)))
+            Log.critical("{0} is not a valid config file".format(
+                os.path.basename(self._exp_parser_file)))
         else:
             Log.info('{0}  OK'.format(os.path.basename(self._exp_parser_file)))
         return result
@@ -565,7 +608,8 @@ class AutosubmitConfig(object):
             if self._proj_parser_file == '':
                 self._proj_parser = None
             else:
-                self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
+                self._proj_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._proj_parser_file)
             return True
         except Exception as e:
             Log.error('Project conf file error: {0}', e)
@@ -575,27 +619,36 @@ class AutosubmitConfig(object):
         result = True
         result = result and self.is_valid_jobs_in_wrapper()
         if not result:
-            Log.error("There are sections in JOBS_IN_WRAPPER that are not defined in your jobs.conf file")
+            Log.error(
+                "There are sections in JOBS_IN_WRAPPER that are not defined in your jobs.conf file")
 
         if 'horizontal' in self.get_wrapper_type():
-            result = result and self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE')
-            result = result and self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS')
+            result = result and self._platforms_parser.check_exists(
+                self.get_platform(), 'PROCESSORS_PER_NODE')
+            result = result and self._platforms_parser.check_exists(
+                self.get_platform(), 'MAX_PROCESSORS')
         if 'vertical' in self.get_wrapper_type():
-            result = result and self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK')
+            result = result and self._platforms_parser.check_exists(
+                self.get_platform(), 'MAX_WALLCLOCK')
         return result
 
     def reload(self):
         """
         Creates parser objects for configuration files
         """
-        self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
-        self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
-        self._jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
-        self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
+        self._conf_parser = AutosubmitConfig.get_parser(
+            self.parser_factory, self._conf_parser_file)
+        self._platforms_parser = AutosubmitConfig.get_parser(
+            self.parser_factory, self._platforms_parser_file)
+        self._jobs_parser = AutosubmitConfig.get_parser(
+            self.parser_factory, self._jobs_parser_file)
+        self._exp_parser = AutosubmitConfig.get_parser(
+            self.parser_factory, self._exp_parser_file)
         if self._proj_parser_file == '':
             self._proj_parser = None
         else:
-            self._proj_parser = AutosubmitConfig.get_parser(self.parser_factory, self._proj_parser_file)
+            self._proj_parser = AutosubmitConfig.get_parser(
+                self.parser_factory, self._proj_parser_file)
 
     def load_parameters(self):
         """
@@ -650,12 +703,14 @@ class AutosubmitConfig(object):
         # Experiment conf
         content = open(self._exp_parser_file).read()
         if re.search('EXPID =.*', content):
-            content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
+            content = content.replace(
+                re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
         open(self._exp_parser_file, 'w').write(content)
 
         content = open(self._conf_parser_file).read()
         if re.search('EXPID =.*', content):
-            content = content.replace(re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
+            content = content.replace(
+                re.search('EXPID =.*', content).group(0), "EXPID = " + exp_id)
         open(self._conf_parser_file, 'w').write(content)
 
     def get_project_type(self):
@@ -702,6 +757,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
+
     def get_git_project_commit(self):
         """
         Returns git commit from experiment's config file
@@ -710,6 +766,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
+
     def get_git_remote_project_root(self):
         """
         Returns remote machine ROOT PATH
@@ -718,6 +775,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'REMOTE_CLONE_ROOT', '')
+
     def get_submodules_list(self):
         """
         Returns submodules list from experiment's config file
@@ -725,7 +783,7 @@ class AutosubmitConfig(object):
         :return: submodules to load
         :rtype: list
         """
-        return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES','').split()).split()
+        return ' '.join(self._exp_parser.get_option('git', 'PROJECT_SUBMODULES', '').split()).split()
 
     def get_fetch_single_branch(self):
         """
@@ -735,6 +793,7 @@ class AutosubmitConfig(object):
         :rtype: boolean
         """
         return self._exp_parser.get_option('git', 'FETCH_SINGLE_BRANCH', 'False').lower()
+
     def get_project_destination(self):
         """
         Returns git commit from experiment's config file
@@ -749,7 +808,8 @@ class AutosubmitConfig(object):
             elif self.get_project_type().lower() == "svn":
                 value = self.get_svn_project_url().split('/')[-1]
             elif self.get_project_type().lower() == "git":
-                value = self.get_git_project_origin().split('/')[-1].split('.')[-2]
+                value = self.get_git_project_origin().split(
+                    '/')[-1].split('.')[-2]
         return value
 
     def set_git_project_commit(self, as_conf):
@@ -758,7 +818,7 @@ class AutosubmitConfig(object):
         :param as_conf: Configuration class for exteriment
         :type as_conf: AutosubmitConfig
         """
-        full_project_path=as_conf.get_project_dir()
+        full_project_path = as_conf.get_project_dir()
         try:
             output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
                                              shell=True)
@@ -769,7 +829,8 @@ class AutosubmitConfig(object):
         project_branch = output
         Log.debug("Project branch is: " + project_branch)
         try:
-            output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
+            output = subprocess.check_output(
+                "cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
         except subprocess.CalledProcessError:
             Log.critical("Failed to retrieve project commit SHA...")
             return False
@@ -785,7 +846,8 @@ class AutosubmitConfig(object):
             content = content.replace(re.search('PROJECT_COMMIT =.*', content).group(0),
                                       "PROJECT_COMMIT = " + project_sha)
         open(self._exp_parser_file, 'w').write(content)
-        Log.debug("Project commit SHA succesfully registered to the configuration file.")
+        Log.debug(
+            "Project commit SHA succesfully registered to the configuration file.")
         return True
 
     def get_svn_project_url(self):
@@ -834,7 +896,8 @@ class AutosubmitConfig(object):
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
                         for count in range(int(numbers[0]), int(numbers[1]) + 1):
-                            date_list.append(parse_date(string_date + str(count).zfill(len(numbers[0]))))
+                            date_list.append(parse_date(
+                                string_date + str(count).zfill(len(numbers[0]))))
                     else:
                         date_list.append(parse_date(string_date + split_in))
                 string_date = None
@@ -863,7 +926,8 @@ class AutosubmitConfig(object):
         :return: initial chunk
         :rtype: int
         """
-        chunk_ini = self._exp_parser.get_option('experiment', 'CHUNKINI', default)
+        chunk_ini = self._exp_parser.get_option(
+            'experiment', 'CHUNKINI', default)
         if chunk_ini == '':
             return default
         return int(chunk_ini)
@@ -876,6 +940,18 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get('experiment', 'CHUNKSIZEUNIT').lower()
+
+    def get_chunk_size(self, default=1):
+        """
+        Chunk Size as defined in the expdef file.
+
+        :return: Chunksize, 1 as default.  
+        :rtype: int
+        """
+        chunk_size = self._exp_parser.get('experiment', 'CHUNKSIZE', default)
+        if chunk_size == '':
+            return default
+        return int(chunk_size)
 
     def get_member_list(self):
         """
@@ -896,7 +972,8 @@ class AutosubmitConfig(object):
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
                         for count in range(int(numbers[0]), int(numbers[1]) + 1):
-                            member_list.append(string_member + str(count).zfill(len(numbers[0])))
+                            member_list.append(
+                                string_member + str(count).zfill(len(numbers[0])))
                     else:
                         member_list.append(string_member + split_in)
                 string_member = None
@@ -945,7 +1022,8 @@ class AutosubmitConfig(object):
         """
         content = open(self._exp_parser_file).read()
         if re.search('HPCARCH =.*', content):
-            content = content.replace(re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
+            content = content.replace(
+                re.search('HPCARCH =.*', content).group(0), "HPCARCH = " + hpc)
         open(self._exp_parser_file, 'w').write(content)
 
     def set_version(self, autosubmit_version):
@@ -968,7 +1046,8 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION' , 'None')
+        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION', 'None')
+
     def get_total_jobs(self):
         """
         Returns max number of running jobs  from autosubmit's config file
@@ -977,7 +1056,7 @@ class AutosubmitConfig(object):
         :rtype: int
         """
         return int(self._conf_parser.get('config', 'TOTALJOBS'))
-    
+
     def get_output_type(self):
         """
         Returns default output type, pdf if none
@@ -985,7 +1064,7 @@ class AutosubmitConfig(object):
         :return: output type
         :rtype: string
         """
-        return self._conf_parser.get_option('config', 'OUTPUT','pdf')
+        return self._conf_parser.get_option('config', 'OUTPUT', 'pdf')
 
     def get_max_wallclock(self):
         """
@@ -1001,7 +1080,8 @@ class AutosubmitConfig(object):
 
         :rtype: str
         """
-        config_value = self._conf_parser.get_option('config', 'MAX_PROCESSORS', None)
+        config_value = self._conf_parser.get_option(
+            'config', 'MAX_PROCESSORS', None)
         return int(config_value) if config_value is not None else config_value
 
     def get_max_waiting_jobs(self):
@@ -1068,11 +1148,13 @@ class AutosubmitConfig(object):
         :return: if remote dependencies
         :rtype: bool
         """
-        config_value = self._conf_parser.get_option('config', 'PRESUBMISSION', 'false').lower()
+        config_value = self._conf_parser.get_option(
+            'config', 'PRESUBMISSION', 'false').lower()
         if config_value == "true":
             return True
         else:
             return False
+
     def get_wrapper_type(self):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
@@ -1081,6 +1163,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
+
     def get_wrapper_policy(self):
         """
         Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
@@ -1098,6 +1181,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
+
     def get_wrapper_queue(self):
         """
         Returns the wrapper queue if not defined, will be the one of the first job wrapped
@@ -1106,6 +1190,7 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('wrapper', 'QUEUE', 'None')
+
     def get_min_wrapped_jobs(self):
         """
          Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
@@ -1123,6 +1208,7 @@ class AutosubmitConfig(object):
          :rtype: int
          """
         return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
+
     def get_wrapper_method(self):
         """
          Returns the method of make the wrapper
@@ -1131,6 +1217,7 @@ class AutosubmitConfig(object):
          :rtype: string
          """
         return self._conf_parser.get_option('wrapper', 'METHOD', 'ASThread')
+
     def get_wrapper_check_time(self):
         """
          Returns time to check the status of jobs in the wrapper

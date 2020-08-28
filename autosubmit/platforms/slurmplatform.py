@@ -120,24 +120,25 @@ class SlurmPlatform(ParamikoPlatform):
 
     def parse_job_finish_data(self, output, packed):
         """Parses the context of the sacct query to SLURM for a single job. 
-        Only normal jobs return submit, start, and finish times. 
-        When a wrapper has finished, capture finish time. 
+        Only normal jobs return submit, start, finish, joules, ncpus, nnodes. 
 
-        :param output: The sacct output
-        :type output: str
-        :param job_id: Id in SLURM for the job
-        :type job_id: int
-        :param packed: true if job belongs to package
-        :type packed: bool
-        :return: submit, start, finish, joules, detailed_data
-        :rtype: int, int, int, int, json object (str)
+        When a wrapper has finished, capture finish time.  
+
+        :param output: The sacct output 
+        :type output: str 
+        :param job_id: Id in SLURM for the job 
+        :type job_id: int 
+        :param packed: true if job belongs to package 
+        :type packed: bool 
+        :return: submit, start, finish, joules, ncpus, nnodes, detailed_data
+        :rtype: int, int, int, int, int, int, json object (str)
         """
         try:
-            # Storing detail for posterity
+            # Setting up: Storing detail for posterity
             detailed_data = dict()
             # No blank spaces after or before
-            output = output.strip()
-            lines = output.split("\n")
+            output = output.strip() if output else None
+            lines = output.split("\n") if output else []
             is_end_of_wrapper = False
             extra_data = None
             # If there is output, list exists
@@ -151,73 +152,65 @@ class SlurmPlatform(ParamikoPlatform):
                         if packed:
                             # If it belongs to a wrapper
                             extra_data = {"ncpus": str(line[2] if len(line) > 2 else "NA"),
-                                          "submit": str(line[3] if len(line) > 3 else "NA"),
-                                          "start": str(line[4] if len(line) > 4 else "NA"),
-                                          "finish": str(line[5] if len(line) > 5 else "NA"),
-                                          "energy": str(line[6] if len(line) > 6 else "NA"),
-                                          "MaxRSS": str(line[7] if len(line) > 7 else "NA"),
-                                          "AveRSS": str(line[8] if len(line) > 8 else "NA")}
+                                          "nnodes": str(line[3] if len(line) > 3 else "NA"),
+                                          "submit": str(line[4] if len(line) > 4 else "NA"),
+                                          "start": str(line[5] if len(line) > 5 else "NA"),
+                                          "finish": str(line[6] if len(line) > 6 else "NA"),
+                                          "energy": str(line[7] if len(line) > 7 else "NA"),
+                                          "MaxRSS": str(line[8] if len(line) > 8 else "NA"),
+                                          "AveRSS": str(line[9] if len(line) > 9 else "NA")}
                         else:
                             # Normal job
-                            extra_data = {"energy": str(line[6] if len(line) > 6 else "NA"),
-                                          "MaxRSS": str(line[7] if len(line) > 7 else "NA"),
-                                          "AveRSS": str(line[8] if len(line) > 8 else "NA")}
+                            extra_data = {"energy": str(line[7] if len(line) > 7 else "NA"),
+                                          "MaxRSS": str(line[8] if len(line) > 8 else "NA"),
+                                          "AveRSS": str(line[9] if len(line) > 9 else "NA")}
                         # Detailed data will contain the important information from output
                         detailed_data[name] = extra_data
-                submit = start = finish = joules = 0
+                submit = start = finish = joules = nnodes = ncpus = 0
                 status = "UNKNOWN"
-                line = None
+                # Take first line as source
+                line = lines[0].strip().split()
+                ncpus = int(line[2] if len(line) > 2 else 0)
+                nnodes = int(line[3] if len(line) > 3 else 0)
+                status = str(line[1])
                 if packed == False:
                     # If it is not wrapper job, take first line as source
-                    line = lines[0].strip().split()
-                    status = str(line[1])
                     if status not in ["COMPLETED", "FAILED", "UNKNOWN"]:
                         # It not completed, then its error and send default data plus output
-                        return (0, 0, 0, detailed_data)
+                        return (0, 0, 0, 0, ncpus, nnodes, detailed_data)
                 else:
-                    line = lines[0].strip().split()
                     # Check if the wrapper has finished
-                    if str(line[1]) in ["COMPLETED", "FAILED", "UNKNOWN"]:
+                    if status in ["COMPLETED", "FAILED", "UNKNOWN"]:
                         # Wrapper has finished
                         is_end_of_wrapper = True
                 if line:
                     try:
                         # Parse submit and start only for normal jobs (not packed)
                         submit = int(mktime(datetime.strptime(
-                            line[3], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
-                        start = int(mktime(datetime.strptime(
                             line[4], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
+                        start = int(mktime(datetime.strptime(
+                            line[5], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
                         # Assuming the job has been COMPLETED
                         # If normal job or end of wrapper => Try to get the finish time from the first line of the output, else default to now.
                         finish = (int(mktime(datetime.strptime(
-                            line[5], "%Y-%m-%dT%H:%M:%S").timetuple())) if len(line) > 5 and line[5] != "Unknown" else datetime.now().timestamp()) if not packed or is_end_of_wrapper == True else 0
+                            line[6], "%Y-%m-%dT%H:%M:%S").timetuple())) if len(line) > 6 and line[6] != "Unknown" else datetime.now().timestamp()) if not packed or is_end_of_wrapper == True else 0
                         # If normal job or end of wrapper => Try to get energy from first line
                         joules = (self.parse_output_number(
-                            line[6]) if len(line) > 6 and len(line[6]) > 0 else 0) if not packed or is_end_of_wrapper == True else 0
+                            line[7]) if len(line) > 7 and len(line[7]) > 0 else 0) if not packed or is_end_of_wrapper == True else 0
                     except Exception as exp:
                         Log.info(
                             "Parsing mishandling.")
                         # joules = -1
                         pass
 
-                # print(detailed_data)
                 detailed_data = detailed_data if not packed or is_end_of_wrapper == True else extra_data
-                # print("Is packed {0}".format(packed))
-                # print("Is end of wrapper {0}".format(is_end_of_wrapper))
-                # print("Submit {0}".format(submit))
-                # print(start)
-                # print(finish)
-                # print(joules)
-                # print(detailed_data)
-                return (submit, start, finish, joules, detailed_data)
+                return (submit, start, finish, joules, ncpus, nnodes, detailed_data)
 
-            return (0, 0, 0, 0, dict())
+            return (0, 0, 0, 0, 0, 0, dict())
         except Exception as exp:
-            # On error return 4*0
-            # print(exp)
             Log.warning(
                 "Autosubmit couldn't parse SLURM energy output. From parse_job_finish_data: {0}".format(str(exp)))
-            return (0, 0, 0, 0, dict())
+            return (0, 0, 0, 0, 0, 0, dict())
 
     def parse_output_number(self, string_number):
         """
@@ -285,7 +278,7 @@ class SlurmPlatform(ParamikoPlatform):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
     def get_job_energy_cmd(self, job_id):
-        return 'sacct -n -j {0} -o JobId%25,State,NCPUS,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
+        return 'sacct -n -j {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
         reason = [x.split(',')[1] for x in output.splitlines()
