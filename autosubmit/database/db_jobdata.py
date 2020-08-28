@@ -689,6 +689,7 @@ class JobDataStructure(MainDataBase):
                     current_run.queuing = queue_count
                     current_run.submitted = submit_count
                     current_run.running = running_count
+                    current_run.finish = 0
                     self._update_experiment_run(current_run)
                     self.current_run_id = current_run.run_id
         except Exception as exp:
@@ -698,6 +699,13 @@ class JobDataStructure(MainDataBase):
             Log.warning(
                 "Autosubmit couldn't insert a new experiment run register. validate_current_run {0}".format(str(exp)))
             return None
+
+    def update_finish_time(self):
+        current_run = self.get_max_id_experiment_run()
+        if current_run:
+            current_run.finish = int(time.time())
+            self._update_experiment_run(current_run)
+            self.current_run_id = current_run.run_id
 
     def get_job_package_code(self, current_job_name):
         """

@@ -1460,6 +1460,9 @@ class Autosubmit:
                         return 2
                     time.sleep(safetysleeptime)
                 Log.info("No more jobs to run.")
+                # Updating job data header with finish time
+                job_data_structure.validate_current_run(
+                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
 
                 timeout = 0
                 for platform in platforms_to_test:
@@ -1481,6 +1484,8 @@ class Autosubmit:
                     return False
                 else:
                     Log.result("Run successful")
+                    # Updating finish time for job data header
+                    job_data_structure.update_finish_time()
                     return True
 
         except portalocker.AlreadyLocked:
