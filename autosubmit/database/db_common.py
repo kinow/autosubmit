@@ -40,14 +40,14 @@ def create_db(qry):
     try:
         (conn, cursor) = open_conn(False)
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
 
 
     try:
         cursor.executescript(qry)
     except sqlite3.Error as e:
         close_conn(conn, cursor)
-        raise AutosubmitCritical('Database can not be created',7000,e.message)
+        raise AutosubmitCritical('Database can not be created',7004,e.message)
 
     conn.commit()
     close_conn(conn, cursor)
@@ -62,7 +62,7 @@ def check_db():
     """
 
     if not os.path.exists(BasicConfig.DB_PATH):
-        raise AutosubmitCritical('DB path does not exists: {0}'.format(BasicConfig.DB_PATH),7000)
+        raise AutosubmitCritical('DB path does not exists: {0}'.format(BasicConfig.DB_PATH),7003)
     return True
 
 
@@ -100,12 +100,12 @@ def open_conn(check_version=True):
         # If database version is not the expected, update database....
         if version < CURRENT_DATABASE_VERSION:
             if not _update_database(version, cursor):
-                raise AutosubmitCritical('Database version doesn''t match', 7000)
+                raise AutosubmitCritical('Database version doesn''t match', 7001)
 
         # ... or ask for autosubmit upgrade
         elif version > CURRENT_DATABASE_VERSION:
             raise AutosubmitCritical('Database version is not compatible with this autosubmit version. Please execute pip install '
-                         'autosubmit --upgrade', 7000)
+                         'autosubmit --upgrade', 7002)
     return conn, cursor
 
 
@@ -140,14 +140,14 @@ def save_experiment(name, description, version):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
                        {'name': name, 'description': description, 'version': version})
     except sqlite3.IntegrityError as e:
         close_conn(conn, cursor)
-        raise AutosubmitCritical('Couldn''t register experiment',7000,e.message)
+        raise AutosubmitCritical('Couldn''t register experiment',7005,e.message)
 
 
     conn.commit()
@@ -171,7 +171,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -182,7 +182,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     close_conn(conn, cursor)
     if row is None:
         if error_on_inexistence:
-            raise AutosubmitCritical('The experiment name "{0}" does not exist yet!!!', 7000)
+            raise AutosubmitCritical('The experiment name "{0}" does not exist yet!!!', 7005)
         return False
     return True
 
@@ -202,7 +202,7 @@ def get_autosubmit_version(expid):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -212,7 +212,7 @@ def get_autosubmit_version(expid):
     row = cursor.fetchone()
     close_conn(conn, cursor)
     if row is None:
-        raise AutosubmitCritical('The experiment "{0}" does not exist'.format(expid),7000)
+        raise AutosubmitCritical('The experiment "{0}" does not exist'.format(expid),7005)
     return row[0]
 
 
@@ -232,7 +232,7 @@ def last_name_used(test=False, operational=False):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
     conn.text_factory = str
     if test:
         cursor.execute('SELECT name '
@@ -281,7 +281,7 @@ def delete_experiment(experiment_id):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7000,e.message)
+        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
         return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})
@@ -317,7 +317,7 @@ def _update_database(version, cursor):
                                  'WHERE autosubmit_version NOT NULL;')
         cursor.execute('UPDATE db_version SET version={0};'.format(CURRENT_DATABASE_VERSION))
     except sqlite3.Error as e:
-        raise AutosubmitCritical('unable to update database version', 7000,e.message)
+        raise AutosubmitCritical('unable to update database version', 7001,e.message)
     Log.info("Update completed")
     return True
 

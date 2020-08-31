@@ -94,7 +94,7 @@ class ParamikoPlatform(Platform):
                 retry += 1
             if not self.connected:
                 trace='Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator'.format(self.host, self.name)
-                raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7000,trace)
+                raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7050,trace)
 
     def connect(self, reconnect=False):
         """
@@ -247,7 +247,7 @@ class ParamikoPlatform(Platform):
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(os.path.join(self.get_files_path(), filename)))
             if e.lower().contains("garbage"):
-                raise AutosubmitCritical("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ",7000,e.message)
+                raise AutosubmitCritical("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ",7051,e.message)
 
 
 

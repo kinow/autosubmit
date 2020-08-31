@@ -351,7 +351,31 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return str(self._jobs_parser.get_option(section, 'CUSTOM_DIRECTIVES', ''))
+    def show_messages(self):
 
+        if len(self.warn_config.keys()) == 0 and len(self.wrong_config.keys()) == 0:
+            Log.result("Configuration files OK\n")
+        elif len(self.warn_config.keys()) > 0 and len(self.wrong_config.keys()) == 0:
+            Log.result("Configuration files contains some issues ignored")
+        if len(self.warn_config.keys()) > 0:
+            message = "On Configuration files:\n"
+            for section in self.warn_config:
+                message += "Issues on [{0}] config file:".format(section)
+                for parameter in self.warn_config[section]:
+                    message += "\n[{0}] {1} ".format(parameter[0],parameter[1])
+                message += "\n"
+            Log.printlog(message,6000)
+
+        if len(self.wrong_config.keys()) > 0:
+            message = "On Configuration files:\n"
+            for section in self.wrong_config:
+                message += "Critical Issues on [{0}] config file:".format(section)
+                for parameter in self.wrong_config[section]:
+                    message += "\n[{0}] {1}".format(parameter[0], parameter[1])
+                message += "\n"
+            raise AutosubmitCritical(message,7014)
+        else:
+            return True
     def check_conf_files(self,check_file=False):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
@@ -374,29 +398,13 @@ class AutosubmitConfig(object):
                 self.check_proj()
         except:
             pass # test doesn't check proj
-        if len(self.warn_config.keys()) == 0 and len(self.wrong_config.keys()) == 0:
-            Log.result("Configuration files OK\n")
-        elif len(self.warn_config.keys()) > 0 and len(self.wrong_config.keys()) == 0:
-            Log.result("Configuration files contains some issues ignored")
-        if len(self.warn_config.keys()) > 0:
-            message = "On Configuration files:\n"
-            for section in self.warn_config:
-                message += "Issues on [{0}] config file:".format(section)
-                for parameter in self.warn_config[section]:
-                    message += "\n[{0}] {1} ".format(parameter[0],parameter[1])
-                message += "\n"
-            Log.printlog(message,6000)
-
-        if len(self.wrong_config.keys()) > 0:
-            message = "On Configuration files:\n"
-            for section in self.wrong_config:
-                message += "Critical Issues on [{0}] config file:".format(section)
-                for parameter in self.wrong_config[section]:
-                    message += "\n[{0}] {1}".format(parameter[0], parameter[1])
-                message += "\n"
-            raise AutosubmitCritical(message,7000)
-        else:
-            return True
+        try:
+            result = self.show_messages()
+            return result
+        except AutosubmitCritical as e:
+            raise AutosubmitCritical(e.message,e.code,e.trace)
+        except Exception as e:
+            raise AutosubmitCritical("There was an error while showing the config log messages",7014,e.message)
 
     def check_autosubmit_conf(self):
         """
@@ -823,14 +831,14 @@ class AutosubmitConfig(object):
             output = subprocess.check_output("cd {0}; git rev-parse --abbrev-ref HEAD".format(full_project_path),
                                              shell=True)
         except subprocess.CalledProcessError as e:
-            raise AutosubmitCritical("Failed to retrieve project branch...",7000,e.message)
+            raise AutosubmitCritical("Failed to retrieve project branch...",7014,e.message)
 
         project_branch = output
         Log.debug("Project branch is: " + project_branch)
         try:
             output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
         except subprocess.CalledProcessError as e:
-            raise AutosubmitCritical("Failed to retrieve project commit SHA...", 7000,e.message)
+            raise AutosubmitCritical("Failed to retrieve project commit SHA...", 7014,e.message)
             Log.critical("Failed to retrieve project commit SHA...")
         project_sha = output
         Log.debug("Project commit SHA is: " + project_sha)

@@ -633,7 +633,7 @@ class Job(object):
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
         # communications library not known
-        raise AutosubmitCritical( 'You have defined a not valid communications library on the configuration file', 7000)
+        raise AutosubmitCritical( 'You have defined a not valid communications library on the configuration file', 7014)
 
     def update_children_status(self):
         children = list(self.children)
@@ -849,7 +849,7 @@ class Job(object):
         if communications_library == 'paramiko':
             return self._get_paramiko_template(snippet, template)
         else:
-            raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7000)
+            raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7014)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.platform

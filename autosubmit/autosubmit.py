@@ -101,7 +101,7 @@ def signal_handler_create(signal_received, frame):
     :param signal_received:
     :param frame:
     """
-    raise AutosubmitCritical('Autosubmit has been closed in an unexpected way. Killed or control + c.',7000)
+    raise AutosubmitCritical('Autosubmit has been closed in an unexpected way. Killed or control + c.',7010)
 
 class Autosubmit:
     """
@@ -496,7 +496,7 @@ class Autosubmit:
                 if e.message == 0: # Version keyword force an exception in parse arg due and os_exit(0) but the program is succesfully finished
                     print(Autosubmit.autosubmit_version)
                     os._exit(0)
-            raise AutosubmitCritical("Incorrect arguments for this command",7000)
+            raise AutosubmitCritical("Incorrect arguments for this command",7011)
 
 
         expid = "None"
@@ -584,7 +584,7 @@ class Autosubmit:
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
             if not os.path.exists(exp_path) and "create" not in command:
-                raise AutosubmitCritical("Experiment does not exist", 7000)
+                raise AutosubmitCritical("Experiment does not exist", 7012)
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
             if not os.path.exists(aslogs_path):
@@ -604,9 +604,9 @@ class Autosubmit:
             current_owner_id = pwd.getpwuid(os.stat(os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
             if current_user_id != current_owner_id:
-                raise AutosubmitCritical("You don't own the experiment {0}.".format(expid),7000)
+                raise AutosubmitCritical("You don't own the experiment {0}.".format(expid),7012)
         except BaseException as e:
-            raise AutosubmitCritical("User or owner does not exists",7000,e.message)
+            raise AutosubmitCritical("User or owner does not exists",7012,e.message)
 
 
     @staticmethod
@@ -655,16 +655,16 @@ class Autosubmit:
                     shutil.rmtree(os.path.join(
                         BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                 except OSError as e:
-                    raise AutosubmitCritical('Can not delete experiment folder: ',7000,e.message)
+                    raise AutosubmitCritical('Can not delete experiment folder: ',7012,e.message)
                 Log.info("Deleting experiment from database...")
                 ret = delete_experiment(expid_delete)
                 if ret:
                     Log.result("Experiment {0} deleted".format(expid_delete))
             else:
                 if currentOwner_id == 0:
-                    raise AutosubmitCritical('Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!'.format(expid_delete), 7000)
+                    raise AutosubmitCritical('Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!'.format(expid_delete), 7012)
                 else:
-                    raise AutosubmitCritical('Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7000)
+                    raise AutosubmitCritical('Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -687,12 +687,12 @@ class Autosubmit:
         """
         exp_id = None
         if description is None or hpc is None:
-            raise AutosubmitCritical("Check that the parameters are defined (-d and -H) ",7000)
+            raise AutosubmitCritical("Check that the parameters are defined (-d and -H) ",7011)
         if not copy_id:
             exp_id = new_experiment(
                 description, Autosubmit.autosubmit_version, test, operational)
             if exp_id == '':
-                raise AutosubmitCritical("Couldn't create a new experiment",7000)
+                raise AutosubmitCritical("Couldn't create a new experiment",7011)
             try:
                 os.mkdir(os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id))
                 os.mkdir(os.path.join(
@@ -730,7 +730,7 @@ class Autosubmit:
                     exp_id, hpc, Autosubmit.autosubmit_version, dummy)
             except (OSError, IOError) as e:
                 Autosubmit._delete_expid(exp_id)
-                raise AutosubmitCritical("Couldn't create a new experiment, permissions?", 7000, e.message)
+                raise AutosubmitCritical("Couldn't create a new experiment, permissions?", 7012, e.message)
         else:
             try:
                 if root_folder == '' or root_folder is None:
@@ -819,13 +819,13 @@ class Autosubmit:
                         autosubmit_git = AutosubmitGit(copy_id[0])
                         Log.info("checking model version...")
                         if not autosubmit_git.check_commit(autosubmit_config):
-                            raise AutosubmitCritical("Uncommitted changes",7000)
+                            raise AutosubmitCritical("Uncommitted changes",7013)
 
                 else:
-                    raise AutosubmitCritical("The experiment directory doesn't exist",7000)
+                    raise AutosubmitCritical("The experiment directory doesn't exist",7012)
             except (OSError, IOError) as e:
                 Autosubmit._delete_expid(exp_id, True)
-                raise AutosubmitCritical("Can not create experiment", 7000,e.message)
+                raise AutosubmitCritical("Can not create experiment", 7012,e.message)
 
         Log.debug("Creating temporal directory...")
         exp_id_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, exp_id)
@@ -886,9 +886,9 @@ class Autosubmit:
                 Log.debug('Enter Autosubmit._delete_expid {0}', expid)
                 return Autosubmit._delete_expid(expid, force)
             else:
-                raise AutosubmitCritical("Insufficient permissions",7000)
+                raise AutosubmitCritical("Insufficient permissions",7012)
         else:
-            raise AutosubmitCritical("Experiment does not exist", 7000)
+            raise AutosubmitCritical("Experiment does not exist", 7012)
 
     @staticmethod
     def _load_parameters(as_conf, job_list, platforms):
@@ -913,7 +913,7 @@ class Autosubmit:
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         if as_conf.get_platform().lower() not in platforms.keys():
             raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
-            ).lower()) + " is not a valid platform defined in platforms_.conf.",7000)
+            ).lower()) + " is not a valid platform defined in platforms_.conf.",7014)
         platform = platforms[as_conf.get_platform().lower()]
         platform.add_parameters(parameters, True)
         # Attach paramenters to JobList
@@ -1148,7 +1148,7 @@ class Autosubmit:
         else:
             if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
                 raise AutosubmitCritical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
-                             "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid),7000 )
+                             "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid),7 )
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -1170,7 +1170,7 @@ class Autosubmit:
                 try:
                     job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                 except BaseException as e:
-                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7000,e.message)
+                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7040,e.message)
 
 
                 Log.debug("Starting from job list restored from {0} files", pkl_dir)
@@ -1191,7 +1191,7 @@ class Autosubmit:
                 try:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
                 except BaseException as e:
-                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",7000,e.message)
+                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",7040,e.message)
                 if as_conf.get_wrapper_type() != 'none':
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                           expid, "pkl", "job_packages_" + expid+".db"), 0644)
@@ -1200,7 +1200,7 @@ class Autosubmit:
                     except BaseException as e:
                         raise AutosubmitCritical(
                             "Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",
-                            7000, e.message)
+                            7040, e.message)
 
                     for (exp_id, package_name, job_name) in packages:
                         if package_name not in job_list.packages_dict:
@@ -1273,7 +1273,7 @@ class Autosubmit:
                                             if wrapper_job.status != wrapper_job.new_status:
                                                 Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(Status.VALUE_TO_KEY[wrapper_job.status]) + ' to status ' + str(Status.VALUE_TO_KEY[wrapper_job.new_status]))
                                         except:
-                                            raise AutosubmitCritical("Wrapper is in Unknown Status couldn't get wrapper parameters",7000)
+                                            raise AutosubmitCritical("Wrapper is in Unknown Status couldn't get wrapper parameters",7050)
 
                                         # New status will be saved and inner_jobs will be checked.
                                         wrapper_job.check_status(wrapper_job.new_status)
@@ -1367,22 +1367,22 @@ class Autosubmit:
                                 try:
                                     job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                                 except BaseException as e:
-                                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7000,
+                                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7040,
                                                              e.message)
                         else: # Restore from files
                             try:
                                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                             except BaseException as e:
-                                raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7000,
+                                raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7040,
                                                          e.message)
                         if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                             try:
                                 Autosubmit.restore_platforms(platforms_to_test)
                             except:
-                                raise AutosubmitCritical("Autosubmit couldn't recover the platforms",7000, e.message)
+                                raise AutosubmitCritical("Autosubmit couldn't recover the platforms",7050, e.message)
                                 main_loop_retrials = main_loop_retrials - 1
                         else:
-                            raise AutosubmitCritical("Autosubmit Encounter too much e  rrors during running time",7000,e.message)
+                            raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7051,e.message)
                     except AutosubmitCritical as e: # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
@@ -1498,7 +1498,7 @@ class Autosubmit:
                         packages_persistence.save(
                             package.name, package.jobs, package._expid, inspect)
                 except WrongTemplateException as e:
-                    raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7000)
+                    raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7014)
                 except AutosubmitCritical as e:
                     raise AutosubmitCritical(e.message,e.code,e.trace)
                 except Exception as e:
@@ -1780,7 +1780,7 @@ class Autosubmit:
                     expid, job_list, file_format, period_ini, period_fi, not hide)
                 Log.result("Stats plot ready")
             except Exception as e:
-                raise AutosubmitCritical("Stats couldn't be shown",7000,e.message)
+                raise AutosubmitCritical("Stats couldn't be shown",7061,e.message)
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(
                 ft, period_ini, period_fi))
@@ -1994,7 +1994,7 @@ class Autosubmit:
                     "Checking [{0}] from platforms configuration...", platform)
                 if not as_conf.get_migrate_user_to(platform):
                     Log.printlog(
-                        "Missing directive USER_TO in [{0}]".format( platform),7000)
+                        "Missing directive USER_TO in [{0}]".format( platform),7014)
                     error = True
                     break
                 if as_conf.get_migrate_project_to(platform):
@@ -2094,7 +2094,7 @@ class Autosubmit:
 
             if error:
                 Log.printlog(
-                    "The experiment cannot be offered, reverting changes",7000)
+                    "The experiment cannot be offered, reverting changes",7012)
                 as_conf = AutosubmitConfig(
                     experiment_id, BasicConfig, ConfigParserFactory())
                 as_conf.check_conf_files(False)
@@ -2113,7 +2113,7 @@ class Autosubmit:
             else:
                 if not Autosubmit.archive(experiment_id, False, False):
                     Log.printlog(
-                        "The experiment cannot be offered, reverting changes", 7000)
+                        "The experiment cannot be offered, reverting changes", 7012)
                     for platform in backup_files:
                         p = submitter.platforms[platform]
                         p.move_file(os.path.join(
@@ -2132,7 +2132,7 @@ class Autosubmit:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
             if not Autosubmit.unarchive(experiment_id, False):
-                raise AutosubmitCritical("The experiment cannot be picked up",7000)
+                raise AutosubmitCritical("The experiment cannot be picked up",7012)
             Log.info("Local files/dirs have been successfully picked up")
             as_conf = AutosubmitConfig(
                 experiment_id, BasicConfig, ConfigParserFactory())
@@ -2171,7 +2171,7 @@ class Autosubmit:
             if error:
                 Autosubmit.archive(experiment_id, False, False)
                 Log.printlog(
-                    "The experiment cannot be picked,reverting changes.",7000)
+                    "The experiment cannot be picked,reverting changes.",7012)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
                     p.send_command("rm -R " + p.root_dir)
@@ -2366,7 +2366,7 @@ class Autosubmit:
             config_file.close()
             Log.result("Configuration file written successfully")
         except (IOError, OSError) as e:
-            raise AutosubmitCritical("Can not write config file: {0}",7000,e.message)
+            raise AutosubmitCritical("Can not write config file: {0}",7012,e.message)
         return True
 
     @staticmethod
@@ -2386,9 +2386,9 @@ class Autosubmit:
             d = dialog.Dialog(
                 dialog="dialog", autowidgetsize=True, screen_color='GREEN')
         except dialog.DialogError:
-            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
+            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7060)
         except Exception:
-            raise AutosubmitCritical("Dialog libs aren't found in your Operational system",7000)
+            raise AutosubmitCritical("Dialog libs aren't found in your Operational system",7060)
 
         d.set_background_title("Autosubmit configure utility")
         if os.geteuid() == 0:
@@ -2410,7 +2410,7 @@ class Autosubmit:
                 os.system('clear')
                 return False
         except dialog.DialogError:
-            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
+            raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7060)
 
         filename = '.autosubmitrc'
         if level == 'All':
@@ -2447,16 +2447,16 @@ class Autosubmit:
                     jobs_conf_path = parser.get('conf', 'jobs')
 
         except (IOError, OSError) as e:
-            raise AutosubmitCritical("Can not read config file",7000,e.message)
+            raise AutosubmitCritical("Can not read config file",7014,e.message)
 
         while True:
             try:
                 code, database_path = d.dselect(database_path, width=80, height=20,
                                                 title='\Zb\Z1Select path to database\Zn', colors='enable')
             except dialog.DialogError:
-                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7000)
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7060)
             if Autosubmit._requested_exit(code, d):
-                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7000)
+                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7060)
             elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
@@ -2471,11 +2471,11 @@ class Autosubmit:
                                                   title='\Zb\Z1Select path to experiments repository\Zn',
                                                   colors='enable')
             except dialog.DialogError:
-                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7060)
 
 
             if Autosubmit._requested_exit(code, d):
-                raise AutosubmitCritical("Graphical visualization failed,requested exit",7000)
+                raise AutosubmitCritical("Graphical visualization failed,requested exit",7060)
             elif code == dialog.Dialog.OK:
                 database_path = database_path.replace('~', home_path)
                 if not os.path.exists(database_path):
@@ -2496,10 +2496,10 @@ class Autosubmit:
                                      form_height=10,
                                      title='\Zb\Z1Just a few more options:\Zn', colors='enable')
             except dialog.DialogError:
-                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7000)
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size",7060)
 
             if Autosubmit._requested_exit(code, d):
-                raise AutosubmitCritical("Graphical visualization failed, _requested_exit", 7000)
+                raise AutosubmitCritical("Graphical visualization failed, _requested_exit", 7060)
             elif code == dialog.Dialog.OK:
                 database_filename = tag[0]
                 platforms_conf_path = tag[1]
@@ -2530,10 +2530,10 @@ class Autosubmit:
                                      form_height=10,
                                      title='\Zb\Z1Mail notifications configuration:\Zn', colors='enable')
             except dialog.DialogError:
-                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7000)
+                raise AutosubmitCritical("Graphical visualization failed, not enough screen size", 7060)
 
             if Autosubmit._requested_exit(code, d):
-                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7000)
+                raise AutosubmitCritical("Graphical visualization failed, requested exit", 7060)
             elif code == dialog.Dialog.OK:
                 smtp_hostname = tag[0]
                 mail_from = tag[1]
@@ -2565,7 +2565,7 @@ class Autosubmit:
                      width=50, height=5)
             os.system('clear')
         except (IOError, OSError) as e:
-            raise AutosubmitCritical("Can not write config file", 7000,e.message)
+            raise AutosubmitCritical("Can not write config file", 7012,e.message)
         return True
 
     @staticmethod
@@ -2588,10 +2588,10 @@ class Autosubmit:
             Log.info("Creating autosubmit database...")
             qry = resource_string('autosubmit.database', 'data/autosubmit.sql')
             if not create_db(qry):
-                raise AutosubmitCritical("Can not write database file", 7000)
+                raise AutosubmitCritical("Can not write database file", 7004)
             Log.result("Autosubmit database created successfully")
         else:
-            raise AutosubmitCritical("Database already exists.", 7000)
+            raise AutosubmitCritical("Database already exists.", 7004)
         return True
 
     @staticmethod
@@ -2609,9 +2609,9 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        as_conf.check_expdef_conf()
-
-
+        as_conf.check_conf_files()
+        if "Expdef" in as_conf.wrong_config:
+            as_conf.show_messages()
         project_type = as_conf.get_project_type()
         if Autosubmit._copy_code(as_conf, expid, project_type, True):
             Log.result("Project folder updated")
@@ -2657,7 +2657,7 @@ class Autosubmit:
             # Cleaning to reduce file size.
             version = get_autosubmit_version(expid)
             if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
-                raise AutosubmitCritical("Can not archive project. Clean not successful", 7000)
+                raise AutosubmitCritical("Can not archive project. Clean not successful", 7012)
 
         # Getting year of last completed. If not, year of expid folder
         year = None
@@ -2692,7 +2692,7 @@ class Autosubmit:
                 tar.close()
                 os.chmod(os.path.join(year_path, output_filepath), 0o755)
         except Exception as e:
-            raise AutosubmitCritical("Can not write tar file", 7000,e.message)
+            raise AutosubmitCritical("Can not write tar file", 7012,e.message)
 
 
         Log.info("Tar file created!")
@@ -2713,7 +2713,7 @@ class Autosubmit:
                 except Exception as e:
 
                     Autosubmit.unarchive(expid, compress, True)
-                    raise AutosubmitCritical("Can not remove or rename experiments folder",7000,e.message)
+                    raise AutosubmitCritical("Can not remove or rename experiments folder",7012,e.message)
 
         Log.result("Experiment archived successfully")
         return True
@@ -2769,7 +2769,7 @@ class Autosubmit:
         try:
             os.remove(archive_path)
         except Exception as e:
-            Log.printlog("Can not remove archived file folder: {0}".format(e),7000)
+            Log.printlog("Can not remove archived file folder: {0}".format(e),7012)
             return False
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)
@@ -2854,7 +2854,7 @@ class Autosubmit:
 
                     date_list = as_conf.get_date_list()
                     if len(date_list) != len(set(date_list)):
-                        raise AutosubmitCritical('There are repeated start dates!',7000)
+                        raise AutosubmitCritical('There are repeated start dates!',7014)
                     num_chunks = as_conf.get_num_chunks()
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
@@ -2963,7 +2963,7 @@ class Autosubmit:
                     signal.signal(signal.SIGINT, signal_handler_create)
                     fh.flush()
                     os.fsync(fh.fileno())
-                    raise AutosubmitCritical("Stopped by user input", 7000)
+                    raise AutosubmitCritical("Stopped by user input", 7010)
         except portalocker.AlreadyLocked:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
@@ -2992,7 +2992,7 @@ class Autosubmit:
             try:
                 hpcarch = submitter.platforms[as_conf.get_platform()]
             except:
-                raise AutosubmitCritical("Can't set main platform",7000)
+                raise AutosubmitCritical("Can't set main platform",7014)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()
@@ -3018,7 +3018,7 @@ class Autosubmit:
 
                 shutil.rmtree(project_path, ignore_errors=True)
                 raise AutosubmitCritical("Can not check out revision {0} into {1}".format(svn_project_revision + " " + svn_project_url,
-                          project_path),7000)
+                          project_path),7062)
             Log.debug("{0}", output)
 
         elif project_type == "local":
@@ -3037,7 +3037,7 @@ class Autosubmit:
                             subprocess.call(cmd, shell=True)
                         except subprocess.CalledProcessError:
                             raise AutosubmitCritical("Can not rsync {0} into {1}. Exiting...".format(
-                                local_project_path, project_path), 7000)
+                                local_project_path, project_path), 7063)
                 else:
                     os.mkdir(local_destination)
                     try:
@@ -3046,7 +3046,7 @@ class Autosubmit:
                     except subprocess.CalledProcessError:
                         shutil.rmtree(project_path)
                         raise AutosubmitCritical("Can not copy {0} into {1}. Exiting...".format(
-                            local_project_path, project_path), 7000)
+                            local_project_path, project_path), 7063)
             else:
                 os.mkdir(project_path)
                 os.mkdir(local_destination)
@@ -3060,7 +3060,7 @@ class Autosubmit:
                 except subprocess.CalledProcessError:
                     shutil.rmtree(project_path)
                     raise AutosubmitCritical(
-                        "Can not copy {0} into {1}. Exiting...".format( local_project_path, project_path), 7000)
+                        "Can not copy {0} into {1}. Exiting...".format( local_project_path, project_path), 7063)
                 Log.debug("{0}", output)
         return True
 
@@ -3173,7 +3173,7 @@ class Autosubmit:
                                 ".\n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
                                 "\n\tRemember that this option expects section names separated by a blank space as input."
 
-                        raise AutosubmitCritical("Error in the supplied input for -ft.",7000,section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -ft.",7011,section_validation_message)
                 job_list = Autosubmit.load_job_list(
                     expid, as_conf, notransitive=notransitive)
                 submitter = Autosubmit._get_submitter(as_conf)
@@ -3218,7 +3218,7 @@ class Autosubmit:
                             job_validation_message += "\n\tSpecified job(s) : [" + str(job_not_foundList) + "] not found in the experiment " + \
                                 str(expid) + ". \n\tProcess stopped. Review the format of the provided input. Comparison is case sensitive." + \
                                 "\n\tRemember that this option expects job names separated by a blank space as input."
-                        raise AutosubmitCritical("Error in the supplied input for -ft.",7000,section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -ft.",7011,section_validation_message)
 
                 # Validating fc if filter_chunks -fc has been set:
                 if filter_chunks is not None:
@@ -3282,7 +3282,7 @@ class Autosubmit:
 
                      # Ending validation
                     if fc_filter_is_correct == False:
-                        raise AutosubmitCritical("Error in the supplied input for -fc.",7000,section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -fc.",7011,section_validation_message)
                 # Validating status, if filter_status -fs has been set:
                 # At this point we already have job_list from where we are getting the allows STATUS
                 if filter_status is not None:
@@ -3314,7 +3314,7 @@ class Autosubmit:
                                 status_validation_message += "\n\t There are no jobs with status " + \
                                     status + " in this experiment."
                     if status_validation_error == True:
-                        raise AutosubmitCritical("Error in the supplied input for -fs.",7000,section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -fs.",7011,section_validation_message)
 
                 jobs_filtered = []
                 final_status = Autosubmit._get_status(final)
@@ -3400,7 +3400,7 @@ class Autosubmit:
 
                     # Ending validation
                     if filter_is_correct == False:
-                        raise AutosubmitCritical("Error in the supplied input for -ftc.", 7000, section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -ftc.", 7011, section_validation_message)
 
                     # If input is valid, continue.
                     record = dict()
@@ -3805,7 +3805,7 @@ class Autosubmit:
         elif storage_type == 'db':
             return JobListPersistenceDb(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                         "job_list_" + expid)
-        raise AutosubmitCritical('Storage type not known',7000)
+        raise AutosubmitCritical('Storage type not known',7014)
 
     @staticmethod
     def _create_json(text):
@@ -3913,7 +3913,7 @@ class Autosubmit:
         exp_parser = as_conf.get_parser(
             ConfigParserFactory(), as_conf.experiment_file)
         if exp_parser.get_bool_option('rerun', "RERUN", True):
-            raise AutosubmitCritical('Can not test a RERUN experiment',7000)
+            raise AutosubmitCritical('Can not test a RERUN experiment',7014)
 
         content = open(as_conf.experiment_file).read()
         if random_select:
@@ -3925,7 +3925,7 @@ class Autosubmit:
                     if platforms_parser.get_option(section, 'TEST_SUITE', 'false').lower() == 'true':
                         test_platforms.append(section)
                 if len(test_platforms) == 0:
-                    raise AutosubmitCritical("Missing hpcarch setting in expdef",7000)
+                    raise AutosubmitCritical("Missing hpcarch setting in expdef",7014)
 
                 hpc = random.choice(test_platforms)
             if member is None:
@@ -4024,9 +4024,9 @@ class Autosubmit:
         try:
             submitter.load_platforms(as_conf)
             if submitter.platforms is None:
-                raise AutosubmitCritical("platforms couldn't be loaded",7000)
+                raise AutosubmitCritical("platforms couldn't be loaded",7014)
         except:
-            raise AutosubmitCritical("platforms couldn't be loaded", 7000)
+            raise AutosubmitCritical("platforms couldn't be loaded", 7014)
         platforms = submitter.platforms
 
         platforms_to_test = set()

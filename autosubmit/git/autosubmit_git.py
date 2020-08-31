@@ -56,16 +56,16 @@ class AutosubmitGit:
                     output = subprocess.check_output("cd {0}; git diff-index HEAD --".format(dirname_path),
                                                      shell=True)
                 except subprocess.CalledProcessError as e:
-                    raise AutosubmitCritical("Failed to retrieve git info ...",7000,e.message)
+                    raise AutosubmitCritical("Failed to retrieve git info ...",7064,e.message)
                 if output:
                     Log.info("Changes not committed detected... SKIPPING!")
-                    raise AutosubmitCritical("Commit needed!",7000)
+                    raise AutosubmitCritical("Commit needed!",7013)
                 else:
                     output = subprocess.check_output("cd {0}; git log --branches --not --remotes".format(dirname_path),
                                                      shell=True)
                     if output:
                         Log.info("Changes not pushed detected... SKIPPING!")
-                        raise AutosubmitCritical("Synchronization needed!", 7000)
+                        raise AutosubmitCritical("Synchronization needed!", 7064)
                     else:
                         if not as_conf.set_git_project_commit(as_conf):
                             return False
@@ -124,7 +124,7 @@ class AutosubmitGit:
         :return: True if clone was successful, False otherwise
         """
         if not as_conf.is_valid_git_repository():
-            raise AutosubmitCritical("Incorrect Git Configuration, check origin,commit and branch settings of expdef file", 7000)
+            raise AutosubmitCritical("Incorrect Git Configuration, check origin,commit and branch settings of expdef file", 7064)
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_remote_project_path = as_conf.get_git_remote_project_root()
@@ -219,5 +219,5 @@ class AutosubmitGit:
 
             except subprocess.CalledProcessError as e:
                 shutil.rmtree(project_path)
-                raise AutosubmitCritical("Can not clone {0} into {1}".format(git_project_branch + " " + git_project_origin, project_path), 7000,e.message)
+                raise AutosubmitCritical("Can not clone {0} into {1}".format(git_project_branch + " " + git_project_origin, project_path), 7065,e.message)
         return True

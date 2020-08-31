@@ -93,7 +93,7 @@ class JobPackageBase(object):
                     exit=True
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                    raise AutosubmitCritical("check=on_submission parameter didn't generate the template {0}".format(job.name),7000)
+                    raise AutosubmitCritical("check=on_submission parameter didn't generate the template {0}".format(job.name),7014)
                 if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
                     Log.warning("Script {0} check failed",job.name)
                     Log.warning("On submission script has some empty variables")
