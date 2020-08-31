@@ -2968,7 +2968,7 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
         except AutosubmitCritical as e:
-            raise
+            raise AutosubmitCritical(e.message,e.code)
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
@@ -2989,7 +2989,10 @@ class Autosubmit:
         if project_type == "git":
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
-            hpcarch = submitter.platforms[as_conf.get_platform().lower()]
+            try:
+                hpcarch = submitter.platforms[as_conf.get_platform()]
+            except:
+                raise AutosubmitCritical("Can't set main platform",7000)
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()

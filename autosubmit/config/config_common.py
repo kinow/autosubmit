@@ -446,8 +446,10 @@ class AutosubmitConfig(object):
 
         if len(self._platforms_parser.sections()) != len(set(self._platforms_parser.sections())):
             self.wrong_config["Platform"]+=[["Global", "Platforms found multiple times"]]
-
+        main_platform_found = False
         for section in self._platforms_parser.sections():
+            if section in self.hpcarch:
+                main_platform_found= True
             if not self._platforms_parser.check_exists(section, 'TYPE'):
                 self.wrong_config["Platform"]+=[[section, "Mandatory TYPE parameter not found"]]
                 platform_type = self._platforms_parser.get_option(section, 'TYPE', '').lower()
@@ -468,6 +470,8 @@ class AutosubmitConfig(object):
                 self.wrong_config["Platform"]+=[[ section, "Mandatory MAX_WAITING_JOBS parameter not found or non-integer"]]
             if not  self._platforms_parser.check_is_int(section, 'TOTAL_JOBS', False):
                 self.wrong_config["Platform"]+=[[ section, "Mandatory TOTAL_JOBS parameter not found or non-integer"]]
+        if not main_platform_found:
+            self.wrong_config["Expdef"] += [["Default", "Main platform is not defined! check if [HPCARCH = {0}] has any typo".format(self.hpcarch)]]
         if "Platform" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._platforms_parser_file)))
             return True
@@ -550,7 +554,11 @@ class AutosubmitConfig(object):
 
         if not  parser.check_exists('DEFAULT', 'HPCARCH'):
             self.wrong_config["Expdef"]+=[['DEFAULT', "Mandatory HPCARCH parameter is invalid"]]
-
+        else:
+            try:
+                self.hpcarch = self.get_platform()
+            except:
+                self.wrong_config["Expdef"] += [['Default', "HPCARCH value is not a valid platform (check typo)"]]
         if not  parser.check_exists('experiment', 'DATELIST'):
             self.wrong_config["Expdef"]+=[['DEFAULT', "Mandatory DATELIST parameter is invalid"]]
         if not  parser.check_exists('experiment', 'MEMBERS'):
@@ -595,6 +603,7 @@ class AutosubmitConfig(object):
                     self.wrong_config["Expdef"]+=[['project_files', "FILE_PROJECT_CONF parameter is invalid"]]
         else:
             self.wrong_config["Expdef"]+=[['project', "Mandatory project choice is invalid"]]
+
 
         if "Expdef" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._exp_parser_file)))
