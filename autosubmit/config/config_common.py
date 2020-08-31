@@ -494,12 +494,12 @@ class AutosubmitConfig(object):
                 section_file_path = parser.get_option(section,'FILE')
                 try:
                     if  self.ignore_file_path:
-                        if not os.path.exists(section_file_path):
+                        if not os.path.exists(os.path.join(self.get_project_dir(),section_file_path)):
                             if parser.check_exists(section, 'CHECK'):
                                 if not parser.get_option(section, 'CHECK') in "on_submission":
-                                    self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists, check parameter is found however is not in on_submission value"]]
+                                    self.wrong_config["Jobs"] += [[section, "FILE {0} doesn''t exists, check parameter is found however is not in on_submission value".format(section_file_path)]]
                             else:
-                                self.wrong_config["Jobs"] += [[section, "FILE path doesn't exists"]]
+                                self.wrong_config["Jobs"] += [[section, "FILE {0}  doesn't exists".format(os.path.join(self.get_project_dir(),section_file_path))]]
                 except BaseException:
                     pass # tests conflict quick-patch
             if not  parser.check_is_boolean(section, 'RERUN_ONLY', False):

@@ -940,7 +940,7 @@ class Autosubmit:
         os.system('clear')
         signal.signal(signal.SIGINT, signal_handler)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files(False)
+        as_conf.check_conf_files(True)
         project_type = as_conf.get_project_type()
         safetysleeptime = as_conf.get_safetysleeptime()
         Log.debug("The Experiment name is: {0}", expid)
@@ -2854,8 +2854,7 @@ class Autosubmit:
 
                     date_list = as_conf.get_date_list()
                     if len(date_list) != len(set(date_list)):
-                        Log.error('There are repeated start dates!')
-                        return False
+                        raise AutosubmitCritical('There are repeated start dates!',7000)
                     num_chunks = as_conf.get_num_chunks()
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
