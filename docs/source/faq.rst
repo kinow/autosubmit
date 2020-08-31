@@ -4,6 +4,7 @@ Critical Error codes - Solutions
 
 Database Issues  - Critical Error codes [7001-7005]
 ====================
+
 +------------+------------+-----------+
 | Code   | Details   | Solution  |
 +============+============+===========+
@@ -23,8 +24,10 @@ Default Solution
 These issues are usually from server side, ask first in Autosubmit git if you don't have a custom installation-
 
 ----
+
 Wrong User Input  - Critical Error codes [7010-7030]
 ====================
+
 +------------+------------+-----------+
 | Code   | Details   | Solution  |
 +============+============+===========+
@@ -41,11 +44,14 @@ Wrong User Input  - Critical Error codes [7010-7030]
 
 Default Solution
 ---------------
+
 These issues are usually mistakes from the user input, check the avaliable logs and git resolved issues. Alternative, you can ask for help to Autosubmit team.
+
 ----
 
 Platform issues  - Critical Error codes. Local [7040-7050] and remote [7050-7060]
 ====================
+
 +------------+------------+-----------+
 | Code   | Details   | Solution  |
 +============+============+===========+
@@ -62,11 +68,14 @@ Platform issues  - Critical Error codes. Local [7040-7050] and remote [7050-7060
 
 Default Solution
 ---------------
+
 Check autosubmit log for detailed information, there will be additional error codes.
+
 ----
 
 Uncatalogued Issues  - Critical Error codes [7060+]
 ====================
+
 +------------+------------+-----------+
 | Code   | Details   | Solution  |
 +============+============+===========+
@@ -87,5 +96,7 @@ Uncatalogued Issues  - Critical Error codes [7060+]
 
 Default Solution
 ---------------
+
 Check autosubmit log for detailed information, there will be additional error codes.
+
 ----
