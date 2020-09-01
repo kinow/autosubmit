@@ -1356,7 +1356,8 @@ class Autosubmit:
                             job_list.save()
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
-                        Log.error("{1} [eCode={0}]",e.code, e.message)
+                        Log.error("Trace: {0}", e.trace)
+                        Log.error("{1} [eCode={0}]", e.code, e.message)
                         #Save job_list if not is a failed submitted job
                         if "submitted" not in e.message:
                             try:
@@ -1373,7 +1374,7 @@ class Autosubmit:
                             try:
                                 job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                             except BaseException as e:
-                                raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7040,
+                                raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
                                                          e.message)
                         if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                             try:

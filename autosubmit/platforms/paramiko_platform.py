@@ -721,7 +721,7 @@ class ParamikoPlatform(Platform):
                 else:
                     Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
             except BaseException as e:
-                raise AutosubmitError("Couldn''t send the file", 6004, e.message)
+                raise AutosubmitError("Couldn''t send the file {0} on HPC {1}".format(self.remote_log_dir,self.host), 6004, e.message)
 
 
 class ParamikoPlatformException(Exception):

@@ -101,8 +101,8 @@ Check autosubmit log for detailed information, there will be additional error co
 
 ----
 
-Uncatalogued Issues  - Platform Error codes [6000]
-===================================================
+Minor errors  - Error codes [6000+]
+===================================
 
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | Code | Details                                              | Solution                                                                                       |
