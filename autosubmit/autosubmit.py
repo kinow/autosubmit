@@ -2078,12 +2078,12 @@ class Autosubmit:
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), True):
                                 Log.printlog(
                                     "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
-                                             os.path.join(p.temp_dir, experiment_id), 6000))
+                                             os.path.join(p.temp_dir, experiment_id), 6012))
                                 error = True
                                 break
                         except (IOError, BaseException) as e:
                             Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
-                                         os.path.join(p.temp_dir, experiment_id)),6000)
+                                         os.path.join(p.temp_dir, experiment_id)),6012)
                             error = True
                             break
 
@@ -2162,7 +2162,7 @@ class Autosubmit:
                                 "Files/dirs on {0} have been successfully picked up", platform)
                         except (IOError, BaseException):
                             error = True
-                            Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(os.path.join(p.temp_dir, experiment_id), p.root_dir),6000)
+                            Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(os.path.join(p.temp_dir, experiment_id), p.root_dir),6012)
                             break
                         backup_files.append(platform)
                     else:
@@ -2761,7 +2761,7 @@ class Autosubmit:
                 tar.close()
         except Exception as e:
             shutil.rmtree(exp_folder, ignore_errors=True)
-            Log.printlog("Can not extract tar file: {0}".format(e),6000)
+            Log.printlog("Can not extract tar file: {0}".format(e),6012)
             return False
 
         Log.info("Unpacking finished")

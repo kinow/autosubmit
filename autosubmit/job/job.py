@@ -546,9 +546,9 @@ class Job(object):
                 platform.test_connection()
                 self.retrieve_logfiles()
             except Exception:
-                Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6000)
+                Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6001)
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
-            Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6000)
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6001)
         try:
             platform.closeConnection()
         except:
@@ -598,12 +598,12 @@ class Job(object):
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
-                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6000)
+                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6009)
             elif self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
-            Log.printlog("Job {0} in SUBMITTED. This should never happen on this step..".format(self.name),6000)
+            Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(self.name),6008)
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
@@ -654,7 +654,7 @@ class Job(object):
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6000)
+            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6009)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
@@ -1185,7 +1185,7 @@ class WrapperJob(Job):
             reason = self.platform.parse_queue_reason(
                 self.platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
-                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6000)
+                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6009)
                 self.cancel_failed_wrapper_job()
                 self.update_failed_jobs()
                 return
@@ -1222,7 +1222,7 @@ class WrapperJob(Job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
             # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name,self.name),6000)
+            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name,self.name),6009)
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
@@ -1293,7 +1293,7 @@ done
                                     job)
                                 if over_wallclock:
                                     Log.printlog(
-                                        "Job {0} is FAILED".format(jobname),6000)
+                                        "Job {0} is FAILED".format(jobname),6009)
 
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
@@ -1333,8 +1333,7 @@ done
             self._check_finished_job(job)
 
     def cancel_failed_wrapper_job(self):
-        Log.error("Cancelling job with id {0}".format(self.id))
-        Log.printlog("Cancelling job with id {0}".format(self.id),6000)
+        Log.printlog("Cancelling job with id {0}".format(self.id),6009)
         self.platform.send_command(
             self.platform.cancel_cmd + " " + str(self.id))
 

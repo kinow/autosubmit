@@ -364,7 +364,7 @@ class AutosubmitConfig(object):
                 for parameter in self.warn_config[section]:
                     message += "\n[{0}] {1} ".format(parameter[0],parameter[1])
                 message += "\n"
-            Log.printlog(message,6000)
+            Log.printlog(message,6013)
 
         if len(self.wrong_config.keys()) > 0:
             message = "On Configuration files:\n"

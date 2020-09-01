@@ -1031,7 +1031,7 @@ class JobList:
             else:
                 return list()
         except IOError:
-            Log.printlog("Autosubmit will use a backup for recover the job_list",6000)
+            Log.printlog("Autosubmit will use a backup for recover the job_list",6010)
             return list()
 
     def load(self):

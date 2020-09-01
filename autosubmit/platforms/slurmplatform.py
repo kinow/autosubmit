@@ -79,11 +79,11 @@ class SlurmPlatform(ParamikoPlatform):
                 jobs_id = self.get_submitted_job_id(self.get_ssh_output())
                 return jobs_id
             else:
-                raise AutosubmitError("Jobs couldn't be submitted, retry again in next iteration",6000)
+                raise AutosubmitError("Jobs couldn't be submitted, retry again in next iteration",6008)
         except IOError as e:
-            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6000, e.message)
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
         except BaseException as e:
-            raise AutosubmitError("Job couldn't be submitted, retry again in next AS iteration", 6000, e.message)
+            raise AutosubmitError("Job couldn't be submitted, retry again in next AS iteration", 6008, e.message)
 
     def update_cmds(self):
         """

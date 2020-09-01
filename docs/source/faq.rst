@@ -1,5 +1,5 @@
 ##################################
-Critical Error codes and solutions
+Error codes and solutions
 ##################################
 
 Database Issues  - Critical Error codes [7001-7005]
@@ -14,14 +14,14 @@ Database Issues  - Critical Error codes [7001-7005]
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 | 7003 | DB doesn't exists                             | Check if database exists                                        |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
-| 7004 | Can't create a new database                   | check your user permissions                                     |
+| 7004 | Can't create a new database                   | Check your user permissions                                     |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 | 7005 | AS database is corrupted or locked            | Please, open a new issue ASAP. (If you are on BSC environment)  |
 +------+-----------------------------------------------+-----------------------------------------------------------------+
 
 Default Solution
 ----------------
-These issues are usually from server side, ask first in Autosubmit git if you don't have a custom installation-
+These issues are usually from server side, please,  ask first in Autosubmit git if you don't have a custom installation.
 
 ----
 
@@ -73,7 +73,7 @@ Check autosubmit log for detailed information, there will be additional error co
 
 ----
 
-Uncatalogued Issues  - Critical Error codes [7060+]
+Uncatalogued codes  - Critical Error codes [7060+]
 ===================================================
 
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -101,3 +101,35 @@ Check autosubmit log for detailed information, there will be additional error co
 
 ----
 
+Uncatalogued Issues  - Platform Error codes [6000]
+===================================================
+
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| Code | Details                                              | Solution                                                                                       |
++======+======================================================+================================================================================================+
+| 6001 |     Failed to retrieve log files                     | Automatically, if there aren't bigger issues                                                   |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6002 |     Failed reconection                               | Automatically, if there aren't bigger issues                                                   |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6003 |     Failed connection, wrong configuration           | Check your platform.conf file                                                                  |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6004 |     input output issues                              |  Automatically, if there aren't bigger issues                                                  |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6005 |     Unable to execute the command                    |  Automatically, if there aren't bigger issues                                                  |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6006 |     Failed command                                   | Check err output for more info, command worked but some issue was detected                     |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6007 |     Broken sFTP connection                           |  Automatically, if there aren't bigger issues                                                  |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6008 |     Inconsistent/unexpected ,jhjob sñtatus           |  Automatically, if there aren't bigger issues                                                  |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6009 |     Failed job checker                               | Automatically, if there aren't bigger issues                                                   |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6010 |     Corrupted job_list using backup                  | Automatically, if it fails, Perform mv <expid>/pkl/job_list_backup.pkl <expid>/pkl/job_list.pkl|
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6011 |     Incorrect mail notifier configuration            | Double check your mail configuration on job.conf (job status) and autosubmit.conf (email)      |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6012 |     Migrate , archive/unarchive I/O issues           | Check migrate how-to configuration                                                             |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
+| 6013 |     Configuration issues                             | Check log output for more info                                                                 |
++------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
