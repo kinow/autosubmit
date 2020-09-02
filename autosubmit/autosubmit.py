@@ -1225,9 +1225,7 @@ class Autosubmit:
                 Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
                 save = True
                 while job_list.get_active():
-
                     try:
-
                         if Autosubmit.exit:
                             return 0
                         # reload parameters changes
@@ -1377,11 +1375,11 @@ class Autosubmit:
                                 raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
                                                          e.message)
                         if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
+                            main_loop_retrials = main_loop_retrials - 1
                             try:
                                 Autosubmit.restore_platforms(platforms_to_test)
-                            except:
+                            except BaseException:
                                 raise AutosubmitCritical("Autosubmit couldn't recover the platforms",7050, e.message)
-                                main_loop_retrials = main_loop_retrials - 1
                         else:
                             raise AutosubmitCritical("Autosubmit Encounter too much errors during running time",7051,e.message)
                     except AutosubmitCritical as e: # Critical errors can't be recovered. Failed configuration or autosubmit error
@@ -1485,6 +1483,8 @@ class Autosubmit:
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             continue
+                        except AutosubmitError as e:
+                            raise
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
                             from job.job import WrapperJob
@@ -1502,6 +1502,8 @@ class Autosubmit:
                     raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7014)
                 except AutosubmitCritical as e:
                     raise AutosubmitCritical(e.message,e.code,e.trace)
+                except AutosubmitError as e:
+                    raise
                 except Exception as e:
                     raise
 

@@ -509,7 +509,7 @@ class AutosubmitConfig(object):
                         if not os.path.exists(os.path.join(self.get_project_dir(),section_file_path)):
                             if parser.check_exists(section, 'CHECK'):
                                 if not parser.get_option(section, 'CHECK') in "on_submission":
-                                    self.wrong_config["Jobs"] += [[section, "FILE {0} doesn''t exists, check parameter is found however is not in on_submission value".format(section_file_path)]]
+                                    self.wrong_config["Jobs"] += [[section, "FILE {0} doesn't exists and check parameter is not set on_submission value".format(section_file_path)]]
                             else:
                                 self.wrong_config["Jobs"] += [[section, "FILE {0}  doesn't exists".format(os.path.join(self.get_project_dir(),section_file_path))]]
                 except BaseException:
@@ -604,7 +604,7 @@ class AutosubmitConfig(object):
                 if not  parser.check_exists('local', 'PROJECT_PATH'):
                     self.wrong_config["Expdef"]+=[['local', "PROJECT_PATH parameter is invalid"]]
             elif project_type == 'none': #debug propouses
-                self.ignore_file_path = True
+                self.ignore_file_path = False
 
             if project_type != 'none':
                 if not parser.check_exists('project_files', 'FILE_PROJECT_CONF'):

@@ -73,6 +73,7 @@ class ParamikoPlatform(Platform):
         try:
             transport = self._ssh.get_transport()
             transport.send_ignore()
+            pass
         except BaseException as e:
             try:
                 self.reset()
@@ -83,18 +84,21 @@ class ParamikoPlatform(Platform):
                 raise AutosubmitError("After a reconnection procedure, the platform is still not alive.",6002)
 
     def restore_connection(self):
-        self.connected = True
-        if self._ssh is None:
-            retries = 2
-            retry = 0
+        try:
             self.connected = False
-            while self.connected is False and retry < retries:
-                if self.connect(True):
-                    self.connected = True
-                retry += 1
-            if not self.connected:
-                trace='Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator'.format(self.host, self.name)
-                raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7050,trace)
+            if self._ssh is None:
+                retries = 2
+                retry = 0
+                while self.connected is False and retry < retries:
+                    self.connect(True)
+                    retry += 1
+                if not self.connected:
+                    trace='Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator'.format(self.host, self.name)
+                    raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7050,trace)
+        except AutosubmitCritical:
+            raise
+        except:
+            raise AutosubmitCritical('Cant connect to this platform due an unknown error',7050)
 
     def connect(self, reconnect=False):
         """
@@ -134,6 +138,8 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = self._ssh.open_sftp()
             self.connected = True
         except BaseException as e:
+            if "Authentication failed." in e.message:
+                raise AutosubmitCritical("Authentication Failed, please check the platform.conf of {0}".format(self._host_config['hostname']),7050,e.message)
             if not reconnect and "," in self._host_config['hostname']:
                 self.restore_connection(reconnect=True)
             else:
@@ -220,9 +226,9 @@ class ParamikoPlatform(Platform):
             return True
         except Exception as e:
             if str(e) in "Garbage":
-                raise AutosubmitError('Files couldn''t be retrieved, session not active'.format(filename),6004,e.message)
+                raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
             if must_exist:
-                raise AutosubmitError('A critical file couldn''t be retrieved, File {0} does not exists'.format(filename),6004,e.message)
+                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004,e.message)
             else:
                 Log.printlog("Log file couldn't be retrieved: {0}".format(filename),5000)
                 return False
@@ -483,15 +489,17 @@ class ParamikoPlatform(Platform):
             timeout = 60/2
         else:
             timeout = 60*2
+        stderr_readlines = []
+        stdout_chunks = []
         try:
             stdin, stdout, stderr = self._ssh.exec_command(command)
             channel = stdout.channel
             channel.settimeout(timeout)
             stdin.close()
             channel.shutdown_write()
-            stdout_chunks = []
+
             stdout_chunks.append(stdout.channel.recv(len(stdout.channel.in_buffer)))
-            stderr_readlines = []
+
 
             while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready():
                 # stop if channel was closed prematurely, and there is no data in the buffers.
@@ -529,6 +537,9 @@ class ParamikoPlatform(Platform):
                 else:
                     Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
+        except AttributeError as e:
+            raise AutosubmitError(
+                'Session not active: {0}'.format(e.message), 6005)
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6005,e.message)
 
@@ -719,9 +730,9 @@ class ParamikoPlatform(Platform):
                 if self.send_command(self.get_mkdir_cmd()):
                     Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
-                    Log.error('Could not create the DIR {0} on HPC {1}'.format(self.remote_log_dir, self.host))
+                    Log.error('Could not create the DIR {0} to HPC {1}'.format(self.remote_log_dir, self.host))
             except BaseException as e:
-                raise AutosubmitError("Couldn''t send the file {0} on HPC {1}".format(self.remote_log_dir,self.host), 6004, e.message)
+                raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(self.remote_log_dir,self.host), 6004, e.message)
 
 
 class ParamikoPlatformException(Exception):
