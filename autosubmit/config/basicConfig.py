@@ -29,7 +29,7 @@ from log.log import Log, AutosubmitError,AutosubmitCritical
 
 class BasicConfig:
     """
-    Class to manage configuration for autosubmit path, database and default values for new experiments
+    Class to manage configuration for Autosubmit path, database and default values for new experiments
     """
 
     def __init__(self):

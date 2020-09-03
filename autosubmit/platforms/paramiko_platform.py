@@ -247,7 +247,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             return True
         except IOError as e:
-            Log.printlog('{0} couldn''t be retrieved, session not active'.format(os.path.join(self.get_files_path(), filename)),6004)
+            Log.printlog("{0} couldn't be retrieved, session not active".format(os.path.join(self.get_files_path(), filename)),6004)
             return False
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(os.path.join(self.get_files_path(), filename)))
@@ -276,7 +276,7 @@ class ParamikoPlatform(Platform):
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)),6004,e.message)
             if must_exist:
-                raise AutosubmitError('A critical file couldn''t be retrieved, File {0} does not exists'.format(os.path.join(self.get_files_path(), src)),6004,e.message)
+                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(os.path.join(self.get_files_path(), src)),6004,e.message)
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(os.path.join(self.get_files_path(), src)),5001)
                 return False

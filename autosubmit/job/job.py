@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+Main module for Autosubmit. Only contains an interface class to all functionality implemented on Autosubmit
 """
 
 import os
@@ -518,16 +518,22 @@ class Job(object):
         retries = 3
         sleeptime = 5
         i = 0
+        sleep(10)
         try:
             while (not out_exist or not err_exist) and i < retries:
-                out_exist = platform.check_file_exists(
-                    remote_logs[0])  # will do 5 retries
-                err_exist = platform.check_file_exists(
-                    remote_logs[1])  # will do 5 retries
+                try:
+                    out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                    err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                except AutosubmitError as e:
+                    out_exist = False
+                    err_exist = False
+                    pass
                 if not out_exist or not err_exist:
                     sleeptime = sleeptime + 5
                     i = i + 1
                     sleep(sleeptime)
+            if i >= retries:
+                raise AutosubmitError("Failed to retrieve log files",6001)
             if out_exist and err_exist:
                 if copy_remote_logs:
                     if local_logs != remote_logs:
@@ -537,23 +543,16 @@ class Job(object):
                     platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 for local_log in local_logs:
-                    platform.write_jobid(self.id, os.path.join(
-                        self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                    platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
         except AutosubmitError as e:
-            Log.error("{1} [eCode={0}]", e.code, e.message)
-            # Save job_list if not is a failed submitted job
-            try:
-                platform.test_connection()
-                self.retrieve_logfiles()
-            except Exception:
-                Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6001)
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
-            Log.printlog("Failed to retrieve log file for job {0}".format(self.name),6001)
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
         try:
             platform.closeConnection()
         except:
             pass
-        sleep(2)
+        sleep(5) # safe wait before end a thread
         return
 
     def update_status(self, copy_remote_logs=False):
@@ -624,7 +623,7 @@ class Job(object):
     @staticmethod
     def _get_submitter(as_conf):
         """
-        Returns the submitter corresponding to the communication defined on autosubmit's config file
+        Returns the submitter corresponding to the communication defined on Autosubmit's config file
 
         :return: submitter
         :rtype: Submitter

@@ -40,7 +40,7 @@ def create_db(qry):
     try:
         (conn, cursor) = open_conn(False)
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
 
 
     try:
@@ -140,7 +140,7 @@ def save_experiment(name, description, version):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
     try:
         cursor.execute('INSERT INTO experiment (name, description, autosubmit_version) VALUES (:name, :description, '
                        ':version)',
@@ -171,7 +171,7 @@ def check_experiment_exists(name, error_on_inexistence=True):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -202,7 +202,7 @@ def get_autosubmit_version(expid):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
     conn.isolation_level = None
 
     # SQLite always return a unicode object, but we can change this
@@ -232,7 +232,7 @@ def last_name_used(test=False, operational=False):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
     conn.text_factory = str
     if test:
         cursor.execute('SELECT name '
@@ -281,7 +281,7 @@ def delete_experiment(experiment_id):
     try:
         (conn, cursor) = open_conn()
     except DbException as e:
-        raise AutosubmitCritical('Connection to database could not be established',7001,e.message)
+        raise AutosubmitCritical("Could not establish a connection to database",7001,e.message)
         return False
     cursor.execute('DELETE FROM experiment '
                    'WHERE name=:name', {'name': experiment_id})

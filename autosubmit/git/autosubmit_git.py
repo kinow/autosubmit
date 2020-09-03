@@ -124,7 +124,7 @@ class AutosubmitGit:
         :return: True if clone was successful, False otherwise
         """
         if not as_conf.is_valid_git_repository():
-            raise AutosubmitCritical("Incorrect Git Configuration, check origin,commit and branch settings of expdef file", 7064)
+            raise AutosubmitCritical("Incorrect git Configuration, check origin,commit and branch settings of expdef file", 7064)
         git_project_origin = as_conf.get_git_project_origin()
         git_project_branch = as_conf.get_git_project_branch()
         git_remote_project_path = as_conf.get_git_remote_project_root()

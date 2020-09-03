@@ -356,11 +356,11 @@ class AutosubmitConfig(object):
         if len(self.warn_config.keys()) == 0 and len(self.wrong_config.keys()) == 0:
             Log.result("Configuration files OK\n")
         elif len(self.warn_config.keys()) > 0 and len(self.wrong_config.keys()) == 0:
-            Log.result("Configuration files contains some issues ignored")
+            Log.result("Configuration files contain some issues ignored")
         if len(self.warn_config.keys()) > 0:
-            message = "On Configuration files:\n"
+            message = "In Configuration files:\n"
             for section in self.warn_config:
-                message += "Issues on [{0}] config file:".format(section)
+                message += "Issues in [{0}] config file:".format(section)
                 for parameter in self.warn_config[section]:
                     message += "\n[{0}] {1} ".format(parameter[0],parameter[1])
                 message += "\n"
@@ -387,22 +387,25 @@ class AutosubmitConfig(object):
         Log.info('\nChecking configuration files...')
         self.ignore_file_path = check_file
         self.reload()
+        #Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
         self.check_jobs_conf()
         self.check_autosubmit_conf()
-
         try:
             if self.get_project_type() != "none":
                 # Check proj configuration
                 self.check_proj()
         except:
-            pass # test doesn't check proj
+            pass # This exception is in case that the experiment doesn't contains any file ( usefull for test the workflow with None Option)
+        # End of checkers.
+
+        # This Try/Except is in charge of  print all the info gathered by all the checkers and stop the program if any critical error is found.
         try:
             result = self.show_messages()
             return result
         except AutosubmitCritical as e:
-            raise AutosubmitCritical(e.message,e.code,e.trace)
+            raise AutosubmitCritical(e.message,e.code,e.trace) # In case that there are critical errors in the configuration, Autosubmit won't continue.
         except Exception as e:
             raise AutosubmitCritical("There was an error while showing the config log messages",7014,e.message)
 
@@ -509,9 +512,9 @@ class AutosubmitConfig(object):
                         if not os.path.exists(os.path.join(self.get_project_dir(),section_file_path)):
                             if parser.check_exists(section, 'CHECK'):
                                 if not parser.get_option(section, 'CHECK') in "on_submission":
-                                    self.wrong_config["Jobs"] += [[section, "FILE {0} doesn't exists and check parameter is not set on_submission value".format(section_file_path)]]
+                                    self.wrong_config["Jobs"] += [[section, "FILE {0} doesn't exist and check parameter is not set on_submission value".format(section_file_path)]]
                             else:
-                                self.wrong_config["Jobs"] += [[section, "FILE {0}  doesn't exists".format(os.path.join(self.get_project_dir(),section_file_path))]]
+                                self.wrong_config["Jobs"] += [[section, "FILE {0}  doesn't exist".format(os.path.join(self.get_project_dir(),section_file_path))]]
                 except BaseException:
                     pass # tests conflict quick-patch
             if not  parser.check_is_boolean(section, 'RERUN_ONLY', False):
