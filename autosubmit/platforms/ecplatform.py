@@ -20,13 +20,12 @@
 import os
 import subprocess
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from log.log import Log
+from log.log import Log,AutosubmitCritical,AutosubmitError
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 from time import sleep
-
 
 class EcPlatform(ParamikoPlatform):
     """
@@ -142,7 +141,7 @@ class EcPlatform(ParamikoPlatform):
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
-                Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
+                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,e.message)
             return False
         self._ssh_output = output
         return True
