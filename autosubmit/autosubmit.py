@@ -1345,7 +1345,7 @@ class Autosubmit:
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
-                    except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
+                    except AutosubmitError as e: #If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 1 minute before continue")
@@ -1414,8 +1414,10 @@ class Autosubmit:
 
     @staticmethod
     def restore_platforms(platform_to_test):
+        Log.result("Checking the connection to all platforms in use")
         for platform in platform_to_test:
             platform.test_connection()
+            Log.result("[{1}] Connection successfull to host {0}",platform.host,platform.name)
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
                           only_wrappers=False, hold=False):

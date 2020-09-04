@@ -512,7 +512,7 @@ class Job(object):
         submitter = self._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         platform = submitter.platforms[platform_name]
-        platform.connect()
+        platform.restore_connection()
         out_exist = False
         err_exist = False
         retries = 3

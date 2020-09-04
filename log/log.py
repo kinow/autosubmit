@@ -282,7 +282,7 @@ class Log:
         elif 3000 >= code < 4000:
             Log.warning("{1}[eCode={0}]", code, message)
         elif 6000 >= code < 7000:
-            Log.error("{1}[eCode={0}]", code, message)
+            Log.error("[ERROR] {1}[eCode={0}]", code, message)
         elif code >= 7000:
             Log.critical("{1}[eCode={0}]", code, message)
         else:

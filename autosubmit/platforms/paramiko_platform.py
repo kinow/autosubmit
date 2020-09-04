@@ -66,37 +66,42 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self._ftpChannel = None
         self.transport = None
+
     def test_connection(self):
         """
         Test if the connection is still alive, reconnect if not.
         """
-
-        if self._ssh is None:
-            try:
-                self.connect()
-            except Exception:
-                raise AutosubmitError("Connection failed, will try with another node.", 6002)
-        else: # Reconnection
-            try:
-                self.reset()
-                self.restore_connection()
-                transport = self._ssh.get_transport()
-                transport.send_ignore()
-            except EOFError as e:
-                raise AutosubmitError("After a reconnection procedure, the platform is still not alive.", 6002)
-            except Exception as e:
-                raise AutosubmitError("Couldn't finish the reconnection procedure, test transport layer failed", 6002)
+        try:
+            self.reset()
+            self.restore_connection()
+            transport = self._ssh.get_transport()
+            transport.send_ignore()
+        except EOFError as e:
+            raise AutosubmitError("After a reconnection procedure, the platform is still not alive.", 6002)
+        except Exception as e:
+            raise AutosubmitError("Connection established, but session still not active", 6002)
     def restore_connection(self):
         try:
             self.connected = False
             retries = 2
             retry = 0
+            try:
+                self.connect()
+            except Exception as e:
+                if ',' in self.host:
+                    Log.printlog("Connection Failed to {0}, will test another host".format(self.host.split(',')[0]), 6002)
+                else:
+                    raise AutosubmitCritical("First connection to {0} is failed, check host configuration or try another login node ".format(self.host),7050)
             while self.connected is False and retry < retries:
-                self.connect(True)
+                try:
+                    self.connect(True)
+                except:
+                    pass
                 retry += 1
             if not self.connected:
                 trace='Can not create ssh or sftp connection to {0}: Connection could not be established to platform {1}\n Please, check your expid platform.conf to see if there are mistakes in the configuration\n Also Ensure that the login node listed on HOST parameter is available(try to connect via ssh on a terminal)\n Also you can put more than one host using a comma as separator'.format(self.host, self.name)
                 raise AutosubmitCritical('Experiment cant no continue without unexpected behaviour, Stopping Autosubmit',7050,trace)
+
         except AutosubmitCritical:
             raise
         except Exception as e:
@@ -140,6 +145,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel = self._ssh.open_sftp()
             self.connected = True
         except BaseException as e:
+            self.connected = False
             if "Authentication failed." in e.message:
                 raise AutosubmitCritical("Authentication Failed, please check the platform.conf of {0}".format(self._host_config['hostname']),7050,e.message)
             if not reconnect and "," in self._host_config['hostname']:
