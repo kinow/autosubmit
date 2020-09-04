@@ -1183,7 +1183,7 @@ class Autosubmit:
                 try:
                     packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
                 except BaseException as e:
-                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",7040,e.message)
+                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages",7040,e.message)
                 if as_conf.get_wrapper_type() != 'none':
                     os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                           expid, "pkl", "job_packages_" + expid+".db"), 0644)
@@ -1191,7 +1191,7 @@ class Autosubmit:
                         packages = packages_persistence.load()
                     except BaseException as e:
                         raise AutosubmitCritical(
-                            "Corrupted job_packages, python 2.7 and sqlite doesn''t allow to restore these packages",
+                            "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
                             7040, e.message)
 
                     for (exp_id, package_name, job_name) in packages:
@@ -1213,7 +1213,7 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
-                main_loop_retrials = 5 # Hard limit of tries (change to 100)
+                main_loop_retrials = 120 # Hard limit of tries 120 tries at 1min sleep each try
                 Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
                 save = True
                 while job_list.get_active():
@@ -1348,6 +1348,8 @@ class Autosubmit:
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list, keep trying for 5 more retries
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
+                        Log.info("Waiting 1 minute before continue")
+                        sleep(60)
                         #Save job_list if not is a failed submitted job
                         if "submitted" not in e.message:
                             try:
@@ -1358,7 +1360,7 @@ class Autosubmit:
                                 try:
                                     job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                                 except BaseException as e:
-                                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored", 7040,
+                                    raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
                                                              e.message)
                         else: # Restore from files
                             try:
