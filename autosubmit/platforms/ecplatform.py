@@ -19,16 +19,13 @@
 
 import os
 import subprocess
-from time import sleep
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform, ParamikoPlatformException
-from bscearth.utils.log import Log
-
+from log.log import Log,AutosubmitCritical,AutosubmitError
 from autosubmit.platforms.headers.ec_header import EcHeader
 from autosubmit.platforms.headers.ec_cca_header import EcCcaHeader
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import EcWrapperFactory
 from time import sleep
-
 
 class EcPlatform(ParamikoPlatform):
     """
@@ -117,19 +114,34 @@ class EcPlatform(ParamikoPlatform):
 
     def connect(self):
         """
-        In this case, it does nothing because connection is established foe each command
+        In this case, it does nothing because connection is established for each command
 
         :return: True
         :rtype: bool
         """
-        return True
+        self.connected = True
+    def restore_connection(self):
+        """
+        In this case, it does nothing because connection is established for each command
 
+        :return: True
+        :rtype: bool
+        """
+        self.connected = True
+    def test_connection(self):
+        """
+        In this case, it does nothing because connection is established for each command
+
+        :return: True
+        :rtype: bool
+        """
+        self.connected = True
     def send_command(self, command, ignore_log=False):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
             if not ignore_log:
-                Log.error('Could not execute command {0} on {1}'.format(e.cmd, self.host))
+                raise AutosubmitError('Could not execute command {0} on {1}'.format(e.cmd, self.host),7500,e.message)
             return False
         self._ssh_output = output
         return True

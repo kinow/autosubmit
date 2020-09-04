@@ -793,17 +793,14 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         for job_id in range(horizontal_wrapper_size):
             for thread in range(1, int(n_threads)):
                 core[thread] = core[thread-1]*2
-                print "#{0} cpu-mask is {1}: ".format(thread, hex(core[thread]))
             job_mask = 0x0
             for thr_mask in core:
                 job_mask = job_mask + thr_mask
             srun_mask_values.append(str(hex(job_mask)))
-            print "#{0} job_mask is {1}: ".format(thread, hex(job_mask))
             if job_id > 0:
                     core[0]=core[0] << int(n_threads)
             else:
                     core[0]=job_mask+0x1
-            print "#{0} cpu-mask is {1}: ".format(0, hex(core[0]))
 
         mask_array = "( "
         for mask in srun_mask_values:

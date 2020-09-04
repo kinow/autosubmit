@@ -27,20 +27,17 @@ import re
 import os
 import pickle
 from time import localtime, strftime
-from sys import setrecursionlimit
 from shutil import move
 from autosubmit.job.job import Job
-from bscearth.utils.log import Log
 from autosubmit.job.job_dict import DicJobs
 from autosubmit.job.job_utils import Dependency
-from autosubmit.job.job_common import Status, Type, bcolors
-from bscearth.utils.date import date2str, parse_date, sum_str_hours
-from autosubmit.job.job_packages import JobPackageSimple, JobPackageArray, JobPackageThread
+from autosubmit.job.job_common import Status, bcolors
+from bscearth.utils.date import date2str, parse_date
 import autosubmit.database.db_structure as DbStructure
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
-
+from log.log import AutosubmitCritical,AutosubmitError,Log
 
 class JobList:
     """
@@ -144,7 +141,11 @@ class JobList:
         jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
-            jobs_data = {str(row[0]): row for row in self.load()}
+
+            try:
+                jobs_data = {str(row[0]): row for row in self.load()}
+            except:
+                jobs_data = {str(row[0]): row for row in self.backup_load()}
         self._create_jobs(dic_jobs, jobs_parser, priority,
                           default_job_type, jobs_data)
         Log.info("Adding dependencies...")
@@ -171,7 +172,7 @@ class JobList:
             if not jobs_parser.has_option(job_section, option):
                 continue
 
-            dependencies_keys = jobs_parser.get(job_section, option).split()
+            dependencies_keys = jobs_parser.get(job_section, option).upper().split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, dic_jobs, job_section)
 
@@ -939,8 +940,7 @@ class JobList:
                Status.SUBMITTED and not job.status == Status.READY]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
             if len(tmp) != 0 and len(active) != 0:
-                Log.warning(
-                    "Only Held Jobs active,Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow) ")
+                raise AutosubmitCritical("Only Held Jobs active. Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)",7066)
             active = []
         return active
 
@@ -956,7 +956,6 @@ class JobList:
         for job in self._job_list:
             if job.name == name:
                 return job
-        Log.warning("We could not find that job {0} in the list!!!!", name)
 
     def get_in_queue_grouped_id(self, platform):
         jobs = self.get_in_queue(platform)
@@ -1025,11 +1024,14 @@ class JobList:
         :return: loaded joblist object
         :rtype: JobList
         """
-        if os.path.exists(filename):
-            fd = open(filename, 'rw')
-            return pickle.load(fd)
-        else:
-            Log.critical('File {0} does not exist'.format(filename))
+        try:
+            if os.path.exists(filename):
+                fd = open(filename, 'rw')
+                return pickle.load(fd)
+            else:
+                return list()
+        except IOError:
+            Log.printlog("Autosubmit will use a backup for recover the job_list",6010)
             return list()
 
     def load(self):
@@ -1041,13 +1043,35 @@ class JobList:
         """
         Log.info("Loading JobList")
         return self._persistence.load(self._persistence_path, self._persistence_file)
+    def backup_load(self):
+        """
+        Recreates an stored job list from the persistence
 
+        :return: loaded job list object
+        :rtype: JobList
+        """
+        Log.info("Loading backup JobList")
+        return self._persistence.load(self._persistence_path, self._persistence_file+"_backup")
     def save(self):
         """
         Persists the job list
         """
+        self.update_status_log()
         self._persistence.save(self._persistence_path,
                                self._persistence_file, self._job_list)
+    def backup_save(self):
+        """
+        Persists the job list
+        """
+        self._persistence.save(self._persistence_path,
+                               self._persistence_file+"_backup", self._job_list)
+    def update_status_log(self):
+        job_list = self.get_completed() + self.get_in_queue()
+        Log.status("\n{0}\t\t\t{1}\t\t{2}", "Job Name", "Job Id", "Job Status")
+        for job in job_list:
+
+            Log.status("{0}\t{1}\t{2}", job.name, job.id, Status().VALUE_TO_KEY[job.status])
+
 
     def update_from_file(self, store_change=True):
         """
@@ -1216,7 +1240,6 @@ class JobList:
 
             save = True
         Log.debug('Update finished')
-
         return save
 
     def update_genealogy(self, new=True, notransitive=False, update_structure=False):
@@ -1313,9 +1336,7 @@ class JobList:
         if out:
             Log.result("Scripts OK")
         else:
-            Log.warning("Scripts check failed")
-            Log.user_warning(
-                "Running after failed scripts check is at your own risk!")
+            Log.printlog("Scripts check failed\n Running after failed scripts is at your own risk!",3000)
         return out
 
     def _remove_job(self, job):
@@ -1355,7 +1376,7 @@ class JobList:
                 continue
 
             dependencies_keys = jobs_parser.get(
-                job_section, "RERUN_DEPENDENCIES").split()
+                job_section, "RERUN_DEPENDENCIES").upper().split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, self._dic_jobs, job_section)
 

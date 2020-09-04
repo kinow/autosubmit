@@ -34,7 +34,10 @@ class DbManager(object):
         self.connection = sqlite3.connect(self._get_db_filepath())
         if is_new:
             self._initialize_database()
-
+    def backup(self):
+        pass
+    def restore(self):
+        pass
 
     def disconnect(self):
         """

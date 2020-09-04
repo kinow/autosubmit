@@ -18,11 +18,10 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+Main module for Autosubmit. Only contains an interface class to all functionality implemented on Autosubmit
 """
 
 import os
-import sys
 import re
 import time
 import json
@@ -38,12 +37,12 @@ from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.database.db_jobdata import JobDataStructure
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
-import threading
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
+from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 
 def threaded(fn):
@@ -52,7 +51,6 @@ def threaded(fn):
         thread.start()
         return thread
     return wrapper
-
 
 class Job(object):
     """
@@ -103,7 +101,7 @@ class Job(object):
         self.scratch_free_space = None
         self.custom_directives = []
         self.undefined_variables = None
-
+        self.log_retries = 5
         self.id = job_id
         self.file = None
         self._local_logs = ('', '')
@@ -127,7 +125,6 @@ class Job(object):
         self.packed = False
         self.hold = False
         self.distance_weight = 0
-
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -296,6 +293,9 @@ class Job(object):
         """
         Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
         Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+
+        Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
     def print_parameters(self):
         """
@@ -518,28 +518,41 @@ class Job(object):
         retries = 3
         sleeptime = 5
         i = 0
-        while (not out_exist or not err_exist) and i < retries:
-            out_exist = platform.check_file_exists(
-                remote_logs[0])  # will do 5 retries
-            err_exist = platform.check_file_exists(
-                remote_logs[1])  # will do 5 retries
-            if not out_exist or not err_exist:
-                sleeptime = sleeptime + 5
-                i = i + 1
-                sleep(sleeptime)
-        if out_exist and err_exist:
-            if copy_remote_logs:
-                if local_logs != remote_logs:
-                    # unifying names for log files
-                    self.synchronize_logs(platform, remote_logs, local_logs)
-                    remote_logs = local_logs
-                platform.get_logs_files(self.expid, remote_logs)
-            # Update the logs with Autosubmit Job Id Brand
-            for local_log in local_logs:
-                platform.write_jobid(self.id, os.path.join(
-                    self._tmp_path, 'LOG_' + str(self.expid), local_log))
-        platform.closeConnection()
-        sleep(2)
+        sleep(10)
+        try:
+            while (not out_exist or not err_exist) and i < retries:
+                try:
+                    out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                    err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                except AutosubmitError as e:
+                    out_exist = False
+                    err_exist = False
+                    pass
+                if not out_exist or not err_exist:
+                    sleeptime = sleeptime + 5
+                    i = i + 1
+                    sleep(sleeptime)
+            if i >= retries:
+                raise AutosubmitError("Failed to retrieve log files",6001)
+            if out_exist and err_exist:
+                if copy_remote_logs:
+                    if local_logs != remote_logs:
+                        # unifying names for log files
+                        self.synchronize_logs(platform, remote_logs, local_logs)
+                        remote_logs = local_logs
+                    platform.get_logs_files(self.expid, remote_logs)
+                # Update the logs with Autosubmit Job Id Brand
+                for local_log in local_logs:
+                    platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+        except AutosubmitError as e:
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
+        except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
+            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
+        try:
+            platform.closeConnection()
+        except:
+            pass
+        sleep(5) # safe wait before end a thread
         return
 
     def update_status(self, copy_remote_logs=False):
@@ -553,11 +566,10 @@ class Job(object):
         previous_status = self.status
         new_status = self.new_status
         if new_status == Status.COMPLETED:
-            Log.debug("This job seems to have completed: checking...")
+            Log.debug("{0} job seems to have completed: checking...".format(self.name))
 
             if not self.platform.get_completed_files(self.name):
-                log_name = os.path.join(
-                    self._tmp_path, self.name + '_COMPLETED')
+                log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
             self.check_completion()
         else:
@@ -572,29 +584,25 @@ class Job(object):
         elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
-            Log.user_warning(
-                "Job {0} is FAILED. Checking completed files to confirm the failure...", self.name)
+            Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(self.name),3000)
             self.platform.get_completed_files(self.name)
             self.check_completion()
             if self.status == Status.COMPLETED:
-                Log.warning(
-                    'Job {0} seems to have failed but there is a COMPLETED file', self.name)
+                Log.printlog(" there is a COMPLETED file.",3000)
                 Log.result("Job {0} is COMPLETED", self.name)
             else:
                 self.update_children_status()
         elif self.status == Status.UNKNOWN:
-            Log.debug(
-                "Job {0} in UNKNOWN status. Checking completed files...", self.name)
+            Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),3000)
             self.platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
-                Log.warning('Job {0} in UNKNOWN status', self.name)
+                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6009)
             elif self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
-            Log.warning(
-                'Job {0} in SUBMITTED status after checking.', self.name)
+            Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(self.name),6008)
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
@@ -615,7 +623,7 @@ class Job(object):
     @staticmethod
     def _get_submitter(as_conf):
         """
-        Returns the submitter corresponding to the communication defined on autosubmit's config file
+        Returns the submitter corresponding to the communication defined on Autosubmit's config file
 
         :return: submitter
         :rtype: Submitter
@@ -623,11 +631,8 @@ class Job(object):
         communications_library = as_conf.get_communications_library()
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
-
         # communications library not known
-        Log.error(
-            'You have defined a not valid communications library on the configuration file')
-        raise Exception('Communications library not known')
+        raise AutosubmitCritical( 'You have defined a not valid communications library on the configuration file', 7014)
 
     def update_children_status(self):
         children = list(self.children)
@@ -643,13 +648,12 @@ class Job(object):
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
-        log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
+        log_name = os.path.join(self._tmp_path,self.name + '_COMPLETED')
 
         if os.path.exists(log_name):
             self.status = Status.COMPLETED
         else:
-            Log.warning(
-                "Job {0} completion check failed. There is no COMPLETED file", self.name)
+            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6009)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
@@ -844,8 +848,7 @@ class Job(object):
         if communications_library == 'paramiko':
             return self._get_paramiko_template(snippet, template)
         else:
-            Log.error('You have to define a template on Job class')
-            raise Exception('Job template content not found')
+            raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7014)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self.platform
@@ -943,15 +946,13 @@ class Job(object):
             if not out:
                 self.undefined_variables = set(variables) - set(parameters)
                 if show_logs:
-                    Log.warning("The following set of variables to be substituted in template script is not part of "
-                                "parameters set, and will be replaced by a blank value: {0}", str(self.undefined_variables))
+                    Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(self.undefined_variables),3000)
+
 
             # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
-                    Log.warning("The following set of variables are not being used in the templates: {0}",
-                                str(set(parameters)-set(variables)))
-
+                    Log.printlog("The following set of variables are not being used in the templates: {0}".format(str(set(parameters)-set(variables))),3000)
         return out
 
     def write_submit_time(self):
@@ -965,9 +966,6 @@ class Job(object):
         else:
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
-        # Writing database
-        JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
 
     def write_start_time(self):
         """
@@ -978,8 +976,7 @@ class Job(object):
         if self.platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
-            Log.warning(
-                'Could not get start time for {0}. Using current time as an approximation', self.name)
+            Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(self.name),3000)
             start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -987,9 +984,6 @@ class Job(object):
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
-        # Writing database
-        JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id)
         return True
 
     def write_end_time(self, completed):
@@ -1003,25 +997,16 @@ class Job(object):
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')
-        finish_time = None
-        final_status = None
         if end_time > 0:
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
-            # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
-            finish_time = end_time
         else:
             f.write(date2str(datetime.datetime.now(), 'S'))
-            finish_time = time.time()  # date2str(datetime.datetime.now(), 'S')
         f.write(' ')
         if completed:
-            final_status = "COMPLETED"
             f.write('COMPLETED')
         else:
-            final_status = "FAILED"
             f.write('FAILED')
-        JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform)
 
     def check_started_after(self, date_limit):
         """
@@ -1120,6 +1105,7 @@ class WrapperJob(Job):
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
+
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
         self.platform = platform
@@ -1198,8 +1184,7 @@ class WrapperJob(Job):
             reason = self.platform.parse_queue_reason(
                 self.platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
-                Log.error("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}", self.name,
-                          reason)
+                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6009)
                 self.cancel_failed_wrapper_job()
                 self.update_failed_jobs()
                 return
@@ -1236,8 +1221,7 @@ class WrapperJob(Job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
             # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.error("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(
-                job.name, self.name))
+            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name,self.name),6009)
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
@@ -1295,8 +1279,8 @@ done
                         if len(out) > 1:
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
-                                Log.info("Job {0} started at {1}".format(
-                                    jobname, str(parse_date(start_time))))
+                                Log.status("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+
                                 self.running_jobs_start[job] = start_time
                                 job.new_status = Status.RUNNING
                                 job.update_status(
@@ -1307,8 +1291,9 @@ done
                                 over_wallclock = self._check_inner_job_wallclock(
                                     job)
                                 if over_wallclock:
-                                    Log.error(
-                                        "Job {0} is FAILED".format(jobname))
+                                    Log.printlog(
+                                        "Job {0} is FAILED".format(jobname),6009)
+
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
@@ -1347,7 +1332,7 @@ done
             self._check_finished_job(job)
 
     def cancel_failed_wrapper_job(self):
-        Log.error("Cancelling job with id {0}".format(self.id))
+        Log.printlog("Cancelling job with id {0}".format(self.id),6009)
         self.platform.send_command(
             self.platform.cancel_cmd + " " + str(self.id))
 
@@ -1362,21 +1347,18 @@ done
 
     def _is_over_wallclock(self, start_time, wallclock):
         elapsed = datetime.datetime.now() - parse_date(start_time)
-        splited = wallclock.split(':')
-        if len(splited) == 3:
-            total = int(splited[0]) + int(splited[1]) + int(splited[2])
-        elif len(splited) == 2:
-            total = int(splited[0]) + int(splited[1])
-        elif len(splited) == 1:
-            total = int(splited[0])
-        else:
-            total = 0
-
+        wallclock = datetime.datetime.strptime(wallclock, '%H:%M')
+        total = 0.0
+        if wallclock.hour > 0:
+            total = wallclock.hour
+        if wallclock.minute > 0:
+            total += wallclock.minute/60.0
+        if wallclock.second > 0:
+            total += wallclock.second/60.0/60.0
         total = total * 1.15
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
-        second = int(((total - int(total)) * 60 -
-                      int((total - int(total)) * 60.0)) * 60.0)
+        second = int(((total - int(total)) * 60 - int((total - int(total)) * 60.0)) * 60.0)
         wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
                                              seconds=second)
         if elapsed > wallclock_delta:
@@ -1392,3 +1374,6 @@ done
         time = int(output[index])
         time = self._parse_timestamp(time)
         return time
+
+
+

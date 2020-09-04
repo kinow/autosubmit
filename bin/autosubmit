@@ -21,6 +21,8 @@
 import os
 import sys
 
+from log.log import Log,AutosubmitCritical
+
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
 sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
@@ -29,12 +31,26 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 from autosubmit.autosubmit import Autosubmit
 
 
+
 # noinspection PyProtectedMember
 def main():
-    if not Autosubmit.parse_args():
+    try:
+        Autosubmit.parse_args()
+        os._exit(0)
+    except AutosubmitCritical as e:
+        if e.trace is not None:
+            Log.error("Trace: {0}", e.trace)
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
+        Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
         os._exit(1)
-
-    os._exit(0)
+    except Exception as e:
+        Log.error("Trace: {0}", e.message)
+        if "temporarily unavailable" in str(e.message):
+            Log.critical("Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock",7000)
+        else:
+            Log.critical("Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
+        os._exit(1)
 
 if __name__ == "__main__":
     main()
+

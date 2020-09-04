@@ -1,0 +1,16 @@
+Log_levels:
+STATUS, DEBUG, WARNING, USER_WARNING, INFO, RESULT, ERROR, CRITICAL, NO_LOG
+
+Error_codes: List of error codes that one can find in autosubmit.
+
+1000 - Unhandled Error
+4000 - Warning -> Just a warning can continue.
+    4001 -> Config files has some invalid info
+8000 - Error   -> Can continue with errors.
+    8001 ->
+9000 - Critical -> finalises the execution of autosubmit
+    9001 -> Expid doesn't exists on the database. do  you have a typo on expid?
+autosubmit run
+    9001 -> Expid doesn't exists on the database.
+    9004 -> Invalid config Files
+

@@ -25,9 +25,8 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.local_header import LocalHeader
 
 from autosubmit.config.basicConfig import BasicConfig
-from bscearth.utils.log import Log
+from log.log import Log
 from time import sleep
-
 
 class LocalPlatform(ParamikoPlatform):
     """
@@ -88,7 +87,11 @@ class LocalPlatform(ParamikoPlatform):
         return self.get_pscall(job_id)
 
     def connect(self):
-        return True
+        self.connected = True
+    def test_connection(self):
+        self.connected = True
+    def restore_connection(self):
+        self.connected = True
 
     def send_command(self, command,ignore_log=False):
         try:

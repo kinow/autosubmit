@@ -22,8 +22,8 @@ Module containing functions to manage autosubmit's experiments.
 """
 import string
 import autosubmit.database.db_common as db_common
-from bscearth.utils.log import Log
-
+from log.log import Log,AutosubmitCritical,AutosubmitError
+Log.get_logger("Autosubmit")
 
 def new_experiment(description, version, test=False, operational=False):
     """
@@ -121,8 +121,7 @@ def is_valid_experiment_id(name):
     """
     name = name.lower()
     if len(name) < 4 or not name.isalnum():
-        Log.error("So sorry, but the name must have at least 4 alphanumeric chars!!!")
-        return False
+        raise AutosubmitCritical("Incorrect experiment, it must have exactly 4 alphanumeric chars")
     return True
 
 

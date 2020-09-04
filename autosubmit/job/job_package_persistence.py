@@ -17,9 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-import os
-
-from bscearth.utils.log import Log
 from autosubmit.database.db_manager import DbManager
 
 
@@ -52,9 +49,13 @@ class JobPackagePersistence(object):
 
         """
         if not wrapper:
-            return self.db_manager.select_all(self.JOB_PACKAGES_TABLE)
+            result= self.db_manager.select_all(self.JOB_PACKAGES_TABLE)
+            return result
         else:
-            return self.db_manager.select_all(self.WRAPPER_JOB_PACKAGES_TABLE)
+            result= self.db_manager.select_all(self.WRAPPER_JOB_PACKAGES_TABLE)
+            return result
+
+
     def reset(self):
         """
         Loads package of jobs from a database
@@ -72,6 +73,9 @@ class JobPackagePersistence(object):
         :param persistence_path: str
 
         """
+        with self.connect_backup:
+            self.connect.backup(self.connect_backup)
+
         #self._reset_table()
         job_packages_data = []
         for job in jobs:
@@ -82,6 +86,7 @@ class JobPackagePersistence(object):
         else:
             self.db_manager.insertMany(self.JOB_PACKAGES_TABLE, job_packages_data)
             self.db_manager.insertMany(self.WRAPPER_JOB_PACKAGES_TABLE, job_packages_data)
+
     def reset_table(self,wrappers=False):
         """
         Drops and recreates the database

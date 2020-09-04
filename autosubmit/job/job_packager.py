@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
-from bscearth.utils.log import Log
+from log.log import Log
 from autosubmit.job.job_common import Status, Type
 from bscearth.utils.date import sum_str_hours
 from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, JobPackageHorizontal, \
@@ -25,7 +25,8 @@ from autosubmit.job.job_packages import JobPackageSimple, JobPackageVertical, Jo
 from operator import attrgetter
 from math import ceil
 import operator
-from time import sleep
+
+
 class JobPackager(object):
     """
     Main class that manages Job wrapping.
@@ -209,7 +210,7 @@ class JobPackager(object):
                     dependencies_keys = []
                     for sectionN in multiple_sections:
                         dependencies_keys += self._as_config.jobs_parser.get(
-                            sectionN, "DEPENDENCIES").split()
+                            sectionN, "DEPENDENCIES").upper().split()
 
                 hard_limit_wrapper = max_wrapped_jobs
                 for k in dependencies_keys:
@@ -306,7 +307,7 @@ class JobPackager(object):
         :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
         # .jobs_in_wrapper defined in .conf, see constructor.
-        sections_split = self.jobs_in_wrapper.split()
+        sections_split = self.jobs_in_wrapper.upper().split()
 
         jobs_section = dict()
         for job in jobs_list:

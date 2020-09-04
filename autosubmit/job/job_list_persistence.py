@@ -22,7 +22,7 @@ from sys import setrecursionlimit
 
 import os
 
-from bscearth.utils.log import Log
+from log.log import Log
 from autosubmit.database.db_manager import DbManager
 
 
@@ -72,7 +72,7 @@ class JobListPersistencePkl(JobListPersistence):
             fd = open(path, 'r')
             return pickle.load(fd)
         else:
-            Log.critical('File {0} does not exist'.format(path))
+            Log.printlog('File {0} does not exist'.format(path),7040)
             return list()
 
     def save(self, persistence_path, persistence_file, job_list):
