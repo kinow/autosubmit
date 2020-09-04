@@ -18,7 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 try:
     # noinspection PyCompatibility
-    from config_parser import SafeConfigParser
+    from configparser import SafeConfigParser
 except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
@@ -1038,7 +1038,7 @@ class AutosubmitConfig(object):
         :return: version
         :rtype: str
         """
-        return self._conf_parser.get('config', 'AUTOSUBMIT_VERSION' , 'None')
+        return self._conf_parser.get_option('config', 'AUTOSUBMIT_VERSION' , 'None')
     def get_total_jobs(self):
         """
         Returns max number of running jobs  from autosubmit's config file

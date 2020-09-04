@@ -43,18 +43,8 @@ from config.config_parser import ConfigParserFactory
 from config.config_common import AutosubmitConfig
 from config.basicConfig import BasicConfig
 from distutils.util import strtobool
-"""
-Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
-"""
+from log.log import Log, AutosubmitError,AutosubmitCritical
 
-try:
-    # noinspection PyCompatibility
-    from configparser import SafeConfigParser
-except ImportError:
-    # noinspection PyCompatibility
-    from ConfigParser import SafeConfigParser
-
-# It is Python dialog available? (optional dependency)
 try:
     import dialog
 except Exception:
@@ -78,7 +68,10 @@ import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from collections import defaultdict
 from pyparsing import nestedExpr
-from log.log import Log, AutosubmitError,AutosubmitCritical
+
+"""
+Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
+"""
 
 
 sys.path.insert(0, os.path.abspath('.'))
@@ -1128,7 +1121,6 @@ class Autosubmit:
         :rtype: bool
         """
 
-        Autosubmit._check_ownership(expid)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         import platform
@@ -1146,9 +1138,9 @@ class Autosubmit:
                          as_conf.get_version(), Autosubmit.autosubmit_version, expid)
                 as_conf.set_version(Autosubmit.autosubmit_version)
         else:
-            if as_conf.get_version() != '' and as_conf.get_version() != Autosubmit.autosubmit_version:
+            if as_conf.get_version() is not None and as_conf.get_version() != Autosubmit.autosubmit_version:
                 raise AutosubmitCritical("Current experiment uses ({0}) which is not the running Autosubmit version  \nPlease, update the experiment version if you wish to continue using AutoSubmit {1}\nYou can achieve this using the command autosubmit updateversion {2} \n"
-                             "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid),7 )
+                             "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid),7067)
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):

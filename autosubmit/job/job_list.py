@@ -1298,7 +1298,7 @@ class JobList:
                         DbStructure.save_structure(
                             self.graph, self.expid, self._config.STRUCTURES_DIR)
                     except Exception as exp:
-                        Log.debug(exp)
+                        Log.warning(exp)
                         pass
 
         for job in self._job_list:

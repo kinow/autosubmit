@@ -27,7 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
-from bscearth.utils.date import Log
+from log.log import Log,AutosubmitError,AutosubmitCritical
 # from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
@@ -78,7 +78,7 @@ def get_structure(exp_id, structures_path):
             raise Exception("Structures folder not found " +
                             str(structures_path))
     except Exception as exp:
-        Log.warning("Get structure error: {0}".format(str(exp)))
+        Log.printlog("Get structure error: {0}".format(str(exp)), 6014)
         Log.debug(traceback.format_exc())
 
 
@@ -91,7 +91,7 @@ def create_connection(db_file):
     try:
         conn = sqlite3.connect(db_file)
         return conn
-    except:
+    except Exception as e:
         return None
 
 
@@ -105,7 +105,7 @@ def create_table(conn, create_table_sql):
         c = conn.cursor()
         c.execute(create_table_sql)
     except Exception as e:
-        Log.warning("Create table error {0}".format(str(e)))
+        Log.printlog("Create table error {0}".format(str(e)),5000)
 
 
 def _get_exp_structure(path):
@@ -123,7 +123,7 @@ def _get_exp_structure(path):
         rows = cur.fetchall()
         return rows
     except Exception as exp:
-        Log.warning("Get structure error {0}".format(str(exp)))
+        Log.debug("Get structure error {0}, couldn't load from storage ".format(str(exp)))
         Log.debug(traceback.format_exc())
         return dict()
 
