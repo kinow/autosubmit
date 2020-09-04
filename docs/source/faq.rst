@@ -57,11 +57,11 @@ Platform issues  - Critical Error codes. Local [7040-7050] and remote [7050-7060
 +======+=================================================================+=========================================================================================================================================+
 | 7040 | Invalid experiment pkl/db likely due a local platform failure   | Should be recovered automatically, if not check if there is a backup file and do it manually                                            |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-| 7041 | Weird job status                                                | Weird Job status, try to recover experiment(check the recovery how-to for more info) if this issue persist please, report it to gitlab  |
+| 7041 | Weird job status                                                | Weird Job status, try to recover experiment(check the recovery how-to for more info) if this issue persist please, report it to gitlab.  |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-| 7050 | Connection can't be established.                                | check your experiment platform configuration                                                                                            |
+| 7050 | Connection can't be established.                                | Check your experiment platform configuration                                                                                            |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-| 7050 | Failure after a restart, connection can't be restored.          | Check or ask (manually) if the remote platforms have any known issue                                                                    |
+| 7050 | Failure after a restart, connection can't be restored.          | Check or ask (manually) if the remote platforms have any known issues.                                                                    |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
 | 7051 | Invalid ssh configuration.                                      | Check .ssh/config file. Additionally, Check if you can perform a password less connection to that platform.                             |
 +------+-----------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
@@ -79,7 +79,7 @@ Uncatalogued codes  - Critical Error codes [7060+]
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Code | Details                             | Solution                                                                                                               |
 +======+=====================================+========================================================================================================================+
-| 7060 |  Display issues during monitoring   | try to use a different output or txt                                                                                   |
+| 7060 |  Display issues during monitoring   | Use a different output or txt                                                                                   |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7061 | Stat command failed                 | Check Aslogs command output, open a git issue                                                                          |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
@@ -121,7 +121,7 @@ Minor errors  - Error codes [6000+]
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6007 |     Broken sFTP connection                           |  Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6008 |     Inconsistent/unexpected ,jhjob sñtatus           |  Automatically, if there aren't bigger issues                                                  |
+| 6008 |     Inconsistent/unexpected ,job status           |  Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6009 |     Failed job checker                               | Automatically, if there aren't bigger issues                                                   |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
