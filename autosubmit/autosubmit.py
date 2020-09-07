@@ -1218,12 +1218,11 @@ class Autosubmit:
 
                     Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                     # Before starting main loop, setup historical database tables and main information
-                    Log.debug("Running job data structure functions")
+                    Log.debug("Running job data structure")
                     try:
                         job_data_structure = JobDataStructure(expid)
-                        job_data_structure.validate_current_run(
-                            job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
-                                        # Update RUNNING database
+                        job_data_structure.validate_current_run(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+
                         ExperimentStatus(expid).update_running_status()
                     except Exception as e:
                         raise AutosubmitCritical("Error while processing job_data_structure", 7067, e.message)

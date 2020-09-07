@@ -322,7 +322,7 @@ class ExperimentStatus(MainDataBase):
         self.DB_FILE_ECEARTH = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, "ecearth.db")
         self.PKL_FILE_PATH = os.path.join(
-            BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_list_" + str(self.expid) + ".pkl")
+            BasicConfig.LOCAL_ROOT_DIR, str(self.expid), "pkl", "job_list_" + str(self.expid) + ".pkl")
         self.create_table_query = textwrap.dedent(
             '''CREATE TABLE
         IF NOT EXISTS experiment_status (
@@ -394,8 +394,7 @@ class ExperimentStatus(MainDataBase):
         try:
             if self.conn_ec:
                 cur = self.conn_ec.cursor()
-                cur.execute(
-                    "SELECT id FROM experiment WHERE name=?", (self.expid,))
+                cur.execute("SELECT id FROM experiment WHERE name=?",( self.expid) ) # TODO verify changes  (self.expid,) -> (self.expid)
                 row = cur.fetchone()
                 return int(row[0])
             return None
@@ -497,7 +496,7 @@ class ExperimentStatus(MainDataBase):
             return None
         except sqlite3.Error as e:
             Log.warning(
-                "Error while trying to update {0} in experiment_status.".format(str(expid)))
+                "Error while trying to update {0} in experiment_status.".format(str(self.expid)))
             Log.debug("From _update_exp_status: {0}".format(
                 traceback.format_exc()))
             # Log.warning("Error on Update: " + str(type(e).__name__))
@@ -514,9 +513,8 @@ class JobDataStructure(MainDataBase):
         """
         MainDataBase.__init__(self, expid)
         BasicConfig.read()
-        #self.expid = expid
-        self.basic_conf = BasicConfig
         self.expid = expid
+        self.basic_conf = BasicConfig
         self.folder_path = BasicConfig.JOBDATA_DIR
         self.database_path = os.path.join(
             self.folder_path, "job_data_" + str(expid) + ".db")
