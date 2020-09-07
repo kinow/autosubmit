@@ -312,6 +312,22 @@ class ParamikoPlatform(Platform):
                 return int(job_id)
             else:
                 return None
+
+    def check_job_energy(self, job_id, packed=False):
+        """
+        Checks job energy and return values. Defined in child classes.
+
+        Args:
+            job_id (int): Id of Job
+
+        Returns:
+            4-tuple (int, int, int, int): submit time, start time, finish time, energy
+        """
+        check_energy_cmd = self.get_job_energy_cmd(job_id)
+        self.send_command(check_energy_cmd)
+        return self.parse_job_finish_data(
+                self.get_ssh_output(), packed)
+
     def submit_Script(self, hold=False):
         """
         Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.

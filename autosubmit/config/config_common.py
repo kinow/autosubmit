@@ -341,7 +341,6 @@ class AutosubmitConfig(object):
         open(self._platforms_parser_file, 'w').write(content)
         open(self._platforms_parser_file, 'a').write(contentToMod)
 
-
     def get_custom_directives(self, section):
         """
         Gets custom directives needed for the given job type
@@ -773,6 +772,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_BRANCH', 'master')
+
     def get_git_project_commit(self):
         """
         Returns git commit from experiment's config file
@@ -781,6 +781,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get_option('git', 'PROJECT_COMMIT', None)
+
     def get_git_remote_project_root(self):
         """
         Returns remote machine ROOT PATH
@@ -946,6 +947,18 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._exp_parser.get('experiment', 'CHUNKSIZEUNIT').lower()
+
+    def get_chunk_size(self, default=1):
+        """
+        Chunk Size as defined in the expdef file.
+
+        :return: Chunksize, 1 as default.
+        :rtype: int
+        """
+        chunk_size = self._exp_parser.get('experiment', 'CHUNKSIZE', default)
+        if chunk_size == '':
+            return default
+        return int(chunk_size)
 
     def get_member_list(self):
         """

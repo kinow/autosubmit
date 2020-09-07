@@ -37,6 +37,7 @@ from autosubmit.job.job_common import Status, Type
 from autosubmit.job.job_common import StatisticsSnippetBash, StatisticsSnippetPython
 from autosubmit.job.job_common import StatisticsSnippetR, StatisticsSnippetEmpty
 from autosubmit.config.basicConfig import BasicConfig
+from autosubmit.database.db_jobdata import JobDataStructure
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
 from time import sleep
 from threading import Thread
@@ -966,6 +967,9 @@ class Job(object):
         else:
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
+        # Writing database
+        JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
 
     def write_start_time(self):
         """
@@ -984,6 +988,9 @@ class Job(object):
         f.write(' ')
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
+        # Writing database
+        JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
         return True
 
     def write_end_time(self, completed):
@@ -1007,6 +1014,8 @@ class Job(object):
             f.write('COMPLETED')
         else:
             f.write('FAILED')
+        JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
+                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])
 
     def check_started_after(self, date_limit):
         """
@@ -1314,7 +1323,7 @@ done
             output = self.platform.check_completed_files(job.name)
             if output is None or output == '':
                 sleep(wait)
-                retries = retries-1
+                retries = retries - 1
         if output is not None and output != '' and 'COMPLETED' in output:
             job.new_status = Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')

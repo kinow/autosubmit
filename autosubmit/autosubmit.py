@@ -68,6 +68,7 @@ import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from collections import defaultdict
 from pyparsing import nestedExpr
+from database.db_jobdata import ExperimentStatus, JobDataStructure
 
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
@@ -647,6 +648,10 @@ class Autosubmit:
                     Log.info("Removing experiment directory...")
                     shutil.rmtree(os.path.join(
                         BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                    os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                           BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
+                    os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                           BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
                 except OSError as e:
                     raise AutosubmitCritical('Can not delete experiment folder: ',7012,e.message)
                 Log.info("Deleting experiment from database...")
@@ -1209,9 +1214,17 @@ class Autosubmit:
 
                 job_list.save()
                 Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
+                # Before starting main loop, setup historical database tables and main information
+                job_data_structure = JobDataStructure(expid)
+                job_data_structure.validate_current_run(
+                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+                # Update RUNNING database
+                ExperimentStatus(expid).update_running_status()
+
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
+
                 # Main loop. Finishing when all jobs have been submitted
                 main_loop_retrials = 120 # Hard limit of tries 120 tries at 1min sleep each try
                 Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
@@ -1236,6 +1249,7 @@ class Autosubmit:
                             job_list.backup_save()
                         save = False
                         slurm = []
+                        job_changes_tracker = {}  # to easily keep track of changes per iteration
                         for platform in platforms_to_test:
                             list_jobid = ""
                             completed_joblist = []
@@ -1249,6 +1263,7 @@ class Autosubmit:
                                         'Checking wrapper job with id ' + str(job_id))
                                     wrapper_job = job_list.job_package_map[job_id]
                                     if as_conf.get_notifications() == 'true':
+                                        # Setting prev_status as an easy way to check status change for inner jobs
                                         for inner_job in wrapper_job.job_list:
                                             inner_job.prev_status = inner_job.status
                                     check_wrapper = True
@@ -1286,6 +1301,12 @@ class Autosubmit:
                                                                                   Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
                                                                                   as_conf.get_mails_to())
+                                    # Detect and store changes
+                                    job_changes_tracker = {job.name: (
+                                        job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
+                                    job_data_structure.process_status_changes(
+                                        job_changes_tracker)
+                                    job_changes_tracker = {}
                                 else:  # Prepare jobs, if slurm check all active jobs at once.
                                     job = job[0]
                                     prev_status = job.status
@@ -1302,6 +1323,9 @@ class Autosubmit:
                                         else:  # If they're not from slurm platform check one-by-one
                                             platform.check_job(job)
                                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                                # Keeping track of changes
+                                                job_changes_tracker[job.name] = (
+                                                    prev_status, job.status)
                                                 if as_conf.get_notifications() == 'true':
                                                     if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                                         Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
@@ -1324,6 +1348,9 @@ class Autosubmit:
                                 prev_status = platform_jobs[2][j_Indx]
                                 job = platform_jobs[3][j_Indx]
                                 if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
+                                    # Keeping track of changes
+                                    job_changes_tracker[job.name] = (
+                                        prev_status, job.status)
                                     if as_conf.get_notifications() == 'true':
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
@@ -1342,6 +1369,11 @@ class Autosubmit:
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
+                        # Safe spot to store changes
+                        job_data_structure.process_status_changes(
+                            job_changes_tracker)
+                        job_changes_tracker = {}
+
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
@@ -1385,6 +1417,10 @@ class Autosubmit:
                         raise
                 #############################################################################3
                 Log.result("No more jobs to run.")
+                # Updating job data header with finish time
+                job_data_structure.validate_current_run(
+                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
                 for platform in platforms_to_test:
@@ -1404,6 +1440,8 @@ class Autosubmit:
                     Log.info("Some jobs have failed and reached maximum retrials")
                 else:
                     Log.result("Run successful")
+                    # Updating finish time for job data header
+                    job_data_structure.update_finish_time()
         except portalocker.AlreadyLocked:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message,7000)
@@ -2888,8 +2926,11 @@ class Autosubmit:
                     job_list.save()
                     JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                           "job_packages_" + expid).reset_table()
-
                     groups_dict = dict()
+
+                    # Setting up job historical database header. Must create a new run.
+                    JobDataStructure(expid).validate_current_run(job_list.get_job_list(
+                    ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True)
 
                     if not noplot:
                         if group_by:
@@ -3130,6 +3171,7 @@ class Autosubmit:
                 Log.debug('Status of jobs to change: {0}', filter_status)
                 Log.debug('Sections to change: {0}', filter_section)
                 wrongExpid = 0
+                job_tracked_changes = {}
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, ConfigParserFactory())
                 as_conf.check_conf_files(False)
@@ -3324,6 +3366,9 @@ class Autosubmit:
                         ft = filter_chunks.split(",")[1:]
                     if ft == 'Any':
                         for job in job_list.get_job_list():
+                            # Tracking changes
+                            job_tracked_changes[job.name] = (
+                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
@@ -3333,6 +3378,9 @@ class Autosubmit:
                                     if filter_chunks:
                                         jobs_filtered.append(job)
                                     else:
+                                        # Tracking changes
+                                        job_tracked_changes[job.name] = (
+                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
@@ -3483,6 +3531,9 @@ class Autosubmit:
                     status = Status()
                     for job in final_list:
                         if job.status != final_status:
+                            # Tracking changes
+                            job_tracked_changes[job.name] = (
+                                job.status, final_status)
                             # Only real changes
                             performed_changes[job.name] = str(
                                 Status.VALUE_TO_KEY[job.status]) + " -> " + str(final)
@@ -3497,7 +3548,7 @@ class Autosubmit:
                                     "-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
                             else:
                                 Log.info(job_list.print_with_status(statusChange = performed_changes))
-                    else: 
+                    else:
                         Log.warning("No changes were performed.")
                 # End of New Feature
 
@@ -3510,6 +3561,9 @@ class Autosubmit:
 
                     if fc == 'Any':
                         for job in jobs_filtered:
+                            # Tracking changes
+                            job_tracked_changes[job.name] = (
+                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
@@ -3528,10 +3582,16 @@ class Autosubmit:
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
                                     for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
+                                        # Tracking changes
+                                        job_tracked_changes[job.name] = (
+                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
                                     for job in filter(lambda j: j.chunk == chunk, jobs_member):
+                                        # Tracking changes
+                                        job_tracked_changes[job.name] = (
+                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
@@ -3541,12 +3601,18 @@ class Autosubmit:
                     Log.debug("Filtering jobs with status {0}", filter_status)
                     if status_list == 'Any':
                         for job in job_list.get_job_list():
+                            # Tracking changes
+                            job_tracked_changes[job.name] = (
+                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
                         for status in status_list:
                             fs = Autosubmit._get_status(status)
                             for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
+                                # Tracking changes
+                                job_tracked_changes[job.name] = (
+                                    job.status, final_status)
                                 Autosubmit.change_status(
                                     final, final_status, job, save)
 
@@ -3569,6 +3635,9 @@ class Autosubmit:
                     else:
                         for job in job_list.get_job_list():
                             if job.name in jobs:
+                                # Tracking changes
+                                job_tracked_changes[job.name] = (
+                                    job.status, final_status)
                                 Autosubmit.change_status(
                                     final, final_status, job, save)
 
@@ -3576,6 +3645,9 @@ class Autosubmit:
 
                 if save and wrongExpid == 0:
                     job_list.save()
+                    job_data_structure = JobDataStructure(expid)
+                    job_data_structure.process_status_changes(
+                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save",3000)

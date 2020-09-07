@@ -19,6 +19,9 @@
 
 import os
 from time import sleep
+from time import mktime
+from datetime import datetime
+import traceback
 
 from xml.dom.minidom import parseString
 
@@ -113,6 +116,128 @@ class SlurmPlatform(ParamikoPlatform):
     def parse_job_output(self, output):
         return output.strip().split(' ')[0].strip()
 
+    def parse_job_finish_data(self, output, packed):
+        """Parses the context of the sacct query to SLURM for a single job.
+        Only normal jobs return submit, start, finish, joules, ncpus, nnodes.
+
+        When a wrapper has finished, capture finish time.
+
+        :param output: The sacct output
+        :type output: str
+        :param job_id: Id in SLURM for the job
+        :type job_id: int
+        :param packed: true if job belongs to package
+        :type packed: bool
+        :return: submit, start, finish, joules, ncpus, nnodes, detailed_data
+        :rtype: int, int, int, int, int, int, json object (str)
+        """
+        try:
+            # Setting up: Storing detail for posterity
+            detailed_data = dict()
+            # No blank spaces after or before
+            output = output.strip() if output else None
+            lines = output.split("\n") if output else []
+            is_end_of_wrapper = False
+            extra_data = None
+            # If there is output, list exists
+            if len(lines) > 0:
+                # Collecting information from all output
+                for line in lines:
+                    line = line.strip().split()
+                    if len(line) > 0:
+                        # Collecting detailed data
+                        name = str(line[0])
+                        if packed:
+                            # If it belongs to a wrapper
+                            extra_data = {"ncpus": str(line[2] if len(line) > 2 else "NA"),
+                                          "nnodes": str(line[3] if len(line) > 3 else "NA"),
+                                          "submit": str(line[4] if len(line) > 4 else "NA"),
+                                          "start": str(line[5] if len(line) > 5 else "NA"),
+                                          "finish": str(line[6] if len(line) > 6 else "NA"),
+                                          "energy": str(line[7] if len(line) > 7 else "NA"),
+                                          "MaxRSS": str(line[8] if len(line) > 8 else "NA"),
+                                          "AveRSS": str(line[9] if len(line) > 9 else "NA")}
+                        else:
+                            # Normal job
+                            extra_data = {"energy": str(line[7] if len(line) > 7 else "NA"),
+                                          "MaxRSS": str(line[8] if len(line) > 8 else "NA"),
+                                          "AveRSS": str(line[9] if len(line) > 9 else "NA")}
+                        # Detailed data will contain the important information from output
+                        detailed_data[name] = extra_data
+                submit = start = finish = joules = nnodes = ncpus = 0
+                status = "UNKNOWN"
+                # Take first line as source
+                line = lines[0].strip().split()
+                ncpus = int(line[2] if len(line) > 2 else 0)
+                nnodes = int(line[3] if len(line) > 3 else 0)
+                status = str(line[1])
+                if packed == False:
+                    # If it is not wrapper job, take first line as source
+                    if status not in ["COMPLETED", "FAILED", "UNKNOWN"]:
+                        # It not completed, then its error and send default data plus output
+                        return (0, 0, 0, 0, ncpus, nnodes, detailed_data)
+                else:
+                    # Check if the wrapper has finished
+                    if status in ["COMPLETED", "FAILED", "UNKNOWN"]:
+                        # Wrapper has finished
+                        is_end_of_wrapper = True
+                if line:
+                    try:
+                        # Parse submit and start only for normal jobs (not packed)
+                        submit = int(mktime(datetime.strptime(
+                            line[4], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
+                        start = int(mktime(datetime.strptime(
+                            line[5], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
+                        # Assuming the job has been COMPLETED
+                        # If normal job or end of wrapper => Try to get the finish time from the first line of the output, else default to now.
+                        finish = (int(mktime(datetime.strptime(
+                            line[6], "%Y-%m-%dT%H:%M:%S").timetuple())) if len(line) > 6 and line[6] != "Unknown" else datetime.now().timestamp()) if not packed or is_end_of_wrapper == True else 0
+                        # If normal job or end of wrapper => Try to get energy from first line
+                        joules = (self.parse_output_number(
+                            line[7]) if len(line) > 7 and len(line[7]) > 0 else 0) if not packed or is_end_of_wrapper == True else 0
+                    except Exception as exp:
+                        Log.info(
+                            "Parsing mishandling.")
+                        # joules = -1
+                        pass
+
+                detailed_data = detailed_data if not packed or is_end_of_wrapper == True else extra_data
+                return (submit, start, finish, joules, ncpus, nnodes, detailed_data)
+
+            return (0, 0, 0, 0, 0, 0, dict())
+        except Exception as exp:
+            Log.warning(
+                "Autosubmit couldn't parse SLURM energy output. From parse_job_finish_data: {0}".format(str(exp)))
+            return (0, 0, 0, 0, 0, 0, dict())
+
+    def parse_output_number(self, string_number):
+        """
+        Parses number in format 1.0K 1.0M 1.0G
+
+        :param string_number: String representation of number
+        :type string_number: str
+        :return: number in float format
+        :rtype: float
+        """
+        number = 0.0
+        if (string_number):
+            last_letter = string_number.strip()[-1]
+            multiplier = 1
+            if last_letter == "G":
+                multiplier = 1000000
+                number = string_number[:-1]
+            elif last_letter == "K" or last_letter == "M":
+                multiplier = 1000
+                number = string_number[:-1]
+            else:
+                number = string_number
+            try:
+                number = float(number) * multiplier
+            except Exception as exp:
+                number = 0.0
+                pass
+        return number
+
     def parse_Alljobs_output(self, output,job_id):
         try:
             status = [x.split()[1] for x in output.splitlines() if x.split()[0] == str(job_id)]
@@ -155,6 +280,8 @@ class SlurmPlatform(ParamikoPlatform):
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
+    def get_job_energy_cmd(self, job_id):
+        return 'sacct -n -j {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output,job_id):
         reason =[x.split(',')[1] for x in output.splitlines() if x.split(',')[0] == str(job_id)]
