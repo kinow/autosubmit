@@ -1057,8 +1057,7 @@ class JobList:
         Persists the job list
         """
         self.update_status_log()
-        self._persistence.save(self._persistence_path,
-                               self._persistence_file, self._job_list)
+        self._persistence.save(self._persistence_path,self._persistence_file, self._job_list)
     def backup_save(self):
         """
         Persists the job list
@@ -1066,11 +1065,16 @@ class JobList:
         self._persistence.save(self._persistence_path,
                                self._persistence_file+"_backup", self._job_list)
     def update_status_log(self):
-        job_list = self.get_completed() + self.get_in_queue()
-        Log.status("\n{0}\t\t\t{1}\t\t{2}", "Job Name", "Job Id", "Job Status")
-        for job in job_list:
 
-            Log.status("{0}\t{1}\t{2}", job.name, job.id, Status().VALUE_TO_KEY[job.status])
+        job_list = self.get_completed()[-5:] + self.get_in_queue()
+
+        Log.status("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name", "Job Id", "Job Status", "Job Platform", "Job Queue")
+        for job in job_list:
+            if len(job.queue) < 1:
+                queue = "no-scheduler"
+            else:
+                queue = job.queue
+            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job.platform.name,queue)
 
 
     def update_from_file(self, store_change=True):
@@ -1124,6 +1128,7 @@ class JobList:
 
         # reset jobs that has failed less than 10 times
         Log.debug('Updating FAILED jobs')
+        write_log_status = False
         for job in self.get_failed():
             job.inc_fail_count()
             if not hasattr(job, 'retrials') or job.retrials is None:

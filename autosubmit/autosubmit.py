@@ -586,6 +586,8 @@ class Autosubmit:
 
             Log.set_file(os.path.join(aslogs_path, command + '.log'), "out", log_level)
             Log.set_file(os.path.join(aslogs_path, command + '_err.log'), "err")
+            if os.path.exists(os.path.join(aslogs_path,'jobs_status.log')):
+                os.remove(os.path.join(aslogs_path,'jobs_status.log'))
             Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
         else:
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR, command + '.log'), "out", log_level)
@@ -1168,7 +1170,7 @@ class Autosubmit:
                     try:
                         job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                     except BaseException as e:
-                        raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7040,e.message)
+                        raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored",7040,e.message)
 
 
                     Log.debug("Starting from job list restored from {0} files", pkl_dir)
@@ -1213,7 +1215,7 @@ class Autosubmit:
                                                      None, jobs[0].platform, as_conf, jobs[0].hold)
                             job_list.job_package_map[jobs[0].id] = wrapper_job
                     Log.debug("Checking job_list current status")
-                    job_list.update_list(as_conf)
+                    save = job_list.update_list(as_conf)
                     job_list.save()
 
                     Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
