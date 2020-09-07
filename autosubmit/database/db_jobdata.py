@@ -33,8 +33,8 @@ from json import dumps
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_package_persistence import JobPackagePersistence
-from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, Log, subs_dates
-
+from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, subs_dates
+from log.log import Log,AutosubmitCritical,AutosubmitError
 
 CURRENT_DB_VERSION = 12  # Used to be 10
 # Defining RowType standard
@@ -582,27 +582,32 @@ class JobDataStructure(MainDataBase):
             CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);
             ''')
         # print(self.database_path)
-        if not os.path.exists(self.database_path):
-            open(self.database_path, "w")
-            self.conn = self.create_connection(self.database_path)
-            self.create_table(self.create_table_header_query)
-            self.create_table(self.create_table_query)
-            self.create_index()
-            if self._set_pragma_version(CURRENT_DB_VERSION):
-                Log.info("Database version set.")
-        else:
-            self.conn = self.create_connection(self.database_path)
-            db_version = self._select_pragma_version()
-            if db_version != CURRENT_DB_VERSION:
-                # Update to current version
-                Log.info("Database schema needs update.")
-                self.update_table_schema()
-                self.create_index()
+        try:
+            if not os.path.exists(self.database_path):
+                open(self.database_path, "w")
+                self.conn = self.create_connection(self.database_path)
                 self.create_table(self.create_table_header_query)
+                self.create_table(self.create_table_query)
+                self.create_index()
                 if self._set_pragma_version(CURRENT_DB_VERSION):
-                    Log.info("Database version set to {0}.".format(
-                        CURRENT_DB_VERSION))
-        self.current_run_id = self.get_current_run_id()
+                    Log.info("Database version set.")
+            else:
+                self.conn = self.create_connection(self.database_path)
+                db_version = self._select_pragma_version()
+                if db_version != CURRENT_DB_VERSION:
+                    # Update to current version
+                    Log.info("Database schema needs update.")
+                    self.update_table_schema()
+                    self.create_index()
+                    self.create_table(self.create_table_header_query)
+                    if self._set_pragma_version(CURRENT_DB_VERSION):
+                        Log.info("Database version set to {0}.".format(
+                            CURRENT_DB_VERSION))
+            self.current_run_id = self.get_current_run_id()
+        except IOError as e:
+            raise AutosubmitCritical("Historic Database route {0} is not accesible".format(BasicConfig.JOBDATA_DIR),7067,e.message)
+        except Exception as e:
+            raise AutosubmitCritical("Historic Database {0} due an database error".format(),7067,e.message)
 
     def determine_rowtype(self, code):
         """

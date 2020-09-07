@@ -1004,15 +1004,22 @@ class Job(object):
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         f.write(' ')
+        finish_time = None
+        final_status = None
         if end_time > 0:
             # noinspection PyTypeChecker
             f.write(date2str(datetime.datetime.fromtimestamp(end_time), 'S'))
+            # date2str(datetime.datetime.fromtimestamp(end_time), 'S')
+            finish_time = end_time
         else:
             f.write(date2str(datetime.datetime.now(), 'S'))
+            finish_time = time.time()  # date2str(datetime.datetime.now(), 'S')
         f.write(' ')
         if completed:
+            final_status = "COMPLETED"
             f.write('COMPLETED')
         else:
+            final_status = "FAILED"
             f.write('FAILED')
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
                                                        self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])

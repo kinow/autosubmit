@@ -955,7 +955,7 @@ class AutosubmitConfig(object):
         :return: Chunksize, 1 as default.
         :rtype: int
         """
-        chunk_size = self._exp_parser.get('experiment', 'CHUNKSIZE', default)
+        chunk_size = self._exp_parser.get_option('experiment', 'CHUNKSIZE', default)
         if chunk_size == '':
             return default
         return int(chunk_size)

@@ -1218,7 +1218,7 @@ class Autosubmit:
                 job_data_structure = JobDataStructure(expid)
                 job_data_structure.validate_current_run(
                     job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
-                # Update RUNNING database
+                                # Update RUNNING database
                 ExperimentStatus(expid).update_running_status()
 
                 #########################
@@ -1263,7 +1263,7 @@ class Autosubmit:
                                         'Checking wrapper job with id ' + str(job_id))
                                     wrapper_job = job_list.job_package_map[job_id]
                                     if as_conf.get_notifications() == 'true':
-                                        # Setting prev_status as an easy way to check status change for inner jobs
+                                                                        # Setting prev_status as an easy way to check status change for inner jobs
                                         for inner_job in wrapper_job.job_list:
                                             inner_job.prev_status = inner_job.status
                                     check_wrapper = True
@@ -1301,7 +1301,7 @@ class Autosubmit:
                                                                                   Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
                                                                                   as_conf.get_mails_to())
-                                    # Detect and store changes
+                                                                                        # Detect and store changes
                                     job_changes_tracker = {job.name: (
                                         job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
                                     job_data_structure.process_status_changes(
@@ -1369,7 +1369,7 @@ class Autosubmit:
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
-                        # Safe spot to store changes
+                         # Safe spot to store changes
                         job_data_structure.process_status_changes(
                             job_changes_tracker)
                         job_changes_tracker = {}
@@ -2929,8 +2929,7 @@ class Autosubmit:
                     groups_dict = dict()
 
                     # Setting up job historical database header. Must create a new run.
-                    JobDataStructure(expid).validate_current_run(job_list.get_job_list(
-                    ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True)
+                    JobDataStructure(expid).validate_current_run(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True)
 
                     if not noplot:
                         if group_by:

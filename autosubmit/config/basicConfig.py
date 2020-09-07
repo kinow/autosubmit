@@ -40,6 +40,8 @@ class BasicConfig:
         '/esarchive', 'autosubmit', 'as_metadata', 'structures')
     GLOBAL_LOG_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'Aslogs')
+    JOBDATA_DIR = os.path.join(
+        '/esarchive', 'autosubmit', 'as_metadata', 'data')
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
@@ -102,6 +104,8 @@ class BasicConfig:
             BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
         if parser.has_option('globallogs', 'path'):
             BasicConfig.GLOBAL_LOG_DIR = parser.get('globallogs', 'path')
+        if parser.has_option('historicdb', 'path'):
+            BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
     @staticmethod
     def read():
         """
