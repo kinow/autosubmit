@@ -1149,77 +1149,88 @@ class Autosubmit:
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
-                Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
-                os.system('clear')
-                signal.signal(signal.SIGINT, signal_handler)
-
-                hpcarch = as_conf.get_platform()
-                safetysleeptime = as_conf.get_safetysleeptime()
-                retrials = as_conf.get_retrials()
-                submitter = Autosubmit._get_submitter(as_conf)
-                submitter.load_platforms(as_conf)
-                Log.debug("The Experiment name is: {0}", expid)
-                Log.debug("Sleep: {0}", safetysleeptime)
-                Log.debug("Default retrials: {0}", retrials)
-                Log.info("Starting job submission...")
-                pkl_dir = os.path.join(
-                    BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                 try:
-                    job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-                except BaseException as e:
-                    raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7040,e.message)
+                    Log.info("Preparing .lock file to avoid multiple instances with same experiment id")
+                    os.system('clear')
+                    signal.signal(signal.SIGINT, signal_handler)
 
-
-                Log.debug("Starting from job list restored from {0} files", pkl_dir)
-                Log.debug("Length of the jobs list: {0}", len(job_list))
-                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-                # check the job list script creation
-                Log.debug("Checking experiment templates...")
-                platforms_to_test = set()
-                for job in job_list.get_job_list():
-                    if job.platform_name is None:
-                        job.platform_name = hpcarch
-                    # noinspection PyTypeChecker
-                    job.platform = submitter.platforms[job.platform_name.lower(
-                    )]
-                    # noinspection PyTypeChecker
-                    platforms_to_test.add(job.platform)
-                job_list.check_scripts(as_conf)
-                try:
-                    packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
-                except BaseException as e:
-                    raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages",7040,e.message)
-                if as_conf.get_wrapper_type() != 'none':
-                    os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                          expid, "pkl", "job_packages_" + expid+".db"), 0644)
+                    hpcarch = as_conf.get_platform()
+                    safetysleeptime = as_conf.get_safetysleeptime()
+                    retrials = as_conf.get_retrials()
+                    submitter = Autosubmit._get_submitter(as_conf)
+                    submitter.load_platforms(as_conf)
+                    Log.debug("The Experiment name is: {0}", expid)
+                    Log.debug("Sleep: {0}", safetysleeptime)
+                    Log.debug("Default retrials: {0}", retrials)
+                    Log.info("Starting job submission...")
+                    pkl_dir = os.path.join(
+                        BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
                     try:
-                        packages = packages_persistence.load()
+                        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                     except BaseException as e:
-                        raise AutosubmitCritical(
-                            "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
-                            7040, e.message)
+                        raise AutosubmitCritical("Corrupted job_list, backup couldn''t be restored",7040,e.message)
 
-                    for (exp_id, package_name, job_name) in packages:
-                        if package_name not in job_list.packages_dict:
-                            job_list.packages_dict[package_name] = []
-                        job_list.packages_dict[package_name].append(
-                            job_list.get_job_by_name(job_name))
-                    for package_name, jobs in job_list.packages_dict.items():
-                        from job.job import WrapperJob
-                        wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                                 None,
-                                                 None, jobs[0].platform, as_conf, jobs[0].hold)
-                        job_list.job_package_map[jobs[0].id] = wrapper_job
-                job_list.update_list(as_conf)
 
-                job_list.save()
-                Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
-                # Before starting main loop, setup historical database tables and main information
-                job_data_structure = JobDataStructure(expid)
-                job_data_structure.validate_current_run(
-                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
-                                # Update RUNNING database
-                ExperimentStatus(expid).update_running_status()
+                    Log.debug("Starting from job list restored from {0} files", pkl_dir)
+                    Log.debug("Length of the jobs list: {0}", len(job_list))
+                    Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                    # check the job list script creation
+                    Log.debug("Checking experiment templates...")
+                    platforms_to_test = set()
+                    for job in job_list.get_job_list():
+                        if job.platform_name is None:
+                            job.platform_name = hpcarch
+                        # noinspection PyTypeChecker
+                        job.platform = submitter.platforms[job.platform_name.lower(
+                        )]
+                        # noinspection PyTypeChecker
+                        platforms_to_test.add(job.platform)
+                    job_list.check_scripts(as_conf)
+                    Log.debug("Loading job packages")
+                    try:
+                        packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)
+                    except BaseException as e:
+                        raise AutosubmitCritical("Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages",7040,e.message)
+                    if as_conf.get_wrapper_type() != 'none':
+                        os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                              expid, "pkl", "job_packages_" + expid+".db"), 0644)
+                        try:
+                            packages = packages_persistence.load()
+                        except BaseException as e:
+                            raise AutosubmitCritical(
+                                "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
+                                7040, e.message)
+                        Log.debug("Processing job packages")
+                        for (exp_id, package_name, job_name) in packages:
+                            if package_name not in job_list.packages_dict:
+                                job_list.packages_dict[package_name] = []
+                            job_list.packages_dict[package_name].append(
+                                job_list.get_job_by_name(job_name))
+                        for package_name, jobs in job_list.packages_dict.items():
+                            from job.job import WrapperJob
+                            wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                     None,
+                                                     None, jobs[0].platform, as_conf, jobs[0].hold)
+                            job_list.job_package_map[jobs[0].id] = wrapper_job
+                    Log.debug("Checking job_list current status")
+                    job_list.update_list(as_conf)
+                    job_list.save()
+
+                    Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
+                    # Before starting main loop, setup historical database tables and main information
+                    Log.debug("Running job data structure functions")
+                    try:
+                        job_data_structure = JobDataStructure(expid)
+                        job_data_structure.validate_current_run(
+                            job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+                                        # Update RUNNING database
+                        ExperimentStatus(expid).update_running_status()
+                    except Exception as e:
+                        raise AutosubmitCritical("Error while processing job_data_structure", 7067, e.message)
+                except AutosubmitCritical as e:
+                    raise AutosubmitCritical(e.message, 7067, e.trace)
+                except Exception as e:
+                    raise AutosubmitCritical("Error in run initialization", 7067, e.message)
 
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
@@ -1229,6 +1240,7 @@ class Autosubmit:
                 main_loop_retrials = 120 # Hard limit of tries 120 tries at 1min sleep each try
                 Autosubmit.restore_platforms(platforms_to_test) # establish the connection to all platforms
                 save = True
+                Log.debug("Running main loop")
                 while job_list.get_active():
                     try:
                         if Autosubmit.exit:

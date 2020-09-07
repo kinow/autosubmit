@@ -45,6 +45,7 @@ class AutosubmitConfig(object):
         self.expid = expid
         self.basic_config = basic_config
         self.parser_factory = parser_factory
+
         self._conf_parser = None
         self._conf_parser_file = os.path.join(self.basic_config.LOCAL_ROOT_DIR, expid, "conf",
                                               "autosubmit_" + expid + ".conf")
@@ -658,10 +659,13 @@ class AutosubmitConfig(object):
         """
         Creates parser objects for configuration files
         """
-        self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
-        self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
-        self._jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
-        self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
+        try:
+            self._conf_parser = AutosubmitConfig.get_parser(self.parser_factory, self._conf_parser_file)
+            self._platforms_parser = AutosubmitConfig.get_parser(self.parser_factory, self._platforms_parser_file)
+            self._jobs_parser = AutosubmitConfig.get_parser(self.parser_factory, self._jobs_parser_file)
+            self._exp_parser = AutosubmitConfig.get_parser(self.parser_factory, self._exp_parser_file)
+        except Exception as e:
+            raise AutosubmitCritical("{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(e.message),7014)
         if self._proj_parser_file == '':
             self._proj_parser = None
         else:
