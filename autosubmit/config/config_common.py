@@ -439,7 +439,7 @@ class AutosubmitConfig(object):
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
-                    self.wrong_config["Autosubmit"]+=[['mail', "Some of the configured e-mail is not valid"]]
+                    self.wrong_config["Autosubmit"]+=[['mail', "invalid e-mail"]]
         if "Autosubmit" not in self.wrong_config:
             Log.result('{0} OK'.format(os.path.basename(self._conf_parser_file)))
             return True
@@ -453,10 +453,10 @@ class AutosubmitConfig(object):
         Checks experiment's queues configuration file.
         """
         if len(self._platforms_parser.sections()) == 0:
-            self.wrong_config["Platform"] += [["Global","No remote platforms found"]]
+            self.wrong_config["Platform"] += [["Global","Platform file is not well-configured or found"]]
 
         if len(self._platforms_parser.sections()) != len(set(self._platforms_parser.sections())):
-            self.wrong_config["Platform"]+=[["Global", "Platforms found multiple times"]]
+            self.wrong_config["Platform"]+=[["Global", "There are repeated platforms"]]
         main_platform_found = False
         for section in self._platforms_parser.sections():
             if section in self.hpcarch:
@@ -643,12 +643,12 @@ class AutosubmitConfig(object):
             self.wrong_config["Wrapper"]+=[['wrapper', "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
         if 'horizontal' in self.get_wrapper_type():
             if not  self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE'):
-                self.wrong_config["Wrapper"]+=[['wrapper', "PROCESSORS_PER_NODE no exists in the horizontal-wrapper platform"]]
+                self.wrong_config["Wrapper"]+=[['wrapper', "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
             if not  self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS'):
-                self.wrong_config["Wrapper"]+=[['wrapper', "MAX_PROCESSORS no exists in the horizontal-wrapper platform"]]
+                self.wrong_config["Wrapper"]+=[['wrapper', "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
         if 'vertical' in self.get_wrapper_type():
             if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK'):
-                self.wrong_config["Wrapper"]+=[['wrapper', "MAX_WALLCLOCK no exists in the vertical-wrapper platform"]]
+                self.wrong_config["Wrapper"]+=[['wrapper', "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
         if "Wrapper"  not in self.wrong_config:
             Log.result('wrappers OK')
             return True
