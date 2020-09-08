@@ -280,7 +280,7 @@ class Platform(object):
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
-            if self.get_file(filename, False):
+            if self.get_file(filename, True):
                 Log.debug('{0}_STAT file have been transfered', job_name)
                 return True
         Log.debug('Something did not work well when transferring the STAT file')

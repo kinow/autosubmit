@@ -172,7 +172,7 @@ class EcPlatform(ParamikoPlatform):
             sleeptime = 5
             process_ok = False
             FNULL = open(os.devnull, 'w')
-            while not process_ok and retries < 2:
+            while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
                 #process = subprocess.Popen(command, shell=True, stdout=os.devnull)
                 out, _ = process.communicate()
@@ -186,9 +186,9 @@ class EcPlatform(ParamikoPlatform):
         except Exception as e:
             process_ok = False
         if not process_ok and must_exist:
-            raise AutosubmitError("Completed/Stat File don't recovered {0}".format(filename), 6004, command)
+            Log.printlog("Completed/Stat File don't recovered {0}".format(filename), 6004, command)
         if not process_ok:
-            raise AutosubmitError("Log file don't recovered {0}".format(filename), 6004, command)
+            Log.printlog("Log file don't recovered {0}".format(filename), 6004, command)
         return process_ok
 
     def delete_file(self, filename):

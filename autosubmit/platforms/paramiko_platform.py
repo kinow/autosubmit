@@ -236,10 +236,12 @@ class ParamikoPlatform(Platform):
             if str(e) in "Garbage":
                 raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
             if must_exist:
-                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004,e.message)
+                Log.printlog("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004,e.message)
+                return False
             else:
                 Log.printlog("Log file couldn't be retrieved: {0}".format(filename),5000)
                 return False
+
 
     def delete_file(self, filename):
         """
