@@ -153,10 +153,8 @@ class EcPlatform(ParamikoPlatform):
                                            os.path.join(self.get_files_path(), filename), self.host)
         try:
             subprocess.check_call(command, shell=True)
-        except subprocess.CalledProcessError:
-            Log.error('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),
-                                                              os.path.join(self.get_files_path(), filename)))
-            raise
+        except subprocess.CalledProcessError as e:
+            raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,e.message)
         return True
 
     def get_file(self, filename, must_exist=True, relative_path=''):
@@ -168,14 +166,15 @@ class EcPlatform(ParamikoPlatform):
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        command = '{0} {3}:{2} {1}'.format(self.get_cmd, file_path, os.path.join(self.get_files_path(), filename),
-                                           self.host)
+        command = '{0} {3}:{2} {1}'.format(self.get_cmd, file_path, os.path.join(self.get_files_path(), filename),self.host)
         try:
             retries = 0
             sleeptime = 5
             process_ok = False
+            FNULL = open(os.devnull, 'w')
             while not process_ok and retries < 2:
-                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
+                #process = subprocess.Popen(command, shell=True, stdout=os.devnull)
                 out, _ = process.communicate()
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1
@@ -185,21 +184,20 @@ class EcPlatform(ParamikoPlatform):
                 else:
                     process_ok = True
         except Exception as e:
-            Log.error("Not recovered,{0}", e)
-            Log.error("command: , {0} ",command)
             process_ok = False
         if not process_ok and must_exist:
-            raise Exception('File {0} does not exists'.format(filename))
+            raise AutosubmitError("Completed/Stat File don't recovered {0}".format(filename), 6004, command)
         if not process_ok:
-            Log.warning("File not transferred {0}, output: {1}",command,out)
+            raise AutosubmitError("Log file don't recovered {0}".format(filename), 6004, command)
         return process_ok
 
     def delete_file(self, filename):
         command = '{0} {1}:{2}'.format(self.del_cmd, self.host, os.path.join(self.get_files_path(), filename))
         try:
-            subprocess.check_call(command, stdout=open(os.devnull, 'w'), shell=True)
+            FNULL = open(os.devnull, 'w')
+            subprocess.check_call(command, stdout=FNULL,stderr=FNULL, shell=True)
         except subprocess.CalledProcessError:
-            Log.debug('Could not remove file {0}'.format(os.path.join(self.get_files_path(), filename)))
+            Log.debug('Could not remove file {0}',os.path.join(self.get_files_path(), filename) )
             return False
         return True
 

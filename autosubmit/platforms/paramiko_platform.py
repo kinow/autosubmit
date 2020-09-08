@@ -754,7 +754,7 @@ class ParamikoPlatform(Platform):
                 if self.send_command(self.get_mkdir_cmd()):
                     Log.debug('{0} has been created on {1} .', self.remote_log_dir, self.host)
                 else:
-                    Log.error('Could not create the DIR {0} to HPC {1}'.format(self.remote_log_dir, self.host))
+                    Log.debug('Could not create the DIR {0} to HPC {1}'.format(self.remote_log_dir, self.host))
             except BaseException as e:
                 raise AutosubmitError("Couldn't send the file {0} to HPC {1}".format(self.remote_log_dir,self.host), 6004, e.message)
 

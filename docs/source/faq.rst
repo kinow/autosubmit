@@ -79,19 +79,19 @@ Uncatalogued codes  - Critical Error codes [7060+]
 +---------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 | Code | Details                             | Solution                                                                                                               |
 +======+=====================================+========================================================================================================================+
-| 7060 |  Display issues during monitoring   | Use a different output or txt.                                                                                   |
+| 7060 |  Display issues during monitoring   | Use a different output or txt.                                                                                         |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7061 | Stat command failed                 | Check Aslogs command output, open a git issue.                                                                          |
+| 7061 | Stat command failed                 | Check Aslogs command output, open a git issue.                                                                         |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7062 | Svn issues                          | Check, in expdef, if url exist.                                                                                        |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7063 | cp/rsync issues                     | Check if destination path exist.                                                                                       |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7064 | Git issues                          | Check that the proj folder is a well configured git folder. Also, check [GIT] expdef config.                            |
+| 7064 | Git issues                          | Check that the proj folder is a well configured git folder. Also, check [GIT] expdef config.                           |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7065 | Wrong git configuration             | Invalid git url. Check [GIT] expdef config. If issue persists, check if proj folder is a well configured git folder.   |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
-| 7066 | Presubmission feature issues        | New feature, this message shouldn't be prompt. Please report it to Git.                                                 |
+| 7066 | Presubmission feature issues        | New feature, this message shouldn't be prompt. Please report it to Git.                                                |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
 | 7067 | Historical Database not found       | Configure [historicdb] PATH = <file_path>.                                                                             |
 +------+-------------------------------------+------------------------------------------------------------------------------------------------------------------------+
@@ -123,7 +123,7 @@ Minor errors  - Error codes [6000+]
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6007 |     Broken sFTP connection                           |  Automatically, if there aren't bigger issues                                                  |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
-| 6008 |     Inconsistent/unexpected ,job status           |  Automatically, if there aren't bigger issues                                                  |
+| 6008 |     Inconsistent/unexpected ,job status           |  Automatically, if there aren't bigger issues                                                     |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+
 | 6009 |     Failed job checker                               | Automatically, if there aren't bigger issues                                                   |
 +------+------------------------------------------------------+------------------------------------------------------------------------------------------------+

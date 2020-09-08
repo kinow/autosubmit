@@ -109,7 +109,7 @@ class JobPackageBase(object):
         else:
             self._create_scripts(configuration)
             self._send_files()
-            self._do_submission(job_scripts=None,hold=hold)
+            self._do_submission(hold=hold)
 
 
     def _create_scripts(self, configuration):
