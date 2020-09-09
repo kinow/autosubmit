@@ -123,6 +123,8 @@ class AutosubmitGit:
         :type force: bool
         :return: True if clone was successful, False otherwise
         """
+        submodule_failure = False
+
         if not as_conf.is_valid_git_repository():
             raise AutosubmitCritical("Incorrect git Configuration, check origin,commit and branch settings of expdef file", 7064)
         git_project_origin = as_conf.get_git_project_origin()
@@ -176,7 +178,12 @@ class AutosubmitGit:
                 else:
                     command += " cd {0}; git submodule init;".format(project_destination)
                     for submodule in git_project_submodules:
-                        command += " git submodule update {0};".format(submodule)
+                        try:
+                            command += " git submodule update {0};".format(submodule)
+                        except BaseException as e:
+                            submodule_failure=True
+                            Log.printlog("Trace: {0}".format(e.message), 6014)
+                            Log.printlog("Submodule {0} has a wrong configuration".format(submodule), 6014)
                 if git_remote_project_path == '':
                     output = subprocess.check_output(command, shell=True)
                 else:
@@ -209,7 +216,12 @@ class AutosubmitGit:
 
                     command += " cd {0}; git submodule init;".format(project_destination)
                     for submodule in git_project_submodules:
-                        command += " git submodule update  {0};".format(submodule)
+                        try:
+                            command += " git submodule update  {0};".format(submodule)
+                        except BaseException as e:
+                            submodule_failure=True
+                            Log.printlog("Trace: {0}".format(e.message), 6014)
+                            Log.printlog("Submodule {0} has a wrong configuration".format(submodule), 6014)
                 Log.debug('{0}', command)
                 if git_remote_project_path == '':
                     output = subprocess.check_output(command, shell=True)
@@ -220,4 +232,6 @@ class AutosubmitGit:
             except subprocess.CalledProcessError as e:
                 shutil.rmtree(project_path)
                 raise AutosubmitCritical("Can not clone {0} into {1}".format(git_project_branch + " " + git_project_origin, project_path), 7065,e.message)
+        if submodule_failure:
+            return False
         return True
