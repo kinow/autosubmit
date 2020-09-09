@@ -619,10 +619,12 @@ class Autosubmit:
         :return: True if succesfully deleted, False otherwise
         :rtype: boolean
         """
+        # Read current login
         # Read current user uid
         my_user = os.getuid()
         # Read eadmin user uid
         id_eadmin = os.popen('id -u eadmin').read().strip()
+
         if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                                                           expid_delete)):
             Log.result("Experiment directory does not exist.")
@@ -632,39 +634,48 @@ class Autosubmit:
             currentOwner_id = 0
             currentOwner = "empty"
             try:
-                currentOwner = os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid
-                currentOwner_id = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
+                currentOwner_id = os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid
+                currentOwner = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
             except:
                 pass
             finally:
-                if currentOwner_id == 0:
+                if currentOwner_id <= 0 :
                     Log.info("Current owner '{0}' of experiment {1} does not exist anymore.", currentOwner, expid_delete)
 
             # Deletion workflow continues as usual, a disjunction is included for the case when
             # force is sent, and user is eadmin
-            if currentOwner_id == os.getlogin() or (force and my_user == id_eadmin):
-                if (force and my_user == id_eadmin):
-                    Log.info(
-                        "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
-                try:
-                    Log.info("Removing experiment directory...")
-                    shutil.rmtree(os.path.join(
-                        BasicConfig.LOCAL_ROOT_DIR, expid_delete))
-                    os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                           BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
-                    os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                           BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
-                except OSError as e:
-                    raise AutosubmitCritical('Can not delete experiment folder: ',7012,e.message)
-                Log.info("Deleting experiment from database...")
-                ret = delete_experiment(expid_delete)
-                if ret:
-                    Log.result("Experiment {0} deleted".format(expid_delete))
-            else:
-                if currentOwner_id == 0:
-                    raise AutosubmitCritical('Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!'.format(expid_delete), 7012)
+            try:
+                if currentOwner_id == my_user or (force and my_user == id_eadmin):
+                    if (force and my_user == id_eadmin):
+                        Log.info(
+                            "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
+                    try:
+                        Log.info("Removing experiment directory...")
+                        shutil.rmtree(os.path.join(
+                            BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                        try:
+                            os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                                   BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
+                        except:
+                            pass
+                        try:
+                            os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
+                                                   BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
+                        except:
+                            pass
+                    except OSError as e:
+                        raise AutosubmitCritical('Can not delete experiment folder: ',7012,e.message)
+                    Log.info("Deleting experiment from database...")
+                    ret = delete_experiment(expid_delete)
+                    if ret:
+                        Log.result("Experiment {0} deleted".format(expid_delete))
                 else:
-                    raise AutosubmitCritical('Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
+                    if currentOwner_id == 0:
+                        raise AutosubmitCritical('Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!'.format(expid_delete), 7012)
+                    else:
+                        raise AutosubmitCritical('Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
+            except Exception as e:
+                raise AutosubmitCritical("Couldn't delete the experiment:",7012,e.message)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -1187,7 +1198,10 @@ class Autosubmit:
                         )]
                         # noinspection PyTypeChecker
                         platforms_to_test.add(job.platform)
-                    job_list.check_scripts(as_conf)
+                    try:
+                        job_list.check_scripts(as_conf)
+                    except Exception as e:
+                        raise AutosubmitCritical("Error while checking job templates",7015,e.message)
                     Log.debug("Loading job packages")
                     try:
                         packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),"job_packages_" + expid)

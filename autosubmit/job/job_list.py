@@ -1332,7 +1332,6 @@ class JobList:
                     'Template {0} will not be checked'.format(job.section))
                 continue
             else:
-
                 if job.section in self.sections_checked:
                     show_logs = False
             if not job.check_script(as_conf, self.parameters, show_logs):
