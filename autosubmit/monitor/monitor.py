@@ -33,7 +33,7 @@ import subprocess
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-from log.log import Log
+from log.log import Log,AutosubmitError,AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
 from diagram import create_bar_diagram
@@ -294,8 +294,7 @@ class Monitor:
             if job_list_object is not None:
                 self.generate_output_txt(expid, joblist, path, job_list_object=job_list_object)
         else:
-            Log.error('Format {0} not supported', output_format)
-            return
+            raise AutosubmitCritical('Format {0} not supported'.format(output_format),7069)
         if output_format != "txt":
             Log.result('Plot created at {0}', output_file)
         # If txt, don't open
@@ -303,7 +302,7 @@ class Monitor:
             try:
                 subprocess.check_call(['xdg-open', output_file])
             except subprocess.CalledProcessError:
-                Log.error('File {0} could not be opened', output_file)
+                raise AutosubmitCritical('File {0} could not be opened'.format(output_file), 7068)
         # If the txt has been generated, don't make it again.
         if output_format != "txt":
             self.generate_output_txt(expid, joblist, path, "default")
@@ -397,8 +396,7 @@ class Monitor:
             try:
                 subprocess.check_call(['xdg-open', output_file])
             except subprocess.CalledProcessError:
-                Log.error('File {0} could not be opened', output_file)
-
+                raise AutosubmitCritical('File {0} could not be opened'.format(output_file),7068)
     @staticmethod
     def clean_plot(expid):
         """

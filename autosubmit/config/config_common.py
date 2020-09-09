@@ -847,7 +847,6 @@ class AutosubmitConfig(object):
             output = subprocess.check_output("cd {0}; git rev-parse HEAD".format(full_project_path), shell=True)
         except subprocess.CalledProcessError as e:
             raise AutosubmitCritical("Failed to retrieve project commit SHA...", 7014,e.message)
-            Log.critical("Failed to retrieve project commit SHA...")
         project_sha = output
         Log.debug("Project commit SHA is: " + project_sha)
 

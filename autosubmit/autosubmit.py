@@ -1584,12 +1584,9 @@ class Autosubmit:
                             i += 1
                     save = True
                 except WrongTemplateException as e:
-                    Log.error(
-                        "Invalid parameter substitution in {0} template", e.job_name)
-                    raise
-                except Exception:
-                    Log.error("{0} submission failed", platform.name)
-                    raise
+                    raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7014,e.message)
+                except Exception as e:
+                    raise AutosubmitError("{0} submission failed".format(platform.name),6015,e.message)
         return save
 
     @staticmethod

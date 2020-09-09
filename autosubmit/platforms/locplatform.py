@@ -164,7 +164,7 @@ class LocalPlatform(ParamikoPlatform):
                     sleeptime = sleeptime + 5
                     retries = retries + 1
             except BaseException as e:  # Unrecoverable error
-                Log.critical("Crashed while retrieving  logs: {0}",e)
+                Log.printlog("Crashed while retrieving  logs",6001,e.message)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 
