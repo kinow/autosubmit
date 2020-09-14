@@ -186,9 +186,9 @@ class EcPlatform(ParamikoPlatform):
         except Exception as e:
             process_ok = False
         if not process_ok and must_exist:
-            Log.printlog("Completed/Stat File don't recovered {0}".format(filename), 6004, command)
+            Log.printlog("Completed/Stat File don't recovered {0}".format(filename), 6004)
         if not process_ok:
-            Log.printlog("Log file don't recovered {0}".format(filename), 6004, command)
+            Log.printlog("Log file don't recovered {0}".format(filename), 6004)
         return process_ok
 
     def delete_file(self, filename):
