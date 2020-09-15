@@ -258,7 +258,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.remove(os.path.join(self.get_files_path(), filename))
             return True
         except IOError as e:
-            Log.printlog("{0} couldn't be retrieved, session not active".format(os.path.join(self.get_files_path(), filename)),6004)
+            #Log.printlog("{0} couldn't be retrieved, session not active".format(os.path.join(self.get_files_path(), filename)),6004)
             return False
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(os.path.join(self.get_files_path(), filename)))

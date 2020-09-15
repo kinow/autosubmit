@@ -640,7 +640,7 @@ class JobDataStructure(MainDataBase):
                         # If setstatus changes more than 90% of date-member completed jobs, it's a new run
                         # Must create a new experiment run
                         Log.result(
-                            "Since a significant amount of jobs have changes status. Autosubmit will consider a new run of the same experiment.")
+                            "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
                         self.validate_current_run(
                             job_list, chunk_unit, chunk_size, True)
                         return None
