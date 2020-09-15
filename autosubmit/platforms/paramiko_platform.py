@@ -234,7 +234,8 @@ class ParamikoPlatform(Platform):
             return True
         except Exception as e:
             if str(e) in "Garbage":
-                raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
+                #raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
+                Log.printlog("File {0} seems to no exists (skipping)".format(filename),5004,e.message)
             if must_exist:
                 Log.printlog("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004)
                 return False
