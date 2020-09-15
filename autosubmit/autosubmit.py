@@ -1933,6 +1933,9 @@ class Autosubmit:
         platforms = submitter.platforms
 
         platforms_to_test = set()
+
+        Autosubmit.restore_platforms(platforms_to_test)  # establish the connection to all platforms
+
         for job in job_list.get_job_list():
             job.submitter = submitter
             if job.platform_name is None:
