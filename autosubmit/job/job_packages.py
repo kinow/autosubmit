@@ -88,20 +88,24 @@ class JobPackageBase(object):
         """
         exit=False
         for job in self.jobs:
-            if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
-                if only_generate:
-                    exit=True
-                    break
-                if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                    raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
-                if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                    Log.warning("Script {0} check failed",job.name)
-                    Log.warning("On submission script has some empty variables")
-                else:
-                    Log.result("Script {0} OK",job.name)
-            job.update_parameters(configuration, parameters)
-            # looking for directives on jobs
-            self._custom_directives = self._custom_directives | set(job.custom_directives)
+            try:
+                if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+                    if only_generate:
+                        exit=True
+                        break
+                    if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                        raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
+                    if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
+                        Log.warning("Script {0} check failed",job.name)
+                        Log.warning("On submission script has some empty variables")
+                    else:
+                        Log.result("Script {0} OK",job.name)
+                job.update_parameters(configuration, parameters)
+                # looking for directives on jobs
+                self._custom_directives = self._custom_directives | set(job.custom_directives)
+            except BaseException as e: #should be IOERROR
+                raise AutosubmitCritical(
+                    "Template [ {0} ] using CHECK=On_submission does not exists {0}".format(job.name), 7014)
 
         if only_generate:
             if not exit:
