@@ -1407,8 +1407,8 @@ class Autosubmit:
                     except AutosubmitError as e: #If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
-                        Log.info("Waiting 1 minute before continue")
-                        sleep(60)
+                        Log.info("Waiting 30 seconds before continue")
+                        sleep(30)
                         #Save job_list if not is a failed submitted job
                         if "submitted" not in e.message:
                             try:
