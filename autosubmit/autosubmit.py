@@ -1934,7 +1934,6 @@ class Autosubmit:
 
         platforms_to_test = set()
 
-        Autosubmit.restore_platforms(platforms_to_test)  # establish the connection to all platforms
 
         for job in job_list.get_job_list():
             job.submitter = submitter
@@ -1944,6 +1943,7 @@ class Autosubmit:
             job.platform = platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name.lower()])
+        Autosubmit.restore_platforms(platforms_to_test)  # establish the connection to all platforms
 
         if all_jobs:
             jobs_to_recover = job_list.get_job_list()
