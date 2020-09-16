@@ -3207,6 +3207,7 @@ class Autosubmit:
 
                 # Getting output type from configuration
                 output_type = as_conf.get_output_type()
+                # Getting db connections
 
                 # Validating job sections, if filter_section -ft has been set:
                 if filter_section is not None:
@@ -3255,6 +3256,18 @@ class Autosubmit:
                     # noinspection PyTypeChecker
                     job.platform = submitter.platforms[job.platform_name.lower(
                     )]
+                platforms_to_test = set()
+                platforms = submitter.platforms
+                for job in job_list.get_job_list():
+                    job.submitter = submitter
+                    if job.platform_name is None:
+                        job.platform_name = hpcarch
+                    # noinspection PyTypeChecker
+                    job.platform = platforms[job.platform_name.lower()]
+                    # noinspection PyTypeChecker
+                    platforms_to_test.add(platforms[job.platform_name.lower()])
+                Autosubmit.restore_platforms(platforms_to_test)  # establish the connection to all platforms
+
                 # Validating list of jobs, if filter_list -fl has been set:
                 # Seems that Autosubmit.load_job_list call is necessary before verification is executed
                 if job_list is not None and lst is not None:

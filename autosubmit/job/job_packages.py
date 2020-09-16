@@ -89,6 +89,7 @@ class JobPackageBase(object):
         exit=False
         for job in self.jobs:
             try:
+
                 if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
                     if only_generate:
                         exit=True
