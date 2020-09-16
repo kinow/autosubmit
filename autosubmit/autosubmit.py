@@ -1327,7 +1327,7 @@ class Autosubmit:
                                                                                   Status.VALUE_TO_KEY[inner_job.prev_status],
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
                                                                                   as_conf.get_mails_to())
-                                                                                        # Detect and store changes
+                                    # Detect and store changes
                                     job_changes_tracker = {job.name: (job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
                                     job_data_structure.process_status_changes(
                                         job_changes_tracker)
