@@ -1329,8 +1329,7 @@ class Autosubmit:
                                                                                   as_conf.get_mails_to())
                                     # Detect and store changes
                                     job_changes_tracker = {job.name: (job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
-                                    job_data_structure.process_status_changes(
-                                        job_changes_tracker)
+                                    job_data_structure.process_status_changes(job_changes_tracker)
                                     job_changes_tracker = {}
                                 else:  # Prepare jobs, if slurm check all active jobs at once.
                                     job = job[0]
@@ -1406,7 +1405,7 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
-                        sleep(1)
+                        sleep(30)
                         #Save job_list if not is a failed submitted job
                         recovery = True
                         try:
