@@ -157,7 +157,7 @@ class EcPlatform(ParamikoPlatform):
             raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,e.message)
         return True
 
-    def get_file(self, filename, must_exist=True, relative_path=''):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)

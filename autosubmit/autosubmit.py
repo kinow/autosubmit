@@ -1289,8 +1289,7 @@ class Autosubmit:
                                     Log.debug(
                                         'Checking wrapper job with id ' + str(job_id))
                                     wrapper_job = job_list.job_package_map[job_id]
-                                    if as_conf.get_notifications() == 'true':
-                                                                        # Setting prev_status as an easy way to check status change for inner jobs
+                                    if as_conf.get_notifications() == 'true': # Setting prev_status as an easy way to check status change for inner jobs
                                         for inner_job in wrapper_job.job_list:
                                             inner_job.prev_status = inner_job.status
                                     check_wrapper = True
@@ -1329,8 +1328,7 @@ class Autosubmit:
                                                                                   Status.VALUE_TO_KEY[inner_job.status],
                                                                                   as_conf.get_mails_to())
                                                                                         # Detect and store changes
-                                    job_changes_tracker = {job.name: (
-                                        job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
+                                    job_changes_tracker = {job.name: (job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
                                     job_data_structure.process_status_changes(
                                         job_changes_tracker)
                                     job_changes_tracker = {}
@@ -1408,29 +1406,27 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
-                        sleep(30)
+                        sleep(1)
                         #Save job_list if not is a failed submitted job
-                        if "submitted" not in e.message:
-                            try:
-                                save = job_list.update_list(as_conf)
-                                if save:
-                                    job_list.save()
-                            except BaseException as e: #Restore from file
-                                try:
-                                    job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-                                except BaseException as e:
-                                    raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
-                                                             e.message)
-                        else: # Restore from files
-                            try:
-                                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-                            except BaseException as e:
-                                raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
-                                                         e.message)
+                        recovery = True
+                        try:
+                            job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                        except BaseException as e:
+                            raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
+                                                     e.message)
                         if main_loop_retrials > 0: # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                             main_loop_retrials = main_loop_retrials - 1
                             try:
                                 Autosubmit.restore_platforms(platforms_to_test)
+                                platforms_to_test = set()
+                                for job in job_list.get_job_list():
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    # noinspection PyTypeChecker
+                                    job.platform = submitter.platforms[job.platform_name.lower(
+                                    )]
+                                    # noinspection PyTypeChecker
+                                    platforms_to_test.add(job.platform)
                             except BaseException:
                                 raise AutosubmitCritical("Autosubmit couldn't recover the platforms",7050, e.message)
                         else:
@@ -1600,6 +1596,8 @@ class Autosubmit:
                 except WrongTemplateException as e:
                     raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name),7014,e.message)
                 except AutosubmitError as e:
+                    raise
+                except AutosubmitCritical as e:
                     raise
                 except Exception as e:
                     raise AutosubmitError("{0} submission failed".format(platform.name),6015,e.message)
@@ -1974,8 +1972,8 @@ class Autosubmit:
             elif job.status != Status.SUSPENDED:
                 job.status = Status.WAITING
                 job.fail_count = 0
-                Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
-                Log.status("CHANGED job '{0}' status to WAITING".format(job.name))
+                #Log.info("CHANGED job '{0}' status to WAITING".format(job.name))
+                #Log.status("CHANGED job '{0}' status to WAITING".format(job.name))
 
 
         end = datetime.datetime.now()
@@ -3186,6 +3184,7 @@ class Autosubmit:
         Autosubmit._check_ownership(expid)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        section_validation_message = " "
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -3397,7 +3396,7 @@ class Autosubmit:
                                 status_validation_message += "\n\t There are no jobs with status " + \
                                     status + " in this experiment."
                     if status_validation_error == True:
-                        raise AutosubmitCritical("Error in the supplied input for -fs.",7011,section_validation_message)
+                        raise AutosubmitCritical("Error in the supplied input for -fs.{0}".format(status_validation_message),7011,section_validation_message)
 
                 jobs_filtered = []
                 final_status = Autosubmit._get_status(final)

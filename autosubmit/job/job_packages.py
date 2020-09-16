@@ -89,7 +89,6 @@ class JobPackageBase(object):
         exit=False
         for job in self.jobs:
             try:
-
                 if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
                     if only_generate:
                         exit=True
@@ -104,9 +103,10 @@ class JobPackageBase(object):
                 job.update_parameters(configuration, parameters)
                 # looking for directives on jobs
                 self._custom_directives = self._custom_directives | set(job.custom_directives)
+
             except BaseException as e: #should be IOERROR
                 raise AutosubmitCritical(
-                    "Template [ {0} ] using CHECK=On_submission does not exists {0}".format(job.name), 7014)
+                    "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
 
         if only_generate:
             if not exit:

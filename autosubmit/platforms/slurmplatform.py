@@ -78,13 +78,26 @@ class SlurmPlatform(ParamikoPlatform):
         try:
             self.send_file(self.get_submit_script(),False)
             cmd = os.path.join(self.get_files_path(),os.path.basename(self._submit_script_path))
-            self.send_command(cmd)
+            try:
+                self.send_command(cmd)
+            except AutosubmitError as e:
+                if "submission failed" in e.message.lower():
+                    raise AutosubmitCritical(e.message, 7014, e.trace)
+                else:
+                    raise
+            except Exception as e:
+                raise
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
             return jobs_id
         except IOError as e:
             raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
+        except AutosubmitError as e:
+            raise
+        except AutosubmitCritical as e:
+            raise
         except BaseException as e:
             raise AutosubmitError("Job couldn't be submitted, retry again in next AS iteration", 6008, e.message)
+
 
     def update_cmds(self):
         """

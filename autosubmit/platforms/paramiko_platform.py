@@ -207,7 +207,7 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError('Send file failed. Connection seems to no be active',6004)
 
     # Gets .err and .out
-    def get_file(self, filename, must_exist=True, relative_path=''):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -235,12 +235,15 @@ class ParamikoPlatform(Platform):
         except Exception as e:
             if str(e) in "Garbage":
                 #raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
-                Log.printlog("File {0} seems to no exists (skipping)".format(filename),5004)
+                if not ignore_log:
+                    Log.printlog("File {0} seems to no exists (skipping)".format(filename),5004)
             if must_exist:
-                Log.printlog("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004)
+                if not ignore_log:
+                    Log.printlog("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004)
                 return False
             else:
-                Log.printlog("Log file couldn't be retrieved: {0}".format(filename),5000)
+                if not ignore_log:
+                    Log.printlog("Log file couldn't be retrieved: {0}".format(filename),5000)
                 return False
 
 
@@ -567,6 +570,10 @@ class ParamikoPlatform(Platform):
         except AttributeError as e:
             raise AutosubmitError(
                 'Session not active: {0}'.format(e.message), 6005)
+        except AutosubmitCritical as e:
+            raise
+        except AutosubmitError as e:
+            raise
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6005,e.message)
 

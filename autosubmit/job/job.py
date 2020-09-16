@@ -109,6 +109,7 @@ class Job(object):
         self._remote_logs = ('', '')
 
         self.status = status
+        self.prev_status = status
         self.old_status = self.status
         self.new_status = status
         self.priority = priority
@@ -565,6 +566,7 @@ class Job(object):
         :type: Status
         """
         previous_status = self.status
+        self.prev_status = previous_status
         new_status = self.new_status
         if new_status == Status.COMPLETED:
             Log.debug("{0} job seems to have completed: checking...".format(self.name))
@@ -1147,6 +1149,7 @@ class WrapperJob(Job):
 
     def check_status(self, status):
         prev_status = self.status
+        self.prev_status = prev_status
         self.status = status
         Log.debug('Checking inner jobs status')
         if self.status in [Status.HELD, Status.QUEUING]:  # If WRAPPER is QUEUED OR HELD

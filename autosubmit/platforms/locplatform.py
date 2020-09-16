@@ -121,7 +121,7 @@ class LocalPlatform(ParamikoPlatform):
     def check_file_exists(self,filename):
         return True
 
-    def get_file(self, filename, must_exist=True, relative_path=''):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)

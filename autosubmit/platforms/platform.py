@@ -151,7 +151,7 @@ class Platform(object):
         """
         raise NotImplementedError
 
-    def get_file(self, filename, must_exist=True, relative_path=''):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -219,7 +219,7 @@ class Platform(object):
         :rtype: bool
         """
         if recovery:
-            if self.get_file('{0}_COMPLETED'.format(job_name), False):
+            if self.get_file('{0}_COMPLETED'.format(job_name), False,ignore_log=recovery):
                 return True
             else:
                 return False
