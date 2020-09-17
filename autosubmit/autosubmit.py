@@ -2694,7 +2694,7 @@ class Autosubmit:
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
-        as_conf.check_expdef_conf(False)
+        as_conf.check_expdef_conf()
 
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
