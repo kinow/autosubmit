@@ -246,7 +246,7 @@ class JobPackager(object):
                         if job.fail_count > 0:
                             failed_innerjobs = True
                             break
-                    if failed_innerjobs and self.wrapper_policy == "mixed":
+                    if failed_innerjobs and str(self.wrapper_policy) == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
                                 continue
@@ -259,9 +259,9 @@ class JobPackager(object):
                                     package = JobPackageSimple([job])
                                 packages_to_submit.append(package)
                     else:
-                        for job in p.jobs:
-                            job.packed = True
                         if len(p.jobs) >= min_wrapped_jobs:  # if the quantity is enough, make the wrapper
+                            for job in p.jobs:
+                                job.packed = True
                             packages_to_submit.append(p)
                         else:
                             deadlock = True
