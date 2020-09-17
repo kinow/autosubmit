@@ -238,9 +238,15 @@ class JobPackager(object):
                     built_packages_tmp.append(self._build_hybrid_package(
                         jobs_to_submit_by_section[section], max_wrapped_jobs, section))
             if wrapped:
+
                 for p in built_packages_tmp:
+                    failed_innerjobs = False
                     #Check failed jobs first
-                    if self.wrapper_policy == "mixed":
+                    for job in p.jobs:
+                        if job.fail_count > 0:
+                            failed_innerjobs = True
+                            break
+                    if failed_innerjobs and self.wrapper_policy == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
                                 continue
