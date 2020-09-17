@@ -58,8 +58,9 @@ Number of jobs in a package
 - **MIN_WRAPPED** can be defined in ``autosubmit_cxxx.conf`` in order to limit the minimum number of jobs that a wrapper can contain
     - If not defined, it considers that **MIN_WRAPPED** is 2.
     - If **POLICY** is flexible and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will be submitted as individual jobs, as long as the condition is not satisfied.
+    - If **POLICY** is mixed and there are failed jobs inside a wrapper, these jobs will be submitted as individual jobs.
     - If **POLICY** is strict and it is not possible to wrap **MIN_WRAPPED** or more tasks, these tasks will not be submitted until there are enough tasks to build a package.
-     - strict policy can cause deadlocks.
+    - strict and mixed policies can cause **deadlocks**.
 
 
 Wrapper check time
