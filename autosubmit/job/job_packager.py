@@ -248,7 +248,7 @@ class JobPackager(object):
                         for job in p.jobs:
                             independent_inner_job = True
                             for parent in job.parents:
-                                if parent in p.jobs and parent.name != job.name:  # This job depends on others inner jobs? T/F
+                                if parent in p.jobs and parent.name != job.name:  # This job depends on others inner jobs? T
                                     independent_inner_job = False
                                     break
                             tmp = [parent for parent in job.parents if
@@ -259,7 +259,18 @@ class JobPackager(object):
                             Log.debug("Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
                             for job in p.jobs:
                                 job.packed = False
-                        elif deadlock and self.wrapper_policy != "strict":
+                        elif deadlock and self.wrapper_policy == "semi-strict":
+                            Log.debug("Wrapper policy is set to semi-strict, there is a deadlock")
+                            for job in p.jobs:
+                                job.packed = False
+                                if job.fail_count > 0 and job.status == Status.READY:
+                                    Log.debug("Wrapper policy is set to semi-strict, there is a failed job that will be sent sequential")
+                                    if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                        package = JobPackageSimpleWrapped([job])
+                                    else:
+                                        package = JobPackageSimple([job])
+                                    packages_to_submit.append(package)
+                        elif deadlock and self.wrapper_policy != "strict" and self.wrapper_policy != "semi-strict":
                             Log.debug("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
                             for job in p.jobs:
                                 job.packed = False
