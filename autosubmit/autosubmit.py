@@ -1221,6 +1221,7 @@ class Autosubmit:
             # Starting waiting sequence
             Log.info("Your experiment will start execution on {0}\n".format(
                 target_date.strftime("%Y-%m-%d %H:%M:%S")))
+            # Check time every second
             while datetime.datetime.now() < target_date:
                 elapsed_time = target_date - datetime.datetime.now()
                 sys.stdout.write(
