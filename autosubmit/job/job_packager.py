@@ -240,11 +240,11 @@ class JobPackager(object):
             if wrapped:
                 for p in built_packages_tmp:
                     #Check failed jobs first
-                    if self.wrapper_policy == "semi-strict":
+                    if self.wrapper_policy == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
                                 continue
-                            Log.debug("Wrapper policy is set to semi-flexible and there are failed jobs")
+                            Log.debug("Wrapper policy is set to mixed and there are failed jobs")
                             job.packed = False
                             if job.status == Status.READY:
                                 if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
@@ -273,8 +273,8 @@ class JobPackager(object):
                                 Log.debug("Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
                                 for job in p.jobs:
                                     job.packed = False
-                            elif deadlock and self.wrapper_policy == "semi-strict":
-                                Log.debug("Wrapper policy is set to semi-strict, there is a deadlock")
+                            elif deadlock and self.wrapper_policy == "mixed":
+                                Log.debug("Wrapper policy is set to mixed, there is a deadlock")
                                 for job in p.jobs:
                                     job.packed = False
                                     if job.fail_count > 0 and job.status == Status.READY:
@@ -284,7 +284,7 @@ class JobPackager(object):
                                         else:
                                             package = JobPackageSimple([job])
                                         packages_to_submit.append(package)
-                            elif deadlock and self.wrapper_policy != "strict" and self.wrapper_policy != "semi-strict":
+                            elif deadlock and self.wrapper_policy != "strict" and self.wrapper_policy != "mixed":
                                 Log.debug("Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
                                 for job in p.jobs:
                                     job.packed = False
