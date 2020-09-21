@@ -114,6 +114,7 @@ class Log:
     CRITICAL = 7000
     NO_LOG = CRITICAL + 1000
     logging.basicConfig()
+    log_dict_debug = logging.Logger.manager.loggerDict
     if 'Autosubmit' in logging.Logger.manager.loggerDict.keys():
         log = logging.getLogger('Autosubmit')
     else:
@@ -153,7 +154,7 @@ class Log:
         file_path = os.path.join(directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
         if type == 'out':
             file_handler = logging.FileHandler(file_path, 'w')
-            file_handler.setLevel(level)
+            file_handler.setLevel(Log.DEBUG)
             file_handler.setFormatter(LogFormatter(True))
             Log.log.addHandler(file_handler)
         elif type == 'err':

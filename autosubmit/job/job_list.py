@@ -38,7 +38,7 @@ import autosubmit.database.db_structure as DbStructure
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical,AutosubmitError,Log
-
+#Log.get_logger("Log.Autosubmit")
 class JobList:
     """
     Class to manage the list of jobs to be run by autosubmit
@@ -1243,7 +1243,7 @@ class JobList:
                         else:
                             job.hold = True
 
-            save = True
+            #save = True
         Log.debug('Update finished')
         return save
 
