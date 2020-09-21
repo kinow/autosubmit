@@ -364,7 +364,7 @@ class ParamikoPlatform(Platform):
             job.new_status = job_status
         sleep_time=5
         while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
-            retries -= 1
+            retries = retries - 1
             Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.debug('retries left {0}', retries)
             Log.debug('Will be retrying in {0} seconds', sleep_time)
@@ -561,9 +561,13 @@ class ParamikoPlatform(Platform):
             for errorLine in stderr_readlines:
                 if errorLine.find("submission failed") != -1 or errorLine.find("git clone") != -1:
                     raise AutosubmitError('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines),6005))
+                if "not active" in errorLine:
+                    raise AutosubmitError('SSH Session not active, will restart the platforms', 6005)
+
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.printlog('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6006)
+
                 else:
                     Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
@@ -740,7 +744,8 @@ class ParamikoPlatform(Platform):
             try:
                 self.transport.sys.exit(0)
             except:
-                Log.debug("Transport already closed")
+                pass
+
 
 
     def check_remote_log_dir(self):

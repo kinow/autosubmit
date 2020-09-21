@@ -1445,19 +1445,18 @@ class Autosubmit:
 
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
-                for platform in platforms_to_test:
-                    platform.closeConnection()
+
                 active_threads = True
                 all_threads = threading.enumerate()
                 while active_threads and timeout < 360:
                     active_threads = False
-                    threads_active = 0
                     for thread in all_threads:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
-                                threads_active = threads_active+1
-                        sleep(10)
+                    sleep(10)
+                for platform in platforms_to_test:
+                    platform.closeConnection()
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                 else:
@@ -1961,7 +1960,7 @@ class Autosubmit:
             if job.platform.get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-                Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
+                #Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
 
                 if not no_recover_logs:
                     try:

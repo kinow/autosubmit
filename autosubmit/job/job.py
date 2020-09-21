@@ -293,11 +293,11 @@ class Job(object):
         """
         Prints job information in log
         """
-        Log.info("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
-        Log.info("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+        Log.debug("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        Log.debug("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
-        Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
-        Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
+        #Log.status("{0}\t{1}\t{2}", "Job Name", "Job Id", "Job Status")
+        #Log.status("{0}\t\t{1}\t{2}", self.name, self.id, self.status)
 
     def print_parameters(self):
         """
@@ -520,13 +520,13 @@ class Job(object):
         retries = 3
         sleeptime = 5
         i = 0
-        sleep(10)
+        sleep(20)
         try:
             while (not out_exist or not err_exist) and i < retries:
                 try:
                     out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
                     err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
-                except AutosubmitError as e:
+                except Exception as e:
                     out_exist = False
                     err_exist = False
                     pass
@@ -535,7 +535,7 @@ class Job(object):
                     i = i + 1
                     sleep(sleeptime)
             if i >= retries:
-                raise AutosubmitError("Failed to retrieve log files",6001)
+                raise AutosubmitError("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]),6001)
             if out_exist and err_exist:
                 if copy_remote_logs:
                     if local_logs != remote_logs:
@@ -1298,7 +1298,7 @@ done
                         if len(out) > 1:
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
-                                Log.status("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
+                                Log.debug("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
 
                                 self.running_jobs_start[job] = start_time
                                 job.new_status = Status.RUNNING
