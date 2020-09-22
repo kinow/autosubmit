@@ -1405,11 +1405,30 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
+                        Log.info("Waiting 30 seconds before continue")
                         sleep(30)
                         #Save job_list if not is a failed submitted job
                         recovery = True
                         try:
+
                             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                            packages_persistence = JobPackagePersistence( os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                            packages = packages_persistence.load()
+                            for (exp_id, package_name, job_name) in packages:
+                                if package_name not in job_list.packages_dict:
+                                    job_list.packages_dict[package_name] = []
+                                job_list.packages_dict[package_name].append(
+                                    job_list.get_job_by_name(job_name))
+                            for package_name, jobs in job_list.packages_dict.items():
+                                from job.job import WrapperJob
+                                for inner_job in jobs:
+                                    inner_job.packed = True
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                         None,
+                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
+                                job_list.job_package_map[jobs[0].id] = wrapper_job
+                            save = job_list.update_list(as_conf)
+                            job_list.save()
                         except BaseException as e:
                             raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
                                                      e.message)
