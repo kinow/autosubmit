@@ -518,14 +518,20 @@ class Job(object):
         out_exist = False
         err_exist = False
         retries = 3
-        sleeptime = 5
+        sleeptime = 0
         i = 0
         sleep(20)
         try:
-            while (not out_exist or not err_exist) and i < retries:
+            while (not out_exist and not err_exist) and i < retries:
                 try:
-                    out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
-                    err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                    try:
+                        out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                    except IOError as e:
+                        out_exist = False
+                    try:
+                        err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                    except IOError as e:
+                        err_exists = False
                 except Exception as e:
                     out_exist = False
                     err_exist = False
@@ -535,17 +541,22 @@ class Job(object):
                     i = i + 1
                     sleep(sleeptime)
             if i >= retries:
-                raise AutosubmitError("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]),6001)
-            if out_exist and err_exist:
-                if copy_remote_logs:
-                    if local_logs != remote_logs:
-                        # unifying names for log files
-                        self.synchronize_logs(platform, remote_logs, local_logs)
-                        remote_logs = local_logs
-                    platform.get_logs_files(self.expid, remote_logs)
-                # Update the logs with Autosubmit Job Id Brand
+                if not out_exist or not err_exist:
+                    raise AutosubmitError("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]),6001)
+
+            if copy_remote_logs:
+                if local_logs != remote_logs:
+                    # unifying names for log files
+                    self.synchronize_logs(platform, remote_logs, local_logs)
+                    remote_logs = local_logs
+                platform.get_logs_files(self.expid, remote_logs)
+            # Update the logs with Autosubmit Job Id Brand
+            try:
                 for local_log in local_logs:
                     platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+            except Exception as e:
+                Log.printlog("Failed to write the jobid".format(self.name), 6001)
+
         except AutosubmitError as e:
             Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
