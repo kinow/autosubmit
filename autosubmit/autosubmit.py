@@ -1228,6 +1228,7 @@ class Autosubmit:
                     "\r{0} until execution starts".format(elapsed_time))
                 sys.stdout.flush()
                 sleep(1)
+        # End of handling starting time block
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -1486,7 +1487,7 @@ class Autosubmit:
                         save = job_list.update_list(as_conf)
                         if save:
                             job_list.save()
-                         # Safe spot to store changes
+                        # Safe spot to store changes
                         job_data_structure.process_status_changes(
                             job_changes_tracker)
                         job_changes_tracker = {}
@@ -1536,9 +1537,9 @@ class Autosubmit:
                         raise
                 # 3
                 Log.result("No more jobs to run.")
-                # Updating job data header with finish time
+                # Updating job data header with current information
                 job_data_structure.validate_current_run(
-                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+                    job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=False, only_update=True)
 
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
