@@ -34,7 +34,7 @@ from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.job.job_common import Status
 from autosubmit.job.job_package_persistence import JobPackagePersistence
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, subs_dates
-from log.log import Log,AutosubmitCritical,AutosubmitError
+from log.log import Log, AutosubmitCritical, AutosubmitError
 
 CURRENT_DB_VERSION = 12  # Used to be 10
 # Defining RowType standard
@@ -394,7 +394,9 @@ class ExperimentStatus(MainDataBase):
         try:
             if self.conn_ec:
                 cur = self.conn_ec.cursor()
-                cur.execute("SELECT id FROM experiment WHERE name=?",( self.expid) ) # TODO verify changes  (self.expid,) -> (self.expid)
+                # TODO verify changes  (self.expid,) -> (self.expid)
+                cur.execute(
+                    "SELECT id FROM experiment WHERE name=?", (self.expid))
                 row = cur.fetchone()
                 return int(row[0])
             return None
@@ -603,9 +605,11 @@ class JobDataStructure(MainDataBase):
                             CURRENT_DB_VERSION))
             self.current_run_id = self.get_current_run_id()
         except IOError as e:
-            raise AutosubmitCritical("Historic Database route {0} is not accesible".format(BasicConfig.JOBDATA_DIR),7067,e.message)
+            raise AutosubmitCritical("Historic Database route {0} is not accesible".format(
+                BasicConfig.JOBDATA_DIR), 7067, e.message)
         except Exception as e:
-            raise AutosubmitCritical("Historic Database {0} due an database error".format(),7067,e.message)
+            raise AutosubmitCritical(
+                "Historic Database {0} due an database error".format(), 7067, e.message)
 
     def determine_rowtype(self, code):
         """
@@ -650,7 +654,7 @@ class JobDataStructure(MainDataBase):
         else:
             raise Exception("Empty header database")
 
-    def validate_current_run(self, job_list, chunk_unit="NA", chunk_size=0, must_create=False):
+    def validate_current_run(self, job_list, chunk_unit="NA", chunk_size=0, must_create=False, only_update=False):
         """[summary]
 
         :param job_list ([type]): [description]
@@ -682,7 +686,7 @@ class JobDataStructure(MainDataBase):
                                         current_total, failed_count, queue_count, running_count, submit_count)
                 self.current_run_id = self._insert_experiment_run(new_run)
             else:
-                if current_run.total != current_total:
+                if current_run.total != current_total and only_update == False:
                     new_run = ExperimentRun(0, None, 0, 0, chunk_unit, chunk_size, completed_count,
                                             current_total, failed_count, queue_count, running_count, submit_count)
                     self.current_run_id = self._insert_experiment_run(new_run)
@@ -692,6 +696,7 @@ class JobDataStructure(MainDataBase):
                     current_run.queuing = queue_count
                     current_run.submitted = submit_count
                     current_run.running = running_count
+                    current_run.total = current_total if only_update == True else current_run.total
                     current_run.finish = 0
                     self._update_experiment_run(current_run)
                     self.current_run_id = current_run.run_id

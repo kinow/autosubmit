@@ -17,6 +17,8 @@ Options:
                                 prevents doing the transitive reduction when plotting the workflow
       -v                    --update_version
                                 update the experiment version to match the actual autosubmit version
+      -s                    --start_time
+                                sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day) 
       -h, --help  show this help message and exit
 
 Example:
