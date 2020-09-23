@@ -77,9 +77,9 @@ class ParamikoPlatform(Platform):
             transport = self._ssh.get_transport()
             transport.send_ignore()
         except EOFError as e:
-            raise AutosubmitError("After a reconnection procedure, the platform is still not alive.", 6002)
+            raise AutosubmitError("After a reconnection procedure, the platform is still not alive.", 6002,e.message)
         except Exception as e:
-            raise AutosubmitError("Connection established, but session still not active", 6002)
+            raise AutosubmitError("Connection established, but session still not active", 6002,e.message)
     def restore_connection(self):
         try:
             self.connected = False

@@ -514,7 +514,11 @@ class Job(object):
         submitter = self._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
         platform = submitter.platforms[platform_name]
-        platform.restore_connection()
+        try:
+            platform.restore_connection()
+        except Exception as e:
+            Log.printlog("{0} \n Failed to connect to the platform, can't recover the logs ".format(e.message), 6001)
+
         out_exist = False
         err_exist = False
         retries = 3

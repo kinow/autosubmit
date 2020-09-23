@@ -1155,7 +1155,7 @@ class JobList:
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:
-                Log.debug('Updating SYNC jobs')
+                #Log.debug('Updating SYNC jobs')
                 tmp = [
                     parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):

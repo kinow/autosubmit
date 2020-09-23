@@ -135,7 +135,7 @@ class Autosubmit:
                                 default='WARNING', type=str,
                                 help="sets file's log level.")
             parser.add_argument('-lc', '--logconsole', choices=('NO_LOG','INFO','WARNING', 'DEBUG'),
-                                default='INFO', type=str,
+                                default='WARNING', type=str,
                                 help="sets console's log level")
 
             subparsers = parser.add_subparsers(dest='command')
