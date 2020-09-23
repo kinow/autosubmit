@@ -1410,6 +1410,23 @@ class Autosubmit:
                         recovery = True
                         try:
                             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                            packages_persistence = JobPackagePersistence( os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                            packages = packages_persistence.load()
+                            for (exp_id, package_name, job_name) in packages:
+                                if package_name not in job_list.packages_dict:
+                                    job_list.packages_dict[package_name] = []
+                                job_list.packages_dict[package_name].append(
+                                    job_list.get_job_by_name(job_name))
+                            for package_name, jobs in job_list.packages_dict.items():
+                                from job.job import WrapperJob
+                                for inner_job in jobs:
+                                    inner_job.packed = True
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                         None,
+                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
+                                job_list.job_package_map[jobs[0].id] = wrapper_job
+                            save = job_list.update_list(as_conf)
+                            job_list.save()
                         except BaseException as e:
                             raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
                                                      e.message)
@@ -1445,19 +1462,19 @@ class Autosubmit:
 
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
-                for platform in platforms_to_test:
-                    platform.closeConnection()
+
                 active_threads = True
                 all_threads = threading.enumerate()
                 while active_threads and timeout < 360:
                     active_threads = False
-                    threads_active = 0
                     for thread in all_threads:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
-                                threads_active = threads_active+1
-                        sleep(10)
+                    sleep(10)
+                    timeout += 10
+                for platform in platforms_to_test:
+                    platform.closeConnection()
                 if len(job_list.get_failed()) > 0:
                     Log.info("Some jobs have failed and reached maximum retrials")
                 else:
@@ -1961,7 +1978,7 @@ class Autosubmit:
             if job.platform.get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
                 Log.info("CHANGED job '{0}' status to COMPLETED".format(job.name))
-                Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
+                #Log.status("CHANGED job '{0}' status to COMPLETED".format(job.name))
 
                 if not no_recover_logs:
                     try:

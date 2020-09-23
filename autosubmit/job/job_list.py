@@ -1243,7 +1243,7 @@ class JobList:
                         else:
                             job.hold = True
 
-            save = True
+            #save = True
         Log.debug('Update finished')
         return save
 
