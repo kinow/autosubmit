@@ -1409,6 +1409,7 @@ class Autosubmit:
                         #Save job_list if not is a failed submitted job
                         recovery = True
                         try:
+
                             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
                             packages_persistence = JobPackagePersistence( os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages = packages_persistence.load()
