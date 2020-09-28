@@ -902,11 +902,13 @@ class JobDataStructure(MainDataBase):
             # print("Writing finish time \t" + str(job_name) + "\t" + str(finish))
             job_data_last = self.get_job_data_last(job_name)
             # energy = 0
+            is_packed = False
             submit_time = start_time = finish_time = number_nodes = number_cpus = energy = 0
             extra_data = dict()
             # Updating existing row
             if job_data_last:
                 job_data_last = job_data_last[0]
+                is_packed = True if job_data_last.rowtype > 1000 else False
                 # Call Slurm here, update times.
                 if platform_object:
                     # print("There is platform object")
@@ -915,7 +917,7 @@ class JobDataStructure(MainDataBase):
                             if platform_object.type == "slurm":
                                 # print("Checking Slurm for " + str(job_name))
                                 submit_time, start_time, finish_time, energy, number_cpus, number_nodes, extra_data = platform_object.check_job_energy(
-                                    job_id, packed)
+                                    job_id, is_packed)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
@@ -948,15 +950,15 @@ class JobDataStructure(MainDataBase):
                 return True
             # It is necessary to create a new row
             submit_inserted = self.write_submit_time(
-                job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, packed)
+                job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, is_packed)
             write_inserted = self.write_start_time(job_name, finish, status, ncpus,
-                                                   wallclock, qos, date, member, section, chunk, platform, job_id, packed)
+                                                   wallclock, qos, date, member, section, chunk, platform, job_id, is_packed)
             # print(submit_inserted)
             # print(write_inserted)
             if submit_inserted and write_inserted:
                 #print("retro finish")
                 self.write_finish_time(
-                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object, packed, number_nodes)
+                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object, is_packed, number_nodes)
             else:
                 return None
         except Exception as exp:
