@@ -177,7 +177,10 @@ class SlurmPlatform(ParamikoPlatform):
                                           "AveRSS": str(line[9] if len(line) > 9 else "NA")}
                         else:
                             # Normal job
-                            extra_data = {"energy": str(line[7] if len(line) > 7 else "NA"),
+                            extra_data = {"submit": str(line[4] if len(line) > 4 else "NA"),
+                                          "start": str(line[5] if len(line) > 5 else "NA"),
+                                          "finish": str(line[6] if len(line) > 6 else "NA"),
+                                          "energy": str(line[7] if len(line) > 7 else "NA"),
                                           "MaxRSS": str(line[8] if len(line) > 8 else "NA"),
                                           "AveRSS": str(line[9] if len(line) > 9 else "NA")}
                         # Detailed data will contain the important information from output
