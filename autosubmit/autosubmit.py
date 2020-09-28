@@ -1420,9 +1420,9 @@ class Autosubmit:
                                     # Detect and store changes
                                     job_changes_tracker = {job.name: (
                                         job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
-                                    job_data_structure.process_status_changes(
-                                        job_changes_tracker)
-                                    job_changes_tracker = {}
+                                    # job_data_structure.process_status_changes(
+                                    #     job_changes_tracker)
+                                    # job_changes_tracker = {}
                                 else:  # Prepare jobs, if slurm check all active jobs at once.
                                     job = job[0]
                                     prev_status = job.status
@@ -1489,7 +1489,7 @@ class Autosubmit:
                             job_list.save()
                         # Safe spot to store changes
                         job_data_structure.process_status_changes(
-                            job_changes_tracker)
+                            job_changes_tracker, job_list.get_job_list())
                         job_changes_tracker = {}
 
                         if Autosubmit.exit:
@@ -3837,7 +3837,7 @@ class Autosubmit:
                     job_list.save()
                     job_data_structure = JobDataStructure(expid)
                     job_data_structure.process_status_changes(
-                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True)
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)

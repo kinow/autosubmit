@@ -633,11 +633,11 @@ class JobDataStructure(MainDataBase):
             new_run = ExperimentRun(0)
             return self._insert_experiment_run(new_run)
 
-    def process_status_changes(self, tracking_dictionary, job_list=None, chunk_unit="NA", chunk_size=0):
+    def process_status_changes(self, tracking_dictionary, job_list=None, chunk_unit="NA", chunk_size=0, check_run=False):
         current_run = self.get_max_id_experiment_run()
         if current_run:
             if tracking_dictionary is not None and bool(tracking_dictionary) == True:
-                if job_list:
+                if job_list and check_run == True:
                     current_date_member_completed_count = sum(
                         1 for job in job_list if job.date is not None and job.member is not None and job.status == Status.COMPLETED)
                     if len(tracking_dictionary.keys()) >= int(current_date_member_completed_count * 0.9):
@@ -648,9 +648,28 @@ class JobDataStructure(MainDataBase):
                         self.validate_current_run(
                             job_list, chunk_unit, chunk_size, True)
                         return None
-                for name, (prev_status, status) in tracking_dictionary.items():
-                    current_run.update_counters(prev_status, status)
-                self._update_experiment_run(current_run)
+                if job_list and check_run == False:
+                    if len(tracking_dictionary.items()) > 0:
+                        # Changes exist
+                        completed_count = sum(
+                            1 for job in job_list if job.status == Status.COMPLETED)
+                        failed_count = sum(
+                            1 for job in job_list if job.status == Status.FAILED)
+                        queue_count = sum(
+                            1 for job in job_list if job.status == Status.QUEUING)
+                        submit_count = sum(
+                            1 for job in job_list if job.status == Status.SUBMITTED)
+                        running_count = sum(
+                            1 for job in job_list if job.status == Status.RUNNING)
+                        current_run.completed = completed_count
+                        current_run.failed = failed_count
+                        current_run.queuing = queue_count
+                        current_run.submitted = submit_count
+                        current_run.running = running_count
+                        self._update_experiment_run(current_run)
+                # for name, (prev_status, status) in tracking_dictionary.items():
+                #     current_run.update_counters(prev_status, status)
+
         else:
             raise Exception("Empty header database")
 
