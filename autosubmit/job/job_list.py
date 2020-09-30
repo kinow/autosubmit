@@ -829,8 +829,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        waiting_jobs = [job for job in self._job_list if (job.platform.type == platform_type and
-                                                          job.status == Status.WAITING)]
+        waiting_jobs = [job for job in self._job_list if (job.platform.type == platform_type and job.status == Status.WAITING)]
         return waiting_jobs
 
     def get_held_jobs(self, platform=None):
@@ -1168,8 +1167,7 @@ class JobList:
         if not fromSetStatus:
             all_parents_completed = []
             for job in self.get_waiting():
-                tmp = [
-                    parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False

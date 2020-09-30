@@ -345,7 +345,7 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def check_job(self, job, default_status=Status.COMPLETED, retries=5):
+    def check_job(self, job, default_status=Status.COMPLETED, retries=5,submit_hold_check=False):
         """
         Checks job running status
 
@@ -390,7 +390,11 @@ class ParamikoPlatform(Platform):
             Log.error(" check_job(), job is not on the queue system. Output was: {0}", self.get_checkjob_cmd(job_id))
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
-        job.new_status = job_status
+        if submit_hold_check:
+            return job_status
+        else:
+            job.new_status = job_status
+
     def _check_jobid_in_queue(self,ssh_output,job_list_cmd):
         for job in job_list_cmd[:-1].split(','):
             if job not in ssh_output:
