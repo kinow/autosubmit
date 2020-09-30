@@ -1130,8 +1130,6 @@ class Autosubmit:
         :rtype: \n
         """
         job_list._job_list = jobs_filtered
-        job_list.update_list(as_conf, False)
-
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
         # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
@@ -1693,12 +1691,26 @@ class Autosubmit:
                             raise BaseException(
                                 "Exiting AS, AS is unable to get jobID this can be due a failure on the platform or a bad parameter on job.conf(check that queue parameter is valid for your current platform(CNS,BSC32,PRACE...)")
                         i = 0
+                        sleep(10)
                         for package in valid_packages_to_submit:
+                            if hold:
+                                package.jobs[0].id = str(jobs_id[i])
+                                cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
+                                package.jobs[0].platform.send_command(cmd)
+                                queue_status = package.jobs[0].platform._ssh_output
+                                reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                if reason == '(JobHeldAdmin)':
+
+                                    package.jobs[0].platform.send_command(job.platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                    i= i+1
+                                    continue
+                                if not platform.hold_job(package.jobs[0]):
+                                    i = i + 1
+                                    continue
                             for job in package.jobs:
+                                job.hold = hold
                                 job.id = str(jobs_id[i])
                                 job.status = Status.SUBMITTED
-                                job.hold = hold
-                                job.write_submit_time()
                             if hasattr(package, "name"):
                                 job_list.packages_dict[package.name] = package.jobs
                                 from job.job import WrapperJob
@@ -1721,8 +1733,7 @@ class Autosubmit:
                 except AutosubmitCritical as e:
                     raise
                 except Exception as e:
-                    raise AutosubmitError("{0} submission failed".format(
-                        platform.name), 6015, e.message)
+                    raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message)
 
         return save
 
@@ -3030,6 +3041,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
 
+
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             # Encapsulating the lock
@@ -3049,8 +3061,7 @@ class Autosubmit:
                         return False
                     update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
                                                                  "job_list_" + expid + ".pkl"))
-                    Autosubmit._create_project_associated_conf(
-                        as_conf, False, update_job)
+                    Autosubmit._create_project_associated_conf(as_conf, False, update_job)
 
                     # Load parameters
                     Log.info("Loading parameters...")
@@ -3131,8 +3142,7 @@ class Autosubmit:
                             for job in jobs_wr:
                                 job.children = job.children - referenced_jobs_to_remove
                                 job.parents = job.parents - referenced_jobs_to_remove
-                            Autosubmit.generate_scripts_andor_wrappers(
-                                as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
+                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
 
                             packages = packages_persistence.load(True)
                         else:
