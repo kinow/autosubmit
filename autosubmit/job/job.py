@@ -511,14 +511,19 @@ class Job(object):
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
+
         submitter = self._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
-        platform = submitter.platforms[platform_name]
+        hpcarch = as_conf.get_platform()
+        platforms_to_test = set()
+        if self.platform_name is None:
+            self.platform_name = hpcarch
+        self.platform = submitter.platforms[self.platform_name.lower()]
         try:
-            platform.restore_connection()
+            self.platform.restore_connection()
         except Exception as e:
-            Log.printlog("{0} \n Failed to connect to the platform, can't recover the logs ".format(e.message), 6001)
-
+            Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
+            raise AutosubmitError("Couldn't connect to the remote platform for this {0} job err/out files.")
         out_exist = False
         err_exist = False
         retries = 3
@@ -529,11 +534,11 @@ class Job(object):
             while (not out_exist and not err_exist) and i < retries:
                 try:
                     try:
-                        out_exist = platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                        out_exist = self.platform.check_file_exists(remote_logs[0])  # will do 5 retries
                     except IOError as e:
                         out_exist = False
                     try:
-                        err_exist = platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                        err_exist = self.platform.check_file_exists(remote_logs[1])  # will do 5 retries
                     except IOError as e:
                         err_exists = False
                 except Exception as e:
@@ -551,22 +556,22 @@ class Job(object):
             if copy_remote_logs:
                 if local_logs != remote_logs:
                     # unifying names for log files
-                    self.synchronize_logs(platform, remote_logs, local_logs)
+                    self.synchronize_logs(self.platform, remote_logs, local_logs)
                     remote_logs = local_logs
-                platform.get_logs_files(self.expid, remote_logs)
+                self.platform.get_logs_files(self.expid, remote_logs)
             # Update the logs with Autosubmit Job Id Brand
             try:
                 for local_log in local_logs:
-                    platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-            except Exception as e:
-                Log.printlog("Failed to write the jobid".format(self.name), 6001)
+                    self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+            except BaseException as e:
+                Log.printlog("Trace {0} \n Failed to write the {1}".format(e.message,self.name), 6001)
 
         except AutosubmitError as e:
-            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
-            Log.printlog("Failed to retrieve log file for job {0}".format(self.name), 6001)
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
         try:
-            platform.closeConnection()
+            self.platform.closeConnection()
         except:
             pass
         sleep(5) # safe wait before end a thread
@@ -831,7 +836,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 30'
+                template = 'sleep 240'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:

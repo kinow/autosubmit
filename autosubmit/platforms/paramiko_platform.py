@@ -469,12 +469,11 @@ class ParamikoPlatform(Platform):
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
                         if not job.hold:
-                            self.send_command("scontrol release "+"{0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                            Log.info("Job {0} is being released (id:{1}) ", job.name,job.id)
+                            self.send_command("scontrol release {0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         else:
-                            Log.info("Job {0} is HELD", job.name)
-                    elif reason == '(JobHeldAdmin)':
-                        Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
+                            pass
+                    elif reason == '(JobHeldAdmin)': #This shouldn't happen anymore TODO delete
+                        Log.debug("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
 

@@ -625,7 +625,7 @@ class Autosubmit:
     def _delete_expid(expid_delete, force):
         """
         Removes an experiment from path and database
-        If current user is eadmin and -f has been sent, it deletes regardless 
+        If current user is eadmin and -f has been sent, it deletes regardless
         of experiment owner
 
         :type expid_delete: str
@@ -1120,7 +1120,7 @@ class Autosubmit:
         :type as_conf: AutosubmitConfig() Object \n
         :param job_list: Representation of the jobs of the experiment, keeps the list of jobs inside. \n
         :type job_list: JobList() Object \n
-        :param jobs_filtered: list of jobs that are relevant to the process. \n 
+        :param jobs_filtered: list of jobs that are relevant to the process. \n
         :type jobs_filtered: List() of Job Objects \n
         :param packages_persistence: Object that handles local db persistence.  \n
         :type packages_persistence: JobPackagePersistence() Object \n
@@ -1694,16 +1694,26 @@ class Autosubmit:
                         sleep(10)
                         for package in valid_packages_to_submit:
                             if hold:
+                                retries = 5
                                 package.jobs[0].id = str(jobs_id[i])
-                                cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
-                                package.jobs[0].platform.send_command(cmd)
-                                queue_status = package.jobs[0].platform._ssh_output
-                                reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
-                                if reason == '(JobHeldAdmin)':
-
-                                    package.jobs[0].platform.send_command(job.platform.cancel_cmd + " {0}".format(jobs_id[i]))
-                                    i= i+1
-                                    continue
+                                can_continue = True
+                                while can_continue and retries > 0:
+                                    cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
+                                    package.jobs[0].platform.send_command(cmd)
+                                    queue_status = package.jobs[0].platform._ssh_output
+                                    reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                    if reason == '(JobHeldAdmin)':
+                                        can_continue = False
+                                    elif reason == '(JobHeldUser)':
+                                        can_continue = True
+                                    else:
+                                        can_continue = False
+                                        retries = retries - 1
+                                        sleep(5)
+                                if not can_continue:
+                                    package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                    i = i + 1
+                                    continue # skip job if is bug by the admin bug.
                                 if not platform.hold_job(package.jobs[0]):
                                     i = i + 1
                                     continue
