@@ -1717,8 +1717,8 @@ class Autosubmit:
                                             can_continue = True
                                         else:
                                             can_continue = False
-                                            retries = retries - 1
                                             sleep(5)
+                                        retries = retries - 1
                                     if not can_continue:
                                         package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
                                         i = i + 1
