@@ -1501,9 +1501,15 @@ class Autosubmit:
                         # Save job_list if not is a failed submitted job
                         recovery = True
                         try:
-
                             job_list = Autosubmit.load_job_list(
                                 expid, as_conf, notransitive=notransitive)
+                            Autosubmit._load_parameters(
+                                as_conf, job_list, submitter.platforms)
+                            for job in job_list.get_job_list():
+                                if job.platform_name is None:
+                                    job.platform_name = hpcarch
+                                job.platform = submitter.platforms[job.platform_name.lower()]
+
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages = packages_persistence.load()
@@ -1523,7 +1529,7 @@ class Autosubmit:
                             save = job_list.update_list(as_conf)
                             job_list.save()
                         except BaseException as e:
-                            raise AutosubmitCritical("Corrupted job_list, backup couldn't be restored", 7040,
+                            raise AutosubmitCritical("Job_list couldn't be restored", 7040,
                                                      e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         if main_loop_retrials > 0:
@@ -1681,41 +1687,47 @@ class Autosubmit:
                     raise
                 except Exception as e:
                     raise
-
             if platform.type == "slurm" and not inspect and not only_wrappers:
+                failed_packages = list()
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:
                         jobs_id = platform.submit_Script(hold=hold)
+
                         if jobs_id is None:
                             raise BaseException(
                                 "Exiting AS, AS is unable to get jobID this can be due a failure on the platform or a bad parameter on job.conf(check that queue parameter is valid for your current platform(CNS,BSC32,PRACE...)")
                         i = 0
-                        sleep(10)
+                        if hold:
+                            sleep(10)
                         for package in valid_packages_to_submit:
                             if hold:
                                 retries = 5
                                 package.jobs[0].id = str(jobs_id[i])
-                                can_continue = True
-                                while can_continue and retries > 0:
-                                    cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
-                                    package.jobs[0].platform.send_command(cmd)
-                                    queue_status = package.jobs[0].platform._ssh_output
-                                    reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
-                                    if reason == '(JobHeldAdmin)':
-                                        can_continue = False
-                                    elif reason == '(JobHeldUser)':
-                                        can_continue = True
-                                    else:
-                                        can_continue = False
-                                        retries = retries - 1
-                                        sleep(5)
-                                if not can_continue:
-                                    package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
-                                    i = i + 1
-                                    continue # skip job if is bug by the admin bug.
-                                if not platform.hold_job(package.jobs[0]):
-                                    i = i + 1
+                                try:
+                                    can_continue = True
+                                    while can_continue and retries > 0:
+                                        cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
+                                        package.jobs[0].platform.send_command(cmd)
+                                        queue_status = package.jobs[0].platform._ssh_output
+                                        reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                        if reason == '(JobHeldAdmin)':
+                                            can_continue = False
+                                        elif reason == '(JobHeldUser)':
+                                            can_continue = True
+                                        else:
+                                            can_continue = False
+                                            retries = retries - 1
+                                            sleep(5)
+                                    if not can_continue:
+                                        package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                        i = i + 1
+                                        continue # skip job if is bug by the admin bug.
+                                    if not platform.hold_job(package.jobs[0]):
+                                        i = i + 1
+                                        continue
+                                except Exception as e:
+                                    failed_packages.append(jobs_id)
                                     continue
                             for job in package.jobs:
                                 job.hold = hold
@@ -1731,10 +1743,13 @@ class Autosubmit:
                                 job_list.job_package_map[package.jobs[0].id] = wrapper_job
                                 if isinstance(package, JobPackageThread):
                                     # Saving only when it is a real multi job package
-                                    packages_persistence.save(
-                                        package.name, package.jobs, package._expid, inspect)
+                                    packages_persistence.save(package.name, package.jobs, package._expid, inspect)
                             i += 1
                     save = True
+                    if len(failed_packages) > 0:
+                        for job_id in failed_packages:
+                            package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                        raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
                     raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                         e.job_name), 7014, e.message)
