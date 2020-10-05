@@ -345,7 +345,7 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def check_job(self, job, default_status=Status.COMPLETED, retries=5):
+    def check_job(self, job, default_status=Status.COMPLETED, retries=5,submit_hold_check=False):
         """
         Checks job running status
 
@@ -390,7 +390,11 @@ class ParamikoPlatform(Platform):
             Log.error(" check_job(), job is not on the queue system. Output was: {0}", self.get_checkjob_cmd(job_id))
             job_status = Status.UNKNOWN
             Log.error('check_job() The job id ({0}) status is {1}.', job_id, job_status)
-        job.new_status = job_status
+        if submit_hold_check:
+            return job_status
+        else:
+            job.new_status = job_status
+
     def _check_jobid_in_queue(self,ssh_output,job_list_cmd):
         for job in job_list_cmd[:-1].split(','):
             if job not in ssh_output:
@@ -465,12 +469,11 @@ class ParamikoPlatform(Platform):
                     elif reason == '(JobHeldUser)':
                         job.new_status=Status.HELD
                         if not job.hold:
-                            self.send_command("scontrol release "+"{0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                            Log.info("Job {0} is being released (id:{1}) ", job.name,job.id)
+                            self.send_command("scontrol release {0}".format(job.id)) # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
                         else:
-                            Log.info("Job {0} is HELD", job.name)
-                    elif reason == '(JobHeldAdmin)':
-                        Log.info("Job {0} Failed to be HELD, canceling... ", job.name)
+                            pass
+                    elif reason == '(JobHeldAdmin)': #This shouldn't happen anymore TODO delete
+                        Log.debug("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
                         job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
 

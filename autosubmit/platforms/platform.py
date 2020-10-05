@@ -151,7 +151,7 @@ class Platform(object):
         """
         raise NotImplementedError
 
-    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
+    def get_file(self, filename, must_exist=True, relative_path='', ignore_log=False):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -192,12 +192,12 @@ class Platform(object):
         :rtype: bool
         """
         raise NotImplementedError
-    
+
     # Executed when calling from Job
     def get_logs_files(self, exp_id, remote_logs):
         """
         Get the given LOGS files
-        
+
         :param exp_id: experiment id
         :type exp_id: str
         :param remote_logs: names of the log files
@@ -206,7 +206,7 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=0,recovery=False):
+    def get_completed_files(self, job_name, retries=0, recovery=False):
         """
         Get the COMPLETED file of the given job
 
@@ -219,7 +219,7 @@ class Platform(object):
         :rtype: bool
         """
         if recovery:
-            if self.get_file('{0}_COMPLETED'.format(job_name), False,ignore_log=recovery):
+            if self.get_file('{0}_COMPLETED'.format(job_name), False, ignore_log=recovery):
                 return True
             else:
                 return False
@@ -230,7 +230,6 @@ class Platform(object):
                 return False
         else:
             return False
-
 
     def remove_stat_file(self, job_name):
         """
@@ -261,6 +260,7 @@ class Platform(object):
             Log.debug('{0} been removed', filename)
             return True
         return False
+
     def check_file_exists(self, src):
         return True
 
@@ -325,8 +325,10 @@ class Platform(object):
         :rtype: autosubmit.job.job_common.Status
         """
         raise NotImplementedError
+
     def closeConnection(self):
         return
+
     def write_jobid(self, jobid, complete_path):
         """
         Writes Job id in an out file.
@@ -340,7 +342,7 @@ class Platform(object):
         """
         try:
             title_job = "[INFO] JOBID=" + str(jobid)
-            if os.path.exists(complete_path):                
+            if os.path.exists(complete_path):
                 file_type = complete_path[-3:]
                 if file_type == "out" or file_type == "err":
                     with open(complete_path, "r+") as f:
@@ -348,16 +350,16 @@ class Platform(object):
                         first_line = f.readline()
                         # Not rewrite
                         if not first_line.startswith("[INFO] JOBID="):
-                            content = f.read()                        
+                            content = f.read()
                             # Write again (Potentially slow)
-                            #start = time()
-                            #Log.info("Attempting job identification of " + str(jobid))                            
-                            f.seek(0,0)
-                            f.write(title_job + "\n\n" + first_line + content)                                        
-                        f.close()      
-                            #finish = time()    
-                            #Log.info("Job correctly identified in " + str(finish - start) + " seconds")              
+                            # start = time()
+                            # Log.info("Attempting job identification of " + str(jobid))
+                            f.seek(0, 0)
+                            f.write(title_job + "\n\n" + first_line + content)
+                        f.close()
+                        # finish = time()
+                        # Log.info("Job correctly identified in " + str(finish - start) + " seconds")
 
         except Exception as ex:
-           Log.error("Writing Job Id Failed : " + str(ex))
-        
+            Log.error("Writing Job Id Failed : " + str(ex))
+

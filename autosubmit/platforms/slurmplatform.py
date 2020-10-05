@@ -25,6 +25,7 @@ import traceback
 
 from xml.dom.minidom import parseString
 
+from autosubmit.job.job_common import Status
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
@@ -117,10 +118,38 @@ class SlurmPlatform(ParamikoPlatform):
             self.host, self.remote_log_dir)
         self._submit_hold_cmd = 'sbatch -H -D {1} {1}/'.format(
             self.host, self.remote_log_dir)
-
+        #jobid =$(sbatch WOA_run_mn4.sh 2 > & 1 | grep -o "[0-9]*"); scontrol hold $jobid;
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
+
+    def hold_job(self,job):
+        try:
+            cmd = "scontrol release {0} ; scontrol hold {0} ".format(job.id)
+            self.send_command(cmd)
+            job_status = self.check_job(job, submit_hold_check=True)
+            if job_status == Status.RUNNING:
+                self.send_command("scancel {0}".format(job.id))
+                return False
+            cmd=self.get_queue_status_cmd(job.id)
+            self.send_command(cmd)
+
+            queue_status = self._ssh_output
+            reason = str()
+            reason = self.parse_queue_reason(queue_status, job.id)
+            if reason == '(JobHeldUser)':
+                return True
+            else:
+                self.send_command("scancel {0}".format(job.id))
+                return False
+        except BaseException as e:
+            try:
+                self.send_command("scancel {0}".format(job.id))
+                raise AutosubmitError("Can't hold jobid:{0}, canceling job".format(job.id), 6000, e.message)
+            except BaseException as e:
+                raise AutosubmitError("Can't cancel the jobid: {0}".format(job.id),6000,e.message)
+            except AutosubmitError as e:
+                raise
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
