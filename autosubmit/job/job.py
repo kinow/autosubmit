@@ -523,7 +523,6 @@ class Job(object):
             self.platform.restore_connection()
         except Exception as e:
             Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
-            raise AutosubmitError("Couldn't connect to the remote platform for this {0} job err/out files.")
         out_exist = False
         err_exist = False
         retries = 3
@@ -551,7 +550,8 @@ class Job(object):
                     sleep(sleeptime)
             if i >= retries:
                 if not out_exist or not err_exist:
-                    raise AutosubmitError("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]),6001)
+                    Log.printlog("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]), 6001)
+
 
             if copy_remote_logs:
                 if local_logs != remote_logs:
@@ -836,7 +836,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 30'
+                template = 'sleep 60'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
