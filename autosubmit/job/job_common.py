@@ -42,6 +42,7 @@ class Status:
     def retval(self, value):
         return getattr(self, value)
 
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -64,8 +65,8 @@ class bcolors:
     HELD = '\033[34;1m'
     FAILED = '\033[31m'
     SUSPENDED = '\033[31;1m'
-    CODE_TO_COLOR = {-3: SUSPENDED, -2: UNKNOWN, -1: FAILED, 0: WAITING, 1: READY, 2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED}
-        
+    CODE_TO_COLOR = {-3: SUSPENDED, -2: UNKNOWN, -1: FAILED, 0: WAITING, 1: READY,
+                     2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED}
 
 
 class Type:
@@ -238,3 +239,35 @@ class StatisticsSnippetEmpty:
     @staticmethod
     def as_tailer():
         return ''
+
+
+def parse_output_number(string_number):
+    """
+    Parses number in format 1.0K 1.0M 1.0G
+
+    :param string_number: String representation of number
+    :type string_number: str
+    :return: number in float format
+    :rtype: float
+    """
+    number = 0.0
+    if (string_number):
+        last_letter = string_number.strip()[-1]
+        multiplier = 1
+        if last_letter == "G":
+            multiplier = 1000000000
+            number = string_number[:-1]
+        elif last_letter == "M":
+            multiplier = 1000000
+            number = string_number[:-1]
+        elif last_letter == "K":
+            multiplier = 1000
+            number = string_number[:-1]
+        else:
+            number = string_number
+        try:
+            number = float(number) * multiplier
+        except Exception as exp:
+            number = 0.0
+            pass
+    return number

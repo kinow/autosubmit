@@ -20,12 +20,13 @@
 import os
 from time import sleep
 from time import mktime
+from time import time
 from datetime import datetime
 import traceback
 
 from xml.dom.minidom import parseString
 
-from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Status, parse_output_number
 from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.slurm_header import SlurmHeader
 from autosubmit.platforms.wrappers.wrapper_factory import SlurmWrapperFactory
@@ -118,12 +119,12 @@ class SlurmPlatform(ParamikoPlatform):
             self.host, self.remote_log_dir)
         self._submit_hold_cmd = 'sbatch -H -D {1} {1}/'.format(
             self.host, self.remote_log_dir)
-        #jobid =$(sbatch WOA_run_mn4.sh 2 > & 1 | grep -o "[0-9]*"); scontrol hold $jobid;
+        # jobid =$(sbatch WOA_run_mn4.sh 2 > & 1 | grep -o "[0-9]*"); scontrol hold $jobid;
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir
 
-    def hold_job(self,job):
+    def hold_job(self, job):
         try:
             cmd = "scontrol release {0} ; scontrol hold {0} ".format(job.id)
             self.send_command(cmd)
@@ -131,7 +132,7 @@ class SlurmPlatform(ParamikoPlatform):
             if job_status == Status.RUNNING:
                 self.send_command("scancel {0}".format(job.id))
                 return False
-            cmd=self.get_queue_status_cmd(job.id)
+            cmd = self.get_queue_status_cmd(job.id)
             self.send_command(cmd)
 
             queue_status = self._ssh_output
@@ -145,9 +146,11 @@ class SlurmPlatform(ParamikoPlatform):
         except BaseException as e:
             try:
                 self.send_command("scancel {0}".format(job.id))
-                raise AutosubmitError("Can't hold jobid:{0}, canceling job".format(job.id), 6000, e.message)
+                raise AutosubmitError(
+                    "Can't hold jobid:{0}, canceling job".format(job.id), 6000, e.message)
             except BaseException as e:
-                raise AutosubmitError("Can't cancel the jobid: {0}".format(job.id),6000,e.message)
+                raise AutosubmitError(
+                    "Can't cancel the jobid: {0}".format(job.id), 6000, e.message)
             except AutosubmitError as e:
                 raise
 
@@ -181,6 +184,7 @@ class SlurmPlatform(ParamikoPlatform):
         try:
             # Setting up: Storing detail for posterity
             detailed_data = dict()
+            steps = []
             # No blank spaces after or before
             output = output.strip() if output else None
             lines = output.split("\n") if output else []
@@ -214,7 +218,8 @@ class SlurmPlatform(ParamikoPlatform):
                                           "AveRSS": str(line[9] if len(line) > 9 else "NA")}
                         # Detailed data will contain the important information from output
                         detailed_data[name] = extra_data
-                submit = start = finish = joules = nnodes = ncpus = 0
+                        steps.append(name)
+                submit = start = finish = energy = nnodes = ncpus = 0
                 status = "UNKNOWN"
                 # Take first line as source
                 line = lines[0].strip().split()
@@ -225,12 +230,14 @@ class SlurmPlatform(ParamikoPlatform):
                     # If it is not wrapper job, take first line as source
                     if status not in ["COMPLETED", "FAILED", "UNKNOWN"]:
                         # It not completed, then its error and send default data plus output
-                        return (0, 0, 0, 0, ncpus, nnodes, detailed_data)
+                        return (0, 0, 0, 0, ncpus, nnodes, detailed_data, False)
                 else:
+                    # If it is a wrapped job
                     # Check if the wrapper has finished
                     if status in ["COMPLETED", "FAILED", "UNKNOWN"]:
                         # Wrapper has finished
                         is_end_of_wrapper = True
+                # Continue with first line as source
                 if line:
                     try:
                         # Parse submit and start only for normal jobs (not packed)
@@ -240,56 +247,71 @@ class SlurmPlatform(ParamikoPlatform):
                             line[5], "%Y-%m-%dT%H:%M:%S").timetuple())) if not packed else 0
                         # Assuming the job has been COMPLETED
                         # If normal job or end of wrapper => Try to get the finish time from the first line of the output, else default to now.
-                        finish = (int(mktime(datetime.strptime(
-                            line[6], "%Y-%m-%dT%H:%M:%S").timetuple())) if len(line) > 6 and line[6] != "Unknown" else datetime.now().timestamp()) if not packed or is_end_of_wrapper == True else 0
-                        # If normal job or end of wrapper => Try to get energy from first line
-                        joules = (self.parse_output_number(
-                            line[7]) if len(line) > 7 and len(line[7]) > 0 else 0) if not packed or is_end_of_wrapper == True else 0
+                        finish = 0
+
+                        if not packed:
+                            # If normal job, take finish time from first line
+                            finish = (int(mktime(datetime.strptime(line[6], "%Y-%m-%dT%H:%M:%S").timetuple(
+                            ))) if len(line) > 6 and line[6] != "Unknown" else int(time()))
+                            energy = parse_output_number(line[7]) if len(
+                                line) > 7 and len(line[7]) > 0 else 0
+                        else:
+                            # If it is a wrapper job
+                            # If end of wrapper, take data from first line
+                            if is_end_of_wrapper == True:
+                                finish = (int(mktime(datetime.strptime(line[6], "%Y-%m-%dT%H:%M:%S").timetuple(
+                                ))) if len(line) > 6 and line[6] != "Unknown" else int(time()))
+                                energy = parse_output_number(line[7]) if len(
+                                    line) > 7 and len(line[7]) > 0 else 0
+                            else:
+                                # If packed but not end of wrapper, try to get info from current data.
+                                if "finish" in extra_data.keys() and extra_data["finish"] != "Unknown":
+                                    # finish data exists
+                                    finish = int(mktime(datetime.strptime(
+                                        extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
+                                else:
+                                    # if finish date does not exist, query previous step.
+                                    if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
+                                        new_extra_data = detailed_data[steps[-2]]
+                                        if "finish" in new_extra_data.keys() and new_extra_data["finish"] != "Unknown":
+                                            # This might result in an job finish < start, need to handle that in the caller function
+                                            finish = int(mktime(datetime.strptime(
+                                                new_extra_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple()))
+                                        else:
+                                            finish = int(time())
+                                    else:
+                                        finish = int(time())
+                                if "energy" in extra_data.keys() and extra_data["energy"] != "NA":
+                                    # energy exists
+                                    energy = parse_output_number(
+                                        extra_data["energy"])
+                                else:
+                                    # if energy does not exist, query previous step
+                                    if len(steps) >= 2 and detailed_data.__contains__(steps[-2]):
+                                        new_extra_data = detailed_data[steps[-2]]
+                                        if "energy" in new_extra_data.keys() and new_extra_data["energy"] != "NA":
+                                            energy = parse_output_number(
+                                                new_extra_data["energy"])
+                                        else:
+                                            energy = 0
+                                    else:
+                                        energy = 0
                     except Exception as exp:
+                        # print(line)
+                        # Log.info(traceback.format_exc())
                         Log.info(
                             "Parsing mishandling.")
                         # joules = -1
                         pass
 
                 detailed_data = detailed_data if not packed or is_end_of_wrapper == True else extra_data
-                return (submit, start, finish, joules, ncpus, nnodes, detailed_data)
+                return (submit, start, finish, energy, ncpus, nnodes, detailed_data, is_end_of_wrapper)
 
-            return (0, 0, 0, 0, 0, 0, dict())
+            return (0, 0, 0, 0, 0, 0, dict(), False)
         except Exception as exp:
             Log.warning(
                 "Autosubmit couldn't parse SLURM energy output. From parse_job_finish_data: {0}".format(str(exp)))
-            return (0, 0, 0, 0, 0, 0, dict())
-
-    def parse_output_number(self, string_number):
-        """
-        Parses number in format 1.0K 1.0M 1.0G
-
-        :param string_number: String representation of number
-        :type string_number: str
-        :return: number in float format
-        :rtype: float
-        """
-        number = 0.0
-        if (string_number):
-            last_letter = string_number.strip()[-1]
-            multiplier = 1
-            if last_letter == "G":
-                multiplier = 1000000000
-                number = string_number[:-1]
-            elif last_letter == "M":
-                multiplier = 1000000
-                number = string_number[:-1]
-            elif last_letter == "K":
-                multiplier = 1000
-                number = string_number[:-1]
-            else:
-                number = string_number
-            try:
-                number = float(number) * multiplier
-            except Exception as exp:
-                number = 0.0
-                pass
-        return number
+            return (0, 0, 0, 0, 0, 0, dict(), False)
 
     def parse_Alljobs_output(self, output, job_id):
         try:
