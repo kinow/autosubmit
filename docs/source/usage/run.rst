@@ -18,9 +18,9 @@ Options:
       -v                    --update_version
                                 update the experiment version to match the actual autosubmit version
       -st                   --start_time
-                                sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day) 
-      -sa                   --start_after
-                                sets a experiment expid that will be tracked for completion. When this experiment is completed, the current instance of Autosubmit run will start.
+                                Sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day).
+      -sa                   --start_after 
+                                Sets a experiment expid that will be tracked for completion. When this experiment is completed, the current instance of Autosubmit run will start.
       -h, --help  show this help message and exit
 
 Example:
