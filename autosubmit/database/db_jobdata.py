@@ -37,6 +37,7 @@ from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_da
 from log.log import Log, AutosubmitCritical, AutosubmitError
 
 CURRENT_DB_VERSION = 14  # Used to be 10
+EXPERIMENT_HEADER_CHANGES_DB_VERSION = 14
 # Defining RowType standard
 
 
@@ -567,9 +568,15 @@ class ExperimentStatus(MainDataBase):
             return None
 
 
+def check_if_database_exists(expid):
+    BasicConfig.read()
+    folder_path = BasicConfig.JOBDATA_DIR
+    database_path = os.path.join(folder_path, "job_data_" + str(expid) + ".db")
+
+
 class JobDataStructure(MainDataBase):
 
-    def __init__(self, expid):
+    def __init__(self, expid, check_only=False):
         """Initializes the object based on the unique identifier of the experiment.
 
         Args:
@@ -647,35 +654,50 @@ class JobDataStructure(MainDataBase):
         self.create_index_query = textwrap.dedent(''' 
             CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);
             ''')
-        # print(self.database_path)
+
+        self.database_exists = True
+        self.db_version = 0
         try:
-            if not os.path.exists(self.database_path):
-                open(self.database_path, "w")
-                self.conn = self.create_connection(self.database_path)
-                self.create_table(self.create_table_header_query)
-                self.create_table(self.create_table_query)
-                self.create_index()
-                if self._set_pragma_version(CURRENT_DB_VERSION):
-                    Log.info("Database version set.")
-            else:
-                self.conn = self.create_connection(self.database_path)
-                db_version = self._select_pragma_version()
-                if db_version != CURRENT_DB_VERSION:
-                    # Update to current version
-                    Log.info("Database schema needs update.")
-                    self.update_table_schema()
-                    self.create_index()
+            if check_only == False:
+                if not os.path.exists(self.database_path):
+                    open(self.database_path, "w")
+                    self.conn = self.create_connection(self.database_path)
                     self.create_table(self.create_table_header_query)
+                    self.create_table(self.create_table_query)
+                    self.create_index()
                     if self._set_pragma_version(CURRENT_DB_VERSION):
-                        Log.info("Database version set to {0}.".format(
-                            CURRENT_DB_VERSION))
-            self.current_run_id = self.get_current_run_id()
+                        Log.info("Database version set.")
+                        self.db_version = CURRENT_DB_VERSION
+                else:
+                    self.conn = self.create_connection(self.database_path)
+                    self.db_version = self._select_pragma_version()
+                    if self.db_version != CURRENT_DB_VERSION:
+                        # Update to current version
+                        Log.info("Database schema needs update.")
+                        self.update_table_schema()
+                        self.create_index()
+                        self.create_table(self.create_table_header_query)
+                        if self._set_pragma_version(CURRENT_DB_VERSION):
+                            Log.info("Database version set to {0}.".format(
+                                CURRENT_DB_VERSION))
+                            self.db_version = CURRENT_DB_VERSION
+                self.current_run_id = self.get_current_run_id()
+            else:
+                if not os.path.exists(self.database_path):
+                    self.database_exists = False
+                else:
+                    self.conn = self.create_connection(self.database_path)
+                    self.db_version = self._select_pragma_version()
+
         except IOError as e:
             raise AutosubmitCritical("Historic Database route {0} is not accesible".format(
                 BasicConfig.JOBDATA_DIR), 7067, e.message)
         except Exception as e:
             raise AutosubmitCritical(
                 "Historic Database {0} due an database error".format(), 7067, e.message)
+
+    def is_header_ready_db_version(self):
+        return True if self.db_version >= EXPERIMENT_HEADER_CHANGES_DB_VERSION else False
 
     def determine_rowtype(self, code):
         """
@@ -1425,11 +1447,8 @@ class JobDataStructure(MainDataBase):
     def get_max_id_experiment_run(self):
         """Get Max experiment run object (last experiment run)
 
-        Raises:
-            Exception: [description]
-
-        Returns:
-            [type]: [description]
+        :return: ExperimentRun object
+        :rtype: Object
         """
         try:
             #expe = list()
