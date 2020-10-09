@@ -101,7 +101,7 @@ Additionally, jobs are grouped within the corresponding date, member and chunk h
 
     [wrapper]
     TYPE = vertical-mixed
-    JOBS_IN_WRAPPER = <JOB_SECTION1 JOB_SECTION2> # REQUIRED
+    JOBS_IN_WRAPPER = <JOB_SECTION1&JOB_SECTION2> # REQUIRED
 
 
 Horizontal wrapper
@@ -157,7 +157,7 @@ Horizontal-vertical
     [wrapper]
     TYPE = horizontal-vertical
     MACHINEFILES = STANDARD
-    JOBS_IN_WRAPPER = SIM POST
+    JOBS_IN_WRAPPER = SIM&POST
 
 .. figure:: ../workflows/horizontal-vertical.png
    :name: wrapper_horizontal_vertical
@@ -178,7 +178,7 @@ Vertical-horizontal
     [wrapper]
     TYPE = vertical-horizontal
     MACHINEFILES = STANDARD
-    JOBS_IN_WRAPPER = SIM POST
+    JOBS_IN_WRAPPER = SIM&POST
 
 .. figure:: ../workflows/vertical-horizontal.png
    :name: wrapper_vertical_horizontal
@@ -234,7 +234,7 @@ Considering a very simple workflow with the configurations as follows:
 
     [wrapper]
     TYPE = vertical-mixed
-    JOBS_IN_WRAPPER = SIM POST
+    JOBS_IN_WRAPPER = SIM&POST
 
 
 .. figure:: ../workflows/wrapper.png
@@ -250,7 +250,7 @@ Horizontal wrapper with remote dependencies
 
    [wrapper]
    TYPE = horizontal
-   JOBS_IN_WRAPPER = SIM POST
+   JOBS_IN_WRAPPER = SIM&POST
 
 .. figure:: ../workflows/horizontal_remote.png
    :name: horizontal_remote

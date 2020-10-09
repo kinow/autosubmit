@@ -343,8 +343,7 @@ class JobPackager(object):
         jobs_section = dict()
         for job in jobs_list:
             # This iterator will always return None if there is no '&' defined in the section name
-            section = next(
-                (s for s in sections_split if job.section in s and '&' in s), None)
+            section = next((s for s in sections_split if job.section in s and '&' in s), None)
             if section is None:
                 section = job.section
             if section not in jobs_section:

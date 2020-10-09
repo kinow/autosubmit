@@ -525,55 +525,49 @@ class Job(object):
             Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
         out_exist = False
         err_exist = False
-        retries = 3
+        retries = 20
         sleeptime = 0
         i = 0
         sleep(20)
+        no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
-                    try:
-                        out_exist = self.platform.check_file_exists(remote_logs[0])  # will do 5 retries
-                    except IOError as e:
-                        out_exist = False
-                    try:
-                        err_exist = self.platform.check_file_exists(remote_logs[1])  # will do 5 retries
-                    except IOError as e:
-                        err_exists = False
-                except Exception as e:
+                    out_exist = self.platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                except IOError as e:
                     out_exist = False
-                    err_exist = False
-                    pass
+                try:
+                    err_exist = self.platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                except IOError as e:
+                    err_exists = False
                 if not out_exist or not err_exist:
                     sleeptime = sleeptime + 5
                     i = i + 1
                     sleep(sleeptime)
             if i >= retries:
                 if not out_exist or not err_exist:
-                    Log.printlog("Retries = {0}, Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]), 6001)
-
-
+                    raise AutosubmitError("Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]), 6001)
             if copy_remote_logs:
                 if local_logs != remote_logs:
                     # unifying names for log files
                     self.synchronize_logs(self.platform, remote_logs, local_logs)
                     remote_logs = local_logs
                 self.platform.get_logs_files(self.expid, remote_logs)
-            # Update the logs with Autosubmit Job Id Brand
-            try:
-                for local_log in local_logs:
-                    self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-            except BaseException as e:
-                Log.printlog("Trace {0} \n Failed to write the {1}".format(e.message,self.name), 6001)
+                # Update the logs with Autosubmit Job Id Brand
+                try:
+                    for local_log in local_logs:
+                        self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                except BaseException as e:
+                    raise AutosubmitError("Trace {0} \n Failed to write the {1}".format(e.message,self.name), 6001)
 
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
+            sleep(5)  # safe wait before end a thread
+            return
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
-        try:
-            self.platform.closeConnection()
-        except:
-            pass
+            sleep(5)  # safe wait before end a thread
+            return
         sleep(5) # safe wait before end a thread
         return
 
@@ -611,7 +605,6 @@ class Job(object):
             self.platform.get_completed_files(self.name)
             self.check_completion()
             if self.status == Status.COMPLETED:
-                Log.printlog(" there is a COMPLETED file.",3000)
                 Log.result("Job {0} is COMPLETED", self.name)
             else:
                 self.update_children_status()
@@ -836,7 +829,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 60'
+                template = 'sleep 70'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -1151,6 +1144,7 @@ class WrapperJob(Job):
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
         self.hold = hold
+        self.inner_jobs_running = dict()
 
     def _queuing_reason_cancel(self, reason):
         try:
@@ -1189,8 +1183,14 @@ class WrapperJob(Job):
         # Fail can come from check function or running/completed checkers.
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
-            self.cancel_failed_wrapper_job()
-            self.update_failed_jobs()
+            self._check_running_jobs()
+            still_running = False
+            for job in self.inner_jobs_running.keys():
+                if job.status == Status.RUNNING:
+                    still_running = True
+            if not still_running:
+                self.cancel_failed_wrapper_job()
+                self.update_failed_jobs()
 
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [
@@ -1344,7 +1344,7 @@ done
 
             if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
-
+            self.inner_jobs_running = not_finished_jobs_dict
     def _check_finished_job(self, job):
         wait = 2
         retries = 5
@@ -1374,6 +1374,7 @@ done
         Log.printlog("Cancelling job with id {0}".format(self.id),6009)
         self.platform.send_command(
             self.platform.cancel_cmd + " " + str(self.id))
+        # If there are jobs running, let them finish TODO
 
     def _update_completed_jobs(self):
         for job in self.job_list:
