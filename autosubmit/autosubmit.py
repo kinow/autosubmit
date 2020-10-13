@@ -1129,6 +1129,7 @@ class Autosubmit:
         :return: Nothing\n
         :rtype: \n
         """
+
         job_list._job_list = jobs_filtered
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
@@ -3149,7 +3150,9 @@ class Autosubmit:
                                                        expand_list=expand, expanded_status=status)
                             groups_dict = job_grouping.group_jobs()
                         # WRAPPERS
+
                         if as_conf.get_wrapper_type() != 'none' and check_wrappers:
+                            as_conf.check_conf_files(True)
                             packages_persistence = JobPackagePersistence(
                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages_persistence.reset_table(True)
