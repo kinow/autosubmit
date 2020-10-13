@@ -11,7 +11,7 @@ dependencies:
 - pyparsing
 - numpy
 - matplotlib
-
+- pip
 - mock
 - portalocker
 - networkx
