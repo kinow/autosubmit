@@ -26,7 +26,7 @@ from notifications.notifier import Notifier
 from notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
-from database.db_common import get_autosubmit_version
+from database.db_common import get_autosubmit_version, check_experiment_exists
 from database.db_common import delete_experiment
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
@@ -155,6 +155,8 @@ class Autosubmit:
                                    default=False, help='Update experiment version')
             subparser.add_argument('-st', '--start_time', required=False,
                                    help='Sets the starting time for this experiment')
+            subparser.add_argument('-sa', '--start_after', required=False,
+                                   help='Sets a experiment expid which completion will trigger the start of this experiment.')
 
             # Expid
             subparser = subparsers.add_parser(
@@ -509,7 +511,7 @@ class Autosubmit:
             args.command, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
-            return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time)
+            return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time, args.start_after)
         elif args.command == 'expid':
             return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                     args.operational, args.config) != ''
@@ -1158,7 +1160,7 @@ class Autosubmit:
             job_list.update_list(as_conf, False)
 
     @staticmethod
-    def run_experiment(expid, notransitive=False, update_version=False, start_time=None):
+    def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
 
@@ -1227,6 +1229,43 @@ class Autosubmit:
                 sys.stdout.flush()
                 sleep(1)
         # End of handling starting time block
+
+        # Start start after completion trigger block
+        if start_after:
+            Log.info("User provided expid completion trigger has been detected.")
+            # The user tries to be tricky
+            if str(start_after) == str(expid):
+                Log.info(
+                    "Hey! What do you think is going to happen? In theory, your experiment will run again after it has been completed. Good luck!")
+            # Check if experiment exists. If False or None, it does not exist
+            if not check_experiment_exists(start_after):
+                return None
+            # JobStructure object, check_only flag to avoid updating remote experiment
+            jobStructure = JobDataStructure(start_after, check_only=True)
+            # Check if database exists
+            if jobStructure.database_exists == False:
+                Log.critical(
+                    "Experiment {0} does not have a valid database. Make sure that it is running under the latest version of Autosubmit.".format(start_after))
+                return
+            # Check if database version is correct
+            if jobStructure.is_header_ready_db_version() == False:
+                Log.critical("Experiment {0} is running DB version {1} which is not supported by the completion trigger function. An updated DB version is needed.".format(
+                    start_after, jobStructure.db_version))
+                return
+            Log.info("Autosubmit will start monitoring experiment {0}. When the number of completed jobs plus suspended jobs becomes equal to the total number of jobs of experiment {0}, experiment {1} will start. Querying every 60 seconds. Status format Completed/Queuing/Running/Suspended/Failed.".format(
+                start_after, expid))
+            while True:
+                # Query current run
+                current_run = jobStructure.get_max_id_experiment_run()
+                if current_run and current_run.finish > 0 and current_run.total > 0 and current_run.completed + current_run.suspended == current_run.total:
+                    break
+                else:
+                    sys.stdout.write(
+                        "\rExperiment {0} ({1} total jobs) status {2}/{3}/{4}/{5}/{6}".format(start_after, current_run.total, current_run.completed, current_run.queuing, current_run.running, current_run.suspended, current_run.failed))
+                    sys.stdout.flush()
+                # Update every 60 seconds
+                sleep(60)
+        # End of completion trigger block
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -1508,7 +1547,8 @@ class Autosubmit:
                             for job in job_list.get_job_list():
                                 if job.platform_name is None:
                                     job.platform_name = hpcarch
-                                job.platform = submitter.platforms[job.platform_name.lower()]
+                                job.platform = submitter.platforms[job.platform_name.lower(
+                                )]
 
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
@@ -1707,10 +1747,13 @@ class Autosubmit:
                                 try:
                                     can_continue = True
                                     while can_continue and retries > 0:
-                                        cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
-                                        package.jobs[0].platform.send_command(cmd)
+                                        cmd = package.jobs[0].platform.get_queue_status_cmd(
+                                            jobs_id[i])
+                                        package.jobs[0].platform.send_command(
+                                            cmd)
                                         queue_status = package.jobs[0].platform._ssh_output
-                                        reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
+                                        reason = package.jobs[0].platform.parse_queue_reason(
+                                            queue_status, jobs_id[i])
                                         if reason == '(JobHeldAdmin)':
                                             can_continue = False
                                         elif reason == '(JobHeldUser)':
@@ -1720,9 +1763,11 @@ class Autosubmit:
                                             sleep(5)
                                         retries = retries - 1
                                     if not can_continue:
-                                        package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                        package.jobs[0].platform.send_command(
+                                            package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
                                         i = i + 1
-                                        continue # skip job if is bug by the admin bug.
+                                        # skip job if is bug by the admin bug.
+                                        continue
                                     if not platform.hold_job(package.jobs[0]):
                                         i = i + 1
                                         continue
@@ -1743,13 +1788,16 @@ class Autosubmit:
                                 job_list.job_package_map[package.jobs[0].id] = wrapper_job
                                 if isinstance(package, JobPackageThread):
                                     # Saving only when it is a real multi job package
-                                    packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                                    packages_persistence.save(
+                                        package.name, package.jobs, package._expid, inspect)
                             i += 1
                     save = True
                     if len(failed_packages) > 0:
                         for job_id in failed_packages:
-                            package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
-                        raise AutosubmitError("{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
+                            package.jobs[0].platform.send_command(
+                                package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                        raise AutosubmitError(
+                            "{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
                     raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                         e.job_name), 7014, e.message)
@@ -1758,7 +1806,8 @@ class Autosubmit:
                 except AutosubmitCritical as e:
                     raise
                 except Exception as e:
-                    raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message)
+                    raise AutosubmitError("{0} submission failed".format(
+                        platform.name), 6015, e.message)
 
         return save
 
@@ -3066,7 +3115,6 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
 
-
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             # Encapsulating the lock
@@ -3086,7 +3134,8 @@ class Autosubmit:
                         return False
                     update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
                                                                  "job_list_" + expid + ".pkl"))
-                    Autosubmit._create_project_associated_conf(as_conf, False, update_job)
+                    Autosubmit._create_project_associated_conf(
+                        as_conf, False, update_job)
 
                     # Load parameters
                     Log.info("Loading parameters...")
@@ -3167,7 +3216,8 @@ class Autosubmit:
                             for job in jobs_wr:
                                 job.children = job.children - referenced_jobs_to_remove
                                 job.parents = job.parents - referenced_jobs_to_remove
-                            Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
+                            Autosubmit.generate_scripts_andor_wrappers(
+                                as_conf, job_list_wrappers, jobs_wr, packages_persistence, True)
 
                             packages = packages_persistence.load(True)
                         else:
