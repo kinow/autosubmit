@@ -27,7 +27,7 @@ import traceback
 import sqlite3
 import copy
 import collections
-from datetime import datetime
+from datetime import datetime, timedelta
 from json import dumps, loads
 #from networkx import DiGraph
 from autosubmit.config.basicConfig import BasicConfig
@@ -237,6 +237,48 @@ class JobData(object):
                 self.require_update = True
             self._energy = energy if energy else 0
 
+    def delta_queue_time(self):
+        return str(timedelta(seconds=self.queuing_time()))
+
+    def delta_running_time(self):
+        return str(timedelta(seconds=self.running_time()))
+
+    def submit_datetime(self):
+        if self.submit > 0:
+            return datetime.fromtimestamp(self.submit)
+        return None
+
+    def start_datetime(self):
+        if self.start > 0:
+            return datetime.fromtimestamp(self.start)
+        return None
+
+    def finish_datetime(self):
+        if self.finish > 0:
+            return datetime.fromtimestamp(self.finish)
+        return None
+
+    def submit_datetime_str(self):
+        o_datetime = self.submit_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
+    def start_datetime_str(self):
+        o_datetime = self.start_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
+    def finish_datetime_str(self):
+        o_datetime = self.finish_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
     def running_time(self):
         """Calculates the running time of the job.
 
@@ -264,6 +306,24 @@ class JobData(object):
             if queue > 0:
                 return queue
         return 0
+
+    def get_hdata(self):
+        hdata = collections.OrderedDict()
+        hdata["name"] = self.job_name
+        hdata["date"] = self.date
+        hdata["section"] = self.section
+        hdata["member"] = self.member
+        hdata["chunk"] = self.chunk
+        hdata["submit"] = self.submit_datetime_str()
+        hdata["start"] = self.start_datetime_str()
+        hdata["finish"] = self.finish_datetime_str()
+        hdata["queue_time"] = self.delta_queue_time()
+        hdata["run_time"] = self.delta_running_time()
+        hdata["wallclock"] = self.wallclock
+        hdata["ncpus"] = self.ncpus
+        hdata["nnodes"] = self.nnodes
+        hdata["energy"] = self.energy
+        return dumps(hdata)
 
 
 class JobDataList():
@@ -978,7 +1038,7 @@ class JobDataStructure(MainDataBase):
                 "Autosubmit couldn't write start time.")
             return None
 
-    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=[], no_slurm=True):
+    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=[], no_slurm=True, out_file_path=None):
         """Writes the finish time into the database
 
         Args:
@@ -1027,10 +1087,16 @@ class JobDataStructure(MainDataBase):
                     try:
                         if type(platform_object) is not str:
                             if platform_object.type == "slurm" and job_id > 0:
-                                # Waiting 30 seconds for slurm data completion
+                                # Waiting 60 seconds for slurm data completion
                                 time.sleep(60)
                                 submit_time, start_time, finish_time, energy, number_cpus, number_nodes, extra_data, is_end_of_wrapper = platform_object.check_job_energy(
                                     job_id, is_packed)
+                            # Writing EXTRADATA
+                            if job_id > 0 and out_file_path is not None:
+                                if job_data_last.job_id == job_id:
+                                    # print("Writing extra info")
+                                    platform_object.write_job_extrainfo(
+                                        job_data_last.get_hdata(), out_file_path)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
