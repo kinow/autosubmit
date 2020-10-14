@@ -323,6 +323,7 @@ class JobData(object):
         hdata["ncpus"] = self.ncpus
         hdata["nnodes"] = self.nnodes
         hdata["energy"] = self.energy
+        hdata["platform"] = self.platform
         return dumps(hdata)
 
 
