@@ -1185,7 +1185,7 @@ class WrapperJob(Job):
             self.status = Status.FAILED
             self._check_running_jobs()
             still_running = False
-            for job in self.inner_jobs_running.keys():
+            for job in self.inner_jobs_running.values():
                 if job.status == Status.RUNNING:
                     still_running = True
             if not still_running:

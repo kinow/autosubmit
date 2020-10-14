@@ -130,6 +130,19 @@ class PythonWrapperBuilder(WrapperBuilder):
         from math import ceil
         from collections import OrderedDict
         import copy
+        class Unbuffered(object):
+           def __init__(self, stream):
+               self.stream = stream
+           def write(self, data):
+               self.stream.write(data)
+               self.stream.flush()
+           def writelines(self, datas):
+               self.stream.writelines(datas)
+               self.stream.flush()
+           def __getattr__(self, attr):
+               return getattr(self.stream, attr)
+        
+        sys.stdout = Unbuffered(sys.stdout)
 
         # Defining scripts to be run
         scripts= {0}
@@ -314,7 +327,8 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", pid.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
+                
+                #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
