@@ -3109,7 +3109,7 @@ class Autosubmit:
     @staticmethod
     def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False, check_wrappers=False, detail=False):
         """
-        Creates job list for given experiment. Configuration files must be valid before realizing this process.
+        Creates job list for given experiment. Configuration files must be valid before executing this process.
 
         :param expid: experiment identifier
         :type expid: str
