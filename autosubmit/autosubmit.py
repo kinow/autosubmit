@@ -1379,6 +1379,21 @@ class Autosubmit:
                 while job_list.get_active():
                     try:
                         if Autosubmit.exit:
+                            # Closing threads on Ctrl+C
+                            exit_timeout = 0
+                            exit_active_threads = True
+                            Log.info(
+                                "Looking for active threads before closing Autosubmit. Ending the program before these threads finish may result in unexpected behavior. This procedure will last until all threads have finished or the program has waited for more than 60 seconds.")
+                            while exit_active_threads and exit_timeout <= 60:
+                                exit_active_threads = False
+                                for thread in threading.enumerate():
+                                    if "Thread-" in thread.name:
+                                        if thread.is_alive():
+                                            Log.info(
+                                                "{0} is still working.".format(thread.name))
+                                            exit_active_threads = True
+                                sleep(20)
+                                exit_timeout += 20
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
