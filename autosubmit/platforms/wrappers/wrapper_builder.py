@@ -293,7 +293,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", current.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", current.template," has FAILED"
-                {1}
+                #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return sequential_threads_launcher
@@ -361,7 +361,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", pid.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
+                #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
@@ -394,7 +394,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 print datetime.now(), "The job ", pid.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
+                #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
@@ -484,7 +484,7 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
                 print datetime.now(), "The job ", pid.template," has been COMPLETED"
             else:
                 print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
+                #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher

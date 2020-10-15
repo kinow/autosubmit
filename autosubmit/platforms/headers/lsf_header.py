@@ -54,7 +54,7 @@ class LsfHeader(object):
 
     # noinspection PyMethodMayBeStatic
     def get_exclusivity(self, job):
-        if job.platform.exclusivity == 'true':
+        if job._platform.exclusivity == 'true':
             return "#BSUB -x"
         else:
             return ""

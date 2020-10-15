@@ -519,8 +519,10 @@ class Job(object):
         if self.platform_name is None:
             self.platform_name = hpcarch
         self.platform = submitter.platforms[self.platform_name.lower()]
+
+        self._platform = submitter.platforms[self.platform_name.lower()]
         try:
-            self.platform.restore_connection()
+            self._platform.restore_connection()
         except Exception as e:
             Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
         out_exist = False
@@ -552,11 +554,11 @@ class Job(object):
                     # unifying names for log files
                     self.synchronize_logs(self.platform, remote_logs, local_logs)
                     remote_logs = local_logs
-                self.platform.get_logs_files(self.expid, remote_logs)
+                self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 try:
                     for local_log in local_logs:
-                        self.platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                        self._platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                 except BaseException as e:
                     raise AutosubmitError("Trace {0} \n Failed to write the {1}".format(e.message,self.name), 6001)
 
@@ -585,7 +587,7 @@ class Job(object):
         if new_status == Status.COMPLETED:
             Log.debug("{0} job seems to have completed: checking...".format(self.name))
 
-            if not self.platform.get_completed_files(self.name):
+            if not self._platform.get_completed_files(self.name):
                 log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
             self.check_completion()
@@ -602,7 +604,7 @@ class Job(object):
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
             Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(self.name),3000)
-            self.platform.get_completed_files(self.name)
+            self._platform.get_completed_files(self.name)
             self.check_completion()
             if self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
@@ -610,7 +612,7 @@ class Job(object):
                 self.update_children_status()
         elif self.status == Status.UNKNOWN:
             Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),3000)
-            self.platform.get_completed_files(self.name)
+            self._platform.get_completed_files(self.name)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
                 Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6009)
@@ -753,7 +755,7 @@ class Job(object):
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
-        job_platform = self.platform
+        job_platform = self._platform
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
@@ -867,7 +869,7 @@ class Job(object):
             raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7014)
 
     def _get_paramiko_template(self, snippet, template):
-        current_platform = self.platform
+        current_platform = self._platform
         return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
                         snippet.as_tailer()])
@@ -992,7 +994,7 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.platform.get_stat_file(self.name, retries=5):
+        if self._platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
             Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(self.name),3000)
@@ -1014,7 +1016,7 @@ class Job(object):
         :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
-        self.platform.get_stat_file(self.name, retries=0)
+        self._platform.get_stat_file(self.name, retries=0)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
@@ -1139,7 +1141,7 @@ class WrapperJob(Job):
 
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
-        self.platform = platform
+        self._platform = platform
         self.as_config = as_config
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
@@ -1183,14 +1185,14 @@ class WrapperJob(Job):
         # Fail can come from check function or running/completed checkers.
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
-            self._check_running_jobs()
+            #self._check_running_jobs()
             still_running = False
             for job in self.inner_jobs_running.values():
                 if job.status == Status.RUNNING:
                     still_running = True
             if not still_running:
                 self.cancel_failed_wrapper_job()
-                self.update_failed_jobs()
+            self.update_failed_jobs()
 
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [
@@ -1198,7 +1200,7 @@ class WrapperJob(Job):
         not_completed_job_names = [job.name for job in not_completed_jobs]
         job_names = ' '.join(not_completed_job_names)
         if job_names:
-            completed_files = self.platform.check_completed_files(job_names)
+            completed_files = self._platform.check_completed_files(job_names)
             completed_jobs = []
             for job in not_completed_jobs:
                 if completed_files and len(completed_files) > 0:
@@ -1217,11 +1219,11 @@ class WrapperJob(Job):
 
     def _check_inner_jobs_queue(self, prev_status):
         reason = str()
-        if self.platform.type == 'slurm':
-            self.platform.send_command(
-                self.platform.get_queue_status_cmd(self.id))
-            reason = self.platform.parse_queue_reason(
-                self.platform._ssh_output, self.id)
+        if self._platform.type == 'slurm':
+            self._platform.send_command(
+                self._platform.get_queue_status_cmd(self.id))
+            reason = self._platform.parse_queue_reason(
+                self._platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
                 Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6009)
                 self.cancel_failed_wrapper_job()
@@ -1230,7 +1232,7 @@ class WrapperJob(Job):
             if reason == '(JobHeldUser)':
                 if self.hold is False:
                     # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                    self.platform.send_command(
+                    self._platform.send_command(
                         "scontrol release " + "{0}".format(self.id))
                     self.status = Status.QUEUING
                     for job in self.job_list:
@@ -1243,8 +1245,8 @@ class WrapperJob(Job):
             elif reason == '(JobHeldAdmin)':
                 Log.debug(
                     "Job {0} Failed to be HELD, canceling... ", self.name)
-                self.platform.send_command(
-                    self.platform.cancel_cmd + " {0}".format(self.id))
+                self._platform.send_command(
+                    self._platform.cancel_cmd + " {0}".format(self.id))
                 self.status = Status.WAITING
             else:
                 Log.info("Job {0} is QUEUING {1}", self.name, reason)
@@ -1277,7 +1279,7 @@ class WrapperJob(Job):
                 not_finished_jobs_dict[job.name] = job
         if len(not_finished_jobs_dict.keys()) > 0:  # Only running jobs will enter there
             not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
-            remote_log_dir = self.platform.get_remote_log_dir()
+            remote_log_dir = self._platform.get_remote_log_dir()
             # PREPARE SCRIPT TO SEND
             command = textwrap.dedent("""
 cd {1}
@@ -1308,7 +1310,7 @@ done
             content = ''
             while content == '' and retries > 0:
                 self._platform.send_command(command, False)
-                content = self.platform._ssh_output.split('\n')
+                content = self._platform._ssh_output.split('\n')
                 # content.reverse()
                 for line in content[:-1]:
                     out = line.split()
@@ -1350,7 +1352,7 @@ done
         retries = 5
         output = ''
         while output == '' and retries > 0:
-            output = self.platform.check_completed_files(job.name)
+            output = self._platform.check_completed_files(job.name)
             if output is None or output == '':
                 sleep(wait)
                 retries = retries - 1
@@ -1372,8 +1374,8 @@ done
 
     def cancel_failed_wrapper_job(self):
         Log.printlog("Cancelling job with id {0}".format(self.id),6009)
-        self.platform.send_command(
-            self.platform.cancel_cmd + " " + str(self.id))
+        self._platform.send_command(
+            self._platform.cancel_cmd + " " + str(self.id))
         # If there are jobs running, let them finish TODO
 
     def _update_completed_jobs(self):

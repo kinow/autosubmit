@@ -323,9 +323,11 @@ class SlurmPlatform(ParamikoPlatform):
         if not hold:
             self._submit_script_file.write(
                 self._submit_cmd + job_script + "\n")
+            self._submit_script_file.close()
         else:
             self._submit_script_file.write(
                 self._submit_hold_cmd + job_script + "\n")
+            self._submit_script_file.close()
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)

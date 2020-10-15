@@ -1311,7 +1311,7 @@ class TestWrappers(TestCase):
         job.packed = False
         job.hold = False
         job.wallclock = total_wallclock
-        job.platform = self.platform
+        job._platform = self.platform
 
         job.date = date
         job.member = member

@@ -647,7 +647,7 @@ class JobList:
         :rtype: list
         """
 
-        completed_jobs = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        completed_jobs = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
                           job.status == Status.COMPLETED]
         if wrapper:
             return [job for job in completed_jobs if job.packed is False]
@@ -664,7 +664,7 @@ class JobList:
         :return: completed jobs
         :rtype: list
         """
-        uncompleted_jobs = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        uncompleted_jobs = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                             job.status != Status.COMPLETED]
 
         if wrapper:
@@ -683,10 +683,10 @@ class JobList:
         """
         submitted = list()
         if hold:
-            submitted = [job for job in self._job_list if (platform is None or job.platform == platform) and
+            submitted = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                          job.status == Status.SUBMITTED and job.hold == hold]
         else:
-            submitted = [job for job in self._job_list if (platform is None or job.platform == platform) and
+            submitted = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                          job.status == Status.SUBMITTED]
         if wrapper:
             return [job for job in submitted if job.packed is False]
@@ -702,7 +702,7 @@ class JobList:
         :return: running jobs
         :rtype: list
         """
-        running = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        running = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                    job.status == Status.RUNNING]
         if wrapper:
             return [job for job in running if job.packed is False]
@@ -718,7 +718,7 @@ class JobList:
         :return: queuedjobs
         :rtype: list
         """
-        queuing = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        queuing = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                    job.status == Status.QUEUING]
         if wrapper:
             return [job for job in queuing if job.packed is False]
@@ -734,7 +734,7 @@ class JobList:
         :return: failed jobs
         :rtype: list
         """
-        failed = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        failed = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                   job.status == Status.FAILED]
         if wrapper:
             return [job for job in failed if job.packed is False]
@@ -750,7 +750,7 @@ class JobList:
         :return: all jobs
         :rtype: list
         """
-        unsubmitted = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        unsubmitted = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                        (job.status != Status.SUBMITTED and job.status != Status.QUEUING and job.status == Status.RUNNING and job.status == Status.COMPLETED)]
 
         if wrapper:
@@ -783,7 +783,7 @@ class JobList:
         :return: ready jobs
         :rtype: list
         """
-        ready = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        ready = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                  job.status == Status.READY and job.hold is hold]
 
         if wrapper:
@@ -800,7 +800,7 @@ class JobList:
         :return: prepared jobs
         :rtype: list
         """
-        prepared = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        prepared = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                     job.status == Status.PREPARED]
         return prepared
 
@@ -813,7 +813,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        waiting_jobs = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        waiting_jobs = [job for job in self._job_list if (platform is None or job.platform_name == platform.name) and
                         job.status == Status.WAITING]
         if wrapper:
             return [job for job in waiting_jobs if job.packed is False]
@@ -829,7 +829,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        waiting_jobs = [job for job in self._job_list if (job.platform.type == platform_type and job.status == Status.WAITING)]
+        waiting_jobs = [job for job in self._job_list if (job._platform.type == platform_type and job.status == Status.WAITING)]
         return waiting_jobs
 
     def get_held_jobs(self, platform=None):
@@ -841,7 +841,7 @@ class JobList:
         :return: jobs in platforms
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job.platform == platform) and
+        return [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
                 job.status == Status.HELD]
 
     def get_unknown(self, platform=None, wrapper=False):
@@ -853,7 +853,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        submitted = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        submitted = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
                      job.status == Status.UNKNOWN]
         if wrapper:
             return [job for job in submitted if job.packed is False]
@@ -869,7 +869,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        suspended = [job for job in self._job_list if (platform is None or job.platform == platform) and
+        suspended = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
                      job.status == Status.SUSPENDED]
         if wrapper:
             return [job for job in suspended if job.packed is False]
@@ -1073,7 +1073,7 @@ class JobList:
                 queue = "no-scheduler"
             else:
                 queue = job.queue
-            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job.platform.name,queue)
+            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job._platform.name,queue)
 
 
     def update_from_file(self, store_change=True):
@@ -1111,7 +1111,7 @@ class JobList:
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf, store_change=True, fromSetStatus=False):
+    def update_list(self, as_conf, store_change=True, fromSetStatus=False,submitter=None):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -1140,6 +1140,14 @@ class JobList:
                     parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
+                    if submitter is not None:
+                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        job.platform.test_connection()
+                        job._platform = submitter.platforms[job.platform_name.lower()]
+                        job._platform.test_connection()
+
+                    job.id = None
+
                     job.packed = False
                     save = True
                     Log.debug(
@@ -1150,7 +1158,12 @@ class JobList:
                     job.packed = False
                     Log.debug(
                         "Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
-
+            else:
+                job.status = Status.FAILED
+                job.packed = False
+                save = True
+                Log.debug(
+                    "Job is failed".format(job.name))
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:

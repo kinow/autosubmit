@@ -34,7 +34,7 @@ class TestJob(TestCase):
         self.job._platform = platform
         self.job.processors = 999
 
-        returned_platform = self.job.platform
+        returned_platform = self.job._platform
 
         self.assertEquals(platform, returned_platform)
 
@@ -45,7 +45,7 @@ class TestJob(TestCase):
         self.job._platform = platform
         self.job.processors = '1'
 
-        returned_platform = self.job.platform
+        returned_platform = self.job._platform
 
         self.assertEquals('serial-platform', returned_platform)
 
@@ -53,9 +53,9 @@ class TestJob(TestCase):
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
         self.assertNotEquals(dummy_platform, self.job._platform)
 
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
 
-        self.assertEquals(dummy_platform, self.job.platform)
+        self.assertEquals(dummy_platform, self.job._platform)
 
     def test_when_the_job_has_a_queue_returns_that_queue(self):
         dummy_queue = 'whatever'
@@ -69,7 +69,7 @@ class TestJob(TestCase):
         dummy_queue = 'whatever-parallel'
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
         dummy_platform.queue = dummy_queue
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
 
         self.assertIsNone(self.job._queue)
 
@@ -89,7 +89,7 @@ class TestJob(TestCase):
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
 
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
         self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)

@@ -164,7 +164,7 @@ class LocalPlatform(ParamikoPlatform):
                     sleeptime = sleeptime + 5
                     retries = retries + 1
             except BaseException as e:  # Unrecoverable error
-                Log.printlog("Crashed while retrieving  logs",6001)
+                Log.printlog("File does not exist, logs {0} {1}".format(self.get_files_path(),src),6001)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 
