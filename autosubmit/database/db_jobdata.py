@@ -707,7 +707,9 @@ class JobDataStructure(MainDataBase):
             failed INTEGER NOT NULL,
             queuing INTEGER NOT NULL,
             running INTEGER NOT NULL,
-            submitted INTEGER NOT NULL
+            submitted INTEGER NOT NULL,
+            suspended INTEGER NOT NULL DEFAULT 0,
+            metadata TEXT
             );
             ''')
 

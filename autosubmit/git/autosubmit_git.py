@@ -276,7 +276,8 @@ class AutosubmitGit:
         if submodule_failure:
             Log.info(
                 "Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
-            return False
-        Log.info("Removing backup...")
-        shutil.rmtree(project_backup_path)
+            return False        
+        if os.path.exists(project_backup_path):
+            Log.info("Removing backup...")
+            shutil.rmtree(project_backup_path)
         return True
