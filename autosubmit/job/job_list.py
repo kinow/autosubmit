@@ -54,6 +54,7 @@ class JobList(object):
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._persistence_file = "job_list_" + expid
         self._job_list = list()
+        self._base_job_list = list()
         self._expid = expid
         self._config = config
         self._parser_factory = parser_factory
@@ -106,6 +107,7 @@ class JobList(object):
     def run_members(self, value):
         if value is not None:
             self._run_members = value
+            self._base_job_list = [job for job in self._job_list]
             old_job_list = [job for job in self._job_list]
             self._job_list = [
                 job for job in old_job_list if job.member is None or job.member in self._run_members or job.status not in [Status.WAITING, Status.READY]]
@@ -1084,9 +1086,16 @@ class JobList(object):
         """
         Persists the job list
         """
+        job_list = None
+        if self.run_members is not None:
+            job_names = [job.name for job in self._job_list]
+            job_list = [job for job in self._job_list]
+            for job in self._base_job_list:
+                if job.name not in job_names:
+                    job_list.append(job)
         self.update_status_log()
         self._persistence.save(self._persistence_path,
-                               self._persistence_file, self._job_list)
+                               self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
 
     def backup_save(self):
         """
