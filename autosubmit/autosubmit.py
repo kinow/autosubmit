@@ -18,6 +18,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 from __future__ import print_function
 import threading
+import traceback
 
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
@@ -3131,7 +3132,7 @@ class Autosubmit:
     @staticmethod
     def create(expid, noplot, hide, output='pdf', group_by=None, expand=list(), expand_status=list(), notransitive=False, check_wrappers=False, detail=False):
         """
-        Creates job list for given experiment. Configuration files must be valid before realizing this process.
+        Creates job list for given experiment. Configuration files must be valid before executing this process.
 
         :param expid: experiment identifier
         :type expid: str
@@ -3163,12 +3164,14 @@ class Autosubmit:
                     as_conf = AutosubmitConfig(
                         expid, BasicConfig, ConfigParserFactory())
                     as_conf.check_conf_files(False)
+
                     project_type = as_conf.get_project_type()
                     # Getting output type provided by the user in config, 'pdf' as default
                     output_type = as_conf.get_output_type()
 
                     if not Autosubmit._copy_code(as_conf, expid, project_type, False):
                         return False
+
                     update_job = not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl",
                                                                  "job_list_" + expid + ".pkl"))
                     Autosubmit._create_project_associated_conf(
@@ -3299,6 +3302,7 @@ class Autosubmit:
             message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
+            Log.debug(traceback.format_exc())
             raise AutosubmitCritical(e.message, e.code)
 
     @staticmethod
@@ -3317,6 +3321,9 @@ class Autosubmit:
         :rtype: bool
         """
         project_destination = as_conf.get_project_destination()
+        # if project_destination is None:
+        #     raise AutosubmitCritical(
+        #         "Autosubmit couldn't identify the project destination.", 7014)
         if project_type == "git":
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
@@ -3324,6 +3331,7 @@ class Autosubmit:
                 hpcarch = submitter.platforms[as_conf.get_platform()]
             except:
                 raise AutosubmitCritical("Can't set main platform", 7014)
+
             return AutosubmitGit.clone_repository(as_conf, force, hpcarch)
         elif project_type == "svn":
             svn_project_url = as_conf.get_svn_project_url()

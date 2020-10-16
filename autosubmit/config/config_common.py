@@ -25,6 +25,7 @@ except ImportError:
 import os
 import re
 import subprocess
+import traceback
 
 from pyparsing import nestedExpr
 
@@ -908,16 +909,21 @@ class AutosubmitConfig(object):
         :return: git commit
         :rtype: str
         """
-        value = self._exp_parser.get('project', 'PROJECT_DESTINATION')
-        if not value:
-            if self.get_project_type().lower() == "local":
-                value = os.path.split(self.get_local_project_path())[1]
-            elif self.get_project_type().lower() == "svn":
-                value = self.get_svn_project_url().split('/')[-1]
-            elif self.get_project_type().lower() == "git":
-                value = self.get_git_project_origin().split(
-                    '/')[-1].split('.')[-2]
-        return value
+        try:
+            value = self._exp_parser.get('project', 'PROJECT_DESTINATION')
+            if not value:
+                if self.get_project_type().lower() == "local":
+                    value = os.path.split(self.get_local_project_path())[1]
+                elif self.get_project_type().lower() == "svn":
+                    value = self.get_svn_project_url().split('/')[-1]
+                elif self.get_project_type().lower() == "git":
+                    value = self.get_git_project_origin().split(
+                        '/')[-1].split('.')[-2]
+            return value
+        except Exception as exp:
+            Log.debug(str(exp))
+            Log.debug(traceback.format_exc())
+            return ''
 
     def set_git_project_commit(self, as_conf):
         """
