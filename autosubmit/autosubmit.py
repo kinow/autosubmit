@@ -158,6 +158,8 @@ class Autosubmit:
                                    help='Sets the starting time for this experiment')
             subparser.add_argument('-sa', '--start_after', required=False,
                                    help='Sets a experiment expid which completion will trigger the start of this experiment.')
+            subparser.add_argument('-rm', '--run_members', required=False,
+                                   help='Sets members allowed on this run.')
 
             # Expid
             subparser = subparsers.add_parser(
@@ -512,7 +514,7 @@ class Autosubmit:
             args.command, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
-            return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time, args.start_after)
+            return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time, args.start_after, args.run_members)
         elif args.command == 'expid':
             return Autosubmit.expid(args.HPC, args.description, args.copy, args.dummy, False,
                                     args.operational, args.config) != ''
@@ -1161,7 +1163,7 @@ class Autosubmit:
             job_list.update_list(as_conf, False)
 
     @staticmethod
-    def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None):
+    def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None, run_members=None):
         """
         Runs and experiment (submitting all the jobs properly and repeating its execution in case of failure).
 
@@ -1268,6 +1270,22 @@ class Autosubmit:
                 sleep(60)
         # End of completion trigger block
 
+        # Handling run_members
+        allowed_members = None
+
+        if run_members:
+            allowed_members = run_members.split()
+            rmember = [
+                rmember for rmember in allowed_members if rmember not in as_conf.get_member_list()]
+            if len(rmember) > 0:
+                Log.critical(
+                    "Some of the members ({0}) in the list of allowed members you supplied do not exist in the current list of members specified in the conf files.\nCurrent list of members: {1}".format(str(rmember), str(as_conf.get_member_list())))
+                return
+            if len(allowed_members) == 0:
+                Log.critical(
+                    "Not a valid -rm --run_members input: {0}".format(str(run_members)))
+                return
+
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
             with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
@@ -1361,6 +1379,11 @@ class Autosubmit:
                     except Exception as e:
                         raise AutosubmitCritical(
                             "Error while processing job_data_structure", 7067, e.message)
+                    if allowed_members:
+                        # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
+                        job_list.run_members = allowed_members
+                        Log.result("Only jobs with member value in {0} or no member will be allowed in this run. Also, those jobs already SUBMITTED, QUEUING, or RUNNING will be allowed to complete and will be tracked.".format(
+                            str(allowed_members)))
                 except AutosubmitCritical as e:
                     raise AutosubmitCritical(e.message, 7067, e.trace)
                 except Exception as e:
@@ -1370,7 +1393,6 @@ class Autosubmit:
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
-
                 # Main loop. Finishing when all jobs have been submitted
                 main_loop_retrials = 120  # Hard limit of tries 120 tries at 1min sleep each try
                 # establish the connection to all platforms
@@ -1393,8 +1415,8 @@ class Autosubmit:
                                             Log.info(
                                                 "{0} is still working.".format(thread.name))
                                             exit_active_threads = True
-                                sleep(20)
-                                exit_timeout += 20
+                                sleep(10)
+                                exit_timeout += 10
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
