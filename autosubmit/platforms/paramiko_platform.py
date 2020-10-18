@@ -207,7 +207,7 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError('Send file failed. Connection seems to no be active',6004)
 
     # Gets .err and .out
-    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False,wrapper_failed=False):
         """
         Copies a file from the current platform to experiment's tmp folder
 

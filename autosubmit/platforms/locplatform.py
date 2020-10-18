@@ -118,10 +118,10 @@ class LocalPlatform(ParamikoPlatform):
             raise
         return True
 
-    def check_file_exists(self,filename):
+    def check_file_exists(self,filename,wrapper_failed=False):
         return True
 
-    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False,wrapper_failed=False):
         local_path = os.path.join(self.tmp_path, relative_path)
         if not os.path.exists(local_path):
             os.makedirs(local_path)
@@ -140,7 +140,7 @@ class LocalPlatform(ParamikoPlatform):
         return True
 
     # Moves .err .out
-    def check_file_exists(self, src):
+    def check_file_exists(self, src,wrapper_failed=False):
         """
         Moves a file on the platform
         :param src: source name
@@ -160,9 +160,12 @@ class LocalPlatform(ParamikoPlatform):
                 if not file_exist:  # File doesn't exist, retry in sleeptime
                     Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
                              max_retries - retries, remote_path)
-                    sleep(sleeptime)
-                    sleeptime = sleeptime + 5
-                    retries = retries + 1
+                    if not wrapper_failed:
+                        sleep(sleeptime)
+                        sleeptime = sleeptime + 5
+                        retries = retries + 1
+                    else:
+                        retries = 9999
             except BaseException as e:  # Unrecoverable error
                 Log.printlog("File does not exist, logs {0} {1}".format(self.get_files_path(),src),6001)
                 file_exist = False  # won't exist

@@ -1144,7 +1144,7 @@ class Autosubmit:
                 job.platform_name = hpcarch
             # Assign platform objects to each job
             # noinspection PyTypeChecker
-            job._platform = submitter.platforms[job._platform_name.lower()]
+            job._platform = submitter.platforms[job.platform_name.lower()]
             # Add object to set
             # noinspection PyTypeChecker
             platforms_to_test.add(job._platform)

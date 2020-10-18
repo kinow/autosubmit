@@ -151,7 +151,7 @@ class Platform(object):
         """
         raise NotImplementedError
 
-    def get_file(self, filename, must_exist=True, relative_path='', ignore_log=False):
+    def get_file(self, filename, must_exist=True, relative_path='', ignore_log=False,wrapper_failed=False):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -206,7 +206,7 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
 
-    def get_completed_files(self, job_name, retries=0, recovery=False):
+    def get_completed_files(self, job_name, retries=0, recovery=False,wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
 
@@ -223,8 +223,8 @@ class Platform(object):
                 return True
             else:
                 return False
-        if self.check_file_exists('{0}_COMPLETED'.format(job_name)):
-            if self.get_file('{0}_COMPLETED'.format(job_name), False):
+        if self.check_file_exists('{0}_COMPLETED'.format(job_name),wrapper_failed=wrapper_failed):
+            if self.get_file('{0}_COMPLETED'.format(job_name), False,wrapper_failed=wrapper_failed):
                 return True
             else:
                 return False
@@ -261,7 +261,7 @@ class Platform(object):
             return True
         return False
 
-    def check_file_exists(self, src):
+    def check_file_exists(self, src,wrapper_failed=False):
         return True
 
     def get_stat_file(self, job_name, retries=0):
