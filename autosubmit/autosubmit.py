@@ -622,7 +622,7 @@ class Autosubmit:
                 "User or owner does not exists", 7012, e.message)
 
     @staticmethod
-    def _delete_expid(expid_delete, force):
+    def _delete_expid(expid_delete, force=False):
         """
         Removes an experiment from path and database
         If current user is eadmin and -f has been sent, it deletes regardless
