@@ -279,10 +279,16 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
         sequential_threads_launcher = textwrap.dedent("""
+        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
         for i in range(len({0})):
             current = {1}
             current.start()
             current.join()
+            if os.path.exists(failed_path):
+                level_failed = os.path.join(os.getcwd(),"Level_"+str(i)+"_FAILED")
+                open(level_failed, 'w').close()
+                os._exit(1)
+            
         """).format(jobs_list, thread, '\n'.ljust(13))
 
         if footer:
@@ -297,7 +303,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 open(failed_path, 'w').close()
                 print datetime.now(), "The job ", current.template," has FAILED"
                 #{1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
 
         return sequential_threads_launcher
 
@@ -316,28 +322,25 @@ class PythonWrapperBuilder(WrapperBuilder):
             pid_list.append(current)
             current.start()
 
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
-        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 0), '\n'.ljust(13))
+    # Waiting until all scripts finish
+    for i in range(len(pid_list)):
+        pid = pid_list[i]
+        pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_filename = {0}[i].replace('.cmd', '_FAILED')
-        failed_path = os.path.join(os.getcwd(), failed_filename)
-        Failed = False
+        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
-            Failed = True
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
-                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         parallel_threads_launcher += self._indent(textwrap.dedent("""
-        if Failed:
-            {0}
+        #if Failed:
+            #{0}
                 """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
@@ -355,28 +358,26 @@ class PythonWrapperBuilder(WrapperBuilder):
             pid_list.append(current)
             current.start()
 
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
-        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 0), '\n'.ljust(13))
+    # Waiting until all scripts finish
+    for i in range(len(pid_list)):
+        pid = pid_list[i]
+        pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_filename = {0}[i].replace('.cmd', '_FAILED')
-        failed_path = os.path.join(os.getcwd(), failed_filename)
+        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
         Failed = False
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
-            Failed = True
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
-                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         parallel_threads_launcher += self._indent(textwrap.dedent("""
-        if Failed:
-            {0}
+        #if Failed:
+            #{0}
                 """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
@@ -394,28 +395,26 @@ class PythonWrapperBuilder(WrapperBuilder):
             pid_list.append(current)
             current.start()
 
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
-        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 0), '\n'.ljust(13))
+    # Waiting until all scripts finish
+    for i in range(len(pid_list)):
+        pid = pid_list[i]
+        pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_filename = {0}[i].replace('.cmd', '_FAILED')
-        failed_path = os.path.join(os.getcwd(), failed_filename)
+        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
         Failed = False
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
-            Failed = True
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
-                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         parallel_threads_launcher += self._indent(textwrap.dedent("""
-        if Failed:
-            {0}
+        #if Failed:
+            #{0}
                 """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     # all should override -> abstract!
@@ -491,28 +490,25 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
             pid_list.append(current)
             current.start()
 
-            # Waiting until all scripts finish
-            for i in range(len(pid_list)):
-                pid = pid_list[i]
-                pid.join()
-        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 0), '\n'.ljust(13))
+        # Waiting until all scripts finish
+        for i in range(len(pid_list)):
+            pid = pid_list[i]
+            pid.join()
+        """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_filename = {0}[i].replace('.cmd', '_FAILED')
-        failed_path = os.path.join(os.getcwd(), failed_filename)
-        Failed = False
+        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
-            Failed = True
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
-                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         parallel_threads_launcher += self._indent(textwrap.dedent("""
-        if Failed:
-            {0}
+        #if Failed:
+            #{0}
                 """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_joblist_thread(self):

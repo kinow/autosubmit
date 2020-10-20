@@ -127,6 +127,7 @@ class Job(object):
         self.packed = False
         self.hold = False
         self.distance_weight = 0
+        self.level = 0
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -668,7 +669,7 @@ class Job(object):
         """
         log_name = os.path.join(self._tmp_path,self.name + '_COMPLETED')
 
-        if os.path.exists(log_name):
+        if os.path.exists(log_name): #TODO
             self.status = Status.COMPLETED
         else:
             Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6009)
@@ -1186,15 +1187,20 @@ class WrapperJob(Job):
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
             if self.prev_status not in [Status.FAILED, Status.UNKNOWN]:
-                sleep(1)
+                sleep(10)
+
+            #if self.prev_status in [Status.SUBMITTED,Status.QUEUING]:
+            #    for job in self.job_list:
+            #        if job.level == 0:
+            #            job.status = Status.RUNNING
             self._check_running_jobs()
             if len(self.inner_jobs_running) > 0:
-                    still_running = True
+                still_running = True
             else:
                 still_running = False
             if not still_running:
                 self.cancel_failed_wrapper_job()
-            self.update_failed_jobs()
+            #self.update_failed_jobs()
 
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [
@@ -1322,26 +1328,19 @@ done
                         if len(out) > 1:
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
-                                Log.debug("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
-
+                                Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
                                 self.running_jobs_start[job] = start_time
-                                job.new_status = Status.RUNNING
-                                job.update_status(
-                                    self.as_config.get_copy_remote_logs() == 'true')
-
+                                job.status = Status.RUNNING
+                                #job.update_status(self.as_config.get_copy_remote_logs() == 'true')
                             if len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
-                                over_wallclock = self._check_inner_job_wallclock(
-                                    job)
+                                over_wallclock = self._check_inner_job_wallclock(job)
                                 if over_wallclock:
-                                    Log.printlog(
-                                        "Job {0} is FAILED".format(jobname),6009)
-
+                                    Log.printlog("Job {0} is FAILED".format(jobname),6009)
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
-                                Log.info("Job {0} finished at {1}".format(
-                                    jobname, str(parse_date(end_time))))
+                                Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                 if content == '':
                     sleep(wait)
                     retries = retries - 1
@@ -1368,7 +1367,6 @@ done
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self):
-
         not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
         running_jobs = list()
         for job in not_finished_jobs:
@@ -1376,8 +1374,9 @@ done
                    Status.COMPLETED or self.status == Status.COMPLETED]
             if job.parents is None or len(tmp) == len(job.parents):
                 running_jobs.append(job)
-            else:
-                job.status = Status.WAITING
+            #else:
+            #    job.status = Status.WAITING
+            #    job.packed = False
         for job in running_jobs:
             self._check_finished_job(job)
 
