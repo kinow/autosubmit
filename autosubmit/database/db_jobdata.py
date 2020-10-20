@@ -1256,7 +1256,7 @@ class JobDataStructure(MainDataBase):
                         else:
                             # Identify best source
                             description_job = max(
-                                jobs_in_package, key=lambda x: len(x.extra_data))
+                                jobs_in_package, key=lambda x: len(str(x.extra_data)))
                             # Identify job steps
                             keys_step = [
                                 y for y in description_job.extra_data.keys() if '.' in y and y[y.index('.') + 1:] not in ["batch", "extern"] and y != "parents"]
@@ -1290,7 +1290,7 @@ class JobDataStructure(MainDataBase):
                                     main_step = [main_step[0]]
                                     # If main step contains submit, its valid. Else, break, not valid,
                                     for key in main_step:
-                                        if "submit" not in description_job.extra_data[key].keys():
+                                        if key not in description_job.extra_data.keys() or "submit" not in description_job.extra_data[key].keys():
                                             keys_found = False
                                         break
                                     # Build wrapper jobs
