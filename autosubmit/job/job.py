@@ -656,7 +656,7 @@ class Job(object):
     def update_children_status(self):
         children = list(self.children)
         for child in children:
-            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
+            if child.level == 0 and child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
                 child.status = Status.FAILED
                 children += list(child.children)
 
@@ -1136,6 +1136,7 @@ class WrapperJob(Job):
 
     def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config, hold):
         super(WrapperJob, self).__init__(name, job_id, status, priority)
+        self.failed = False
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
@@ -1187,20 +1188,30 @@ class WrapperJob(Job):
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
             if self.prev_status not in [Status.FAILED, Status.UNKNOWN]:
-                sleep(10)
-
-            #if self.prev_status in [Status.SUBMITTED,Status.QUEUING]:
-            #    for job in self.job_list:
-            #        if job.level == 0:
-            #            job.status = Status.RUNNING
-            self._check_running_jobs()
+                sleep(1)
+            else:
+                self.failed = True
+                self._check_running_jobs()
             if len(self.inner_jobs_running) > 0:
                 still_running = True
+                if not self.failed:
+                    if self.platform.check_file_exists('WRAPPER_FAILED', wrapper_failed=True):
+                        for job in self.inner_jobs_running:
+                            if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
+                                Log.info("Wrapper {0} Failed, checking inner_jobs...".format(self.name))
+                                self.failed = True
+                                self.platform.delete_file('WRAPPER_FAILED')
+                                break
+
+                if self.failed:
+                    self.update_failed_jobs()
+                    if len(self.inner_jobs_running) <= 0:
+                        still_running = False
             else:
                 still_running = False
             if not still_running:
                 self.cancel_failed_wrapper_job()
-            #self.update_failed_jobs()
+
 
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [
@@ -1232,8 +1243,11 @@ class WrapperJob(Job):
             reason = self._platform.parse_queue_reason(self._platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
                 Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6009)
+                #while running jobs?
+                self._check_running_jobs() #todo
+                self.update_failed_jobs(canceled_wrapper=True)
                 self.cancel_failed_wrapper_job()
-                self.update_failed_jobs()
+
                 return
             if reason == '(JobHeldUser)':
                 if self.hold is False:
@@ -1273,7 +1287,6 @@ class WrapperJob(Job):
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
         return False
-
     def _check_running_jobs(self):
         not_finished_jobs_dict = OrderedDict()
         self.inner_jobs_running = list()
@@ -1344,48 +1357,45 @@ done
                 if content == '':
                     sleep(wait)
                     retries = retries - 1
-
+            temp_list = self.inner_jobs_running
+            self.inner_jobs_running = [job for job in temp_list if job.status == Status.RUNNING]
             if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
-    def _check_finished_job(self, job):
-        wait = 2
-        retries = 2
-        output = ''
-        while output == '' and retries > 0:
-            output = self._platform.check_completed_files(job.name)
-            if output is None or output == '':
-                sleep(wait)
-                retries = retries - 1
-        if output is not None and output != '' and 'COMPLETED' in output:
+    def _check_finished_job(self, job , failed_file=False):
+        if not failed_file:
+            wait = 2
+            retries = 2
+            output = ''
+            while output == '' and retries > 0:
+                output = self._platform.check_completed_files(job.name)
+                if output is None or output == '':
+                    sleep(wait)
+                    retries = retries - 1
+        if failed_file or (output is not None and output != '' and 'COMPLETED' in output):
             job.new_status = Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         else:
-            Log.info(
-                "No completed filed found, setting {0} to FAILED...".format(job.name))
+            #Log.info("No completed filed found, setting {0} to FAILED...".format(job.name))
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         self.running_jobs_start.pop(job, None)
 
-    def update_failed_jobs(self):
-        not_finished_jobs = [job for job in self.job_list if job.status not in [Status.FAILED, Status.COMPLETED]]
-        running_jobs = list()
-        for job in not_finished_jobs:
-            tmp = [parent for parent in job.parents if parent.status ==
-                   Status.COMPLETED or self.status == Status.COMPLETED]
-            if job.parents is None or len(tmp) == len(job.parents):
-                running_jobs.append(job)
-            #else:
-            #    job.status = Status.WAITING
-            #    job.packed = False
+    def update_failed_jobs(self,canceled_wrapper=False):
+        running_jobs = self.inner_jobs_running
+        self.inner_jobs_running = list()
         for job in running_jobs:
-            self._check_finished_job(job)
+            if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
+                if job.platform.get_file('{0}_FAILED'.format(job.name), False, wrapper_failed=True):
+                    self._check_finished_job(job)
+            else:
+                self.inner_jobs_running.append(job)
 
     def cancel_failed_wrapper_job(self):
         Log.printlog("Cancelling job with id {0}".format(self.id),6009)
-        self._platform.send_command(
-            self._platform.cancel_cmd + " " + str(self.id))
-        # If there are jobs running, let them finish TODO
-
+        self._platform.send_command(self._platform.cancel_cmd + " " + str(self.id))
+        for job in self.job_list:
+            if job.status not in [Status.COMPLETED, Status.FAILED]:
+                job.status = Status.WAITING
     def _update_completed_jobs(self):
         for job in self.job_list:
             if job.status == Status.RUNNING:

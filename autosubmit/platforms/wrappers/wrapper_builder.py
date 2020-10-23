@@ -19,6 +19,8 @@
 
 import textwrap
 import math
+import random
+import string
 
 class WrapperDirector:
     """
@@ -119,8 +121,17 @@ class WrapperBuilder(object):
 
 
 class PythonWrapperBuilder(WrapperBuilder):
+    def get_random_alphanumeric_string(self,letters_count, digits_count):
+        sample_str = ''.join((random.choice(string.ascii_letters) for i in range(letters_count)))
+        sample_str += ''.join((random.choice(string.digits) for i in range(digits_count)))
 
+        # Convert string to list and shuffle it to mix letters and digits
+        sample_list = list(sample_str)
+        random.shuffle(sample_list)
+        final_string = ''.join(sample_list)
+        return final_string+"_FAILED"
     def build_imports(self):
+
         return textwrap.dedent("""
         import os
         import sys
@@ -143,10 +154,10 @@ class PythonWrapperBuilder(WrapperBuilder):
                return getattr(self.stream, attr)
         
         sys.stdout = Unbuffered(sys.stdout)
-
+        wrapper_id = "{1}"
         # Defining scripts to be run
         scripts= {0}
-        """).format(str(self.job_scripts), '\n'.ljust(13))
+        """).format(str(self.job_scripts), self.get_random_alphanumeric_string(5,5),'\n'.ljust(13))
 
     def build_job_thread(self):
         return textwrap.dedent("""
@@ -279,14 +290,15 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
         sequential_threads_launcher = textwrap.dedent("""
-        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         for i in range(len({0})):
             current = {1}
             current.start()
             current.join()
-            if os.path.exists(failed_path):
-                level_failed = os.path.join(os.getcwd(),"Level_"+str(i)+"_FAILED")
-                open(level_failed, 'w').close()
+            if os.path.exists(failed_wrapper):
+                os.remove(os.path.join(os.getcwd(),wrapper_id))
+                wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
+                open(wrapper_failed, 'w').close()
                 os._exit(1)
             
         """).format(jobs_list, thread, '\n'.ljust(13))
@@ -297,9 +309,11 @@ class PythonWrapperBuilder(WrapperBuilder):
             completed_path = os.path.join(os.getcwd(), completed_filename)
             failed_filename = {0}[i].replace('.cmd', '_FAILED')
             failed_path = os.path.join(os.getcwd(), failed_filename)
+            failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
             if os.path.exists(completed_path):
                 print datetime.now(), "The job ", current.template," has been COMPLETED"
             else:
+                open(failed_wrapper,'w').close()
                 open(failed_path, 'w').close()
                 print datetime.now(), "The job ", current.template," has FAILED"
                 #{1}
@@ -331,10 +345,13 @@ class PythonWrapperBuilder(WrapperBuilder):
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
+            open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
@@ -367,11 +384,14 @@ class PythonWrapperBuilder(WrapperBuilder):
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         Failed = False
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
+            open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
@@ -404,11 +424,14 @@ class PythonWrapperBuilder(WrapperBuilder):
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         Failed = False
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
+            open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
@@ -499,10 +522,13 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
             parallel_threads_launcher += self._indent(textwrap.dedent("""
         completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
         completed_path = os.path.join(os.getcwd(), completed_filename)
-        failed_path = os.path.join(os.getcwd(),"HORIZONTAL_FAILED")
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         if os.path.exists(completed_path):
             print datetime.now(), "The job ", pid.template," has been COMPLETED"
         else:
+            open(failed_wrapper, 'w').close()
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
