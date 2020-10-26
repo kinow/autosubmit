@@ -519,7 +519,7 @@ class Job(object):
         platforms_to_test = set()
         if self.platform_name is None:
             self.platform_name = hpcarch
-        self.platform = submitter.platforms[self.platform_name.lower()]
+        #self.platform = submitter.platforms[self.platform_name.lower()]
 
         self._platform = submitter.platforms[self.platform_name.lower()]
         try:
