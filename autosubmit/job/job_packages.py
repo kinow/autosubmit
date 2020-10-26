@@ -46,7 +46,7 @@ class JobPackageBase(object):
         self.hold = False
         try:
             self._tmp_path = jobs[0]._tmp_path
-            self._platform = jobs[0].platform
+            self._platform = jobs[0]._platform
             self._custom_directives = set()
             for job in jobs:
                 if job._platform.name != self._platform.name or job._platform is None:
