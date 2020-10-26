@@ -215,7 +215,7 @@ class PythonWrapperBuilder(WrapperBuilder):
                 idx += 1
                 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
-        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -355,10 +355,6 @@ class PythonWrapperBuilder(WrapperBuilder):
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-        parallel_threads_launcher += self._indent(textwrap.dedent("""
-        #if Failed:
-            #{0}
-                """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
@@ -395,10 +391,7 @@ class PythonWrapperBuilder(WrapperBuilder):
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-        parallel_threads_launcher += self._indent(textwrap.dedent("""
-        #if Failed:
-            #{0}
-                """).format(self.exit_thread, '\n'.ljust(13)), 4)
+
         return parallel_threads_launcher
     def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
@@ -435,10 +428,7 @@ class PythonWrapperBuilder(WrapperBuilder):
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-        parallel_threads_launcher += self._indent(textwrap.dedent("""
-        #if Failed:
-            #{0}
-                """).format(self.exit_thread, '\n'.ljust(13)), 4)
+
         return parallel_threads_launcher
     # all should override -> abstract!
     def build_main(self):
@@ -532,10 +522,6 @@ class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
             open(failed_path, 'w').close()
             print datetime.now(), "The job ", pid.template," has FAILED"
                     """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-        parallel_threads_launcher += self._indent(textwrap.dedent("""
-        #if Failed:
-            #{0}
-                """).format(self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_joblist_thread(self):
         return textwrap.dedent("""
@@ -681,7 +667,7 @@ class SrunWrapperBuilder(WrapperBuilder):
                 idx += 1
                 processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
 
-        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
