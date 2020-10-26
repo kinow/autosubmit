@@ -199,23 +199,20 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_cores_list(self):
         return textwrap.dedent("""
-        total_cores = {0}
-        jobs_resources = {1}
-
+total_cores = {0}
+jobs_resources = {1}
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+idx = 0
+all_cores = []
+while total_cores > 0:
+    if processors_per_node > 0:
+        processors_per_node -= 1
+        total_cores -= 1
+        all_cores.append(all_nodes[idx])
+    else:
+        idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        idx = 0
-        all_cores = []
-        while total_cores > 0:
-            if processors_per_node > 0:
-                processors_per_node -= 1
-                total_cores -= 1
-                all_cores.append(all_nodes[idx])
-            else:
-                idx += 1
-                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -226,28 +223,26 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_machinefiles_standard(self):
         return textwrap.dedent("""
-        machines = str()
-
-        cores = int(jobs_resources[section]['PROCESSORS'])
-        tasks = int(jobs_resources[section]['TASKS'])
-        nodes = int(ceil(int(cores)/float(tasks)))
-        if tasks < processors_per_node:
-            cores = tasks
-       
-        job_cores = cores
-        while nodes > 0:
-            while cores > 0:
-                if len(all_cores) > 0:
-                    node = all_cores.pop(0)
-                    if node:
-                        machines += node +"_NEWLINE_"
-                        cores -= 1
-            for rest in range(processors_per_node-tasks):
-                if len(all_cores) > 0:
-                    all_cores.pop(0)
-            nodes -= 1
+            machines = str()
+            cores = int(jobs_resources[section]['PROCESSORS'])
+            tasks = int(jobs_resources[section]['TASKS'])
+            nodes = int(ceil(int(cores)/float(tasks)))
             if tasks < processors_per_node:
-                cores = job_cores
+                cores = tasks
+            job_cores = cores
+            while nodes > 0:
+                while cores > 0:
+                    if len(all_cores) > 0:
+                        node = all_cores.pop(0)
+                        if node:
+                            machines += node +"_NEWLINE_"
+                            cores -= 1
+                for rest in range(processors_per_node-tasks):
+                    if len(all_cores) > 0:
+                        all_cores.pop(0)
+                nodes -= 1
+                if tasks < processors_per_node:
+                    cores = job_cores
         """).format('\n'.ljust(13))
 
     def _create_components_dict(self):
@@ -323,23 +318,20 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_parallel_threads_launcher(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
-
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
-
-            {2}
-            current = {1}({0}[i], i+self.id_run)
-            pid_list.append(current)
-            current.start()
-
-    # Waiting until all scripts finish
-    for i in range(len(pid_list)):
-        pid = pid_list[i]
-        pid.join()
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i+self.id_run)
+    pid_list.append(current)
+    current.start()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
@@ -358,23 +350,22 @@ class PythonWrapperBuilder(WrapperBuilder):
         return parallel_threads_launcher
     def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i)
-            pid_list.append(current)
-            current.start()
-
-    # Waiting until all scripts finish
-    for i in range(len(pid_list)):
-        pid = pid_list[i]
-        pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
@@ -395,23 +386,22 @@ class PythonWrapperBuilder(WrapperBuilder):
         return parallel_threads_launcher
     def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i)
-            pid_list.append(current)
-            current.start()
-
-    # Waiting until all scripts finish
-    for i in range(len(pid_list)):
-        pid = pid_list[i]
-        pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
@@ -490,23 +480,22 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
 class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
     def build_parallel_threads_launcher_horizontal_vertical(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i+self.id_run)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i+self.id_run)
-            pid_list.append(current)
-            current.start()
-
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
@@ -651,23 +640,20 @@ class SrunWrapperBuilder(WrapperBuilder):
 
     def build_cores_list(self):
         return textwrap.dedent("""
-        total_cores = {0}
-        jobs_resources = {1}
-
+total_cores = {0}
+jobs_resources = {1}
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+idx = 0
+all_cores = []
+while total_cores > 0:
+    if processors_per_node > 0:
+        processors_per_node -= 1
+        total_cores -= 1
+        all_cores.append(all_nodes[idx])
+    else:
+        idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        idx = 0
-        all_cores = []
-        while total_cores > 0:
-            if processors_per_node > 0:
-                processors_per_node -= 1
-                total_cores -= 1
-                all_cores.append(all_nodes[idx])
-            else:
-                idx += 1
-                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-            processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -678,28 +664,26 @@ class SrunWrapperBuilder(WrapperBuilder):
 
     def build_machinefiles_standard(self):
         return textwrap.dedent("""
-        machines = str()
-
-        cores = int(jobs_resources[section]['PROCESSORS'])
-        tasks = int(jobs_resources[section]['TASKS'])
-        nodes = int(ceil(int(cores)/float(tasks)))
-        if tasks < processors_per_node:
-            cores = tasks
-
-        job_cores = cores
-        while nodes > 0:
-            while cores > 0:
-                if len(all_cores) > 0:
-                    node = all_cores.pop(0)
-                    if node:
-                        machines += node +"_NEWLINE_"
-                        cores -= 1
-            for rest in range(processors_per_node-tasks):
-                if len(all_cores) > 0:
-                    all_cores.pop(0)
-            nodes -= 1
+            machines = str()
+            cores = int(jobs_resources[section]['PROCESSORS'])
+            tasks = int(jobs_resources[section]['TASKS'])
+            nodes = int(ceil(int(cores)/float(tasks)))
             if tasks < processors_per_node:
-                cores = job_cores
+                cores = tasks
+            job_cores = cores
+            while nodes > 0:
+                while cores > 0:
+                    if len(all_cores) > 0:
+                        node = all_cores.pop(0)
+                        if node:
+                            machines += node +"_NEWLINE_"
+                            cores -= 1
+                for rest in range(processors_per_node-tasks):
+                    if len(all_cores) > 0:
+                        all_cores.pop(0)
+                nodes -= 1
+                if tasks < processors_per_node:
+                    cores = job_cores
         """).format('\n'.ljust(13))
 
     def _create_components_dict(self):
