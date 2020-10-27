@@ -41,7 +41,7 @@ class TestJobPackage(TestCase):
         self.assertEquals(self.jobs, self.job_package.jobs)
 
     def test_job_package_platform_getter(self):
-        self.assertEquals(self._platform.serial_platform, self.job_package.platform)
+        self.assertEquals(self.platform.serial_platform, self.job_package.platform)
 
     def test_job_package_submission(self):
         # arrange
