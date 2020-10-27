@@ -536,11 +536,11 @@ class Job(object):
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
-                    out_exist = self.platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                    out_exist = self._platform.check_file_exists(remote_logs[0])  # will do 5 retries
                 except IOError as e:
                     out_exist = False
                 try:
-                    err_exist = self.platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                    err_exist = self._platform.check_file_exists(remote_logs[1])  # will do 5 retries
                 except IOError as e:
                     err_exists = False
                 if not out_exist or not err_exist:
@@ -553,7 +553,7 @@ class Job(object):
             if copy_remote_logs:
                 if local_logs != remote_logs:
                     # unifying names for log files
-                    self.synchronize_logs(self.platform, remote_logs, local_logs)
+                    self.synchronize_logs(self._platform, remote_logs, local_logs)
                     remote_logs = local_logs
                 self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
@@ -1195,12 +1195,12 @@ class WrapperJob(Job):
             if len(self.inner_jobs_running) > 0:
                 still_running = True
                 if not self.failed:
-                    if self.platform.check_file_exists('WRAPPER_FAILED', wrapper_failed=True):
+                    if self._platform.check_file_exists('WRAPPER_FAILED', wrapper_failed=True):
                         for job in self.inner_jobs_running:
                             if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
                                 Log.info("Wrapper {0} Failed, checking inner_jobs...".format(self.name))
                                 self.failed = True
-                                self.platform.delete_file('WRAPPER_FAILED')
+                                self._platform.delete_file('WRAPPER_FAILED')
                                 break
 
                 if self.failed:
