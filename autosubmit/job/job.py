@@ -519,16 +519,14 @@ class Job(object):
         platforms_to_test = set()
         if self.platform_name is None:
             self.platform_name = hpcarch
-        #self.platform = submitter.platforms[self.platform_name.lower()]
-
-        self._platform = submitter.platforms[self.platform_name.lower()]
+        self._platform = submitter.platforms[self.platform_name.lower()] # serial
         try:
             self._platform.restore_connection()
         except Exception as e:
             Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
         out_exist = False
         err_exist = False
-        retries = 20
+        retries = 5
         sleeptime = 0
         i = 0
         sleep(20)

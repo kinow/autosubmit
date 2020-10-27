@@ -421,7 +421,7 @@ class SlurmPlatform(ParamikoPlatform):
                     retries = 9999
             except BaseException as e:  # Unrecoverable error
                 Log.critical(
-                    "Crashed while retrieving remote logs", 6001, e.message)
+                    "remote logs {0} couldn't be recovered".format(filename), 6001, e.message)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 
