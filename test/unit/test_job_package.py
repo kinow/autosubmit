@@ -12,10 +12,10 @@ from autosubmit.job.job_common import Status
 class TestJobPackage(TestCase):
 
     def setUp(self):
-        self._platform = Mock()
+        self.platform = Mock()
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
-        self.jobs[0]._platform = self.jobs[1]._platform = self._platform
+        self.jobs[0]._platform = self.jobs[1]._platform = self.platform
         self.job_package = JobPackageSimple(self.jobs)
 
     def test_job_package_default_init(self):

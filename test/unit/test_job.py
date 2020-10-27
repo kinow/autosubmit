@@ -31,7 +31,7 @@ class TestJob(TestCase):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
         platform.serial_platform = 'serial-platform'
 
-        self.job.platform = platform
+        self.job._platform = platform
         self.job.processors = 999
 
         returned_platform = self.job.platform
@@ -42,8 +42,8 @@ class TestJob(TestCase):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
         platform.serial_platform = 'serial-platform'
 
-        self.job.platform = platform
-        self.job.processors = '1'
+        self.job._platform = platform
+        self.job.processors = 1
 
         returned_platform = self.job.platform
 
@@ -89,7 +89,7 @@ class TestJob(TestCase):
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
 
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
         self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)
@@ -265,7 +265,7 @@ class TestJob(TestCase):
         dummy_platform = Mock()
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.custom_directives = '["whatever"]'
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
         # Act
         parameters = self.job.update_parameters(as_conf, dict())
         # Assert
