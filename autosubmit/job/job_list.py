@@ -647,7 +647,7 @@ class JobList:
         :rtype: list
         """
 
-        completed_jobs = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
+        completed_jobs = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
                           job.status == Status.COMPLETED]
         if wrapper:
             return [job for job in completed_jobs if job.packed is False]
@@ -829,7 +829,7 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        waiting_jobs = [job for job in self._job_list if (job._platform.type == platform_type and job.status == Status.WAITING)]
+        waiting_jobs = [job for job in self._job_list if (job.platform.type == platform_type and job.status == Status.WAITING)]
         return waiting_jobs
 
     def get_held_jobs(self, platform=None):
@@ -841,7 +841,7 @@ class JobList:
         :return: jobs in platforms
         :rtype: list
         """
-        return [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
+        return [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
                 job.status == Status.HELD]
 
     def get_unknown(self, platform=None, wrapper=False):
@@ -853,7 +853,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        submitted = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
+        submitted = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
                      job.status == Status.UNKNOWN]
         if wrapper:
             return [job for job in submitted if job.packed is False]
@@ -869,7 +869,7 @@ class JobList:
         :return: unknown state jobs
         :rtype: list
         """
-        suspended = [job for job in self._job_list if (platform is None or job._platform.name == platform.name) and
+        suspended = [job for job in self._job_list if (platform is None or job.platform.name == platform.name) and
                      job.status == Status.SUSPENDED]
         if wrapper:
             return [job for job in suspended if job.packed is False]
@@ -968,7 +968,7 @@ class JobList:
     def get_in_ready_grouped_id(self, platform):
         jobs = []
         [jobs.append(job) for job in jobs if (
-            platform is None or job._platform.name is platform.name)]
+            platform is None or job.platform.name is platform.name)]
 
         jobs_by_id = dict()
         for job in jobs:
@@ -1073,7 +1073,7 @@ class JobList:
                 queue = "no-scheduler"
             else:
                 queue = job.queue
-            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job._platform.name,queue)
+            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job.platform.name,queue)
 
 
     def update_from_file(self, store_change=True):
@@ -1143,8 +1143,8 @@ class JobList:
                     if submitter is not None:
                         job.platform = submitter.platforms[job.platform_name.lower()]
                         job.platform.test_connection()
-                        job._platform = submitter.platforms[job.platform_name.lower()]
-                        job._platform.test_connection()
+                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        job.platform.test_connection()
 
                     job.id = None
 

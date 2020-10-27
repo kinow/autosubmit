@@ -475,7 +475,7 @@ class ParamikoPlatform(Platform):
                     elif reason == '(JobHeldAdmin)': #This shouldn't happen anymore TODO delete
                         Log.debug("Job {0} Failed to be HELD, canceling... ", job.name)
                         job.new_status = Status.WAITING
-                        job._platform.send_command(job._platform.cancel_cmd + " {0}".format(job.id))
+                        job.platform.send_command(job.platform.cancel_cmd + " {0}".format(job.id))
 
         else:
             for job in job_list:

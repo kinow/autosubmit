@@ -1144,10 +1144,10 @@ class Autosubmit:
                 job.platform_name = hpcarch
             # Assign platform objects to each job
             # noinspection PyTypeChecker
-            job._platform = submitter.platforms[job.platform_name.lower()]
+            job.platform = submitter.platforms[job.platform_name.lower()]
             # Add object to set
             # noinspection PyTypeChecker
-            platforms_to_test.add(job._platform)
+            platforms_to_test.add(job.platform)
         # case setstatus
         job_list.check_scripts(as_conf)
         job_list.update_list(as_conf, False)
@@ -1268,10 +1268,10 @@ class Autosubmit:
                         if job.platform_name is None:
                             job.platform_name = hpcarch
                         # noinspection PyTypeChecker
-                        job._platform = submitter.platforms[job.platform_name.lower(
+                        job.platform = submitter.platforms[job.platform_name.lower(
                         )]
                         # noinspection PyTypeChecker
-                        platforms_to_test.add(job._platform)
+                        platforms_to_test.add(job.platform)
                     try:
                         job_list.check_scripts(as_conf)
                     except Exception as e:
@@ -1508,7 +1508,7 @@ class Autosubmit:
                             for job in job_list.get_job_list():
                                 if job.platform_name is None:
                                     job.platform_name = hpcarch
-                                job._platform = submitter.platforms[job.platform_name.lower()]
+                                job.platform = submitter.platforms[job.platform_name.lower()]
 
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
@@ -1543,10 +1543,10 @@ class Autosubmit:
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
                                     # noinspection PyTypeChecker
-                                    job._platform = submitter.platforms[job.platform_name.lower(
+                                    job.platform = submitter.platforms[job.platform_name.lower(
                                     )]
                                     # noinspection PyTypeChecker
-                                    platforms_to_test.add(job._platform)
+                                    platforms_to_test.add(job.platform)
                             except BaseException:
                                 raise AutosubmitCritical(
                                     "Autosubmit couldn't recover the platforms", 7050, e.message)
@@ -2098,7 +2098,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job._platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name.lower()])
         # establish the connection to all platforms
@@ -2115,9 +2115,9 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job._platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name.lower()]
 
-            if job._platform.get_completed_files(job.name, 0, True):
+            if job.platform.get_completed_files(job.name, 0, True):
                 job.status = Status.COMPLETED
                 Log.info(
                     "CHANGED job '{0}' status to COMPLETED".format(job.name))
@@ -2125,7 +2125,7 @@ class Autosubmit:
 
                 if not no_recover_logs:
                     try:
-                        job._platform.get_logs_files(expid, job.remote_logs)
+                        job.platform.get_logs_files(expid, job.remote_logs)
                     except:
                         pass
             elif job.status != Status.SUSPENDED:
@@ -2443,7 +2443,7 @@ class Autosubmit:
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpc_architecture
-            job._platform = submitter.platforms[job.platform_name.lower()]
+            job.platform = submitter.platforms[job.platform_name.lower()]
             job.update_parameters(as_conf, job_list.parameters)
 
         return job_list.check_scripts(as_conf)
@@ -3323,15 +3323,15 @@ class Autosubmit:
         if (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED):
             job.hold = False
             if job.platform_name is not None and job.platform_name.lower() != "local":
-                job._platform.send_command(
-                    job._platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+                job.platform.send_command(
+                    job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
         elif (job.status == Status.QUEUING or job.status == Status.RUNNING or job.status == Status.SUBMITTED) and save and (final_status == Status.SUSPENDED):
             if job.platform_name is not None and job.platform_name.lower() != "local":
-                job._platform.send_command(
+                job.platform.send_command(
                     "scontrol hold " + "{0}".format(job.id), ignore_log=True)
         elif (final_status == Status.QUEUING or final_status == Status.RUNNING) and save and (job.status == Status.SUSPENDED):
             if job.platform_name is not None and job.platform_name.lower() != "local":
-                job._platform.send_command(
+                job.platform.send_command(
                     "scontrol release " + "{0}".format(job.id), ignore_log=True)
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
@@ -3433,7 +3433,7 @@ class Autosubmit:
                     if job.platform_name is None:
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
-                    job._platform = submitter.platforms[job.platform_name.lower(
+                    job.platform = submitter.platforms[job.platform_name.lower(
                     )]
                 platforms_to_test = set()
                 platforms = submitter.platforms
@@ -3442,7 +3442,7 @@ class Autosubmit:
                     if job.platform_name is None:
                         job.platform_name = hpcarch
                     # noinspection PyTypeChecker
-                    job._platform = platforms[job.platform_name.lower()]
+                    job.platform = platforms[job.platform_name.lower()]
                     # noinspection PyTypeChecker
                     platforms_to_test.add(platforms[job.platform_name.lower()])
                 # establish the connection to all platforms
@@ -4333,7 +4333,7 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job._platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name.lower()]
             # noinspection PyTypeChecker
             platforms_to_test.add(platforms[job.platform_name.lower()])
         rerun_names = []
@@ -4348,12 +4348,12 @@ class Autosubmit:
             if job.platform_name is None:
                 job.platform_name = hpcarch
             # noinspection PyTypeChecker
-            job._platform = platforms[job.platform_name.lower()]
+            job.platform = platforms[job.platform_name.lower()]
 
-            if job._platform.get_completed_files(job.name, 0):
+            if job.platform.get_completed_files(job.name, 0):
                 job.status = Status.COMPLETED
                 Log.info(
                     "CHANGED job '{0}' status to COMPLETED".format(job.name))
 
-            job._platform.get_logs_files(expid, job.remote_logs)
+            job.platform.get_logs_files(expid, job.remote_logs)
         return job_list

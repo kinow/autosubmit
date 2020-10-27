@@ -31,10 +31,10 @@ class TestJob(TestCase):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
         platform.serial_platform = 'serial-platform'
 
-        self.job._platform = platform
+        self.job.platform = platform
         self.job.processors = 999
 
-        returned_platform = self.job._platform
+        returned_platform = self.job.platform
 
         self.assertEquals(platform, returned_platform)
 
@@ -42,20 +42,20 @@ class TestJob(TestCase):
         platform = Platform(self.experiment_id, 'parallel-platform', FakeBasicConfig)
         platform.serial_platform = 'serial-platform'
 
-        self.job._platform = platform
+        self.job.platform = platform
         self.job.processors = '1'
 
-        returned_platform = self.job._platform
+        returned_platform = self.job.platform
 
         self.assertEquals('serial-platform', returned_platform)
 
     def test_set_platform(self):
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
-        self.assertNotEquals(dummy_platform, self.job._platform)
+        self.assertNotEquals(dummy_platform, self.job.platform)
 
-        self.job._platform = dummy_platform
+        self.job.platform = dummy_platform
 
-        self.assertEquals(dummy_platform, self.job._platform)
+        self.assertEquals(dummy_platform, self.job.platform)
 
     def test_when_the_job_has_a_queue_returns_that_queue(self):
         dummy_queue = 'whatever'
@@ -69,7 +69,7 @@ class TestJob(TestCase):
         dummy_queue = 'whatever-parallel'
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
         dummy_platform.queue = dummy_queue
-        self.job._platform = dummy_platform
+        self.job.platform = dummy_platform
 
         self.assertIsNone(self.job._queue)
 
@@ -89,7 +89,7 @@ class TestJob(TestCase):
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
 
-        self.job._platform = dummy_platform
+        self.job.platform = dummy_platform
         self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)
@@ -265,7 +265,7 @@ class TestJob(TestCase):
         dummy_platform = Mock()
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.custom_directives = '["whatever"]'
-        self.job._platform = dummy_platform
+        self.job.platform = dummy_platform
         # Act
         parameters = self.job.update_parameters(as_conf, dict())
         # Assert
