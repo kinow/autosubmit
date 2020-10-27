@@ -75,7 +75,7 @@ class JobPackageBase(object):
         :return: platform
         :rtype: Platform
         """
-        return self.platform
+        return self._platform
 
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
