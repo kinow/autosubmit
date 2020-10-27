@@ -12,7 +12,7 @@ from autosubmit.job.job_common import Status
 class TestJobPackage(TestCase):
 
     def setUp(self):
-        self._platform = Mock()
+        self.platform = Mock()
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
         self.jobs[0]._platform = self.jobs[1]._platform = self._platform
@@ -41,7 +41,7 @@ class TestJobPackage(TestCase):
         self.assertEquals(self.jobs, self.job_package.jobs)
 
     def test_job_package_platform_getter(self):
-        self.assertEquals(self._platform.serial_platform, self.job_package.platform)
+        self.assertEquals(self.platform.serial_platform, self.job_package.platform)
 
     def test_job_package_submission(self):
         # arrange

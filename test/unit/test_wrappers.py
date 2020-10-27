@@ -151,13 +151,13 @@ class TestWrappers(TestCase):
     def setUp(self):
         self.experiment_id = 'random-id'
         self.config = FakeBasicConfig
-        self._platform = Mock()
+        self.platform = Mock()
         self.job_list = JobList(self.experiment_id, self.config, ConfigParserFactory(),
                                 JobListPersistenceDb('.', '.'))
         self.parser_mock = Mock(spec='SafeConfigParser')
 
-        self._platform.max_waiting_jobs = 100
-        self._platform.total_jobs = 100
+        self.platform.max_waiting_jobs = 100
+        self.platform.total_jobs = 100
         self.config.get_wrapper_type = Mock(return_value='vertical')
         self.config.get_wrapper_crossdate = Mock(return_value=False)
         self.config.get_remote_dependencies = Mock(return_value=False)
@@ -167,7 +167,7 @@ class TestWrappers(TestCase):
         self.config.get_wrapper_policy = Mock(return_value='flexible')
 
         self.job_packager = JobPackager(
-            self.config, self._platform, self.job_list)
+            self.config, self.platform, self.job_list)
 
     ### ONE SECTION WRAPPER ###
     def test_returned_packages(self):
@@ -1311,7 +1311,7 @@ class TestWrappers(TestCase):
         job.packed = False
         job.hold = False
         job.wallclock = total_wallclock
-        job._platform = self._platform
+        job._platform = self.platform
 
         job.date = date
         job.member = member
