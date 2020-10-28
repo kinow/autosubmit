@@ -1627,8 +1627,9 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             if not hold:
-                Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+                Log.info("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
                 ready_jobs = job_list.get_ready(platform, hold=hold)
+                pass
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
