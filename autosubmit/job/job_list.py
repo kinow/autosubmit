@@ -37,9 +37,11 @@ import autosubmit.database.db_structure as DbStructure
 
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
-from log.log import AutosubmitCritical,AutosubmitError,Log
-#Log.get_logger("Log.Autosubmit")
-class JobList:
+from log.log import AutosubmitCritical, AutosubmitError, Log
+# Log.get_logger("Log.Autosubmit")
+
+
+class JobList(object):
     """
     Class to manage the list of jobs to be run by autosubmit
 
@@ -52,6 +54,7 @@ class JobList:
         self._failed_file = "failed_job_list_" + expid + ".pkl"
         self._persistence_file = "job_list_" + expid
         self._job_list = list()
+        self._base_job_list = list()
         self._expid = expid
         self._config = config
         self._parser_factory = parser_factory
@@ -70,6 +73,7 @@ class JobList:
         self.packages_id = dict()
         self.job_package_map = dict()
         self.sections_checked = set()
+        self._run_members = None
 
     @property
     def expid(self):
@@ -94,6 +98,27 @@ class JobList:
     @graph.setter
     def graph(self, value):
         self._graph = value
+
+    @property
+    def run_members(self):
+        return self._run_members
+
+    @run_members.setter
+    def run_members(self, value):
+        if value is not None:
+            self._run_members = value
+            self._base_job_list = [job for job in self._job_list]
+            old_job_list = [job for job in self._job_list]
+            self._job_list = [
+                job for job in old_job_list if job.member is None or job.member in self._run_members or job.status not in [Status.WAITING, Status.READY]]
+            old_job_list = [job for job in self._job_list]
+            old_job_list_names = [job.name for job in old_job_list]
+            self._job_list = [job for job in old_job_list if len(
+                job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
+            # for job in self._job_list:
+            #     print("{0} {1}".format(
+            #         job.name, Status.VALUE_TO_KEY[job.status]))
+            # print(job.parents)
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
                  default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False):
@@ -172,7 +197,8 @@ class JobList:
             if not jobs_parser.has_option(job_section, option):
                 continue
 
-            dependencies_keys = jobs_parser.get(job_section, option).upper().split()
+            dependencies_keys = jobs_parser.get(
+                job_section, option).upper().split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, dic_jobs, job_section)
 
@@ -829,7 +855,8 @@ class JobList:
         :return: waiting jobs
         :rtype: list
         """
-        waiting_jobs = [job for job in self._job_list if (job.platform.type == platform_type and job.status == Status.WAITING)]
+        waiting_jobs = [job for job in self._job_list if (
+            job.platform.type == platform_type and job.status == Status.WAITING)]
         return waiting_jobs
 
     def get_held_jobs(self, platform=None):
@@ -939,7 +966,8 @@ class JobList:
                Status.SUBMITTED and not job.status == Status.READY]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
             if len(tmp) != 0 and len(active) != 0:
-                raise AutosubmitCritical("Only Held Jobs active. Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)",7066)
+                raise AutosubmitCritical(
+                    "Only Held Jobs active. Exiting Autosubmit (TIP: This can happen if suspended or/and Failed jobs are found on the workflow)", 7066)
             active = []
         return active
 
@@ -1030,7 +1058,8 @@ class JobList:
             else:
                 return list()
         except IOError:
-            Log.printlog("Autosubmit will use a backup for recover the job_list",6010)
+            Log.printlog(
+                "Autosubmit will use a backup for recover the job_list", 6010)
             return list()
 
     def load(self):
@@ -1042,6 +1071,7 @@ class JobList:
         """
         Log.info("Loading JobList")
         return self._persistence.load(self._persistence_path, self._persistence_file)
+
     def backup_load(self):
         """
         Recreates an stored job list from the persistence
@@ -1050,31 +1080,43 @@ class JobList:
         :rtype: JobList
         """
         Log.info("Loading backup JobList")
-        return self._persistence.load(self._persistence_path, self._persistence_file+"_backup")
+        return self._persistence.load(self._persistence_path, self._persistence_file + "_backup")
+
     def save(self):
         """
         Persists the job list
         """
+        job_list = None
+        if self.run_members is not None:
+            job_names = [job.name for job in self._job_list]
+            job_list = [job for job in self._job_list]
+            for job in self._base_job_list:
+                if job.name not in job_names:
+                    job_list.append(job)
         self.update_status_log()
-        self._persistence.save(self._persistence_path,self._persistence_file, self._job_list)
+        self._persistence.save(self._persistence_path,
+                               self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+
     def backup_save(self):
         """
         Persists the job list
         """
         self._persistence.save(self._persistence_path,
-                               self._persistence_file+"_backup", self._job_list)
+                               self._persistence_file + "_backup", self._job_list)
+
     def update_status_log(self):
 
         job_list = self.get_completed()[-5:] + self.get_in_queue()
 
-        Log.status("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name", "Job Id", "Job Status", "Job Platform", "Job Queue")
+        Log.status("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name",
+                   "Job Id", "Job Status", "Job Platform", "Job Queue")
         for job in job_list:
             if len(job.queue) < 1:
                 queue = "no-scheduler"
             else:
                 queue = job.queue
-            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status().VALUE_TO_KEY[job.status],job.platform.name,queue)
-
+            Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status(
+            ).VALUE_TO_KEY[job.status], job.platform.name, queue)
 
     def update_from_file(self, store_change=True):
         """
@@ -1180,7 +1222,8 @@ class JobList:
         if not fromSetStatus:
             all_parents_completed = []
             for job in self.get_waiting():
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [
+                    parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1351,7 +1394,8 @@ class JobList:
         if out:
             Log.result("Scripts OK")
         else:
-            Log.printlog("Scripts check failed\n Running after failed scripts is at your own risk!",3000)
+            Log.printlog(
+                "Scripts check failed\n Running after failed scripts is at your own risk!", 3000)
         return out
 
     def _remove_job(self, job):

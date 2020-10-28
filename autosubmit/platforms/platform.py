@@ -1,6 +1,7 @@
 import os
 
 from log.log import Log
+import traceback
 from autosubmit.job.job_common import Status
 
 
@@ -19,7 +20,8 @@ class Platform(object):
         self.expid = expid
         self.name = name
         self.config = config
-        self.tmp_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
+        self.tmp_path = os.path.join(
+            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR)
         self._serial_platform = None
         self._serial_queue = None
         self._default_queue = None
@@ -204,7 +206,8 @@ class Platform(object):
         :type remote_logs: (str, str)
         """
         (job_out_filename, job_err_filename) = remote_logs
-        self.get_files([job_out_filename, job_err_filename], False, 'LOG_{0}'.format(exp_id))
+        self.get_files([job_out_filename, job_err_filename],
+                       False, 'LOG_{0}'.format(exp_id))
 
     def get_completed_files(self, job_name, retries=0, recovery=False,wrapper_failed=False):
         """
@@ -276,7 +279,8 @@ class Platform(object):
         :rtype: bool
         """
         filename = job_name + '_STAT'
-        stat_local_path = os.path.join(self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
+        stat_local_path = os.path.join(
+            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
         if os.path.exists(stat_local_path):
             os.remove(stat_local_path)
         if self.check_file_exists(filename):
@@ -294,7 +298,8 @@ class Platform(object):
         :rtype: str
         """
         if self.type == "local":
-            path = os.path.join(self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
+            path = os.path.join(
+                self.root_dir, self.config.LOCAL_TMP_DIR, 'LOG_{0}'.format(self.expid))
         else:
             path = os.path.join(self.root_dir, 'LOG_{0}'.format(self.expid))
         return path
@@ -363,3 +368,29 @@ class Platform(object):
         except Exception as ex:
             Log.error("Writing Job Id Failed : " + str(ex))
 
+    def write_job_extrainfo(self, job_hdata, complete_path):
+        """[summary]
+
+        :param job_hdata: job extra data 
+        :type job_hdata: str 
+        :param complete_path: complete path to the file, includes filename 
+        :type complete_path: str 
+        :return: Modifies file and returns True, False if file could not be modified 
+        :rtype: Boolean 
+        """
+        try:
+            # footer = "extra_data = {0}".format()
+            # print("Complete path {0}".format(complete_path))
+            if os.path.exists(complete_path):
+                file_type = complete_path[-3:]
+                # print("Detected file type {0}".format(file_type))
+                if file_type == "out" or file_type == "err":
+                    with open(complete_path, "a") as f:
+                        job_footer_info = "[INFO] HDATA={0}".format(job_hdata)
+                        f.write(job_footer_info)
+                        f.close()
+        except Exception as ex:
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit has not written extra information into the .out log.")
+            pass

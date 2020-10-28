@@ -27,16 +27,17 @@ import traceback
 import sqlite3
 import copy
 import collections
-from datetime import datetime
-from json import dumps
+from datetime import datetime, timedelta
+from json import dumps, loads
 #from networkx import DiGraph
 from autosubmit.config.basicConfig import BasicConfig
-from autosubmit.job.job_common import Status
+from autosubmit.job.job_common import Status, parse_output_number
 from autosubmit.job.job_package_persistence import JobPackagePersistence
 from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_date, chunk_start_date, subs_dates
 from log.log import Log, AutosubmitCritical, AutosubmitError
 
-CURRENT_DB_VERSION = 12  # Used to be 10
+CURRENT_DB_VERSION = 14  # Used to be 10
+EXPERIMENT_HEADER_CHANGES_DB_VERSION = 14
 # Defining RowType standard
 
 
@@ -50,7 +51,7 @@ JobItem = collections.namedtuple('JobItem', ['id', 'counter', 'job_name', 'creat
                                              'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 'chunk', 'last', 'platform', 'job_id', 'extra_data', 'nnodes', 'run_id'])
 
 ExperimentRunItem = collections.namedtuple('ExperimentRunItem', [
-                                           'run_id', 'created', 'start', 'finish', 'chunk_unit', 'chunk_size', 'completed', 'total', 'failed', 'queuing', 'running', 'submitted'])
+                                           'run_id', 'created', 'start', 'finish', 'chunk_unit', 'chunk_size', 'completed', 'total', 'failed', 'queuing', 'running', 'submitted', 'suspended', 'metadata'])
 
 ExperimentRow = collections.namedtuple(
     'ExperimentRow', ['exp_id', 'expid', 'status', 'seconds'])
@@ -58,7 +59,7 @@ ExperimentRow = collections.namedtuple(
 
 class ExperimentRun():
 
-    def __init__(self, run_id, created=None, start=0, finish=0, chunk_unit="NA", chunk_size=0, completed=0, total=0, failed=0, queuing=0, running=0, submitted=0):
+    def __init__(self, run_id, created=None, start=0, finish=0, chunk_unit="NA", chunk_size=0, completed=0, total=0, failed=0, queuing=0, running=0, submitted=0, suspended=0, metadata=""):
         self.run_id = run_id
         self.created = created if created else datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
         self.start = start
@@ -71,6 +72,8 @@ class ExperimentRun():
         self.completed = completed
         self.failed = failed
         self.total = total
+        self.suspended = suspended
+        self.metadata = metadata
 
     def _increase_counter(self, status):
         if status == Status.FAILED:
@@ -106,7 +109,28 @@ class ExperimentRun():
             self._decrease_counter(prev_status)
 
 
-class JobData():
+class JobStepExtraData():
+    def __init__(self, key, dict_data):
+        self.key = key
+        self.ncpus = dict_data["ncpus"] if dict_data and "ncpus" in dict_data.keys(
+        ) else 0
+        self.nnodes = dict_data["nnodes"] if dict_data and "nnodes" in dict_data.keys(
+        ) else 0
+        self.submit = int(time.mktime(datetime.strptime(dict_data["submit"], "%Y-%m-%dT%H:%M:%S").timetuple())) if dict_data and "submit" in dict_data.keys(
+        ) else 0
+        self.start = int(time.mktime(datetime.strptime(dict_data["start"], "%Y-%m-%dT%H:%M:%S").timetuple())) if dict_data and "start" in dict_data.keys(
+        ) else 0
+        self.finish = int(time.mktime(datetime.strptime(dict_data["finish"], "%Y-%m-%dT%H:%M:%S").timetuple())) if dict_data and "finish" in dict_data.keys(
+        ) and dict_data["finish"] != "Unknown" else 0
+        self.energy = parse_output_number(dict_data["energy"]) if dict_data and "energy" in dict_data.keys(
+        ) else 0
+        self.maxRSS = dict_data["MaxRSS"] if dict_data and "MaxRSS" in dict_data.keys(
+        ) else 0
+        self.aveRSS = dict_data["AveRSS"] if dict_data and "AveRSS" in dict_data.keys(
+        ) else 0
+
+
+class JobData(object):
     """Job Data object
     """
 
@@ -158,9 +182,14 @@ class JobData():
         self._platform = platform if platform and len(
             platform) > 0 else "NA"
         self.job_id = job_id if job_id else 0
-        self.extra_data = dumps(extra_data)
+        try:
+            self.extra_data = loads(extra_data)
+        except Exception as exp:
+            self.extra_data = ""
+            pass
         self.nnodes = nnodes
         self.run_id = run_id
+        self.require_update = False
 
     @property
     def submit(self):
@@ -200,7 +229,102 @@ class JobData():
 
     @energy.setter
     def energy(self, energy):
-        self._energy = energy if energy else 0
+        # print("Energy {0}".format(energy))
+        if energy > 0:
+            if (energy != self._energy):
+                # print("Updating energy to {0} from {1}.".format(
+                #    energy, self._energy))
+                self.require_update = True
+            self._energy = energy if energy else 0
+
+    def delta_queue_time(self):
+        return str(timedelta(seconds=self.queuing_time()))
+
+    def delta_running_time(self):
+        return str(timedelta(seconds=self.running_time()))
+
+    def submit_datetime(self):
+        if self.submit > 0:
+            return datetime.fromtimestamp(self.submit)
+        return None
+
+    def start_datetime(self):
+        if self.start > 0:
+            return datetime.fromtimestamp(self.start)
+        return None
+
+    def finish_datetime(self):
+        if self.finish > 0:
+            return datetime.fromtimestamp(self.finish)
+        return None
+
+    def submit_datetime_str(self):
+        o_datetime = self.submit_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
+    def start_datetime_str(self):
+        o_datetime = self.start_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
+    def finish_datetime_str(self):
+        o_datetime = self.finish_datetime()
+        if o_datetime:
+            return o_datetime.strftime('%Y-%m-%d-%H:%M:%S')
+        else:
+            return None
+
+    def running_time(self):
+        """Calculates the running time of the job.
+
+        Returns:
+            int: running time
+        """
+        if self.status in ["RUNNING", "COMPLETED", "FAILED"]:
+            # print("Finish: {0}".format(self.finish))
+            run = int((self.finish if self.finish >
+                       0 else time.time()) - self.start)
+            # print("RUN {0}".format(run))
+            if run > 0:
+                return run
+        return 0
+
+    def queuing_time(self):
+        """Calculates the queuing time of the job.
+
+        Returns:
+            int: queueing time
+        """
+        if self.status in ["SUBMITTED", "QUEUING", "RUNNING", "COMPLETED", "HELD", "PREPARED", "FAILED"]:
+            queue = int((self.start if self.start >
+                         0 else time.time()) - self.submit)
+            if queue > 0:
+                return queue
+        return 0
+
+    def get_hdata(self):
+        hdata = collections.OrderedDict()
+        hdata["name"] = self.job_name
+        hdata["date"] = self.date
+        hdata["section"] = self.section
+        hdata["member"] = self.member
+        hdata["chunk"] = self.chunk
+        hdata["submit"] = self.submit_datetime_str()
+        hdata["start"] = self.start_datetime_str()
+        hdata["finish"] = self.finish_datetime_str()
+        hdata["queue_time"] = self.delta_queue_time()
+        hdata["run_time"] = self.delta_running_time()
+        hdata["wallclock"] = self.wallclock
+        hdata["ncpus"] = self.ncpus
+        hdata["nnodes"] = self.nnodes
+        hdata["energy"] = self.energy
+        hdata["platform"] = self.platform
+        return dumps(hdata)
 
 
 class JobDataList():
@@ -505,9 +629,15 @@ class ExperimentStatus(MainDataBase):
             return None
 
 
+def check_if_database_exists(expid):
+    BasicConfig.read()
+    folder_path = BasicConfig.JOBDATA_DIR
+    database_path = os.path.join(folder_path, "job_data_" + str(expid) + ".db")
+
+
 class JobDataStructure(MainDataBase):
 
-    def __init__(self, expid):
+    def __init__(self, expid, check_only=False):
         """Initializes the object based on the unique identifier of the experiment.
 
         Args:
@@ -526,6 +656,10 @@ class JobDataStructure(MainDataBase):
             "ALTER TABLE job_data ADD COLUMN nnodes INTEGER NOT NULL DEFAULT 0")
         self.version_schema_changes.append(
             "ALTER TABLE job_data ADD COLUMN run_id INTEGER")
+        self.version_schema_changes.append(
+            "ALTER TABLE experiment_run ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0")
+        self.version_schema_changes.append(
+            "ALTER TABLE experiment_run ADD COLUMN metadata TEXT")
         # We use rowtype to identify a packed job
         self.create_table_query = textwrap.dedent(
             '''CREATE TABLE
@@ -573,7 +707,9 @@ class JobDataStructure(MainDataBase):
             failed INTEGER NOT NULL,
             queuing INTEGER NOT NULL,
             running INTEGER NOT NULL,
-            submitted INTEGER NOT NULL
+            submitted INTEGER NOT NULL,
+            suspended INTEGER NOT NULL DEFAULT 0,
+            metadata TEXT
             );
             ''')
 
@@ -581,35 +717,50 @@ class JobDataStructure(MainDataBase):
         self.create_index_query = textwrap.dedent(''' 
             CREATE INDEX IF NOT EXISTS ID_JOB_NAME ON job_data(job_name);
             ''')
-        # print(self.database_path)
+
+        self.database_exists = True
+        self.db_version = 0
         try:
-            if not os.path.exists(self.database_path):
-                open(self.database_path, "w")
-                self.conn = self.create_connection(self.database_path)
-                self.create_table(self.create_table_header_query)
-                self.create_table(self.create_table_query)
-                self.create_index()
-                if self._set_pragma_version(CURRENT_DB_VERSION):
-                    Log.info("Database version set.")
-            else:
-                self.conn = self.create_connection(self.database_path)
-                db_version = self._select_pragma_version()
-                if db_version != CURRENT_DB_VERSION:
-                    # Update to current version
-                    Log.info("Database schema needs update.")
-                    self.update_table_schema()
-                    self.create_index()
+            if check_only == False:
+                if not os.path.exists(self.database_path):
+                    open(self.database_path, "w")
+                    self.conn = self.create_connection(self.database_path)
                     self.create_table(self.create_table_header_query)
+                    self.create_table(self.create_table_query)
+                    self.create_index()
                     if self._set_pragma_version(CURRENT_DB_VERSION):
-                        Log.info("Database version set to {0}.".format(
-                            CURRENT_DB_VERSION))
-            self.current_run_id = self.get_current_run_id()
+                        Log.info("Database version set.")
+                        self.db_version = CURRENT_DB_VERSION
+                else:
+                    self.conn = self.create_connection(self.database_path)
+                    self.db_version = self._select_pragma_version()
+                    if self.db_version != CURRENT_DB_VERSION:
+                        # Update to current version
+                        Log.info("Database schema needs update.")
+                        self.update_table_schema()
+                        self.create_index()
+                        self.create_table(self.create_table_header_query)
+                        if self._set_pragma_version(CURRENT_DB_VERSION):
+                            Log.info("Database version set to {0}.".format(
+                                CURRENT_DB_VERSION))
+                            self.db_version = CURRENT_DB_VERSION
+                self.current_run_id = self.get_current_run_id()
+            else:
+                if not os.path.exists(self.database_path):
+                    self.database_exists = False
+                else:
+                    self.conn = self.create_connection(self.database_path)
+                    self.db_version = self._select_pragma_version()
+
         except IOError as e:
             raise AutosubmitCritical("Historic Database route {0} is not accesible".format(
                 BasicConfig.JOBDATA_DIR), 7067, e.message)
         except Exception as e:
             raise AutosubmitCritical(
                 "Historic Database {0} due an database error".format(), 7067, e.message)
+
+    def is_header_ready_db_version(self):
+        return True if self.db_version >= EXPERIMENT_HEADER_CHANGES_DB_VERSION else False
 
     def determine_rowtype(self, code):
         """
@@ -637,6 +788,7 @@ class JobDataStructure(MainDataBase):
         current_run = self.get_max_id_experiment_run()
         if current_run:
             if tracking_dictionary is not None and bool(tracking_dictionary) == True:
+                # print("Changes {0}".format(tracking_dictionary))
                 if job_list and check_run == True:
                     current_date_member_completed_count = sum(
                         1 for job in job_list if job.date is not None and job.member is not None and job.status == Status.COMPLETED)
@@ -648,7 +800,7 @@ class JobDataStructure(MainDataBase):
                         self.validate_current_run(
                             job_list, chunk_unit, chunk_size, True)
                         return None
-                if job_list and check_run == False:
+                if job_list:
                     if len(tracking_dictionary.items()) > 0:
                         # Changes exist
                         completed_count = sum(
@@ -661,12 +813,16 @@ class JobDataStructure(MainDataBase):
                             1 for job in job_list if job.status == Status.SUBMITTED)
                         running_count = sum(
                             1 for job in job_list if job.status == Status.RUNNING)
+                        suspended_count = sum(
+                            1 for job in job_list if job.status == Status.SUSPENDED)
                         current_run.completed = completed_count
                         current_run.failed = failed_count
                         current_run.queuing = queue_count
                         current_run.submitted = submit_count
                         current_run.running = running_count
+                        current_run.suspended = suspended_count
                         self._update_experiment_run(current_run)
+                        return None
                 # for name, (prev_status, status) in tracking_dictionary.items():
                 #     current_run.update_counters(prev_status, status)
 
@@ -699,22 +855,30 @@ class JobDataStructure(MainDataBase):
                 1 for job in job_list if job.status == Status.SUBMITTED)
             running_count = sum(
                 1 for job in job_list if job.status == Status.RUNNING)
+            suspended_count = sum(
+                1 for job in job_list if job.status == Status.SUSPENDED)
 
             if not current_run or must_create == True:
                 new_run = ExperimentRun(0, None, 0, 0, chunk_unit, chunk_size, completed_count,
-                                        current_total, failed_count, queue_count, running_count, submit_count)
+                                        current_total, failed_count, queue_count, running_count, submit_count, suspended_count, None)
                 self.current_run_id = self._insert_experiment_run(new_run)
             else:
+                # print("Current run {0}".format(current_run.total))
+                # print("Current total {0}".format(len(job_list)))
                 if current_run.total != current_total and only_update == False:
+                    # print("Creating new run")
                     new_run = ExperimentRun(0, None, 0, 0, chunk_unit, chunk_size, completed_count,
-                                            current_total, failed_count, queue_count, running_count, submit_count)
+                                            current_total, failed_count, queue_count, running_count, submit_count, suspended_count, None)
                     self.current_run_id = self._insert_experiment_run(new_run)
                 else:
+                    # print("Updating current run")
                     current_run.completed = completed_count
                     current_run.failed = failed_count
                     current_run.queuing = queue_count
                     current_run.submitted = submit_count
+                    #  print("New suspended count {0}".format(suspended_count))
                     current_run.running = running_count
+                    current_run.suspended = suspended_count
                     current_run.total = current_total if only_update == True else current_run.total
                     current_run.finish = 0
                     self._update_experiment_run(current_run)
@@ -877,7 +1041,7 @@ class JobDataStructure(MainDataBase):
                 "Autosubmit couldn't write start time.")
             return None
 
-    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=[]):
+    def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=[], no_slurm=True, out_file_path=None):
         """Writes the finish time into the database
 
         Args:
@@ -899,29 +1063,48 @@ class JobDataStructure(MainDataBase):
             Boolean/None: True if success, None if exception.
         """
         try:
+            # Current thread:
+            BasicConfig.read()
+            # self.expid = expid
+            # self.basic_conf = BasicConfig
+            self.folder_path = BasicConfig.JOBDATA_DIR
+            self.database_path = os.path.join(
+                self.folder_path, "job_data_" + str(self.expid) + ".db")
+            self.conn = self.create_connection(self.database_path)
+
             # print("Writing finish time \t" + str(job_name) + "\t" + str(finish))
             job_data_last = self.get_job_data_last(job_name)
             # energy = 0
             is_packed = False
+            is_end_of_wrapper = False
             submit_time = start_time = finish_time = number_nodes = number_cpus = energy = 0
             extra_data = dict()
             # Updating existing row
-            if job_data_last:
+            if job_data_last and len(job_data_last) > 0:
                 job_data_last = job_data_last[0]
                 is_packed = True if job_data_last.rowtype > 1000 else False
+
                 # Call Slurm here, update times.
-                if platform_object:
+                if platform_object and no_slurm == False:
                     # print("There is platform object")
                     try:
                         if type(platform_object) is not str:
-                            if platform_object.type == "slurm":
-                                # print("Checking Slurm for " + str(job_name))
-                                submit_time, start_time, finish_time, energy, number_cpus, number_nodes, extra_data = platform_object.check_job_energy(
+                            if platform_object.type == "slurm" and job_id > 0:
+                                # Waiting 60 seconds for slurm data completion
+                                time.sleep(60)
+                                submit_time, start_time, finish_time, energy, number_cpus, number_nodes, extra_data, is_end_of_wrapper = platform_object.check_job_energy(
                                     job_id, is_packed)
+                            # Writing EXTRADATA
+                            if job_id > 0 and out_file_path is not None:
+                                if job_data_last.job_id == job_id:
+                                    # print("Writing extra info")
+                                    platform_object.write_job_extrainfo(
+                                        job_data_last.get_hdata(), out_file_path)
                     except Exception as exp:
                         Log.info(traceback.format_exc())
                         Log.warning(str(exp))
                         #energy = 0
+
                 try:
                     extra_data["parents"] = [int(item)
                                              for item in parent_id_list]
@@ -930,23 +1113,29 @@ class JobDataStructure(MainDataBase):
                         "Parent Id List couldn't be parsed to array of int. Using default values.")
                     extra_data["parents"] = parent_id_list
                     pass
-
-                job_data_last.finish = finish_time if finish_time > 0 else int(
-                    finish)
+                current_timestamp = int(time.time())
+                job_data_last.finish = current_timestamp if no_slurm == True else (
+                    job_data_last.finish if job_data_last.finish > 0 else current_timestamp)
+                # job_data_last.finish =  finish_time if finish_time > 0 and finish_time >= job_data_last.start else (
+                #     current_timestamp if no_slurm == True else job_data_last.finish)
+                #print("Job data finish time {0}".format(job_data_last.finish))
                 job_data_last.status = status
                 job_data_last.job_id = job_id
                 job_data_last.energy = energy
                 job_data_last.ncpus = number_cpus if number_cpus > 0 else job_data_last.ncpus
                 job_data_last.nnodes = number_nodes if number_nodes > 0 else job_data_last.nnodes
                 job_data_last.extra_data = dumps(
-                    extra_data) if extra_data else "NA"
+                    extra_data) if extra_data else None
                 job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-                if submit_time > 0 and start_time > 0:
+                if is_packed == False and submit_time > 0 and start_time > 0:
                     job_data_last.submit = int(submit_time)
                     job_data_last.start = int(start_time)
                     rowid = self._update_finish_job_data_plus(job_data_last)
                 else:
-                    rowid = self._update_finish_job_data(job_data_last)
+                    job_data_last.start = job_data_last.start if job_data_last.start > 0 else start_time
+                    rowid = self._update_finish_job_data_plus(job_data_last)
+                if no_slurm == False and is_end_of_wrapper == True:
+                    self.process_current_run_collection()
                 return True
             # It is necessary to create a new row
             submit_inserted = self.write_submit_time(
@@ -958,7 +1147,7 @@ class JobDataStructure(MainDataBase):
             if submit_inserted and write_inserted:
                 #print("retro finish")
                 self.write_finish_time(
-                    job_name, finish, status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object, is_packed, number_nodes)
+                    job_name, time.time(), status, ncpus, wallclock, qos, date, member, section, chunk, platform, job_id, platform_object, is_packed, parent_id_list)
             else:
                 return None
         except Exception as exp:
@@ -1007,6 +1196,218 @@ class JobDataStructure(MainDataBase):
             print(traceback.format_exc())
             Log.warning(str(exp))
             return None
+
+    def process_current_run_collection(self):
+        """Post-process for job_data.
+
+        Returns:
+            ([job_data], [warning_messaages]): job data processes, messages
+        """
+        # start_time = time.time()
+        current_job_data = None
+        # warning_messages = []
+        experiment_run = self.get_max_id_experiment_run()
+        # List of jobs from pkl -> Dictionary
+        # allJobsDict = {
+        #     job.name: Status.VALUE_TO_KEY[job.status] for job in allJobs}
+        # None if there is no experiment header
+        if experiment_run:
+            # List of last runs of jobs
+            current_job_data = self.get_current_job_data(experiment_run.run_id)
+            if not current_job_data:
+                Log.warning(
+                    "Autosubmit did not find historical database information.")
+                return None
+                # warning_messages.append(
+                #     "Critical | This version of Autosubmit does not support the database that provides the energy information.")
+            # Include only those that exist in the pkl and have the same status as in the pkl
+            # current_job_data = [job for job in current_job_data_last if job.job_name in allJobsDict.keys(
+            # ) and allJobsDict[job.job_name] == job.status] if current_job_data_last else None
+            # Start processing
+            if current_job_data:
+                # Dropping parents key
+                for job in current_job_data:
+                    job.extra_data.pop('parents', None)
+                # Internal map from name to object
+                name_to_current_job = {
+                    job.job_name: job for job in current_job_data}
+                # Unique packages where rowtype > 2
+                packages = set(
+                    job.rowtype for job in current_job_data if job.rowtype > 2)
+                # Start by processing packages
+                for package in packages:
+                    # All jobs in package
+                    jobs_in_package = [
+                        job for job in current_job_data if job.rowtype == package]
+                    # Order package by submit order
+                    jobs_in_package.sort(key=lambda x: x._id, reverse=True)
+                    # Internal list of single-purpose objects
+                    wrapper_jobs = []
+                    sum_total_energy = 0
+                    not_1_to_1 = True
+                    keys_found = False
+                    no_process = False
+                    for job_data in jobs_in_package:
+                        # If it is a wrapper job step
+                        if "energy" in job_data.extra_data.keys() and job_data.extra_data["energy"] != "NA":
+                            name_to_current_job[job_data.job_name].energy = parse_output_number(
+                                job_data.extra_data["energy"])
+                            sum_total_energy += name_to_current_job[job_data.job_name].energy
+                        else:
+                            # Identify best source
+                            description_job = max(
+                                jobs_in_package, key=lambda x: len(str(x.extra_data)))
+                            # Identify job steps
+                            keys_step = [
+                                y for y in description_job.extra_data.keys() if '.' in y and y[y.index('.') + 1:] not in ["batch", "extern"] and y != "parents"]
+                            if len(keys_step) > 0:
+                                # Steps found
+                                keys_step.sort(
+                                    key=lambda x: int(x[x.index('.') + 1:]))
+                                keys_found = True
+                                # Find all job steps
+                                for key in keys_step:
+                                    if "submit" not in description_job.extra_data[key].keys():
+                                        keys_found = False
+                                    break
+
+                                for key in keys_step:
+                                    wrapper_jobs.append(JobStepExtraData(
+                                        key, description_job.extra_data[key]))
+
+                                sum_total_energy = sum(
+                                    jobp.energy for jobp in wrapper_jobs) * 1.0
+
+                                if len(jobs_in_package) == len(wrapper_jobs) and len(wrapper_jobs) > 0:
+                                    # Approximation
+                                    not_1_to_1 = False
+                            else:
+                                # Identify main step
+                                main_step = [
+                                    y for y in description_job.extra_data.keys() if '.' not in y and y != "parents"]
+                                if len(main_step) > 0:
+                                    # Check only first one
+                                    main_step = [main_step[0]]
+                                    # If main step contains submit, its valid. Else, break, not valid,
+                                    for key in main_step:
+                                        if key not in description_job.extra_data.keys() or "submit" not in description_job.extra_data[key].keys():
+                                            keys_found = False
+                                        break
+                                    # Build wrapper jobs
+                                    for key in main_step:
+                                        wrapper_jobs.append(JobStepExtraData(
+                                            key, description_job.extra_data[key]))
+                                    # Total energy for main job
+                                    sum_total_energy = sum(
+                                        jobp.energy for jobp in wrapper_jobs) * 1.0
+
+                                else:
+                                    no_process = True
+                                    # warning_messages.append(
+                                    #     "Wrapper | Wrapper {0} does not have information to perform any energy approximation.".format(package))
+                            break
+                    # Keys do not have enough information
+                    # if keys_found == False:
+                    #     warning_messages.append(
+                    #         "Wrapper | Wrapper {0} does not have complete sacct data available.".format(package))
+                    # If it is not a 1 to 1 relationship between jobs in package and job steps
+                    if sum_total_energy > 0:
+                        if not_1_to_1 == True and no_process == False:
+                            # It is not 1 to 1, so we perform approximation
+                            # warning_messages.append(
+                            #     "Approximation | The energy results in wrapper {0} are an approximation. Total energy detected: {1}.".format(package, sum_total_energy))
+                            # Completing job information if necessary
+                            for i in range(0, len(jobs_in_package)):
+                                if jobs_in_package[i].running_time() <= 0:
+                                    # Needs to be completed
+                                    # Dropping job from package list
+                                    dropped_job = jobs_in_package.pop(i)
+                            # After completion is finished, calculate total resources to be approximated
+                            resources_total = sum(
+                                z.ncpus * z.running_time() for z in jobs_in_package) * 1.0
+                            if resources_total > 0:
+                                for job_data in jobs_in_package:
+                                    job_data_factor = (
+                                        job_data.ncpus * job_data.running_time())
+                                    # if job_data_factor <= 0:
+                                    # warning_messages.append("Approximation | Job {0} requires {1} ncpus and has {2} running time, resulting in a 0 energy approximation. This job will be ignored.".format(
+                                    #     job_data.job_name, job_data.ncpus, job_data.running_time()))
+                                    name_to_current_job[job_data.job_name].energy = round(job_data_factor /
+                                                                                          resources_total * sum_total_energy, 2)
+                            # else:
+                            #     warning_messages.append(
+                            #         "Approximation | Aproximation for wrapper {0} failed.".format(package))
+                        else:
+                            # Check if it is 1 to 1
+                            if len(jobs_in_package) > 0 and len(wrapper_jobs) > 0 and len(jobs_in_package) == len(wrapper_jobs) and no_process == False:
+                                # It is 1 to 1
+                                for i in range(0, len(jobs_in_package)):
+                                    name_to_current_job[jobs_in_package[i]
+                                                        .job_name].energy = wrapper_jobs[i].energy
+                                    name_to_current_job[jobs_in_package[i]
+                                                        .job_name].submit = wrapper_jobs[i].submit
+                                    name_to_current_job[jobs_in_package[i]
+                                                        .job_name].start = wrapper_jobs[i].start
+                                    name_to_current_job[jobs_in_package[i]
+                                                        .job_name].finish = wrapper_jobs[i].finish
+                            # else:
+                            #     warning_messages.append(
+                            #         "Approximation | Wrapper {0} did not have enough or precise information to calculate an exact mapping.".format(package))
+                    # else:
+                    #     warning_messages.append(
+                    #         "Approximation | Wrapper {0} does not have energy information, it will be ignored.".format(package))
+
+                for job_data in current_job_data:
+                    if job_data.rowtype == 2 and len(job_data.extra_data.keys()) > 0:
+                        keys = [x for x in job_data.extra_data.keys()
+                                if x != "parents" and '.' not in x]
+                        if len(keys) > 0:
+                            found_energy = job_data.extra_data[keys[0]]["energy"]
+                            # Resort to batch if main is NA
+                            found_energy = found_energy if found_energy != "NA" else (
+                                job_data.extra_data[keys[0] + ".batch"]["energy"] if keys[0] + ".batch" in job_data.extra_data.keys() else found_energy)
+                            job_data.energy = parse_output_number(found_energy)
+                        else:
+                            continue
+                            # warning_messages.append(
+                            #     "Single Job | Job {0} has no energy information available. {1} ".format(job_data.job_name, keys))
+                self.update_energy_values(
+                    [job for job in current_job_data if job.require_update == True])
+            # for job in current_job_data:
+            #     if job.energy == 0:
+            #         print("Job {:30} | energy {:15} | package {:5} | status {:15}".format(
+            #             job.job_name, job.energy, job.rowtype, job.status))
+
+            # for message in warning_messages:
+            #     print(message)
+
+        # print("Extra data query finished in {0} seconds.".format(
+        #     time.time() - start_time))
+
+        # if not current_job_data:
+        #     warning_messages.append(
+        #         "Energy | There is not enough information to compute a reliable result.")
+
+        # return current_job_data, warning_messages
+
+    def update_energy_values(self, update_job_data):
+        """Updating energy values
+
+        :param update_job_data: list JobData object 
+        :type update_job_data: List of JobData
+        """
+        try:
+            #print("Updating {0}".format(len(update_job_data)))
+            for jobdata in update_job_data:
+                # print("Job {0} requires update. Energy {1}.".format(
+                #    jobdata.job_name, jobdata.energy))
+                self._update_job_data(jobdata)
+            self.conn.commit()
+        except Exception as exp:
+            Log.info(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't retrieve experiment run header. update_energy_values. Exception {0}".format(str(exp)))
+            pass
 
     def get_all_job_data(self):
         """[summary]
@@ -1063,6 +1464,31 @@ class JobDataStructure(MainDataBase):
             Log.warning("Autosubmit couldn't retrieve job data. get_job_data")
             return None
 
+    def get_current_job_data(self, run_id):
+        """[summary]
+
+        Args:
+            run_id ([type]): [description]
+        """
+        try:
+            current_collection = []
+            # if self.db_version < DB_VERSION_SCHEMA_CHANGES:
+            #     raise Exception("This function requieres a newer DB version.")
+            if os.path.exists(self.folder_path):
+                current_job_data = self._get_current_job_data(run_id)
+                if current_job_data:
+                    for job_data in current_job_data:
+                        jobitem = JobItem(*job_data)
+                        current_collection.append(JobData(jobitem.id, jobitem.counter, jobitem.job_name, jobitem.created, jobitem.modified, jobitem.submit, jobitem.start, jobitem.finish, jobitem.status, jobitem.rowtype, jobitem.ncpus,
+                                                          jobitem.wallclock, jobitem.qos, jobitem.energy, jobitem.date, jobitem.section, jobitem.member, jobitem.chunk, jobitem.last, jobitem.platform, jobitem.job_id, jobitem.extra_data, jobitem.nnodes, jobitem.run_id))
+                    return current_collection
+            return None
+        except Exception as exp:
+            print(traceback.format_exc())
+            print(
+                "Error on returning current job data. run_id {0}".format(run_id))
+            return None
+
     def get_pending_data(self):
         """[summary]
         """
@@ -1088,13 +1514,18 @@ class JobDataStructure(MainDataBase):
             return None
 
     def get_max_id_experiment_run(self):
+        """Get Max experiment run object (last experiment run)
+
+        :return: ExperimentRun object
+        :rtype: Object
+        """
         try:
             #expe = list()
             if os.path.exists(self.folder_path):
                 current_experiment_run = self._get_max_id_experiment_run()
                 if current_experiment_run:
                     exprun_item = ExperimentRunItem(*current_experiment_run)
-                    return ExperimentRun(exprun_item.run_id, exprun_item.created, exprun_item.start, exprun_item.finish, exprun_item.chunk_unit, exprun_item.chunk_size, exprun_item.completed, exprun_item.total, exprun_item.failed, exprun_item.queuing, exprun_item.running, exprun_item.submitted)
+                    return ExperimentRun(exprun_item.run_id, exprun_item.created, exprun_item.start, exprun_item.finish, exprun_item.chunk_unit, exprun_item.chunk_size, exprun_item.completed, exprun_item.total, exprun_item.failed, exprun_item.queuing, exprun_item.running, exprun_item.submitted, exprun_item.suspended, exprun_item.metadata)
                 else:
                     return None
             else:
@@ -1245,6 +1676,30 @@ class JobDataStructure(MainDataBase):
             Log.warning("Error on Update : " + str(type(e).__name__))
             return None
 
+    def _update_job_data(self, job_data):
+        """Updating processed job_data
+
+        :param job_data: JobData object with changes
+        :type job_data: JobData object
+        :return: True if succesful, None otherwise
+        :rtype: Boolean - None
+        """
+        try:
+            if self.conn:
+                sql = ''' UPDATE job_data SET energy=?, modified=? WHERE id=? '''
+                cur = self.conn.cursor()
+                cur.execute(sql, (job_data.energy, datetime.today().strftime(
+                    '%Y-%m-%d-%H:%M:%S'), job_data._id))
+                # self.conn.commit()
+                return True
+            return None
+        except sqlite3.Error as e:
+            if _debug == True:
+                print(traceback.format_exc())
+            Log.info(traceback.format_exc())
+            Log.warning("Error on Insert : {}".format(str(type(e).__name__)))
+            return None
+
     def _update_experiment_run(self, experiment_run):
         """Updates experiment run row by run_id (finish, chunk_unit, chunk_size, completed, total, failed, queuing, running, submitted)
 
@@ -1255,10 +1710,10 @@ class JobDataStructure(MainDataBase):
         """
         try:
             if self.conn:
-                sql = ''' UPDATE experiment_run SET finish=?, chunk_unit=?, chunk_size=?, completed=?, total=?, failed=?, queuing=?, running=?, submitted=? WHERE run_id=? '''
+                sql = ''' UPDATE experiment_run SET finish=?, chunk_unit=?, chunk_size=?, completed=?, total=?, failed=?, queuing=?, running=?, submitted=?, suspended=? WHERE run_id=? '''
                 cur = self.conn.cursor()
                 cur.execute(sql, (experiment_run.finish, experiment_run.chunk_unit, experiment_run.chunk_size,
-                                  experiment_run.completed, experiment_run.total, experiment_run.failed, experiment_run.queuing, experiment_run.running, experiment_run.submitted, experiment_run.run_id))
+                                  experiment_run.completed, experiment_run.total, experiment_run.failed, experiment_run.queuing, experiment_run.running, experiment_run.submitted, experiment_run.suspended, experiment_run.run_id))
                 self.conn.commit()
                 return cur.lastrowid
             return None
@@ -1285,7 +1740,7 @@ class JobDataStructure(MainDataBase):
                 #print("pre insert")
                 cur.execute(sql, tuplerow)
                 self.conn.commit()
-                #print("Inserted " + str(jobdata.job_name))
+                # print("Inserted " + str(jobdata.job_name))
                 return cur.lastrowid
             else:
                 #print("Not a valid connection.")
@@ -1306,9 +1761,9 @@ class JobDataStructure(MainDataBase):
         try:
             if self.conn:
                 #print("preparing to insert")
-                sql = ''' INSERT INTO experiment_run(created,start,finish,chunk_unit,chunk_size,completed,total,failed,queuing,running,submitted) VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
+                sql = ''' INSERT INTO experiment_run(created,start,finish,chunk_unit,chunk_size,completed,total,failed,queuing,running,submitted,suspended,metadata) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?) '''
                 tuplerow = (experiment_run.created, experiment_run.start, experiment_run.finish, experiment_run.chunk_unit, experiment_run.chunk_size, experiment_run.completed,
-                            experiment_run.total, experiment_run.failed, experiment_run.queuing, experiment_run.running, experiment_run.submitted)
+                            experiment_run.total, experiment_run.failed, experiment_run.queuing, experiment_run.running, experiment_run.submitted, experiment_run.suspended, experiment_run.metadata)
                 cur = self.conn.cursor()
                 cur.execute(sql, tuplerow)
                 self.conn.commit()
@@ -1318,7 +1773,7 @@ class JobDataStructure(MainDataBase):
         except sqlite3.Error as e:
             if _debug == True:
                 Log.info(traceback.format_exc())
-            Log.debug(traceback.format_exc())
+            print(traceback.format_exc())
             Log.warning("Error on insert on experiment_run: {0}".format(
                 str(type(e).__name__)))
             return None
@@ -1346,6 +1801,29 @@ class JobDataStructure(MainDataBase):
             Log.debug(traceback.format_exc())
             Log.warning("Error on Select : " + str(type(e).__name__))
             return list()
+
+    def _get_current_job_data(self, run_id):
+        """[summary]
+
+        Args:
+            run_id ([type]): [description]
+        """
+        try:
+            if self.conn:
+                self.conn.text_factory = str
+                cur = self.conn.cursor()
+                cur.execute("SELECT id, counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data, nnodes, run_id from job_data WHERE run_id=? and last=1 and finish > 0 and rowtype >= 2 ORDER BY id", (run_id,))
+                rows = cur.fetchall()
+                if len(rows) > 0:
+                    return rows
+                else:
+                    return None
+        except sqlite3.Error as e:
+            if _debug == True:
+                print(traceback.format_exc())
+            print("Error on select job data: {0}".format(
+                str(type(e).__name__)))
+            return None
 
     def _get_job_data(self, job_name):
         """[summary]
@@ -1513,7 +1991,7 @@ class JobDataStructure(MainDataBase):
                 self.conn.text_factory = str
                 cur = self.conn.cursor()
                 cur.execute(
-                    "SELECT run_id,created,start,finish,chunk_unit,chunk_size,completed,total,failed,queuing,running,submitted from experiment_run ORDER BY run_id DESC LIMIT 0, 1")
+                    "SELECT run_id,created,start,finish,chunk_unit,chunk_size,completed,total,failed,queuing,running,submitted, suspended, metadata from experiment_run ORDER BY run_id DESC LIMIT 0, 1")
                 rows = cur.fetchall()
                 if len(rows) > 0:
                     return rows[0]
@@ -1527,3 +2005,12 @@ class JobDataStructure(MainDataBase):
             Log.warning("Error on select max run_id : " +
                         str(type(e).__name__))
             return None
+
+    def _retry_database_operation(self):
+        completed = False
+        tries = 0
+        while completed == False and tries <= 3:
+            try:
+                pass
+            except sqlite3.Error as e:
+                pass

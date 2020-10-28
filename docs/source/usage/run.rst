@@ -17,8 +17,12 @@ Options:
                                 prevents doing the transitive reduction when plotting the workflow
       -v                    --update_version
                                 update the experiment version to match the actual autosubmit version
-      -s                    --start_time
-                                sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day) 
+      -st                   --start_time
+                                Sets the starting time for the experiment. Accepted format: 'yyyy-mm-dd HH:MM:SS' or 'HH:MM:SS' (defaults to current day).
+      -sa                   --start_after 
+                                Sets a experiment expid that will be tracked for completion. When this experiment is completed, the current instance of Autosubmit run will start.
+      -rm                   --run_members
+                                Sets a list of members allowed to run. The list must have the format '### ###' where '###' represents the name of the member as set in the conf files.
       -h, --help  show this help message and exit
 
 Example:

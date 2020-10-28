@@ -42,7 +42,7 @@ from bscearth.utils.date import date2str, parse_date, previous_day, chunk_end_da
 from time import sleep
 from threading import Thread
 from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
-from log.log import Log,AutosubmitCritical,AutosubmitError
+from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")
 
 
@@ -52,6 +52,7 @@ def threaded(fn):
         thread.start()
         return thread
     return wrapper
+
 
 class Job(object):
     """
@@ -523,7 +524,8 @@ class Job(object):
         try:
             self._platform.restore_connection()
         except Exception as e:
-            Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message,self.name), 6001)
+            Log.printlog(
+                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 5
@@ -587,7 +589,8 @@ class Job(object):
         self.prev_status = previous_status
         new_status = self.new_status
         if new_status == Status.COMPLETED:
-            Log.debug("{0} job seems to have completed: checking...".format(self.name))
+            Log.debug(
+                "{0} job seems to have completed: checking...".format(self.name))
 
             if not self._platform.get_completed_files(self.name,wrapper_failed=self.packed):
                 log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
@@ -617,12 +620,14 @@ class Job(object):
             self._platform.get_completed_files(self.name,wrapper_failed=self.packed)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
-                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),6009)
+                Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(
+                    self.name), 6009)
             elif self.status == Status.COMPLETED:
                 Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.SUBMITTED:
             # after checking the jobs , no job should have the status "submitted"
-            Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(self.name),6008)
+            Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(
+                self.name), 6008)
 
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
@@ -652,7 +657,8 @@ class Job(object):
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
         # communications library not known
-        raise AutosubmitCritical( 'You have defined a not valid communications library on the configuration file', 7014)
+        raise AutosubmitCritical(
+            'You have defined a not valid communications library on the configuration file', 7014)
 
     def update_children_status(self):
         children = list(self.children)
@@ -668,12 +674,13 @@ class Job(object):
         :param default_status: status to set if job is not completed. By default is FAILED
         :type default_status: Status
         """
-        log_name = os.path.join(self._tmp_path,self.name + '_COMPLETED')
+        log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
         if os.path.exists(log_name): #TODO
             self.status = Status.COMPLETED
         else:
-            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(self.name),6009)
+            Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(
+                self.name), 6009)
             self.status = default_status
 
     def update_parameters(self, as_conf, parameters,
@@ -868,7 +875,8 @@ class Job(object):
         if communications_library == 'paramiko':
             return self._get_paramiko_template(snippet, template)
         else:
-            raise AutosubmitCritical("Job {0} does not have an correct template// template not found".format(self.name),7014)
+            raise AutosubmitCritical(
+                "Job {0} does not have an correct template// template not found".format(self.name), 7014)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self._platform
@@ -966,13 +974,14 @@ class Job(object):
             if not out:
                 self.undefined_variables = set(variables) - set(parameters)
                 if show_logs:
-                    Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(self.undefined_variables),3000)
-
+                    Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(
+                        self.undefined_variables), 3000)
 
             # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
-                    Log.printlog("The following set of variables are not being used in the templates: {0}".format(str(set(parameters)-set(variables))),3000)
+                    Log.printlog("The following set of variables are not being used in the templates: {0}".format(
+                        str(set(parameters) - set(variables))), 3000)
         return out
 
     def write_submit_time(self):
@@ -999,7 +1008,8 @@ class Job(object):
         if self._platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
-            Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(self.name),3000)
+            Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(
+                self.name), 3000)
             start_time = time.time()
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -1040,8 +1050,15 @@ class Job(object):
         else:
             final_status = "FAILED"
             f.write('FAILED')
-        JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])
+        out, err = self.local_logs
+        path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
+        # Launch first as simple non-threaded function
+        JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors, self.wallclock, self._queue, self.date,
+                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])
+        # Launch second as threaded function
+        thread_write_finish = Thread(target=JobDataStructure(self.expid).write_finish_time, args=(self.name, finish_time, final_status, self.processors,
+                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out))
+        thread_write_finish.start()
 
     def check_started_after(self, date_limit):
         """
@@ -1283,7 +1300,8 @@ class WrapperJob(Job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
             # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(job.name,self.name),6009)
+            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(
+                job.name, self.name), 6009)
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
@@ -1413,13 +1431,14 @@ done
         if wallclock.hour > 0:
             total = wallclock.hour
         if wallclock.minute > 0:
-            total += wallclock.minute/60.0
+            total += wallclock.minute / 60.0
         if wallclock.second > 0:
-            total += wallclock.second/60.0/60.0
+            total += wallclock.second / 60.0 / 60.0
         total = total * 1.15
         hour = int(total)
         minute = int((total - int(total)) * 60.0)
-        second = int(((total - int(total)) * 60 - int((total - int(total)) * 60.0)) * 60.0)
+        second = int(((total - int(total)) * 60 -
+                      int((total - int(total)) * 60.0)) * 60.0)
         wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,
                                              seconds=second)
         if elapsed > wallclock_delta:
@@ -1435,6 +1454,3 @@ done
         time = int(output[index])
         time = self._parse_timestamp(time)
         return time
-
-
-
