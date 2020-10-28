@@ -77,13 +77,13 @@ class JobPackager(object):
             Log.debug("Number of jobs prepared: {0}", len(
                 jobs_list.get_prepared(platform)))
             if len(jobs_list.get_prepared(platform)) > 0:
-                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                Log.debug("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_prepared(platform)))
         else:
             Log.debug("Number of jobs ready: {0}", len(
                 jobs_list.get_ready(platform, hold=False)))
             if len(jobs_list.get_ready(platform)) > 0:
-                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                Log.debug("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_ready(platform)))
         self._maxTotalProcessors = 0
     def compute_weight(self,job_list):

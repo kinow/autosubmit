@@ -529,7 +529,7 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        sleep(20)
+        sleep(10)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
@@ -547,7 +547,9 @@ class Job(object):
                     sleep(sleeptime)
             if i >= retries:
                 if not out_exist or not err_exist:
-                    raise AutosubmitError("Failed to retrieve log files {1} and {2}".format(retries,remote_logs[0],remote_logs[1]), 6001)
+                    Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(retries,remote_logs[0],remote_logs[1]))
+                    sleep(5)  # safe wait before end a thread
+                    return
             if copy_remote_logs:
                 if local_logs != remote_logs:
                     # unifying names for log files
@@ -559,8 +561,9 @@ class Job(object):
                     for local_log in local_logs:
                         self._platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                 except BaseException as e:
-                    raise AutosubmitError("Trace {0} \n Failed to write the {1}".format(e.message,self.name), 6001)
-
+                    Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(e.message,self.name))
+                    sleep(5)  # safe wait before end a thread
+                    return
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
             sleep(5)  # safe wait before end a thread
@@ -1015,7 +1018,7 @@ class Job(object):
         :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
-        self._platform.get_stat_file(self.name, retries=0)
+        self._platform.get_stat_file(self.name, retries=5)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
