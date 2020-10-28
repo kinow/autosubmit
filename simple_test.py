@@ -33,7 +33,7 @@
 #         if job.platform_name is None:
 #             job.platform_name = "marenostrum4"
 #         # noinspection PyTypeChecker
-#         job.platform = submitter.platforms[job.platform_name.lower(
+#         job._platform = submitter.platforms[job.platform_name.lower(
 #         )]
 
 #     list_jobs = job_list.get_job_list()

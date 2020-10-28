@@ -15,7 +15,7 @@ class TestJobPackage(TestCase):
         self.platform = Mock()
         self.jobs = [Job('dummy1', 0, Status.READY, 0),
                      Job('dummy2', 0, Status.READY, 0)]
-        self.jobs[0].platform = self.jobs[1].platform = self.platform
+        self.jobs[0]._platform = self.jobs[1]._platform = self.platform
         self.job_package = JobPackageSimple(self.jobs)
 
     def test_job_package_default_init(self):
@@ -23,14 +23,14 @@ class TestJobPackage(TestCase):
             JobPackageSimple([])
 
     def test_job_package_different_platforms_init(self):
-        self.jobs[0].platform = Mock()
-        self.jobs[1].platform = Mock()
+        self.jobs[0]._platform = Mock()
+        self.jobs[1]._platform = Mock()
         with self.assertRaises(Exception):
             JobPackageSimple(this.jobs)
 
     def test_job_package_none_platforms_init(self):
-        self.jobs[0].platform = None
-        self.jobs[1].platform = None
+        self.jobs[0]._platform = None
+        self.jobs[1]._platform = None
         with self.assertRaises(Exception):
             JobPackageSimple(this.jobs)
 
@@ -41,7 +41,7 @@ class TestJobPackage(TestCase):
         self.assertEquals(self.jobs, self.job_package.jobs)
 
     def test_job_package_platform_getter(self):
-        self.assertEquals(self.platform.serial_platform, self.job_package.platform)
+        self.assertEquals(self.platform, self.job_package.platform)
 
     def test_job_package_submission(self):
         # arrange

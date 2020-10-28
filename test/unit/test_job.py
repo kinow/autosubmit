@@ -43,7 +43,7 @@ class TestJob(TestCase):
         platform.serial_platform = 'serial-platform'
 
         self.job._platform = platform
-        self.job.processors = '1'
+        self.job.processors = 1
 
         returned_platform = self.job.platform
 
@@ -51,7 +51,7 @@ class TestJob(TestCase):
 
     def test_set_platform(self):
         dummy_platform = Platform('whatever', 'rand-name', FakeBasicConfig)
-        self.assertNotEquals(dummy_platform, self.job._platform)
+        self.assertNotEquals(dummy_platform, self.job.platform)
 
         self.job.platform = dummy_platform
 
@@ -89,7 +89,7 @@ class TestJob(TestCase):
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.queue = parallel_queue
 
-        self.job.platform = dummy_platform
+        self.job._platform = dummy_platform
         self.job.processors = '1'
 
         self.assertIsNone(self.job._queue)

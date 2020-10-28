@@ -128,7 +128,7 @@ class Job(object):
         self.packed = False
         self.hold = False
         self.distance_weight = 0
-
+        self.level = 0
     def __getstate__(self):
         odict = self.__dict__
         if '_platform' in odict:
@@ -520,71 +520,61 @@ class Job(object):
         platforms_to_test = set()
         if self.platform_name is None:
             self.platform_name = hpcarch
-        self.platform = submitter.platforms[self.platform_name.lower()]
+        self._platform = submitter.platforms[self.platform_name.lower()] # serial
         try:
-            self.platform.restore_connection()
+            self._platform.restore_connection()
         except Exception as e:
             Log.printlog(
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
         out_exist = False
         err_exist = False
-        retries = 3
+        retries = 5
         sleeptime = 0
         i = 0
-        sleep(20)
+        sleep(10)
+        no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
-                    try:
-                        out_exist = self.platform.check_file_exists(
-                            remote_logs[0])  # will do 5 retries
-                    except IOError as e:
-                        out_exist = False
-                    try:
-                        err_exist = self.platform.check_file_exists(
-                            remote_logs[1])  # will do 5 retries
-                    except IOError as e:
-                        err_exists = False
-                except Exception as e:
+                    out_exist = self._platform.check_file_exists(remote_logs[0])  # will do 5 retries
+                except IOError as e:
                     out_exist = False
-                    err_exist = False
-                    pass
+                try:
+                    err_exist = self._platform.check_file_exists(remote_logs[1])  # will do 5 retries
+                except IOError as e:
+                    err_exists = False
                 if not out_exist or not err_exist:
                     sleeptime = sleeptime + 5
                     i = i + 1
                     sleep(sleeptime)
             if i >= retries:
                 if not out_exist or not err_exist:
-                    Log.printlog("Retries = {0}, Failed to retrieve log files {1} and {2}".format(
-                        retries, remote_logs[0], remote_logs[1]), 6001)
-
+                    Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(retries,remote_logs[0],remote_logs[1]))
+                    sleep(5)  # safe wait before end a thread
+                    return
             if copy_remote_logs:
                 if local_logs != remote_logs:
                     # unifying names for log files
-                    self.synchronize_logs(
-                        self.platform, remote_logs, local_logs)
+                    self.synchronize_logs(self._platform, remote_logs, local_logs)
                     remote_logs = local_logs
-                self.platform.get_logs_files(self.expid, remote_logs)
-            # Update the logs with Autosubmit Job Id Brand
-            try:
-                for local_log in local_logs:
-                    self.platform.write_jobid(self.id, os.path.join(
-                        self._tmp_path, 'LOG_' + str(self.expid), local_log))
-            except BaseException as e:
-                Log.printlog("Trace {0} \n Failed to write the {1}".format(
-                    e.message, self.name), 6001)
-
+                self._platform.get_logs_files(self.expid, remote_logs)
+                # Update the logs with Autosubmit Job Id Brand
+                try:
+                    for local_log in local_logs:
+                        self._platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                except BaseException as e:
+                    Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(e.message,self.name))
+                    sleep(5)  # safe wait before end a thread
+                    return
         except AutosubmitError as e:
-            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
-                e.message, self.name), 6001)
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
+            sleep(5)  # safe wait before end a thread
+            return
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
-            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
-                e.message, self.name), 6001)
-        try:
-            self.platform.closeConnection()
-        except:
-            pass
-        sleep(5)  # safe wait before end a thread
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
+            sleep(5)  # safe wait before end a thread
+            return
+        sleep(5) # safe wait before end a thread
         return
 
     def update_status(self, copy_remote_logs=False):
@@ -602,9 +592,8 @@ class Job(object):
             Log.debug(
                 "{0} job seems to have completed: checking...".format(self.name))
 
-            if not self.platform.get_completed_files(self.name):
-                log_name = os.path.join(
-                    self._tmp_path, self.name + '_COMPLETED')
+            if not self._platform.get_completed_files(self.name,wrapper_failed=self.packed):
+                log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
             self.check_completion()
         else:
@@ -619,19 +608,16 @@ class Job(object):
         elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
-            Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(
-                self.name), 3000)
-            self.platform.get_completed_files(self.name)
+            Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(self.name),3000)
+            self._platform.get_completed_files(self.name,wrapper_failed=self.packed)
             self.check_completion()
             if self.status == Status.COMPLETED:
-                Log.printlog(" there is a COMPLETED file.", 3000)
                 Log.result("Job {0} is COMPLETED", self.name)
             else:
                 self.update_children_status()
         elif self.status == Status.UNKNOWN:
-            Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(
-                self.name), 3000)
-            self.platform.get_completed_files(self.name)
+            Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(self.name),3000)
+            self._platform.get_completed_files(self.name,wrapper_failed=self.packed)
             self.check_completion(Status.UNKNOWN)
             if self.status == Status.UNKNOWN:
                 Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(
@@ -677,7 +663,7 @@ class Job(object):
     def update_children_status(self):
         children = list(self.children)
         for child in children:
-            if child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
+            if child.level == 0 and child.status in [Status.SUBMITTED, Status.RUNNING, Status.QUEUING, Status.UNKNOWN]:
                 child.status = Status.FAILED
                 children += list(child.children)
 
@@ -690,7 +676,7 @@ class Job(object):
         """
         log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
-        if os.path.exists(log_name):
+        if os.path.exists(log_name): #TODO
             self.status = Status.COMPLETED
         else:
             Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(
@@ -778,7 +764,7 @@ class Job(object):
             else:
                 parameters['Chunk_LAST'] = 'FALSE'
 
-        job_platform = self.platform
+        job_platform = self._platform
         self.processors = as_conf.get_processors(self.section)
         self.threads = as_conf.get_threads(self.section)
         self.tasks = as_conf.get_tasks(self.section)
@@ -854,7 +840,7 @@ class Job(object):
             template = template_file.read()
         else:
             if self.type == Type.BASH:
-                template = 'sleep 60'
+                template = 'sleep 5'
             elif self.type == Type.PYTHON:
                 template = 'time.sleep(5)'
             elif self.type == Type.R:
@@ -893,7 +879,7 @@ class Job(object):
                 "Job {0} does not have an correct template// template not found".format(self.name), 7014)
 
     def _get_paramiko_template(self, snippet, template):
-        current_platform = self.platform
+        current_platform = self._platform
         return ''.join([snippet.as_header(current_platform.get_header(self)),
                         template,
                         snippet.as_tailer()])
@@ -1019,7 +1005,7 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self.platform.get_stat_file(self.name, retries=5):
+        if self._platform.get_stat_file(self.name, retries=5):
             start_time = self.check_start_time()
         else:
             Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(
@@ -1042,7 +1028,7 @@ class Job(object):
         :param completed: True if job was completed successfully, False otherwise
         :type completed: bool
         """
-        self.platform.get_stat_file(self.name, retries=0)
+        self._platform.get_stat_file(self.name, retries=5)
         end_time = self.check_end_time()
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
@@ -1168,17 +1154,19 @@ class WrapperJob(Job):
 
     def __init__(self, name, job_id, status, priority, job_list, total_wallclock, num_processors, platform, as_config, hold):
         super(WrapperJob, self).__init__(name, job_id, status, priority)
+        self.failed = False
         self.job_list = job_list
         # divide jobs in dictionary by state?
         self.wallclock = total_wallclock
 
         self.num_processors = num_processors
         self.running_jobs_start = OrderedDict()
-        self.platform = platform
+        self._platform = platform
         self.as_config = as_config
         # save start time, wallclock and processors?!
         self.checked_time = datetime.datetime.now()
         self.hold = hold
+        self.inner_jobs_running = list()
 
     def _queuing_reason_cancel(self, reason):
         try:
@@ -1217,8 +1205,31 @@ class WrapperJob(Job):
         # Fail can come from check function or running/completed checkers.
         if self.status in [Status.FAILED, Status.UNKNOWN]:
             self.status = Status.FAILED
-            self.cancel_failed_wrapper_job()
-            self.update_failed_jobs()
+            if self.prev_status not in [Status.FAILED, Status.UNKNOWN]:
+                sleep(1)
+            else:
+                self.failed = True
+                self._check_running_jobs()
+            if len(self.inner_jobs_running) > 0:
+                still_running = True
+                if not self.failed:
+                    if self._platform.check_file_exists('WRAPPER_FAILED', wrapper_failed=True):
+                        for job in self.inner_jobs_running:
+                            if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
+                                Log.info("Wrapper {0} Failed, checking inner_jobs...".format(self.name))
+                                self.failed = True
+                                self._platform.delete_file('WRAPPER_FAILED')
+                                break
+
+                if self.failed:
+                    self.update_failed_jobs()
+                    if len(self.inner_jobs_running) <= 0:
+                        still_running = False
+            else:
+                still_running = False
+            if not still_running:
+                self.cancel_failed_wrapper_job()
+
 
     def check_inner_jobs_completed(self, jobs):
         not_completed_jobs = [
@@ -1226,7 +1237,7 @@ class WrapperJob(Job):
         not_completed_job_names = [job.name for job in not_completed_jobs]
         job_names = ' '.join(not_completed_job_names)
         if job_names:
-            completed_files = self.platform.check_completed_files(job_names)
+            completed_files = self._platform.check_completed_files(job_names)
             completed_jobs = []
             for job in not_completed_jobs:
                 if completed_files and len(completed_files) > 0:
@@ -1245,21 +1256,21 @@ class WrapperJob(Job):
 
     def _check_inner_jobs_queue(self, prev_status):
         reason = str()
-        if self.platform.type == 'slurm':
-            self.platform.send_command(
-                self.platform.get_queue_status_cmd(self.id))
-            reason = self.platform.parse_queue_reason(
-                self.platform._ssh_output, self.id)
+        if self._platform.type == 'slurm':
+            self._platform.send_command(self._platform.get_queue_status_cmd(self.id))
+            reason = self._platform.parse_queue_reason(self._platform._ssh_output, self.id)
             if self._queuing_reason_cancel(reason):
-                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(
-                    self.name, reason), 6009)
+                Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(self.name,reason),6009)
+                #while running jobs?
+                self._check_running_jobs() #todo
+                self.update_failed_jobs(canceled_wrapper=True)
                 self.cancel_failed_wrapper_job()
-                self.update_failed_jobs()
+
                 return
             if reason == '(JobHeldUser)':
                 if self.hold is False:
                     # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                    self.platform.send_command(
+                    self._platform.send_command(
                         "scontrol release " + "{0}".format(self.id))
                     self.status = Status.QUEUING
                     for job in self.job_list:
@@ -1272,8 +1283,8 @@ class WrapperJob(Job):
             elif reason == '(JobHeldAdmin)':
                 Log.debug(
                     "Job {0} Failed to be HELD, canceling... ", self.name)
-                self.platform.send_command(
-                    self.platform.cancel_cmd + " {0}".format(self.id))
+                self._platform.send_command(
+                    self._platform.cancel_cmd + " {0}".format(self.id))
                 self.status = Status.WAITING
             else:
                 Log.info("Job {0} is QUEUING {1}", self.name, reason)
@@ -1295,9 +1306,9 @@ class WrapperJob(Job):
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
         return False
-
     def _check_running_jobs(self):
         not_finished_jobs_dict = OrderedDict()
+        self.inner_jobs_running = list()
         not_finished_jobs = [job for job in self.job_list if job.status not in [
             Status.COMPLETED, Status.FAILED]]
         for job in not_finished_jobs:
@@ -1305,9 +1316,10 @@ class WrapperJob(Job):
                    Status.COMPLETED or self.status == Status.COMPLETED]
             if job.parents is None or len(tmp) == len(job.parents):
                 not_finished_jobs_dict[job.name] = job
+                self.inner_jobs_running.append(job)
         if len(not_finished_jobs_dict.keys()) > 0:  # Only running jobs will enter there
             not_finished_jobs_names = ' '.join(not_finished_jobs_dict.keys())
-            remote_log_dir = self.platform.get_remote_log_dir()
+            remote_log_dir = self._platform.get_remote_log_dir()
             # PREPARE SCRIPT TO SEND
             command = textwrap.dedent("""
 cd {1}
@@ -1338,7 +1350,7 @@ done
             content = ''
             while content == '' and retries > 0:
                 self._platform.send_command(command, False)
-                content = self.platform._ssh_output.split('\n')
+                content = self._platform._ssh_output.split('\n')
                 # content.reverse()
                 for line in content[:-1]:
                     out = line.split()
@@ -1348,64 +1360,61 @@ done
                         if len(out) > 1:
                             if job not in self.running_jobs_start:
                                 start_time = self._check_time(out, 1)
-                                Log.debug("Job {0} started at {1}".format(
-                                    jobname, str(parse_date(start_time))))
-
+                                Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
                                 self.running_jobs_start[job] = start_time
-                                job.new_status = Status.RUNNING
-                                job.update_status(
-                                    self.as_config.get_copy_remote_logs() == 'true')
-
+                                job.status = Status.RUNNING
+                                #job.update_status(self.as_config.get_copy_remote_logs() == 'true')
                             if len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
-                                over_wallclock = self._check_inner_job_wallclock(
-                                    job)
+                                over_wallclock = self._check_inner_job_wallclock(job)
                                 if over_wallclock:
-                                    Log.printlog(
-                                        "Job {0} is FAILED".format(jobname), 6009)
-
+                                    Log.printlog("Job {0} is FAILED".format(jobname),6009)
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)
-                                Log.info("Job {0} finished at {1}".format(
-                                    jobname, str(parse_date(end_time))))
+                                Log.info("Job {0} finished at {1}".format(jobname, str(parse_date(end_time))))
                 if content == '':
                     sleep(wait)
                     retries = retries - 1
-
+            temp_list = self.inner_jobs_running
+            self.inner_jobs_running = [job for job in temp_list if job.status == Status.RUNNING]
             if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
-
-    def _check_finished_job(self, job):
-        wait = 2
-        retries = 5
-        output = ''
-        while output == '' and retries > 0:
-            output = self.platform.check_completed_files(job.name)
-            if output is None or output == '':
-                sleep(wait)
-                retries = retries - 1
-        if output is not None and output != '' and 'COMPLETED' in output:
+    def _check_finished_job(self, job , failed_file=False):
+        if not failed_file:
+            wait = 2
+            retries = 2
+            output = ''
+            while output == '' and retries > 0:
+                output = self._platform.check_completed_files(job.name)
+                if output is None or output == '':
+                    sleep(wait)
+                    retries = retries - 1
+        if failed_file or (output is not None and output != '' and 'COMPLETED' in output):
             job.new_status = Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         else:
-            Log.info(
-                "No completed filed found, setting {0} to FAILED...".format(job.name))
+            #Log.info("No completed filed found, setting {0} to FAILED...".format(job.name))
             job.new_status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         self.running_jobs_start.pop(job, None)
 
-    def update_failed_jobs(self):
-        not_finished_jobs = [job for job in self.job_list if job.status not in [
-            Status.FAILED, Status.COMPLETED]]
-        for job in not_finished_jobs:
-            self._check_finished_job(job)
+    def update_failed_jobs(self,canceled_wrapper=False):
+        running_jobs = self.inner_jobs_running
+        self.inner_jobs_running = list()
+        for job in running_jobs:
+            if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
+                if job.platform.get_file('{0}_FAILED'.format(job.name), False, wrapper_failed=True):
+                    self._check_finished_job(job)
+            else:
+                self.inner_jobs_running.append(job)
 
     def cancel_failed_wrapper_job(self):
-        Log.printlog("Cancelling job with id {0}".format(self.id), 6009)
-        self.platform.send_command(
-            self.platform.cancel_cmd + " " + str(self.id))
-
+        Log.printlog("Cancelling job with id {0}".format(self.id),6009)
+        self._platform.send_command(self._platform.cancel_cmd + " " + str(self.id))
+        for job in self.job_list:
+            if job.status not in [Status.COMPLETED, Status.FAILED]:
+                job.status = Status.WAITING
     def _update_completed_jobs(self):
         for job in self.job_list:
             if job.status == Status.RUNNING:

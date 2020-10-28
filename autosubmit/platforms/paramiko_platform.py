@@ -207,7 +207,7 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError('Send file failed. Connection seems to no be active',6004)
 
     # Gets .err and .out
-    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False):
+    def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False,wrapper_failed=False):
         """
         Copies a file from the current platform to experiment's tmp folder
 
@@ -363,7 +363,7 @@ class ParamikoPlatform(Platform):
             Log.error('check_job() The job id ({0}) is not an integer neither a string.', job_id)
             job.new_status = job_status
         sleep_time=5
-        while not (self.send_command(self.get_checkjob_cmd(job_id)) and retries >= 0) or (self.get_ssh_output() == "" and retries >= 0):
+        while not ( self.send_command(self.get_checkjob_cmd(job_id)) or (self.get_ssh_output() == "") ) and retries > 0:
             retries = retries - 1
             Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.debug('retries left {0}', retries)

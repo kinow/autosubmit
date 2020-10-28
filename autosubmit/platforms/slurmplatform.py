@@ -345,9 +345,11 @@ class SlurmPlatform(ParamikoPlatform):
         if not hold:
             self._submit_script_file.write(
                 self._submit_cmd + job_script + "\n")
+            #self._submit_script_file.close()
         else:
             self._submit_script_file.write(
                 self._submit_hold_cmd + job_script + "\n")
+            #self._submit_script_file.close()
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)
@@ -419,7 +421,7 @@ class SlurmPlatform(ParamikoPlatform):
     def allocated_nodes():
         return """os.system("scontrol show hostnames $SLURM_JOB_NODELIST > node_list")"""
 
-    def check_file_exists(self, filename):
+    def check_file_exists(self, filename,wrapper_failed=False):
         file_exist = False
         sleeptime = 5
         retries = 0
@@ -433,12 +435,15 @@ class SlurmPlatform(ParamikoPlatform):
             except IOError:  # File doesn't exist, retry in sleeptime
                 Log.debug("{2} File still no exists.. waiting {0}s for a new retry ( retries left: {1})", sleeptime,
                           max_retries - retries, os.path.join(self.get_files_path(), filename))
-                sleep(sleeptime)
-                sleeptime = sleeptime + 5
-                retries = retries + 1
+                if not wrapper_failed:
+                    sleep(sleeptime)
+                    sleeptime = sleeptime + 5
+                    retries = retries + 1
+                else:
+                    retries = 9999
             except BaseException as e:  # Unrecoverable error
                 Log.critical(
-                    "Crashed while retrieving remote logs", 6001, e.message)
+                    "remote logs {0} couldn't be recovered".format(filename), 6001, e.message)
                 file_exist = False  # won't exist
                 retries = 999  # no more retries
 

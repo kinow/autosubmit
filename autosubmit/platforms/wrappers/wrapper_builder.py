@@ -19,6 +19,8 @@
 
 import textwrap
 import math
+import random
+import string
 
 class WrapperDirector:
     """
@@ -119,8 +121,17 @@ class WrapperBuilder(object):
 
 
 class PythonWrapperBuilder(WrapperBuilder):
+    def get_random_alphanumeric_string(self,letters_count, digits_count):
+        sample_str = ''.join((random.choice(string.ascii_letters) for i in range(letters_count)))
+        sample_str += ''.join((random.choice(string.digits) for i in range(digits_count)))
 
+        # Convert string to list and shuffle it to mix letters and digits
+        sample_list = list(sample_str)
+        random.shuffle(sample_list)
+        final_string = ''.join(sample_list)
+        return final_string+"_FAILED"
     def build_imports(self):
+
         return textwrap.dedent("""
         import os
         import sys
@@ -130,10 +141,23 @@ class PythonWrapperBuilder(WrapperBuilder):
         from math import ceil
         from collections import OrderedDict
         import copy
-
+        class Unbuffered(object):
+           def __init__(self, stream):
+               self.stream = stream
+           def write(self, data):
+               self.stream.write(data)
+               self.stream.flush()
+           def writelines(self, datas):
+               self.stream.writelines(datas)
+               self.stream.flush()
+           def __getattr__(self, attr):
+               return getattr(self.stream, attr)
+        
+        sys.stdout = Unbuffered(sys.stdout)
+        wrapper_id = "{1}"
         # Defining scripts to be run
         scripts= {0}
-        """).format(str(self.job_scripts), '\n'.ljust(13))
+        """).format(str(self.job_scripts), self.get_random_alphanumeric_string(5,5),'\n'.ljust(13))
 
     def build_job_thread(self):
         return textwrap.dedent("""
@@ -175,23 +199,20 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_cores_list(self):
         return textwrap.dedent("""
-        total_cores = {0}
-        jobs_resources = {1}
-
+total_cores = {0}
+jobs_resources = {1}
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+idx = 0
+all_cores = []
+while total_cores > 0:
+    if processors_per_node > 0:
+        processors_per_node -= 1
+        total_cores -= 1
+        all_cores.append(all_nodes[idx])
+    else:
+        idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        idx = 0
-        all_cores = []
-        while total_cores > 0:
-            if processors_per_node > 0:
-                processors_per_node -= 1
-                total_cores -= 1
-                all_cores.append(all_nodes[idx])
-            else:
-                idx += 1
-                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -202,28 +223,26 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_machinefiles_standard(self):
         return textwrap.dedent("""
-        machines = str()
-
-        cores = int(jobs_resources[section]['PROCESSORS'])
-        tasks = int(jobs_resources[section]['TASKS'])
-        nodes = int(ceil(int(cores)/float(tasks)))
-        if tasks < processors_per_node:
-            cores = tasks
-       
-        job_cores = cores
-        while nodes > 0:
-            while cores > 0:
-                if len(all_cores) > 0:
-                    node = all_cores.pop(0)
-                    if node:
-                        machines += node +"_NEWLINE_"
-                        cores -= 1
-            for rest in range(processors_per_node-tasks):
-                if len(all_cores) > 0:
-                    all_cores.pop(0)
-            nodes -= 1
+            machines = str()
+            cores = int(jobs_resources[section]['PROCESSORS'])
+            tasks = int(jobs_resources[section]['TASKS'])
+            nodes = int(ceil(int(cores)/float(tasks)))
             if tasks < processors_per_node:
-                cores = job_cores
+                cores = tasks
+            job_cores = cores
+            while nodes > 0:
+                while cores > 0:
+                    if len(all_cores) > 0:
+                        node = all_cores.pop(0)
+                        if node:
+                            machines += node +"_NEWLINE_"
+                            cores -= 1
+                for rest in range(processors_per_node-tasks):
+                    if len(all_cores) > 0:
+                        all_cores.pop(0)
+                nodes -= 1
+                if tasks < processors_per_node:
+                    cores = job_cores
         """).format('\n'.ljust(13))
 
     def _create_components_dict(self):
@@ -266,122 +285,139 @@ class PythonWrapperBuilder(WrapperBuilder):
 
     def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
         sequential_threads_launcher = textwrap.dedent("""
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         for i in range(len({0})):
             current = {1}
             current.start()
             current.join()
+            if os.path.exists(failed_wrapper):
+                os.remove(os.path.join(os.getcwd(),wrapper_id))
+                wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
+                open(wrapper_failed, 'w').close()
+                os._exit(1)
+            
         """).format(jobs_list, thread, '\n'.ljust(13))
 
         if footer:
             sequential_threads_launcher += self._indent(textwrap.dedent("""
             completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
             completed_path = os.path.join(os.getcwd(), completed_filename)
+            failed_filename = {0}[i].replace('.cmd', '_FAILED')
+            failed_path = os.path.join(os.getcwd(), failed_filename)
+            failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
             if os.path.exists(completed_path):
                 print datetime.now(), "The job ", current.template," has been COMPLETED"
             else:
+                open(failed_wrapper,'w').close()
+                open(failed_path, 'w').close()
                 print datetime.now(), "The job ", current.template," has FAILED"
-                {1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+                #{1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
 
         return sequential_threads_launcher
 
     def build_parallel_threads_launcher(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
-
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
-
-            {2}
-            current = {1}({0}[i], i+self.id_run)
-            pid_list.append(current)
-            current.start()
-
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i+self.id_run)
+    pid_list.append(current)
+    current.start()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
-
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
-            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
-            completed_path = os.path.join(os.getcwd(), completed_filename)
-            if os.path.exists(completed_path):
-                print datetime.now(), "The job ", pid.template," has been COMPLETED"
-            else:
-                print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-
+        completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+        completed_path = os.path.join(os.getcwd(), completed_filename)
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
+        if os.path.exists(completed_path):
+            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+        else:
+            open(failed_wrapper, 'w').close()
+            open(failed_path, 'w').close()
+            print datetime.now(), "The job ", pid.template," has FAILED"
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_parallel_threads_launcher_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i)
-            pid_list.append(current)
-            current.start()
-
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
-
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
-            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
-            completed_path = os.path.join(os.getcwd(), completed_filename)
-            if os.path.exists(completed_path):
-                print datetime.now(), "The job ", pid.template," has been COMPLETED"
-            else:
-                print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+        completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+        completed_path = os.path.join(os.getcwd(), completed_filename)
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
+        Failed = False
+        if os.path.exists(completed_path):
+            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+        else:
+            open(failed_wrapper, 'w').close()
+            open(failed_path, 'w').close()
+            print datetime.now(), "The job ", pid.template," has FAILED"
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
     def build_parallel_threads_launcher_vertical_horizontal(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i)
-            pid_list.append(current)
-            current.start()
-
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
-
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
-            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
-            completed_path = os.path.join(os.getcwd(), completed_filename)
-            if os.path.exists(completed_path):
-                print datetime.now(), "The job ", pid.template," has been COMPLETED"
-            else:
-                print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+        completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+        completed_path = os.path.join(os.getcwd(), completed_filename)
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
+        Failed = False
+        if os.path.exists(completed_path):
+            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+        else:
+            open(failed_wrapper, 'w').close()
+            open(failed_path, 'w').close()
+            print datetime.now(), "The job ", pid.template," has FAILED"
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
 
         return parallel_threads_launcher
     # all should override -> abstract!
@@ -444,35 +480,37 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
 class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
     def build_parallel_threads_launcher_horizontal_vertical(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
-        pid_list = []
+pid_list = []
+for i in range(len({0})):
+    if type({0}[i]) != list:
+        job = {0}[i]
+        jobname = job.replace(".cmd", '')
+        section = jobname.split('_')[-1]
 
-        for i in range(len({0})):
-            if type({0}[i]) != list:
-                job = {0}[i]
-                jobname = job.replace(".cmd", '')
-                section = jobname.split('_')[-1]
+    {2}
+    current = {1}({0}[i], i+self.id_run)
+    pid_list.append(current)
+    current.start()
 
-            {2}
-            current = {1}({0}[i], i+self.id_run)
-            pid_list.append(current)
-            current.start()
-
-        # Waiting until all scripts finish
-        for i in range(len(pid_list)):
-            pid = pid_list[i]
-            pid.join()
+# Waiting until all scripts finish
+for i in range(len(pid_list)):
+    pid = pid_list[i]
+    pid.join()
         """).format(jobs_list, thread, self._indent(self.build_machinefiles(), 8), '\n'.ljust(13))
         if footer:
             parallel_threads_launcher += self._indent(textwrap.dedent("""
-            completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
-            completed_path = os.path.join(os.getcwd(), completed_filename)
-            if os.path.exists(completed_path):
-                print datetime.now(), "The job ", pid.template," has been COMPLETED"
-            else:
-                print datetime.now(), "The job ", pid.template," has FAILED"
-                {1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
-
+        completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+        completed_path = os.path.join(os.getcwd(), completed_filename)
+        failed_filename = {0}[i].replace('.cmd', '_FAILED')
+        failed_path = os.path.join(os.getcwd(),failed_filename)
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
+        if os.path.exists(completed_path):
+            print datetime.now(), "The job ", pid.template," has been COMPLETED"
+        else:
+            open(failed_wrapper, 'w').close()
+            open(failed_path, 'w').close()
+            print datetime.now(), "The job ", pid.template," has FAILED"
+                    """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return parallel_threads_launcher
     def build_joblist_thread(self):
         return textwrap.dedent("""
@@ -602,23 +640,20 @@ class SrunWrapperBuilder(WrapperBuilder):
 
     def build_cores_list(self):
         return textwrap.dedent("""
-        total_cores = {0}
-        jobs_resources = {1}
-
+total_cores = {0}
+jobs_resources = {1}
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+idx = 0
+all_cores = []
+while total_cores > 0:
+    if processors_per_node > 0:
+        processors_per_node -= 1
+        total_cores -= 1
+        all_cores.append(all_nodes[idx])
+    else:
+        idx += 1
         processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        idx = 0
-        all_cores = []
-        while total_cores > 0:
-            if processors_per_node > 0:
-                processors_per_node -= 1
-                total_cores -= 1
-                all_cores.append(all_nodes[idx])
-            else:
-                idx += 1
-                processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
-
-        processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
+processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
         """).format(self.num_procs, str(self.jobs_resources), '\n'.ljust(13))
 
     def build_machinefiles(self):
@@ -629,28 +664,26 @@ class SrunWrapperBuilder(WrapperBuilder):
 
     def build_machinefiles_standard(self):
         return textwrap.dedent("""
-        machines = str()
-
-        cores = int(jobs_resources[section]['PROCESSORS'])
-        tasks = int(jobs_resources[section]['TASKS'])
-        nodes = int(ceil(int(cores)/float(tasks)))
-        if tasks < processors_per_node:
-            cores = tasks
-
-        job_cores = cores
-        while nodes > 0:
-            while cores > 0:
-                if len(all_cores) > 0:
-                    node = all_cores.pop(0)
-                    if node:
-                        machines += node +"_NEWLINE_"
-                        cores -= 1
-            for rest in range(processors_per_node-tasks):
-                if len(all_cores) > 0:
-                    all_cores.pop(0)
-            nodes -= 1
+            machines = str()
+            cores = int(jobs_resources[section]['PROCESSORS'])
+            tasks = int(jobs_resources[section]['TASKS'])
+            nodes = int(ceil(int(cores)/float(tasks)))
             if tasks < processors_per_node:
-                cores = job_cores
+                cores = tasks
+            job_cores = cores
+            while nodes > 0:
+                while cores > 0:
+                    if len(all_cores) > 0:
+                        node = all_cores.pop(0)
+                        if node:
+                            machines += node +"_NEWLINE_"
+                            cores -= 1
+                for rest in range(processors_per_node-tasks):
+                    if len(all_cores) > 0:
+                        all_cores.pop(0)
+                nodes -= 1
+                if tasks < processors_per_node:
+                    cores = job_cores
         """).format('\n'.ljust(13))
 
     def _create_components_dict(self):

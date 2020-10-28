@@ -77,13 +77,13 @@ class JobPackager(object):
             Log.debug("Number of jobs prepared: {0}", len(
                 jobs_list.get_prepared(platform)))
             if len(jobs_list.get_prepared(platform)) > 0:
-                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                Log.debug("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_prepared(platform)))
         else:
             Log.debug("Number of jobs ready: {0}", len(
                 jobs_list.get_ready(platform, hold=False)))
             if len(jobs_list.get_ready(platform)) > 0:
-                Log.info("Jobs ready for {0}: {1}", self._platform.name, len(
+                Log.debug("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_ready(platform)))
         self._maxTotalProcessors = 0
     def compute_weight(self,job_list):
@@ -235,10 +235,8 @@ class JobPackager(object):
                 elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
                     wrapped = True
                     built_packages_tmp = list()
-                    built_packages_tmp.append(self._build_hybrid_package(
-                        jobs_to_submit_by_section[section], max_wrapped_jobs, section))
+                    built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section))
             if wrapped:
-
                 for p in built_packages_tmp:
                     failed_innerjobs = False
                     #Check failed jobs first
@@ -343,8 +341,7 @@ class JobPackager(object):
         jobs_section = dict()
         for job in jobs_list:
             # This iterator will always return None if there is no '&' defined in the section name
-            section = next(
-                (s for s in sections_split if job.section in s and '&' in s), None)
+            section = next((s for s in sections_split if job.section in s and '&' in s), None)
             if section is None:
                 section = job.section
             if section not in jobs_section:
@@ -444,12 +441,16 @@ class JobPackager(object):
         max_procs = horizontal_packager.total_processors
         new_package = horizontal_packager.get_next_packages(
             section, max_wallclock=self._platform.max_wallclock, horizontal_vertical=True, max_procs=max_procs)
+
         if new_package is not None:
             current_package += new_package
 
         for i in range(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
-
+        if len(current_package) > 1:
+            for level in range(1,len(current_package)):
+                for job in current_package[level]:
+                    job.level=level
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
                                             jobs_resources=jobs_resources, configuration=self._as_config)
 
@@ -465,11 +466,15 @@ class JobPackager(object):
             job_list = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
                                                  max_wrapped_jobs,
                                                  self._platform.max_wallclock).build_vertical_package(job)
+
             current_package.append(job_list)
 
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
-
+        if len(current_package) > 1:
+            for level in range(1,len(current_package)):
+                for job in current_package[level]:
+                    job.level=level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
                                             jobs_resources=jobs_resources, method=self.wrapper_method, configuration=self._as_config)
 
@@ -498,7 +503,7 @@ class JobPackagerVertical(object):
         self.max_wrapped_jobs = max_wrapped_jobs
         self.max_wallclock = max_wallclock
 
-    def build_vertical_package(self, job):
+    def build_vertical_package(self, job,level=0):
         """
         Goes trough the job and all the related jobs (children, or part of the same date member ordered group), finds those suitable
         and groups them together into a wrapper. 
@@ -522,9 +527,10 @@ class JobPackagerVertical(object):
             if self.total_wallclock <= self.max_wallclock:
                 # Marking, this is later tested in the main loop
                 child.packed = True
+                child.level = level
                 self.jobs_list.append(child)
                 # Recursive call
-                return self.build_vertical_package(child)
+                return self.build_vertical_package(child,level=level+1)
         # Wrapped jobs are accumulated and returned in this list
         return self.jobs_list
 

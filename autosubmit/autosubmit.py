@@ -627,7 +627,7 @@ class Autosubmit:
                 "User or owner does not exists", 7012, e.message)
 
     @staticmethod
-    def _delete_expid(expid_delete, force):
+    def _delete_expid(expid_delete, force=False):
         """
         Removes an experiment from path and database
         If current user is eadmin and -f has been sent, it deletes regardless
@@ -1134,6 +1134,7 @@ class Autosubmit:
         :return: Nothing\n
         :rtype: \n
         """
+
         job_list._job_list = jobs_filtered
         # Current choice is Paramiko Submitter
         submitter = Autosubmit._get_submitter(as_conf)
@@ -1526,8 +1527,7 @@ class Autosubmit:
                                         save = True
 
                             if platform.type == "slurm" and list_jobid != "":
-                                slurm.append(
-                                    [platform, list_jobid, list_prevStatus, completed_joblist])
+                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
                         # END Normal jobs + wrappers
                         # CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                         for platform_jobs in slurm:
@@ -1550,7 +1550,7 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                 save = True
                         # End Check Current jobs
-                        save2 = job_list.update_list(as_conf)
+                        save2 = job_list.update_list(as_conf,submitter=submitter)
                         if save or save2:
                             job_list.save()
                         if len(job_list.get_ready()) > 0:
@@ -1559,7 +1559,7 @@ class Autosubmit:
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-                        save = job_list.update_list(as_conf)
+                        save = job_list.update_list(as_conf,submitter=submitter)
                         if save:
                             job_list.save()
                         # Safe spot to store changes
@@ -1615,6 +1615,8 @@ class Autosubmit:
                             try:
                                 Autosubmit.restore_platforms(platforms_to_test)
                                 platforms_to_test = set()
+                                Autosubmit.restore_platforms(platforms_to_test)
+
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
@@ -1703,14 +1705,13 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             if not hold:
-                Log.debug("\nJobs ready for {1}: {0}", len(
-                    job_list.get_ready(platform, hold=hold)), platform.name)
+                Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+                ready_jobs = job_list.get_ready(platform, hold=hold)
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(
-                as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1736,8 +1737,7 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(
-                                as_conf, job_list.parameters, inspect, hold=hold)
+                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             continue
@@ -1816,6 +1816,7 @@ class Autosubmit:
                                 job.hold = hold
                                 job.id = str(jobs_id[i])
                                 job.status = Status.SUBMITTED
+                                job.write_submit_time()
                             if hasattr(package, "name"):
                                 job_list.packages_dict[package.name] = package.jobs
                                 from job.job import WrapperJob
@@ -3238,7 +3239,9 @@ class Autosubmit:
                                                        expand_list=expand, expanded_status=status)
                             groups_dict = job_grouping.group_jobs()
                         # WRAPPERS
+
                         if as_conf.get_wrapper_type() != 'none' and check_wrappers:
+                            as_conf.check_conf_files(True)
                             packages_persistence = JobPackagePersistence(
                                 os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages_persistence.reset_table(True)
