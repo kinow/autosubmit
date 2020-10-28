@@ -3188,6 +3188,8 @@ class Autosubmit:
                     num_chunks = as_conf.get_num_chunks()
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
+                    run_only_members = as_conf.get_member_list(run_only=True)
+                    print("Run only members {0}".format(run_only_members))
                     if len(member_list) != len(set(member_list)):
                         raise AutosubmitCritical(
                             "There are repeated member names!")
@@ -3208,7 +3210,7 @@ class Autosubmit:
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive, update_structure=True)
+                                      as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
 
                     if rerun == "true":
                         chunk_list = Autosubmit._create_json(
@@ -4359,7 +4361,7 @@ class Autosubmit:
 
         job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                            Autosubmit._get_job_list_persistence(expid, as_conf))
-
+        run_only_members = as_conf.get_member_list(run_only=True)
         date_list = as_conf.get_date_list()
         date_format = ''
         if as_conf.get_chunk_size_unit() is 'hour':
@@ -4372,7 +4374,7 @@ class Autosubmit:
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
-                          new=False, notransitive=notransitive)
+                          new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
 
             chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())

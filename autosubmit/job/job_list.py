@@ -121,7 +121,7 @@ class JobList(object):
             # print(job.parents)
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False):
+                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False, run_only_members=[]):
         """
         Creates all jobs needed for the current workflow
 
@@ -182,6 +182,20 @@ class JobList(object):
             new, notransitive, update_structure=update_structure)
         for job in self._job_list:
             job.parameters = parameters
+
+        # Checking for member constraints
+        if len(run_only_members) > 0:
+            # Found
+            Log.info("Considering only members {0}".format(
+                str(run_only_members)))
+            old_job_list = [job for job in self._job_list]
+            self._job_list = [
+                job for job in old_job_list if job.member is None or job.member in run_only_members or job.status not in [Status.WAITING, Status.READY]]
+            for job in self._job_list:
+                job.parents = [
+                    jobp for jobp in job.parents if jobp in self._job_list]
+                job.children = [
+                    jobc for jobc in job._children if jobc in self._job_list]
 
         # Perhaps this should be done by default independent of the wrapper_type supplied
         if wrapper_type == 'vertical-mixed':
