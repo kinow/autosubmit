@@ -3189,7 +3189,7 @@ class Autosubmit:
                     chunk_ini = as_conf.get_chunk_ini()
                     member_list = as_conf.get_member_list()
                     run_only_members = as_conf.get_member_list(run_only=True)
-                    print("Run only members {0}".format(run_only_members))
+                    # print("Run only members {0}".format(run_only_members))
                     if len(member_list) != len(set(member_list)):
                         raise AutosubmitCritical(
                             "There are repeated member names!")
