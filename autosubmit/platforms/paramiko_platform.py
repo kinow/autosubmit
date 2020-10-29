@@ -239,7 +239,7 @@ class ParamikoPlatform(Platform):
                     Log.printlog("File {0} seems to no exists (skipping)".format(filename),5004)
             if must_exist:
                 if not ignore_log:
-                    Log.printlog("A critical file couldn't be retrieved, File {0} does not exists".format(filename),6004)
+                    Log.printlog("File {0} does not exists".format(filename),6004)
                 return False
             else:
                 if not ignore_log:
