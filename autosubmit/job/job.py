@@ -1193,7 +1193,7 @@ class WrapperJob(Job):
             # This will update the inner jobs to QUEUE or HELD (normal behaviour) or WAITING ( if they fails to be held)
             self._check_inner_jobs_queue(prev_status)
         elif self.status == Status.RUNNING:  # If wrapper is running
-            Log.info("Wrapper {0} is {1}".format(self.name, Status().VALUE_TO_KEY[self.status]))
+            #Log.info("Wrapper {0} is {1}".format(self.name, Status().VALUE_TO_KEY[self.status]))
             # This will update the status from submitted or hold to running (if safety timer is high enough or queue is fast enough)
             if prev_status in [Status.SUBMITTED]:
                 for job in self.job_list:
