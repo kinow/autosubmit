@@ -580,7 +580,7 @@ class AutosubmitConfig(object):
                         [section, "PLATFORM parameter is invalid, this platform is not configured"]]
 
             if parser.has_option(section, 'DEPENDENCIES'):
-                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).upper().split(' '):
+                for dependency in str(parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
                     if '-' in dependency:
                         dependency = dependency.split('-')[0]
                     elif '+' in dependency:
@@ -1415,7 +1415,7 @@ class AutosubmitConfig(object):
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()
-            for section in expression.upper().split(" "):
+            for section in expression.split(" "):
                 if "&" in section:
                     for inner_section in section.split("&"):
                         if inner_section not in sections:

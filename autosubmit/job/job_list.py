@@ -198,7 +198,7 @@ class JobList(object):
                 continue
 
             dependencies_keys = jobs_parser.get(
-                job_section, option).upper().split()
+                job_section, option).split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, dic_jobs, job_section)
 
@@ -1435,7 +1435,7 @@ class JobList(object):
                 continue
 
             dependencies_keys = jobs_parser.get(
-                job_section, "RERUN_DEPENDENCIES").upper().split()
+                job_section, "RERUN_DEPENDENCIES").split()
             dependencies = JobList._manage_dependencies(
                 dependencies_keys, self._dic_jobs, job_section)
 

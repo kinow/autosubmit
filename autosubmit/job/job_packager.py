@@ -203,14 +203,21 @@ class JobPackager(object):
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(
                     section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
                 if '&' not in section:
-                    dependencies_keys = self._as_config.jobs_parser.get(
-                        section, "DEPENDENCIES").split()
+                    if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
+                        dependencies_keys = self._as_config.jobs_parser.get(
+                            section, "DEPENDENCIES").split()
+                    else:
+                        dependencies_keys = []
+
                 else:
                     multiple_sections = section.split('&')
                     dependencies_keys = []
                     for sectionN in multiple_sections:
-                        dependencies_keys += self._as_config.jobs_parser.get(
-                            sectionN, "DEPENDENCIES").upper().split()
+                        if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
+                            dependencies_keys += self._as_config.jobs_parser.get(
+                                sectionN, "DEPENDENCIES").split()
+                        else:
+                            dependencies_keys = []
 
                 hard_limit_wrapper = max_wrapped_jobs
                 for k in dependencies_keys:
@@ -336,7 +343,7 @@ class JobPackager(object):
         :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
         # .jobs_in_wrapper defined in .conf, see constructor.
-        sections_split = self.jobs_in_wrapper.upper().split()
+        sections_split = self.jobs_in_wrapper.split()
 
         jobs_section = dict()
         for job in jobs_list:
