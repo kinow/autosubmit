@@ -90,8 +90,28 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 
 * The variable -ft can be one of the defined types of job.
 
-.. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.
-In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
+The variable -ftc acts similar to -fc but also accepts the job types. It does not accept chunk ranges e.g. "1-10", but accepts the wildcard "Any" for members and job types. Let's look at some examples.
+
+* Using -ftc to change the chunks "1 2 3 4" of member "fc0" and chunk "1" of member "fc1" for the starting date "19601101", where these changes apply only for the "SIM" jobs:
+    ::
+
+        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] ],SIM
+
+* Using -ftc to change the chunks "1 2 3 4" of all members for the starting date "19601101", where these changes apply only for the "SIM" jobs:
+    ::
+
+        [ 19601101 [ Any [1 2 3 4] ] ],SIM
+
+* Using -ftc to change the chunks "1 2 3 4" of "fc0" members for the starting date "19601101", where these changes apply to all jobs:
+    ::
+
+        [ 19601101 [ fc0 [1 2 3 4] ] ],Any
+
+Try the combinations you come up with. Autosubmit will supply with proper feedback when a wrong combination is supplied.
+
+.. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file. In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
+
+.. _setstatusno:
 
 How to change the job status without stopping autosubmit
 ========================================================
