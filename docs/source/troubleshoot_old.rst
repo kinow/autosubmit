@@ -1,4 +1,6 @@
-.. _setstatus:
+###################
+Troubleshooting_old
+###################
 
 How to change the job status stopping autosubmit
 ================================================
@@ -19,42 +21,36 @@ You must execute:
 
 Options:
 ::
-    usage: autosubmit setstatus [-h] [-np] [-s] [-t] [-o {pdf,png,ps,svg}] [-fl] [-fc] [-fs] [-ft] [-group_by {date,member,chunk,split} -expand -expand_status] [-cw] expid
 
-      expid                 experiment identifier
+    usage: autosubmit setstatus [-h] [-np] [-s] -t
+        {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN,QUEUING,RUNNING}
+        (-fl LIST
+        | -fc FILTER_CHUNKS
+        | -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+        | -ft FILTER_TYPE)
+        [--hide]
+        expid
 
-      -h, --help            show this help message and exit
-      -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
-                            type of output for generated plot
-      -np, --noplot         omit plot
-      -s, --save            Save changes to disk
-      -t, --status_final    Target status
-      -fl FILTER_LIST, --list
-                            List of job names to be changed
-      -fc FILTER_CHUNK, --filter_chunk
-                            List of chunks to be changed
-      -fs FILTER_STATUS, --filter_status
-                            List of status to be changed
-      -ft FILTER_TYPE, --filter_type
-                            List of types to be changed
-      -ftc FILTER_TYPE_CHUNK --filter_type_chunk
-                            Accepts a string with the formula: "[ 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM,SIM2"
-                            Where SIM, SIM2 are section (or job types) names that also accept the keyword "Any" so the changes apply to all sections.
-                            Starting Date (19601101) does not accept the keyword "Any", so you must specify the starting dates to be changed.
-                            Member names (fc0) accept the keyword "Any", so the chunks ([1 2 3 4]) given will be updated for all members.
-                            Chunks must be in the format "[1 2 3 4]" where "1 2 3 4" represent the numbers of the chunks in the member,
-                            no range format is allowed.
-      -d                    When using the option -ftc and sending this flag, a tree view of the experiment with markers indicating which jobs
-                            have been changed will be generated.
-      --hide,               hide the plot
-      -group_by {date,member,chunk,split,automatic}
-                            criteria to use for grouping jobs
-      -expand,              list of dates/members/chunks to expand
-      -expand_status,       status(es) to expand
-      -nt                   --notransitive
-                                prevents doing the transitive reduction when plotting the workflow
-      -cw                   --check_wrapper
-                                Generate the wrapper in the current workflow
+    expid                 experiment identifier
+    -h, --help            show this help message and exit
+    -np, --noplot         omit plot
+    -s, --save            Save changes to disk
+    -t {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN},
+                --status_final {READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+                            Supply the target status
+        -fl LIST, --list LIST  Supply the list of job names to be changed. Default =
+                            "Any". LIST = "cxxx_20101101_fc3_21_sim
+                            cxxx_20111101_fc4_26_sim"
+        -fc FILTER_CHUNKS, --filter_chunks FILTER_CHUNKS
+                            Supply the list of chunks to change the status.
+                            Default = "Any". LIST = "[ 19601101 [ fc0 [1 2 3 4]
+                            fc1 [1] ] 19651101 [ fc0 [16-30] ] ]"
+        -fs {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN},
+                --filter_status {Any,READY,COMPLETED,WAITING,SUSPENDED,FAILED,UNKNOWN}
+                            Select the original status to filter the list of jobs
+        -ft FILTER_TYPE, --filter_type FILTER_TYPE
+                            Select the job type to filter the list of jobs
+
 Examples:
 ::
 
@@ -62,7 +58,6 @@ Examples:
     autosubmit setstatus cxxx -fc "[ 19601101 [ fc1 [1] ] ]" -t READY -s
     autosubmit setstatus cxxx -fs FAILED -t READY -s
     autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
-    autosubmit setstatus cxxx -ftc "[ 19601101 [ fc1 [1] ], SIM" -t SUSPENDED -s
 
 This script has two mandatory arguments.
 
@@ -93,15 +88,7 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 
 * The variable -ft can be one of the defined types of job.
 
-* The variable -ftc acts similar to -fc but also accepts the job types. It does not accept chunk ranges e.g. "1-10", but accepts the wildcard "Any" for members and job types:
-    ::
-
-        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ Any [1 2] ] ],SIM
-
 .. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.
-In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
-
-.. _setstatusno:
 
 How to change the job status without stopping autosubmit
 ========================================================
