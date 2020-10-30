@@ -99,17 +99,17 @@ The variable -ftc acts similar to -fc but also accepts the job types. It does no
 * Using -ftc to change the chunks "1 2 3 4" of member "fc0" and chunk "1" of member "fc1" for the starting date "19601101", where these changes apply only for the "SIM" jobs:
     ::
 
-        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ],SIM
+        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] ],SIM
 
 * Using -ftc to change the chunks "1 2 3 4" of all members for the starting date "19601101", where these changes apply only for the "SIM" jobs:
     ::
 
-        [ 19601101 [ Any [1 2 3 4] ],SIM
+        [ 19601101 [ Any [1 2 3 4] ] ],SIM
 
 * Using -ftc to change the chunks "1 2 3 4" of "fc0" members for the starting date "19601101", where these changes apply to all jobs:
     ::
 
-        [ 19601101 [ fc0 [1 2 3 4] ],Any
+        [ 19601101 [ fc0 [1 2 3 4] ] ],Any
 
 Try the combinations you come up with. Autosubmit will supply with proper feedback when a wrong combination is supplied.
 
