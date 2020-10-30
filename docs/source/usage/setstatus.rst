@@ -21,40 +21,41 @@ Options:
 ::
     usage: autosubmit setstatus [-h] [-np] [-s] [-t] [-o {pdf,png,ps,svg}] [-fl] [-fc] [-fs] [-ft] [-group_by {date,member,chunk,split} -expand -expand_status] [-cw] expid
 
-      expid                 experiment identifier
+        expid                 experiment identifier
 
-      -h, --help            show this help message and exit
-      -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
+        -h, --help            show this help message and exit
+        -o {pdf,png,ps,svg}, --output {pdf,png,ps,svg}
                             type of output for generated plot
-      -np, --noplot         omit plot
-      -s, --save            Save changes to disk
-      -t, --status_final    Target status
-      -fl FILTER_LIST, --list
+        -np, --noplot         omit plot
+        -s, --save            Save changes to disk
+        -t, --status_final    Target status
+        -fl FILTER_LIST, --list
                             List of job names to be changed
-      -fc FILTER_CHUNK, --filter_chunk
+        -fc FILTER_CHUNK, --filter_chunk
                             List of chunks to be changed
-      -fs FILTER_STATUS, --filter_status
+        -fs FILTER_STATUS, --filter_status
                             List of status to be changed
-      -ft FILTER_TYPE, --filter_type
+        -ft FILTER_TYPE, --filter_type
                             List of types to be changed
-      -ftc FILTER_TYPE_CHUNK --filter_type_chunk
+        -ftc FILTER_TYPE_CHUNK --filter_type_chunk
                             Accepts a string with the formula: "[ 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM,SIM2"
                             Where SIM, SIM2 are section (or job types) names that also accept the keyword "Any" so the changes apply to all sections.
                             Starting Date (19601101) does not accept the keyword "Any", so you must specify the starting dates to be changed.
                             Member names (fc0) accept the keyword "Any", so the chunks ([1 2 3 4]) given will be updated for all members.
                             Chunks must be in the format "[1 2 3 4]" where "1 2 3 4" represent the numbers of the chunks in the member,
                             no range format is allowed.
-      -d                    When using the option -ftc and sending this flag, a tree view of the experiment with markers indicating which jobs
+        -d                    When using the option -ftc and sending this flag, a tree view of the experiment with markers indicating which jobs
                             have been changed will be generated.
-      --hide,               hide the plot
-      -group_by {date,member,chunk,split,automatic}
+        --hide,               hide the plot
+        -group_by {date,member,chunk,split,automatic}
                             criteria to use for grouping jobs
-      -expand,              list of dates/members/chunks to expand
-      -expand_status,       status(es) to expand
-      -nt                   --notransitive
+        -expand,              list of dates/members/chunks to expand
+        -expand_status,       status(es) to expand
+        -nt                   --notransitive
                                 prevents doing the transitive reduction when plotting the workflow
-      -cw                   --check_wrapper
+        -cw                   --check_wrapper
                                 Generate the wrapper in the current workflow
+
 Examples:
 ::
 
@@ -93,13 +94,26 @@ If we supply the key word "Any", all jobs will be changed to the target status.
 
 * The variable -ft can be one of the defined types of job.
 
-* The variable -ftc acts similar to -fc but also accepts the job types. It does not accept chunk ranges e.g. "1-10", but accepts the wildcard "Any" for members and job types:
+The variable -ftc acts similar to -fc but also accepts the job types. It does not accept chunk ranges e.g. "1-10", but accepts the wildcard "Any" for members and job types. Let's look at some examples.
+
+* Using -ftc to change the chunks "1 2 3 4" of member "fc0" and chunk "1" of member "fc1" for the starting date "19601101", where these changes apply only for the "SIM" jobs:
     ::
 
-        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 19651101 [ Any [1 2] ] ],SIM
+        [ 19601101 [ fc0 [1 2 3 4] fc1 [1] ],SIM
 
-.. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file.
-In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
+* Using -ftc to change the chunks "1 2 3 4" of all members for the starting date "19601101", where these changes apply only for the "SIM" jobs:
+    ::
+
+        [ 19601101 [ Any [1 2 3 4] ],SIM
+
+* Using -ftc to change the chunks "1 2 3 4" of "fc0" members for the starting date "19601101", where these changes apply to all jobs:
+    ::
+
+        [ 19601101 [ fc0 [1 2 3 4] ],Any
+
+Try the combinations you come up with. Autosubmit will supply with proper feedback when a wrong combination is supplied.
+
+.. hint:: When we are satisfied with the results we can use the parameter -s, which will save the change to the pkl file. In order to understand more the grouping options, which are used for visualization purposes, please check :ref:`grouping`.
 
 .. _setstatusno:
 
