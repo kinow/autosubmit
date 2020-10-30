@@ -213,11 +213,9 @@ class JobPackager(object):
                     multiple_sections = section.split('&')
                     dependencies_keys = []
                     for sectionN in multiple_sections:
-                        if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
+                        if self._as_config.jobs_parser.has_option(sectionN, 'DEPENDENCIES'):
                             dependencies_keys += self._as_config.jobs_parser.get(
                                 sectionN, "DEPENDENCIES").split()
-                        else:
-                            dependencies_keys = []
 
                 hard_limit_wrapper = max_wrapped_jobs
                 for k in dependencies_keys:
@@ -776,7 +774,7 @@ class JobPackagerHorizontal(object):
 
             if package_jobs:
                 # if not self.add_sectioncombo_processors(self.total_processors) and horizontal_vertical:
-                if self._current_processors != max_procs:
+                if self._current_processors > max_procs:
                     return packages
                 if max_wallclock:
                     total_wallclock = sum_str_hours(total_wallclock, wallclock)

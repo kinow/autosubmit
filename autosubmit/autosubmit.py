@@ -3416,7 +3416,7 @@ class Autosubmit:
         :param job:
         """
 
-        if (job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED):
+        if (job.status == Status.SUBMITTED or job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED):
             job.hold = False
             if job.platform_name is not None and job.platform_name.lower() != "local":
                 job.platform.send_command(
