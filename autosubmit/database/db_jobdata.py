@@ -795,7 +795,7 @@ class JobDataStructure(MainDataBase):
                     if len(tracking_dictionary.keys()) >= int(current_date_member_completed_count * 0.9):
                         # If setstatus changes more than 90% of date-member completed jobs, it's a new run
                         # Must create a new experiment run
-                        Log.result(
+                        Log.debug(
                             "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
                         self.validate_current_run(
                             job_list, chunk_unit, chunk_size, True)

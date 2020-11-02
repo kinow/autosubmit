@@ -1067,7 +1067,7 @@ class AutosubmitConfig(object):
             return default
         return int(chunk_size)
 
-    def get_member_list(self):
+    def get_member_list(self, run_only=False):
         """
         Returns members list from experiment's config file
 
@@ -1075,7 +1075,8 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         member_list = list()
-        string = self._exp_parser.get('experiment', 'MEMBERS')
+        string = self._exp_parser.get('experiment', 'MEMBERS') if run_only == False else self._exp_parser.get_option(
+            'experiment', 'RUN_ONLY_MEMBERS', '')
         if not string.startswith("["):
             string = '[{0}]'.format(string)
         split_string = nestedExpr('[', ']').parseString(string).asList()
