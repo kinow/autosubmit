@@ -795,7 +795,7 @@ class JobDataStructure(MainDataBase):
                     if len(tracking_dictionary.keys()) >= int(current_date_member_completed_count * 0.9):
                         # If setstatus changes more than 90% of date-member completed jobs, it's a new run
                         # Must create a new experiment run
-                        Log.result(
+                        Log.debug(
                             "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
                         self.validate_current_run(
                             job_list, chunk_unit, chunk_size, True)
@@ -1317,11 +1317,15 @@ class JobDataStructure(MainDataBase):
                             # warning_messages.append(
                             #     "Approximation | The energy results in wrapper {0} are an approximation. Total energy detected: {1}.".format(package, sum_total_energy))
                             # Completing job information if necessary
+                            dropped_jobs = []
                             for i in range(0, len(jobs_in_package)):
                                 if jobs_in_package[i].running_time() <= 0:
                                     # Needs to be completed
                                     # Dropping job from package list
-                                    dropped_job = jobs_in_package.pop(i)
+                                    dropped_jobs.append(i)
+                                    #dropped_job = jobs_in_package.pop(i)
+                            for j in dropped_jobs:
+                                jobs_in_package.pop(j)
                             # After completion is finished, calculate total resources to be approximated
                             resources_total = sum(
                                 z.ncpus * z.running_time() for z in jobs_in_package) * 1.0
