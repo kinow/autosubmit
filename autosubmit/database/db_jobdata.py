@@ -734,7 +734,10 @@ class JobDataStructure(MainDataBase):
                 else:
                     self.conn = self.create_connection(self.database_path)
                     self.db_version = self._select_pragma_version()
-                    if self.db_version != CURRENT_DB_VERSION:
+                    if self.db_version > CURRENT_DB_VERSION:
+                        Log.info(
+                            "Your version of Autosubmit implements an older database version. This might result in unexpected behavior in the job historical database.")
+                    if self.db_version < CURRENT_DB_VERSION:
                         # Update to current version
                         Log.info("Database schema needs update.")
                         self.update_table_schema()
@@ -1285,7 +1288,7 @@ class JobDataStructure(MainDataBase):
                                 # Identify main step
                                 main_step = [
                                     y for y in description_job.extra_data.keys() if '.' not in y and y != "parents"]
-                                if len(main_step) > 0:
+                                if len(main_step) > 0 and main_step[0] not in ['AveRSS', 'finish', 'ncpus', 'submit', 'MaxRSS', 'start', 'nnodes', 'energy']:
                                     # Check only first one
                                     main_step = [main_step[0]]
                                     # If main step contains submit, its valid. Else, break, not valid,
@@ -1423,12 +1426,13 @@ class JobDataStructure(MainDataBase):
             if os.path.exists(self.folder_path):
 
                 current_table = self._get_all_job_data()
-                current_job_data = dict()
-                for item in current_table:
-                    # _id, _counter, _job_name, _created, _modified, _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform = item
-                    job_item = JobItem(*item)
-                    self.jobdata_list.add_jobdata(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
-                                                          job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data, job_item.nnodes, job_item.run_id))
+                # current_job_data = dict()
+                if current_table:
+                    for item in current_table:
+                        # _id, _counter, _job_name, _created, _modified, _submit, _start, _finish, _status, _rowtype, _ncpus, _wallclock, _qos, _energy, _date, _section, _member, _chunk, _last, _platform = item
+                        job_item = JobItem(*item)
+                        self.jobdata_list.add_jobdata(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
+                                                              job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data, job_item.nnodes, job_item.run_id))
 
             else:
                 raise Exception("Job data folder not found :" +
@@ -1455,11 +1459,14 @@ class JobDataStructure(MainDataBase):
             job_data = list()
             if os.path.exists(self.folder_path):
                 current_job = self._get_job_data(job_name)
-                for item in current_job:
-                    job_item = JobItem(*item)
-                    job_data.append(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
-                                            job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data, job_item.nnodes, job_item.run_id))
-                return job_data
+                if current_job:
+                    for item in current_job:
+                        job_item = JobItem(*item)
+                        job_data.append(JobData(job_item.id, job_item.counter, job_item.job_name, job_item.created, job_item.modified, job_item.submit, job_item.start, job_item.finish, job_item.status,
+                                                job_item.rowtype, job_item.ncpus, job_item.wallclock, job_item.qos, job_item.energy, job_item.date, job_item.section, job_item.member, job_item.chunk, job_item.last, job_item.platform, job_item.job_id, job_item.extra_data, job_item.nnodes, job_item.run_id))
+                    return job_data
+                else:
+                    return None
             else:
                 raise Exception("Job data folder not found :" +
                                 str(self.jobdata_path))
