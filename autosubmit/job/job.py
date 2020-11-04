@@ -591,7 +591,6 @@ class Job(object):
         if new_status == Status.COMPLETED:
             Log.debug(
                 "{0} job seems to have completed: checking...".format(self.name))
-
             if not self._platform.get_completed_files(self.name,wrapper_failed=self.packed):
                 log_name = os.path.join(self._tmp_path, self.name + '_COMPLETED')
 
@@ -1363,8 +1362,9 @@ done
                                 start_time = self._check_time(out, 1)
                                 Log.info("Job {0} started at {1}".format(jobname, str(parse_date(start_time))))
                                 self.running_jobs_start[job] = start_time
-                                job.status = Status.RUNNING
-                                #job.update_status(self.as_config.get_copy_remote_logs() == 'true')
+                                job.new_status = Status.RUNNING
+                                #job.status = Status.RUNNING
+                                job.update_status(self.as_config.get_copy_remote_logs() == 'true')
                             if len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
                                 over_wallclock = self._check_inner_job_wallclock(job)

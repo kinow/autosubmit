@@ -1742,7 +1742,19 @@ class Autosubmit:
                         except (IOError, OSError):
                             continue
                         except AutosubmitError as e:
+                            if "bad parameters" in e.message.lower():
+                                error_msg = ""
+                                for job in package.jobs:
+                                    if job.section not in error_msg:
+                                        error_msg += job.section + "&"
+                                raise AutosubmitCritical(
+                                    "Submission failed, check job and queue specified of job_sections of {0}".format(
+                                        error_msg[:-1]), 7014)
                             raise
+                        except WrongTemplateException as e:
+                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name), 7014, e.message)
+                        except Exception as e:
+                            raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message+"\n"+e.trace)
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
                             from job.job import WrapperJob
@@ -1770,11 +1782,22 @@ class Autosubmit:
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:
-                        jobs_id = platform.submit_Script(hold=hold)
-
-                        if jobs_id is None:
-                            raise BaseException(
-                                "Exiting AS, AS is unable to get jobID this can be due a failure on the platform or a bad parameter on job.conf(check that queue parameter is valid for your current platform(CNS,BSC32,PRACE...)")
+                        try:
+                            jobs_id = platform.submit_Script(hold=hold)
+                        except AutosubmitError as e:
+                            jobs_id = None
+                            if "bad parameters" in e.message.lower():
+                                error_msg = ""
+                                for job in package.jobs:
+                                    if job.section not in error_msg:
+                                        error_msg += job.section + "&"
+                                raise AutosubmitCritical(
+                                    "Submission failed, check job and queue specified of job_sections of {0}".format(
+                                        error_msg[:-1]), 7014,e.trace)
+                        except BaseException as e:
+                            raise AutosubmitError("Submission failed, this can be due a failure on the platform", 6015,e.message)
+                        if jobs_id is None or len(jobs_id) <= 0:
+                            raise AutosubmitError("Submission failed, this can be due a failure on the platform",6015)
                         i = 0
                         if hold:
                             sleep(10)

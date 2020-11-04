@@ -70,6 +70,7 @@ class EcPlatform(ParamikoPlatform):
         self._checkhost_cmd = "ecaccess-certificate-list"
         self._submit_cmd = ("ecaccess-job-submit -distant -queueName " + self.host + " " + self.host + ":" +
                             self.remote_log_dir + "/")
+        self._submit_command_name = "ecaccess-job-submit"
         self.put_cmd = "ecaccess-file-put"
         self.get_cmd = "ecaccess-file-get"
         self.del_cmd = "ecaccess-file-delete"

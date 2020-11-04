@@ -70,7 +70,7 @@ class PBSPlatform(ParamikoPlatform):
         self.get_cmd = "scp"
         self.mkdir_cmd = "ssh " + self.host + " mkdir -p " + self.remote_log_dir
         self._submit_cmd = "ssh " + self.host + " qsub -d " + self.remote_log_dir + " " + self.remote_log_dir + "/ "
-
+        self._submit_command_name = "qsub"
         if str.startswith(self._version, '11'):
             self._checkjob_cmd = "ssh " + self.host + " qstat"
 

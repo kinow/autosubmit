@@ -54,6 +54,7 @@ class LsfPlatform(ParamikoPlatform):
         self._checkjob_cmd = "bjobs "
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = "bsub -cwd " + self.remote_log_dir + " < " + self.remote_log_dir + "/"
+        self._submit_command_name = "bsub"
         self.put_cmd = "scp"
         self.get_cmd = "scp"
         self.mkdir_cmd = "mkdir -p " + self.remote_log_dir

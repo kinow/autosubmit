@@ -87,24 +87,19 @@ class SlurmPlatform(ParamikoPlatform):
             try:
                 self.send_command(cmd)
             except AutosubmitError as e:
-                if "submission failed" in e.message.lower():
-                    raise AutosubmitCritical(e.message, 7014, e.trace)
-                else:
-                    raise
+                raise
             except Exception as e:
                 raise
             jobs_id = self.get_submitted_job_id(self.get_ssh_output())
             return jobs_id
         except IOError as e:
-            raise AutosubmitError(
-                "Submit script is not found, retry again in next AS iteration", 6008, e.message)
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
         except AutosubmitError as e:
             raise
         except AutosubmitCritical as e:
             raise
-        except BaseException as e:
-            raise AutosubmitError(
-                "Job couldn't be submitted, retry again in next AS iteration", 6008, e.message)
+        except Exception as e:
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
 
     def update_cmds(self):
         """
@@ -117,6 +112,7 @@ class SlurmPlatform(ParamikoPlatform):
         self._checkhost_cmd = "echo 1"
         self._submit_cmd = 'sbatch -D {1} {1}/'.format(
             self.host, self.remote_log_dir)
+        self._submit_command_name = "sbatch"
         self._submit_hold_cmd = 'sbatch -H -D {1} {1}/'.format(
             self.host, self.remote_log_dir)
         # jobid =$(sbatch WOA_run_mn4.sh 2 > & 1 | grep -o "[0-9]*"); scontrol hold $jobid;

@@ -81,7 +81,7 @@ class JobPackager(object):
                     jobs_list.get_prepared(platform)))
         else:
             Log.debug("Number of jobs ready: {0}", len(
-                jobs_list.get_ready(platform, hold=False)))
+                 jobs_list.get_ready(platform, hold=False)))
             if len(jobs_list.get_ready(platform)) > 0:
                 Log.debug("Jobs ready for {0}: {1}", self._platform.name, len(
                     jobs_list.get_ready(platform)))
