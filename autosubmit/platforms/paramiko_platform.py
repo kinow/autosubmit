@@ -578,9 +578,9 @@ class ParamikoPlatform(Platform):
             if not ignore_log:
                 if len(stderr_readlines) > 0:
                     Log.printlog('Command {0} in {1} warning: {2}'.format(command, self.host, '\n'.join(stderr_readlines)),6006)
-
                 else:
-                    Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
+                    pass
+                    #Log.debug('Command {0} in {1} successful with out message: {2}', command, self.host, self._ssh_output)
             return True
         except AttributeError as e:
             raise AutosubmitError(
