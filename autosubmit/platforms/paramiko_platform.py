@@ -653,7 +653,7 @@ class ParamikoPlatform(Platform):
         :return: output from last command
         :rtype: str
         """
-        Log.debug('Output {0}', self._ssh_output)
+        #Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
 
     def get_call(self, job_script, job):
