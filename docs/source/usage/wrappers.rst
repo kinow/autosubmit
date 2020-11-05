@@ -248,17 +248,3 @@ Considering a very simple workflow with the configurations as follows:
    :align: center
    :alt: wrapped jobs
 
-Horizontal wrapper with remote dependencies
-**********************
-
-.. code-block:: ini
-
-   [wrapper]
-   TYPE = horizontal
-   JOBS_IN_WRAPPER = SIM&POST
-
-.. figure:: ../workflows/horizontal_remote.png
-   :name: horizontal_remote
-   :width: 60%
-   :align: center
-   :alt: horizontally wrapped jobs
