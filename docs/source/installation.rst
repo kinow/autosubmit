@@ -79,6 +79,7 @@ Lastly, if autosubmit configure doesn't work for you or you need to configure ad
 Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information as follows:
 
 .. code-block:: ini
+
     [database]
     path = path to autosubmit db
     filename = autosubmit.db
