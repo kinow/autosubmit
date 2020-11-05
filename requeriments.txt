@@ -6,6 +6,6 @@ pydotplus>=2
 pyparsing>=2.0.1
 paramiko==1.15
 mock>=1.3.0
-portalocker>=0.5.7
+portalocker==0.5.7
 networkx
 bscearth.utils
