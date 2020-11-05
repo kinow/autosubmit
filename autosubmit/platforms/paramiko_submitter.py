@@ -84,7 +84,6 @@ class ParamikoSubmitter(Submitter):
         # parser is the platforms parser that represents platforms_.conf
         # Traverse sections []
         for section in parser.sections():
-            
             # Consider only those included in the list of jobs
             if section.lower() not in platforms_used:
                 continue

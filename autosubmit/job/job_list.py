@@ -1268,7 +1268,7 @@ class JobList(object):
                             "A job in prepared status has all parent completed, job: {0} status set to: READY ...".format(job.name))
                 Log.debug(
                     'Updating WAITING jobs eligible for be prepared')
-                for job in self.get_waiting_remote_dependencies('slurm'.lower()):
+                for job in self.get_waiting_remote_dependencies('slurm'):
                     if job.name not in all_parents_completed:
                         tmp = [parent for parent in job.parents if (
                             (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and "setup" not in parent.name.lower())]
