@@ -235,22 +235,3 @@ In `platforms_cxxx.conf`:
     MAX_WALLCLOCK =
     MAX_PROCESSORS =
     PROCESSORS_PER_NODE = 48
-
-Vertical-mixed wrapper
-**********************
-
-Allows to combine different sections into a single independent vertical - wrapper
-
-.. code-block:: ini
-
-    [wrapper]
-    TYPE = vertical-mixed
-    JOBS_IN_WRAPPER = SIM&SIM2
-
-
-.. figure:: ../workflows/vertical-mixed.png
-   :name: wrapper
-   :width: 100%
-   :align: center
-   :alt: wrapped jobs
-
