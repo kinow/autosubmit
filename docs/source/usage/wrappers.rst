@@ -11,6 +11,9 @@ At the moment there are 4 types of wrappers that can be used depending on the ex
 * Horizontal
 * Hybrid (horizontal-vertical and vertical-horizontal approaches)
 
+When using the wrapper, it is useful to be able to visualize which packages are being created.
+So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs that are wrapped together in the same job package.
+
 How to configure
 ========================
 
@@ -232,14 +235,6 @@ In `platforms_cxxx.conf`:
     MAX_WALLCLOCK =
     MAX_PROCESSORS =
     PROCESSORS_PER_NODE = 48
-
-
-Visualization examples
-===============================
-
-When using the wrapper, it is useful to be able to visualize which packages are being created.
-So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs that are wrapped together in the same job package.
-
 
 Vertical-mixed wrapper
 **********************
