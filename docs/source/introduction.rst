@@ -12,13 +12,16 @@ What is Autosubmit ?
     Autosubmit has been used to manage models running at supercomputers in BSC, ECMWF, IC3, CESGA, EPCC, PDC and OLCF.
     Autosubmit is now available via PyPi package under the terms of GNU General Public License.
 
-+----------------------------------------------------------------------+
-| Get involved or contact us:                                          |
-+==========================+===========================================+
-| Autosubmit GitLab:       | https://earth.bsc.es/gitlab/es/autosubmit |
-+--------------------------+-------------------------------------------+
-| Autosubmit Mailing List: | autosubmit@bsc.es                         |
-+--------------------------+-------------------------------------------+
+::
+
+    Get involved or contact us:
+
++------------------------------------------------------------------------+
++----------------------------+-------------------------------------------+
+| Autosubmit GitLab:         | https://earth.bsc.es/gitlab/es/autosubmit |
++----------------------------+-------------------------------------------+
+| Autosubmit Mailing List:   | autosubmit@bsc.es                         |
++----------------------------+-------------------------------------------+
 
 Why is Autosubmit needed ?
 ==========================
