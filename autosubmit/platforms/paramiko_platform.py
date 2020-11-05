@@ -374,7 +374,7 @@ class ParamikoPlatform(Platform):
             sleep_time = sleep_time+5
             self.send_command(self.get_checkjob_cmd(job_id))
         if retries >= 0:
-            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
             if job_status in self.job_status['COMPLETED'] or retries == 0:
@@ -418,17 +418,17 @@ class ParamikoPlatform(Platform):
 
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time=5
+
         while not (self.send_command(cmd) and retries >= 0) or ( not self._check_jobid_in_queue(self.get_ssh_output(),job_list_cmd) and retries >= 0):
             retries -= 1
             Log.debug('Retrying check job command: {0}', cmd)
             Log.debug('retries left {0}', retries)
             Log.debug('Will be retrying in {0} seconds', sleep_time)
-
             sleep(sleep_time)
             sleep_time=sleep_time+5
         job_list_status = self.get_ssh_output()
-        Log.debug('Successful check job command: {0}, \n output: {1}', cmd, self._ssh_output)
         if retries >= 0:
+            Log.debug('Successful check job command')
             in_queue_jobs = []
             list_queue_jobid = ""
             for job in job_list:

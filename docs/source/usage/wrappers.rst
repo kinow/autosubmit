@@ -179,11 +179,11 @@ Vertical-horizontal
     [wrapper]
     TYPE = vertical-horizontal
     MACHINEFILES = STANDARD
-    JOBS_IN_WRAPPER = SIM&POST
+    JOBS_IN_WRAPPER = SIM
 
 .. figure:: ../workflows/vertical-horizontal.png
    :name: wrapper_vertical_horizontal
-   :width: 80%
+   :width: 100%
    :align: center
    :alt: hybrid wrapper
 
