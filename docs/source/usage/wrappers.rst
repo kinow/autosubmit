@@ -162,7 +162,6 @@ Horizontal-vertical
 .. figure:: ../workflows/dasim.png
    :name: wrapper_horizontal_vertical
    :width: 100%
-   :heigth: 100%
    :align: center
    :alt: hybrid wrapper
 
