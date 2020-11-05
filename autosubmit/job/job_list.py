@@ -499,7 +499,11 @@ class JobList(object):
             filtered_jobs_list)
 
         sections_running_type_map = dict()
-        for section in wrapper_jobs.split(" "):
+        if "&" in wrapper_jobs:
+            char="&"
+        else:
+            char=" "
+        for section in wrapper_jobs.split(char):
             # RUNNING = once, as default. This value comes from jobs_.conf
             sections_running_type_map[section] = self._dic_jobs.get_option(
                 section, "RUNNING", 'once')

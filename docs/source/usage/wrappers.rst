@@ -246,10 +246,10 @@ Considering a very simple workflow with the configurations as follows:
 
     [wrapper]
     TYPE = vertical-mixed
-    JOBS_IN_WRAPPER = SIM&POST
+    JOBS_IN_WRAPPER = SIM&SIM2
 
 
-.. figure:: ../workflows/wrapper.png
+.. figure:: ../workflows/vertical-mixed.png
    :name: wrapper
    :width: 100%
    :align: center
