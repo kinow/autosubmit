@@ -157,14 +157,26 @@ Horizontal-vertical
     [wrapper]
     TYPE = horizontal-vertical
     MACHINEFILES = STANDARD
-    JOBS_IN_WRAPPER = SIM&POST
+    JOBS_IN_WRAPPER = SIM&DA
 
-.. figure:: ../workflows/horizontal-vertical.png
+.. figure:: ../workflows/dasim.png
    :name: wrapper_horizontal_vertical
    :width: 80%
    :align: center
    :alt: hybrid wrapper
 
+.. code-block:: ini
+
+    [wrapper]
+    TYPE = horizontal-vertical
+    MACHINEFILES = STANDARD
+    JOBS_IN_WRAPPER = SIM&DA
+
+.. figure:: ../workflows/dasim.png
+   :name: wrapper_horizontal_vertical
+   :width: 80%
+   :align: center
+   :alt: hybrid wrapper
 
 Vertical-horizontal
 ===========================
