@@ -101,8 +101,13 @@ Additionally, jobs are grouped within the corresponding date, member and chunk h
 
     [wrapper]
     TYPE = vertical-mixed
-    JOBS_IN_WRAPPER = <JOB_SECTION1&JOB_SECTION2> # REQUIRED
+    JOBS_IN_WRAPPER = SIM&SIM2 # REQUIRED
 
+.. figure:: ../workflows/vertical-mixed.png
+   :name: vertical-mixed
+   :width: 100%
+   :align: center
+   :alt: vertical-mixed wrapper
 
 Horizontal wrapper
 ==========================
