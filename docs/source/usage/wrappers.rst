@@ -244,7 +244,7 @@ So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs th
 Vertical-mixed wrapper
 **********************
 
-Allows to combine different sections into a single independent vertical - wrapper 
+Allows to combine different sections into a single independent vertical - wrapper
 
 .. code-block:: ini
 

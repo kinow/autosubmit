@@ -11,7 +11,13 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 
 These packages (argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko,python2-pythondialog and portalocker) must be available for python runtime.
 
+.. important:: Graphviz version must be 2.38, 2.40 is not working, others perhaps works. You can check using dot -v.
+
+.. important:: Dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
+
 .. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh.
+
+.. important:: The ssh key has to be in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`
 
 To install autosubmit just execute:
 ::
@@ -67,5 +73,37 @@ For installing the database for Autosubmit on the configured folder, when no dat
     autosubmit install
 
 .. danger:: Be careful ! autosubmit install will create a blank database.
+
+Lastly, if autosubmit configure doesn't work for you or you need to configure additional info create:
+
+Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information as follows:
+
+.. code-block:: ini
+    [database]
+    path = path to autosubmit db
+    filename = autosubmit.db
+
+    [local]
+    path = path to experiment folders
+
+    [conf]
+    jobs = path to any experiment  jobs conf # If not working on esarchive, you must create one from scratch check the how to.
+    platforms = path to any experiment  platform conf # If not working on esarchive, you must create one from scratch check the how to.
+
+    [mail]
+    smtp_server = mail.bsc.es
+    mail_from = automail@bsc.es
+
+    [structures]
+    path =  path to experiment folders
+
+    [globallogs]
+    path =  path to global logs (for expid,delete and migrate commands)
+
+    [historicdb]
+    path = <experiment_folder>/historic
+
+    [hosts]
+    whitelist = localhost bscesautosubmit01 bscesautosubmit02 # Add localhost only if you are not on esarchive system
 
 Now you are ready to use Autosubmit !
