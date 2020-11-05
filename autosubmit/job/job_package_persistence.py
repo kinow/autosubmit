@@ -1,6 +1,6 @@
 
 
-# Copyright 2017 Earth Sciences Department, BSC-CNS
+# Copyright 2017-2020 Earth Sciences Department, BSC-CNS
 
 # This file is part of Autosubmit.
 

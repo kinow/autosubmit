@@ -11,9 +11,9 @@ The Autosubmit code is maintained in *PyPi*, the main source for python packages
 
 These packages (argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotlib, paramiko,python2-pythondialog and portalocker) must be available for python runtime.
 
-.. important:: Graphviz version must be 2.38, 2.40 is not working, others perhaps works. You can check using dot -v.
+.. important:: (SYSTEM) Graphviz version must be 2.38, 2.40 is not working, others perhaps works. You can check the version using dot -v.
 
-.. important:: Dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
+.. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
 .. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh.
 
