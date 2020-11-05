@@ -117,11 +117,16 @@ The horizontal wrapper is more appropriate when there are multiple ensemble memb
 If the wrapped jobs have an mpirun call, they will need machine files to specify in which nodes each job will run.
 Different cases may need specific approaches when creating the machine files. For auto-ecearth use COMPONENTS instead of STANDARD.
 
+Horizontal wrapper
+**********************
+
 .. code-block:: ini
 
-    [wrapper]
-    TYPE = horizontal
-    MACHINEFILES = STANDARD
+   [wrapper]
+   TYPE = horizontal
+   JOBS_IN_WRAPPER = SIM
+
+
 
 In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` set the maximum number of processors allowed by the platform in use:
 
@@ -130,6 +135,12 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
     [marenostrum4]
     ...
     MAX_PROCESSORS = 2400
+
+.. figure:: ../workflows/horizontal_remote.png
+   :name: horizontal_remote
+   :width: 60%
+   :align: center
+   :alt: horizontally wrapped jobs
 
 Shared-memory Experiments
 **********************
@@ -233,7 +244,7 @@ So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs th
 Vertical-mixed wrapper
 **********************
 
-Considering a very simple workflow with the configurations as follows:
+Allows to combine different sections into a single independent vertical - wrapper 
 
 .. code-block:: ini
 
