@@ -23,10 +23,12 @@ Why is Autosubmit needed ?
 
 Autosubmit is the only existing tool that satisfies the following requirements from the weather and climate community:
 
-- *Automatisation*: Job submission to machines and dependencies between jobs are managed by Autosubmit. No user intervention is needed.
-- *Data provenance*: Assigns unique identifiers for each experiment and stores information about model version, experiment configuration and computing facilities used in the whole process.
-- *Failure tolerance*: Automatic retrials and ability to rerun chunks in case of corrupted or missing data.
-- *Resource management*: Autosubmit manages supercomputer particularities, allowing users to run their experiments in the available machine without having to adapt the code. Autosubmit also allows to submit tasks from the same experiment to different platforms.
+- **Automatisation** Job submission to machines and dependencies between jobs are managed by Autosubmit. No user intervention is needed.
+- **Data provenance** Assigns unique identifiers for each experiment and stores information about model version, experiment configuration and computing facilities used in the whole process.
+- **Failure tolerance** Automatic retrials and ability to rerun chunks in case of corrupted or missing data.
+- **Resource management** Autosubmit manages supercomputer particularities, allowing users to run their experiments in the available machine without having to adapt the code. Autosubmit also allows to submit tasks from the same experiment to different platforms.
+
+
 
 
 How does Autosubmit work ?
