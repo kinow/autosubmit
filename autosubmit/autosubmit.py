@@ -1742,7 +1742,7 @@ class Autosubmit:
                         except (IOError, OSError):
                             continue
                         except AutosubmitError as e:
-                            if "bad parameters" in e.message.lower():
+                            if e.message.lower().find("bad parameters") != -1:
                                 error_msg = ""
                                 for job in package.jobs:
                                     if job.section not in error_msg:
@@ -1786,7 +1786,7 @@ class Autosubmit:
                             jobs_id = platform.submit_Script(hold=hold)
                         except AutosubmitError as e:
                             jobs_id = None
-                            if "bad parameters" in e.message.lower():
+                            if e.message.lower().find("bad parameters") != -1:
                                 error_msg = ""
                                 for job in package.jobs:
                                     if job.section not in error_msg:

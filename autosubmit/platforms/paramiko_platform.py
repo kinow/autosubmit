@@ -265,7 +265,7 @@ class ParamikoPlatform(Platform):
             return False
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(os.path.join(self.get_files_path(), filename)))
-            if e.message.lower().contains("garbage"):
+            if e.message.lower().find("garbage") != -1:
                 raise AutosubmitCritical("Wrong User or invalid .ssh/config. Or invalid user in platform.conf or public key not set ",7051,e.message)
 
 

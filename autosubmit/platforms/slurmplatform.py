@@ -438,7 +438,7 @@ class SlurmPlatform(ParamikoPlatform):
                 else:
                     retries = 9999
             except BaseException as e:  # Unrecoverable error
-                if e.message.lower().contains("garbage"):
+                if e.message.lower().find("garbage") != -1:
                     if not wrapper_failed:
                         sleep(sleeptime)
                         sleeptime = sleeptime + 5
