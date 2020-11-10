@@ -21,7 +21,7 @@
 import os
 import sys
 
-from log.log import Log,AutosubmitCritical
+from log.log import Log, AutosubmitCritical
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -29,7 +29,6 @@ sys.path[0] = os.path.normpath(os.path.join(scriptdir, os.pardir))
 
 # noinspection PyUnresolvedReferences
 from autosubmit.autosubmit import Autosubmit
-
 
 
 # noinspection PyProtectedMember
@@ -46,11 +45,13 @@ def main():
     except Exception as e:
         Log.error("Trace: {0}", e.message)
         if "temporarily unavailable" in str(e.message):
-            Log.critical("Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock",7000)
+            Log.critical(
+                "Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock", 7000)
         else:
-            Log.critical("Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
+            Log.critical(
+                "Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
         os._exit(1)
+
 
 if __name__ == "__main__":
     main()
-

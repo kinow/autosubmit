@@ -675,6 +675,8 @@ class Autosubmit:
                             "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
                         Log.info("Removing experiment directory...")
+                        # Shutdown Logger so we do not access non-existent nor create a race condition
+                        Log.shutdown_logger()
                         shutil.rmtree(os.path.join(
                             BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                         try:
@@ -688,12 +690,15 @@ class Autosubmit:
                         except:
                             pass
                     except OSError as e:
+                        # This call might raise an exception since tmp folder could have been deleted.
+                        # However, if there is an Exception in this code block it is very probable that tmp folder still exists
                         raise AutosubmitCritical(
                             'Can not delete experiment folder: ', 7012, e.message)
-                    Log.info("Deleting experiment from database...")
+                    # Avoid calling logger from now on
+                    print("Deleting experiment from database...")
                     ret = delete_experiment(expid_delete)
                     if ret:
-                        Log.result(
+                        print(
                             "Experiment {0} deleted".format(expid_delete))
                 else:
                     if currentOwner_id == 0:
@@ -703,8 +708,12 @@ class Autosubmit:
                         raise AutosubmitCritical(
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
             except Exception as e:
-                raise AutosubmitCritical(
-                    "Couldn't delete the experiment:", 7012, e.message)
+                # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
+                # print(traceback.format_exc())
+                print("Couldn't delete the experiment {0}".format(
+                    expid_delete))
+                # raise AutosubmitCritical(
+                #     "Couldn't delete the experiment:", 7012, e.message)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -1527,7 +1536,8 @@ class Autosubmit:
                                         save = True
 
                             if platform.type == "slurm" and list_jobid != "":
-                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
+                                slurm.append(
+                                    [platform, list_jobid, list_prevStatus, completed_joblist])
                         # END Normal jobs + wrappers
                         # CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                         for platform_jobs in slurm:
@@ -1550,7 +1560,8 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                 save = True
                         # End Check Current jobs
-                        save2 = job_list.update_list(as_conf,submitter=submitter)
+                        save2 = job_list.update_list(
+                            as_conf, submitter=submitter)
                         if save or save2:
                             job_list.save()
                         if len(job_list.get_ready()) > 0:
@@ -1559,7 +1570,8 @@ class Autosubmit:
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-                        save = job_list.update_list(as_conf,submitter=submitter)
+                        save = job_list.update_list(
+                            as_conf, submitter=submitter)
                         if save:
                             job_list.save()
                         # Safe spot to store changes
@@ -1705,13 +1717,15 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             if not hold:
-                Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+                Log.debug("\nJobs ready for {1}: {0}", len(
+                    job_list.get_ready(platform, hold=hold)), platform.name)
                 ready_jobs = job_list.get_ready(platform, hold=hold)
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(
+                as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1737,7 +1751,8 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
+                            package.submit(
+                                as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             continue
@@ -1752,9 +1767,11 @@ class Autosubmit:
                                         error_msg[:-1]), 7014)
                             raise
                         except WrongTemplateException as e:
-                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name), 7014, e.message)
+                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
+                                e.job_name), 7014, e.message)
                         except Exception as e:
-                            raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message+"\n"+e.trace)
+                            raise AutosubmitError("{0} submission failed".format(
+                                platform.name), 6015, e.message + "\n" + e.trace)
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
                             from job.job import WrapperJob
@@ -1793,11 +1810,13 @@ class Autosubmit:
                                         error_msg += job.section + "&"
                                 raise AutosubmitCritical(
                                     "Submission failed, check job and queue specified of job_sections of {0}".format(
-                                        error_msg[:-1]), 7014,e.trace)
+                                        error_msg[:-1]), 7014, e.trace)
                         except BaseException as e:
-                            raise AutosubmitError("Submission failed, this can be due a failure on the platform", 6015,e.message)
+                            raise AutosubmitError(
+                                "Submission failed, this can be due a failure on the platform", 6015, e.message)
                         if jobs_id is None or len(jobs_id) <= 0:
-                            raise AutosubmitError("Submission failed, this can be due a failure on the platform",6015)
+                            raise AutosubmitError(
+                                "Submission failed, this can be due a failure on the platform", 6015)
                         i = 0
                         if hold:
                             sleep(10)
