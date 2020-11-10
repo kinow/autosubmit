@@ -7,3 +7,5 @@
 /.coverage
 autosubmit/miniTest.py
 autosubmit/simple_test.py
+.vscode/
+.vscode

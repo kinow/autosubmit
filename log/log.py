@@ -1,5 +1,8 @@
-import logging, os, sys
+import logging
+import os
+import sys
 from datetime import datetime
+
 
 class AutosubmitError(Exception):
     """Exception raised for Autosubmit critical errors .
@@ -7,13 +10,15 @@ class AutosubmitError(Exception):
         errorcode -- Classified code
         message -- explanation of the error
     """
-    def __init__(self,  message="Unhandled Error",code=6000,trace = None):
+
+    def __init__(self, message="Unhandled Error", code=6000, trace=None):
         self.code = code
         self.message = message
         self.trace = trace
 
     def __str__(self):
         return " "
+
 
 class AutosubmitCritical(Exception):
     """Exception raised for Autosubmit critical errors .
@@ -21,13 +26,15 @@ class AutosubmitCritical(Exception):
         errorcode -- Classified code
         message -- explanation of the error
     """
-    def __init__(self,  message="Unhandled Error",code=7000,trace = None):
+
+    def __init__(self, message="Unhandled Error", code=7000, trace=None):
         self.code = code
         self.message = message
         self.trace = trace
 
     def __str__(self):
         return " "
+
 
 class LogFormatter:
 
@@ -125,6 +132,13 @@ class Log:
     log.addHandler(console_handler)
 
     @staticmethod
+    def shutdown_logger():
+        """
+        Shutdown logger module to prevent race issues on delete
+        """
+        logging.shutdown()
+
+    @staticmethod
     def get_logger(name="Autosubmit"):
         """
         Configure the file to store the log. If another file was specified earlier, new messages will only go to the
@@ -147,11 +161,13 @@ class Log:
         directory, filename = os.path.split(file_path)
         if not os.path.exists(directory):
             os.mkdir(directory)
-        files = [ f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f)) and f.endswith(filename) ]
+        files = [f for f in os.listdir(directory) if os.path.isfile(
+            os.path.join(directory, f)) and f.endswith(filename)]
         if len(files) >= 5:
             files.sort()
             os.remove(os.path.join(directory, files[0]))
-        file_path = os.path.join(directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
+        file_path = os.path.join(
+            directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
         if type == 'out':
             file_handler = logging.FileHandler(file_path, 'w')
             file_handler.setLevel(level)
@@ -228,7 +244,6 @@ class Log:
         """
         Log.log.log(Log.RESULT, msg.format(*args))
 
-
     @staticmethod
     def warning(msg, *args):
         """
@@ -270,7 +285,7 @@ class Log:
         Log.log.log(Log.STATUS, msg.format(*args))
 
     @staticmethod
-    def printlog(message="Generic message",code=4000):
+    def printlog(message="Generic message", code=4000):
         """Log management for Autosubmit messages .
         Attributes:
             errorcode -- Classified code
@@ -288,4 +303,3 @@ class Log:
             Log.critical("{1}[eCode={0}]", code, message)
         else:
             Log.info("{0}", message)
-
