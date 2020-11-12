@@ -1536,8 +1536,7 @@ class Autosubmit:
                                         save = True
 
                             if platform.type == "slurm" and list_jobid != "":
-                                slurm.append(
-                                    [platform, list_jobid, list_prevStatus, completed_joblist])
+                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
                         # END Normal jobs + wrappers
                         # CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                         for platform_jobs in slurm:
@@ -1560,8 +1559,7 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                 save = True
                         # End Check Current jobs
-                        save2 = job_list.update_list(
-                            as_conf, submitter=submitter)
+                        save2 = job_list.update_list(as_conf,submitter=submitter)
                         if save or save2:
                             job_list.save()
                         if len(job_list.get_ready()) > 0:
@@ -1570,8 +1568,7 @@ class Autosubmit:
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-                        save = job_list.update_list(
-                            as_conf, submitter=submitter)
+                        save = job_list.update_list(as_conf,submitter=submitter)
                         if save:
                             job_list.save()
                         # Safe spot to store changes
@@ -1717,15 +1714,13 @@ class Autosubmit:
         save = False
         for platform in platforms_to_test:
             if not hold:
-                Log.debug("\nJobs ready for {1}: {0}", len(
-                    job_list.get_ready(platform, hold=hold)), platform.name)
+                Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
                 ready_jobs = job_list.get_ready(platform, hold=hold)
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(
-                as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1751,27 +1746,28 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(
-                                as_conf, job_list.parameters, inspect, hold=hold)
+                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             continue
                         except AutosubmitError as e:
                             if e.message.lower().find("bad parameters") != -1:
                                 error_msg = ""
-                                for job in package.jobs:
-                                    if job.section not in error_msg:
-                                        error_msg += job.section + "&"
+                                for package_tmp in valid_packages_to_submit:
+                                    for job_tmp in package_tmp.jobs:
+                                        if job_tmp.section not in error_msg:
+                                            error_msg += job_tmp.section + "&"
+                                for job_tmp in package.jobs:
+                                    if job_tmp.section not in error_msg:
+                                        error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
-                                    "Submission failed, check job and queue specified of job_sections of {0}".format(
-                                        error_msg[:-1]), 7014)
+                                    "Submission failed, check job and queue specified in jobs.conf. Sections that could be affected: {0}".format(
+                                        error_msg[:-1]), 7014,e.trace)
                             raise
                         except WrongTemplateException as e:
-                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
-                                e.job_name), 7014, e.message)
+                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name), 7014, e.message)
                         except Exception as e:
-                            raise AutosubmitError("{0} submission failed".format(
-                                platform.name), 6015, e.message + "\n" + e.trace)
+                            raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message+"\n"+e.trace)
                         if hasattr(package, "name"):
                             job_list.packages_dict[package.name] = package.jobs
                             from job.job import WrapperJob
@@ -1805,18 +1801,17 @@ class Autosubmit:
                             jobs_id = None
                             if e.message.lower().find("bad parameters") != -1:
                                 error_msg = ""
-                                for job in package.jobs:
-                                    if job.section not in error_msg:
-                                        error_msg += job.section + "&"
+                                for package_tmp in valid_packages_to_submit:
+                                    for job_tmp in package_tmp.jobs:
+                                        if job_tmp.section not in error_msg:
+                                            error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
                                     "Submission failed, check job and queue specified of job_sections of {0}".format(
                                         error_msg[:-1]), 7014, e.trace)
                         except BaseException as e:
-                            raise AutosubmitError(
-                                "Submission failed, this can be due a failure on the platform", 6015, e.message)
+                            raise AutosubmitError("Submission failed, this can be due a failure on the platform", 6015,e.message)
                         if jobs_id is None or len(jobs_id) <= 0:
-                            raise AutosubmitError(
-                                "Submission failed, this can be due a failure on the platform", 6015)
+                            raise AutosubmitError("Submission failed, this can be due a failure on the platform",6015)
                         i = 0
                         if hold:
                             sleep(10)
