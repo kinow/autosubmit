@@ -587,7 +587,7 @@ class Autosubmit:
     @staticmethod
     def _init_logs(command, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
-        if expid != 'None':
+        if expid != 'None' and (command not in ["delete","migrate","expid"]):
             Autosubmit._check_ownership(expid)
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
@@ -675,8 +675,6 @@ class Autosubmit:
                             "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
                         Log.info("Removing experiment directory...")
-                        # Shutdown Logger so we do not access non-existent nor create a race condition
-                        Log.shutdown_logger()
                         shutil.rmtree(os.path.join(
                             BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                         try:
@@ -690,15 +688,11 @@ class Autosubmit:
                         except:
                             pass
                     except OSError as e:
-                        # This call might raise an exception since tmp folder could have been deleted.
-                        # However, if there is an Exception in this code block it is very probable that tmp folder still exists
-                        raise AutosubmitCritical(
-                            'Can not delete experiment folder: ', 7012, e.message)
-                    # Avoid calling logger from now on
-                    print("Deleting experiment from database...")
+                        raise AutosubmitCritical('Can not delete experiment folder: ', 7012, e.message)
+                    Log.info("Deleting experiment from database...")
                     ret = delete_experiment(expid_delete)
                     if ret:
-                        print(
+                        Log.result(
                             "Experiment {0} deleted".format(expid_delete))
                 else:
                     if currentOwner_id == 0:
@@ -710,10 +704,7 @@ class Autosubmit:
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 # print(traceback.format_exc())
-                print("Couldn't delete the experiment {0}".format(
-                    expid_delete))
-                # raise AutosubmitCritical(
-                #     "Couldn't delete the experiment:", 7012, e.message)
+                raise AutosubmitCritical("Couldn't delete the experiment:", 7012, e.message)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
