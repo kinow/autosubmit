@@ -587,12 +587,14 @@ class Autosubmit:
     @staticmethod
     def _init_logs(command, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
-        if expid != 'None' and (command not in ["delete","migrate","expid"]):
+        expid_less=["expid","testcase","install","-v","readme","changelog","configure"]
+        global_log_command = ["delete","unarchive","archive","migrate"]
+        if expid != 'None' and command not in expid_less and command not in global_log_command:
             Autosubmit._check_ownership(expid)
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
-            if not os.path.exists(exp_path) and "create" not in command:
+            if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
@@ -608,10 +610,17 @@ class Autosubmit:
             Log.set_file(os.path.join(
                 aslogs_path, 'jobs_status.log'), "status")
         else:
+            if expid == 'None':
+                exp_id = ""
+            if command not in expid_less:
+                exp_path=os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+                exp_id="_"+expid
+                if not os.path.exists(exp_path):
+                    raise AutosubmitCritical("Experiment does not exist", 7012)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
-                                      command + '.log'), "out", log_level)
+                                      command + exp_id + '.log'), "out", log_level)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
-                                      command + '_err.log'), "err")
+                                      command + exp_id + '_err.log'), "err")
 
     @staticmethod
     def _check_ownership(expid):
