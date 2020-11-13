@@ -131,6 +131,8 @@ class Platform(object):
         parameters['{0}TYPE'.format(prefix)] = self.type
         parameters['{0}SCRATCH_DIR'.format(prefix)] = self.scratch
         parameters['{0}TEMP_DIR'.format(prefix)] = self.temp_dir
+        if self.temp_dir is None:
+            self.temp_dir = ''
         parameters['{0}ROOTDIR'.format(prefix)] = self.root_dir
 
         parameters['{0}LOGDIR'.format(prefix)] = self.get_files_path()

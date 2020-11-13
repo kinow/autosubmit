@@ -286,7 +286,15 @@ class ParamikoPlatform(Platform):
                                     os.path.join(path_root, dest))
             return True
 
-        except (Exception,IOError) as e:
+        except IOError as e:
+            if str(e) in "Garbage":
+                raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(path_root),6004,e.message)
+            if must_exist:
+                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(path_root),6004,e.message)
+            else:
+                Log.debug("File {0} doesn't exists ".format(path_root))
+                return False
+        except Exception as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists'.format(os.path.join(self.get_files_path(), src)),6004,e.message)
             if must_exist:
@@ -294,7 +302,6 @@ class ParamikoPlatform(Platform):
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(os.path.join(self.get_files_path(), src)),5001)
                 return False
-
     def submit_job(self, job, script_name, hold=False):
         """
         Submit a job from a given job object.
@@ -520,7 +527,7 @@ class ParamikoPlatform(Platform):
         """
 
         if "-rP" in command or "find" in command or "convertLink" in command:
-            timeout = 60*60  # Max Wait 1hour if the command is a copy or simbolic links ( migrate can trigger long times)
+            timeout = 60*60*2  # Max Wait 2hours if the command is a copy or simbolic links ( migrate can trigger long times)
         elif "rm" in command:
             timeout = 60/2
         else:
