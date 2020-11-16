@@ -565,16 +565,34 @@ class Job(object):
                 except BaseException as e:
                     Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(e.message,self.name))
                     sleep(5)  # safe wait before end a thread
+                    try:
+                        self._platform.closeConnection()
+                    except:
+                        pass
                     return
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
             sleep(5)  # safe wait before end a thread
+            try:
+                self._platform.closeConnection()
+            except:
+                pass
+
             return
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(e.message,self.name), 6001)
             sleep(5)  # safe wait before end a thread
+            try:
+                self._platform.closeConnection()
+            except:
+                pass
+
             return
         sleep(5) # safe wait before end a thread
+        try:
+            self._platform.closeConnection()
+        except:
+            pass
         return
 
     def update_status(self, copy_remote_logs=False):

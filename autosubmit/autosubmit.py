@@ -297,7 +297,8 @@ class Autosubmit:
                                default=False, help='Offer experiment')
             group.add_argument('-p', '--pickup', action="store_true",
                                default=False, help='Pick-up released experiment')
-
+            subparser.add_argument('-r', '--onlyremote', action="store_true",
+                               default=False, help='Only moves remote files')
             # Inspect
             subparser = subparsers.add_parser(
                 'inspect', description="Generate all .cmd files")
@@ -485,12 +486,19 @@ class Autosubmit:
             subparser = subparsers.add_parser(
                 'archive', description='archives an experiment')
             subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-nclean', '--noclean', default=False, action='store_true',
+                                   help='Avoid Cleaning of experiment folder')
+            subparser.add_argument('-uc', '--uncompress', default=False, action='store_true',
+                                   help='Only does a container without compress')
 
             # Unarchive
             subparser = subparsers.add_parser(
                 'unarchive', description='unarchives an experiment')
             subparser.add_argument('expid', help='experiment identifier')
-
+            subparser.add_argument('-nclean', '--noclean', default=False, action='store_true',
+                                   help='Avoid Cleaning of experiment folder')
+            subparser.add_argument('-uc', '--uncompressed', default=False, action='store_true',
+                                   help='Untar an uncompressed tar')
             # Readme
             subparsers.add_parser('readme', description='show readme')
 
@@ -511,7 +519,7 @@ class Autosubmit:
         if hasattr(args, 'expid'):
             expid = args.expid
         Autosubmit._init_logs(
-            args.command, args.logconsole, args.logfile, expid)
+            args, args.logconsole, args.logfile, expid)
 
         if args.command == 'run':
             return Autosubmit.run_experiment(args.expid, args.notransitive, args.update_version, args.start_time, args.start_after, args.run_members)
@@ -540,7 +548,7 @@ class Autosubmit:
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
-            return Autosubmit.migrate(args.expid, args.offer, args.pickup)
+            return Autosubmit.migrate(args.expid, args.offer, args.pickup,args.onlyremote)
         elif args.command == 'create':
             return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
                                      args.expand_status, args.notransitive, args.check_wrapper, args.detail)
@@ -567,9 +575,9 @@ class Autosubmit:
         elif args.command == 'updateversion':
             return Autosubmit.update_version(args.expid)
         elif args.command == 'archive':
-            return Autosubmit.archive(args.expid)
+            return Autosubmit.archive(args.expid,noclean=args.noclean,uncompress=args.uncompress)
         elif args.command == 'unarchive':
-            return Autosubmit.unarchive(args.expid)
+            return Autosubmit.unarchive(args.expid,uncompressed=args.uncompressed)
 
         elif args.command == 'readme':
             if os.path.isfile(Autosubmit.readme_path):
@@ -585,33 +593,49 @@ class Autosubmit:
             return False
 
     @staticmethod
-    def _init_logs(command, console_level='INFO', log_level='DEBUG', expid='None'):
+    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
-        if expid != 'None':
-            Autosubmit._check_ownership(expid)
+        expid_less=["expid","testcase","install","-v","readme","changelog","configure","unarchive"]
+        global_log_command = ["delete","archive"]
+        if "offer" in args:
+            if args.offer:
+                global_log_command.append("migrate") #offer
+            else:
+                expid_less.append("migrate") #pickup
+        if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
-            if not os.path.exists(exp_path) and "create" not in command:
+            if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
+            if args.command not in ["monitor","describe","delete"]: # delete is treated differently
+                Autosubmit._check_ownership(expid)
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
             if not os.path.exists(aslogs_path):
                 os.mkdir(aslogs_path)
 
             Log.set_file(os.path.join(
-                aslogs_path, command + '.log'), "out", log_level)
+                aslogs_path, args.command + '.log'), "out", log_level)
             Log.set_file(os.path.join(
-                aslogs_path, command + '_err.log'), "err")
+                aslogs_path, args.command + '_err.log'), "err")
             if os.path.exists(os.path.join(aslogs_path, 'jobs_status.log')):
                 os.remove(os.path.join(aslogs_path, 'jobs_status.log'))
             Log.set_file(os.path.join(
                 aslogs_path, 'jobs_status.log'), "status")
         else:
+            if expid == 'None':
+                exp_id = ""
+            else:
+                exp_id = "_" + expid
+            if args.command not in expid_less:
+                exp_path=os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+                if not os.path.exists(exp_path):
+                    raise AutosubmitCritical("Experiment does not exist", 7012)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
-                                      command + '.log'), "out", log_level)
+                                      args.command + exp_id + '.log'), "out", log_level)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
-                                      command + '_err.log'), "err")
+                                      args.command + exp_id + '_err.log'), "err")
 
     @staticmethod
     def _check_ownership(expid):
@@ -675,8 +699,6 @@ class Autosubmit:
                             "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
                         Log.info("Removing experiment directory...")
-                        # Shutdown Logger so we do not access non-existent nor create a race condition
-                        Log.shutdown_logger()
                         shutil.rmtree(os.path.join(
                             BasicConfig.LOCAL_ROOT_DIR, expid_delete))
                         try:
@@ -690,15 +712,11 @@ class Autosubmit:
                         except:
                             pass
                     except OSError as e:
-                        # This call might raise an exception since tmp folder could have been deleted.
-                        # However, if there is an Exception in this code block it is very probable that tmp folder still exists
-                        raise AutosubmitCritical(
-                            'Can not delete experiment folder: ', 7012, e.message)
-                    # Avoid calling logger from now on
-                    print("Deleting experiment from database...")
+                        raise AutosubmitCritical('Can not delete experiment folder: ', 7012, e.message)
+                    Log.info("Deleting experiment from database...")
                     ret = delete_experiment(expid_delete)
                     if ret:
-                        print(
+                        Log.result(
                             "Experiment {0} deleted".format(expid_delete))
                 else:
                     if currentOwner_id == 0:
@@ -710,10 +728,7 @@ class Autosubmit:
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 # print(traceback.format_exc())
-                print("Couldn't delete the experiment {0}".format(
-                    expid_delete))
-                # raise AutosubmitCritical(
-                #     "Couldn't delete the experiment:", 7012, e.message)
+                raise AutosubmitCritical("Couldn't delete the experiment:", 7012, e.message)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -1664,6 +1679,9 @@ class Autosubmit:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
+                                if hasattr(thread,"log_name"):
+                                    if thread.log_name == 'paramiko.transport':
+                                        active_threads = False
                     sleep(10)
                     timeout += 10
                 for platform in platforms_to_test:
@@ -2310,7 +2328,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def migrate(experiment_id, offer, pickup):
+    def migrate(experiment_id, offer, pickup, only_remote):
         """
         Migrates experiment files from current to other user.
         It takes mapping information for new user from config files.
@@ -2318,16 +2336,31 @@ class Autosubmit:
         :param experiment_id: experiment identifier:
         :param pickup:
         :param offer:
+        :param only_remote:
         """
 
-        error = False
         if offer:
-            Log.info('Migrating experiment {0}'.format(experiment_id))
-            as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
             as_conf.check_conf_files(False)
+            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
+            job_list = Autosubmit.load_job_list(experiment_id, as_conf, notransitive=True, monitor=True)
+            Log.debug("Job list restored from {0} files", pkl_dir)
+            error = False
+            platforms_to_test = set()
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
+            if submitter.platforms is None:
+                raise AutosubmitCritical("No platforms configured!!!", 7014)
+            platforms = submitter.platforms
+            for job in job_list.get_job_list():
+                job.submitter = submitter
+                if job.platform_name is None:
+                    job.platform_name = as_conf.get_platform()
+                platforms_to_test.add(platforms[job.platform_name.lower()])
+            # establish the connection to all platforms on use
+            Autosubmit.restore_platforms(platforms_to_test)
+            Log.info('Migrating experiment {0}'.format(experiment_id))
+            Autosubmit._check_ownership(experiment_id)
             if submitter.platforms is None:
                 return False
             Log.info("Checking remote platforms")
@@ -2336,16 +2369,25 @@ class Autosubmit:
             already_moved = set()
             backup_files = []
             backup_conf = []
+            error = False
             for platform in platforms:
                 # Checks
-                Log.info(
-                    "Checking [{0}] from platforms configuration...", platform)
-                if not as_conf.get_migrate_user_to(platform):
-                    Log.printlog(
-                        "Missing directive USER_TO in [{0}]".format(platform), 7014)
+                err_message = 'Invalid Configuration:'
+                Log.info("Checking [{0}] from platforms configuration...", platform)
+                if as_conf.get_migrate_user_to(platform) == '':
+                    err_message += "\nInvalid USER_TO target [ USER == USER_TO in [{0}] ]".format(platform)
                     error = True
-                    break
-                if as_conf.get_migrate_project_to(platform):
+                elif not as_conf.get_migrate_duplicate(platform) and as_conf.get_migrate_user_to(platform) == as_conf.get_current_user(platform):
+                    err_message +="\nInvalid USER_TO target [ USER == USER_TO in ({0}) ] while parameter SAME_USER is false (or unset)".format(platform)
+                    error = True
+                p = submitter.platforms[platform]
+                if p.temp_dir is None:
+                    err_message += "\nInvalid TEMP_DIR, Parameter must be present even if empty in [{0}]".format(platform)
+                    error = True
+            if error:
+                raise AutosubmitCritical(err_message, 7014)
+            for platform in platforms:
+                if as_conf.get_migrate_project_to(platform) != '':
                     Log.info("Project in platform configuration file successfully updated to {0}",
                              as_conf.get_current_project(platform))
                     as_conf.get_current_project(platform)
@@ -2359,40 +2401,24 @@ class Autosubmit:
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
                 else:
-                    Log.info(
-                        "[OPTIONAL] PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
-                    backup_conf.append(
-                        [platform, as_conf.get_current_user(platform), None])
-                    as_conf.set_new_user(
-                        platform, as_conf.get_migrate_user_to(platform))
+                    Log.result("[OPTIONAL] PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
+                    backup_conf.append( [platform, as_conf.get_current_user(platform), None])
+                    as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
 
                 if as_conf.get_migrate_host_to(platform) != "none":
-                    Log.info(
-                        "Host in platform configuration file successfully updated to {0}", as_conf.get_migrate_host_to(platform))
-                    as_conf.set_new_host(
-                        platform, as_conf.get_migrate_host_to(platform))
+                    Log.result("Host in platform configuration file successfully updated to {0}", as_conf.get_migrate_host_to(platform))
+                    as_conf.set_new_host(platform, as_conf.get_migrate_host_to(platform))
                 else:
-                    Log.warning(
-                        "[OPTIONAL] HOST_TO directive not found. The directive HOST will remain unchanged")
-
-                Log.info("Moving local files/dirs")
+                    Log.result("[OPTIONAL] HOST_TO directive not found. The directive HOST will remain unchanged")
                 p = submitter.platforms[platform]
                 if p.temp_dir not in already_moved:
                     if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
-                        Log.info("Converting abs symlink to relative")
                         # find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh
-
-                        Log.info(
-                            "Converting the absolute symlinks into relatives on platform {0} ", platform)
                         #command = "find " + p.root_dir + " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n'"
-                        if p.root_dir.find(experiment_id) < 0:
-                            Log.error(
-                                "[Aborting] it is not safe to change symlinks in {0} due an invalid expid", p.root_dir)
-                            error = True
-                            break
+                        Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform)
                         command = "find " + p.root_dir + \
                             " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n' "
                         try:
@@ -2403,13 +2429,13 @@ class Autosubmit:
                                 with open(convertLinkPath, 'w') as convertLinkFile:
                                     convertLinkFile.write(p.get_ssh_output())
                                 p.send_file("convertLink.sh")
-                                convertLinkPathRemote = os.path.join(
-                                    p.remote_log_dir, "convertLink.sh")
+                                convertLinkPathRemote = os.path.join(p.remote_log_dir, "convertLink.sh")
                                 command = "chmod +x " + convertLinkPathRemote + " && " + \
                                     convertLinkPathRemote + " && rm " + convertLinkPathRemote
-                                Log.info(
-                                    "Converting absolute symlinks this can take a while depending on the experiment size ")
                                 p.send_command(command, True)
+                            else:
+                                Log.result("No links found in {0} for [{1}] ".format(p.root_dir,platform))
+
                         except IOError:
                             Log.debug(
                                 "The platform {0} does not contain absolute symlinks", platform)
@@ -2418,38 +2444,31 @@ class Autosubmit:
                                 "Absolute symlinks failed to convert, check user in platform.conf", 3000)
                             error = True
                             break
-
                         try:
-                            Log.info(
-                                "Moving remote files/dirs on {0}", platform)
+                            Log.info("Moving remote files/dirs on {0}", platform)
                             p.send_command("chmod 777 -R " + p.root_dir)
-                            if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), True):
-                                Log.printlog(
-                                    "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
-                                                                                           os.path.join(p.temp_dir, experiment_id), 6012))
-                                error = True
-                                break
-                        except (IOError, BaseException) as e:
-                            Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
-                                                                                                os.path.join(p.temp_dir, experiment_id)), 6012)
+                            if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), False):
+                                Log.result("No data found in {0} for [{1}] ".format(p.root_dir, platform))
+                        except IOError as e:
+                            Log.printlog(
+                                "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
+                                                                                       os.path.join(p.temp_dir,
+                                                                                                    experiment_id),
+                                                                                       6012))
                             error = True
                             break
-
+                        except Exception as e:
+                            Log.printlog("Trace: {2}\nThe files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,os.path.join(p.temp_dir, experiment_id),e.message), 6012)
+                            error = True
+                            break
                         backup_files.append(platform)
-                Log.result(
-                    "Files/dirs on {0} have been successfully offered", platform)
-                Log.result("[{0}] from platforms configuration OK", platform)
-
+                Log.result("Files/dirs on {0} have been successfully offered", platform)
             if error:
-                Log.printlog(
-                    "The experiment cannot be offered, reverting changes", 7012)
-                as_conf = AutosubmitConfig(
-                    experiment_id, BasicConfig, ConfigParserFactory())
+                as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
                 as_conf.check_conf_files(False)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
-                    p.move_file(os.path.join(
-                        p.temp_dir, experiment_id), p.root_dir, True)
+                    p.move_file(os.path.join(p.temp_dir, experiment_id), p.root_dir, True)
                 for platform in backup_conf:
                     as_conf.set_new_user(platform[0], platform[1])
                     if platform[2] is not None:
@@ -2457,11 +2476,22 @@ class Autosubmit:
                     if as_conf.get_migrate_host_to(platform[0]) != "none":
                         as_conf.set_new_host(
                             platform[0], as_conf.get_migrate_host_to(platform[0]))
-                return False
+                raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014)
             else:
-                if not Autosubmit.archive(experiment_id, False, False):
-                    Log.printlog(
-                        "The experiment cannot be offered, reverting changes", 7012)
+                try:
+                    if not only_remote:
+                        if not Autosubmit.archive(experiment_id, True, True):
+                            for platform in backup_files:
+                                p = submitter.platforms[platform]
+                                p.move_file(os.path.join(
+                                    p.temp_dir, experiment_id), p.root_dir, True)
+                            for platform in backup_conf:
+                                as_conf.set_new_user(platform[0], platform[1])
+                                if platform[2] is not None:
+                                    as_conf.set_new_project(platform[0], platform[2])
+                            raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014)
+                    Log.result("The experiment has been successfully offered.")
+                except Exception as e:
                     for platform in backup_files:
                         p = submitter.platforms[platform]
                         p.move_file(os.path.join(
@@ -2470,66 +2500,73 @@ class Autosubmit:
                         as_conf.set_new_user(platform[0], platform[1])
                         if platform[2] is not None:
                             as_conf.set_new_project(platform[0], platform[2])
-
-                    return False
-                else:
-
-                    Log.result("The experiment has been successfully offered.")
-
+                    raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014,e.message)
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
-            if not Autosubmit.unarchive(experiment_id, False):
-                raise AutosubmitCritical(
-                    "The experiment cannot be picked up", 7012)
-            Log.info("Local files/dirs have been successfully picked up")
-            as_conf = AutosubmitConfig(
-                experiment_id, BasicConfig, ConfigParserFactory())
+            if not only_remote:
+                if not Autosubmit.unarchive(experiment_id, True):
+                    raise AutosubmitCritical("The experiment cannot be picked up", 7012)
+                Log.info("Local files/dirs have been successfully picked up")
+            else:
+                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
+                if not os.path.exists(exp_path):
+                    raise AutosubmitCritical("Experiment seems to be archived, no action is performed", 7012)
+
+            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
             as_conf.check_conf_files(False)
-            Log.info("Checking remote platforms")
+            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
+            job_list = Autosubmit.load_job_list(experiment_id, as_conf, notransitive=True, monitor=True)
+            Log.debug("Job list restored from {0} files", pkl_dir)
+            error = False
+            platforms_to_test = set()
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             if submitter.platforms is None:
-                return False
-            platforms = filter(lambda x: x not in [
-                               'local', 'LOCAL'], submitter.platforms)
+                raise AutosubmitCritical("No platforms configured!!!", 7014)
+            platforms = submitter.platforms
+            for job in job_list.get_job_list():
+                job.submitter = submitter
+                if job.platform_name is None:
+                    job.platform_name = as_conf.get_platform()
+                platforms_to_test.add(platforms[job.platform_name.lower()])
+
+            Log.info("Checking remote platforms")
+            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
             already_moved = set()
             backup_files = []
-            for platform in platforms:
-                p = submitter.platforms[platform]
-                if p.temp_dir not in already_moved:
-                    if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
-                        already_moved.add(p.temp_dir)
-                        Log.info("Copying remote files/dirs on {0}", platform)
-                        Log.info("Copying from {0} to {1}", os.path.join(
-                            p.temp_dir, experiment_id), p.root_dir)
-                        try:
-                            p.send_command(
-                                "cp -rP " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir)
-                            p.send_command("chmod 755 -R " + p.root_dir)
-                            Log.result(
-                                "Files/dirs on {0} have been successfully picked up", platform)
-                        except (IOError, BaseException):
-                            error = True
-                            Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(
-                                os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
-                            break
-                        backup_files.append(platform)
-                    else:
-                        Log.result(
-                            "Files/dirs on {0} have been successfully picked up", platform)
+            # establish the connection to all platforms on use
+            try:
+                Autosubmit.restore_platforms(platforms_to_test)
+            except Exception as e:
+                raise AutosubmitCritical("Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote",7014,e.message)
+                error = True
+            if not error:
+                for platform in platforms:
+                    p = submitter.platforms[platform]
+                    if p.temp_dir not in already_moved:
+                        if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
+                            already_moved.add(p.temp_dir)
+                            Log.info("Copying remote files/dirs on {0}", platform)
+                            Log.info("Copying from {0} to {1}", os.path.join(
+                                p.temp_dir, experiment_id), p.root_dir)
+                            try:
+                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir)
+                                p.send_command("chmod 755 -R " + p.root_dir)
+                                Log.result("Files/dirs on {0} have been successfully picked up", platform)
+                                p.send_command("find {0} -depth -type d -empty -delete".format(p.temp_dir))
+                                Log.result("Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
+
+                            except (IOError, BaseException):
+                                error = True
+                                Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
+                                break
+                            backup_files.append(platform)
+                        else:
+                            Log.result("Files/dirs on {0} have been successfully picked up", platform)
             if error:
-                Autosubmit.archive(experiment_id, False, False)
-                Log.printlog(
-                    "The experiment cannot be picked,reverting changes.", 7012)
-                for platform in backup_files:
-                    p = submitter.platforms[platform]
-                    p.send_command("rm -R " + p.root_dir)
-                return False
+                raise AutosubmitCritical("Unable to pickup all platforms, the non-moved files are on the TEMP_DIR\n You can try again with autosubmit {0} -p --onlyremote".format(experiment_id), 7012)
             else:
-                for platform in backup_files:
-                    p = submitter.platforms[platform]
-                    p.send_command("rm -R " + p.temp_dir + "/" + experiment_id)
                 Log.result("The experiment has been successfully picked up.")
                 #Log.info("Refreshing the experiment.")
                 # Autosubmit.refresh(experiment_id,False,False)
@@ -3000,7 +3037,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def archive(expid, clean=True, compress=True):
+    def archive(expid, noclean=True, uncompress=True):
         """
         Archives an experiment: call clean (if experiment is of version 3 or later), compress folder
         to tar.gz and moves to year's folder
@@ -3015,10 +3052,10 @@ class Autosubmit:
 
         exp_folder = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
-        if clean:
+        if not noclean:
             # Cleaning to reduce file size.
             version = get_autosubmit_version(expid)
-            if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True, False):
+            if version is not None and version.startswith('3') and not Autosubmit.clean(expid, True, True, True):
                 raise AutosubmitCritical(
                     "Can not archive project. Clean not successful", 7012)
 
@@ -3044,7 +3081,7 @@ class Autosubmit:
             if not os.path.exists(year_path):
                 os.mkdir(year_path)
                 os.chmod(year_path, 0o755)
-            if compress:
+            if not uncompress:
                 compress_type = "w:gz"
                 output_filepath = '{0}.tar.gz'.format(expid)
             else:
@@ -3074,7 +3111,7 @@ class Autosubmit:
                         exp_folder + "_to_delete "))
                 except Exception as e:
 
-                    Autosubmit.unarchive(expid, compress, True)
+                    Autosubmit.unarchive(expid, uncompress=False)
                     raise AutosubmitCritical(
                         "Can not remove or rename experiments folder", 7012, e.message)
 
@@ -3082,7 +3119,7 @@ class Autosubmit:
         return True
 
     @staticmethod
-    def unarchive(experiment_id, compress=True, overwrite=False):
+    def unarchive(experiment_id, uncompressed=True):
         """
         Unarchives an experiment: uncompress folder from tar.gz and moves to experiments root folder
 
@@ -3096,7 +3133,7 @@ class Autosubmit:
         # Searching by year. We will store it on database
         year = datetime.datetime.today().year
         archive_path = None
-        if compress:
+        if not uncompressed:
             compress_type = "r:gz"
             output_pathfile = '{0}.tar.gz'.format(experiment_id)
         else:
@@ -3533,7 +3570,7 @@ class Autosubmit:
                     if countStart > 1 or countEnd > 1:
                         section_validation_error = True
                         section_validation_message += "\n\tList of sections has a format error. Perhaps you were trying to use -fc instead."
-                    #countUnderscore = filter_section.count('_')
+                    #countUnderscore =  filter_section.count('_')
                     # if countUnderscore > 1:
                     #    section_validation_error = True
                     #    section_validation_message += "\n\tList of sections provided has a format error. Perhaps you were trying to use -fl instead."

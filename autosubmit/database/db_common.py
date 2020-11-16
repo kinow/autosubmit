@@ -299,8 +299,7 @@ def delete_experiment(experiment_id):
                    'WHERE name=:name', {'name': experiment_id})
     row = cursor.fetchone()
     if row is None:
-        # Avoid calling Log since the tmp folder has been deleted
-        print('The experiment {0} has been deleted!!!', experiment_id)
+        Log.debug('The experiment {0} has been deleted!!!', experiment_id)
     close_conn(conn, cursor)
     return True
 

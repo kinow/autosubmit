@@ -226,7 +226,14 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+    def get_migrate_duplicate(self, section):
+        """
+        Returns the user to change to from platform config file.
 
+        :return: migrate user to
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'SAME_USER', 'false').lower()
     def get_current_user(self, section):
         """
         Returns the user to be changed from platform config file.
