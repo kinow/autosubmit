@@ -526,10 +526,10 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
 
-        if "-rP" in command or "find" in command or "convertLink" in command:
-            timeout = 60*60*2  # Max Wait 2hours if the command is a copy or simbolic links ( migrate can trigger long times)
+        if "rsync" in command or "find" in command or "convertLink" in command:
+            timeout = None  # infinite timeout on migrate command
         elif "rm" in command:
-            timeout = 60/2
+            timeout = 60
         else:
             timeout = 60*2
         stderr_readlines = []
@@ -770,7 +770,7 @@ class ParamikoPlatform(Platform):
 
     def check_tmp_exists(self):
         try:
-            if self.send_command("ls {0}".format(self.tmp_path)):
+            if self.send_command("ls {0}".format(self.temp_dir)):
                 if "no such file or directory" in self.get_ssh_output_err().lower():
                     return False
                 else:

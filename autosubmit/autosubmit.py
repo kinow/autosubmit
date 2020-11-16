@@ -1433,7 +1433,7 @@ class Autosubmit:
                             timeout = 0
                             active_threads = True
                             all_threads = threading.enumerate()
-                            while active_threads and timeout <= 30:
+                            while active_threads and timeout <= 60:
                                 active_threads = False
                                 for thread in all_threads:
                                     if "Thread-" in thread.name:
@@ -1443,13 +1443,13 @@ class Autosubmit:
                                                     active_threads = True
                                                     Log.info(
                                                         "{0} is still working, waiting {1} seconds.".format(thread.name,
-                                                                                                 30 - timeout))
+                                                                                                 60 - timeout))
                                                     continue
                                             else:
                                                 active_threads = True
                                                 Log.info(
                                                     "{0} is still working, left {1}.".format(thread.name,
-                                                                                             30 - timeout))
+                                                                                             60 - timeout))
                                                 continue
                                 if active_threads:
                                     sleep(10)
