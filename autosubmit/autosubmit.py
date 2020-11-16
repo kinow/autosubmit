@@ -1428,20 +1428,32 @@ class Autosubmit:
                     try:
                         if Autosubmit.exit:
                             # Closing threads on Ctrl+C
-                            exit_timeout = 0
-                            exit_active_threads = True
                             Log.info(
-                                "Looking for active threads before closing Autosubmit. Ending the program before these threads finish may result in unexpected behavior. This procedure will last until all threads have finished or the program has waited for more than 60 seconds.")
-                            while exit_active_threads and exit_timeout <= 60:
-                                exit_active_threads = False
-                                for thread in threading.enumerate():
+                                "Looking for active threads before closing Autosubmit. Ending the program before these threads finish may result in unexpected behavior. This procedure will last until all threads have finished or the program has waited for more than 30 seconds.")
+                            timeout = 0
+                            active_threads = True
+                            all_threads = threading.enumerate()
+                            while active_threads and timeout <= 30:
+                                active_threads = False
+                                for thread in all_threads:
                                     if "Thread-" in thread.name:
-                                        if thread.is_alive():
-                                            Log.info(
-                                                "{0} is still working.".format(thread.name))
-                                            exit_active_threads = True
-                                sleep(10)
-                                exit_timeout += 10
+                                        if thread.isAlive():
+                                            if hasattr(thread, "log_name"):
+                                                if thread.log_name != 'paramiko.transport':
+                                                    active_threads = True
+                                                    Log.info(
+                                                        "{0} is still working, waiting {1} seconds.".format(thread.name,
+                                                                                                 30 - timeout))
+                                                    continue
+                                            else:
+                                                active_threads = True
+                                                Log.info(
+                                                    "{0} is still working, left {1}.".format(thread.name,
+                                                                                             30 - timeout))
+                                                continue
+                                if active_threads:
+                                    sleep(10)
+                                    timeout += 10
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
@@ -1670,7 +1682,6 @@ class Autosubmit:
 
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
-
                 active_threads = True
                 all_threads = threading.enumerate()
                 while active_threads and timeout < 360:
@@ -1681,13 +1692,17 @@ class Autosubmit:
                                 if hasattr(thread,"log_name"):
                                     if thread.log_name != 'paramiko.transport':
                                         active_threads = True
+                                        Log.info(
+                                            "{0} is still working, waiting {1} seconds.".format(thread.name, 360 - timeout))
                                         continue
                                 else:
                                     active_threads = True
+                                    Log.info(
+                                        "{0} is still working, waiting {1} seconds.".format(thread.name, 360 - timeout))
                                     continue
-
-                    sleep(10)
-                    timeout += 10
+                    if active_threads:
+                        sleep(10)
+                        timeout += 10
                 for platform in platforms_to_test:
                     platform.closeConnection()
                 if len(job_list.get_failed()) > 0:
