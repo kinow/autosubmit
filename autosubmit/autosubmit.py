@@ -1679,6 +1679,9 @@ class Autosubmit:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
                                 active_threads = True
+                                if hasattr(thread,"log_name"):
+                                    if thread.log_name == 'paramiko.transport':
+                                        active_threads = False
                     sleep(10)
                     timeout += 10
                 for platform in platforms_to_test:

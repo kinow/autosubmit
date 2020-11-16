@@ -343,7 +343,7 @@ class ParamikoPlatform(Platform):
 
     def submit_Script(self, hold=False):
         """
-        Sends a SubmitfileScript, exec in platform and retrieve the Jobs_ID.
+        Sends a Submitfile Script, exec in platform and retrieve the Jobs_ID.
 
         :param job: job object
         :type job: autosubmit.job.job.Job
