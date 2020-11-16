@@ -188,7 +188,8 @@ class LocalPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
-
+    def get_ssh_output_err(self):
+        return self._ssh_output_err
     def get_logs_files(self, exp_id, remote_logs):
         """
         Overriding the parent's implementation.

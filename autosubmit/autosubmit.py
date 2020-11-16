@@ -1678,10 +1678,14 @@ class Autosubmit:
                     for thread in all_threads:
                         if "Thread-" in thread.name:
                             if thread.isAlive():
-                                active_threads = True
                                 if hasattr(thread,"log_name"):
-                                    if thread.log_name == 'paramiko.transport':
-                                        active_threads = False
+                                    if thread.log_name != 'paramiko.transport':
+                                        active_threads = True
+                                        continue
+                                else:
+                                    active_threads = True
+                                    continue
+
                     sleep(10)
                     timeout += 10
                 for platform in platforms_to_test:
@@ -2384,6 +2388,10 @@ class Autosubmit:
                 if p.temp_dir is None:
                     err_message += "\nInvalid TEMP_DIR, Parameter must be present even if empty in [{0}]".format(platform)
                     error = True
+                elif p.temp_dir != "":
+                    if not p.check_tmp_exists():
+                        err_message += "\nTEMP_DIR {0}, does not exists in [{1}]".format(p.temp_dir,platform)
+                        error = True
             if error:
                 raise AutosubmitCritical(err_message, 7014)
             for platform in platforms:
@@ -2448,7 +2456,7 @@ class Autosubmit:
                             Log.info("Moving remote files/dirs on {0}", platform)
                             p.send_command("chmod 777 -R " + p.root_dir)
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), False):
-                                Log.result("No data found in {0} for [{1}] ".format(p.root_dir, platform))
+                                Log.result("No data found in {0} for [{1}]\n".format(p.root_dir, platform))
                         except IOError as e:
                             Log.printlog(
                                 "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
@@ -2551,10 +2559,10 @@ class Autosubmit:
                             Log.info("Copying from {0} to {1}", os.path.join(
                                 p.temp_dir, experiment_id), p.root_dir)
                             try:
-                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir)
-                                p.send_command("chmod 755 -R " + p.root_dir)
+                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                p.send_command("chmod 755 -R " + p.root_dir[:-5])
                                 Log.result("Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command("find {0} -depth -type d -empty -delete".format(p.temp_dir))
+                                p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir,experiment_id)))
                                 Log.result("Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
 
                             except (IOError, BaseException):

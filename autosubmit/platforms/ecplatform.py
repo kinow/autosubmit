@@ -204,7 +204,8 @@ class EcPlatform(ParamikoPlatform):
 
     def get_ssh_output(self):
         return self._ssh_output
-
+    def get_ssh_output_err(self):
+        return self._ssh_output_err
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, expid, dependency, rootdir, directives):
         return """\

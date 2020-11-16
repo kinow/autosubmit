@@ -568,10 +568,12 @@ class ParamikoPlatform(Platform):
             stdout.close()
             stderr.close()
             self._ssh_output = ""
+            self._ssh_output_err = ""
             for s in stdout_chunks:
                 if s != '':
                     self._ssh_output += s
             for errorLineCase in stderr_readlines:
+                self._ssh_output_err += errorLineCase
                 errorLine = errorLineCase.lower()
                 if "not active" in errorLine:
                     raise AutosubmitError('SSH Session not active, will restart the platforms', 6005)
@@ -662,7 +664,8 @@ class ParamikoPlatform(Platform):
         """
         #Log.debug('Output {0}', self._ssh_output)
         return self._ssh_output
-
+    def get_ssh_output_err(self):
+        return self._ssh_output_err
     def get_call(self, job_script, job):
         """
         Gets execution command for given job
@@ -765,6 +768,17 @@ class ParamikoPlatform(Platform):
                 pass
 
 
+    def check_tmp_exists(self):
+        try:
+            if self.send_command("ls {0}".format(self.tmp_path)):
+                if "no such file or directory" in self.get_ssh_output_err().lower():
+                    return False
+                else:
+                    return True
+            else:
+                return False
+        except Exception as e:
+            return False
 
     def check_remote_log_dir(self):
         """
