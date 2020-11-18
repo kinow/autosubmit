@@ -500,9 +500,9 @@ class JobList(object):
 
         sections_running_type_map = dict()
         if "&" in wrapper_jobs:
-            char="&"
+            char = "&"
         else:
-            char=" "
+            char = " "
         for section in wrapper_jobs.split(char):
             # RUNNING = once, as default. This value comes from jobs_.conf
             sections_running_type_map[section] = self._dic_jobs.get_option(
@@ -1171,7 +1171,7 @@ class JobList(object):
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf, store_change=True, fromSetStatus=False,submitter=None):
+    def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -1201,9 +1201,11 @@ class JobList(object):
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
                     if submitter is not None:
-                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        job.platform = submitter.platforms[job.platform_name.lower(
+                        )]
                         job.platform.test_connection()
-                        job.platform = submitter.platforms[job.platform_name.lower()]
+                        job.platform = submitter.platforms[job.platform_name.lower(
+                        )]
                         job.platform.test_connection()
 
                     job.id = None
@@ -1337,21 +1339,42 @@ class JobList(object):
         if not notransitive:
             # Transitive reduction required
             current_structure = None
-            if os.path.exists(os.path.join(self._config.STRUCTURES_DIR, "structure_" + self.expid + ".db")):
+            db_path = os.path.join(
+                self._config.STRUCTURES_DIR, "structure_" + self.expid + ".db")
+            m_time_db = None
+            jobs_conf_path = os.path.join(
+                self._config.LOCAL_ROOT_DIR, self.expid, "conf", "jobs_{0}.conf".format(self.expid))
+            m_time_job_conf = None
+            if os.path.exists(db_path):
                 try:
                     current_structure = DbStructure.get_structure(
                         self.expid, self._config.STRUCTURES_DIR)
+                    m_time_db = os.stat(db_path).st_mtime
+                    if os.path.exists(jobs_conf_path):
+                        m_time_job_conf = os.stat(jobs_conf_path).st_mtime
                 except Exception as exp:
                     pass
             structure_valid = False
-            if ((current_structure) and (len(self._job_list) == len(current_structure.keys())) and update_structure == False):
+            # If there is a current structure, and the number of jobs in JobList is equal to the number of jobs in the structure
+            if ((current_structure) and (len(self._job_list) == len(current_structure)) and update_structure == False):
                 structure_valid = True
-                # print(current_structure.keys())
+                # Further validation
                 # Structure exists and is valid, use it as a source of dependencies
-                for job in self._job_list:
-                    if job.name not in current_structure.keys():
+                if m_time_job_conf:
+                    if m_time_job_conf > m_time_db:
+                        Log.info(
+                            "File jobs_{0}.conf has been modified since the last time the structured was cached.".format(self.expid))
                         structure_valid = False
-                        continue
+                else:
+                    Log.info(
+                        "File jobs_{0}.conf was not found.".format(self.expid))
+
+                if structure_valid == True:
+                    for job in self._job_list:
+                        if current_structure.get(job.name, None) is None:
+                            structure_valid = False
+                            break
+
                 if structure_valid == True:
                     Log.info("Using existing valid structure.")
                     for job in self._job_list:
