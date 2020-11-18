@@ -1413,7 +1413,7 @@ done
         else:
             #Log.info("No completed filed found, setting {0} to FAILED...".format(job.name))
             job.status = Status.FAILED
-            job.update_status(self.as_config.get_copy_remote_logs() == 'true')
+            #job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self,canceled_wrapper=False):
