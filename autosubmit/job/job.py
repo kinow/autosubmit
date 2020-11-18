@@ -1238,7 +1238,6 @@ class WrapperJob(Job):
                                 self.failed = True
                                 self._platform.delete_file('WRAPPER_FAILED')
                                 break
-
                 if self.failed:
                     self.update_failed_jobs()
                     if len(self.inner_jobs_running) <= 0:
@@ -1318,10 +1317,8 @@ class WrapperJob(Job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
             # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock! Cancelling...".format(
+            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
                 job.name, self.name), 6009)
-            job.new_status = Status.FAILED
-            job.update_status(self.as_config.get_copy_remote_logs() == 'true')
             return True
         return False
     def _check_running_jobs(self):
@@ -1385,8 +1382,9 @@ done
                                 job.update_status(self.as_config.get_copy_remote_logs() == 'true')
                             if len(out) == 2:
                                 Log.info("Job {0} is RUNNING".format(jobname))
-                                over_wallclock = self._check_inner_job_wallclock(job)
+                                over_wallclock = self._check_inner_job_wallclock(job) # messaged included
                                 if over_wallclock:
+                                    job.status = Status.FAILED
                                     Log.printlog("Job {0} is FAILED".format(jobname),6009)
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
@@ -1397,7 +1395,7 @@ done
                     retries = retries - 1
             temp_list = self.inner_jobs_running
             self.inner_jobs_running = [job for job in temp_list if job.status == Status.RUNNING]
-            if retries == 0 or over_wallclock:
+            if retries == 0: # or over_wallclock:
                 self.status = Status.FAILED
     def _check_finished_job(self, job , failed_file=False):
         if not failed_file:
@@ -1414,7 +1412,7 @@ done
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         else:
             #Log.info("No completed filed found, setting {0} to FAILED...".format(job.name))
-            job.new_status = Status.FAILED
+            job.status = Status.FAILED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
         self.running_jobs_start.pop(job, None)
 
