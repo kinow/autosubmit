@@ -4175,7 +4175,8 @@ class Autosubmit:
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
-        #as_conf.set_safetysleeptime(10)
+        if not as_conf._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True):
+            as_conf.set_safetysleeptime(10)
 
         if dummy:
             content = open(as_conf.experiment_file).read()

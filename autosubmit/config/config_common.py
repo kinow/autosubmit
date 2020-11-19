@@ -459,8 +459,9 @@ class AutosubmitConfig(object):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "TOTALJOBS parameter not found or non-integer"]]
         if not self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True):
-            self.wrong_config["Autosubmit"] += [['config',
-                                                 "SAFETYSLEEPTIME parameter not found or non-integer"]]
+            self.set_safetysleeptime(10)
+            #self.wrong_config["Autosubmit"] += [['config',
+            #                                     "SAFETYSLEEPTIME parameter not found or non-integer"]]
         if not self._conf_parser.check_is_int('config', 'RETRIALS', True):
             self.wrong_config["Autosubmit"] += [['config',
                                                  "RETRIALS parameter not found or non-integer"]]
@@ -1231,7 +1232,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return int(self._conf_parser.get('config', 'SAFETYSLEEPTIME'))
+        return int(self._conf_parser.get_option('config', 'SAFETYSLEEPTIME',10))
 
     def set_safetysleeptime(self, sleep_time):
         """
