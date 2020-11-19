@@ -793,7 +793,7 @@ class Autosubmit:
                         Log.debug(conf_new_filename)
                         open(conf_new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(
-                    exp_id, hpc, Autosubmit.autosubmit_version, dummy)
+                    exp_id, hpc, Autosubmit.autosubmit_version, dummy,copy_id)
             except (OSError, IOError) as e:
                 Autosubmit._delete_expid(exp_id)
                 raise AutosubmitCritical(
@@ -876,7 +876,7 @@ class Autosubmit:
                                                   new_filename), 'w').write(content)
 
                     Autosubmit._prepare_conf_files(
-                        exp_id, hpc, Autosubmit.autosubmit_version, dummy)
+                        exp_id, hpc, Autosubmit.autosubmit_version, dummy,copy_id)
                     #####
                     autosubmit_config = AutosubmitConfig(
                         exp_id, BasicConfig, ConfigParserFactory())
@@ -4158,7 +4158,7 @@ class Autosubmit:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
     @staticmethod
-    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy):
+    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy,copy_id):
         """
         Changes default configuration files to match new experiment values
 
@@ -4175,10 +4175,9 @@ class Autosubmit:
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
-        if not as_conf._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True):
-            as_conf.set_safetysleeptime(10)
 
-        if dummy:
+
+        if dummy or copy_id is None:
             content = open(as_conf.experiment_file).read()
 
             # Experiment
