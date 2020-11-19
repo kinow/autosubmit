@@ -163,7 +163,7 @@ class Log:
             os.mkdir(directory)
         files = [f for f in os.listdir(directory) if os.path.isfile(
             os.path.join(directory, f)) and f.endswith(filename)]
-        if len(files) >= 5:
+        if len(files) >= 10:
             files.sort()
             os.remove(os.path.join(directory, files[0]))
         file_path = os.path.join(

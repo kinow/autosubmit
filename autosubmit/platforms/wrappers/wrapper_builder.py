@@ -290,12 +290,6 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
             current = {1}
             current.start()
             current.join()
-            if os.path.exists(failed_wrapper):
-                os.remove(os.path.join(os.getcwd(),wrapper_id))
-                wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
-                open(wrapper_failed, 'w').close()
-                os._exit(1)
-            
         """).format(jobs_list, thread, '\n'.ljust(13))
 
         if footer:
@@ -312,8 +306,24 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
                 open(failed_path, 'w').close()
                 print datetime.now(), "The job ", current.template," has FAILED"
                 #{1}
-            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+            sequential_threads_launcher += self._indent(textwrap.dedent("""
+                if os.path.exists(failed_wrapper):
+                    os.remove(os.path.join(os.getcwd(),wrapper_id))
+                    wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
+                    open(wrapper_failed, 'w').close()
+                    os._exit(1)
 
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+        else:
+            sequential_threads_launcher += self._indent(textwrap.dedent("""
+                if os.path.exists(failed_wrapper):
+                    os.remove(os.path.join(os.getcwd(),wrapper_id))
+                    wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
+                    open(wrapper_failed, 'w').close()
+                    os._exit(1)
+
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return sequential_threads_launcher
 
     def build_parallel_threads_launcher(self, jobs_list, thread, footer=True):
