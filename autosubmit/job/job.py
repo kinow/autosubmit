@@ -805,7 +805,9 @@ class Job(object):
         self.memory = as_conf.get_memory(self.section)
         self.memory_per_task = as_conf.get_memory_per_task(self.section)
         self.wallclock = as_conf.get_wallclock(self.section)
-
+        if self.wallclock == '':
+            Log.debug("Wallclock for {0} is not defined! , setting it to 02:00".format(self.name))
+            self.wallclock = '02:00'
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space

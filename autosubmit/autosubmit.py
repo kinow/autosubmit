@@ -982,10 +982,12 @@ class Autosubmit:
             platform.add_parameters(parameters)
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         if as_conf.get_platform().lower() not in platforms.keys():
-            raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
-            ).lower()) + " is not a valid platform defined in platforms_.conf.", 7014)
-        platform = platforms[as_conf.get_platform().lower()]
-        platform.add_parameters(parameters, True)
+            Log.warning("Main platform is not defined in platforms.conf")
+            #raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
+            #).lower()) + " is not a valid platform defined in platforms_.conf.", 7014)
+        else:
+            platform = platforms[as_conf.get_platform().lower()]
+            platform.add_parameters(parameters, True)
         # Attach paramenters to JobList
         job_list.parameters = parameters
 
