@@ -27,7 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
-from log.log import Log, AutosubmitError, AutosubmitCritical
+from log.log import Log,AutosubmitError,AutosubmitCritical
 # from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
@@ -60,18 +60,15 @@ def get_structure(exp_id, structures_path):
             current_table = _get_exp_structure(db_structure_path)
             # print("Current table: ")
             # print(current_table)
-            current_table_structure = {}
+            current_table_structure = dict()
             for item in current_table:
                 _from, _to = item
-                current_table_structure.setdefault(_from, [])  # .append(_to)
-                current_table_structure.setdefault(
-                    _to, []).append(_from)  # .append(_from)
-                # if _from not in current_table_structure.keys():
-                #     current_table_structure[_from] = list()
-                # if _to not in current_table_structure.keys():
-                #     current_table_structure[_to] = list()
-                # current_table_structure[_from].append(_to)
-            if (len(current_table_structure) > 0):
+                if _from not in current_table_structure.keys():
+                    current_table_structure[_from] = list()
+                if _to not in current_table_structure.keys():
+                    current_table_structure[_to] = list()
+                current_table_structure[_from].append(_to)
+            if (len(current_table_structure.keys()) > 0):
                 # print("Return structure")
                 return current_table_structure
             else:
@@ -108,7 +105,7 @@ def create_table(conn, create_table_sql):
         c = conn.cursor()
         c.execute(create_table_sql)
     except Exception as e:
-        Log.printlog("Create table error {0}".format(str(e)), 5000)
+        Log.printlog("Create table error {0}".format(str(e)),5000)
 
 
 def _get_exp_structure(path):
@@ -126,8 +123,7 @@ def _get_exp_structure(path):
         rows = cur.fetchall()
         return rows
     except Exception as exp:
-        Log.debug(
-            "Get structure error {0}, couldn't load from storage ".format(str(exp)))
+        Log.debug("Get structure error {0}, couldn't load from storage ".format(str(exp)))
         Log.debug(traceback.format_exc())
         return dict()
 
