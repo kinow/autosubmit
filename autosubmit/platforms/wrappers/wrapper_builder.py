@@ -170,8 +170,8 @@ class PythonWrapperBuilder(WrapperBuilder):
             def run(self):
                 jobname = self.template.replace('.cmd', '')
                 os.system("echo $(date +%s) > "+jobname+"_STAT")
-                out = str(self.template) + "." + str(self.id_run) + ".out"
-                err = str(self.template) + "." + str(self.id_run) + ".err"
+                out = str(self.template) + ".out"
+                err = str(self.template) + ".err"
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
@@ -565,8 +565,8 @@ class BashWrapperBuilder(WrapperBuilder):
         return textwrap.dedent("""
         execute_script()
             {{
-                out="$1.$2.out"
-                err="$1.$2.err"
+                out="$1.out"
+                err="$1.err"
                 bash $1 > $out 2> $err &
                 pid=$!
             }}
@@ -769,8 +769,8 @@ class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
         suffix=".cmd"
         for template in "${{{0}[@]}}"; do
             jobname=${{template%"$suffix"}}
-            out="${{template}}.${{i}}.out" 
-            err="${{template}}.${{i}}.err"
+            out="${{template}}.out" 
+            err="${{template}}.err"
             srun --ntasks=1 --cpus-per-task={1} $template > $out 2> $err &
             sleep "0.2"
             ((i=i+1))
@@ -880,8 +880,8 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
                         as_index=0
                         multiplication_result=$(($i_list*$scripts_size))
                         as_index=$((multiplication_result+$job_index))
-                        out="${{template}}.$as_index.out"
-                        err="${{template}}.$as_index.err"
+                        out="${{template}}.out"
+                        err="${{template}}.err"
                         if [ $job_index -eq 0 ]; then
                             prev_template=$template
                         else

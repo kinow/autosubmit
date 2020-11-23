@@ -326,8 +326,8 @@ class JobPackageThread(JobPackageBase):
         for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self.jobs[i].remote_logs = (
-                self._job_scripts[self.jobs[i].name] + ".{0}.out".format(i),
-                self._job_scripts[self.jobs[i].name] + ".{0}.err".format(i)
+                self._job_scripts[self.jobs[i].name] + ".out".format(i),
+                self._job_scripts[self.jobs[i].name] + ".err".format(i)
             )
         self._common_script = self._create_common_script()
 
@@ -422,8 +422,8 @@ class JobPackageThreadWrapped(JobPackageThread):
         for i in range(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self.jobs[i].remote_logs = (
-                self._job_scripts[self.jobs[i].name] + ".{0}.out".format(i),
-                self._job_scripts[self.jobs[i].name] + ".{0}.err".format(i)
+                self._job_scripts[self.jobs[i].name] + ".out".format(i),
+                self._job_scripts[self.jobs[i].name] + ".err".format(i)
             )
         self._common_script = self._create_common_script()
 

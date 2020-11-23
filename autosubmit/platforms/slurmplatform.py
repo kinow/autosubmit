@@ -447,6 +447,4 @@ class SlurmPlatform(ParamikoPlatform):
                     Log.printlog("remote logs {0} couldn't be recovered".format(filename), 6001)
                     file_exist = False  # won't exist
                     retries = 999  # no more retries
-
-
         return file_exist

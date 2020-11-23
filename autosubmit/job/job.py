@@ -539,18 +539,24 @@ class Job(object):
             while (not out_exist and not err_exist) and i < retries:
                 try:
                     out_exist = self._platform.check_file_exists(
-                        remote_logs[0])  # will do 5 retries
+                        remote_logs[0],True)
                 except IOError as e:
                     out_exist = False
                 try:
                     err_exist = self._platform.check_file_exists(
-                        remote_logs[1])  # will do 5 retries
+                        remote_logs[1],True) 
                 except IOError as e:
                     err_exists = False
                 if not out_exist or not err_exist:
                     sleeptime = sleeptime + 5
                     i = i + 1
                     sleep(sleeptime)
+                    try:
+                        self._platform.restore_connection()
+                    except:
+                        Log.printlog(
+                            "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(
+                                e.message, self.name), 6001)
             if i >= retries:
                 if not out_exist or not err_exist:
                     Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(
@@ -558,11 +564,10 @@ class Job(object):
                     sleep(5)  # safe wait before end a thread
                     return
             if copy_remote_logs:
-                if local_logs != remote_logs:
-                    # unifying names for log files
-                    self.synchronize_logs(
-                        self._platform, remote_logs, local_logs)
-                    remote_logs = local_logs
+                #if local_logs != remote_logs:
+                # unifying names for log files
+                self.synchronize_logs(self._platform, remote_logs, local_logs)
+                remote_logs = local_logs
                 self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 try:
