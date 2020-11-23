@@ -1363,7 +1363,7 @@ class JobList(object):
                 if m_time_job_conf:
                     if m_time_job_conf > m_time_db:
                         Log.info(
-                            "File jobs_{0}.conf has been modified since the last time the structured was cached.".format(self.expid))
+                            "File jobs_{0}.conf has been modified since the last time the structure persistence was saved.".format(self.expid))
                         structure_valid = False
                 else:
                     Log.info(
