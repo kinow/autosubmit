@@ -1751,6 +1751,7 @@ class Autosubmit:
         :rtype: Boolean
         """
         save = False
+        failed_packages = list()
         for platform in platforms_to_test:
             if not hold:
                 Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
@@ -1788,6 +1789,7 @@ class Autosubmit:
                             package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
+                            failed_packages.append(package.jobs[0].id)
                             continue
                         except AutosubmitError as e:
                             if e.message.lower().find("bad parameters") != -1:
@@ -1807,19 +1809,6 @@ class Autosubmit:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name), 7014, e.message)
                         except Exception as e:
                             raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message+"\n"+e.trace)
-                        if hasattr(package, "name"):
-                            job_list.packages_dict[package.name] = package.jobs
-                            from job.job import WrapperJob
-                            wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.READY, 0,
-                                                     package.jobs,
-                                                     package._wallclock, package._num_processors,
-                                                     package.platform, as_conf, hold)
-                            job_list.job_package_map[package.jobs[0].id] = wrapper_job
-
-                    if isinstance(package, JobPackageThread):
-                        # If it is instance of JobPackageThread, then it is JobPackageVertical.
-                        packages_persistence.save(
-                            package.name, package.jobs, package._expid, inspect)
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(
                         "Invalid parameter substitution in {0} template".format(e.job_name), 7014)
@@ -1829,8 +1818,8 @@ class Autosubmit:
                     raise
                 except Exception as e:
                     raise
+
             if platform.type == "slurm" and not inspect and not only_wrappers:
-                failed_packages = list()
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:
@@ -1893,24 +1882,11 @@ class Autosubmit:
                                 job.id = str(jobs_id[i])
                                 job.status = Status.SUBMITTED
                                 job.write_submit_time()
-                            if hasattr(package, "name"):
-                                job_list.packages_dict[package.name] = package.jobs
-                                from job.job import WrapperJob
-                                wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
-                                                         package.jobs,
-                                                         package._wallclock, package._num_processors,
-                                                         package.platform, as_conf, hold)
-                                job_list.job_package_map[package.jobs[0].id] = wrapper_job
-                                if isinstance(package, JobPackageThread):
-                                    # Saving only when it is a real multi job package
-                                    packages_persistence.save(
-                                        package.name, package.jobs, package._expid, inspect)
                             i += 1
                     save = True
                     if len(failed_packages) > 0:
                         for job_id in failed_packages:
-                            package.jobs[0].platform.send_command(
-                                package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                            package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
                         raise AutosubmitError(
                             "{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
@@ -1923,7 +1899,23 @@ class Autosubmit:
                 except Exception as e:
                     raise AutosubmitError("{0} submission failed".format(
                         platform.name), 6015, e.message)
-
+            try:
+                for package in valid_packages_to_submit:
+                    if package.jobs[0].id not in failed_packages:
+                        if hasattr(package, "name"):
+                            job_list.packages_dict[package.name] = package.jobs
+                            from job.job import WrapperJob
+                            wrapper_job = WrapperJob(package.name, package.jobs[0].id, Status.SUBMITTED, 0,
+                                                     package.jobs,
+                                                     package._wallclock, package._num_processors,
+                                                     package.platform, as_conf, hold)
+                            job_list.job_package_map[package.jobs[0].id] = wrapper_job
+                            if isinstance(package, JobPackageThread):
+                                # Saving only when it is a real multi job package
+                                packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+            except Exception as e:
+                raise AutosubmitError("{0} submission failed".format(
+                    platform.name), 6015, e.message)
         return save
 
     @staticmethod
