@@ -1438,21 +1438,11 @@ class Autosubmit:
                             while active_threads and timeout <= 60:
                                 active_threads = False
                                 for thread in all_threads:
-                                    if "Thread-" in thread.name:
+                                    if "JOB_" in thread.name:
                                         if thread.isAlive():
-                                            if hasattr(thread, "log_name"):
-                                                if thread.log_name != 'paramiko.transport':
-                                                    active_threads = True
-                                                    Log.info(
-                                                        "{0} is still working, waiting {1} seconds.".format(thread.name,
-                                                                                                 60 - timeout))
-                                                    continue
-                                            else:
-                                                active_threads = True
-                                                Log.info(
-                                                    "{0} is still working, left {1}.".format(thread.name,
-                                                                                             60 - timeout))
-                                                continue
+                                            active_threads = True
+                                            Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(thread.name,60 - timeout))
+                                            break
                                 if active_threads:
                                     sleep(10)
                                     timeout += 10
@@ -1686,22 +1676,15 @@ class Autosubmit:
                 timeout = 0
                 active_threads = True
                 all_threads = threading.enumerate()
-                while active_threads and timeout < 360:
+                while active_threads and timeout <= 180:
                     active_threads = False
                     for thread in all_threads:
-                        if "Thread-" in thread.name:
+                        if "JOB_" in thread.name:
                             if thread.isAlive():
-                                if hasattr(thread,"log_name"):
-                                    if thread.log_name != 'paramiko.transport':
-                                        active_threads = True
-                                        Log.info(
-                                            "{0} is still working, waiting {1} seconds.".format(thread.name, 360 - timeout))
-                                        continue
-                                else:
-                                    active_threads = True
-                                    Log.info(
-                                        "{0} is still working, waiting {1} seconds.".format(thread.name, 360 - timeout))
-                                    continue
+                                active_threads = True
+                                Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
+                                    thread.name, 180 - timeout))
+                                break
                     if active_threads:
                         sleep(10)
                         timeout += 10

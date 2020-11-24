@@ -49,6 +49,7 @@ Log.get_logger("Autosubmit")
 def threaded(fn):
     def wrapper(*args, **kwargs):
         thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.name = "JOB_"+str(args[0].name)
         thread.start()
         return thread
     return wrapper
@@ -561,10 +562,8 @@ class Job(object):
                 if not out_exist or not err_exist:
                     Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(
                         retries, remote_logs[0], remote_logs[1]))
-                    sleep(5)  # safe wait before end a thread
                     return
             if copy_remote_logs:
-                #if local_logs != remote_logs:
                 # unifying names for log files
                 self.synchronize_logs(self._platform, remote_logs, local_logs)
                 remote_logs = local_logs
@@ -577,7 +576,6 @@ class Job(object):
                 except BaseException as e:
                     Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
                         e.message, self.name))
-                    sleep(5)  # safe wait before end a thread
                     try:
                         self._platform.closeConnection()
                     except:
@@ -586,7 +584,6 @@ class Job(object):
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
-            sleep(5)  # safe wait before end a thread
             try:
                 self._platform.closeConnection()
             except:
@@ -596,7 +593,6 @@ class Job(object):
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
-            sleep(5)  # safe wait before end a thread
             try:
                 self._platform.closeConnection()
             except:
