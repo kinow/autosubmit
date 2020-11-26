@@ -2256,7 +2256,7 @@ class Autosubmit:
             # noinspection PyTypeChecker
             job.platform = platforms[job.platform_name.lower()]
 
-            if job.platform.get_completed_files(job.name, 0, True):
+            if job.platform.get_completed_files(job.name, 0, recovery=True):
                 job.status = Status.COMPLETED
                 Log.info(
                     "CHANGED job '{0}' status to COMPLETED".format(job.name))
@@ -3845,7 +3845,7 @@ class Autosubmit:
                     # Ending validation
                     if filter_is_correct == False:
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -ftc.", 7011, section_validation_message)
+                            "Error in the supplied input for -ftc.", 7011, validation_message)
 
                     # If input is valid, continue.
                     record = dict()
@@ -3907,7 +3907,7 @@ class Autosubmit:
                                         chunk_group = member_group['cs']
                                         for chunk in chunk_group:
                                             filtered_job = filter(
-                                                lambda j: j.chunk == int(chunk), member_selection)
+                                                lambda j: j.chunk is None or j.chunk == int(chunk), member_selection)
                                             for job in filtered_job:
                                                 final_list.append(job)
                                             # From date filter and sync is not None
