@@ -1355,7 +1355,8 @@ class Autosubmit:
                         job.platform = submitter.platforms[job.platform_name.lower(
                         )]
                         # noinspection PyTypeChecker
-                        platforms_to_test.add(job.platform)
+                        if job.status not in (Status.COMPLETED,Status.SUSPENDED):
+                            platforms_to_test.add(job.platform)
                     try:
                         job_list.check_scripts(as_conf)
                     except Exception as e:
@@ -1423,6 +1424,7 @@ class Autosubmit:
                 # Main loop. Finishing when all jobs have been submitted
                 main_loop_retrials = 120  # Hard limit of tries 120 tries at 1min sleep each try
                 # establish the connection to all platforms
+
                 Autosubmit.restore_platforms(platforms_to_test)
                 save = True
                 Log.debug("Running main loop")
@@ -2256,7 +2258,7 @@ class Autosubmit:
             # noinspection PyTypeChecker
             job.platform = platforms[job.platform_name.lower()]
 
-            if job.platform.get_completed_files(job.name, 0, True):
+            if job.platform.get_completed_files(job.name, 0, recovery=True):
                 job.status = Status.COMPLETED
                 Log.info(
                     "CHANGED job '{0}' status to COMPLETED".format(job.name))
@@ -3616,9 +3618,17 @@ class Autosubmit:
                     # noinspection PyTypeChecker
                     job.platform = platforms[job.platform_name.lower()]
                     # noinspection PyTypeChecker
-                    platforms_to_test.add(platforms[job.platform_name.lower()])
+                    if job.status in [Status.QUEUING,Status.SUBMITTED,Status.RUNNING]:
+                        platforms_to_test.add(platforms[job.platform_name.lower()])
                 # establish the connection to all platforms
-                Autosubmit.restore_platforms(platforms_to_test)
+                definitive_platforms = list()
+                for platform in platforms_to_test:
+                    try:
+                        Autosubmit.restore_platforms([platform])
+                        definitive_platforms.append(platform.name)
+                    except Exception as e:
+                        pass
+
 
                 # Validating list of jobs, if filter_list -fl has been set:
                 # Seems that Autosubmit.load_job_list call is necessary before verification is executed
@@ -3845,7 +3855,7 @@ class Autosubmit:
                     # Ending validation
                     if filter_is_correct == False:
                         raise AutosubmitCritical(
-                            "Error in the supplied input for -ftc.", 7011, section_validation_message)
+                            "Error in the supplied input for -ftc.", 7011, validation_message)
 
                     # If input is valid, continue.
                     record = dict()
@@ -3907,7 +3917,7 @@ class Autosubmit:
                                         chunk_group = member_group['cs']
                                         for chunk in chunk_group:
                                             filtered_job = filter(
-                                                lambda j: j.chunk == int(chunk), member_selection)
+                                                lambda j: j.chunk is None or j.chunk == int(chunk), member_selection)
                                             for job in filtered_job:
                                                 final_list.append(job)
                                             # From date filter and sync is not None
@@ -3928,6 +3938,9 @@ class Autosubmit:
                                                 final_list.append(job)
                     status = Status()
                     for job in final_list:
+                        if job.status in [Status.QUEUING,Status.RUNNING,Status.SUBMITTED] and job.platform.name not in definitive_platforms:
+                            Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(job.platform.name,job.name),6000)
+                            continue
                         if job.status != final_status:
                             # Tracking changes
                             job_tracked_changes[job.name] = (
