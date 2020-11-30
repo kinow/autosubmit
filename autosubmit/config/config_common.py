@@ -792,6 +792,43 @@ class AutosubmitConfig(object):
 
         return parameters
 
+    def load_platform_parameters(self):
+        """
+        Load parameters from platform config files.
+
+        :return: a dictionary containing tuples [parameter_name, parameter_value]
+        :rtype: dict
+        """
+        parameters = dict()
+        for section in self._platforms_parser.sections():
+            for option in self._platforms_parser.options(section):
+                parameters[section+"_"+option] = self._platforms_parser.get(section, option)
+        return parameters
+
+
+    def load_section_parameters(self,job_list):
+        """
+        Load parameters from job config files.
+
+        :return: a dictionary containing tuples [parameter_name, parameter_value]
+        :rtype: dict
+        """
+        job_list_by_section = defaultdict()
+        parameters = defaultdict()
+        for job in job_list.get_job_list():
+            if job.platform_name is None:
+                job.platform_name = self.hpcarch
+            if job.section not in job_list_by_section.keys():
+                job_list_by_section[job.section] = [job]
+            else:
+                job_list_by_section[job.section].append(job)
+
+        for section in job_list_by_section.keys():
+            for section_param in job_list_by_section[section][0].parameters.keys():
+                if section_param not in job_list.parameters.keys():
+                    parameters[section + "_" + section_param] = job_list_by_section[section][0].parameters[section_param]
+        return parameters
+
     def load_project_parameters(self):
         """
         Loads parameters from model config file
