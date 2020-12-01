@@ -457,20 +457,23 @@ class ExperimentStatus(MainDataBase):
         modified text NOT NULL,
         FOREIGN KEY (exp_id) REFERENCES experiment (id)
         );''')
+        try:
+            if not os.path.exists(self.DB_FILE_AS_TIMES):
+                open(self.DB_FILE_AS_TIMES, "w")
+                self.conn = self.create_connection(self.DB_FILE_AS_TIMES)
+                self.create_table()
+            else:
+                self.conn = self.create_connection(self.DB_FILE_AS_TIMES)
 
-        if not os.path.exists(self.DB_FILE_AS_TIMES):
-            open(self.DB_FILE_AS_TIMES, "w")
-            self.conn = self.create_connection(self.DB_FILE_AS_TIMES)
-            self.create_table()
-        else:
-            self.conn = self.create_connection(self.DB_FILE_AS_TIMES)
+            if os.path.exists(self.DB_FILE_ECEARTH):
+                self.conn_ec = self.create_connection(self.DB_FILE_ECEARTH)
 
-        if os.path.exists(self.DB_FILE_ECEARTH):
-            self.conn_ec = self.create_connection(self.DB_FILE_ECEARTH)
-
-        self.current_table = self.prepare_status_db()
-        self.current_row = next(
-            (exp for exp in self.current_table if exp.expid == self.expid), None) if len(self.current_table) > 0 else None
+            self.current_table = self.prepare_status_db()
+            self.current_row = next(
+                (exp for exp in self.current_table if exp.expid == self.expid), None) if len(self.current_table) > 0 else None
+        except Exception as exp:
+            Log.debug(exp)
+            pass
 
     def print_current_table(self):
         for experiment in self.current_table:
@@ -596,6 +599,7 @@ class ExperimentStatus(MainDataBase):
                 str(type(e).__name__)))
             Log.warning(
                 "Autosubmit couldn't insert information into status database. _create_exp_status")
+            pass
 
     def _update_exp_status(self, status="RUNNING"):
         """
@@ -756,11 +760,15 @@ class JobDataStructure(MainDataBase):
                     self.db_version = self._select_pragma_version()
 
         except IOError as e:
-            raise AutosubmitCritical("Historic Database route {0} is not accesible".format(
-                BasicConfig.JOBDATA_DIR), 7067, e.message)
+            Log.debug(str(e))
+            pass
+            # raise AutosubmitCritical("Historic Database route {0} is not accesible".format(
+            #     BasicConfig.JOBDATA_DIR), 7067, e.message)
         except Exception as e:
-            raise AutosubmitCritical(
-                "Historic Database {0} due an database error".format(), 7067, e.message)
+            Log.debug(str(e))
+            pass
+            # raise AutosubmitCritical(
+            #     "Historic Database {0} due an database error".format(), 7067, e.message)
 
     def is_header_ready_db_version(self):
         return True if self.db_version >= EXPERIMENT_HEADER_CHANGES_DB_VERSION else False
@@ -788,49 +796,52 @@ class JobDataStructure(MainDataBase):
             return self._insert_experiment_run(new_run)
 
     def process_status_changes(self, tracking_dictionary, job_list=None, chunk_unit="NA", chunk_size=0, check_run=False):
-        current_run = self.get_max_id_experiment_run()
-        if current_run:
-            if tracking_dictionary is not None and bool(tracking_dictionary) == True:
-                # print("Changes {0}".format(tracking_dictionary))
-                if job_list and check_run == True:
-                    current_date_member_completed_count = sum(
-                        1 for job in job_list if job.date is not None and job.member is not None and job.status == Status.COMPLETED)
-                    if len(tracking_dictionary.keys()) >= int(current_date_member_completed_count * 0.9):
-                        # If setstatus changes more than 90% of date-member completed jobs, it's a new run
-                        # Must create a new experiment run
-                        Log.debug(
-                            "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
-                        self.validate_current_run(
-                            job_list, chunk_unit, chunk_size, True)
-                        return None
-                if job_list:
-                    if len(tracking_dictionary.items()) > 0:
-                        # Changes exist
-                        completed_count = sum(
-                            1 for job in job_list if job.status == Status.COMPLETED)
-                        failed_count = sum(
-                            1 for job in job_list if job.status == Status.FAILED)
-                        queue_count = sum(
-                            1 for job in job_list if job.status == Status.QUEUING)
-                        submit_count = sum(
-                            1 for job in job_list if job.status == Status.SUBMITTED)
-                        running_count = sum(
-                            1 for job in job_list if job.status == Status.RUNNING)
-                        suspended_count = sum(
-                            1 for job in job_list if job.status == Status.SUSPENDED)
-                        current_run.completed = completed_count
-                        current_run.failed = failed_count
-                        current_run.queuing = queue_count
-                        current_run.submitted = submit_count
-                        current_run.running = running_count
-                        current_run.suspended = suspended_count
-                        self._update_experiment_run(current_run)
-                        return None
-                # for name, (prev_status, status) in tracking_dictionary.items():
-                #     current_run.update_counters(prev_status, status)
-
-        else:
-            raise Exception("Empty header database")
+        try:
+            current_run = self.get_max_id_experiment_run()
+            if current_run:
+                if tracking_dictionary is not None and bool(tracking_dictionary) == True:
+                    # print("Changes {0}".format(tracking_dictionary))
+                    if job_list and check_run == True:
+                        current_date_member_completed_count = sum(
+                            1 for job in job_list if job.date is not None and job.member is not None and job.status == Status.COMPLETED)
+                        if len(tracking_dictionary.keys()) >= int(current_date_member_completed_count * 0.9):
+                            # If setstatus changes more than 90% of date-member completed jobs, it's a new run
+                            # Must create a new experiment run
+                            Log.debug(
+                                "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
+                            self.validate_current_run(
+                                job_list, chunk_unit, chunk_size, True)
+                            return None
+                    if job_list:
+                        if len(tracking_dictionary.items()) > 0:
+                            # Changes exist
+                            completed_count = sum(
+                                1 for job in job_list if job.status == Status.COMPLETED)
+                            failed_count = sum(
+                                1 for job in job_list if job.status == Status.FAILED)
+                            queue_count = sum(
+                                1 for job in job_list if job.status == Status.QUEUING)
+                            submit_count = sum(
+                                1 for job in job_list if job.status == Status.SUBMITTED)
+                            running_count = sum(
+                                1 for job in job_list if job.status == Status.RUNNING)
+                            suspended_count = sum(
+                                1 for job in job_list if job.status == Status.SUSPENDED)
+                            current_run.completed = completed_count
+                            current_run.failed = failed_count
+                            current_run.queuing = queue_count
+                            current_run.submitted = submit_count
+                            current_run.running = running_count
+                            current_run.suspended = suspended_count
+                            self._update_experiment_run(current_run)
+                            return None
+        except Exception as exp:
+            if _debug == True:
+                Log.info(traceback.format_exc())
+            Log.debug(traceback.format_exc())
+            Log.warning(
+                "Autosubmit couldn't process status changes validate_current_run {0}".format(str(exp)))
+            return None
 
     def validate_current_run(self, job_list, chunk_unit="NA", chunk_size=0, must_create=False, only_update=False):
         """[summary]
@@ -895,11 +906,15 @@ class JobDataStructure(MainDataBase):
             return None
 
     def update_finish_time(self):
-        current_run = self.get_max_id_experiment_run()
-        if current_run:
-            current_run.finish = int(time.time())
-            self._update_experiment_run(current_run)
-            self.current_run_id = current_run.run_id
+        try:
+            current_run = self.get_max_id_experiment_run()
+            if current_run:
+                current_run.finish = int(time.time())
+                self._update_experiment_run(current_run)
+                self.current_run_id = current_run.run_id
+        except Exception as exp:
+            Log.debug(exp)
+            pass
 
     def get_job_package_code(self, current_job_name):
         """
@@ -2001,11 +2016,11 @@ class JobDataStructure(MainDataBase):
                         str(type(e).__name__))
             return None
 
-    def _retry_database_operation(self):
-        completed = False
-        tries = 0
-        while completed == False and tries <= 3:
-            try:
-                pass
-            except sqlite3.Error as e:
-                pass
+    # def _retry_database_operation(self):
+    #     completed = False
+    #     tries = 0
+    #     while completed == False and tries <= 3:
+    #         try:
+    #             pass
+    #         except sqlite3.Error as e:
+    #             pass
