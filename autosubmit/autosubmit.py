@@ -65,6 +65,7 @@ import re
 import random
 import signal
 import datetime
+
 import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from collections import defaultdict
@@ -339,6 +340,17 @@ class Autosubmit:
                 'describe', description="Show details for specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
 
+            # Describe
+            subparser = subparsers.add_parser(
+                'describe', description="Show details for specified experiment")
+            subparser.add_argument('expid', help='experiment identifier')
+
+            # Report
+            subparser = subparsers.add_parser(
+                'report', description="Show metrics.. ") # TODO
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('-t','--template', type=str,help='Supply the metric template.')
+            subparser.add_argument('-all', '--show_all_parameters', action='store_true',default=False, help='Writes a file containing all parameters')
             # Create
             subparser = subparsers.add_parser(
                 'create', description="create specified experiment joblist")
@@ -545,6 +557,8 @@ class Autosubmit:
         elif args.command == 'inspect':
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.notransitive, args.force, args.check_wrapper)
+        elif args.command == 'report':
+            return Autosubmit.report(args.expid,args.template,args.show_all_parameters)
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
@@ -608,7 +622,7 @@ class Autosubmit:
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
             if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
-            if args.command not in ["monitor","describe","delete"]: # delete is treated differently
+            if args.command not in ["monitor","describe","delete","report"]: # delete is treated differently
                 Autosubmit._check_ownership(expid)
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
@@ -2612,6 +2626,83 @@ class Autosubmit:
 
         return job_list.check_scripts(as_conf)
 
+    @staticmethod
+    def capitalize_keys(dictionary):
+        upper_dictionary = defaultdict()
+        for key in dictionary.keys():
+            upper_key = key.upper()
+            upper_dictionary[upper_key] = dictionary[key]
+        return upper_dictionary
+
+    @staticmethod
+    def report(expid,template_file_path="",show_all_parameters=False):
+        """
+        Show report for specified experiment
+        :param expid: experiment identifier:
+        :type str
+        :param template_file_path: template filepath
+        :type str
+        :param show_all_parameters: Write all parameters of the experiment
+        :type bool
+        """
+
+        exp_parameters = defaultdict()
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        import platform
+        host = platform.node()
+        # Gather experiment info
+        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+        as_conf.check_conf_files(False)
+        #Preparation for section parameters
+        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
+
+        # Preparation for platform parameters
+        submitter = Autosubmit._get_submitter(as_conf)
+        submitter.load_platforms(as_conf)
+        # Gathering parameters of autosubmit and expdef config files
+        exp_parameters.update(as_conf.load_parameters())
+        # Gathering parameters of platform config file
+        exp_parameters.update(as_conf.load_project_parameters())
+        # Gathering common parameters of jobs and platform config file
+        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        exp_parameters.update(job_list.parameters)
+        # Gathering parameters of jobs divided by SECTION_PARAMETER
+        exp_parameters.update(as_conf.load_section_parameters(job_list))
+        # Gathering parameters of jobs divided by PLATFORM
+        exp_parameters.update(as_conf.load_platform_parameters())
+        # All parameters to upper_case to be easier to identify
+        exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
+
+        if show_all_parameters:
+            Log.info("Gathering all parameters (all keys are on upper_case)")
+            parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
+                                                                   datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
+            parameter_file = open(os.path.join(tmp_path, parameter_output), 'w').close()
+            parameter_file = open(os.path.join(tmp_path, parameter_output), 'a')
+            for key, value in exp_parameters.items():
+                if value is not None:
+                    parameter_file.write(key+"="+value+"\n")
+                else:
+                    parameter_file.write(key + "=" + "None" + "\n")
+            parameter_file.close()
+
+            os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
+            Log.result("A list of all parameters has been written on {0}".format(os.path.join(tmp_path, parameter_output)))
+
+        if template_file_path != '':
+            Log.info("Gathering the selected parameters (all keys are on upper_case)")
+            template_file = open(template_file_path,'r')
+            template_content = template_file.read()
+            for key, value in exp_parameters.items():
+                template_content = re.sub(
+                    '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
+            template_content = template_content.replace("%%", "%")
+            report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
+            open(os.path.join(tmp_path, report),'w').write(template_content)
+            os.chmod(os.path.join(tmp_path, report), 0o755)
+            template_file.close()
+            Log.result("Report {0} has been created on {1}".format(report,os.path.join(tmp_path,report)))
     @staticmethod
     def describe(experiment_id):
         """
