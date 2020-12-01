@@ -2551,7 +2551,13 @@ class Autosubmit:
                             Log.info("Copying from {0} to {1}", os.path.join(
                                 p.temp_dir, experiment_id), p.root_dir)
                             try:
-                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                finished = False
+                                while not finished:
+                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                    if "warning: rsync" in p.get_ssh_output_err():
+                                        pass
+                                    else:
+                                        finished = True
                                 p.send_command("chmod 755 -R " + p.root_dir[:-5])
                                 Log.result("Files/dirs on {0} have been successfully picked up", platform)
                                 p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir,experiment_id)))
