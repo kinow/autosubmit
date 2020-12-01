@@ -372,7 +372,7 @@ class ParamikoPlatform(Platform):
         sleep_time=5
         sleep(2)
         self.send_command(self.get_checkjob_cmd(job_id))
-        while ( self.get_ssh_output().strip(" ") == "" and retries > 0):
+        while self.get_ssh_output().strip(" ") == "" and retries > 0:
             retries = retries - 1
             Log.debug('Retrying check job command: {0}', self.get_checkjob_cmd(job_id))
             Log.debug('retries left {0}', retries)

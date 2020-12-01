@@ -1415,7 +1415,7 @@ done
                                     jobname, str(parse_date(end_time))))
                 if content == '':
                     sleep(wait)
-                    retries = retries - 1
+                retries = retries - 1
             temp_list = self.inner_jobs_running
             self.inner_jobs_running = [job for job in temp_list if job.status == Status.RUNNING]
             if retries == 0: # or over_wallclock:
@@ -1430,7 +1430,7 @@ done
                 output = self._platform.check_completed_files(job.name)
                 if output is None or output == '':
                     sleep(wait)
-                    retries = retries - 1
+                retries = retries - 1
         if failed_file or (output is not None and output != '' and 'COMPLETED' in output):
             job.new_status = Status.COMPLETED
             job.update_status(self.as_config.get_copy_remote_logs() == 'true')
