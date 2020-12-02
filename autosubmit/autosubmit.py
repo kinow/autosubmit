@@ -2670,25 +2670,35 @@ class Autosubmit:
             raise AutosubmitCritical("Unable to gather the parameters from config files, check permissions.",7012,e.message)
         #Preparation for section parameters
         no_load_sections = False
+        no_load_platforms = False
         try:
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
-        except:
+        except Exception as e:
             no_load_sections = True
-        try:
+
             # Preparation for platform parameters
-            submitter = Autosubmit._get_submitter(as_conf)
-            submitter.load_platforms(as_conf)
+            try:
+                submitter = Autosubmit._get_submitter(as_conf)
+                submitter.load_platforms(as_conf)
+            except Exception as e:
+                no_load_platforms = True
+        try:
             # Gathering parameters of autosubmit and expdef config files
             exp_parameters.update(as_conf.load_parameters())
             # Gathering parameters of platform config file
             exp_parameters.update(as_conf.load_project_parameters())
             # Gathering common parameters of jobs and platform config file
-            if no_load_sections:
+            if no_load_platforms:
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                 exp_parameters.update(job_list.parameters)
+            else:
+                Log.printlog("Incorrect platform  configuration/insufficient permissions \n can't load common job_list variables \n Job section specific parameters will be tried to load regarless of this issue",6013)
             # Gathering parameters of jobs divided by SECTION_PARAMETER
             if no_load_sections:
                 exp_parameters.update(as_conf.load_section_parameters(job_list))
+            else:
+                Log.printlog("Can't load section jobs parameters, the report will have uncompleted parameters", 6014)
+
             # Gathering parameters of jobs divided by PLATFORM
             exp_parameters.update(as_conf.load_platform_parameters())
             # All parameters to upper_case to be easier to identify
@@ -2696,8 +2706,6 @@ class Autosubmit:
         except Exception as e:
             raise AutosubmitCritical("Couldn't gather the experiment parameters",7012,e.message)
 
-        if no_load_sections:
-            Log.printlog("Can't load job_list parameters, the report will have uncompleted parameters",6014)
         if show_all_parameters:
             Log.info("Gathering all parameters (all keys are on upper_case)")
             parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
@@ -2722,6 +2730,7 @@ class Autosubmit:
                 template_content = re.sub(
                     '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
             template_content = template_content.replace("%%", "%")
+            template_content = re.sub(r"\%[a-zA-Z]*\%","-",template_content)
             report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
             open(os.path.join(tmp_path, report),'w').write(template_content)
             os.chmod(os.path.join(tmp_path, report), 0o755)
