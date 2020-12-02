@@ -2729,7 +2729,7 @@ class Autosubmit:
                 template_content = re.sub(
                     '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
             template_content = template_content.replace("%%", "%")
-            template_content = re.sub(r"\%[a-zA-Z]*\%","-",template_content)
+            template_content = re.sub(r"\%[^% \n\t]+\%","-",template_content)
             report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
             open(os.path.join(tmp_path, report),'w').write(template_content)
             os.chmod(os.path.join(tmp_path, report), 0o755)
