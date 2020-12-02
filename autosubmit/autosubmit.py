@@ -2685,17 +2685,17 @@ class Autosubmit:
         try:
             # Gathering parameters of autosubmit and expdef config files
             exp_parameters.update(as_conf.load_parameters())
-            # Gathering parameters of platform config file
+            # Gathering parameters of project config file
             exp_parameters.update(as_conf.load_project_parameters())
             # Gathering common parameters of jobs and platform config file
             if not no_load_platforms:
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                 exp_parameters.update(job_list.parameters)
             else:
-                Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \n Job section specific parameters will be tried to load regarless of this issue",6013)
+                Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \nJob section specific parameters will be tried to load regarless of this issue",6013)
             # Gathering parameters of jobs divided by SECTION_PARAMETER
             if not no_load_sections:
-                exp_parameters.update(as_conf.load_section_parameters(job_list))
+                exp_parameters.update(as_conf.load_section_parameters(job_list,as_conf,submitter))
             else:
                 Log.printlog("Unable to load section jobs parameters, the report will have uncompleted parameters", 6014)
 
@@ -2714,9 +2714,9 @@ class Autosubmit:
             parameter_file = open(os.path.join(tmp_path, parameter_output), 'a')
             for key, value in exp_parameters.items():
                 if value is not None:
-                    parameter_file.write(key+"="+value+"\n")
+                    parameter_file.write(key+"="+str(value)+"\n")
                 else:
-                    parameter_file.write(key + "=" + "None" + "\n")
+                    parameter_file.write(key + "=" + "-" + "\n")
             parameter_file.close()
 
             os.chmod(os.path.join(tmp_path, parameter_output), 0o755)

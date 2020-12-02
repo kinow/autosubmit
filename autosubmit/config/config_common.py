@@ -806,13 +806,15 @@ class AutosubmitConfig(object):
         return parameters
 
 
-    def load_section_parameters(self,job_list):
+    def load_section_parameters(self,job_list,as_conf,submitter):
         """
         Load parameters from job config files.
 
         :return: a dictionary containing tuples [parameter_name, parameter_value]
         :rtype: dict
         """
+        as_conf.check_conf_files(False)
+
         job_list_by_section = defaultdict()
         parameters = defaultdict()
         for job in job_list.get_job_list():
@@ -822,8 +824,9 @@ class AutosubmitConfig(object):
                 job_list_by_section[job.section] = [job]
             else:
                 job_list_by_section[job.section].append(job)
-
+            job.platform = submitter.platforms[job.platform_name.lower()]
         for section in job_list_by_section.keys():
+            job_list_by_section[section][0].update_parameters(as_conf, job_list.parameters)
             for section_param in job_list_by_section[section][0].parameters.keys():
                 if section_param not in job_list.parameters.keys():
                     parameters[section + "_" + section_param] = job_list_by_section[section][0].parameters[section_param]
