@@ -2656,6 +2656,7 @@ class Autosubmit:
         :type str
         """
         exp_parameters = defaultdict()
+
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if folder_path is not None:
@@ -2722,19 +2723,22 @@ class Autosubmit:
             Log.result("A list of all parameters has been written on {0}".format(os.path.join(tmp_path, parameter_output)))
 
         if template_file_path is not None:
-            Log.info("Gathering the selected parameters (all keys are on upper_case)")
-            template_file = open(template_file_path,'r')
-            template_content = template_file.read()
-            for key, value in exp_parameters.items():
-                template_content = re.sub(
-                    '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
-            template_content = template_content.replace("%%", "%")
-            template_content = re.sub(r"\%[^% \n\t]+\%","-",template_content)
-            report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
-            open(os.path.join(tmp_path, report),'w').write(template_content)
-            os.chmod(os.path.join(tmp_path, report), 0o755)
-            template_file.close()
-            Log.result("Report {0} has been created on {1}".format(report,os.path.join(tmp_path,report)))
+            if os.path.exists(template_file_path):
+                Log.info("Gathering the selected parameters (all keys are on upper_case)")
+                template_file = open(template_file_path,'r')
+                template_content = template_file.read()
+                for key, value in exp_parameters.items():
+                    template_content = re.sub(
+                        '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
+                template_content = template_content.replace("%%", "%")
+                template_content = re.sub(r"\%[^% \n\t]+\%","-",template_content)
+                report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
+                open(os.path.join(tmp_path, report),'w').write(template_content)
+                os.chmod(os.path.join(tmp_path, report), 0o755)
+                template_file.close()
+                Log.result("Report {0} has been created on {1}".format(report,os.path.join(tmp_path,report)))
+            else:
+                raise AutosubmitCritical("Template {0} doesn't exists ".format(template_file_path),7014)
     @staticmethod
     def describe(experiment_id):
         """
