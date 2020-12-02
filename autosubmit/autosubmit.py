@@ -2658,7 +2658,7 @@ class Autosubmit:
         exp_parameters = defaultdict()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-        if folder_path != "":
+        if folder_path is not None:
             tmp_path = folder_path
         import platform
         host = platform.node()
