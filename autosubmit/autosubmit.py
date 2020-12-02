@@ -2664,27 +2664,40 @@ class Autosubmit:
         host = platform.node()
         # Gather experiment info
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files(False)
+        try:
+            as_conf.check_conf_files(False)
+        except Exception as e:
+            raise AutosubmitCritical("Unable to gather the parameters from config files, check permissions.",7012,e.message)
         #Preparation for section parameters
-        job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
+        no_load_sections = False
+        try:
+            job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
+        except:
+            no_load_sections = True
+        try:
+            # Preparation for platform parameters
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            # Gathering parameters of autosubmit and expdef config files
+            exp_parameters.update(as_conf.load_parameters())
+            # Gathering parameters of platform config file
+            exp_parameters.update(as_conf.load_project_parameters())
+            # Gathering common parameters of jobs and platform config file
+            if no_load_sections:
+                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                exp_parameters.update(job_list.parameters)
+            # Gathering parameters of jobs divided by SECTION_PARAMETER
+            if no_load_sections:
+                exp_parameters.update(as_conf.load_section_parameters(job_list))
+            # Gathering parameters of jobs divided by PLATFORM
+            exp_parameters.update(as_conf.load_platform_parameters())
+            # All parameters to upper_case to be easier to identify
+            exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
+        except Exception as e:
+            raise AutosubmitCritical("Couldn't gather the experiment parameters",7012,e.message)
 
-        # Preparation for platform parameters
-        submitter = Autosubmit._get_submitter(as_conf)
-        submitter.load_platforms(as_conf)
-        # Gathering parameters of autosubmit and expdef config files
-        exp_parameters.update(as_conf.load_parameters())
-        # Gathering parameters of platform config file
-        exp_parameters.update(as_conf.load_project_parameters())
-        # Gathering common parameters of jobs and platform config file
-        Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-        exp_parameters.update(job_list.parameters)
-        # Gathering parameters of jobs divided by SECTION_PARAMETER
-        exp_parameters.update(as_conf.load_section_parameters(job_list))
-        # Gathering parameters of jobs divided by PLATFORM
-        exp_parameters.update(as_conf.load_platform_parameters())
-        # All parameters to upper_case to be easier to identify
-        exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
-
+        if no_load_sections:
+            Log.printlog("Can't load job_list parameters, the report will have uncompleted parameters",6014)
         if show_all_parameters:
             Log.info("Gathering all parameters (all keys are on upper_case)")
             parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
