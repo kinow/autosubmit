@@ -351,6 +351,8 @@ class Autosubmit:
             subparser.add_argument('expid', help='experiment identifier')
             subparser.add_argument('-t','--template', type=str,help='Supply the metric template.')
             subparser.add_argument('-all', '--show_all_parameters', action='store_true',default=False, help='Writes a file containing all parameters')
+            subparser.add_argument('-fp','--folder_path', type=str,help='Allows to select a non-default folder.')
+
             # Create
             subparser = subparsers.add_parser(
                 'create', description="create specified experiment joblist")
@@ -558,7 +560,7 @@ class Autosubmit:
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.notransitive, args.force, args.check_wrapper)
         elif args.command == 'report':
-            return Autosubmit.report(args.expid,args.template,args.show_all_parameters)
+            return Autosubmit.report(args.expid,args.template,args.show_all_parameters,args.folder_path)
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
@@ -2641,7 +2643,7 @@ class Autosubmit:
         return upper_dictionary
 
     @staticmethod
-    def report(expid,template_file_path="",show_all_parameters=False):
+    def report(expid,template_file_path="",show_all_parameters=False,folder_path=""):
         """
         Show report for specified experiment
         :param expid: experiment identifier:
@@ -2650,11 +2652,14 @@ class Autosubmit:
         :type str
         :param show_all_parameters: Write all parameters of the experiment
         :type bool
+        :param folder_path: Allows to put the report files on another folder
+        :type str
         """
-
         exp_parameters = defaultdict()
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        if folder_path != "":
+            tmp_path = folder_path
         import platform
         host = platform.node()
         # Gather experiment info
