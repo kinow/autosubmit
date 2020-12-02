@@ -2667,7 +2667,7 @@ class Autosubmit:
         try:
             as_conf.check_conf_files(False)
         except Exception as e:
-            raise AutosubmitCritical("Unable to gather the parameters from config files, check permissions.",7012,e.message)
+            raise AutosubmitCritical("Unable to gather the parameters from config files, check permissions.",7012)
         #Preparation for section parameters
         no_load_sections = False
         no_load_platforms = False
@@ -2675,29 +2675,29 @@ class Autosubmit:
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
         except Exception as e:
             no_load_sections = True
-
             # Preparation for platform parameters
-            try:
-                submitter = Autosubmit._get_submitter(as_conf)
-                submitter.load_platforms(as_conf)
-            except Exception as e:
-                no_load_platforms = True
+        try:
+            submitter = Autosubmit._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+        except Exception as e:
+            no_load_platforms = True
+
         try:
             # Gathering parameters of autosubmit and expdef config files
             exp_parameters.update(as_conf.load_parameters())
             # Gathering parameters of platform config file
             exp_parameters.update(as_conf.load_project_parameters())
             # Gathering common parameters of jobs and platform config file
-            if no_load_platforms:
+            if not no_load_platforms:
                 Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                 exp_parameters.update(job_list.parameters)
             else:
-                Log.printlog("Incorrect platform  configuration/insufficient permissions \n can't load common job_list variables \n Job section specific parameters will be tried to load regarless of this issue",6013)
+                Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \n Job section specific parameters will be tried to load regarless of this issue",6013)
             # Gathering parameters of jobs divided by SECTION_PARAMETER
-            if no_load_sections:
+            if not no_load_sections:
                 exp_parameters.update(as_conf.load_section_parameters(job_list))
             else:
-                Log.printlog("Can't load section jobs parameters, the report will have uncompleted parameters", 6014)
+                Log.printlog("Unable to load section jobs parameters, the report will have uncompleted parameters", 6014)
 
             # Gathering parameters of jobs divided by PLATFORM
             exp_parameters.update(as_conf.load_platform_parameters())
@@ -2722,7 +2722,7 @@ class Autosubmit:
             os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
             Log.result("A list of all parameters has been written on {0}".format(os.path.join(tmp_path, parameter_output)))
 
-        if template_file_path != '':
+        if template_file_path is not None:
             Log.info("Gathering the selected parameters (all keys are on upper_case)")
             template_file = open(template_file_path,'r')
             template_content = template_file.read()
