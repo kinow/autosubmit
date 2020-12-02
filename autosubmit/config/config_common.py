@@ -824,10 +824,15 @@ class AutosubmitConfig(object):
                 job_list_by_section[job.section] = [job]
             else:
                 job_list_by_section[job.section].append(job)
-            job.platform = submitter.platforms[job.platform_name.lower()]
+            try:
+                job.platform = submitter.platforms[job.platform_name.lower()]
+            except:
+                job.platform = submitter.platforms["local"]
+
         for section in job_list_by_section.keys():
             job_list_by_section[section][0].update_parameters(as_conf, job_list.parameters)
-            for section_param in job_list_by_section[section][0].parameters.keys():
+            section_list = job_list_by_section[section][0].parameters.keys()
+            for section_param in section_list:
                 if section_param not in job_list.parameters.keys():
                     parameters[section + "_" + section_param] = job_list_by_section[section][0].parameters[section_param]
         return parameters

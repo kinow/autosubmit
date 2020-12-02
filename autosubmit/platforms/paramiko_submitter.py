@@ -42,6 +42,23 @@ class ParamikoSubmitter(Submitter):
     def load_platforms_migrate(self, asconf, retries=5):
         pass #Add all info related to migrate
 
+    def load_local_platform(self,asconf):
+        platforms = dict()
+        # Build Local Platform Object
+        local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
+        local_platform.max_wallclock = asconf.get_max_wallclock()
+        local_platform.max_processors = asconf.get_max_processors()
+        local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
+        local_platform.total_jobs = asconf.get_total_jobs()
+        local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
+        local_platform.temp_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
+        local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
+        local_platform.host = 'localhost'
+        # Add object to entry in dictionary
+        platforms['local'] = local_platform
+        platforms['LOCAL'] = local_platform
+        self.platforms = platforms
+
     def load_platforms(self, asconf, retries=5):
         """
         Create all the platforms object that will be used by the experiment

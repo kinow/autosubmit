@@ -2675,13 +2675,12 @@ class Autosubmit:
             job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
         except Exception as e:
             no_load_sections = True
-            # Preparation for platform parameters
         try:
             submitter = Autosubmit._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
         except Exception as e:
             no_load_platforms = True
-
+            submitter.load_local_platform(as_conf)
         try:
             # Gathering parameters of autosubmit and expdef config files
             exp_parameters.update(as_conf.load_parameters())
@@ -4391,7 +4390,10 @@ class Autosubmit:
         :return: submitter
         :rtype: Submitter
         """
-        communications_library = as_conf.get_communications_library()
+        try:
+            communications_library = as_conf.get_communications_library()
+        except:
+            communications_library = 'paramiko'
         if communications_library == 'paramiko':
             return ParamikoSubmitter()
         else:
