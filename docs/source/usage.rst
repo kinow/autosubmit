@@ -5,7 +5,6 @@ Usage
 Command list
 ============
 
-
 -expid  Create a new experiment
 -create  Create specified experiment workflow
 -check  Check configuration for specified experiment
@@ -28,6 +27,7 @@ Command list
 -migrate_exp  Migrates an experiment from one user to another
 -remote_dependencies Submit multiple jobs at same time in order to gain priority.
 -report extract experiment parameters
+
 .. toctree::
    usage/create_exp
    usage/check
