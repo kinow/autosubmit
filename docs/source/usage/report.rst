@@ -35,8 +35,8 @@ Options:
 
 Template format and example:
 ::
-Autosubmit parameters are encapsulated by %_%, once you know how the parameter is called you can create a template similar to the one as follows:
 
+Autosubmit parameters are encapsulated by %_%, once you know how the parameter is called you can create a template similar to the one as follows:
 - **CHUNKS:** %NUMCHUNKS% - %CHUNKSIZE% %CHUNKSIZEUNIT%
 - **VERSION:** %VERSION%
 - **MODEL_RES:** %MODEL_RES%
@@ -46,12 +46,12 @@ Autosubmit parameters are encapsulated by %_%, once you know how the parameter i
 
 This will be understood by Autosubmit and the result would be similar to:
 
-    CHUNKS: 2 - 1 month
-    VERSION: trunk
-    MODEL_RES: LR
-    PROCS: 96 / 336 / - / - / 1 / 45
-    PRODUCTION_EXP: FALSE
-    OUTCLASS: reduced /  -
+- CHUNKS: 2 - 1 month
+- VERSION: trunk
+- MODEL_RES: LR
+- PROCS: 96 / 336 / - / - / 1 / 45
+- PRODUCTION_EXP: FALSE
+- OUTCLASS: reduced /  -
 
 Although it depends on the experiment.
 
