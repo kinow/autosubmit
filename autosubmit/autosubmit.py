@@ -299,7 +299,7 @@ class Autosubmit:
             group.add_argument('-p', '--pickup', action="store_true",
                                default=False, help='Pick-up released experiment')
             subparser.add_argument('-r', '--onlyremote', action="store_true",
-                               default=False, help='Only moves remote files')
+                                   default=False, help='Only moves remote files')
             # Inspect
             subparser = subparsers.add_parser(
                 'inspect', description="Generate all .cmd files")
@@ -347,11 +347,14 @@ class Autosubmit:
 
             # Report
             subparser = subparsers.add_parser(
-                'report', description="Show metrics.. ") # TODO
+                'report', description="Show metrics.. ")  # TODO
             subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-t','--template', type=str,help='Supply the metric template.')
-            subparser.add_argument('-all', '--show_all_parameters', action='store_true',default=False, help='Writes a file containing all parameters')
-            subparser.add_argument('-fp','--folder_path', type=str,help='Allows to select a non-default folder.')
+            subparser.add_argument(
+                '-t', '--template', type=str, help='Supply the metric template.')
+            subparser.add_argument('-all', '--show_all_parameters', action='store_true',
+                                   default=False, help='Writes a file containing all parameters')
+            subparser.add_argument(
+                '-fp', '--folder_path', type=str, help='Allows to select a non-default folder.')
 
             # Create
             subparser = subparsers.add_parser(
@@ -470,6 +473,11 @@ class Autosubmit:
             subparser.add_argument(
                 '-b', '--branch', help='branch of git to run (or revision from subversion)')
 
+            # Database
+            subparser = subparsers.add_parser(
+                'dbfix', description='historical database functions')
+            subparser.add_argument('expid', help='experiment identifier')
+
             # Test
             subparser = subparsers.add_parser(
                 'test', description='test experiment')
@@ -518,6 +526,7 @@ class Autosubmit:
 
             # Changelog
             subparsers.add_parser('changelog', description='show changelog')
+
             args = parser.parse_args()
 
         except Exception as e:
@@ -560,11 +569,11 @@ class Autosubmit:
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.notransitive, args.force, args.check_wrapper)
         elif args.command == 'report':
-            return Autosubmit.report(args.expid,args.template,args.show_all_parameters,args.folder_path)
+            return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path)
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
-            return Autosubmit.migrate(args.expid, args.offer, args.pickup,args.onlyremote)
+            return Autosubmit.migrate(args.expid, args.offer, args.pickup, args.onlyremote)
         elif args.command == 'create':
             return Autosubmit.create(args.expid, args.noplot, args.hide, args.output, args.group_by, args.expand,
                                      args.expand_status, args.notransitive, args.check_wrapper, args.detail)
@@ -591,9 +600,9 @@ class Autosubmit:
         elif args.command == 'updateversion':
             return Autosubmit.update_version(args.expid)
         elif args.command == 'archive':
-            return Autosubmit.archive(args.expid,noclean=args.noclean,uncompress=args.uncompress)
+            return Autosubmit.archive(args.expid, noclean=args.noclean, uncompress=args.uncompress)
         elif args.command == 'unarchive':
-            return Autosubmit.unarchive(args.expid,uncompressed=args.uncompressed)
+            return Autosubmit.unarchive(args.expid, uncompressed=args.uncompressed)
 
         elif args.command == 'readme':
             if os.path.isfile(Autosubmit.readme_path):
@@ -607,24 +616,28 @@ class Autosubmit:
                     print(f.read())
                     return True
             return False
+        elif args.command == 'dbfix':
+            return Autosubmit.database_fix(args.expid)
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
         Log.set_console_level(console_level)
-        expid_less=["expid","testcase","install","-v","readme","changelog","configure","unarchive"]
-        global_log_command = ["delete","archive"]
+        expid_less = ["expid", "testcase", "install", "-v",
+                      "readme", "changelog", "configure", "unarchive"]
+        global_log_command = ["delete", "archive"]
         if "offer" in args:
             if args.offer:
-                global_log_command.append("migrate") #offer
+                global_log_command.append("migrate")  # offer
             else:
-                expid_less.append("migrate") #pickup
+                expid_less.append("migrate")  # pickup
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
             if not os.path.exists(exp_path):
                 raise AutosubmitCritical("Experiment does not exist", 7012)
-            if args.command not in ["monitor","describe","delete","report"]: # delete is treated differently
+            # delete is treated differently
+            if args.command not in ["monitor", "describe", "delete", "report"]:
                 Autosubmit._check_ownership(expid)
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
@@ -645,7 +658,7 @@ class Autosubmit:
             else:
                 exp_id = "_" + expid
             if args.command not in expid_less:
-                exp_path=os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
                 if not os.path.exists(exp_path):
                     raise AutosubmitCritical("Experiment does not exist", 7012)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
@@ -728,7 +741,8 @@ class Autosubmit:
                         except:
                             pass
                     except OSError as e:
-                        raise AutosubmitCritical('Can not delete experiment folder: ', 7012, e.message)
+                        raise AutosubmitCritical(
+                            'Can not delete experiment folder: ', 7012, e.message)
                     Log.info("Deleting experiment from database...")
                     ret = delete_experiment(expid_delete)
                     if ret:
@@ -744,7 +758,8 @@ class Autosubmit:
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 # print(traceback.format_exc())
-                raise AutosubmitCritical("Couldn't delete the experiment:", 7012, e.message)
+                raise AutosubmitCritical(
+                    "Couldn't delete the experiment:", 7012, e.message)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -809,7 +824,7 @@ class Autosubmit:
                         Log.debug(conf_new_filename)
                         open(conf_new_filename, 'w').write(content)
                 Autosubmit._prepare_conf_files(
-                    exp_id, hpc, Autosubmit.autosubmit_version, dummy,copy_id)
+                    exp_id, hpc, Autosubmit.autosubmit_version, dummy, copy_id)
             except (OSError, IOError) as e:
                 Autosubmit._delete_expid(exp_id)
                 raise AutosubmitCritical(
@@ -892,7 +907,7 @@ class Autosubmit:
                                                   new_filename), 'w').write(content)
 
                     Autosubmit._prepare_conf_files(
-                        exp_id, hpc, Autosubmit.autosubmit_version, dummy,copy_id)
+                        exp_id, hpc, Autosubmit.autosubmit_version, dummy, copy_id)
                     #####
                     autosubmit_config = AutosubmitConfig(
                         exp_id, BasicConfig, ConfigParserFactory())
@@ -999,8 +1014,8 @@ class Autosubmit:
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         if as_conf.get_platform().lower() not in platforms.keys():
             Log.warning("Main platform is not defined in platforms.conf")
-            #raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
-            #).lower()) + " is not a valid platform defined in platforms_.conf.", 7014)
+            # raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
+            # ).lower()) + " is not a valid platform defined in platforms_.conf.", 7014)
         else:
             platform = platforms[as_conf.get_platform().lower()]
             platform.add_parameters(parameters, True)
@@ -1371,7 +1386,7 @@ class Autosubmit:
                         job.platform = submitter.platforms[job.platform_name.lower(
                         )]
                         # noinspection PyTypeChecker
-                        if job.status not in (Status.COMPLETED,Status.SUSPENDED):
+                        if job.status not in (Status.COMPLETED, Status.SUSPENDED):
                             platforms_to_test.add(job.platform)
                     try:
                         job_list.check_scripts(as_conf)
@@ -1459,7 +1474,8 @@ class Autosubmit:
                                     if "JOB_" in thread.name:
                                         if thread.isAlive():
                                             active_threads = True
-                                            Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(thread.name,60 - timeout))
+                                            Log.info("{0} is still retrieving outputs, time remaining is {1} seconds.".format(
+                                                thread.name, 60 - timeout))
                                             break
                                 if active_threads:
                                     sleep(10)
@@ -1573,7 +1589,8 @@ class Autosubmit:
                                         save = True
 
                             if platform.type == "slurm" and list_jobid != "":
-                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
+                                slurm.append(
+                                    [platform, list_jobid, list_prevStatus, completed_joblist])
                         # END Normal jobs + wrappers
                         # CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
                         for platform_jobs in slurm:
@@ -1596,7 +1613,8 @@ class Autosubmit:
                                                                           as_conf.get_mails_to())
                                 save = True
                         # End Check Current jobs
-                        save2 = job_list.update_list(as_conf,submitter=submitter)
+                        save2 = job_list.update_list(
+                            as_conf, submitter=submitter)
                         if save or save2:
                             job_list.save()
                         if len(job_list.get_ready()) > 0:
@@ -1605,7 +1623,8 @@ class Autosubmit:
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-                        save = job_list.update_list(as_conf,submitter=submitter)
+                        save = job_list.update_list(
+                            as_conf, submitter=submitter)
                         if save:
                             job_list.save()
                         # Safe spot to store changes
@@ -1755,13 +1774,15 @@ class Autosubmit:
         failed_packages = list()
         for platform in platforms_to_test:
             if not hold:
-                Log.debug("\nJobs ready for {1}: {0}", len(job_list.get_ready(platform, hold=hold)), platform.name)
+                Log.debug("\nJobs ready for {1}: {0}", len(
+                    job_list.get_ready(platform, hold=hold)), platform.name)
                 ready_jobs = job_list.get_ready(platform, hold=hold)
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
 
-            packages_to_submit = JobPackager(as_conf, platform, job_list, hold=hold).build_packages()
+            packages_to_submit = JobPackager(
+                as_conf, platform, job_list, hold=hold).build_packages()
 
             if not inspect:
                 platform.open_submit_script()
@@ -1787,7 +1808,8 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
+                            package.submit(
+                                as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
                         except (IOError, OSError):
                             failed_packages.append(package.jobs[0].id)
@@ -1804,12 +1826,14 @@ class Autosubmit:
                                         error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
                                     "Submission failed, check job and queue specified in jobs.conf. Sections that could be affected: {0}".format(
-                                        error_msg[:-1]), 7014,e.trace)
+                                        error_msg[:-1]), 7014, e.trace)
                             raise
                         except WrongTemplateException as e:
-                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(e.job_name), 7014, e.message)
+                            raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
+                                e.job_name), 7014, e.message)
                         except Exception as e:
-                            raise AutosubmitError("{0} submission failed".format(platform.name), 6015, e.message+"\n"+e.trace)
+                            raise AutosubmitError("{0} submission failed".format(
+                                platform.name), 6015, e.message + "\n" + e.trace)
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(
                         "Invalid parameter substitution in {0} template".format(e.job_name), 7014)
@@ -1838,9 +1862,11 @@ class Autosubmit:
                                     "Submission failed, check job and queue specified of job_sections of {0}".format(
                                         error_msg[:-1]), 7014, e.trace)
                         except BaseException as e:
-                            raise AutosubmitError("Submission failed, this can be due a failure on the platform", 6015,e.message)
+                            raise AutosubmitError(
+                                "Submission failed, this can be due a failure on the platform", 6015, e.message)
                         if jobs_id is None or len(jobs_id) <= 0:
-                            raise AutosubmitError("Submission failed, this can be due a failure on the platform",6015)
+                            raise AutosubmitError(
+                                "Submission failed, this can be due a failure on the platform", 6015)
                         i = 0
                         if hold:
                             sleep(10)
@@ -1887,7 +1913,8 @@ class Autosubmit:
                     save = True
                     if len(failed_packages) > 0:
                         for job_id in failed_packages:
-                            package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                            package.jobs[0].platform.send_command(
+                                package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
                         raise AutosubmitError(
                             "{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
@@ -1913,7 +1940,8 @@ class Autosubmit:
                             job_list.job_package_map[package.jobs[0].id] = wrapper_job
                             if isinstance(package, JobPackageThread):
                                 # Saving only when it is a real multi job package
-                                packages_persistence.save(package.name, package.jobs, package._expid, inspect)
+                                packages_persistence.save(
+                                    package.name, package.jobs, package._expid, inspect)
             except Exception as e:
                 raise AutosubmitError("{0} submission failed".format(
                     platform.name), 6015, e.message)
@@ -2354,10 +2382,13 @@ class Autosubmit:
         """
 
         if offer:
-            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(
+                experiment_id, BasicConfig, ConfigParserFactory())
             as_conf.check_conf_files(False)
-            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
-            job_list = Autosubmit.load_job_list(experiment_id, as_conf, notransitive=True, monitor=True)
+            pkl_dir = os.path.join(
+                BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
+            job_list = Autosubmit.load_job_list(
+                experiment_id, as_conf, notransitive=True, monitor=True)
             Log.debug("Job list restored from {0} files", pkl_dir)
             error = False
             platforms_to_test = set()
@@ -2387,20 +2418,25 @@ class Autosubmit:
             for platform in platforms:
                 # Checks
                 err_message = 'Invalid Configuration:'
-                Log.info("Checking [{0}] from platforms configuration...", platform)
+                Log.info(
+                    "Checking [{0}] from platforms configuration...", platform)
                 if as_conf.get_migrate_user_to(platform) == '':
-                    err_message += "\nInvalid USER_TO target [ USER == USER_TO in [{0}] ]".format(platform)
+                    err_message += "\nInvalid USER_TO target [ USER == USER_TO in [{0}] ]".format(
+                        platform)
                     error = True
                 elif not as_conf.get_migrate_duplicate(platform) and as_conf.get_migrate_user_to(platform) == as_conf.get_current_user(platform):
-                    err_message +="\nInvalid USER_TO target [ USER == USER_TO in ({0}) ] while parameter SAME_USER is false (or unset)".format(platform)
+                    err_message += "\nInvalid USER_TO target [ USER == USER_TO in ({0}) ] while parameter SAME_USER is false (or unset)".format(
+                        platform)
                     error = True
                 p = submitter.platforms[platform]
                 if p.temp_dir is None:
-                    err_message += "\nInvalid TEMP_DIR, Parameter must be present even if empty in [{0}]".format(platform)
+                    err_message += "\nInvalid TEMP_DIR, Parameter must be present even if empty in [{0}]".format(
+                        platform)
                     error = True
                 elif p.temp_dir != "":
                     if not p.check_tmp_exists():
-                        err_message += "\nTEMP_DIR {0}, does not exists in [{1}]".format(p.temp_dir,platform)
+                        err_message += "\nTEMP_DIR {0}, does not exists in [{1}]".format(
+                            p.temp_dir, platform)
                         error = True
             if error:
                 raise AutosubmitCritical(err_message, 7014)
@@ -2419,24 +2455,31 @@ class Autosubmit:
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
                 else:
-                    Log.result("[OPTIONAL] PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
-                    backup_conf.append( [platform, as_conf.get_current_user(platform), None])
-                    as_conf.set_new_user(platform, as_conf.get_migrate_user_to(platform))
+                    Log.result(
+                        "[OPTIONAL] PROJECT_TO directive not found. The directive PROJECT will remain unchanged")
+                    backup_conf.append(
+                        [platform, as_conf.get_current_user(platform), None])
+                    as_conf.set_new_user(
+                        platform, as_conf.get_migrate_user_to(platform))
                     as_conf.get_current_project(platform)
                     as_conf.get_current_user(platform)
 
                 if as_conf.get_migrate_host_to(platform) != "none":
-                    Log.result("Host in platform configuration file successfully updated to {0}", as_conf.get_migrate_host_to(platform))
-                    as_conf.set_new_host(platform, as_conf.get_migrate_host_to(platform))
+                    Log.result(
+                        "Host in platform configuration file successfully updated to {0}", as_conf.get_migrate_host_to(platform))
+                    as_conf.set_new_host(
+                        platform, as_conf.get_migrate_host_to(platform))
                 else:
-                    Log.result("[OPTIONAL] HOST_TO directive not found. The directive HOST will remain unchanged")
+                    Log.result(
+                        "[OPTIONAL] HOST_TO directive not found. The directive HOST will remain unchanged")
                 p = submitter.platforms[platform]
                 if p.temp_dir not in already_moved:
                     if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
                         already_moved.add(p.temp_dir)
                         # find /home/bsc32/bsc32070/dummy3 -type l -lname '/*' -printf ' ln -sf "$(realpath -s --relative-to="%p" $(readlink "%p")")" \n' > script.sh
                         #command = "find " + p.root_dir + " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n'"
-                        Log.info("Converting the absolute symlinks into relatives on platform {0} ", platform)
+                        Log.info(
+                            "Converting the absolute symlinks into relatives on platform {0} ", platform)
                         command = "find " + p.root_dir + \
                             " -type l -lname \'/*\' -printf 'var=\"$(realpath -s --relative-to=\"%p\" \"$(readlink \"%p\")\")\" && var=${var:3} && ln -sf $var \"%p\"  \\n' "
                         try:
@@ -2447,12 +2490,14 @@ class Autosubmit:
                                 with open(convertLinkPath, 'w') as convertLinkFile:
                                     convertLinkFile.write(p.get_ssh_output())
                                 p.send_file("convertLink.sh")
-                                convertLinkPathRemote = os.path.join(p.remote_log_dir, "convertLink.sh")
+                                convertLinkPathRemote = os.path.join(
+                                    p.remote_log_dir, "convertLink.sh")
                                 command = "chmod +x " + convertLinkPathRemote + " && " + \
                                     convertLinkPathRemote + " && rm " + convertLinkPathRemote
                                 p.send_command(command, True)
                             else:
-                                Log.result("No links found in {0} for [{1}] ".format(p.root_dir,platform))
+                                Log.result("No links found in {0} for [{1}] ".format(
+                                    p.root_dir, platform))
 
                         except IOError:
                             Log.debug(
@@ -2463,10 +2508,12 @@ class Autosubmit:
                             error = True
                             break
                         try:
-                            Log.info("Moving remote files/dirs on {0}", platform)
+                            Log.info(
+                                "Moving remote files/dirs on {0}", platform)
                             p.send_command("chmod 777 -R " + p.root_dir)
                             if not p.move_file(p.root_dir, os.path.join(p.temp_dir, experiment_id), False):
-                                Log.result("No data found in {0} for [{1}]\n".format(p.root_dir, platform))
+                                Log.result("No data found in {0} for [{1}]\n".format(
+                                    p.root_dir, platform))
                         except IOError as e:
                             Log.printlog(
                                 "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
@@ -2476,17 +2523,21 @@ class Autosubmit:
                             error = True
                             break
                         except Exception as e:
-                            Log.printlog("Trace: {2}\nThe files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,os.path.join(p.temp_dir, experiment_id),e.message), 6012)
+                            Log.printlog("Trace: {2}\nThe files/dirs on {0} cannot be moved to {1}.".format(
+                                p.root_dir, os.path.join(p.temp_dir, experiment_id), e.message), 6012)
                             error = True
                             break
                         backup_files.append(platform)
-                Log.result("Files/dirs on {0} have been successfully offered", platform)
+                Log.result(
+                    "Files/dirs on {0} have been successfully offered", platform)
             if error:
-                as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+                as_conf = AutosubmitConfig(
+                    experiment_id, BasicConfig, ConfigParserFactory())
                 as_conf.check_conf_files(False)
                 for platform in backup_files:
                     p = submitter.platforms[platform]
-                    p.move_file(os.path.join(p.temp_dir, experiment_id), p.root_dir, True)
+                    p.move_file(os.path.join(
+                        p.temp_dir, experiment_id), p.root_dir, True)
                 for platform in backup_conf:
                     as_conf.set_new_user(platform[0], platform[1])
                     if platform[2] is not None:
@@ -2494,7 +2545,8 @@ class Autosubmit:
                     if as_conf.get_migrate_host_to(platform[0]) != "none":
                         as_conf.set_new_host(
                             platform[0], as_conf.get_migrate_host_to(platform[0]))
-                raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014)
+                raise AutosubmitCritical(
+                    "The experiment cannot be offered, changes are reverted", 7014)
             else:
                 try:
                     if not only_remote:
@@ -2506,8 +2558,10 @@ class Autosubmit:
                             for platform in backup_conf:
                                 as_conf.set_new_user(platform[0], platform[1])
                                 if platform[2] is not None:
-                                    as_conf.set_new_project(platform[0], platform[2])
-                            raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014)
+                                    as_conf.set_new_project(
+                                        platform[0], platform[2])
+                            raise AutosubmitCritical(
+                                "The experiment cannot be offered, changes are reverted", 7014)
                     Log.result("The experiment has been successfully offered.")
                 except Exception as e:
                     for platform in backup_files:
@@ -2518,23 +2572,30 @@ class Autosubmit:
                         as_conf.set_new_user(platform[0], platform[1])
                         if platform[2] is not None:
                             as_conf.set_new_project(platform[0], platform[2])
-                    raise AutosubmitCritical("The experiment cannot be offered, changes are reverted", 7014,e.message)
+                    raise AutosubmitCritical(
+                        "The experiment cannot be offered, changes are reverted", 7014, e.message)
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
             if not only_remote:
                 if not Autosubmit.unarchive(experiment_id, True):
-                    raise AutosubmitCritical("The experiment cannot be picked up", 7012)
+                    raise AutosubmitCritical(
+                        "The experiment cannot be picked up", 7012)
                 Log.info("Local files/dirs have been successfully picked up")
             else:
-                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id)
+                exp_path = os.path.join(
+                    BasicConfig.LOCAL_ROOT_DIR, experiment_id)
                 if not os.path.exists(exp_path):
-                    raise AutosubmitCritical("Experiment seems to be archived, no action is performed", 7012)
+                    raise AutosubmitCritical(
+                        "Experiment seems to be archived, no action is performed", 7012)
 
-            as_conf = AutosubmitConfig(experiment_id, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(
+                experiment_id, BasicConfig, ConfigParserFactory())
             as_conf.check_conf_files(False)
-            pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
-            job_list = Autosubmit.load_job_list(experiment_id, as_conf, notransitive=True, monitor=True)
+            pkl_dir = os.path.join(
+                BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
+            job_list = Autosubmit.load_job_list(
+                experiment_id, as_conf, notransitive=True, monitor=True)
             Log.debug("Job list restored from {0} files", pkl_dir)
             error = False
             platforms_to_test = set()
@@ -2550,14 +2611,16 @@ class Autosubmit:
                 platforms_to_test.add(platforms[job.platform_name.lower()])
 
             Log.info("Checking remote platforms")
-            platforms = filter(lambda x: x not in ['local', 'LOCAL'], submitter.platforms)
+            platforms = filter(lambda x: x not in [
+                               'local', 'LOCAL'], submitter.platforms)
             already_moved = set()
             backup_files = []
             # establish the connection to all platforms on use
             try:
                 Autosubmit.restore_platforms(platforms_to_test)
             except Exception as e:
-                raise AutosubmitCritical("Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote",7014,e.message)
+                raise AutosubmitCritical(
+                    "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.message)
                 error = True
             if not error:
                 for platform in platforms:
@@ -2565,31 +2628,40 @@ class Autosubmit:
                     if p.temp_dir not in already_moved:
                         if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
                             already_moved.add(p.temp_dir)
-                            Log.info("Copying remote files/dirs on {0}", platform)
+                            Log.info(
+                                "Copying remote files/dirs on {0}", platform)
                             Log.info("Copying from {0} to {1}", os.path.join(
                                 p.temp_dir, experiment_id), p.root_dir)
                             try:
                                 finished = False
                                 while not finished:
-                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                        p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
                                     if "warning: rsync" in p.get_ssh_output_err():
                                         pass
                                     else:
                                         finished = True
-                                p.send_command("chmod 755 -R " + p.root_dir[:-5])
-                                Log.result("Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir,experiment_id)))
-                                Log.result("Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
+                                p.send_command(
+                                    "chmod 755 -R " + p.root_dir[:-5])
+                                Log.result(
+                                    "Files/dirs on {0} have been successfully picked up", platform)
+                                p.send_command(
+                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                Log.result(
+                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
 
                             except (IOError, BaseException):
                                 error = True
-                                Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
+                                Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(
+                                    os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
                                 break
                             backup_files.append(platform)
                         else:
-                            Log.result("Files/dirs on {0} have been successfully picked up", platform)
+                            Log.result(
+                                "Files/dirs on {0} have been successfully picked up", platform)
             if error:
-                raise AutosubmitCritical("Unable to pickup all platforms, the non-moved files are on the TEMP_DIR\n You can try again with autosubmit {0} -p --onlyremote".format(experiment_id), 7012)
+                raise AutosubmitCritical(
+                    "Unable to pickup all platforms, the non-moved files are on the TEMP_DIR\n You can try again with autosubmit {0} -p --onlyremote".format(experiment_id), 7012)
             else:
                 Log.result("The experiment has been successfully picked up.")
                 #Log.info("Refreshing the experiment.")
@@ -2643,7 +2715,7 @@ class Autosubmit:
         return upper_dictionary
 
     @staticmethod
-    def report(expid,template_file_path="",show_all_parameters=False,folder_path=""):
+    def report(expid, template_file_path="", show_all_parameters=False, folder_path=""):
         """
         Show report for specified experiment
         :param expid: experiment identifier:
@@ -2668,12 +2740,14 @@ class Autosubmit:
         try:
             as_conf.check_conf_files(False)
         except Exception as e:
-            raise AutosubmitCritical("Unable to gather the parameters from config files, check permissions.",7012)
-        #Preparation for section parameters
+            raise AutosubmitCritical(
+                "Unable to gather the parameters from config files, check permissions.", 7012)
+        # Preparation for section parameters
         no_load_sections = False
         no_load_platforms = False
         try:
-            job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=False)
+            job_list = Autosubmit.load_job_list(
+                expid, as_conf, notransitive=False)
         except Exception as e:
             no_load_sections = True
         try:
@@ -2689,56 +2763,70 @@ class Autosubmit:
             exp_parameters.update(as_conf.load_project_parameters())
             # Gathering common parameters of jobs and platform config file
             if not no_load_platforms:
-                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                Autosubmit._load_parameters(
+                    as_conf, job_list, submitter.platforms)
                 exp_parameters.update(job_list.parameters)
             else:
-                Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \nJob section specific parameters will be tried to load regarless of this issue",6013)
+                Log.printlog("Incorrect platform configuration/insufficient permissions \nUnable to load common job_list variables \nJob section specific parameters will be tried to load regarless of this issue", 6013)
             # Gathering parameters of jobs divided by SECTION_PARAMETER
             if not no_load_sections:
-                exp_parameters.update(as_conf.load_section_parameters(job_list,as_conf,submitter))
+                exp_parameters.update(as_conf.load_section_parameters(
+                    job_list, as_conf, submitter))
             else:
-                Log.printlog("Unable to load section jobs parameters, the report will have uncompleted parameters", 6014)
+                Log.printlog(
+                    "Unable to load section jobs parameters, the report will have uncompleted parameters", 6014)
 
             # Gathering parameters of jobs divided by PLATFORM
             exp_parameters.update(as_conf.load_platform_parameters())
             # All parameters to upper_case to be easier to identify
             exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
         except Exception as e:
-            raise AutosubmitCritical("Couldn't gather the experiment parameters",7012,e.message)
+            raise AutosubmitCritical(
+                "Couldn't gather the experiment parameters", 7012, e.message)
 
         if show_all_parameters:
             Log.info("Gathering all parameters (all keys are on upper_case)")
             parameter_output = '{0}_parameter_list_{1}.txt'.format(expid,
                                                                    datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
-            parameter_file = open(os.path.join(tmp_path, parameter_output), 'w').close()
-            parameter_file = open(os.path.join(tmp_path, parameter_output), 'a')
+            parameter_file = open(os.path.join(
+                tmp_path, parameter_output), 'w').close()
+            parameter_file = open(os.path.join(
+                tmp_path, parameter_output), 'a')
             for key, value in exp_parameters.items():
                 if value is not None:
-                    parameter_file.write(key+"="+str(value)+"\n")
+                    parameter_file.write(key + "=" + str(value) + "\n")
                 else:
                     parameter_file.write(key + "=" + "-" + "\n")
             parameter_file.close()
 
             os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
-            Log.result("A list of all parameters has been written on {0}".format(os.path.join(tmp_path, parameter_output)))
+            Log.result("A list of all parameters has been written on {0}".format(
+                os.path.join(tmp_path, parameter_output)))
 
         if template_file_path is not None:
             if os.path.exists(template_file_path):
-                Log.info("Gathering the selected parameters (all keys are on upper_case)")
-                template_file = open(template_file_path,'r')
+                Log.info(
+                    "Gathering the selected parameters (all keys are on upper_case)")
+                template_file = open(template_file_path, 'r')
                 template_content = template_file.read()
                 for key, value in exp_parameters.items():
                     template_content = re.sub(
                         '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
                 template_content = template_content.replace("%%", "%")
-                template_content = re.sub(r"\%[^% \n\t]+\%","-",template_content)
-                report = '{0}_report_{1}.txt'.format(expid,datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
-                open(os.path.join(tmp_path, report),'w').write(template_content)
+                template_content = re.sub(
+                    r"\%[^% \n\t]+\%", "-", template_content)
+                report = '{0}_report_{1}.txt'.format(
+                    expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
+                open(os.path.join(tmp_path, report),
+                     'w').write(template_content)
                 os.chmod(os.path.join(tmp_path, report), 0o755)
                 template_file.close()
-                Log.result("Report {0} has been created on {1}".format(report,os.path.join(tmp_path,report)))
+                Log.result("Report {0} has been created on {1}".format(
+                    report, os.path.join(tmp_path, report)))
             else:
-                raise AutosubmitCritical("Template {0} doesn't exists ".format(template_file_path),7014)
+                raise AutosubmitCritical(
+                    "Template {0} doesn't exists ".format(template_file_path), 7014)
+
     @staticmethod
     def describe(experiment_id):
         """
@@ -3164,6 +3252,75 @@ class Autosubmit:
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
         return True
+
+    @staticmethod
+    def database_fix(expid):
+        """
+        Database methods. Performs a sql dump of the database and restores it.
+
+        :param expid: experiment identifier
+        :type expid: str
+        :return:
+        :rtype:        
+        """
+        # exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        # database_file =
+        current_time = int(time.time())
+        database_path = os.path.join(
+            BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid))
+        dump_file_name = 'job_data_{0}_{1}.sql'.format(expid, current_time)
+        dump_file_path = os.path.join(BasicConfig.JOBDATA_DIR, dump_file_name)
+        bash_command = 'sqlite3 {0} .dump > {1}'.format(
+            database_path, dump_file_path)
+        # print(bash_command)
+        try:
+            if os.path.exists(database_path):
+                # output = subprocess.check_output(
+                #     ['sqlite3', database_path, '.dump', ' > ', dump_file_name])
+                result = os.popen(
+                    bash_command).read()
+                # process = subprocess.Popen(
+                #     bash_command.split(), stdout=subprocess.PIPE)
+                # output, error = process.communicate()
+                # print(result)
+                # print(len(result))
+                if result is not None and os.path.exists(dump_file_path):
+                    Log.info("sqldump {0} created".format(dump_file_path))
+                    Log.info(
+                        "Deleting original database {0}".format(database_path))
+                    result = os.popen("rm {0}".format(database_path)).read()
+                    if result is not None and not os.path.exists(database_path):
+                        Log.info("Original database deleted.")
+                        Log.info("Restoring from sqldump")
+                        result = os.popen("cat {0} | sqlite3 {1}".format(
+                            dump_file_path, database_path)).read()
+                        if result is not None and os.path.exists(database_path):
+                            Log.info(
+                                "Database {0} restored.".format(database_path))
+                            Log.info("Deleting sqldump.")
+                            result = os.popen(
+                                "rm {0}".format(dump_file_path)).read()
+                            if result is not None and not os.path.exists(dump_file_path):
+                                Log.info("sqldump file deleted.")
+                                Log.result(
+                                    "The database {0} has been fixed.".format(database_path))
+                            else:
+                                raise Exception(
+                                    "The sqldump file could not be removed.")
+                        else:
+                            raise Exception(
+                                "It was not possible to restore the sqldump file.")
+                    else:
+                        raise Exception(
+                            "It was not possible to delete the original database.")
+                else:
+                    raise Exception("The sqldump file couldn't be created.")
+            else:
+                raise Exception("The database file doesn't exist.")
+        except Exception as exp:
+            Log.warning(str(exp))
+            # print(error)
+            # print(output)
 
     @staticmethod
     def archive(expid, noclean=True, uncompress=True):
@@ -3745,8 +3902,9 @@ class Autosubmit:
                     # noinspection PyTypeChecker
                     job.platform = platforms[job.platform_name.lower()]
                     # noinspection PyTypeChecker
-                    if job.status in [Status.QUEUING,Status.SUBMITTED,Status.RUNNING]:
-                        platforms_to_test.add(platforms[job.platform_name.lower()])
+                    if job.status in [Status.QUEUING, Status.SUBMITTED, Status.RUNNING]:
+                        platforms_to_test.add(
+                            platforms[job.platform_name.lower()])
                 # establish the connection to all platforms
                 definitive_platforms = list()
                 for platform in platforms_to_test:
@@ -3755,7 +3913,6 @@ class Autosubmit:
                         definitive_platforms.append(platform.name)
                     except Exception as e:
                         pass
-
 
                 # Validating list of jobs, if filter_list -fl has been set:
                 # Seems that Autosubmit.load_job_list call is necessary before verification is executed
@@ -4065,8 +4222,9 @@ class Autosubmit:
                                                 final_list.append(job)
                     status = Status()
                     for job in final_list:
-                        if job.status in [Status.QUEUING,Status.RUNNING,Status.SUBMITTED] and job.platform.name not in definitive_platforms:
-                            Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(job.platform.name,job.name),6000)
+                        if job.status in [Status.QUEUING, Status.RUNNING, Status.SUBMITTED] and job.platform.name not in definitive_platforms:
+                            Log.printlog("JOB: [{1}] is ignored as the [{0}] platform is currently offline".format(
+                                job.platform.name, job.name), 6000)
                             continue
                         if job.status != final_status:
                             # Tracking changes
@@ -4275,7 +4433,7 @@ class Autosubmit:
                 sys.stdout.write('Please respond with \'y\' or \'n\'.\n')
 
     @staticmethod
-    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy,copy_id):
+    def _prepare_conf_files(exp_id, hpc, autosubmit_version, dummy, copy_id):
         """
         Changes default configuration files to match new experiment values
 
@@ -4292,7 +4450,6 @@ class Autosubmit:
         as_conf.set_version(autosubmit_version)
         as_conf.set_expid(exp_id)
         as_conf.set_platform(hpc)
-
 
         if dummy or copy_id is None:
             content = open(as_conf.experiment_file).read()
