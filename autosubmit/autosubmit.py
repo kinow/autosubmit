@@ -475,7 +475,7 @@ class Autosubmit:
 
             # Database
             subparser = subparsers.add_parser(
-                'database', description='historical database functions')
+                'dbfix', description='historical database functions')
             subparser.add_argument('expid', help='experiment identifier')
 
             # Test
@@ -616,7 +616,7 @@ class Autosubmit:
                     print(f.read())
                     return True
             return False
-        elif args.command == 'database':
+        elif args.command == 'dbfix':
             return Autosubmit.database_fix(args.expid)
 
     @staticmethod
