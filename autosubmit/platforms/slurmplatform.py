@@ -99,7 +99,7 @@ class SlurmPlatform(ParamikoPlatform):
         except AutosubmitCritical as e:
             raise
         except Exception as e:
-            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, e.message)
+            raise AutosubmitError("Submit script is not found, retry again in next AS iteration", 6008, str(e))
 
     def update_cmds(self):
         """

@@ -16,6 +16,7 @@ Welcome to autosubmit's documentation!
    installation
    usage
    workflows
+   faq-original
    troubleshoot
    faq
    project

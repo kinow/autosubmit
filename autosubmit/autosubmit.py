@@ -759,7 +759,7 @@ class Autosubmit:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
                 # print(traceback.format_exc())
                 raise AutosubmitCritical(
-                    "Couldn't delete the experiment:", 7012, e.message)
+                    "Couldn't delete the experiment:", 7012, str(e))
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -1392,7 +1392,7 @@ class Autosubmit:
                         job_list.check_scripts(as_conf)
                     except Exception as e:
                         raise AutosubmitCritical(
-                            "Error while checking job templates", 7015, e.message)
+                            "Error while checking job templates", 7015, str(e))
                     Log.debug("Loading job packages")
                     try:
                         packages_persistence = JobPackagePersistence(os.path.join(
@@ -1437,7 +1437,7 @@ class Autosubmit:
                         ExperimentStatus(expid).update_running_status()
                     except Exception as e:
                         raise AutosubmitCritical(
-                            "Error while processing job_data_structure", 7067, e.message)
+                            "Error while processing job_data_structure", 7067, str(e))
                     if allowed_members:
                         # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
                         job_list.run_members = allowed_members
@@ -1447,7 +1447,7 @@ class Autosubmit:
                     raise AutosubmitCritical(e.message, 7067, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical(
-                        "Error in run initialization", 7067, e.message)
+                        "Error in run initialization", 7067, str(e))
 
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
@@ -1833,7 +1833,7 @@ class Autosubmit:
                                 e.job_name), 7014, e.message)
                         except Exception as e:
                             raise AutosubmitError("{0} submission failed".format(
-                                platform.name), 6015, e.message + "\n" + e.trace)
+                                platform.name), 6015, str(e))
                 except WrongTemplateException as e:
                     raise AutosubmitCritical(
                         "Invalid parameter substitution in {0} template".format(e.job_name), 7014)
@@ -1926,7 +1926,7 @@ class Autosubmit:
                     raise
                 except Exception as e:
                     raise AutosubmitError("{0} submission failed".format(
-                        platform.name), 6015, e.message)
+                        platform.name), 6015, str(e))
             try:
                 for package in valid_packages_to_submit:
                     if package.jobs[0].id not in failed_packages:
@@ -1944,7 +1944,7 @@ class Autosubmit:
                                     package.name, package.jobs, package._expid, inspect)
             except Exception as e:
                 raise AutosubmitError("{0} submission failed".format(
-                    platform.name), 6015, e.message)
+                    platform.name), 6015, str(e))
         return save
 
     @staticmethod
@@ -2185,7 +2185,7 @@ class Autosubmit:
                 Log.result("Stats plot ready")
             except Exception as e:
                 raise AutosubmitCritical(
-                    "Stats couldn't be shown", 7061, e.message)
+                    "Stats couldn't be shown", 7061, str(e))
         else:
             Log.info("There are no {0} jobs in the period from {1} to {2}...".format(
                 ft, period_ini, period_fi))
@@ -2524,7 +2524,7 @@ class Autosubmit:
                             break
                         except Exception as e:
                             Log.printlog("Trace: {2}\nThe files/dirs on {0} cannot be moved to {1}.".format(
-                                p.root_dir, os.path.join(p.temp_dir, experiment_id), e.message), 6012)
+                                p.root_dir, os.path.join(p.temp_dir, experiment_id), str(e)), 6012)
                             error = True
                             break
                         backup_files.append(platform)
@@ -2573,7 +2573,7 @@ class Autosubmit:
                         if platform[2] is not None:
                             as_conf.set_new_project(platform[0], platform[2])
                     raise AutosubmitCritical(
-                        "The experiment cannot be offered, changes are reverted", 7014, e.message)
+                        "The experiment cannot be offered, changes are reverted", 7014, str(e))
         elif pickup:
             Log.info('Migrating experiment {0}'.format(experiment_id))
             Log.info("Moving local files/dirs")
@@ -2620,7 +2620,7 @@ class Autosubmit:
                 Autosubmit.restore_platforms(platforms_to_test)
             except Exception as e:
                 raise AutosubmitCritical(
-                    "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.message)
+                    "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
                 error = True
             if not error:
                 for platform in platforms:
@@ -2782,7 +2782,7 @@ class Autosubmit:
             exp_parameters = Autosubmit.capitalize_keys(exp_parameters)
         except Exception as e:
             raise AutosubmitCritical(
-                "Couldn't gather the experiment parameters", 7012, e.message)
+                "Couldn't gather the experiment parameters", 7012, str(e))
 
         if show_all_parameters:
             Log.info("Gathering all parameters (all keys are on upper_case)")
@@ -3378,7 +3378,7 @@ class Autosubmit:
                 tar.close()
                 os.chmod(os.path.join(year_path, output_filepath), 0o755)
         except Exception as e:
-            raise AutosubmitCritical("Can not write tar file", 7012, e.message)
+            raise AutosubmitCritical("Can not write tar file", 7012, str(e))
 
         Log.info("Tar file created!")
 
@@ -3386,7 +3386,7 @@ class Autosubmit:
             shutil.rmtree(exp_folder)
         except Exception as e:
             Log.warning(
-                "Can not fully remove experiments folder: {0}".format(e))
+                "Can not fully remove experiments folder: {0}".format(str(e)))
             if os.stat(exp_folder):
                 try:
                     tmp_folder = os.path.join(
@@ -3396,10 +3396,9 @@ class Autosubmit:
                     Log.warning("Experiment folder renamed to: {0}".format(
                         exp_folder + "_to_delete "))
                 except Exception as e:
-
                     Autosubmit.unarchive(expid, uncompress=False)
                     raise AutosubmitCritical(
-                        "Can not remove or rename experiments folder", 7012, e.message)
+                        "Can not remove or rename experiments folder", 7012, str(e))
 
         Log.result("Experiment archived successfully")
         return True
@@ -3447,7 +3446,7 @@ class Autosubmit:
                 tar.close()
         except Exception as e:
             shutil.rmtree(exp_folder, ignore_errors=True)
-            Log.printlog("Can not extract tar file: {0}".format(e), 6012)
+            Log.printlog("Can not extract tar file: {0}".format(str(e)), 6012)
             return False
 
         Log.info("Unpacking finished")
@@ -3456,7 +3455,7 @@ class Autosubmit:
             os.remove(archive_path)
         except Exception as e:
             Log.printlog(
-                "Can not remove archived file folder: {0}".format(e), 7012)
+                "Can not remove archived file folder: {0}".format(str(e)), 7012)
             return False
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)

@@ -438,7 +438,7 @@ class AutosubmitConfig(object):
             raise AutosubmitCritical(e.message, e.code, e.trace)
         except Exception as e:
             raise AutosubmitCritical(
-                "There was an error while showing the config log messages", 7014, e.message)
+                "There was an error while showing the config log messages", 7014, str(e))
 
     def check_autosubmit_conf(self):
         """
@@ -759,7 +759,7 @@ class AutosubmitConfig(object):
                 self.parser_factory, self._exp_parser_file)
         except Exception as e:
             raise AutosubmitCritical(
-                "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(e.message), 7014)
+                "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
         if self._proj_parser_file == '':
             self._proj_parser = None
         else:
