@@ -38,15 +38,12 @@ def main():
         Autosubmit.parse_args()
         os._exit(0)
     except AutosubmitCritical as e:
-        # If an exception reaches this point, print traceback on debug
         if e.trace is not None:
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
         Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
-        Log.debug(traceback.format_exc())
         os._exit(1)
     except Exception as e:
-        # If an exception reaches this point, print traceback on debug
         Log.error("Trace: {0}", str(e))
         if "temporarily unavailable" in str(e):
             Log.critical(
@@ -54,7 +51,6 @@ def main():
         else:
             Log.critical(
                 "Unhandled error: If you see this message, please report it in Autosubmit's GitLab project")
-        Log.debug(traceback.format_exc())
         os._exit(1)
 
 
