@@ -472,7 +472,7 @@ class ExperimentStatus(MainDataBase):
             self.current_row = next(
                 (exp for exp in self.current_table if exp.expid == self.expid), None) if len(self.current_table) > 0 else None
         except Exception as exp:
-            Log.debug(exp)
+            Log.debug(str(exp))
             pass
 
     def print_current_table(self):
@@ -913,7 +913,7 @@ class JobDataStructure(MainDataBase):
                 self._update_experiment_run(current_run)
                 self.current_run_id = current_run.run_id
         except Exception as exp:
-            Log.debug(exp)
+            Log.debug(str(exp))
             pass
 
     def get_job_package_code(self, current_job_name):

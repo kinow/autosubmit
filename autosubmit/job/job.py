@@ -528,7 +528,7 @@ class Job(object):
             self._platform.restore_connection()
         except Exception as e:
             Log.printlog(
-                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
+                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e), self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 5
