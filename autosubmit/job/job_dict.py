@@ -296,7 +296,7 @@ class DicJobs:
         if split > -1:
             name += "_{0}".format(split)
         name += "_" + section
-        if name in jobs_data:            
+        if name in jobs_data:
             job = Job(name, jobs_data[name][1], jobs_data[name][2], priority)
             job.local_logs = (jobs_data[name][8], jobs_data[name][9])
             job.remote_logs = (jobs_data[name][10], jobs_data[name][11])
@@ -317,7 +317,6 @@ class DicJobs:
         job.delay = int(self.get_option(section, "DELAY", -1))
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
-
         job_type = self.get_option(section, "TYPE", default_job_type).lower()
         if job_type == 'bash':
             job.type = Type.BASH
@@ -325,6 +324,7 @@ class DicJobs:
             job.type = Type.PYTHON
         elif job_type == 'r':
             job.type = Type.R
+        job.executable = self.get_option(section, "EXECUTABLE", None)
 
         job.platform_name = self.get_option(section, "PLATFORM", None)
         if job.platform_name is not None:

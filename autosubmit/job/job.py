@@ -107,6 +107,7 @@ class Job(object):
         self.log_retries = 5
         self.id = job_id
         self.file = None
+        self.executable = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
 
@@ -914,9 +915,11 @@ class Job(object):
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self._platform
-        return ''.join([snippet.as_header(current_platform.get_header(self)),
-                        template,
-                        snippet.as_tailer()])
+        return ''.join([
+            snippet.as_header(current_platform.get_header(self), self.executable),
+            template,
+            snippet.as_tailer()
+        ])
 
     def queuing_reason_cancel(self, reason):
         try:
