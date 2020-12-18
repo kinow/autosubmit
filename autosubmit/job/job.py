@@ -148,7 +148,8 @@ class Job(object):
         Log.debug('NAME: {0}', self.name)
         Log.debug('JOBID: {0}', self.id)
         Log.debug('STATUS: {0}', self.status)
-        Log.debug('TYPE: {0}', self.priority)
+        Log.debug('PRIORITY: {0}', self.priority)
+        Log.debug('TYPE: {0}', self.type)
         Log.debug('PARENTS: {0}', [p.name for p in self.parents])
         Log.debug('CHILDREN: {0}', [c.name for c in self.children])
         Log.debug('FAIL_COUNT: {0}', self.fail_count)
@@ -1362,9 +1363,9 @@ for job in {0}
 do
     if [ -f "${{job}}_STAT" ]
     then
-            echo ${{job}} $(head ${{job}}_STAT) 
+            echo ${{job}} $(head ${{job}}_STAT)
     else
-            echo ${{job}} 
+            echo ${{job}}
     fi
 done
 """).format(str(not_finished_jobs_names), str(remote_log_dir), '\n'.ljust(13))
