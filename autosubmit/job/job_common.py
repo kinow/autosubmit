@@ -91,11 +91,13 @@ class StatisticsSnippetBash:
     """
 
     @staticmethod
-    def as_header(scheduler_header):
+    def as_header(scheduler_header, executable):
+        if not executable:
+            executable = "/bin/bash"
         return textwrap.dedent("""\
-            #!/bin/bash
+            #!{0}
 
-            """) + \
+            """).format(executable) + \
             scheduler_header + \
             textwrap.dedent("""\
             ###################
@@ -108,7 +110,7 @@ class StatisticsSnippetBash:
             ###################
             # Autosubmit job
             ###################
-            
+
             """)
 
     @staticmethod
@@ -122,7 +124,7 @@ class StatisticsSnippetBash:
                 echo $(date +%s) >> ${job_name_ptrn}_STAT
                 touch ${job_name_ptrn}_COMPLETED
                 exit 0
-                
+
                 """)
 
 
@@ -133,11 +135,13 @@ class StatisticsSnippetPython:
     """
 
     @staticmethod
-    def as_header(scheduler_header):
+    def as_header(scheduler_header, executable):
+        if not executable:
+            executable = "/usr/bin/env python"
         return textwrap.dedent("""\
-            #!/usr/bin/env python
+            #!{0}
 
-            """) + \
+            """).format(executable) + \
             scheduler_header + \
             textwrap.dedent("""\
             ###################
@@ -181,18 +185,20 @@ class StatisticsSnippetR:
     """
 
     @staticmethod
-    def as_header(scheduler_header):
+    def as_header(scheduler_header, executable):
+        if not executable:
+            executable = "/usr/bin/env Rscript"
         return textwrap.dedent("""\
-            #!/usr/bin/env Rscript
+            #!{0}
 
-            """) + \
+            """).format(executable) + \
             scheduler_header + \
             textwrap.dedent("""\
             ###################
             # Autosubmit header
             ###################
 
-            job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'    
+            job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
 
             fileConn<-file(paste(job_name_ptrn,"_STAT", sep = ''),"w")
             writeLines(toString(trunc(as.numeric(Sys.time()))), fileConn)
@@ -229,11 +235,13 @@ class StatisticsSnippetEmpty:
     """
 
     @staticmethod
-    def as_header(scheduler_header):
+    def as_header(scheduler_header, executable):
+        if not executable:
+            executable = "/bin/bash"
         return textwrap.dedent("""\
-            #!/bin/bash
+            #!{0}
 
-            """) + \
+            """).format(executable) + \
             scheduler_header
 
     @staticmethod

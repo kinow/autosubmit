@@ -196,6 +196,8 @@ Examples:
     # CHECK = False
     ## Select the interpreter that will run the job. Options: bash, python, r Default: bash
     # TYPE = bash
+    ## Specify the path to the interpreter. If empty, use system default based on job type  . Default: empty
+    # EXECUTABLE = /my_python_env/python3
 
 
     [LOCAL_SETUP]
@@ -319,7 +321,7 @@ Examples:
     # Number of retrials if a job fails. Can ve override at job level
     # Default = 0
     RETRIALS = 0
-    # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt 
+    # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt
     # Default = pdf
     OUTPUT = pdf
 

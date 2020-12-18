@@ -278,35 +278,35 @@ class TestDicJobs(TestCase):
         self.assertEquals(len(self.dictionary._dic[mock_section.name]), len(self.date_list))
 
     def test_create_job_creates_a_job_with_right_parameters(self):
-        # arrange
         section = ''
         priority = 99
         date = datetime(2016, 1, 1)
         member = 'fc0'
         chunk = 'ch0'
-        frequency = 123
-        delay = -1
-        platform_name = 'fake-platform'
-        filename = 'fake-fike'
-        queue = 'fake-queue'
-        processors = '111'
-        threads = '222'
-        tasks = '333'
-        memory = memory_per_task = 444
-        wallclock = 555
-        notify_on = 'COMPLETED FAILED'
-        synchronize = None
-        self.parser_mock.has_option = Mock(side_effect=[True, True, True, True, True, True, True, True, True, True, True,
-                                                        True, True, True, True, False, True, False,False])
-        self.parser_mock.get = Mock(side_effect=[frequency, delay, 'True', 'True', 'bash', platform_name, filename, queue,
-                                                 'True', processors, threads, tasks, memory, memory_per_task,
-                                                 wallclock, notify_on,synchronize])
+        # arrange
+        options = {
+            'FREQUENCY': 123,
+            'DELAY': -1,
+            'PLATFORM': 'fake-platform',
+            'FILE': 'fake-fike',
+            'QUEUE': 'fake-queue',
+            'PROCESSORS': '111',
+            'THREADS': '222',
+            'TASKS': '333',
+            'MEMORY': 'memory_per_task= 444',
+            'WALLCLOCK': 555,
+            'NOTIFY_ON': 'COMPLETED FAILED',
+            'SYNCHRONIZE': None,
+            'RERUN_ONLY': 'True',
+        }
+        self.parser_mock.has_option = lambda _, option: option in options
+        self.parser_mock.get = lambda _, option: options[option]
         job_list_mock = Mock()
         job_list_mock.append = Mock()
         self.dictionary._jobs_list.get_job_list = Mock(return_value=job_list_mock)
 
         # act
-        created_job = self.dictionary.build_job(section, priority, date, member, chunk, dict())
+        created_job = self.dictionary.build_job(section, priority, date, member, chunk, 'bash')
 
         # assert
         self.assertEquals('random-id_2016010100_fc0_ch0_', created_job.name)
@@ -317,20 +317,21 @@ class TestDicJobs(TestCase):
         self.assertEquals(member, created_job.member)
         self.assertEquals(chunk, created_job.chunk)
         self.assertEquals(self.date_format, created_job.date_format)
-        self.assertEquals(frequency, created_job.frequency)
-        self.assertEquals(delay, created_job.delay)
+        self.assertEquals(options['FREQUENCY'], created_job.frequency)
+        self.assertEquals(options['DELAY'], created_job.delay)
         self.assertTrue(created_job.wait)
         self.assertTrue(created_job.rerun_only)
         self.assertEquals(Type.BASH, created_job.type)
-        self.assertEquals(platform_name, created_job.platform_name)
-        self.assertEquals(filename, created_job.file)
-        self.assertEquals(queue, created_job.queue)
+        self.assertEquals(None, created_job.executable)
+        self.assertEquals(options['PLATFORM'], created_job.platform_name)
+        self.assertEquals(options['FILE'], created_job.file)
+        self.assertEquals(options['QUEUE'], created_job.queue)
         self.assertTrue(created_job.check)
-        self.assertEquals(processors, created_job.processors)
-        self.assertEquals(threads, created_job.threads)
-        self.assertEquals(tasks, created_job.tasks)
-        self.assertEquals(memory, created_job.memory)
-        self.assertEquals(wallclock, created_job.wallclock)
+        self.assertEquals(options['PROCESSORS'], created_job.processors)
+        self.assertEquals(options['THREADS'], created_job.threads)
+        self.assertEquals(options['TASKS'], created_job.tasks)
+        self.assertEquals(options['MEMORY'], created_job.memory)
+        self.assertEquals(options['WALLCLOCK'], created_job.wallclock)
         self.assertIsNone(created_job.retrials)
         job_list_mock.append.assert_called_once_with(created_job)
 
