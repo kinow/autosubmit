@@ -12,18 +12,21 @@ identifier and add this text:
 This will create a new job named "new_job" that will be executed once at the default platform. This job will user the
 template located at <new_job_template> (path is relative to project folder).
 
-This is the minimun job definition and usually is not enough. You usually will need to add some others parameters:
+This is the minimum job definition and usually is not enough. You usually will need to add some others parameters:
 
-* PLATFORM: allows you to execute the job in a platform of yout choice. It must be defined in the experiment's
+* PLATFORM: allows you to execute the job in a platform of your choice. It must be defined in the experiment's
   platforms.conf file or to have the value 'LOCAL' that always refer to the machine running Autosubmit
 
-* RUNNING: defines if jobs runs only once or once per stardate, member or chunk. Options are: once, date,
+* RUNNING: defines if jobs runs only once or once per start-date, member or chunk. Options are: once, date,
   member, chunk
 
-* DEPENDENCIES: defines dependencies from job as a list of parents jobs separed by spaces. For example, if
+* DEPENDENCIES: defines dependencies from job as a list of parents jobs separated by spaces. For example, if
   'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES = old_job". For dependencies to
-  jobs running in previous chunks, members or startdates, use -(DISTANCE). For example, for a job "SIM" waiting for
+  jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
   the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1"
+
+* SELECT_CHUNKS (optional) : by default, Autosubmit jobs depends on all dependencies chunks (if parent job RUNNING == chunk) , with this
+parameter you will be able to  select the ones that you want.
 
 For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more
 . To do this use:
@@ -66,3 +69,19 @@ Example:
     PROCESSORS = 1616
     THREADS = 1
     TASKS = 1
+
+.. code-block:: ini
+
+    [SIM2]
+    FILE = templates/ecearth3/ecearth3.sim
+    DEPENDENCIES =  SIM2 SIM-1
+    RUNNING = chunk
+    WALLCLOCK = 04:00
+    PROCESSORS = 1616
+    THREADS = 1
+    TASKS = 1
+    # Only one of these lines is needed
+    SELECT_CHUNKS = SIM*[1]*[3] #Will do the dependency of chunk 1 and chunk 3. While chunks 2,4  won't be linked.
+    SELECT_CHUNKS = SIM*[1:3] #Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
+    SELECT_CHUNKS = SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
+    SELECT_CHUNKS = SIM*[1] #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked

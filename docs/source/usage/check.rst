@@ -31,6 +31,7 @@ How to use check in running time:
 In ``jobs_cxxx.conf`` , you can set check(default true) to check the scripts during autosubmit run cxx.
 
 There are two parameters related to check:
+
 .. code-block:: ini
 
     CHECK = TRUE or FALSE or ON_SUBMISSION
