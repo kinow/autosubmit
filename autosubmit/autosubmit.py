@@ -1240,6 +1240,7 @@ class Autosubmit:
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.check_conf_files(True)
+
         Log.info(
             "Autosubmit is running with {0}", Autosubmit.autosubmit_version)
         if update_version:
@@ -1432,7 +1433,7 @@ class Autosubmit:
                     try:
                         job_data_structure = JobDataStructure(expid)
                         job_data_structure.validate_current_run(job_list.get_job_list(
-                        ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size())
+                        ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
 
                         ExperimentStatus(expid).update_running_status()
                     except Exception as e:
@@ -2367,6 +2368,15 @@ class Autosubmit:
             else:
                 Log.info(job_list.print_with_status())
                 Log.status(job_list.print_with_status())
+        # Warnings about precedence completion
+        #time_0 = time.time()
+        notcompleted_parents_completed_jobs = [job for job in job_list.get_job_list(
+        ) if job.status == Status.COMPLETED and len([jobp for jobp in job.parents if jobp.status != Status.COMPLETED]) > 0]
+
+        if notcompleted_parents_completed_jobs and len(notcompleted_parents_completed_jobs) > 0:
+            Log.error("The following COMPLETED jobs depend on jobs that have not been COMPLETED (this can result in unexpected behavior): {0}".format(
+                str([job.name for job in notcompleted_parents_completed_jobs])))
+        #print("Warning calc took {0} seconds".format(time.time() - time_0))
         return True
 
     @staticmethod
@@ -3586,7 +3596,7 @@ class Autosubmit:
 
                     # Setting up job historical database header. Must create a new run.
                     JobDataStructure(expid).validate_current_run(job_list.get_job_list(
-                    ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True)
+                    ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True, current_config=as_conf.get_full_config_as_json())
 
                     if not noplot:
                         if group_by:
@@ -4343,7 +4353,7 @@ class Autosubmit:
                     job_list.save()
                     job_data_structure = JobDataStructure(expid)
                     job_data_structure.process_status_changes(
-                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True)
+                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json())
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)
