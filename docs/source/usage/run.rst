@@ -39,6 +39,8 @@ Example:
 
 .. important:: Before launching Autosubmit check password-less ssh is feasible (*HPCName* is the hostname):
 
+.. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh. Make sure that the ssh key is in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`.
+
     ``ssh HPCName``
 
 More info on password-less ssh can be found at: http://www.linuxproblem.org/art_9.html

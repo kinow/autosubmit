@@ -15,9 +15,9 @@ These packages (argparse, python-dateutil, pyparsing, numpy, pydotplus, matplotl
 
 .. important:: dot -v command should contain "dot",pdf,png,svg,xlib  in device section.
 
-.. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh.
+.. important:: The host machine has to be able to access HPC's/Clusters via password-less ssh. Make sure that the ssh key is in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`.
 
-.. important:: The ssh key has to be in PEM format `ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM`
+
 
 To install autosubmit just execute:
 ::
