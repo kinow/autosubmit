@@ -25,11 +25,10 @@ This is the minimum job definition and usually is not enough. You usually will n
   jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
   the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1"
 
-* SELECT_CHUNKS (optional) : by default, Autosubmit jobs depends on all dependencies chunks (if parent job RUNNING == chunk) , with this
-parameter you will be able to  select the ones that you want, you can watch some examples at the bottom of this page.
+* SELECT_CHUNKS (optional) : by default, Autosubmit jobs depends on all dependencies chunks (if parent job RUNNING == chunk) , with this parameter you will be able to  select the ones that you want, you can watch some examples at the bottom of this page.
 
-For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more
-. To do this use:
+For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more.
+To do this use:
 
 * WALLCLOCK: wallclock time to be submitted to the HPC queue in format HH:MM
 
@@ -96,6 +95,7 @@ In this first example, you can see 3 jobs in which last job (POST) shows an exam
     SELECT_CHUNKS = SIM*[1] #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
 
 Example 2:
+
 In this workflow you can see an illustrated example of select_chunks used in an actual workflow, to avoid an excess of information we only will see the configuration of a single job:
 
 .. code-block:: ini
