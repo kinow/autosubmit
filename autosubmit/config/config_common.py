@@ -26,6 +26,7 @@ import os
 import re
 import subprocess
 import traceback
+import json
 
 from pyparsing import nestedExpr
 
@@ -125,6 +126,44 @@ class AutosubmitConfig(object):
         Returns project's jobs file name
         """
         return self._jobs_parser_file
+
+    def get_full_config_as_dict(self):
+        """
+        Returns full configuration as json object
+        """
+        _conf = _exp = _platforms = _jobs = _proj = None
+        result = {}
+
+        def get_data(parser):
+            """
+            dictionary comprehension to get data from parser
+            """
+            res = {sec: {option: parser.get(sec, option) for option in parser.options(sec)} for sec in [
+                section for section in parser.sections()]}
+            return res
+
+        result["conf"] = get_data(
+            self._conf_parser) if self._conf_parser else None
+        result["exp"] = get_data(
+            self._exp_parser) if self._exp_parser else None
+        result["platforms"] = get_data(
+            self._platforms_parser) if self._platforms_parser else None
+        result["jobs"] = get_data(
+            self._jobs_parser) if self._jobs_parser else None
+        result["proj"] = get_data(
+            self._proj_parser) if self._proj_parser else None
+        return result
+
+    def get_full_config_as_json(self):
+        """
+        Return config as json object
+        """
+        try:
+            return json.dumps(self.get_full_config_as_dict())
+        except Exception as exp:
+            Log.warning(
+                "Autosubmit was not able to retrieve and save the configuration into the historical database.")
+            return ""
 
     def get_project_dir(self):
         """
@@ -226,6 +265,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'USER_TO', '').lower()
+
     def get_migrate_duplicate(self, section):
         """
         Returns the user to change to from platform config file.
@@ -234,6 +274,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'SAME_USER', 'false').lower()
+
     def get_current_user(self, section):
         """
         Returns the user to be changed from platform config file.
@@ -460,7 +501,7 @@ class AutosubmitConfig(object):
                                                  "TOTALJOBS parameter not found or non-integer"]]
         if not self._conf_parser.check_is_int('config', 'SAFETYSLEEPTIME', True):
             self.set_safetysleeptime(10)
-            #self.wrong_config["Autosubmit"] += [['config',
+            # self.wrong_config["Autosubmit"] += [['config',
             #                                     "SAFETYSLEEPTIME parameter not found or non-integer"]]
         if not self._conf_parser.check_is_int('config', 'RETRIALS', True):
             self.wrong_config["Autosubmit"] += [['config',
@@ -802,11 +843,11 @@ class AutosubmitConfig(object):
         parameters = dict()
         for section in self._platforms_parser.sections():
             for option in self._platforms_parser.options(section):
-                parameters[section+"_"+option] = self._platforms_parser.get(section, option)
+                parameters[section + "_" +
+                           option] = self._platforms_parser.get(section, option)
         return parameters
 
-
-    def load_section_parameters(self,job_list,as_conf,submitter):
+    def load_section_parameters(self, job_list, as_conf, submitter):
         """
         Load parameters from job config files.
 
@@ -830,11 +871,13 @@ class AutosubmitConfig(object):
                 job.platform = submitter.platforms["local"]
 
         for section in job_list_by_section.keys():
-            job_list_by_section[section][0].update_parameters(as_conf, job_list.parameters)
+            job_list_by_section[section][0].update_parameters(
+                as_conf, job_list.parameters)
             section_list = job_list_by_section[section][0].parameters.keys()
             for section_param in section_list:
                 if section_param not in job_list.parameters.keys():
-                    parameters[section + "_" + section_param] = job_list_by_section[section][0].parameters[section_param]
+                    parameters[section + "_" +
+                               section_param] = job_list_by_section[section][0].parameters[section_param]
         return parameters
 
     def load_project_parameters(self):
@@ -1277,7 +1320,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return int(self._conf_parser.get_option('config', 'SAFETYSLEEPTIME',10))
+        return int(self._conf_parser.get_option('config', 'SAFETYSLEEPTIME', 10))
 
     def set_safetysleeptime(self, sleep_time):
         """

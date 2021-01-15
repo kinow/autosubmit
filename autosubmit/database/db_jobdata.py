@@ -795,7 +795,7 @@ class JobDataStructure(MainDataBase):
             new_run = ExperimentRun(0)
             return self._insert_experiment_run(new_run)
 
-    def process_status_changes(self, tracking_dictionary, job_list=None, chunk_unit="NA", chunk_size=0, check_run=False):
+    def process_status_changes(self, tracking_dictionary, job_list=None, chunk_unit="NA", chunk_size=0, check_run=False, current_config=""):
         try:
             current_run = self.get_max_id_experiment_run()
             if current_run:
@@ -810,7 +810,7 @@ class JobDataStructure(MainDataBase):
                             Log.debug(
                                 "Since a significant amount of jobs have changed status. Autosubmit will consider a new run of the same experiment.")
                             self.validate_current_run(
-                                job_list, chunk_unit, chunk_size, True)
+                                job_list, chunk_unit, chunk_size, True, current_config=current_config)
                             return None
                     if job_list:
                         if len(tracking_dictionary.items()) > 0:
@@ -843,7 +843,7 @@ class JobDataStructure(MainDataBase):
                 "Autosubmit couldn't process status changes validate_current_run {0}".format(str(exp)))
             return None
 
-    def validate_current_run(self, job_list, chunk_unit="NA", chunk_size=0, must_create=False, only_update=False):
+    def validate_current_run(self, job_list, chunk_unit="NA", chunk_size=0, must_create=False, only_update=False, current_config=""):
         """[summary]
 
         :param job_list ([type]): [description]
@@ -874,7 +874,7 @@ class JobDataStructure(MainDataBase):
 
             if not current_run or must_create == True:
                 new_run = ExperimentRun(0, None, 0, 0, chunk_unit, chunk_size, completed_count,
-                                        current_total, failed_count, queue_count, running_count, submit_count, suspended_count, None)
+                                        current_total, failed_count, queue_count, running_count, submit_count, suspended_count, current_config)
                 self.current_run_id = self._insert_experiment_run(new_run)
             else:
                 # print("Current run {0}".format(current_run.total))
@@ -882,7 +882,7 @@ class JobDataStructure(MainDataBase):
                 if current_run.total != current_total and only_update == False:
                     # print("Creating new run")
                     new_run = ExperimentRun(0, None, 0, 0, chunk_unit, chunk_size, completed_count,
-                                            current_total, failed_count, queue_count, running_count, submit_count, suspended_count, None)
+                                            current_total, failed_count, queue_count, running_count, submit_count, suspended_count, current_config)
                     self.current_run_id = self._insert_experiment_run(new_run)
                 else:
                     # print("Updating current run")
