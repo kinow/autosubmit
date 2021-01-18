@@ -2651,6 +2651,8 @@ class Autosubmit:
                                 elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
                                     rsync_retries += 1
                                     finished = False
+                                elif p.get_ssh_output_err() == "":
+                                    finished = True
                                 else:
                                     error = True
                                     finished = True
