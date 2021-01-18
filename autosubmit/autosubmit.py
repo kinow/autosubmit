@@ -2654,7 +2654,7 @@ class Autosubmit:
                                 else:
                                     error = True
                                     finished = True
-                                    raise AutosubmitError("{0}".format(p.get_ssh_output_err().lower()),6012)
+                                    raise AutosubmitError("{0}".format(p.get_ssh_output_err().lower()), 6012)
                                 p.send_command("chmod 755 -R " + p.root_dir)
                                 Log.result("Files/dirs on {0} have been successfully picked up", platform)
                                 p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
@@ -2663,7 +2663,7 @@ class Autosubmit:
                         except BaseException as e:
                             error = True
                             Log.printlog("The files/dirs on {0} cannot be copied to {1}.\nTRACE:{2}".format(
-                                os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012,e.message)
+                                os.path.join(p.temp_dir, experiment_id), p.root_dir),e.message, 6012)
                             break
                         backup_files.append(platform)
                     else:
