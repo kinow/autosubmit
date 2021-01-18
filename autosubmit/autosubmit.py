@@ -2631,62 +2631,44 @@ class Autosubmit:
             except Exception as e:
                 raise AutosubmitCritical(
                     "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
-                error = True
-            if not error:
-                for platform in platforms:
-                    p = submitter.platforms[platform]
-                    if p.temp_dir not in already_moved:
-                        if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
-                            already_moved.add(p.temp_dir)
-                            Log.info(
-                                "Copying remote files/dirs on {0}", platform)
-                            Log.info("Copying from {0} to {1}", os.path.join(
-                                p.temp_dir, experiment_id), p.root_dir)
-                            finished = False
-                            limit = 100
-                            rsync_retries = 0
+            for platform in platforms:
+                p = submitter.platforms[platform]
+                if p.temp_dir is not None and p.temp_dir not in already_moved:
+                    if p.root_dir != p.temp_dir and len(p.temp_dir) > 0:
+                        already_moved.add(p.temp_dir)
+                        Log.info(
+                            "Copying remote files/dirs on {0}", platform)
+                        Log.info("Copying from {0} to {1}", os.path.join(
+                            p.temp_dir, experiment_id), p.root_dir)
+                        finished = False
+                        limit = 100
+                        rsync_retries = 0
+                        try:
                             while not finished and rsync_retries < limit: # Avoid infinite loop unrealistic upper limit, only for rsync failure
-                                finished = True
-                                try:
-                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
-                                        p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
-                                    if "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                        rsync_retries += 1
-                                        finished = False
-                                    Log.info("{0} \n {1} \n".format(p.get_ssh_output(),p.get_ssh_output_err()))
+                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                if "no such file or directory" in p.get_ssh_output_err().lower():
+                                    finished = True
+                                elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
+                                    rsync_retries += 1
+                                    finished = False
+                                else:
+                                    error = True
+                                    finished = True
+                                    raise AutosubmitError("{0}".format(p.get_ssh_output_err().lower()),6012)
+                                p.send_command("chmod 755 -R " + p.root_dir)
+                                Log.result("Files/dirs on {0} have been successfully picked up", platform)
+                                p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                Log.result("Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
 
-                                except (AutosubmitError, AutosubmitCritical) as e:
-                                    Log.info("{0} \n {1} \n {2} \n {3} \n".format(e.message,e.trace,p.get_ssh_output(),p.get_ssh_output_err()))
-                                    if "connection unexpectedly closed" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                        rsync_retries += 1
-                                        finished = False
-                                    else:
-                                        raise
-                                except BaseException as e:
-                                    Log.info("{0} \n {1} \n {2} \n {3} \n".format(e.message,e.trace,p.get_ssh_output(),p.get_ssh_output_err()))
-                                    if "connection unexpectedly closed" in e.message.lower() or "warning: rsync" in e.message.lower() or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                        rsync_retries += 1
-                                        finished = False
-                                    else:
-                                        raise
-                            try:
-                                p.send_command(
-                                    "chmod 755 -R " + p.root_dir[:-5])
-                                Log.result(
-                                    "Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command(
-                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
-                                Log.result(
-                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
-                            except:
-                                error = True
-                                Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(
-                                    os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
-                                break
-                            backup_files.append(platform)
-                        else:
-                            Log.result(
-                                "Files/dirs on {0} have been successfully picked up", platform)
+                        except BaseException as e:
+                            error = True
+                            Log.printlog("The files/dirs on {0} cannot be copied to {1}.\nTRACE:{2}".format(
+                                os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012,e.message)
+                            break
+                        backup_files.append(platform)
+                    else:
+                        Log.result(
+                            "Files/dirs on {0} have been successfully picked up", platform)
             if error:
                 raise AutosubmitCritical(
                     "Unable to pickup all platforms, the non-moved files are on the TEMP_DIR\n You can try again with autosubmit {0} -p --onlyremote".format(experiment_id), 7012)
