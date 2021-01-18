@@ -2634,13 +2634,22 @@ class Autosubmit:
                                 p.temp_dir, experiment_id), p.root_dir)
                             try:
                                 finished = False
-                                while not finished:
-                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
-                                        p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
-                                    if "warning: rsync" in p.get_ssh_output_err():
-                                        pass
-                                    else:
-                                        finished = True
+                                limit = 100
+                                rsync_retries = 0
+                                while not finished and rsync_retries < limit: # Avoid infinite loop unrealistic upper limit, only for rsync failure
+                                    finished = True
+                                    try:
+                                        p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                            p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                        if "connection unexpectedly closed" in e.message or "warning: rsync" in e.message or "warning: rsync" in p.get_ssh_output_err():
+                                            rsync_retries += 1
+                                            finished = False
+                                    except AutosubmitError as e:
+                                        if "connection unexpectedly closed" in e.message or "warning: rsync" in e.message or "warning: rsync" in p.get_ssh_output_err():
+                                            rsync_retries += 1
+                                            finished = False
+                                        else:
+                                            raise
                                 p.send_command(
                                     "chmod 755 -R " + p.root_dir[:-5])
                                 Log.result(
