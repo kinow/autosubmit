@@ -2663,7 +2663,7 @@ class Autosubmit:
                         except BaseException as e:
                             error = True
                             Log.printlog("The files/dirs on {0} cannot be copied to {1}.\nTRACE:{2}".format(
-                                os.path.join(p.temp_dir, experiment_id), p.root_dir),e.message, 6012)
+                                os.path.join(p.temp_dir, experiment_id), p.root_dir, e.message), 6012)
                             break
                         backup_files.append(platform)
                     else:
