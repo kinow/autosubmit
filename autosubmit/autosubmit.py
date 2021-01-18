@@ -2651,15 +2651,22 @@ class Autosubmit:
                                     try:
                                         p.send_command("rsync -ah --remove-source-files " + os.path.join(
                                             p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
-                                        if "connection unexpectedly closed" in e.message or "warning: rsync" in e.message or "warning: rsync" in p.get_ssh_output_err():
+                                        if "warning: rsync" in [p.get_ssh_output(),p.get_ssh_output_err()] or "connection unexpectedly closed" in [p.get_ssh_output(),p.get_ssh_output_err()]:
                                             rsync_retries += 1
                                             finished = False
-                                    except AutosubmitError as e:
-                                        if "connection unexpectedly closed" in e.message or "warning: rsync" in e.message or "warning: rsync" in p.get_ssh_output_err():
+                                    except (AutosubmitError, AutosubmitCritical) as e:
+                                        if "connection unexpectedly closed" in [e.message,e.trace] or "warning: rsync" in [e.message,e.trace] or "warning: rsync" in [p.get_ssh_output(),p.get_ssh_output_err()] or "connection unexpectedly closed" in [p.get_ssh_output(),p.get_ssh_output_err()]:
                                             rsync_retries += 1
                                             finished = False
                                         else:
                                             raise
+                                    except BaseException as e:
+                                        if "connection unexpectedly closed" in e.message or "warning: rsync" in e.message or "warning: rsync" in [p.get_ssh_output(),p.get_ssh_output_err()] or "connection unexpectedly closed" in [p.get_ssh_output(),p.get_ssh_output_err()]:
+                                            rsync_retries += 1
+                                            finished = False
+                                        else:
+                                            raise
+
                                 p.send_command(
                                     "chmod 755 -R " + p.root_dir[:-5])
                                 Log.result(
