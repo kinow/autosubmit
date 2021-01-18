@@ -2645,27 +2645,31 @@ class Autosubmit:
                             finished = False
                             limit = 100
                             rsync_retries = 0
+                            while not finished and rsync_retries < limit: # Avoid infinite loop unrealistic upper limit, only for rsync failure
+                                finished = True
+                                try:
+                                    p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                        p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                                    if "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
+                                        rsync_retries += 1
+                                        finished = False
+                                    Log.info("{0} \n {1} \n".format(p.get_ssh_output(),p.get_ssh_output_err()))
+
+                                except (AutosubmitError, AutosubmitCritical) as e:
+                                    Log.info("{0} \n {1} \n {2} \n {3} \n".format(e.message,e.trace,p.get_ssh_output(),p.get_ssh_output_err()))
+                                    if "connection unexpectedly closed" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
+                                        rsync_retries += 1
+                                        finished = False
+                                    else:
+                                        raise
+                                except BaseException as e:
+                                    Log.info("{0} \n {1} \n {2} \n {3} \n".format(e.message,e.trace,p.get_ssh_output(),p.get_ssh_output_err()))
+                                    if "connection unexpectedly closed" in e.message.lower() or "warning: rsync" in e.message.lower() or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
+                                        rsync_retries += 1
+                                        finished = False
+                                    else:
+                                        raise
                             try:
-                                while not finished and rsync_retries < limit: # Avoid infinite loop unrealistic upper limit, only for rsync failure
-                                    finished = True
-                                    try:
-                                        p.send_command("rsync -ah --remove-source-files " + os.path.join(
-                                            p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
-                                        if "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                            rsync_retries += 1
-                                            finished = False
-                                    except (AutosubmitError, AutosubmitCritical) as e:
-                                        if "connection unexpectedly closed" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [e.message.lower(),e.trace.lower()] or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                            rsync_retries += 1
-                                            finished = False
-                                        else:
-                                            raise
-                                    except BaseException as e:
-                                        if "connection unexpectedly closed" in e.message.lower() or "warning: rsync" in e.message.lower() or "warning: rsync" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()] or "connection unexpectedly closed" in [p.get_ssh_output().lower(),p.get_ssh_output_err().lower()]:
-                                            rsync_retries += 1
-                                            finished = False
-                                        else:
-                                            raise
                                 p.send_command(
                                     "chmod 755 -R " + p.root_dir[:-5])
                                 Log.result(
@@ -2674,7 +2678,7 @@ class Autosubmit:
                                     "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
                                 Log.result(
                                     "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
-                            except (IOError, BaseException):
+                            except:
                                 error = True
                                 Log.printlog("The files/dirs on {0} cannot be copied to {1}.".format(
                                     os.path.join(p.temp_dir, experiment_id), p.root_dir), 6012)
