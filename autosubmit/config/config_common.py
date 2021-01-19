@@ -455,7 +455,12 @@ class AutosubmitConfig(object):
         """
         Log.info('\nChecking configuration files...')
         self.ignore_file_path = check_file
-        self.reload()
+        try:
+            self.reload()
+        except (AutosubmitCritical,AutosubmitError) as e:
+            raise
+        except BaseException as e:
+            raise
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
