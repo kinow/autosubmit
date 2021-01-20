@@ -767,13 +767,18 @@ class JobPackagerHorizontal(object):
                         if wrappable and child not in next_section_list:
                             next_section_list.append(child)
 
-            next_section_list.sort(
-                key=lambda job: self.sort_by_expression(job.name))
+            next_section_list.sort(key=lambda job: self.sort_by_expression(job.name))
             self.job_list = next_section_list
             package_jobs = self.build_horizontal_package(horizontal_vertical)
 
             if package_jobs:
-                # if not self.add_sectioncombo_processors(self.total_processors) and horizontal_vertical:
+                sections_aux = set()
+                wallclock = package_jobs[0].wallclock
+                for job in package_jobs:
+                    if job.section not in sections_aux:
+                        sections_aux.add(job.section)
+                        if job.wallclock > wallclock:
+                            wallclock = job.wallclock
                 if self._current_processors > max_procs:
                     return packages
                 if max_wallclock:
