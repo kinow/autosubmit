@@ -450,10 +450,10 @@ class JobPackager(object):
         if new_package is not None:
             current_package += new_package
 
-        for i in range(len(current_package)):
+        for i in xrange(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
         if len(current_package) > 1:
-            for level in range(1,len(current_package)):
+            for level in xrange(1,len(current_package)):
                 for job in current_package[level]:
                     job.level=level
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
@@ -477,7 +477,7 @@ class JobPackager(object):
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
         if len(current_package) > 1:
-            for level in range(1,len(current_package)):
+            for level in xrange(1,len(current_package)):
                 for job in current_package[level]:
                     job.level=level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
@@ -653,7 +653,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         # Unnecessary assignment
         sorted_jobs = self.sorted_jobs
 
-        for index in range(self.index, len(sorted_jobs)):
+        for index in xrange(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
                 self.index = index+1

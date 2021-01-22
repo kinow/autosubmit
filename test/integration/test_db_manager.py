@@ -29,7 +29,7 @@ class TestDbManager(TestCase):
         table_name = 'test'
         columns = ['field1', 'field2']
         self.db_manager.create_table(table_name, columns)
-        for i in xrange(3):
+        for i in range(3):
             self.db_manager.insert(table_name, columns, ['dummy', 'dummy'])
         count = self.db_manager.count(table_name)
         self.assertEquals(3, count)

@@ -54,7 +54,7 @@ suppose it is noon, if you supply -fp 5 the query will consider changes starting
     exp_stats = ExperimentStats(jobs_list, period_ini, period_fi)
     grid_spec = gridspec.GridSpec(RATIO * num_plots + 2, 1)
 
-    for plot in range(1, num_plots + 1):
+    for plot in xrange(1, num_plots + 1):
         # Calculating jobs inside the given plot
         l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
         l2 = int(plot * MAX_JOBS_PER_PLOT)
@@ -104,7 +104,7 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
     output_file = output_file.replace('pdf', 'csv')
     with open(output_file, 'wb') as file:
         file.write("Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
-        for i in range(len(jobs_list)):
+        for i in xrange(len(jobs_list)):
             file.write("{0},{1},{2},{3},{4}\n".format(job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
 
 def build_legends(plot, rects, experiment_stats, general_stats):

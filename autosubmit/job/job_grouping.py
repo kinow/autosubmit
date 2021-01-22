@@ -127,7 +127,7 @@ class JobGrouping(object):
                                 for chunk in member_chunks[member_count + 1]:
                                     if chunk.find("-") != -1:
                                         numbers = chunk.split("-")
-                                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
                                             chunks.append(count)
                                     else:
                                         chunks.append(int(chunk))
@@ -163,7 +163,7 @@ class JobGrouping(object):
                 return Status.UNKNOWN
 
     def _create_groups(self, jobs_group_dict, blacklist=list()):
-        for i in reversed(range(len(self.jobs))):
+        for i in reversed(xrange(len(self.jobs))):
             job = self.jobs[i]
 
             groups = []
@@ -251,7 +251,7 @@ class JobGrouping(object):
         self._fix_splits_automatic_grouping(split_groups, split_groups_status, jobs_group_dict)
 
         # check if remaining jobs can be grouped
-        for i in reversed(range(len(self.jobs))):
+        for i in reversed(xrange(len(self.jobs))):
             job = self.jobs[i]
             for group, status in self.group_status_dict.items():
                 if group in job.name and status == job.status:
