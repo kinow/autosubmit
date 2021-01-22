@@ -2644,8 +2644,10 @@ class Autosubmit:
                         limit = 100
                         rsync_retries = 0
                         try:
-                            while not finished and rsync_retries < limit: # Avoid infinite loop unrealistic upper limit, only for rsync failure
-                                p.send_command("rsync -ah --remove-source-files " + os.path.join(p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
+                            # Avoid infinite loop unrealistic upper limit, only for rsync failure
+                            while not finished and rsync_retries < limit:
+                                p.send_command("rsync -ah --remove-source-files " + os.path.join(
+                                    p.temp_dir, experiment_id) + " " + p.root_dir[:-5])
                                 if "no such file or directory" in p.get_ssh_output_err().lower():
                                     finished = True
                                 elif "warning: rsync" in p.get_ssh_output_err().lower() or "connection unexpectedly closed" in p.get_ssh_output_err().lower():
@@ -2656,11 +2658,15 @@ class Autosubmit:
                                 else:
                                     error = True
                                     finished = True
-                                    raise AutosubmitError("{0}".format(p.get_ssh_output_err().lower()), 6012)
+                                    raise AutosubmitError("{0}".format(
+                                        p.get_ssh_output_err().lower()), 6012)
                                 p.send_command("chmod 755 -R " + p.root_dir)
-                                Log.result("Files/dirs on {0} have been successfully picked up", platform)
-                                p.send_command("find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
-                                Log.result("Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
+                                Log.result(
+                                    "Files/dirs on {0} have been successfully picked up", platform)
+                                p.send_command(
+                                    "find {0} -depth -type d -empty -delete".format(os.path.join(p.temp_dir, experiment_id)))
+                                Log.result(
+                                    "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
 
                         except BaseException as e:
                             error = True
@@ -4088,6 +4094,7 @@ class Autosubmit:
 
                 # New feature : Change status by section, member, and chunk; freely.
                 # Including inner validation. Trying to make it independent.
+                # 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16-30] ] ],SIM,SIM2,SIM3
                 if filter_type_chunk:
                     validation_message = "## -ftc Validation Message ##"
                     filter_is_correct = True
@@ -4601,14 +4608,43 @@ class Autosubmit:
         data = []
         # text = "[ 19601101 [ fc0 [1 2 3 4] fc1 [1] ] 16651101 [ fc0 [1-30 31 32] ] ]"
 
+        def parse_date(datestring):
+            result = []
+            startindex = datestring.find('(')
+            endindex = datestring.find(')')
+            if startindex > 0 and endindex > 0:
+                try:
+                    startstring = datestring[:startindex]
+                    startrange = datestring[startindex + 1:].split('-')[0]
+                    endrange = datestring[startindex:-1].split('-')[1]
+                    startday = int(startrange[-2:])
+                    endday = int(endrange[-2:])
+
+                    frommonth = int(startrange[:2])
+                    tomonth = int(endrange[:2])
+
+                    for i in range(frommonth, tomonth + 1):
+                        for j in range(startday, endday + 1):
+                            result.append(startstring + "%02d" %
+                                          i + "%02d" % j)
+                except Exception as exp:
+                    raise AutosubmitCritical(
+                        "Autosubmit couldn't parse your input format. Exception: {0}".format(exp))
+
+            else:
+                result = [datestring]
+            return result
+
         out = nestedExpr('[', ']').parseString(text).asList()
 
         # noinspection PyUnusedLocal
         for element in out[0]:
             if count % 2 == 0:
-                sd = {'sd': out[0][count], 'ms': Autosubmit._get_members(
-                    out[0][count + 1])}
-                data.append(sd)
+                datelist = parse_date(out[0][count])
+                for item in datelist:
+                    sd = {'sd': item, 'ms': Autosubmit._get_members(
+                        out[0][count + 1])}
+                    data.append(sd)
                 count += 1
             else:
                 count += 1

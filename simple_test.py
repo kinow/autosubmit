@@ -11,7 +11,12 @@
 # from autosubmit.job.job_list import JobList
 # from autosubmit.database.db_jobdata import JobDataStructure
 # from bscearth.utils.log import Log
+# from autosubmit.autosubmit import Autosubmit
+# from pyparsing import nestedExpr
 
+# text = "[ 1960(0605-1206) [ fc0 [1 2 3 4] fc1 [1] ] 16651101 [ fc0 [1-30 31 32] ] ]"
+# out = Autosubmit._create_json(text)
+# print(out)
 
 # def test_retrieve_energy():
 #     BasicConfig.read()

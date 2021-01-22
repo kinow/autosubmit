@@ -39,8 +39,9 @@ Options:
                             List of types to be changed
         -ftc FILTER_TYPE_CHUNK --filter_type_chunk
                             Accepts a string with the formula: "[ 19601101 [ fc0 [1 2 3 4] Any [1] ] 19651101 [ fc0 [16 30] ] ],SIM,SIM2"
-                            Where SIM, SIM2 are section (or job types) names that also accept the keyword "Any" so the changes apply to all sections.
+                            Where SIM, SIM2 are section (job types) names that also accept the keyword "Any" so the changes apply to all sections.
                             Starting Date (19601101) does not accept the keyword "Any", so you must specify the starting dates to be changed.
+                            You can also specify date ranges to apply the change to a range on dates.
                             Member names (fc0) accept the keyword "Any", so the chunks ([1 2 3 4]) given will be updated for all members.
                             Chunks must be in the format "[1 2 3 4]" where "1 2 3 4" represent the numbers of the chunks in the member,
                             no range format is allowed.
@@ -64,6 +65,30 @@ Examples:
     autosubmit setstatus cxxx -fs FAILED -t READY -s
     autosubmit setstatus cxxx -ft TRANSFER -t SUSPENDED -s
     autosubmit setstatus cxxx -ftc "[ 19601101 [ fc1 [1] ], SIM" -t SUSPENDED -s
+
+Date (month) range example:
+::
+    
+    autosubmit setstatus cxxx -ftc "[ 1960(1101-1201) [ fc1 [1] ], SIM" -t SUSPENDED -s
+
+This example will result changing the following jobs:
+::
+
+    cxxx_19601101_fc1_1_SIM
+    cxxx_19601201_fc1_1_SIM
+
+Date (day) range example:
+::
+
+    autosubmit setstatus cxxx -ftc "[ 1960(1101-1105) [ fc1 [1] ], SIM" -t SUSPENDED -s
+
+Result:
+::
+    cxxx_19601101_fc1_1_SIM
+    cxxx_19601102_fc1_1_SIM
+    cxxx_19601103_fc1_1_SIM
+    cxxx_19601104_fc1_1_SIM
+    cxxx_19601105_fc1_1_SIM
 
 This script has two mandatory arguments.
 
