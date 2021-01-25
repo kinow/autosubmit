@@ -120,9 +120,18 @@ class JobPackageBase(object):
         :type only_generate: Boolean 
         """
         exit=False
-        chunksize = int((len(self.jobs) + multiprocessing.cpu_count() - 1) / multiprocessing.cpu_count());
+        thread_number = multiprocessing.cpu_count()
+        if len(self.jobs) > 2500:
+            thread_number = thread_number * 2
+        elif len(self.jobs) > 5000:
+            thread_number = thread_number * 3
+        elif len(self.jobs) > 7500:
+            thread_number = thread_number * 4
+        elif len(self.jobs) > 10000:
+            thread_number = thread_number * 5
+        chunksize = int((len(self.jobs) + thread_number - 1) / thread_number);
         try:
-            if chunksize < 2:
+            if len(self.jobs) < thread_number:
                 for job in self.jobs:
                         if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
                             if only_generate:
@@ -151,7 +160,7 @@ class JobPackageBase(object):
         Log.debug("Creating Scripts")
         if only_generate:
             if not exit:
-                if len(self.jobs) < 2:
+                if len(self.jobs) < thread_number:
                     self._create_scripts(configuration)
                 else:
                     Lhandle = list()
@@ -160,7 +169,7 @@ class JobPackageBase(object):
                     for dataThread in Lhandle:
                         dataThread.join()
         else:
-            if len(self.jobs) < 2:
+            if len(self.jobs) < thread_number:
                 self._create_scripts(configuration)
             else:
                 Lhandle = list()

@@ -38,8 +38,16 @@ import autosubmit.database.db_structure as DbStructure
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
+from threading import Thread,Lock
+import multiprocessing
 # Log.get_logger("Log.Autosubmit")
-
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.name = "data_processing"
+        thread.start()
+        return thread
+    return wrapper
 
 class JobList(object):
     """
@@ -1404,6 +1412,21 @@ class JobList(object):
         for job in self._job_list:
             if not job.has_parents() and new:
                 job.status = Status.READY
+    @threaded
+    def check_scripts_threaded(self, as_conf):
+        """
+        When we have created the scripts, all parameters should have been substituted.
+        %PARAMETER% handlers not allowed (thread test)
+
+        :param as_conf: experiment configuration
+        :type as_conf: AutosubmitConfig
+        """
+        out = True
+        for job in self._job_list:
+            show_logs = job.check_warnings
+            if not job.check_script(as_conf, self.parameters, show_logs):
+                out = False
+        return out
 
     def check_scripts(self, as_conf):
         """
