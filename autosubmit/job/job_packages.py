@@ -109,7 +109,14 @@ class JobPackageBase(object):
             lock.release()
             # looking for directives on jobs
             self._custom_directives = self._custom_directives | set(job.custom_directives)
-
+    @threaded
+    def _create_scripts_threaded(self,jobs,configuration):
+        for i in xrange(0, len(jobs)):
+            self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
+            self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),
+                self._job_scripts[jobs[i].name] + ".err".format(i)
+            )
+        self._common_script = self._create_common_script()
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
@@ -385,14 +392,7 @@ class JobPackageThread(JobPackageBase):
 
     def set_job_dependency(self, dependency):
         self._job_dependency = dependency
-    @threaded
-    def _create_scripts_threaded(self,jobs,configuration):
-        for i in xrange(0, len(jobs)):
-            self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
-            self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),
-                self._job_scripts[jobs[i].name] + ".err".format(i)
-            )
-        self._common_script = self._create_common_script()
+
 
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
