@@ -544,6 +544,8 @@ class AutosubmitConfig(object):
             self.wrong_config["Platform"] += [["Global",
                                                "There are repeated platforms"]]
         main_platform_found = False
+        if self.hpcarch in ["local","LOCAL"]:
+            main_platform_found = True
         for section in self._platforms_parser.sections():
             if section in self.hpcarch:
                 main_platform_found = True
