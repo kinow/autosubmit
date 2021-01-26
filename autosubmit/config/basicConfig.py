@@ -24,7 +24,7 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 import os
 
-from log.log import Log, AutosubmitError,AutosubmitCritical
+from log.log import Log, AutosubmitError, AutosubmitCritical
 
 
 class BasicConfig:
@@ -42,6 +42,7 @@ class BasicConfig:
         '/esarchive', 'autosubmit', 'Aslogs')
     JOBDATA_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'as_metadata', 'data')
+    AUTOSUBMIT_API_URL = "http://192.168.11.91:8081"
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
     LOCAL_ROOT_DIR = DB_DIR
@@ -106,6 +107,10 @@ class BasicConfig:
             BasicConfig.GLOBAL_LOG_DIR = parser.get('globallogs', 'path')
         if parser.has_option('historicdb', 'path'):
             BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
+        if parser.has_option('autosubmitapi', 'url'):
+            BasicConfig.AUTOSUBMIT_API_URL = parser.get(
+                'autosubmitapi', 'url')
+
     @staticmethod
     def read():
         """

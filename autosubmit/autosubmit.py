@@ -19,6 +19,7 @@
 from __future__ import print_function
 import threading
 import traceback
+import requests
 
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
@@ -2745,8 +2746,11 @@ class Autosubmit:
         :param folder_path: Allows to put the report files on another folder
         :type str
         """
-        exp_parameters = defaultdict()
 
+        exp_parameters = defaultdict()
+        performance_metrics = None
+        ignore_performance_keys = ["error_message",
+                                   "warnings_job_data", "considered"]
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if folder_path is not None:
@@ -2760,6 +2764,21 @@ class Autosubmit:
         except Exception as e:
             raise AutosubmitCritical(
                 "Unable to gather the parameters from config files, check permissions.", 7012)
+        # Performace Metrics call
+        try:
+            BasicConfig.read()
+            request = requests.get(
+                "{0}/performance/{1}".format(BasicConfig.AUTOSUBMIT_API_URL, expid))
+            performance_metrics = json.loads(request.text)
+            # If error, then None
+            performance_metrics = None if performance_metrics and performance_metrics[
+                "error"] == True else performance_metrics
+            if performance_metrics:
+                for key in ignore_performance_keys:
+                    performance_metrics.pop(key, None)
+        except Exception as e:
+            Log.printlog("Autosubmit couldn't retrieve performance metrics.")
+            performance_metrics = None
         # Preparation for section parameters
         no_load_sections = False
         no_load_platforms = False
@@ -2815,6 +2834,9 @@ class Autosubmit:
                     parameter_file.write(key + "=" + str(value) + "\n")
                 else:
                     parameter_file.write(key + "=" + "-" + "\n")
+            for key in performance_metrics:
+                parameter_file.write("{0} = {1}\n".format(
+                    key, performance_metrics.get(key, "-")))
             parameter_file.close()
 
             os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
@@ -2830,6 +2852,10 @@ class Autosubmit:
                 for key, value in exp_parameters.items():
                     template_content = re.sub(
                         '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
+                # Performance metrics
+                for key in performance_metrics:
+                    template_content = re.sub(
+                        '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content)
                 template_content = template_content.replace("%%", "%")
                 template_content = re.sub(
                     r"\%[^% \n\t]+\%", "-", template_content)

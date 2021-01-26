@@ -104,6 +104,10 @@ Create or modify /etc/autosubmitrc file or ~/.autosubmitrc with the information 
     [historicdb]
     path = <experiment_folder>/historic
 
+    [autosubmitapi]
+    url = url of Autosubmit API (The API is provided inside the BSC network) 
+    # Autosubmit API provides extra information for some Autosubmit functions. It is not mandatory to have access to it to use Autosubmit.
+
     [hosts]
     whitelist = localhost bscesautosubmit01 bscesautosubmit02 # Add localhost only if you are not on esarchive system
 
