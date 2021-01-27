@@ -118,7 +118,7 @@ class JobPackageBase(object):
             self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),
                 self._job_scripts[jobs[i].name] + ".err".format(i)
             )
-        self._common_script = self._create_common_script()
+
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
@@ -177,6 +177,8 @@ class JobPackageBase(object):
                         Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize], configuration))
                     for dataThread in Lhandle:
                         dataThread.join()
+                    self._common_script = self._create_common_script()
+
         else:
             if len(self.jobs) < thread_number:
                 self._create_scripts(configuration)
@@ -186,6 +188,7 @@ class JobPackageBase(object):
                     Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize],configuration))
                 for dataThread in Lhandle:
                     dataThread.join()
+                self._common_script = self._create_common_script()
             Log.debug("Sending Files")
             self._send_files()
             Log.debug("Submitting")
@@ -373,7 +376,10 @@ class JobPackageThread(JobPackageBase):
                 self._jobs_resources[job.section] = dict()
                 self._jobs_resources[job.section]['PROCESSORS'] = job.processors
                 self._jobs_resources[job.section]['TASKS'] = job.tasks
-            jobs_scripts.append(self._job_scripts[job.name])
+            try:
+                jobs_scripts.append(self._job_scripts[job.name])
+            except BaseException as e:
+                pass
         return jobs_scripts
 
     @property
