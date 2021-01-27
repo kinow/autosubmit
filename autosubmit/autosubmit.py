@@ -2049,10 +2049,10 @@ class Autosubmit:
             for parent in job.parents:
                 if parent not in jobs:
                     referenced_jobs_to_remove.add(parent)
-
-        for job in jobs:
-            job.children = job.children - referenced_jobs_to_remove
-            job.parents = job.parents - referenced_jobs_to_remove
+        if len(referenced_jobs_to_remove) > 0:
+            for job in jobs:
+                job.children = job.children - referenced_jobs_to_remove
+                job.parents = job.parents - referenced_jobs_to_remove
         # WRAPPERS
         if as_conf.get_wrapper_type() != 'none' and check_wrapper:
             # Class constructor creates table if it does not exist
