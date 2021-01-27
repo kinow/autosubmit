@@ -174,7 +174,6 @@ class JobList(object):
         jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
-
             try:
                 jobs_data = {str(row[0]): row for row in self.load()}
             except:

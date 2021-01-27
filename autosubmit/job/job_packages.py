@@ -119,6 +119,8 @@ class JobPackageBase(object):
                 self._job_scripts[jobs[i].name] + ".err".format(i)
             )
 
+    def _create_common_script(self):
+        pass
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
