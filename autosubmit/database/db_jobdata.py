@@ -521,9 +521,9 @@ class ExperimentStatus(MainDataBase):
         try:
             if self.conn_ec:
                 cur = self.conn_ec.cursor()
-                # TODO verify changes  (self.expid,) -> (self.expid)
+                # Always use tuple
                 cur.execute(
-                    "SELECT id FROM experiment WHERE name=?", (self.expid))
+                    "SELECT id FROM experiment WHERE name=?", (self.expid, ))
                 row = cur.fetchone()
                 return int(row[0])
             return None
@@ -584,16 +584,19 @@ class ExperimentStatus(MainDataBase):
         try:
             if self.conn and self.conn_ec:
                 exp_id = self._get_id_db()
-                #conn = create_connection(DB_FILE_AS_TIMES)
-                creation_date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-                sql = ''' INSERT INTO experiment_status(exp_id, name, status, seconds_diff, modified) VALUES(?,?,?,?,?) '''
-                # print(row_content)
-                cur = self.conn.cursor()
-                cur.execute(sql, (exp_id,
-                                  self.expid, "RUNNING", 0, creation_date))
-                # print(cur)
-                self.conn.commit()
-                return cur.lastrowid
+                if exp_id:
+                    print("exp_id {0}".format(exp_id))
+                    #conn = create_connection(DB_FILE_AS_TIMES)
+                    creation_date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+                    sql = ''' INSERT INTO experiment_status(exp_id, name, status, seconds_diff, modified) VALUES(?,?,?,?,?) '''
+                    # print(row_content)
+                    cur = self.conn.cursor()
+                    cur.execute(sql, (exp_id,
+                                      self.expid, "RUNNING", 0, creation_date))
+                    # print(cur)
+                    self.conn.commit()
+                    return cur.lastrowid
+                return None
         except sqlite3.Error as e:
             Log.debug("From _create_exp_status: {0}".format(
                 str(type(e).__name__)))
