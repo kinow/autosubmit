@@ -428,15 +428,18 @@ class JobPackageThread(JobPackageBase):
             for job in self.jobs:
                 filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
             self.platform.remove_multiple_files(filenames)
-        with tarfile.open(os.path.join(self._tmp_path, output_filepath), compress_type) as tar:
+        tar_path = os.path.join(self._tmp_path, output_filepath)
+
+        with tarfile.open(tar_path, compress_type) as tar:
             for job in self.jobs:
-                tar.addfile(tarfile.TarInfo(self._job_scripts[job.name]),open(os.path.join(self._tmp_path,self._job_scripts[job.name])))
-        output_path = os.path.join(self._tmp_path, output_filepath)
-        os.chmod(output_path, 0o755)
+                jfile = os.path.join(self._tmp_path,self._job_scripts[job.name])
+                with open(jfile, 'rb') as f:
+                    info = tar.gettarinfo(jfile,self._job_scripts[job.name])
+                    tar.addfile(info, f)
         tar.close()
-        self.platform.send_file(output_path, check=False)
+        os.chmod(tar_path, 0o755)
+        self.platform.send_file(tar_path, check=False)
         self.platform.send_command("cd {0}; tar -xvf {1}".format(self.platform.get_files_path(),output_filepath))
-        #self.platform.send_file(self._job_scripts[job.name], check=False)
         self.platform.send_file(self._common_script)
 
 

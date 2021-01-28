@@ -1376,6 +1376,9 @@ done
                 self._tmp_path, 'LOG_{0}'.format(self.expid))
             multiple_checker_inner_jobs = os.path.join(
                 log_dir, "inner_jobs_checker.sh")
+            if not os.stat(log_dir):
+                os.mkdir(log_dir)
+                os.chmod(log_dir, 0o770)
             open(multiple_checker_inner_jobs, 'w+').write(command)
             os.chmod(multiple_checker_inner_jobs, 0o770)
             self._platform.send_file(multiple_checker_inner_jobs, False)
