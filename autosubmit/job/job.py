@@ -272,7 +272,7 @@ class Job(object):
     @local_logs.setter
     def local_logs(self, value):
         self._local_logs = value
-        self._remote_logs = value
+        #self._remote_logs = value
 
     @property
     def remote_logs(self):
