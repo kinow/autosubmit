@@ -455,7 +455,12 @@ class AutosubmitConfig(object):
         """
         Log.info('\nChecking configuration files...')
         self.ignore_file_path = check_file
-        self.reload()
+        try:
+            self.reload()
+        except (AutosubmitCritical,AutosubmitError) as e:
+            raise
+        except BaseException as e:
+            raise
         # Annotates all errors found in the configuration files in dictionaries self.warn_config and self.wrong_config.
         self.check_expdef_conf()
         self.check_platforms_conf()
@@ -1106,7 +1111,7 @@ class AutosubmitConfig(object):
                 for split_in in split:
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
-                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
                             date_list.append(parse_date(
                                 string_date + str(count).zfill(len(numbers[0]))))
                     else:
@@ -1184,7 +1189,7 @@ class AutosubmitConfig(object):
                 for split_in in split:
                     if split_in.find("-") != -1:
                         numbers = split_in.split("-")
-                        for count in range(int(numbers[0]), int(numbers[1]) + 1):
+                        for count in xrange(int(numbers[0]), int(numbers[1]) + 1):
                             member_list.append(
                                 string_member + str(count).zfill(len(numbers[0])))
                     else:

@@ -45,7 +45,7 @@ from autosubmit.platforms.paramiko_submitter import ParamikoSubmitter
 from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")
 
-
+# A wrapper for encapsulate threads , TODO: Python 3+ to be replaced by the < from concurrent.futures >
 def threaded(fn):
     def wrapper(*args, **kwargs):
         thread = Thread(target=fn, args=args, kwargs=kwargs)
@@ -272,7 +272,7 @@ class Job(object):
     @local_logs.setter
     def local_logs(self, value):
         self._local_logs = value
-        self._remote_logs = value
+        #self._remote_logs = value
 
     @property
     def remote_logs(self):
@@ -329,7 +329,7 @@ class Job(object):
             num_parents = 1
             if isinstance(parent, list):
                 num_parents = len(parent)
-            for i in range(num_parents):
+            for i in xrange(num_parents):
                 new_parent = parent[i] if isinstance(parent, list) else parent
                 self._parents.add(new_parent)
                 new_parent.__add_child(self)
@@ -715,7 +715,6 @@ class Job(object):
             Log.printlog("Job {0} completion check failed. There is no COMPLETED file".format(
                 self.name), 6009)
             self.status = default_status
-
     def update_parameters(self, as_conf, parameters,
                           default_parameters={'d': '%d%', 'd_': '%d_%', 'Y': '%Y%', 'Y_': '%Y_%',
                                               'M': '%M%', 'M_': '%M_%', 'm': '%m%', 'm_': '%m_%'}):
@@ -1012,13 +1011,13 @@ class Job(object):
                 self.undefined_variables = set(variables) - set(parameters)
                 if show_logs:
                     Log.printlog("The following set of variables to be substituted in template script is not part of parameters set, and will be replaced by a blank value: {0}".format(
-                        self.undefined_variables), 3000)
+                        self.undefined_variables), 6013)
 
             # Check which variables in the proj.conf are not being used in the templates
             if show_logs:
                 if not set(variables).issuperset(set(parameters)):
                     Log.printlog("The following set of variables are not being used in the templates: {0}".format(
-                        str(set(parameters) - set(variables))), 3000)
+                        str(set(parameters) - set(variables))), 6013)
         return out
 
     def write_submit_time(self):
@@ -1377,6 +1376,9 @@ done
                 self._tmp_path, 'LOG_{0}'.format(self.expid))
             multiple_checker_inner_jobs = os.path.join(
                 log_dir, "inner_jobs_checker.sh")
+            if not os.stat(log_dir):
+                os.mkdir(log_dir)
+                os.chmod(log_dir, 0o770)
             open(multiple_checker_inner_jobs, 'w+').write(command)
             os.chmod(multiple_checker_inner_jobs, 0o770)
             self._platform.send_file(multiple_checker_inner_jobs, False)

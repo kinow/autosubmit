@@ -1361,7 +1361,7 @@ class JobDataStructure(MainDataBase):
                                 # Needs more guarantees but so far it works.
                                 if len(jobs_in_package) > 0 and len(wrapper_jobs) > 0 and len(jobs_in_package) == len(wrapper_jobs) and no_process == False:
                                     # It is 1 to 1
-                                    for i in range(0, len(jobs_in_package)):
+                                    for i in xrange(0, len(jobs_in_package)):
                                         name_to_current_job[jobs_in_package[i]
                                                             .job_name].energy = wrapper_jobs[i].energy
                                         name_to_current_job[jobs_in_package[i]

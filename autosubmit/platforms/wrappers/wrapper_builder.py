@@ -827,14 +827,14 @@ class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
         total_threads = float(len(self.job_scripts))
         n_threads = float(self.threads)
         core = []
-        for thread in range(int(n_threads)):
+        for thread in xrange(int(n_threads)):
             core.append(0x0)
 
         core[0] = 0x1
         horizontal_wrapper_size=int(total_threads)
         srun_mask_values = []
-        for job_id in range(horizontal_wrapper_size):
-            for thread in range(1, int(n_threads)):
+        for job_id in xrange(horizontal_wrapper_size):
+            for thread in xrange(1, int(n_threads)):
                 core[thread] = core[thread-1]*2
             job_mask = 0x0
             for thr_mask in core:

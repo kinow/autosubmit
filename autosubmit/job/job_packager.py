@@ -450,10 +450,10 @@ class JobPackager(object):
         if new_package is not None:
             current_package += new_package
 
-        for i in range(len(current_package)):
+        for i in xrange(len(current_package)):
             total_wallclock = sum_str_hours(total_wallclock, wallclock)
         if len(current_package) > 1:
-            for level in range(1,len(current_package)):
+            for level in xrange(1,len(current_package)):
                 for job in current_package[level]:
                     job.level=level
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
@@ -477,7 +477,7 @@ class JobPackager(object):
         for job in current_package[-1]:
             total_wallclock = sum_str_hours(total_wallclock, job.wallclock)
         if len(current_package) > 1:
-            for level in range(1,len(current_package)):
+            for level in xrange(1,len(current_package)):
                 for job in current_package[level]:
                     job.level=level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
@@ -653,7 +653,7 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
         # Unnecessary assignment
         sorted_jobs = self.sorted_jobs
 
-        for index in range(self.index, len(sorted_jobs)):
+        for index in xrange(self.index, len(sorted_jobs)):
             child = sorted_jobs[index]
             if self._is_wrappable(child):
                 self.index = index+1
@@ -767,13 +767,18 @@ class JobPackagerHorizontal(object):
                         if wrappable and child not in next_section_list:
                             next_section_list.append(child)
 
-            next_section_list.sort(
-                key=lambda job: self.sort_by_expression(job.name))
+            next_section_list.sort(key=lambda job: self.sort_by_expression(job.name))
             self.job_list = next_section_list
             package_jobs = self.build_horizontal_package(horizontal_vertical)
 
             if package_jobs:
-                # if not self.add_sectioncombo_processors(self.total_processors) and horizontal_vertical:
+                sections_aux = set()
+                wallclock = package_jobs[0].wallclock
+                for job in package_jobs:
+                    if job.section not in sections_aux:
+                        sections_aux.add(job.section)
+                        if job.wallclock > wallclock:
+                            wallclock = job.wallclock
                 if self._current_processors > max_procs:
                     return packages
                 if max_wallclock:

@@ -175,27 +175,27 @@ class TestJobList(TestCase):
     def test_sort_by_name_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_name = self.job_list.sort_by_name()
 
-        for i in xrange(len(sorted_by_name) - 1):
+        for i in range(len(sorted_by_name) - 1):
             self.assertTrue(
                 sorted_by_name[i].name <= sorted_by_name[i + 1].name)
 
     def test_sort_by_id_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_id = self.job_list.sort_by_id()
 
-        for i in xrange(len(sorted_by_id) - 1):
+        for i in range(len(sorted_by_id) - 1):
             self.assertTrue(sorted_by_id[i].id <= sorted_by_id[i + 1].id)
 
     def test_sort_by_type_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_type = self.job_list.sort_by_type()
 
-        for i in xrange(len(sorted_by_type) - 1):
+        for i in range(len(sorted_by_type) - 1):
             self.assertTrue(
                 sorted_by_type[i].type <= sorted_by_type[i + 1].type)
 
     def test_sort_by_status_returns_the_list_of_jobs_well_sorted(self):
         sorted_by_status = self.job_list.sort_by_status()
 
-        for i in xrange(len(sorted_by_status) - 1):
+        for i in range(len(sorted_by_status) - 1):
             self.assertTrue(
                 sorted_by_status[i].status <= sorted_by_status[i + 1].status)
 

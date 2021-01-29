@@ -33,8 +33,18 @@ Log.get_logger("Autosubmit")
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
 from bscearth.utils.date import sum_str_hours
+from threading import Thread,Lock
+import multiprocessing
+import tarfile
 
-
+lock = Lock()
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.name = "data_processing"
+        thread.start()
+        return thread
+    return wrapper
 class JobPackageBase(object):
     """
     Class to manage the package of jobs to be submitted by autosubmit
@@ -77,6 +87,40 @@ class JobPackageBase(object):
         """
         return self._platform
 
+    @threaded
+    def check_scripts(self,jobs,configuration, parameters,only_generate,hold):
+        for job in jobs:
+            if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+                if only_generate:
+                    exit = True
+                    break
+                if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                    lock.acquire()
+                    if configuration.get_project_type().lower() != "none":
+                        raise AutosubmitCritical(
+                            "Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(
+                                job.name), 7014)
+                    lock.release()
+                if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
+                    Log.warning("Script {0} check failed", job.name)
+                    Log.warning("On submission script has  some empty variables")
+                else:
+                    Log.result("Script {0} OK", job.name)
+            lock.acquire()
+            job.update_parameters(configuration, parameters)
+            lock.release()
+            # looking for directives on jobs
+            self._custom_directives = self._custom_directives | set(job.custom_directives)
+    @threaded
+    def _create_scripts_threaded(self,jobs,configuration):
+        for i in xrange(0, len(jobs)):
+            self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
+            self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),
+                self._job_scripts[jobs[i].name] + ".err".format(i)
+            )
+
+    def _create_common_script(self):
+        pass
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
@@ -87,34 +131,69 @@ class JobPackageBase(object):
         :type only_generate: Boolean 
         """
         exit=False
-        for job in self.jobs:
-            try:
-                if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
-                    if only_generate:
-                        exit=True
-                        break
-                    if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                        if configuration.get_project_type().lower() != "none":
-                            raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
-                    if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                        Log.warning("Script {0} check failed",job.name)
-                        Log.warning("On submission script has some empty variables")
-                    else:
-                        Log.result("Script {0} OK",job.name)
-                job.update_parameters(configuration, parameters)
-                # looking for directives on jobs
-                self._custom_directives = self._custom_directives | set(job.custom_directives)
-
-            except BaseException as e: #should be IOERROR
-                raise AutosubmitCritical(
-                    "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
-
+        thread_number = multiprocessing.cpu_count()
+        if len(self.jobs) > 2500:
+            thread_number = thread_number * 2
+        elif len(self.jobs) > 5000:
+            thread_number = thread_number * 3
+        elif len(self.jobs) > 7500:
+            thread_number = thread_number * 4
+        elif len(self.jobs) > 10000:
+            thread_number = thread_number * 5
+        chunksize = int((len(self.jobs) + thread_number - 1) / thread_number);
+        try:
+            if len(self.jobs) < thread_number:
+                for job in self.jobs:
+                        if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+                            if only_generate:
+                                exit=True
+                                break
+                            if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                                if configuration.get_project_type().lower() != "none":
+                                    raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
+                            if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
+                                Log.warning("Script {0} check failed",job.name)
+                                Log.warning("On submission script has some empty variables")
+                            else:
+                                Log.result("Script {0} OK",job.name)
+                        job.update_parameters(configuration, parameters)
+                        # looking for directives on jobs
+                        self._custom_directives = self._custom_directives | set(job.custom_directives)
+            else:
+                Lhandle = list()
+                for i in xrange(0, len(self.jobs), chunksize):
+                    Lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
+                for dataThread in Lhandle:
+                    dataThread.join()
+        except BaseException as e: #should be IOERROR
+            raise AutosubmitCritical(
+                "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
+        Log.debug("Creating Scripts")
         if only_generate:
             if not exit:
-                self._create_scripts(configuration)
+                if len(self.jobs) < thread_number:
+                    self._create_scripts(configuration)
+                else:
+                    Lhandle = list()
+                    for i in xrange(0, len(self.jobs), chunksize):
+                        Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize], configuration))
+                    for dataThread in Lhandle:
+                        dataThread.join()
+                    self._common_script = self._create_common_script()
+
         else:
-            self._create_scripts(configuration)
+            if len(self.jobs) < thread_number:
+                self._create_scripts(configuration)
+            else:
+                Lhandle = list()
+                for i in xrange(0, len(self.jobs), chunksize):
+                    Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize],configuration))
+                for dataThread in Lhandle:
+                    dataThread.join()
+                self._common_script = self._create_common_script()
+            Log.debug("Sending Files")
             self._send_files()
+            Log.debug("Submitting")
             self._do_submission(hold=hold)
 
 
@@ -212,7 +291,7 @@ class JobPackageArray(JobPackageBase):
 
     def _create_scripts(self, configuration):
         timestamp = str(int(time.time()))
-        for i in range(0, len(self.jobs)):
+        for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self._job_inputs[self.jobs[i].name] = self._create_i_input(timestamp, i)
             self.jobs[i].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
@@ -250,7 +329,7 @@ class JobPackageArray(JobPackageBase):
         if package_id is None:
             return
 
-        for i in range(0, len(self.jobs)):
+        for i in xrange(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id) + '[{0}]'.format(i)
             self.jobs[i].status = Status.SUBMITTED
@@ -299,7 +378,10 @@ class JobPackageThread(JobPackageBase):
                 self._jobs_resources[job.section] = dict()
                 self._jobs_resources[job.section]['PROCESSORS'] = job.processors
                 self._jobs_resources[job.section]['TASKS'] = job.tasks
-            jobs_scripts.append(self._job_scripts[job.name])
+            try:
+                jobs_scripts.append(self._job_scripts[job.name])
+            except BaseException as e:
+                pass
         return jobs_scripts
 
     @property
@@ -321,12 +403,11 @@ class JobPackageThread(JobPackageBase):
     def set_job_dependency(self, dependency):
         self._job_dependency = dependency
 
-    def _create_scripts(self, configuration):
 
-        for i in range(0, len(self.jobs)):
+    def _create_scripts(self, configuration):
+        for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
-            self.jobs[i].remote_logs = (
-                self._job_scripts[self.jobs[i].name] + ".out".format(i),
+            self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),
                 self._job_scripts[self.jobs[i].name] + ".err".format(i)
             )
         self._common_script = self._create_common_script()
@@ -340,14 +421,27 @@ class JobPackageThread(JobPackageBase):
 
     def _send_files(self):
         self.platform.check_remote_log_dir()
+        compress_type = "w"
+        output_filepath = '{0}.tar'.format("wrapper_scripts")
         if callable(getattr(self.platform, 'remove_multiple_files')):
             filenames = str()
             for job in self.jobs:
                 filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
             self.platform.remove_multiple_files(filenames)
-        for job in self.jobs:
-            self.platform.send_file(self._job_scripts[job.name], check=False)
+        tar_path = os.path.join(self._tmp_path, output_filepath)
+
+        with tarfile.open(tar_path, compress_type) as tar:
+            for job in self.jobs:
+                jfile = os.path.join(self._tmp_path,self._job_scripts[job.name])
+                with open(jfile, 'rb') as f:
+                    info = tar.gettarinfo(jfile,self._job_scripts[job.name])
+                    tar.addfile(info, f)
+        tar.close()
+        os.chmod(tar_path, 0o755)
+        self.platform.send_file(tar_path, check=False)
+        self.platform.send_command("cd {0}; tar -xvf {1}".format(self.platform.get_files_path(),output_filepath))
         self.platform.send_file(self._common_script)
+
 
     def _do_submission(self, job_scripts=None, hold=False):
         if callable(getattr(self.platform, 'remove_multiple_files')):
@@ -368,7 +462,7 @@ class JobPackageThread(JobPackageBase):
         if package_id is None:
             return
 
-        for i in range(0, len(self.jobs) ):
+        for i in xrange(0, len(self.jobs) ):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
             self.jobs[i].status = Status.SUBMITTED
@@ -419,7 +513,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         return self._platform.project
 
     def _create_scripts(self, configuration):
-        for i in range(0, len(self.jobs)):
+        for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self.jobs[i].remote_logs = (
                 self._job_scripts[self.jobs[i].name] + ".out".format(i),
@@ -451,7 +545,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         if package_id is None:
             raise Exception('Submission failed')
 
-        for i in range(0, len(self.jobs)):
+        for i in xrange(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
             self.jobs[i].status = Status.SUBMITTED

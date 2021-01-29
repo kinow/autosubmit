@@ -38,8 +38,16 @@ import autosubmit.database.db_structure as DbStructure
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
+from threading import Thread,Lock
+import multiprocessing
 # Log.get_logger("Log.Autosubmit")
-
+def threaded(fn):
+    def wrapper(*args, **kwargs):
+        thread = Thread(target=fn, args=args, kwargs=kwargs)
+        thread.name = "data_processing"
+        thread.start()
+        return thread
+    return wrapper
 
 class JobList(object):
     """
@@ -166,7 +174,6 @@ class JobList(object):
         jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
-
             try:
                 jobs_data = {str(row[0]): row for row in self.load()}
             except:
@@ -222,7 +229,7 @@ class JobList(object):
                 num_jobs = 1
                 if isinstance(job, list):
                     num_jobs = len(job)
-                for i in range(num_jobs):
+                for i in xrange(num_jobs):
                     _job = job[i] if num_jobs > 1 else job
                     JobList._manage_job_dependencies(dic_jobs, _job, date_list, member_list, chunk_list, dependencies_keys,
                                                      dependencies, graph)
@@ -268,23 +275,23 @@ class JobList(object):
                     for section_chunk in sections_chunks:
                         info = section_chunk.split('*')
                         if info[0] in key:
-                            for relation in range(1, len(info)):
+                            for relation in xrange(1, len(info)):
                                 auxiliar_relation_list = []
                                 for location in info[relation].split('-'):
                                     auxiliar_chunk_list = []
                                     location = location.strip('[').strip(']')
                                     if ':' in location:
                                         if len(location) == 3:
-                                            for chunk_number in range(int(location[0]), int(location[2]) + 1):
+                                            for chunk_number in xrange(int(location[0]), int(location[2]) + 1):
                                                 auxiliar_chunk_list.append(
                                                     chunk_number)
                                         elif len(location) == 2:
                                             if ':' == location[0]:
-                                                for chunk_number in range(0, int(location[1]) + 1):
+                                                for chunk_number in xrange(0, int(location[1]) + 1):
                                                     auxiliar_chunk_list.append(
                                                         chunk_number)
                                             elif ':' == location[1]:
-                                                for chunk_number in range(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
+                                                for chunk_number in xrange(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
                                                     auxiliar_chunk_list.append(
                                                         chunk_number)
                                     elif ',' in location:
@@ -318,7 +325,7 @@ class JobList(object):
                 numbers = str_split.split(":")
                 # change this to be checked in job_common.py
                 max_splits = min(int(numbers[1]), max_splits)
-                for count in range(int(numbers[0]), max_splits + 1):
+                for count in xrange(int(numbers[0]), max_splits + 1):
                     splits.append(int(str(count).zfill(len(numbers[0]))))
             else:
                 if int(str_split) <= max_splits:
@@ -432,7 +439,7 @@ class JobList(object):
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in range(1, max_distance):
+                for distance in xrange(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
                         job.add_parent(parent)
                         JobList._add_edge(graph, job, parent)
@@ -441,7 +448,7 @@ class JobList(object):
                 max_distance = (member_index + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in range(1, max_distance, 1):
+                for distance in xrange(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
                         job.add_parent(parent)
@@ -451,7 +458,7 @@ class JobList(object):
                 max_distance = (date_index + 1) % job.frequency
                 if max_distance == 0:
                     max_distance = job.frequency
-                for distance in range(1, max_distance, 1):
+                for distance in xrange(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
                         job.add_parent(parent)
@@ -462,7 +469,7 @@ class JobList(object):
         num_parents = 1
         if isinstance(parents, list):
             num_parents = len(parents)
-        for i in range(num_parents):
+        for i in xrange(num_parents):
             parent = parents[i] if isinstance(parents, list) else parents
             graph.add_edge(parent.name, job.name)
 
@@ -525,7 +532,7 @@ class JobList(object):
                 jobs_to_sort = [previous_job]
                 previous_section_running_type = None
                 # Index starts at 1 because 0 has been taken in a previous step
-                for index in range(1, len(sorted_jobs_list) + 1):
+                for index in xrange(1, len(sorted_jobs_list) + 1):
                     # If not last item
                     if index < len(sorted_jobs_list):
                         job = sorted_jobs_list[index]
@@ -544,7 +551,7 @@ class JobList(object):
                                                                             if len(k.name.split('_')) == 5 else num_chunks + 1)))
 
                         # Bringing back original job if identified
-                        for idx in range(0, len(jobs_to_sort)):
+                        for idx in xrange(0, len(jobs_to_sort)):
                             # Test if it is a fake job
                             if jobs_to_sort[idx] in fake_original_job_map:
                                 fake_job = jobs_to_sort[idx]
@@ -1406,6 +1413,21 @@ class JobList(object):
         for job in self._job_list:
             if not job.has_parents() and new:
                 job.status = Status.READY
+    @threaded
+    def check_scripts_threaded(self, as_conf):
+        """
+        When we have created the scripts, all parameters should have been substituted.
+        %PARAMETER% handlers not allowed (thread test)
+
+        :param as_conf: experiment configuration
+        :type as_conf: AutosubmitConfig
+        """
+        out = True
+        for job in self._job_list:
+            show_logs = job.check_warnings
+            if not job.check_script(as_conf, self.parameters, show_logs):
+                out = False
+        return out
 
     def check_scripts(self, as_conf):
         """
@@ -1425,8 +1447,7 @@ class JobList(object):
                     'Template {0} will be checked in running time'.format(job.section))
                 continue
             elif job.check.lower() != 'true':
-                Log.info(
-                    'Template {0} will not be checked'.format(job.section))
+                Log.info('Template {0} will not be checked'.format(job.section))
                 continue
             else:
                 if job.section in self.sections_checked:
@@ -1629,7 +1650,7 @@ class JobList(object):
         if job.name not in visited:
             visited.append(job.name)
             prefix = ""
-            for i in range(level):
+            for i in xrange(level):
                 prefix += "|  "
             # Prefix + Job Name
             result = "\n" + prefix + \

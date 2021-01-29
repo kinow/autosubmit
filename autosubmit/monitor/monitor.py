@@ -163,7 +163,7 @@ class Monitor:
                         if len(subgraph.get_node(group[0])) == 0:
                             subgraph.add_node(previous_node)
 
-                        for i in range(1, len(group)):
+                        for i in xrange(1, len(group)):
                             node = exp.get_node(group[i])[0]
                             if len(subgraph.get_node(group[i])) == 0:
                                 subgraph.add_node(node)
