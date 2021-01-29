@@ -115,9 +115,7 @@ class JobPackageBase(object):
     def _create_scripts_threaded(self,jobs,configuration):
         for i in xrange(0, len(jobs)):
             self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
-            self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),
-                self._job_scripts[jobs[i].name] + ".err".format(i)
-            )
+            #self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),self._job_scripts[jobs[i].name] + ".err".format(i))
 
     def _create_common_script(self):
         pass
@@ -294,7 +292,7 @@ class JobPackageArray(JobPackageBase):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self._job_inputs[self.jobs[i].name] = self._create_i_input(timestamp, i)
-            self.jobs[i].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
+            #self.jobs[i].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
         self._common_script = self._create_common_script(timestamp)
 
     def _create_i_input(self, filename, index):
@@ -407,9 +405,7 @@ class JobPackageThread(JobPackageBase):
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
-            self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),
-                self._job_scripts[self.jobs[i].name] + ".err".format(i)
-            )
+            #self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),self._job_scripts[self.jobs[i].name] + ".err".format(i))
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):
@@ -515,10 +511,7 @@ class JobPackageThreadWrapped(JobPackageThread):
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
-            self.jobs[i].remote_logs = (
-                self._job_scripts[self.jobs[i].name] + ".out".format(i),
-                self._job_scripts[self.jobs[i].name] + ".err".format(i)
-            )
+            #self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),self._job_scripts[self.jobs[i].name] + ".err".format(i))
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):

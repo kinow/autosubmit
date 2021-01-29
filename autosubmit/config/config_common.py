@@ -46,6 +46,7 @@ class AutosubmitConfig(object):
     """
 
     def __init__(self, expid, basic_config, parser_factory):
+        self.ignore_undefined_platforms = False
         self.expid = expid
         self.basic_config = basic_config
         self.parser_factory = parser_factory
@@ -445,7 +446,7 @@ class AutosubmitConfig(object):
         else:
             return True
 
-    def check_conf_files(self, check_file=False):
+    def check_conf_files(self, running_time=False):
         """
         Checks configuration files (autosubmit, experiment jobs and platforms), looking for invalid values, missing
         required options. Prints results in log
@@ -454,7 +455,9 @@ class AutosubmitConfig(object):
         :rtype: bool
         """
         Log.info('\nChecking configuration files...')
-        self.ignore_file_path = check_file
+        self.ignore_file_path = running_time
+        self.ignore_undefined_platforms = running_time
+
         try:
             self.reload()
         except (AutosubmitCritical,AutosubmitError) as e:
@@ -550,6 +553,8 @@ class AutosubmitConfig(object):
                                                "There are repeated platforms"]]
         main_platform_found = False
         if self.hpcarch in ["local","LOCAL"]:
+            main_platform_found = True
+        elif self.ignore_undefined_platforms:
             main_platform_found = True
         for section in self._platforms_parser.sections():
             if section in self.hpcarch:
