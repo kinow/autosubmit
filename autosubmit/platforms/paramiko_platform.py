@@ -82,10 +82,11 @@ class ParamikoPlatform(Platform):
             transport.send_ignore()
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
-                self.name, self.host), 6002, str(e))
-        except Exception as e:
-            raise AutosubmitError("[{0}] connection failed for host: {1}".format(
-                self.name, self.host), 6002, str(e))
+                self.name, self.host), 6002, e.message)
+        except (AutosubmitError,AutosubmitCritical):
+            raise
+        except BaseException as e:
+            raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):
         try:
@@ -784,7 +785,7 @@ class ParamikoPlatform(Platform):
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.{1}.out".format(job.name, str_datetime)
         err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        job.local_logs = (out_filename, err_filename)
+        #job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 

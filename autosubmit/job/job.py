@@ -515,6 +515,7 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
+        remote_logs = (self.script_name + ".out", self.script_name + ".err")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
 
@@ -566,7 +567,7 @@ class Job(object):
                 # unifying names for log files
                 if remote_logs != local_logs:
                     self.synchronize_logs(self._platform, remote_logs, local_logs)
-                    remote_logs = local_logs
+                    remote_logs = copy.deepcopy(local_logs)
                 self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 try:
@@ -962,6 +963,7 @@ class Job(object):
                     '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
+        self.script_name = '{0}.cmd'.format(self.name)
         open(os.path.join(self._tmp_path, script_name),
              'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
@@ -979,6 +981,7 @@ class Job(object):
                     '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
+        self.script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         open(os.path.join(self._tmp_path, script_name),
              'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
