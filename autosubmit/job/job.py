@@ -1049,8 +1049,9 @@ class Job(object):
             Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(
                 self.name), 3000)
             start_time = time.time()
-        timestamp = str(int(time.time()))
-        self.local_logs = (self.name + "."+timestamp+ ".out", self.name + "."+timestamp+".err")
+        timestamp = date2str(datetime.datetime.now(), 'S')
+
+        self.local_logs = (self.name + "." + timestamp + ".out", self.name + "." + timestamp + ".err")
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')

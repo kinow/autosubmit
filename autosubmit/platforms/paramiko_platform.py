@@ -781,10 +781,12 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
         else:
             header = self.header.PARALLEL
-
+        #TODO
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        out_filename = "{0}.cmd.out".format(job.name)
+        err_filename = "{0}.cmd.err".format(job.name)
+        #out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        #err_filename = "{0}.{1}.err".format(job.name, str_datetime)
         #job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
