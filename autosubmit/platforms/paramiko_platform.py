@@ -740,10 +740,11 @@ class ParamikoPlatform(Platform):
             executable = 'python'
         elif job.type == Type.R:
             executable = 'Rscript'
+        remote_logs = (job.script_name + ".out", job.script_name + ".err")
         return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
             os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, job.remote_logs[0]),
-            os.path.join(self.remote_log_dir, job.remote_logs[1])
+            os.path.join(self.remote_log_dir, remote_logs[0]),
+            os.path.join(self.remote_log_dir, remote_logs[1])
         )
 
     @staticmethod

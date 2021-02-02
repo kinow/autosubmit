@@ -1852,15 +1852,15 @@ class Autosubmit:
                             jobs_id = platform.submit_Script(hold=hold)
                         except AutosubmitError as e:
                             jobs_id = None
-                            if e.message.lower().find("bad parameters") != -1:
+                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
                                         if job_tmp.section not in error_msg:
                                             error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
-                                    "Submission failed, check job and queue specified of job_sections of {0}".format(
-                                        error_msg[:-1]), 7014, e.trace)
+                                    "Submission failed, check job,queue and partition specified of job_sections of {0}".format(
+                                        error_msg[:-1]), 7014, e.message)
                         except BaseException as e:
                             raise AutosubmitError(
                                 "Submission failed, this can be due a failure on the platform", 6015, e.message)

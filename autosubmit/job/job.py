@@ -536,7 +536,7 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        sleep(10)
+        sleep(5)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
