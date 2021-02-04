@@ -82,10 +82,11 @@ class ParamikoPlatform(Platform):
             transport.send_ignore()
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
-                self.name, self.host), 6002, str(e))
-        except Exception as e:
-            raise AutosubmitError("[{0}] connection failed for host: {1}".format(
-                self.name, self.host), 6002, str(e))
+                self.name, self.host), 6002, e.message)
+        except (AutosubmitError,AutosubmitCritical):
+            raise
+        except BaseException as e:
+            raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
 
     def restore_connection(self):
         try:
@@ -739,10 +740,11 @@ class ParamikoPlatform(Platform):
             executable = 'python'
         elif job.type == Type.R:
             executable = 'Rscript'
+        remote_logs = (job.script_name + ".out", job.script_name + ".err")
         return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
             os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, job.remote_logs[0]),
-            os.path.join(self.remote_log_dir, job.remote_logs[1])
+            os.path.join(self.remote_log_dir, remote_logs[0]),
+            os.path.join(self.remote_log_dir, remote_logs[1])
         )
 
     @staticmethod
@@ -780,11 +782,13 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
         else:
             header = self.header.PARALLEL
-
+        #TODO
         str_datetime = date2str(datetime.datetime.now(), 'S')
-        out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        job.local_logs = (out_filename, err_filename)
+        out_filename = "{0}.cmd.out".format(job.name)
+        err_filename = "{0}.cmd.err".format(job.name)
+        #out_filename = "{0}.{1}.out".format(job.name, str_datetime)
+        #err_filename = "{0}.{1}.err".format(job.name, str_datetime)
+        #job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 

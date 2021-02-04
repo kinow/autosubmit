@@ -1012,7 +1012,7 @@ class JobDataStructure(MainDataBase):
         # if rowid > 0:
         #     print("Successfully inserted")
 
-    def write_start_time(self, job_name, start=0, status="UNKWNONW", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, packed=False):
+    def write_start_time(self, job_name, start=0, status="UNKWOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, packed=False):
         """Writes start time into the database
 
         Args:

@@ -353,9 +353,6 @@ class Monitor:
     def write_output_txt_recursive(self,job,output_file,level,path):
         log_out = ""
         log_err = ""
-        #if job.status in [Status.FAILED, Status.COMPLETED]:
-        #    log_out = path + "/" + job.local_logs[0]
-        #    log_err = path + "/" + job.local_logs[1]
         output = level+job.name + " " + Status().VALUE_TO_KEY[job.status] +"\n" #+ " " + log_out + " " + log_err + "\n"
         output_file.write(output)
         if job.has_children() > 0:

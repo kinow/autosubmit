@@ -115,7 +115,6 @@ class JobPackageBase(object):
     def _create_scripts_threaded(self,jobs,configuration):
         for i in xrange(0, len(jobs)):
             self._job_scripts[jobs[i].name] = jobs[i].create_script(configuration)
-            #self.jobs[i].remote_logs = (self._job_scripts[jobs[i].name] + ".out".format(i),self._job_scripts[jobs[i].name] + ".err".format(i))
 
     def _create_common_script(self):
         pass
@@ -138,7 +137,7 @@ class JobPackageBase(object):
             thread_number = thread_number * 4
         elif len(self.jobs) > 10000:
             thread_number = thread_number * 5
-        chunksize = int((len(self.jobs) + thread_number - 1) / thread_number);
+        chunksize = int((len(self.jobs) + thread_number - 1) / thread_number)
         try:
             if len(self.jobs) < thread_number:
                 for job in self.jobs:
@@ -167,19 +166,7 @@ class JobPackageBase(object):
             raise AutosubmitCritical(
                 "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
         Log.debug("Creating Scripts")
-        if only_generate:
-            if not exit:
-                if len(self.jobs) < thread_number:
-                    self._create_scripts(configuration)
-                else:
-                    Lhandle = list()
-                    for i in xrange(0, len(self.jobs), chunksize):
-                        Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize], configuration))
-                    for dataThread in Lhandle:
-                        dataThread.join()
-                    self._common_script = self._create_common_script()
-
-        else:
+        if not exit:
             if len(self.jobs) < thread_number:
                 self._create_scripts(configuration)
             else:
@@ -189,10 +176,12 @@ class JobPackageBase(object):
                 for dataThread in Lhandle:
                     dataThread.join()
                 self._common_script = self._create_common_script()
-            Log.debug("Sending Files")
-            self._send_files()
-            Log.debug("Submitting")
-            self._do_submission(hold=hold)
+            if not only_generate:
+
+                Log.debug("Sending Files")
+                self._send_files()
+                Log.debug("Submitting")
+                self._do_submission(hold=hold)
 
 
     def _create_scripts(self, configuration):
@@ -292,7 +281,6 @@ class JobPackageArray(JobPackageBase):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
             self._job_inputs[self.jobs[i].name] = self._create_i_input(timestamp, i)
-            #self.jobs[i].remote_logs = (timestamp + ".{0}.out".format(i), timestamp + ".{0}.err".format(i))
         self._common_script = self._create_common_script(timestamp)
 
     def _create_i_input(self, filename, index):
@@ -405,7 +393,6 @@ class JobPackageThread(JobPackageBase):
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
-            #self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),self._job_scripts[self.jobs[i].name] + ".err".format(i))
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):
@@ -511,7 +498,6 @@ class JobPackageThreadWrapped(JobPackageThread):
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
-            #self.jobs[i].remote_logs = (self._job_scripts[self.jobs[i].name] + ".out".format(i),self._job_scripts[self.jobs[i].name] + ".err".format(i))
         self._common_script = self._create_common_script()
 
     def _create_common_script(self):

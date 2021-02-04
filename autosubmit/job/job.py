@@ -110,7 +110,7 @@ class Job(object):
         self.executable = None
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
-
+        self.script_name = self.name+".cmd"
         self.status = status
         self.prev_status = status
         self.old_status = self.status
@@ -272,7 +272,6 @@ class Job(object):
     @local_logs.setter
     def local_logs(self, value):
         self._local_logs = value
-        #self._remote_logs = value
 
     @property
     def remote_logs(self):
@@ -515,6 +514,7 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
+        remote_logs = (self.script_name + ".out", self.script_name + ".err")
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
 
@@ -536,7 +536,7 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        sleep(10)
+        sleep(5)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
@@ -566,7 +566,7 @@ class Job(object):
                 # unifying names for log files
                 if remote_logs != local_logs:
                     self.synchronize_logs(self._platform, remote_logs, local_logs)
-                    remote_logs = local_logs
+                    remote_logs = copy.deepcopy(local_logs)
                 self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 try:
@@ -962,6 +962,7 @@ class Job(object):
                     '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
+        self.script_name = '{0}.cmd'.format(self.name)
         open(os.path.join(self._tmp_path, script_name),
              'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
@@ -979,6 +980,7 @@ class Job(object):
                     '%(?<!%%)' + variable + '%(?!%%)', '', template_content)
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
+        self.script_name_wrapper = '{0}.{1}.cmd'.format(self.name, wrapper_tag)
         open(os.path.join(self._tmp_path, script_name),
              'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
@@ -1047,6 +1049,9 @@ class Job(object):
             Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(
                 self.name), 3000)
             start_time = time.time()
+        timestamp = date2str(datetime.datetime.now(), 'S')
+
+        self.local_logs = (self.name + "." + timestamp + ".out", self.name + "." + timestamp + ".err")
 
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')

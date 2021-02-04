@@ -25,8 +25,8 @@ from autosubmit.platforms.paramiko_platform import ParamikoPlatform
 from autosubmit.platforms.headers.local_header import LocalHeader
 
 from autosubmit.config.basicConfig import BasicConfig
-from log.log import Log
 from time import sleep
+from log.log import Log, AutosubmitError, AutosubmitCritical
 
 class LocalPlatform(ParamikoPlatform):
     """
@@ -185,7 +185,39 @@ class LocalPlatform(ParamikoPlatform):
             Log.debug('Could not remove file {0}'.format(os.path.join(self.tmp_path, filename)))
             return False
         return True
-
+    def move_file(self, src, dest, must_exist=False):
+        """
+        Moves a file on the platform (includes .err and .out)
+        :param src: source name
+        :type src: str
+        :param dest: destination name
+        :param must_exist: ignore if file exist or not
+        :type dest: str
+        """
+        try:
+            path_root = self.get_files_path()
+            os.rename(os.path.join(path_root, src),os.path.join(path_root, dest))
+            return True
+        except IOError as e:
+            raise AutosubmitError('File {0} does not exists, something went wrong with the platform'.format(
+                path_root), 6004, e.message)
+            if must_exist:
+                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
+                    path_root), 6004, e.message)
+            else:
+                Log.debug("File {0} doesn't exists ".format(path_root))
+                return False
+        except Exception as e:
+            if str(e) in "Garbage":
+                raise AutosubmitError('File {0} does not exists'.format(
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
+            if must_exist:
+                raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
+                    os.path.join(self.get_files_path(), src)), 6004, str(e))
+            else:
+                Log.printlog("Log file couldn't be moved: {0}".format(
+                    os.path.join(self.get_files_path(), src)), 5001)
+                return False
     def get_ssh_output(self):
         return self._ssh_output
     def get_ssh_output_err(self):
