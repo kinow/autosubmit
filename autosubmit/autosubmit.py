@@ -3599,6 +3599,9 @@ class Autosubmit:
                     Log.info("\nCreating the jobs list...")
                     job_list = JobList(expid, BasicConfig, ConfigParserFactory(),
                                        Autosubmit._get_job_list_persistence(expid, as_conf))
+                    prev_job_list = Autosubmit.load_job_list(
+                        expid, as_conf, notransitive=notransitive)
+
 
                     date_format = ''
                     if as_conf.get_chunk_size_unit() is 'hour':
@@ -3620,6 +3623,7 @@ class Autosubmit:
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
                     Log.info("\nSaving the jobs list...")
+                    job_list.add_logs(prev_job_list.get_logs())
                     job_list.save()
                     JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                           "job_packages_" + expid).reset_table()

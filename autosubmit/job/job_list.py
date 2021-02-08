@@ -827,6 +827,36 @@ class JobList(object):
         else:
             return all
 
+    def get_logs(self):
+        """
+        Returns a dict of logs by jobs_name jobs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: logs
+        :rtype: dict(tuple)
+        """
+        logs = dict()
+        for job in self._job_list:
+            logs[job.name] = (job.local_logs,job.remote_logs)
+        return logs
+
+    def add_logs(self,logs):
+        """
+        add logs to the current job_list
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: logs
+        :rtype: dict(tuple)
+        """
+
+        for job in self._job_list:
+            if job.name in logs:
+                job.local_logs = logs[job.name][0]
+                job.remote_logs = logs[job.name][1]
+
+
     def get_ready(self, platform=None, hold=False, wrapper=False):
         """
         Returns a list of ready jobs
