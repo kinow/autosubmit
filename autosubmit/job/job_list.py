@@ -853,8 +853,8 @@ class JobList(object):
 
         for job in self._job_list:
             if job.name in logs:
-                job.local_logs = logs[job.name].job.local_logs
-                job.remote_logs = logs[job.name].job.remote_logs
+                job.local_logs = logs[job.name][0]
+                job.remote_logs = logs[job.name][1]
 
 
     def get_ready(self, platform=None, hold=False, wrapper=False):
