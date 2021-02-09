@@ -188,6 +188,16 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
+    def get_wchunkinc(self, section):
+        """
+        Gets the chunk increase to wallclock  
+        :param section: job type
+        :type section: str
+        :return: wallclock increase per chunk
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'WCHUNKINC', '')
+
     def get_synchronize(self, section):
         """
         Gets wallclock for the given job type
@@ -460,7 +470,7 @@ class AutosubmitConfig(object):
 
         try:
             self.reload()
-        except (AutosubmitCritical,AutosubmitError) as e:
+        except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
             raise
@@ -552,7 +562,7 @@ class AutosubmitConfig(object):
             self.wrong_config["Platform"] += [["Global",
                                                "There are repeated platforms"]]
         main_platform_found = False
-        if self.hpcarch in ["local","LOCAL"]:
+        if self.hpcarch in ["local", "LOCAL"]:
             main_platform_found = True
         elif self.ignore_undefined_platforms:
             main_platform_found = True

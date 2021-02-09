@@ -17,6 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import textwrap
+import datetime
 
 
 class Status:
@@ -279,3 +280,39 @@ def parse_output_number(string_number):
             number = 0.0
             pass
     return number
+
+
+def increase_wallclock_by_chunk(current, increase, chunk):
+    """
+    Receives the wallclock times an increases it according to a quantity times the number of the current chunk.
+    The result cannot be larger than 48:00. 
+    If Chunk = 0 then no increment.
+
+    :param current: WALLCLOCK HH:MM 
+    :type current: str  
+    :param increase: WCHUNKINC HH:MM 
+    :type increase: str  
+    :param chunk: chunk number 
+    :type chunk: int   
+    :return: HH:MM wallclock 
+    :rtype: str 
+    """
+    try:
+        if current and increase and chunk and chunk > 0:
+            wallclock = current.split(":")
+            increase = increase.split(":")
+            current_time = datetime.timedelta(
+                hours=int(wallclock[0]), minutes=int(wallclock[1]))
+            increase_time = datetime.timedelta(
+                hours=int(increase[0]), minutes=int(increase[1])) * (chunk - 1)
+            final_time = current_time + increase_time
+            hours = int(final_time.total_seconds() // 3600)
+            minutes = int((final_time.total_seconds() // 60) - (hours * 60))
+            if hours > 48 or (hours >= 48 and minutes > 0):
+                hours = 48
+                minutes = 0
+            return "%02d:%02d" % (hours, minutes)
+        return current
+    except Exception as exp:
+        # print(exp)
+        return current
