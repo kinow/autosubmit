@@ -183,6 +183,9 @@ Examples:
     ## Wallclock to be submitted to the HPC queue in format HH:MM
     # WALLCLOCK = 00:05
     ## Processors number to be submitted to the HPC. If not specified, defaults to 1.
+    ## Wallclock chunk increase (WALLCLOCK will be increased according to the formula WALLCLOCK + WCHUNKINC * (chunk - 1)). 
+    ## Ideal for sequences of jobs that change their expected running time according to the current chunk.
+    # WCHUNKINC = 00:01
     # PROCESSORS = 1
     ## Threads number to be submitted to the HPC. If not specified, defaults to 1.
     # THREADS = 1
@@ -282,7 +285,9 @@ Examples:
     ## Default Maximum number of jobs to be waiting in any platform queue
     ## Default = 3
     # MAX_WAITING_JOBS = 3
-    ## Default maximum number of jobs to be running at the same time at any platform
+    ## Default maximum number of jobs to be running at the same time at the platform. 
+    ## Applies at platform level. Considers QUEUEING + RUNNING jobs.
+    ## Ideal for configurations where some remote platform has a low upper limit of allowed jobs per user at the same time.
     ## Default = 6
     # TOTAL_JOBS = 6
 
@@ -313,6 +318,7 @@ Examples:
     # Default = 3
     MAXWAITINGJOBS = 3
     # Default maximum number of jobs to be running at the same time at any platform
+    # Can be set at platform level on the platform_cxxx.conf file
     # Default = 6
     TOTALJOBS = 6
     # Time (seconds) between connections to the HPC queue scheduler to poll already submitted jobs status
