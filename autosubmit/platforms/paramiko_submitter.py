@@ -40,9 +40,9 @@ class ParamikoSubmitter(Submitter):
     """
 
     def load_platforms_migrate(self, asconf, retries=5):
-        pass #Add all info related to migrate
+        pass  # Add all info related to migrate
 
-    def load_local_platform(self,asconf):
+    def load_local_platform(self, asconf):
         platforms = dict()
         # Build Local Platform Object
         local_platform = LocalPlatform(asconf.expid, 'local', BasicConfig)
@@ -50,9 +50,12 @@ class ParamikoSubmitter(Submitter):
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
-        local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
-        local_platform.temp_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
-        local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
+        local_platform.scratch = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
+        local_platform.temp_dir = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
+        local_platform.root_dir = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.host = 'localhost'
         # Add object to entry in dictionary
         platforms['local'] = local_platform
@@ -90,9 +93,12 @@ class ParamikoSubmitter(Submitter):
         local_platform.max_processors = asconf.get_max_processors()
         local_platform.max_waiting_jobs = asconf.get_max_waiting_jobs()
         local_platform.total_jobs = asconf.get_total_jobs()
-        local_platform.scratch = os.path.join(BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
-        local_platform.temp_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
-        local_platform.root_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
+        local_platform.scratch = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, asconf.expid, BasicConfig.LOCAL_TMP_DIR)
+        local_platform.temp_dir = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, 'ASlogs')
+        local_platform.root_dir = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, local_platform.expid)
         local_platform.host = 'localhost'
         # Add object to entry in dictionary
         platforms['local'] = local_platform
@@ -109,19 +115,26 @@ class ParamikoSubmitter(Submitter):
             platform_version = parser.get_option(section, 'VERSION', '')
             try:
                 if platform_type == 'pbs':
-                    remote_platform = PBSPlatform(asconf.expid, section.lower(), BasicConfig, platform_version)
+                    remote_platform = PBSPlatform(
+                        asconf.expid, section.lower(), BasicConfig, platform_version)
                 elif platform_type == 'sge':
-                    remote_platform = SgePlatform(asconf.expid, section.lower(), BasicConfig)
+                    remote_platform = SgePlatform(
+                        asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'ps':
-                    remote_platform = PsPlatform(asconf.expid, section.lower(), BasicConfig)
+                    remote_platform = PsPlatform(
+                        asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'lsf':
-                    remote_platform = LsfPlatform(asconf.expid, section.lower(), BasicConfig)
+                    remote_platform = LsfPlatform(
+                        asconf.expid, section.lower(), BasicConfig)
                 elif platform_type == 'ecaccess':
-                    remote_platform = EcPlatform(asconf.expid, section.lower(), BasicConfig, platform_version)
+                    remote_platform = EcPlatform(
+                        asconf.expid, section.lower(), BasicConfig, platform_version)
                 elif platform_type == 'slurm':
-                    remote_platform = SlurmPlatform(asconf.expid, section.lower(), BasicConfig)
+                    remote_platform = SlurmPlatform(
+                        asconf.expid, section.lower(), BasicConfig)
                 else:
-                    raise Exception("Queue type not specified on platform {0}".format(section))
+                    raise Exception(
+                        "Queue type not specified on platform {0}".format(section))
 
             except ParamikoPlatformException as e:
                 Log.error("Queue exception: {0}".format(e.message))
@@ -149,20 +162,29 @@ class ParamikoSubmitter(Submitter):
                                                                asconf.get_total_jobs()))
             remote_platform.hyperthreading = parser.get_option(section, 'HYPERTHREADING',
                                                                'false').lower()
-            remote_platform.project = parser.get_option(section, 'PROJECT', None)
-            remote_platform.budget = parser.get_option(section, 'BUDGET', remote_platform.project)
-            remote_platform.reservation = parser.get_option(section, 'RESERVATION', '')
-            remote_platform.exclusivity = parser.get_option(section, 'EXCLUSIVITY', '').lower()
+            remote_platform.project = parser.get_option(
+                section, 'PROJECT', None)
+            remote_platform.budget = parser.get_option(
+                section, 'BUDGET', remote_platform.project)
+            remote_platform.reservation = parser.get_option(
+                section, 'RESERVATION', '')
+            remote_platform.exclusivity = parser.get_option(
+                section, 'EXCLUSIVITY', '').lower()
             remote_platform.user = parser.get_option(section, 'USER', None)
-            remote_platform.scratch = parser.get_option(section, 'SCRATCH_DIR', None)
-            remote_platform.temp_dir = parser.get_option(section, 'TEMP_DIR', None)
-            remote_platform._default_queue = parser.get_option(section, 'QUEUE', None)
-            remote_platform._serial_queue = parser.get_option(section, 'SERIAL_QUEUE', None)
+            remote_platform.scratch = parser.get_option(
+                section, 'SCRATCH_DIR', None)
+            remote_platform.temp_dir = parser.get_option(
+                section, 'TEMP_DIR', None)
+            remote_platform._default_queue = parser.get_option(
+                section, 'QUEUE', None)
+            remote_platform._serial_queue = parser.get_option(
+                section, 'SERIAL_QUEUE', None)
             remote_platform.processors_per_node = parser.get_option(section, 'PROCESSORS_PER_NODE',
                                                                     None)
             remote_platform.custom_directives = parser.get_option(section, 'CUSTOM_DIRECTIVES',
                                                                   None)
-            Log.debug("Custom directives from platform.conf: {0}".format(remote_platform.custom_directives))
+            Log.debug("Custom directives from platform.conf: {0}".format(
+                remote_platform.custom_directives))
             remote_platform.scratch_free_space = parser.get_option(section, 'SCRATCH_FREE_SPACE',
                                                                    None)
             remote_platform.root_dir = os.path.join(remote_platform.scratch, remote_platform.project,
