@@ -35,6 +35,8 @@ Command list
    usage/check
    usage/describe
    usage/run
+   usage/start_time
+   usage/start_after
    usage/inspect
    usage/test
    usage/testcase
