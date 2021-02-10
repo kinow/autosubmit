@@ -1109,10 +1109,10 @@ class Job(object):
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors, self.wallclock, self._queue, self.date,
-                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents])
+                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err)
         # Launch second as threaded function
         thread_write_finish = Thread(target=JobDataStructure(self.expid).write_finish_time, args=(self.name, finish_time, final_status, self.processors,
-                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out))
+                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err))
         thread_write_finish.start()
 
     def check_started_after(self, date_limit):
