@@ -21,3 +21,10 @@ I see the `database malformed` error on my experiment log.
 
 *Solution*: run `autosubmit dbfix expid` where `expid` is the identifier of your experiment. This function will rebuild the database saving as much information as possible (usually all of it).
 
+My project parameters are not being substituted in the templates.
+========================================================
+
+*Explanation*: If there is a duplicated section or option in any other side of autosubmit, including proj files It won't be able to recognize which option pertains to what section in which file.
+
+*Solution*: Don't repeat section names and parameters names until Autosubmit 4.0 release.
+
