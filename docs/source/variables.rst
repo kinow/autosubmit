@@ -91,3 +91,19 @@ Project variables
 - **ROOTDIR**: local path to experiment's folder
 - **PROJDIR**: local path to experiment's proj folder
 
+Performance Metrics
+===================
+
+Currently, these variables apply only to the report function of Autosubmit. See :ref:`report`.
+
+- **SYPD**: Simulated years per day.
+- **ASYPD**: Actual simulated years per day.
+- **RSYPD**: Raw simulated years per day.
+- **CHSY**: Core hours per simulated year.
+- **JPSY**: Joules per simulated year.
+- **Parallelization**: Number of cores requested for the simulation job.
+
+For more information about these metrics please visit: 
+
+https://earth.bsc.es/gitlab/wuruchi/autosubmitreact/-/wikis/Performance-Metrics.
+
