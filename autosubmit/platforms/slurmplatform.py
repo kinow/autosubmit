@@ -310,6 +310,7 @@ class SlurmPlatform(ParamikoPlatform):
             return (0, 0, 0, 0, 0, 0, dict(), False)
 
     def parse_Alljobs_output(self, output, job_id):
+        status = ""
         try:
             status = [x.split()[1] for x in output.splitlines()
                       if x.split()[0] == str(job_id)]
@@ -341,11 +342,9 @@ class SlurmPlatform(ParamikoPlatform):
         if not hold:
             self._submit_script_file.write(
                 self._submit_cmd + job_script + "\n")
-            #self._submit_script_file.close()
         else:
             self._submit_script_file.write(
                 self._submit_hold_cmd + job_script + "\n")
-            #self._submit_script_file.close()
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)
