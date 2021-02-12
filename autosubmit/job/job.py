@@ -517,19 +517,20 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
-        remote_logs = (self.script_name + ".out", self.script_name + ".err")
-        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.reload()
-
-        submitter = self._get_submitter(as_conf)
-        submitter.load_platforms(as_conf)
-        hpcarch = as_conf.get_platform()
-        platforms_to_test = set()
-        if self.platform_name is None:
-            self.platform_name = hpcarch
-        # serial
-        self._platform = submitter.platforms[self.platform_name.lower()]
         try:
+            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf.reload()
+            remote_logs = (self.script_name + ".out", self.script_name + ".err")
+
+            submitter = self._get_submitter(as_conf)
+            submitter.load_platforms(as_conf)
+            hpcarch = as_conf.get_platform()
+            platforms_to_test = set()
+            if self.platform_name is None:
+                self.platform_name = hpcarch
+            # serial
+            self._platform = submitter.platforms[self.platform_name.lower()]
+
             self._platform.restore_connection()
         except Exception as e:
             Log.printlog(
