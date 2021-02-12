@@ -880,7 +880,8 @@ class Job(object):
         :return: script code
         :rtype: str
         """
-        if self.parameters['PROJECT_TYPE'].lower() != "none":
+        parameters = self.parameters
+        if parameters['PROJECT_TYPE'].lower() != "none":
             template_file = open(os.path.join(
                 as_conf.get_project_dir(), self.file), 'r')
             template = template_file.read()

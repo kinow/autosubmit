@@ -311,11 +311,12 @@ class SlurmPlatform(ParamikoPlatform):
 
     def parse_Alljobs_output(self, output, job_id):
         status = ""
+        Log.debug("Debugging for nimbus: Output {0}, Job_id {1}".format(output,job_id))
         try:
             status = [x.split()[1] for x in output.splitlines()
                       if x.split()[0] == str(job_id)]
         except BaseException as e:
-            return status
+            pass
         if len(status) == 0:
             return status
         return status[0]
