@@ -461,7 +461,7 @@ class ParamikoPlatform(Platform):
         :rtype: autosubmit.job.job_common.Status
         """
         if job_list_cmd[-1] == ",":
-            job_list_cmd=job_list_cmd[:-2]
+            job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5
 
