@@ -1306,7 +1306,13 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._conf_parser.get_option('config', 'MAX_WALLCLOCK', '')
-
+    def get_disable_recovery_threads(self, section):
+        """
+        Returns FALSE/TRUE
+        :return: recovery_threads_option
+        :rtype: str
+        """
+        return self._platforms_parser.get_option(section, 'DISABLE_RECOVERY_THREADS', 'FALSE').lower()
     def get_max_processors(self):
         """
         Returns max processors from autosubmit's config file

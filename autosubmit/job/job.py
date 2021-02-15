@@ -515,6 +515,59 @@ class Job(object):
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
+    def retrieve_logfiles_unthreaded(self, copy_remote_logs, local_logs):
+        remote_logs = (self.script_name + ".out", self.script_name + ".err")
+        out_exist = False
+        err_exist = False
+        retries = 3
+        sleeptime = 0
+        i = 0
+        no_continue = False
+        try:
+            while (not out_exist and not err_exist) and i < retries:
+                try:
+                    out_exist = self._platform.check_file_exists(
+                        remote_logs[0], True)
+                except IOError as e:
+                    out_exist = False
+                try:
+                    err_exist = self._platform.check_file_exists(
+                        remote_logs[1], True)
+                except IOError as e:
+                    err_exists = False
+                if not out_exist or not err_exist:
+                    sleeptime = sleeptime + 5
+                    i = i + 1
+                    sleep(sleeptime)
+            if i >= retries:
+                if not out_exist or not err_exist:
+                    Log.printlog("Failed to retrieve log files {1} and {2} e=6001".format(
+                        retries, remote_logs[0], remote_logs[1]))
+                    return
+            if copy_remote_logs:
+                # unifying names for log files
+                if remote_logs != local_logs:
+                    self.synchronize_logs(self._platform, remote_logs, local_logs)
+                    remote_logs = copy.deepcopy(local_logs)
+                self._platform.get_logs_files(self.expid, remote_logs)
+                # Update the logs with Autosubmit Job Id Brand
+                try:
+                    for local_log in local_logs:
+                        self._platform.write_jobid(self.id, os.path.join(
+                            self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                except BaseException as e:
+                    Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
+                        e.message, self.name))
+
+        except AutosubmitError as e:
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
+                e.message, self.name), 6001)
+
+        except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
+            Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
+                e.message, self.name), 6001)
+        return
+
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
         try:
@@ -676,8 +729,12 @@ class Job(object):
             platform_name = copy.deepcopy(self.platform_name.lower())
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
-            self.retrieve_logfiles(
-                copy_remote_logs, local_logs, remote_logs, expid, platform_name)
+            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf.reload()
+            if as_conf.get_disable_recovery_threads(self.platform.name):
+                self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
+            else:
+                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
 
         return self.status
 
