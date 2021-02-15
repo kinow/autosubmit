@@ -731,7 +731,7 @@ class Job(object):
             remote_logs = copy.deepcopy(self.remote_logs)
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
-            if as_conf.get_disable_recovery_threads(self.platform.name):
+            if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
                 self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
