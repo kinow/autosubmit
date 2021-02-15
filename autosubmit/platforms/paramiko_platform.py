@@ -77,7 +77,10 @@ class ParamikoPlatform(Platform):
         """
         try:
             self.reset()
-            self.restore_connection()
+            try:
+                self.restore_connection()
+            except:
+                pass
             transport = self._ssh.get_transport()
             transport.send_ignore()
         except EOFError as e:
@@ -118,7 +121,7 @@ class ParamikoPlatform(Platform):
             raise
         except Exception as e:
             raise AutosubmitCritical(
-                'Cant connect to this platform due an unknown error', 7050, str(e))
+                'Cant connect to this platform due an unknown error', 7050, e.message)
 
     def connect(self, reconnect=False):
         """
@@ -152,10 +155,10 @@ class ParamikoPlatform(Platform):
                 self._proxy = paramiko.ProxyCommand(
                     self._host_config['proxycommand'])
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, sock=self._proxy)
+                                  key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
             else:
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id)
+                                  key_filename=self._host_config_id, timeout=120 , banner_timeout=120)
             self.transport = paramiko.Transport(
                 (self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
@@ -258,7 +261,6 @@ class ParamikoPlatform(Platform):
             return True
         except Exception as e:
             if str(e) in "Garbage":
-                #raise AutosubmitError("Files couldn't be retrieved, session not active".format(filename),6004,e.message)
                 if not ignore_log:
                     Log.printlog(
                         "File {0} seems to no exists (skipping)".format(filename), 5004)
@@ -288,7 +290,6 @@ class ParamikoPlatform(Platform):
                 self.get_files_path(), filename))
             return True
         except IOError as e:
-            #Log.printlog("{0} couldn't be retrieved, session not active".format(os.path.join(self.get_files_path(), filename)),6004)
             return False
         except BaseException as e:
             Log.error('Could not remove file {0} due a wrong configuration'.format(
@@ -325,10 +326,10 @@ class ParamikoPlatform(Platform):
         except Exception as e:
             if str(e) in "Garbage":
                 raise AutosubmitError('File {0} does not exists'.format(
-                    os.path.join(self.get_files_path(), src)), 6004, str(e))
+                    os.path.join(self.get_files_path(), src)), 6004, e.message)
             if must_exist:
                 raise AutosubmitError("A critical file couldn't be retrieved, File {0} does not exists".format(
-                    os.path.join(self.get_files_path(), src)), 6004, str(e))
+                    os.path.join(self.get_files_path(), src)), 6004, e.message)
             else:
                 Log.printlog("Log file couldn't be moved: {0}".format(
                     os.path.join(self.get_files_path(), src)), 5001)
@@ -460,7 +461,8 @@ class ParamikoPlatform(Platform):
         :return: current job status
         :rtype: autosubmit.job.job_common.Status
         """
-
+        if job_list_cmd[-1] == ",":
+            job_list_cmd=job_list_cmd[:-1]
         cmd = self.get_checkAlljobs_cmd(job_list_cmd)
         sleep_time = 5
 
@@ -857,7 +859,7 @@ class ParamikoPlatform(Platform):
             try:
                 # Test if remote_path exists
                 self._ftpChannel.chdir(self.remote_log_dir)
-            except IOError:
+            except IOError as e:
                 try:
                     if self.send_command(self.get_mkdir_cmd()):
                         Log.debug('{0} has been created on {1} .',

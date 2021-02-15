@@ -315,7 +315,7 @@ class SlurmPlatform(ParamikoPlatform):
             status = [x.split()[1] for x in output.splitlines()
                       if x.split()[0] == str(job_id)]
         except BaseException as e:
-            return status
+            pass
         if len(status) == 0:
             return status
         return status[0]
@@ -347,16 +347,16 @@ class SlurmPlatform(ParamikoPlatform):
                 self._submit_hold_cmd + job_script + "\n")
 
     def get_checkjob_cmd(self, job_id):
-        return 'sacct -n -X -j {1} -o "State"'.format(self.host, job_id)
+        return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)
 
     def get_checkAlljobs_cmd(self, jobs_id):
-        return "sacct -n -X -j  {1} -o jobid,State".format(self.host, jobs_id)
+        return "sacct -n -X --jobs  {1} -o jobid,State".format(self.host, jobs_id)
 
     def get_queue_status_cmd(self, job_id):
         return 'squeue -j {0} -o %A,%R'.format(job_id)
 
     def get_job_energy_cmd(self, job_id):
-        return 'sacct -n -j {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
+        return 'sacct -n --jobs {0} -o JobId%25,State,NCPUS,NNodes,Submit,Start,End,ConsumedEnergy,MaxRSS%25,AveRSS%25'.format(job_id)
 
     def parse_queue_reason(self, output, job_id):
         reason = [x.split(',')[1] for x in output.splitlines()

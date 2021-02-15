@@ -19,6 +19,12 @@ My project parameters are not being substituted in the templates.
 
 *Solution*: Don't repeat section names and parameters names until Autosubmit 4.0 release.
 
+Unable to recover remote logs files.
+========================================================
+
+*Explanation*: If there are limitations on the remote platform regarding multiple connections,
+*Solution*:  You can try DISABLE_RECOVERY_THREADS = TRUE under the [platform_name] section in the platform.conf.
+
 Other possible errors
 =====================
 
