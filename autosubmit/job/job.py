@@ -521,15 +521,9 @@ class Job(object):
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
             remote_logs = (self.script_name + ".out", self.script_name + ".err")
-
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
-            hpcarch = as_conf.get_platform()
-            platforms_to_test = set()
-            if self.platform_name is None:
-                self.platform_name = hpcarch
-            # serial
-            self._platform = submitter.platforms[self.platform_name.lower()]
+            self._platform = submitter.platforms[platform_name.lower()]
             self._platform.test_connection()
         except Exception as e:
             Log.printlog(
