@@ -530,7 +530,7 @@ class Job(object):
                 pass
         except Exception as e:
             Log.printlog(
-                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e.message), self.name), 6001)
+                "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
         out_exist = False
         err_exist = False
         retries = 5
@@ -556,7 +556,7 @@ class Job(object):
                     sleep(sleeptime)
                     try:
                         self._platform.restore_connection()
-                    except:
+                    except BaseException as e:
                         Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(
                             e.message, self.name), 6001)
             if i >= retries:
@@ -581,7 +581,7 @@ class Job(object):
                         e.message, self.name))
                     try:
                         self._platform.closeConnection()
-                    except:
+                    except BaseException as e:
                         pass
                     return
         except AutosubmitError as e:
@@ -589,7 +589,7 @@ class Job(object):
                 e.message, self.name), 6001)
             try:
                 self._platform.closeConnection()
-            except:
+            except BaseException as e:
                 pass
 
             return
@@ -605,7 +605,7 @@ class Job(object):
         sleep(5)  # safe wait before end a thread
         try:
             self._platform.closeConnection()
-        except:
+        except BaseException as e:
             pass
         return
 
