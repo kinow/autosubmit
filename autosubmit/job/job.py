@@ -524,7 +524,10 @@ class Job(object):
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             self._platform = submitter.platforms[platform_name.lower()]
-            self._platform.test_connection()
+            try:
+                self._platform.test_connection()
+            except:
+                pass
         except Exception as e:
             Log.printlog(
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(str(e.message), self.name), 6001)

@@ -77,7 +77,10 @@ class ParamikoPlatform(Platform):
         """
         try:
             self.reset()
-            self.restore_connection()
+            try:
+                self.restore_connection()
+            except:
+                pass
             transport = self._ssh.get_transport()
             transport.send_ignore()
         except EOFError as e:
