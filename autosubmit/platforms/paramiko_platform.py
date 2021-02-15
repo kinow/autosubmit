@@ -155,10 +155,10 @@ class ParamikoPlatform(Platform):
                 self._proxy = paramiko.ProxyCommand(
                     self._host_config['proxycommand'])
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, sock=self._proxy, banner_timeout=1200)
+                                  key_filename=self._host_config_id, sock=self._proxy, timeout=120 , banner_timeout=120)
             else:
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
-                                  key_filename=self._host_config_id, banner_timeout=1200)
+                                  key_filename=self._host_config_id, timeout=120 , banner_timeout=1200)
             self.transport = paramiko.Transport(
                 (self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
