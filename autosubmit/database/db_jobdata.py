@@ -1022,23 +1022,30 @@ class JobDataStructure(MainDataBase):
         :return: package code, None if not found
         :rtype: int or None
         """
-        packages = None
+        packages = packages_plus = None
+        count_packages = count_packages_plus = 0
         try:
             packages = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),
-                                             "job_packages_" + self.expid).load(wrapper=False)
+                                             "job_packages_" + self.expid).load(wrapper=True)
+            count_packages = len(packages)
         except Exception as ex:
             Log.debug(
                 "Wrapper table not found, trying packages. JobDataStructure.retrieve_packages")
             packages = None
-            try:
-                packages = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),
-                                                 "job_packages_" + self.expid).load(wrapper=True)
-            except Exception as exp2:
-                packages = None
 
-        if (packages):
+        try:
+            packages_plus = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),
+                                                  "job_packages_" + self.expid).load(wrapper=False)
+            count_packages_plus = len(packages_plus)
+        except Exception as ex:
+            Log.debug(
+                "Wrapper table not found, trying packages. JobDataStructure.retrieve_packages")
+            packages_plus = None
+
+        if (packages or packages_plus):
+            packages_source = packages if count_packages > count_packages_plus else packages_plus
             try:
-                for exp, package_name, job_name in packages:
+                for exp, package_name, job_name in packages_source:
                     if current_job_name == job_name:
                         code = int(package_name.split("_")[2])
                         return code
@@ -1132,6 +1139,8 @@ class JobDataStructure(MainDataBase):
                 if job_data_last.start == 0:
                     job_data_last.start = start
                     job_data_last.status = status
+                    job_data_last.rowtype = self.determine_rowtype(
+                        self.get_job_package_code(job_name))
                     job_data_last.job_id = job_id
                     job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
                     _updated = self._update_start_job_data(job_data_last)
@@ -1723,10 +1732,10 @@ class JobDataStructure(MainDataBase):
         # current_time =
         try:
             if self.conn:
-                sql = ''' UPDATE job_data SET start=?, modified=?, job_id=?, status=? WHERE id=? '''
+                sql = ''' UPDATE job_data SET start=?, modified=?, job_id=?, status=?, rowtype=? WHERE id=? '''
                 cur = self.conn.cursor()
                 cur.execute(sql, (int(jobdata.start),
-                                  jobdata.modified, jobdata.job_id, jobdata.status, jobdata._id))
+                                  jobdata.modified, jobdata.job_id, jobdata.status, jobdata.rowtype, jobdata._id))
                 self.conn.commit()
                 return True
             return None

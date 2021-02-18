@@ -1536,7 +1536,8 @@ class Autosubmit:
                                                 "Wrapper is in Unknown Status couldn't get wrapper parameters", 7050)
 
                                         # New status will be saved and inner_jobs will be checked.
-                                        wrapper_job.check_status(wrapper_job.new_status)
+                                        wrapper_job.check_status(
+                                            wrapper_job.new_status)
                                         # Erase from packages if the wrapper failed to be queued ( Hold Admin bug )
                                         if wrapper_job.status == Status.WAITING:
                                             for inner_job in wrapper_job.job_list:
@@ -1597,7 +1598,8 @@ class Autosubmit:
                         for platform_jobs in slurm:
                             platform = platform_jobs[0]
                             jobs_to_check = platform_jobs[1]
-                            platform.check_Alljobs(platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
+                            platform.check_Alljobs(
+                                platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
                             for j_Indx in xrange(0, len(platform_jobs[3])):
                                 prev_status = platform_jobs[2][j_Indx]
                                 job = platform_jobs[3][j_Indx]
@@ -3563,7 +3565,8 @@ class Autosubmit:
                     Log.info(
                         "Preparing .lock file to avoid multiple instances with same expid.")
 
-                    as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+                    as_conf = AutosubmitConfig(
+                        expid, BasicConfig, ConfigParserFactory())
                     as_conf.check_conf_files(False)
 
                     project_type = as_conf.get_project_type()
@@ -3601,7 +3604,6 @@ class Autosubmit:
                                        Autosubmit._get_job_list_persistence(expid, as_conf))
                     prev_job_list = Autosubmit.load_job_list(
                         expid, as_conf, notransitive=notransitive)
-
 
                     date_format = ''
                     if as_conf.get_chunk_size_unit() is 'hour':
@@ -3714,11 +3716,11 @@ class Autosubmit:
         except AutosubmitError as e:
             if e.trace == "":
                 e.trace = traceback.format_exc()
-            raise AutosubmitError(e.message, e.code,e.trace)
+            raise AutosubmitError(e.message, e.code, e.trace)
         except AutosubmitCritical as e:
             if e.trace == "":
                 e.trace = traceback.format_exc()
-            raise AutosubmitCritical(e.message, e.code,e.trace)
+            raise AutosubmitCritical(e.message, e.code, e.trace)
 
     @staticmethod
     def _copy_code(as_conf, expid, project_type, force):
