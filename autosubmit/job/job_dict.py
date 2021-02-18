@@ -53,6 +53,7 @@ class DicJobs:
         self.default_retrials = default_retrials
         self._dic = dict()
 
+
     def read_section(self, section, priority, default_job_type, jobs_data=dict()):
         """
         Read a section from jobs conf and creates all jobs for it
@@ -345,6 +346,12 @@ class DicJobs:
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
         job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'false')).lower()
+        job.running = self._parser.get_option(section, 'RUNNING','once').lower()
+
+        if self.get_option(section, "SKIPPABLE", "False").lower() == "true":
+            job.skippable = True
+        else:
+            job.skippable = False
         if job.check_warnings == 'true':
             job.check_warnings = True
         else:

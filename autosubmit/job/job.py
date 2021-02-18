@@ -99,6 +99,7 @@ class Job(object):
         self.delay = None
         self.frequency = None
         self.synchronize = None
+        self.skippable = False
         self.repacked = 0
         self._long_name = None
         self.long_name = name

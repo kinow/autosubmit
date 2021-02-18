@@ -32,13 +32,14 @@ class Status:
     COMPLETED = 5
     HELD = 6
     PREPARED = 7
+    SKIPPED = 8
     FAILED = -1
     UNKNOWN = -2
     SUSPENDED = -3
     #######
     # Note: any change on constants must be applied on the dict below!!!
     VALUE_TO_KEY = {-3: 'SUSPENDED', -2: 'UNKNOWN', -1: 'FAILED', 0: 'WAITING', 1: 'READY',
-                    2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED'}
+                    2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED', 8: 'SKIPPED'}
 
     def retval(self, value):
         return getattr(self, value)
@@ -62,12 +63,13 @@ class bcolors:
     QUEUING = '\033[35;1m'
     RUNNING = '\033[32m'
     COMPLETED = '\033[33m'
+    SKIPPED = '\033[33m'
     PREPARED = '\033[34;2m'
     HELD = '\033[34;1m'
     FAILED = '\033[31m'
     SUSPENDED = '\033[31;1m'
     CODE_TO_COLOR = {-3: SUSPENDED, -2: UNKNOWN, -1: FAILED, 0: WAITING, 1: READY,
-                     2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED}
+                     2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED, 8: SKIPPED}
 
 
 class Type:

@@ -330,7 +330,7 @@ class JobData(object):
         :return: Queueing time in seconds.   
         :rtype: int
         """
-        if self.status in ["SUBMITTED", "QUEUING", "RUNNING", "COMPLETED", "HELD", "PREPARED", "FAILED"]:
+        if self.status in ["SUBMITTED", "QUEUING", "RUNNING", "COMPLETED", "HELD", "PREPARED", "FAILED", "SKIPPED"]:
             queue = int((self.start if self.start >
                          0 else time.time()) - self.submit)
             if queue > 0:
