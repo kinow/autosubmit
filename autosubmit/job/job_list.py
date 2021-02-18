@@ -1208,7 +1208,7 @@ class JobList(object):
                      os.path.join(self._persistence_path, self._update_file +
                                   "_" + output_date))
     def get_skippable_jobs(self):
-        job_list_skip = [job for job in self.get_job_list() if job.skippable is True and (job.status == Status.RUNNING or job.status == Status.COMPLETED or job.status == Status.READY)  ]
+        job_list_skip = [job for job in self.get_job_list() if job.skippable is True and ( job.status == Status.QUEUING or job.status == Status.RUNNING or job.status == Status.COMPLETED or job.status == Status.READY)  ]
         skip_by_section = dict()
         for job in job_list_skip:
             if job.section not in skip_by_section:
@@ -1287,11 +1287,14 @@ class JobList(object):
         jobs_to_skip = self.get_skippable_jobs() # Get A Dict with all jobs that are listed as skipabble
         for section in jobs_to_skip:
             for job in jobs_to_skip[section]:
-                if job.status == Status.READY: #Check only jobs to be pending of be submitted
+                if job.status == Status.READY or job.status == Status.QUEUING: # Check only jobs to be pending of canceled if not started
                     if job.running == 'chunk':
                         for related_job in jobs_to_skip[section]:
                             if job.chunk < related_job.chunk: # Check if there is some related job with an higher chunk
+                                if job.status == Status.QUEUING:
+                                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
                                 job.status = Status.SKIPPED
+
                     elif job.running == 'member':
                         for related_job in jobs_to_skip[section]:
                             if job.member < related_job.member: # Check if there is any other related job with an higher member ( to determine how, since member can be called non-integer)
