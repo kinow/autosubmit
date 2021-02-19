@@ -208,6 +208,7 @@ class JobPackager(object):
                             section, "DEPENDENCIES").split()
                     else:
                         dependencies_keys = []
+                    max_wrapper_job_by_section[section] = max_wrapped_jobs
 
                 else:
                     multiple_sections = section.split('&')
