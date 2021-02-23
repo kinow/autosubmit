@@ -935,7 +935,7 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
-        if parameters['PROJECT_TYPE'].lower() != "none":
+        if as_conf.get_project_type.lower() != "none":
             template_file = open(os.path.join(
                 as_conf.get_project_dir(), self.file), 'r')
             template = template_file.read()
