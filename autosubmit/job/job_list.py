@@ -1285,20 +1285,8 @@ class JobList(object):
                 Log.debug(
                     "Job is failed".format(job.name))
         jobs_to_skip = self.get_skippable_jobs(as_conf.get_wrapper_jobs()) # Get A Dict with all jobs that are listed as skipabble
-        for section in jobs_to_skip:
-            for job in jobs_to_skip[section]:
-                if job.status == Status.READY or job.status == Status.QUEUING: # Check only jobs to be pending of canceled if not started
-                    if job.running == 'chunk':
-                        for related_job in jobs_to_skip[section]:
-                            if job.chunk < related_job.chunk: # Check if there is some related job with an higher chunk
-                                if job.status == Status.QUEUING:
-                                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
-                                job.status = Status.SKIPPED
-                    elif job.running == 'member':
-                        members = as_conf.get_member_list()
-                        for related_job in jobs_to_skip[section]:
-                            if members.index(job.member) < members.index(related_job.member):
-                                job.status = Status.SKIPPED
+
+
 
 
         # if waiting jobs has all parents completed change its State to READY
@@ -1389,7 +1377,37 @@ class JobList(object):
                                     job.name))
                         else:
                             job.hold = True
-
+            for section in jobs_to_skip:
+                for job in jobs_to_skip[section]:
+                    if job.status == Status.READY or job.status == Status.QUEUING:  # Check only jobs to be pending of canceled if not started
+                        if job.running == 'chunk':
+                            jobdate = date2str(job.date, job.date_format)
+                            for related_job in jobs_to_skip[section]:
+                                if job.chunk < related_job.chunk and job.member == related_job.member and jobdate == date2str(
+                                        related_job.date,
+                                        related_job.date_format):  # Check if there is some related job with an higher chunk
+                                    try:
+                                        if job.status == Status.QUEUING:
+                                            job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id),
+                                                                      ignore_log=True)
+                                    except:
+                                        pass #jobid finished already
+                                    job.status = Status.SKIPPED
+                                    save = True
+                        elif job.running == 'member':
+                            members = as_conf.get_member_list()
+                            for related_job in jobs_to_skip[section]:
+                                if members.index(job.member) < members.index(
+                                        related_job.member) and job.chunk == related_job.chunk and jobdate == date2str(
+                                        related_job.date, related_job.date_format):
+                                    try:
+                                        if job.status == Status.QUEUING:
+                                            job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id),
+                                                                      ignore_log=True)
+                                    except:
+                                        pass #job_id finished already
+                                    job.status = Status.SKIPPED
+                                    save = True
             #save = True
         Log.debug('Update finished')
         return save
