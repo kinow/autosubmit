@@ -846,7 +846,7 @@ class AutosubmitConfig(object):
                 parameters[option] = self._conf_parser.get(section, option)
 
         project_type = self.get_project_type()
-        parameters['PROJECT_TYPE'] = self.get_project_type()
+
         if project_type != "none" and self._proj_parser is not None:
             # Load project parameters
             Log.debug("Loading project parameters...")

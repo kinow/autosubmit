@@ -795,7 +795,6 @@ class Job(object):
         parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
-        parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
 
@@ -936,6 +935,7 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
+        parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         if parameters['PROJECT_TYPE'].lower() != "none":
             template_file = open(os.path.join(
                 as_conf.get_project_dir(), self.file), 'r')
