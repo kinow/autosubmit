@@ -934,33 +934,36 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
+        try: # issue in tests with project_type variable while using threads
+            if as_conf.get_project_type().lower() != "none":
+                template_file = open(os.path.join(
+                    as_conf.get_project_dir(), self.file), 'r')
+                template = template_file.read()
+            else:
+                if self.type == Type.BASH:
+                    template = 'sleep 5'
+                elif self.type == Type.PYTHON:
+                    template = 'time.sleep(5)'
+                elif self.type == Type.R:
+                    template = 'Sys.sleep(5)'
+                else:
+                    template = ''
 
-        if parameters['PROJECT_TYPE'].lower() != "none":
+            if self.type == Type.BASH:
+                snippet = StatisticsSnippetBash
+            elif self.type == Type.PYTHON:
+                snippet = StatisticsSnippetPython
+            elif self.type == Type.R:
+                snippet = StatisticsSnippetR
+            else:
+                raise Exception('Job type {0} not supported'.format(self.type))
+    
+            template_content = self._get_template_content(
+                as_conf, snippet, template)
+        except Exception as e:
             template_file = open(os.path.join(
                 as_conf.get_project_dir(), self.file), 'r')
             template = template_file.read()
-        else:
-            if self.type == Type.BASH:
-                template = 'sleep 5'
-            elif self.type == Type.PYTHON:
-                template = 'time.sleep(5)'
-            elif self.type == Type.R:
-                template = 'Sys.sleep(5)'
-            else:
-                template = ''
-
-        if self.type == Type.BASH:
-            snippet = StatisticsSnippetBash
-        elif self.type == Type.PYTHON:
-            snippet = StatisticsSnippetPython
-        elif self.type == Type.R:
-            snippet = StatisticsSnippetR
-        else:
-            raise Exception('Job type {0} not supported'.format(self.type))
-
-        template_content = self._get_template_content(
-            as_conf, snippet, template)
-
         return template_content
 
     def get_wrapped_content(self, as_conf):

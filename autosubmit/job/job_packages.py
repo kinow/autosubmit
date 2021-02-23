@@ -204,6 +204,7 @@ class JobPackageSimple(JobPackageBase):
     def __init__(self, jobs):
         super(JobPackageSimple, self).__init__(jobs)
         self._job_scripts = {}
+
     def _create_scripts(self, configuration):
         for job in self.jobs:
             self._job_scripts[job.name] = job.create_script(configuration)
