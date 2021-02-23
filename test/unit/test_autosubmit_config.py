@@ -299,7 +299,7 @@ class TestAutosubmitConfig(TestCase):
         returned_parameters = config.load_parameters()
 
         # assert
-        self.assertEquals(6, len(returned_parameters))
+        self.assertEquals(7, len(returned_parameters))
         self.assertTrue(returned_parameters.has_key('dummy-option1'))
         self.assertTrue(returned_parameters.has_key('dummy-option2'))
         self.assertTrue(returned_parameters.has_key('dummy-option3'))
