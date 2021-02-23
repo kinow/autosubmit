@@ -1289,9 +1289,8 @@ class JobList(object):
             for job in jobs_to_skip[section]:
                 if job.status == Status.READY or job.status == Status.QUEUING: # Check only jobs to be pending of canceled if not started
                     if job.running == 'chunk':
-                        chunks = as_conf.get_chunk_list()
                         for related_job in jobs_to_skip[section]:
-                            if chunks.index(job.chunk) < chunks.index(related_job.chunk): # Check if there is some related job with an higher chunk
+                            if job.chunk < related_job.chunk: # Check if there is some related job with an higher chunk
                                 if job.status == Status.QUEUING:
                                     job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
                                 job.status = Status.SKIPPED
