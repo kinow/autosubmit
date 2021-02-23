@@ -99,6 +99,7 @@ class Job(object):
         self.delay = None
         self.frequency = None
         self.synchronize = None
+        self.skippable = False
         self.repacked = 0
         self._long_name = None
         self.long_name = name
@@ -794,10 +795,8 @@ class Job(object):
         parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
-
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
-
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
 
@@ -935,19 +934,22 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
-        if parameters['PROJECT_TYPE'].lower() != "none":
-            template_file = open(os.path.join(
-                as_conf.get_project_dir(), self.file), 'r')
-            template = template_file.read()
-        else:
-            if self.type == Type.BASH:
-                template = 'sleep 5'
-            elif self.type == Type.PYTHON:
-                template = 'time.sleep(5)'
-            elif self.type == Type.R:
-                template = 'Sys.sleep(5)'
+        try: # issue in tests with project_type variable while using threads
+            if as_conf.get_project_type().lower() != "none":
+                template_file = open(os.path.join(
+                    as_conf.get_project_dir(), self.file), 'r')
+                template = template_file.read()
             else:
-                template = ''
+                if self.type == Type.BASH:
+                    template = 'sleep 5'
+                elif self.type == Type.PYTHON:
+                    template = 'time.sleep(5)'
+                elif self.type == Type.R:
+                    template = 'Sys.sleep(5)'
+                else:
+                    template = ''
+        except:
+            template = ''
 
         if self.type == Type.BASH:
             snippet = StatisticsSnippetBash
@@ -957,7 +959,6 @@ class Job(object):
             snippet = StatisticsSnippetR
         else:
             raise Exception('Job type {0} not supported'.format(self.type))
-
         template_content = self._get_template_content(
             as_conf, snippet, template)
 

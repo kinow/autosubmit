@@ -886,7 +886,18 @@ class JobList(object):
         prepared = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
                     job.status == Status.PREPARED]
         return prepared
+    def get_skipped(self, platform=None):
+        """
+        Returns a list of prepared jobs
 
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: prepared jobs
+        :rtype: list
+        """
+        skipped = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
+                    job.status == Status.SKIPPED]
+        return skipped
     def get_waiting(self, platform=None, wrapper=False):
         """
         Returns a list of jobs waiting
@@ -1196,7 +1207,15 @@ class JobList(object):
                 move(os.path.join(self._persistence_path, self._update_file),
                      os.path.join(self._persistence_path, self._update_file +
                                   "_" + output_date))
-
+    def get_skippable_jobs(self, jobs_in_wrapper):
+        job_list_skip = [job for job in self.get_job_list() if job.skippable is True and ( job.status == Status.QUEUING or job.status == Status.RUNNING or job.status == Status.COMPLETED or job.status == Status.READY) and jobs_in_wrapper.find(job.section) == -1 ]
+        skip_by_section = dict()
+        for job in job_list_skip:
+            if job.section not in skip_by_section:
+                skip_by_section[job.section] = [job]
+            else:
+                skip_by_section[job.section].append(job)
+        return skip_by_section
     @property
     def parameters(self):
         """
@@ -1265,10 +1284,26 @@ class JobList(object):
                 save = True
                 Log.debug(
                     "Job is failed".format(job.name))
+        jobs_to_skip = self.get_skippable_jobs(as_conf.get_wrapper_jobs()) # Get A Dict with all jobs that are listed as skipabble
+        for section in jobs_to_skip:
+            for job in jobs_to_skip[section]:
+                if job.status == Status.READY or job.status == Status.QUEUING: # Check only jobs to be pending of canceled if not started
+                    if job.running == 'chunk':
+                        for related_job in jobs_to_skip[section]:
+                            if job.chunk < related_job.chunk: # Check if there is some related job with an higher chunk
+                                if job.status == Status.QUEUING:
+                                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+                                job.status = Status.SKIPPED
+                    elif job.running == 'member':
+                        members = as_conf.get_member_list()
+                        for related_job in jobs_to_skip[section]:
+                            if members.index(job.member) < members.index(related_job.member):
+                                job.status = Status.SKIPPED
+
+
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:
-                #Log.debug('Updating SYNC jobs')
                 tmp = [
                     parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
@@ -1276,13 +1311,12 @@ class JobList(object):
                     save = True
                     Log.debug(
                         "Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
-        Log.debug('Update finished')
+        #Log.debug('Update finished')
         Log.debug('Updating WAITING jobs')
         if not fromSetStatus:
             all_parents_completed = []
             for job in self.get_waiting():
-                tmp = [
-                    parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED]
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1312,7 +1346,7 @@ class JobList(object):
                 for job in self.get_waiting_remote_dependencies('slurm'):
                     if job.name not in all_parents_completed:
                         tmp = [parent for parent in job.parents if (
-                            (parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and "setup" not in parent.name.lower())]
+                            (parent.status == Status.SKIPPED or parent.status == Status.COMPLETED or parent.status == Status.QUEUING or parent.status == Status.RUNNING) and "setup" not in parent.name.lower())]
                         if len(tmp) == len(job.parents):
                             job.status = Status.PREPARED
                             job.hold = True

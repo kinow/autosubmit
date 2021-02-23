@@ -56,6 +56,8 @@ There are also other, less used features that you can use:
 
 * CUSTOM_DIRECTIVES: Custom directives for the HPC resource manager headers of the platform used for that job.
 
+* SKIPPABLE: When this is true, the job will be able to skip it work if there is an higher chunk or member already ready, running, queuing or in complete status.
+
 Workflow examples:
 ------------------
 
@@ -114,5 +116,29 @@ In this workflow you can see an illustrated example of select_chunks used in an 
    :align: center
    :alt: select_chunks_workflow
 
+Example 3:
 
+In this workflow you can see an illustrated example of SKIPPABLE parameter used in an dummy workflow.
 
+.. code-block:: ini
+
+    [SIM]
+    FILE = sim.sh
+    DEPENDENCIES = INI POST-1
+    WALLCLOCK = 00:15
+    RUNNING = chunk
+    QUEUE = debug
+    SKIPPABLE = TRUE
+
+    [POST]
+    FILE = post.sh
+    DEPENDENCIES = SIM
+    WALLCLOCK = 00:05
+    RUNNING = member
+    #QUEUE = debug
+
+.. figure:: workflows/skip.png
+   :name: simple
+   :width: 100%
+   :align: center
+   :alt: skip_workflow

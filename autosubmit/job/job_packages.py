@@ -118,6 +118,7 @@ class JobPackageBase(object):
 
     def _create_common_script(self):
         pass
+
     def submit(self, configuration, parameters,only_generate=False,hold=False):
         """
         :para configuration: Autosubmit basic configuration \n
@@ -141,21 +142,21 @@ class JobPackageBase(object):
         try:
             if len(self.jobs) < thread_number:
                 for job in self.jobs:
-                        if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
-                            if only_generate:
-                                exit=True
-                                break
-                            if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                                if configuration.get_project_type().lower() != "none":
-                                    raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
-                            if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
-                                Log.warning("Script {0} check failed",job.name)
-                                Log.warning("On submission script has some empty variables")
-                            else:
-                                Log.result("Script {0} OK",job.name)
-                        job.update_parameters(configuration, parameters)
-                        # looking for directives on jobs
-                        self._custom_directives = self._custom_directives | set(job.custom_directives)
+                    if job.check.lower() == Job.CHECK_ON_SUBMISSION.lower():
+                        if only_generate:
+                            exit=True
+                            break
+                        if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
+                            if configuration.get_project_type().lower() != "none":
+                                raise AutosubmitCritical("Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(job.name),7014)
+                        if not job.check_script(configuration, parameters,show_logs=job.check_warnings):
+                            Log.warning("Script {0} check failed",job.name)
+                            Log.warning("On submission script has some empty variables")
+                        else:
+                            Log.result("Script {0} OK",job.name)
+                    job.update_parameters(configuration, parameters)
+                    # looking for directives on jobs
+                    self._custom_directives = self._custom_directives | set(job.custom_directives)
             else:
                 Lhandle = list()
                 for i in xrange(0, len(self.jobs), chunksize):
@@ -203,6 +204,7 @@ class JobPackageSimple(JobPackageBase):
     def __init__(self, jobs):
         super(JobPackageSimple, self).__init__(jobs)
         self._job_scripts = {}
+
     def _create_scripts(self, configuration):
         for job in self.jobs:
             self._job_scripts[job.name] = job.create_script(configuration)

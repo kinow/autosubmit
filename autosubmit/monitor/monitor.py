@@ -43,7 +43,7 @@ class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
     _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),(Status.PREPARED, 'skyblue'),
                    (Status.SUBMITTED, 'cyan'), (Status.HELD, 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
-                   (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange')])
+                   (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
 
     @staticmethod
     def color_status(status):
@@ -71,7 +71,8 @@ class Monitor:
             return Monitor._table[Status.RUNNING]
         elif status == Status.COMPLETED:
             return Monitor._table[Status.COMPLETED]
-
+        elif status == Status.SKIPPED:
+            return Monitor._table[Status.SKIPPED]
         elif status == Status.FAILED:
             return Monitor._table[Status.FAILED]
         elif status == Status.SUSPENDED:
@@ -103,6 +104,7 @@ class Monitor:
                                        fillcolor=self._table[Status.READY]))
         legend.add_node(pydotplus.Node(name='PREPARED', shape='box', style="filled",
                                        fillcolor=self._table[Status.PREPARED]))
+
         legend.add_node(pydotplus.Node(name='SUBMITTED', shape='box', style="filled",
                                        fillcolor=self._table[Status.SUBMITTED]))
         legend.add_node(pydotplus.Node(name='HELD', shape='box', style="filled",
@@ -111,13 +113,15 @@ class Monitor:
                                        fillcolor=self._table[Status.QUEUING]))
         legend.add_node(pydotplus.Node(name='RUNNING', shape='box', style="filled",
                                        fillcolor=self._table[Status.RUNNING]))
+        legend.add_node(pydotplus.Node(name='SKIPPED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.SKIPPED]))
         legend.add_node(pydotplus.Node(name='COMPLETED', shape='box', style="filled",
                                        fillcolor=self._table[Status.COMPLETED]))
-
         legend.add_node(pydotplus.Node(name='FAILED', shape='box', style="filled",
                                        fillcolor=self._table[Status.FAILED]))
         legend.add_node(pydotplus.Node(name='SUSPENDED', shape='box', style="filled",
                                        fillcolor=self._table[Status.SUSPENDED]))
+
         graph.add_subgraph(legend)
 
         exp = pydotplus.Subgraph(graph_name='Experiment', label=expid)
