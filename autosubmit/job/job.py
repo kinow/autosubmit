@@ -746,12 +746,12 @@ class Job(object):
         :return: submitter
         :rtype: Submitter
         """
-        communications_library = as_conf.get_communications_library()
-        if communications_library == 'paramiko':
-            return ParamikoSubmitter()
+        #communications_library = as_conf.get_communications_library()
+        #if communications_library == 'paramiko':
+        return ParamikoSubmitter()
         # communications library not known
-        raise AutosubmitCritical(
-            'You have defined a not valid communications library on the configuration file', 7014)
+        #raise AutosubmitCritical(
+        #    'You have defined a not valid communications library on the configuration file', 7014)
 
     def update_children_status(self):
         children = list(self.children)
@@ -972,12 +972,12 @@ class Job(object):
         return template_content
 
     def _get_template_content(self, as_conf, snippet, template):
-        communications_library = as_conf.get_communications_library()
-        if communications_library == 'paramiko':
-            return self._get_paramiko_template(snippet, template)
-        else:
-            raise AutosubmitCritical(
-                "Job {0} does not have an correct template// template not found".format(self.name), 7014)
+        #communications_library = as_conf.get_communications_library()
+        #if communications_library == 'paramiko':
+        return self._get_paramiko_template(snippet, template)
+        #else:
+        #    raise AutosubmitCritical(
+        #        "Job {0} does not have an correct template// template not found".format(self.name), 7014)
 
     def _get_paramiko_template(self, snippet, template):
         current_platform = self._platform
