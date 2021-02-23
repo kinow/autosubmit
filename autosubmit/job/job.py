@@ -795,7 +795,7 @@ class Job(object):
         parameters.update(default_parameters)
         parameters['JOBNAME'] = self.name
         parameters['FAIL_COUNT'] = str(self.fail_count)
-
+        parameters['PROJECT_TYPE'] = as_conf.get_project_type()
         parameters['SDATE'] = date2str(self.date, self.date_format)
         parameters['MEMBER'] = self.member
 

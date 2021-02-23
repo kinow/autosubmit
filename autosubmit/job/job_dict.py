@@ -346,7 +346,7 @@ class DicJobs:
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
         job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'false')).lower()
-        job.running = self._parser.get_option(section, 'RUNNING','once').lower()
+        job.running = self.get_option(section, 'RUNNING', 'once').lower()
 
         if self.get_option(section, "SKIPPABLE", "False").lower() == "true":
             job.skippable = True
