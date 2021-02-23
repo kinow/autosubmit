@@ -948,22 +948,20 @@ class Job(object):
                     template = 'Sys.sleep(5)'
                 else:
                     template = ''
+        except:
+            template = ''
 
-            if self.type == Type.BASH:
-                snippet = StatisticsSnippetBash
-            elif self.type == Type.PYTHON:
-                snippet = StatisticsSnippetPython
-            elif self.type == Type.R:
-                snippet = StatisticsSnippetR
-            else:
-                raise Exception('Job type {0} not supported'.format(self.type))
-    
-            template_content = self._get_template_content(
-                as_conf, snippet, template)
-        except Exception as e:
-            template_file = open(os.path.join(
-                as_conf.get_project_dir(), self.file), 'r')
-            template = template_file.read()
+        if self.type == Type.BASH:
+            snippet = StatisticsSnippetBash
+        elif self.type == Type.PYTHON:
+            snippet = StatisticsSnippetPython
+        elif self.type == Type.R:
+            snippet = StatisticsSnippetR
+        else:
+            raise Exception('Job type {0} not supported'.format(self.type))
+        template_content = self._get_template_content(
+            as_conf, snippet, template)
+
         return template_content
 
     def get_wrapped_content(self, as_conf):
