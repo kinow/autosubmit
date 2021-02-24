@@ -1380,8 +1380,8 @@ class JobList(object):
             for section in jobs_to_skip:
                 for job in jobs_to_skip[section]:
                     if job.status == Status.READY or job.status == Status.QUEUING:  # Check only jobs to be pending of canceled if not started
+                        jobdate = date2str(job.date, job.date_format)
                         if job.running == 'chunk':
-                            jobdate = date2str(job.date, job.date_format)
                             for related_job in jobs_to_skip[section]:
                                 if job.chunk < related_job.chunk and job.member == related_job.member and jobdate == date2str(
                                         related_job.date,
