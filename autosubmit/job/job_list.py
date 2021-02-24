@@ -1284,7 +1284,6 @@ class JobList(object):
                 save = True
                 Log.debug(
                     "Job is failed".format(job.name))
-        jobs_to_skip = self.get_skippable_jobs(as_conf.get_wrapper_jobs()) # Get A Dict with all jobs that are listed as skipabble
 
 
 
@@ -1377,6 +1376,9 @@ class JobList(object):
                                     job.name))
                         else:
                             job.hold = True
+            jobs_to_skip = self.get_skippable_jobs(
+                as_conf.get_wrapper_jobs())  # Get A Dict with all jobs that are listed as skipabble
+
             for section in jobs_to_skip:
                 for job in jobs_to_skip[section]:
                     if job.status == Status.READY or job.status == Status.QUEUING:  # Check only jobs to be pending of canceled if not started
