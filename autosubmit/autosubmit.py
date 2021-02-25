@@ -1424,7 +1424,7 @@ class Autosubmit:
                                                      None, jobs[0].platform, as_conf, jobs[0].hold)
                             job_list.job_package_map[jobs[0].id] = wrapper_job
                     Log.debug("Checking job_list current status")
-                    save = job_list.update_list(as_conf)
+                    save = job_list.update_list(as_conf, first_time=True)
                     job_list.save()
 
                     Log.info(
@@ -1491,6 +1491,9 @@ class Autosubmit:
                         total_jobs = len(job_list.get_job_list())
                         Log.info("\n\n{0} of {1} jobs remaining ({2})".format(
                             total_jobs - len(job_list.get_completed()), total_jobs, time.strftime("%H:%M")))
+                        if len(job_list.get_failed()) > 0:
+                            Log.info("{0} jobs has been  failed ({1})".format(
+                                len(job_list.get_failed()), time.strftime("%H:%M")))
                         safetysleeptime = as_conf.get_safetysleeptime()
                         default_retrials = as_conf.get_retrials()
                         check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()

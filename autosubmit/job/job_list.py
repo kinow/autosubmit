@@ -1229,7 +1229,7 @@ class JobList(object):
     def parameters(self, value):
         self._parameters = value
 
-    def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None):
+    def update_list(self, as_conf, store_change=True, fromSetStatus=False, submitter=None, first_time = False):
         """
         Updates job list, resetting failed jobs and changing to READY all WAITING jobs with all parents COMPLETED
 
@@ -1244,37 +1244,32 @@ class JobList(object):
             save = store_change
         Log.debug('Updating FAILED jobs')
         write_log_status = False
-        for job in self.get_failed():
-            job.inc_fail_count()
-            if not hasattr(job, 'retrials') or job.retrials is None:
-                retrials = as_conf.get_retrials()
-            else:
-                retrials = job.retrials
-
-            if job.fail_count <= retrials:
-                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
-                if len(tmp) == len(job.parents):
-                    job.status = Status.READY
-                    #if submitter is not None:
-                    #    job.platform = submitter.platforms[job.platform_name.lower()]
-                    #    job.platform.test_connection()
-                    job.id = None
-                    job.packed = False
-                    save = True
-                    Log.debug(
-                        "Resetting job: {0} status to: READY for retrial...".format(job.name))
+        if not first_time:
+            for job in self.get_failed():
+                if not hasattr(job, 'retrials') or job.retrials is None:
+                    retrials = as_conf.get_retrials()
                 else:
-                    job.status = Status.WAITING
-                    save = True
+                    retrials = job.retrials
+                if job.fail_count < retrials:
+                    job.inc_fail_count()
+                    tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
+                    if len(tmp) == len(job.parents):
+                        job.status = Status.READY
+                        job.id = None
+                        job.packed = False
+                        save = True
+                        Log.debug(
+                            "Resetting job: {0} status to: READY for retrial...".format(job.name))
+                    else:
+                        job.status = Status.WAITING
+                        save = True
+                        job.packed = False
+                        Log.debug(
+                            "Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
+                else:
+                    job.status = Status.FAILED
                     job.packed = False
-                    Log.debug(
-                        "Resetting job: {0} status to: WAITING for parents completion...".format(job.name))
-            else:
-                job.status = Status.FAILED
-                job.packed = False
-                save = True
-                Log.debug(
-                    "Job is failed".format(job.name))
+                    save = True
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:
