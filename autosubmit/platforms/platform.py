@@ -290,7 +290,7 @@ class Platform(object):
             if self.get_file(filename, True):
                 Log.debug('{0}_STAT file have been transfered', job_name)
                 return True
-        Log.debug('Something did not work well when transferring the STAT file')
+        Log.debug('{0}_STAT file not found', job_name)
         return False
 
     def get_files_path(self):

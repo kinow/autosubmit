@@ -1242,8 +1242,6 @@ class JobList(object):
         save = False
         if self.update_from_file(store_change):
             save = store_change
-
-        # reset jobs that has failed less than 10 times
         Log.debug('Updating FAILED jobs')
         write_log_status = False
         for job in self.get_failed():
@@ -1254,20 +1252,13 @@ class JobList(object):
                 retrials = job.retrials
 
             if job.fail_count <= retrials:
-                tmp = [
-                    parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) == len(job.parents):
                     job.status = Status.READY
-                    if submitter is not None:
-                        job.platform = submitter.platforms[job.platform_name.lower(
-                        )]
-                        job.platform.test_connection()
-                        job.platform = submitter.platforms[job.platform_name.lower(
-                        )]
-                        job.platform.test_connection()
-
+                    #if submitter is not None:
+                    #    job.platform = submitter.platforms[job.platform_name.lower()]
+                    #    job.platform.test_connection()
                     job.id = None
-
                     job.packed = False
                     save = True
                     Log.debug(
@@ -1284,10 +1275,6 @@ class JobList(object):
                 save = True
                 Log.debug(
                     "Job is failed".format(job.name))
-
-
-
-
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:
