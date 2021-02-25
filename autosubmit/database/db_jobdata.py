@@ -1221,7 +1221,8 @@ class JobDataStructure(MainDataBase):
                                     platform_object.write_job_extrainfo(
                                         job_data_last.get_hdata(), out_file_path)
                     except Exception as exp:
-                        Log.info(traceback.format_exc())
+                        #Log.info(traceback.format_exc()) #TODO Wilmer, this is stopping autosubmit, "Tuple index out of range"
+                        Log.info("Couldn't write finish time {0}",exp.message)
                         Log.warning(str(exp))
                         #energy = 0
 
