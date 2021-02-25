@@ -577,9 +577,9 @@ class Job(object):
             remote_logs = (self.script_name + ".out", self.script_name + ".err")
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
-            self._platform = submitter.platforms[platform_name.lower()]
+            platform = submitter.platforms[platform_name.lower()]
             try:
-                self._platform.test_connection()
+                platform.test_connection()
             except:
                 pass
         except Exception as e:
@@ -595,12 +595,12 @@ class Job(object):
         try:
             while (not out_exist and not err_exist) and i < retries:
                 try:
-                    out_exist = self._platform.check_file_exists(
+                    out_exist = platform.check_file_exists(
                         remote_logs[0], True)
                 except IOError as e:
                     out_exist = False
                 try:
-                    err_exist = self._platform.check_file_exists(
+                    err_exist = platform.check_file_exists(
                         remote_logs[1], True)
                 except IOError as e:
                     err_exists = False
@@ -609,7 +609,7 @@ class Job(object):
                     i = i + 1
                     sleep(sleeptime)
                     try:
-                        self._platform.restore_connection()
+                        platform.restore_connection()
                     except BaseException as e:
                         Log.printlog("{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(
                             e.message, self.name), 6001)
@@ -622,19 +622,19 @@ class Job(object):
                 # unifying names for log files
                 if remote_logs != local_logs:
                     self.synchronize_logs(
-                        self._platform, remote_logs, local_logs)
+                        platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
-                self._platform.get_logs_files(self.expid, remote_logs)
+                platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
                 try:
                     for local_log in local_logs:
-                        self._platform.write_jobid(self.id, os.path.join(
+                        platform.write_jobid(self.id, os.path.join(
                             self._tmp_path, 'LOG_' + str(self.expid), local_log))
                 except BaseException as e:
                     Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
                         e.message, self.name))
                     try:
-                        self._platform.closeConnection()
+                        platform.closeConnection()
                     except BaseException as e:
                         pass
                     return
@@ -642,7 +642,7 @@ class Job(object):
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
             try:
-                self._platform.closeConnection()
+                platform.closeConnection()
             except BaseException as e:
                 pass
 
@@ -651,14 +651,14 @@ class Job(object):
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
             try:
-                self._platform.closeConnection()
+                platform.closeConnection()
             except:
                 pass
 
             return
         sleep(5)  # safe wait before end a thread
         try:
-            self._platform.closeConnection()
+            platform.closeConnection()
         except BaseException as e:
             pass
         return
