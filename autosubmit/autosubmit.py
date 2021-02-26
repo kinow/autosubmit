@@ -356,7 +356,8 @@ class Autosubmit:
                                    default=False, help='Writes a file containing all parameters')
             subparser.add_argument(
                 '-fp', '--folder_path', type=str, help='Allows to select a non-default folder.')
-
+            subparser.add_argument(
+                '-p', '--placeholders', default=False, action='store_true', help='disables the sustitution of placeholders by -')
             # Create
             subparser = subparsers.add_parser(
                 'create', description="create specified experiment joblist")
@@ -570,7 +571,7 @@ class Autosubmit:
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.notransitive, args.force, args.check_wrapper)
         elif args.command == 'report':
-            return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path)
+            return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path,args.placeholders)
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
@@ -2734,7 +2735,7 @@ class Autosubmit:
         return upper_dictionary
 
     @staticmethod
-    def report(expid, template_file_path="", show_all_parameters=False, folder_path=""):
+    def report(expid, template_file_path="", show_all_parameters=False, folder_path="", placeholders = False):
         """
         Show report for specified experiment
         :param expid: experiment identifier:
@@ -2833,11 +2834,16 @@ class Autosubmit:
                 if value is not None:
                     parameter_file.write(key + "=" + str(value) + "\n")
                 else:
-                    parameter_file.write(key + "=" + "-" + "\n")
-            for key in performance_metrics:
-                parameter_file.write("{0} = {1}\n".format(
-                    key, performance_metrics.get(key, "-")))
-            parameter_file.close()
+                    if placeholders:
+                        parameter_file.write(key + "=" + "%"+key+"%" + "\n")
+                    else:
+                        parameter_file.write(key + "=" + "-" + "\n")
+
+            if performance_metrics is not None:
+                for key in performance_metrics:
+                    parameter_file.write("{0} = {1}\n".format(
+                        key, performance_metrics.get(key, "-")))
+                parameter_file.close()
 
             os.chmod(os.path.join(tmp_path, parameter_output), 0o755)
             Log.result("A list of all parameters has been written on {0}".format(
@@ -2853,12 +2859,13 @@ class Autosubmit:
                     template_content = re.sub(
                         '%(?<!%%)' + key + '%(?!%%)', str(exp_parameters[key]), template_content)
                 # Performance metrics
-                for key in performance_metrics:
-                    template_content = re.sub(
-                        '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content)
+                if performance_metrics is not None:
+                    for key in performance_metrics:
+                        template_content = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content)
                 template_content = template_content.replace("%%", "%")
-                template_content = re.sub(
-                    r"\%[^% \n\t]+\%", "-", template_content)
+                if not placeholders:
+                    template_content = re.sub(r"\%[^% \n\t]+\%", "-", template_content)
                 report = '{0}_report_{1}.txt'.format(
                     expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
                 open(os.path.join(tmp_path, report),
