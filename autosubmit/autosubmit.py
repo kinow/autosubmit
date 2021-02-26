@@ -1425,7 +1425,7 @@ class Autosubmit:
                                                      None, jobs[0].platform, as_conf, jobs[0].hold)
                             job_list.job_package_map[jobs[0].id] = wrapper_job
                     Log.debug("Checking job_list current status")
-                    save = job_list.update_list(as_conf)
+                    save = job_list.update_list(as_conf, first_time=True)
                     job_list.save()
 
                     Log.info(
@@ -1492,6 +1492,9 @@ class Autosubmit:
                         total_jobs = len(job_list.get_job_list())
                         Log.info("\n\n{0} of {1} jobs remaining ({2})".format(
                             total_jobs - len(job_list.get_completed()), total_jobs, time.strftime("%H:%M")))
+                        if len(job_list.get_failed()) > 0:
+                            Log.info("{0} jobs has been  failed ({1})".format(
+                                len(job_list.get_failed()), time.strftime("%H:%M")))
                         safetysleeptime = as_conf.get_safetysleeptime()
                         default_retrials = as_conf.get_retrials()
                         check_wrapper_jobs_sleeptime = as_conf.get_wrapper_check_time()
@@ -1510,11 +1513,11 @@ class Autosubmit:
                             list_prevStatus = []
                             queuing_jobs = job_list.get_in_queue_grouped_id(
                                 platform)
+                            Log.debug('Checking jobs for platform={0}'.format(platform.name))
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
-                                    Log.debug(
-                                        'Checking wrapper job with id ' + str(job_id))
+                                    Log.debug('Checking Wrapper {0}'.format(str(job_id)))
                                     wrapper_job = job_list.job_package_map[job_id]
                                     # Setting prev_status as an easy way to check status change for inner jobs
                                     if as_conf.get_notifications() == 'true':
@@ -1561,10 +1564,8 @@ class Autosubmit:
                                     # Detect and store changes
                                     job_changes_tracker = {job.name: (
                                         job.prev_status, job.status) for job in wrapper_job.job_list if job.prev_status != job.status}
-                                    # job_data_structure.process_status_changes(
-                                    #     job_changes_tracker)
-                                    # job_changes_tracker = {}
                                 else:  # Prepare jobs, if slurm check all active jobs at once.
+                                    # TODO: All of this should be a function, put in slurm_platform file, paramiko and ecmwf check_jobs to clean the code
                                     job = job[0]
                                     prev_status = job.status
                                     if job.status == Status.FAILED:
@@ -1591,16 +1592,13 @@ class Autosubmit:
                                                                                       as_conf.get_mails_to())
                                         save = True
 
-                            if platform.type == "slurm" and list_jobid != "":
-                                slurm.append(
-                                    [platform, list_jobid, list_prevStatus, completed_joblist])
-                        # END Normal jobs + wrappers
-                        # CHECK ALL JOBS at once if they're from slurm ( wrappers non contempled)
-                        for platform_jobs in slurm:
+                            if platform.type == "slurm" and list_jobid != "":  # IF there are jobs in an slurm platform, prepare the check them at once
+                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
+                        for platform_jobs in slurm: # Check slurm single jobs, the other platforms has already been checked.
                             platform = platform_jobs[0]
                             jobs_to_check = platform_jobs[1]
-                            platform.check_Alljobs(
-                                platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
+                            Log.debug("Checking all jobs at once")
+                            platform.check_Alljobs(platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
                             for j_Indx in xrange(0, len(platform_jobs[3])):
                                 prev_status = platform_jobs[2][j_Indx]
                                 job = platform_jobs[3][j_Indx]
@@ -1615,6 +1613,7 @@ class Autosubmit:
                                                                           Status.VALUE_TO_KEY[job.status],
                                                                           as_conf.get_mails_to())
                                 save = True
+                        Log.debug("End of checking")
                         # End Check Current jobs
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
@@ -1646,15 +1645,22 @@ class Autosubmit:
                         # Save job_list if not is a failed submitted job
                         recovery = True
                         try:
+                            failed_jobs = job_list.get_failed()
+                            failed_jobs += job_list.get_ready()
+                            failed_names = {}
+                            for job in failed_jobs:
+                                if job.fail_count > 0:
+                                    failed_names[job.name] = job.fail_count
                             job_list = Autosubmit.load_job_list(
                                 expid, as_conf, notransitive=notransitive)
                             Autosubmit._load_parameters(
                                 as_conf, job_list, submitter.platforms)
                             for job in job_list.get_job_list():
+                                if job in failed_names:
+                                    job.fail_count = failed_names[job.name]
                                 if job.platform_name is None:
                                     job.platform_name = hpcarch
-                                job.platform = submitter.platforms[job.platform_name.lower(
-                                )]
+                                job.platform = submitter.platforms[job.platform_name.lower()]
 
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
@@ -1681,10 +1687,7 @@ class Autosubmit:
                         if main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             try:
-                                Autosubmit.restore_platforms(platforms_to_test)
                                 platforms_to_test = set()
-                                Autosubmit.restore_platforms(platforms_to_test)
-
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
@@ -1693,6 +1696,7 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
+                                Autosubmit.restore_platforms(platforms_to_test)
                             except BaseException:
                                 raise AutosubmitCritical(
                                     "Autosubmit couldn't recover the platforms", 7050, e.message)
@@ -1706,7 +1710,6 @@ class Autosubmit:
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
                         raise
-                # 3
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information
                 job_data_structure.validate_current_run(
