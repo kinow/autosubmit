@@ -941,7 +941,7 @@ class Job(object):
                 template = template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 5'
+                    template = 'sleep 120'
                 elif self.type == Type.PYTHON:
                     template = 'time.sleep(5)'
                 elif self.type == Type.R:

@@ -3420,7 +3420,7 @@ class Autosubmit:
             year_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, str(year))
             if not os.path.exists(year_path):
                 os.mkdir(year_path)
-                os.chmod(year_path, 0o755)
+                os.chmod(year_path, 0o775)
             if not uncompress:
                 compress_type = "w:gz"
                 output_filepath = '{0}.tar.gz'.format(expid)
@@ -3430,7 +3430,7 @@ class Autosubmit:
             with tarfile.open(os.path.join(year_path, output_filepath), compress_type) as tar:
                 tar.add(exp_folder, arcname='')
                 tar.close()
-                os.chmod(os.path.join(year_path, output_filepath), 0o755)
+                os.chmod(os.path.join(year_path, output_filepath), 0o775)
         except Exception as e:
             raise AutosubmitCritical("Can not write tar file", 7012, str(e))
 
@@ -3510,7 +3510,7 @@ class Autosubmit:
         except Exception as e:
             Log.printlog(
                 "Can not remove archived file folder: {0}".format(str(e)), 7012)
-            return False
+            return True
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)
         return True
