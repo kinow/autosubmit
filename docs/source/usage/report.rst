@@ -32,7 +32,7 @@ Options:
         -fp, --show_all_parameters           All parameters will be extracted to a different file
 
         -fp, --folder_path                   By default, all parameters will be put into experiment tmp folder
-        
+
         -p, --placeholders                   disable the replacement by - if the variable doesn't exist
 
 Template format and example:
