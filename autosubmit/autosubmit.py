@@ -3509,7 +3509,8 @@ class Autosubmit:
             os.remove(archive_path)
         except Exception as e:
             Log.printlog(
-                "Can not remove archived file folder: {0}".format(str(e)), 7012)
+                "Can not remove archived file folder: {0}".format(e.message), 7012)
+            Log.result("Experiment {0} unarchived successfully", experiment_id)
             return True
 
         Log.result("Experiment {0} unarchived successfully", experiment_id)

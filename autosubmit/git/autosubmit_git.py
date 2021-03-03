@@ -271,7 +271,7 @@ class AutosubmitGit:
                     Log.info("Restoring proj folder...")
                     shutil.move(project_backup_path, project_path)
                 raise AutosubmitCritical("Can not clone {0} into {1}".format(
-                    git_project_branch + " " + git_project_origin, project_path), 7065, e.message)
+                    git_project_branch + " " + git_project_origin, project_path), 7065)
 
         if submodule_failure:
             Log.info(
