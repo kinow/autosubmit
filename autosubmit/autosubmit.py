@@ -2530,10 +2530,7 @@ class Autosubmit:
                                 Log.result("No data found in {0} for [{1}]\n".format(
                                     p.root_dir, platform))
                         except IOError as e:
-                            Log.printlog(
-                                "The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,
-                                                                                       os.path.join(p.temp_dir,
-                                                                                                    experiment_id),
+                            Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,os.path.join(p.temp_dir,experiment_id),
                                                                                        6012))
                             error = True
                             break

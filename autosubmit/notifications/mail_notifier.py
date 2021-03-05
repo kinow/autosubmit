@@ -36,7 +36,7 @@ class MailNotifier:
             try:
                 self._send_mail(self.config.MAIL_FROM, mail, message)
             except BaseException as e:
-                Log.printlog('An error occurred while sending a mail for the job {0}', job_name,6011)
+                Log.printlog('An error occurred while sending a mail for the job {0}'.format(job_name), 6011)
 
     def _send_mail(self, mail_from, mail_to, message):
         server = smtplib.SMTP_SSL(self.config.SMTP_SERVER)
