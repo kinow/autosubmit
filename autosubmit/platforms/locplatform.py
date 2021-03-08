@@ -141,7 +141,7 @@ class LocalPlatform(ParamikoPlatform):
 
     def check_remote_permissions(self):
         return True
-    
+
     # Moves .err .out
     def check_file_exists(self, src,wrapper_failed=False):
         """
