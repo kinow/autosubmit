@@ -1749,11 +1749,22 @@ class Autosubmit:
 
     @staticmethod
     def restore_platforms(platform_to_test):
-        Log.result("Checking the connection to all platforms in use")
+        Log.info("Checking the connection to all platforms in use")
+        issues = ""
         for platform in platform_to_test:
-            platform.test_connection()
-            Log.result("[{1}] Connection successfull to host {0}",
-                       platform.host, platform.name)
+            try:
+                platform.test_connection()
+            except BaseException:
+                issues += "\n[{1}] Connection Unsuccessful to host {0}".format(platform.host, platform.name)
+                continue
+            Log.result("[{1}] Connection successfull to host {0}",platform.host, platform.name)
+            if platform.check_remote_permissions():
+                Log.result("[{1}] Correct user privileges for host {0}", platform.host, platform.name)
+            else:
+                issues += "\n[{0}] has configuration issues. Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(platform.name, platform.user, platform.project, platform.scratch)
+        if issues != "":
+            raise AutosubmitCritical("Issues while checking the connectivity of platforms.", 7010, issues)
+
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,

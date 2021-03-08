@@ -77,6 +77,8 @@ class EcPlatform(ParamikoPlatform):
         self.mkdir_cmd = ("ecaccess-file-mkdir " + self.host + ":" + self.scratch + "/" + self.project + "/" +
                           self.user + "/" + self.expid + "; " + "ecaccess-file-mkdir " + self.host + ":" +
                           self.remote_log_dir)
+        self.check_remote_permissions_cmd = "ecaccess-file-mkdir " + os.path.join(self.scratch,self.project,self.user,"_permission_checker_azxbyc")
+        self.check_remote_permissions_remove_cmd = "ecaccess-file-rmdir " + os.path.join(self.scratch,self.project,self.user,"_permission_checker_azxbyc")
 
     def get_checkhost_cmd(self):
         return self._checkhost_cmd
@@ -137,6 +139,16 @@ class EcPlatform(ParamikoPlatform):
         :rtype: bool
         """
         self.connected = True
+
+    def check_remote_permissions(self):
+        try:
+            output = subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
+            pass
+            output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
+            return True
+        except:
+            return False
+
     def send_command(self, command, ignore_log=False):
         try:
             output = subprocess.check_output(command, shell=True)
@@ -157,6 +169,30 @@ class EcPlatform(ParamikoPlatform):
         except subprocess.CalledProcessError as e:
             raise AutosubmitError('Could not send file {0} to {1}'.format(os.path.join(self.tmp_path, filename),os.path.join(self.get_files_path(), filename)),6005,e.message)
         return True
+
+    def move_file(self, src, dest, must_exist = False):
+        command = "ecaccess-file-move {0}:{1} {0}:{2}".format(self.host,os.path.join(self.remote_log_dir,src) , os.path.join(self.remote_log_dir,dest))
+        try:
+            retries = 0
+            sleeptime = 5
+            process_ok = False
+            FNULL = open(os.devnull, 'w')
+            while not process_ok and retries < 5:
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
+                out, _ = process.communicate()
+                if 'No such file' in out or process.returncode != 0:
+                    retries = retries + 1
+                    process_ok = False
+                    sleeptime = sleeptime + 5
+                    sleep(sleeptime)
+                else:
+                    process_ok = True
+        except Exception as e:
+            process_ok = False
+        if not process_ok:
+            Log.printlog("Log file don't recovered {0}".format(src), 6004)
+        return process_ok
+
 
     def get_file(self, filename, must_exist=True, relative_path='',ignore_log = False,wrapper_failed=False):
         local_path = os.path.join(self.tmp_path, relative_path)
