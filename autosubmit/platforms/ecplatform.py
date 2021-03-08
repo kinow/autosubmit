@@ -142,6 +142,10 @@ class EcPlatform(ParamikoPlatform):
 
     def check_remote_permissions(self):
         try:
+            try:
+                output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
+            except:
+                pass
             output = subprocess.check_output(self.check_remote_permissions_cmd, shell=True)
             pass
             output = subprocess.check_output(self.check_remote_permissions_remove_cmd, shell=True)
