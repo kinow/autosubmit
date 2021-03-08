@@ -851,9 +851,9 @@ class ParamikoPlatform(Platform):
             return False
     def check_remote_permissions(self):
         try:
-
-            self._ftpChannel.mkdir(os.path.join(self.scratch, self.project, self.user, "_permission_checker_azxbyc"))
-            self._ftpChannel.rmdir(os.path.join(self.scratch, self.project, self.user, "_permission_checker_azxbyc"))
+            path= os.path.join(self.scratch, self.project, self.user, "_permission_checker_azxbyc")
+            self._ftpChannel.mkdir(path)
+            self._ftpChannel.rmdir(path)
             return True
         except:
             return False
