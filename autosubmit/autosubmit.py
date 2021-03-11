@@ -2641,6 +2641,8 @@ class Autosubmit:
             # establish the connection to all platforms on use
             try:
                 Autosubmit.restore_platforms(platforms_to_test)
+            except AutosubmitCritical as e:
+                raise AutosubmitCritical(e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.trace)
             except Exception as e:
                 raise AutosubmitCritical(
                     "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
