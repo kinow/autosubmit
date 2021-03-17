@@ -948,6 +948,16 @@ class AutosubmitConfig(object):
         """
         return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
 
+    def get_parse_two_step_start(self):
+        """
+        Returns two step start jobs
+
+        :return: jobs_list
+        :rtype: str
+        """
+
+        return self._exp_parser.get_option('experiment', 'TWO_STEP_START', '').lower()
+
     def get_file_project_conf(self):
         """
         Returns path to project config file from experiment config file

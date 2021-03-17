@@ -830,6 +830,41 @@ class JobList(object):
         else:
             return all
 
+    def get_job_names(self):
+        """
+        Returns a list of all job names
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: all jobs
+        :rtype: list
+        """
+        all_jobs = [job.name for job in self._job_list]
+
+        return all_jobs
+
+    def get_job_related(self, date_list="", member_or_chunk_list="", section_list=""):
+        """
+        :param datelist: job datelist
+        :param member_or_chunk_list: job member or chunk
+        :param chunk_list: job chunk
+        :type platform: HPCPlatform
+        :return: jobs_list
+        :rtype: list
+        """
+        jobs = [ job for job in self._job_list if job.section in section_list ]
+        if date_list != "":
+            jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
+        else:
+            jobs_date = jobs
+        if 'C' in member_or_chunk_list:
+            jobs_final = [job for job in jobs_date if job.chunk in member_or_chunk_list]
+        elif 'M' in member_or_chunk_list:
+            jobs_final = [job for job in jobs_date if job.member in member_or_chunk_list]
+        else:
+            jobs_final = jobs_date
+        return jobs_final
+
     def get_logs(self):
         """
         Returns a dict of logs by jobs_name jobs
