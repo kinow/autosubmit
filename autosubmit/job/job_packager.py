@@ -133,10 +133,16 @@ class JobPackager(object):
         max_wrapper_job_by_section = dict()
 
         # only_wrappers = False when coming from Autosubmit.submit_ready_jobs, jobs_filtered empty
-        if self.hold:
-            jobs_ready = self._jobs_list.get_prepared(self._platform)
-        else:
-            jobs_ready = self._jobs_list.get_ready(self._platform)
+        jobs_ready = list()
+        if len(self._jobs_list.jobs_to_run_first) > 0:
+            jobs_ready = [job for job in self._jobs_list.jobs_to_run_first if
+                     ( self._platform is None or job.platform.name.lower() == self._platform.name.lower() ) and
+                     job.status == Status.READY]
+        if len(jobs_ready) == 0:
+            if self.hold:
+                jobs_ready = self._jobs_list.get_prepared(self._platform)
+            else:
+                jobs_ready = self._jobs_list.get_ready(self._platform)
 
         if self.hold and len(jobs_ready) > 0:
             self.compute_weight(jobs_ready)
@@ -248,6 +254,14 @@ class JobPackager(object):
                     built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], max_wrapped_jobs, section, max_wrapper_job_by_section))
             if wrapped:
                 for p in built_packages_tmp:
+                    if len(self._jobs_list.jobs_to_run_first) > 0: # related to TWO_STEP_START new variable , defined in expdef
+                        temp_jobs = list()
+                        for packed_job in p.jobs:
+                            if packed_job in self._jobs_list.jobs_to_run_first:
+                                temp_jobs.append(packed_job)
+                            else:
+                                packed_job.packed = False
+                        p.jobs = temp_jobs
                     failed_innerjobs = False
                     #Check failed jobs first
                     for job in p.jobs:

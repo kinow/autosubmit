@@ -104,39 +104,7 @@ def signal_handler_create(signal_received, frame):
     raise AutosubmitCritical(
         'Autosubmit has been closed in an unexpected way. Killed or control + c.', 7010)
 
-def parse_two_step_start(job_list, unparsed_jobs):
-    jobs_to_run_first = list()
-    names = job_list.get_job_names()
-    single = False
-    if "," in unparsed_jobs:
-        semiparsed_jobs = unparsed_jobs.split(",")
-        if len(semiparsed_jobs) > 2:
-            section_job = semiparsed_jobs[0]
-            date = semiparsed_jobs[1]
-            if len(semiparsed_jobs) == 3:
-                member_chunk = semiparsed_jobs[2]
-            else:
-                member_chunk = ""
-            jobs_to_run_first = job_list.get_job_related(section_list=section_job, date_list=date, member_or_chunk_list=member_chunk)
-        else:
-            unparsed_jobs = unparsed_jobs[:-1]
-            single = True
-    else:
-        single = True
 
-    if single:
-        if "&" in unparsed_jobs:
-            jobs_to_check = unparsed_jobs.split("&")
-            section_list = ""
-            for section_or_job_name in jobs_to_check:
-                if section_or_job_name in job_list.sections_checked: # If a section is specified
-                    section_list += section_or_job_name + ","
-                elif section_or_job_name in names: # If a job_name is specified
-                    jobs_to_run_first.append(section_or_job_name)
-            #Get jobs related to sections specified
-            jobs_to_run_first += job_list.get_job_related(section_list=section_list)
-
-    return list(set(jobs_to_run_first)) #Erase duplicates if any
 
 class Autosubmit:
     """
@@ -1253,6 +1221,10 @@ class Autosubmit:
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        # Related to TWO_STEP_START new variable defined in expdef
+        unparsed_two_step_start = as_conf.get_parse_two_step_start()
+        if unparsed_two_step_start != "":
+            job_list.parse_two_step_start(unparsed_two_step_start)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(
                 as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
@@ -1490,10 +1462,10 @@ class Autosubmit:
                         "Error in run initialization", 7067, str(e))
                 #Two step start
                 jobs_to_run_first = list()
+                #Related to TWO_STEP_START new variable defined in expdef
                 unparsed_two_step_start = as_conf.get_parse_two_step_start()
                 if unparsed_two_step_start != "":
-                    jobs_to_run_first = parse_two_step_start(job_list, unparsed_two_step_start)
-
+                    job_list.parse_two_step_start(unparsed_two_step_start)
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -1661,16 +1633,13 @@ class Autosubmit:
                             as_conf, submitter=submitter)
                         if save or save2:
                             job_list.save()
-                        if len(jobs_to_run_first) > 0:
+                        if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(
-                                as_conf, jobs_to_run_first, platforms_to_test, packages_persistence, hold=False)
-                        else:
-                            if len(job_list.get_ready()) > 0:
-                                Autosubmit.submit_ready_jobs(
-                                    as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
-                            if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
-                                Autosubmit.submit_ready_jobs(
-                                    as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
+                                as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
+                        if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
+                            Autosubmit.submit_ready_jobs(
+                                as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
+
                         save = job_list.update_list(
                             as_conf, submitter=submitter)
                         if save:

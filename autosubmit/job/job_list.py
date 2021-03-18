@@ -85,6 +85,7 @@ class JobList(object):
         self.job_package_map = dict()
         self.sections_checked = set()
         self._run_members = None
+        self.jobs_to_run_first = list()
 
     @property
     def expid(self):
@@ -842,6 +843,53 @@ class JobList(object):
         all_jobs = [job.name for job in self._job_list]
 
         return all_jobs
+    def update_two_step_jobs(self):
+        if len(self.jobs_to_run_first) > 0:
+            self.jobs_to_run_first  = [ job for job in self.jobs_to_run_first if job.status != Status.COMPLETED ]
+            if len(self.jobs_to_run_first) > 0:
+                waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
+                if len(waiting_jobs) == len(self.jobs_to_run_first):
+                    self.jobs_to_run_first = []
+                    Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
+    def parse_two_step_start(self, unparsed_jobs):
+        jobs_to_run_first = list()
+        names = self.get_job_names()
+        single = False
+        if "," in unparsed_jobs:
+            semiparsed_jobs = unparsed_jobs.split(",")
+            if len(semiparsed_jobs) == 2 or len(semiparsed_jobs) == 3:
+                section_job = semiparsed_jobs[0]
+                date = semiparsed_jobs[1]
+                if len(semiparsed_jobs) == 3:
+                    member_chunk = semiparsed_jobs[2]
+                else:
+                    member_chunk = ""
+                jobs_to_run_first = self.get_job_related(section_list=section_job, date_list=date,
+                                                         member_or_chunk_list=member_chunk)
+            elif len(semiparsed_jobs) > 3:
+                raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 3 fields specified!")
+            else:
+                unparsed_jobs = unparsed_jobs[:-1]
+                single = True
+        else:
+            single = True
+
+        if single:
+            if "&" in unparsed_jobs:
+                jobs_to_check = unparsed_jobs.split("&")
+                section_list = ""
+                for section_or_job_name in jobs_to_check:
+                    if section_or_job_name in self.sections_checked:  # If a section is specified
+                        section_list += section_or_job_name + ","
+                    elif section_or_job_name in names:  # If a job_name is specified
+                        jobs_to_run_first.append(section_or_job_name)
+                # Get jobs related to sections specified
+                jobs_to_run_first += self.get_job_related(section_list=section_list)
+        self.jobs_to_run_first = list(set(jobs_to_run_first))  # Erase duplicates if any
+        job_names = [job.name for job in self.jobs_to_run_first]
+        Log.debug("Jobs to run first: {0}", job_names)
+        pass
+
 
     def get_job_related(self, date_list="", member_or_chunk_list="", section_list=""):
         """
@@ -852,15 +900,15 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
-        jobs = [ job for job in self._job_list if job.section in section_list ]
+        jobs = [ job for job in self._job_list if job.section.lower() in section_list.lower() ]
         if date_list != "":
             jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
         else:
             jobs_date = jobs
-        if 'C' in member_or_chunk_list:
-            jobs_final = [job for job in jobs_date if job.chunk in member_or_chunk_list]
-        elif 'M' in member_or_chunk_list:
-            jobs_final = [job for job in jobs_date if job.member in member_or_chunk_list]
+        if 'c' in member_or_chunk_list:
+            jobs_final = [job for job in jobs_date if str(job.chunk) in member_or_chunk_list or job.running == "once"]
+        elif 'm' in member_or_chunk_list:
+            jobs_final = [job for job in jobs_date if str(job.member) in member_or_chunk_list or job.running == "once"]
         else:
             jobs_final = jobs_date
         return jobs_final
@@ -1438,6 +1486,7 @@ class JobList(object):
                                     job.status = Status.SKIPPED
                                     save = True
             #save = True
+        self.update_two_step_jobs()
         Log.debug('Update finished')
         return save
 
