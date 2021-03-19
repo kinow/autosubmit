@@ -900,7 +900,8 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
-        jobs = [ job for job in self._job_list if job.section.lower() in section_list.lower() ]
+
+        jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":
             jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
         else:
