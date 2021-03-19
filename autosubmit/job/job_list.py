@@ -831,7 +831,7 @@ class JobList(object):
         else:
             return all
 
-    def get_job_names(self):
+    def get_job_names(self,lower_case=False):
         """
         Returns a list of all job names
 
@@ -840,7 +840,10 @@ class JobList(object):
         :return: all jobs
         :rtype: list
         """
-        all_jobs = [job.name for job in self._job_list]
+        if lower_case:
+            all_jobs = [job.name.lower() for job in self._job_list]
+        else:
+            all_jobs = [job.name for job in self._job_list]
 
         return all_jobs
     def update_two_step_jobs(self):
@@ -853,8 +856,10 @@ class JobList(object):
                     Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
-        names = self.get_job_names()
-        single = False
+        if "&" in unparsed_jobs: # If there are explicit jobs add them
+            jobs_to_check = unparsed_jobs.split("&")
+            job_names = jobs_to_check[0]
+            unparsed_jobs = jobs_to_check[1]
         if "," in unparsed_jobs:
             semiparsed_jobs = unparsed_jobs.split(",")
             if len(semiparsed_jobs) == 2 or len(semiparsed_jobs) == 3:
@@ -864,34 +869,13 @@ class JobList(object):
                     member_chunk = semiparsed_jobs[2]
                 else:
                     member_chunk = ""
-                jobs_to_run_first = self.get_job_related(section_list=section_job, date_list=date,
-                                                         member_or_chunk_list=member_chunk)
+                jobs_to_run_first += self.get_job_related(section_list=section_job, date_list=date,
+                                                         member_or_chunk_list=member_chunk,job_names=job_names)
             elif len(semiparsed_jobs) > 3:
                 raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 3 fields specified!")
-            else:
-                unparsed_jobs = unparsed_jobs[:-1]
-                single = True
-        else:
-            single = True
+            self.jobs_to_run_first = list(set(jobs_to_run_first))
 
-        if single:
-            if "&" in unparsed_jobs:
-                jobs_to_check = unparsed_jobs.split("&")
-                section_list = ""
-                for section_or_job_name in jobs_to_check:
-                    if section_or_job_name in self.sections_checked:  # If a section is specified
-                        section_list += section_or_job_name + ","
-                    elif section_or_job_name in names:  # If a job_name is specified
-                        jobs_to_run_first.append(section_or_job_name)
-                # Get jobs related to sections specified
-                jobs_to_run_first += self.get_job_related(section_list=section_list)
-        self.jobs_to_run_first = list(set(jobs_to_run_first))  # Erase duplicates if any
-        job_names = [job.name for job in self.jobs_to_run_first]
-        Log.debug("Jobs to run first: {0}", job_names)
-        pass
-
-
-    def get_job_related(self, date_list="", member_or_chunk_list="", section_list=""):
+    def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = ""):
         """
         :param datelist: job datelist
         :param member_or_chunk_list: job member or chunk
@@ -900,19 +884,20 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
-
+        jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
         jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":
             jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
         else:
             jobs_date = jobs
-        if 'c' in member_or_chunk_list:
+        if 'c' in member_or_chunk_list[0]:
             jobs_final = [job for job in jobs_date if str(job.chunk) in member_or_chunk_list or job.running == "once"]
-        elif 'm' in member_or_chunk_list:
+        elif 'm' in member_or_chunk_list[0]:
             jobs_final = [job for job in jobs_date if str(job.member) in member_or_chunk_list or job.running == "once"]
         else:
             jobs_final = jobs_date
-        return jobs_final
+
+        return jobs_final+jobs_by_name
 
     def get_logs(self):
         """

@@ -240,7 +240,7 @@ class JobPackager(object):
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
-                    min_wrapped_jobs = 2
+                    min_wrapped_jobs = 0
                 packages_to_submit = []
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     wrapped = True
