@@ -33,6 +33,7 @@ Command list
    usage/check
    usage/describe
    usage/run
+   usage/run_members
    usage/start_time
    usage/start_after
    usage/inspect

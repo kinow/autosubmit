@@ -6,7 +6,7 @@ Autosubmit GUI
 Autosubmit GUI Main Page
 ========================
 
-Inside the Barcelona Supercomputing Internal Network you can find the latest version of Autosubmit GUI deployed for BSC users. It can be accessed by following the url http://bscesweb04.bsc.es/autosubmitapp/. This is a graphic user interface that allows you to easily monitor your experiments and those of your colleagues. This Web App introduces many useful features for experiment monitoring, and we are continuously improving it.
+Inside the Barcelona Supercomputing Internal Network you can find the latest version of Autosubmit GUI deployed for BSC users. It can be accessed by following the url http://bscesweb04.bsc.es/autosubmitapp/ or https://earth.bsc.es/autosubmitapp/. This is a graphic user interface that allows you to easily monitor your experiments and those of your colleagues. This Web App introduces many useful features for experiment monitoring, and we are continuously improving it.
 
 .. note:: The Web App can also be accessed through the VPN Client provided by BSC.
 
@@ -82,6 +82,7 @@ After clicking on the **MORE** button, you will be presented with the **Experime
    agui/tree
    agui/graph
    agui/log
+   agui/performance
    agui/statistics
 
 .. important:: To improve response times, Autosubmit GUI will try to store the dependency structure of your experiment in a database filed called ``structure_expid.db`` where ``expid`` is the name of your experiment. This file will be located in ``/esarchive/autosubmit/expid/pkl/``.
