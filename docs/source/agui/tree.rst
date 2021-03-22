@@ -19,12 +19,13 @@ Inside each group you will find the list of jobs that belong to that group. The 
 
 When you click on a Job, you can see on the right panel (**Selection Panel**) the following information:
 
-- *Initial*: Initial date as in the one used for grouping.
-- *Real*: Real date after adding to the initial date the number of chunk units depending on chunk size.
+- *Start*: Starting date.
+- *End*: Ending date.
 - *Section*: Also known as job type.
 - *Member*
 - *Chunk*
-- *Platform*: HPC Platform.
+- *Platform*: Remote platform.
+- *Id*: Id in the remote platform.
 - *Processors*: Number of processors required by the job.
 - *Wallclock*: Time requested by the job.
 - *Queue*: Time spent in queue, in minutes.
@@ -32,10 +33,20 @@ When you click on a Job, you can see on the right panel (**Selection Panel**) th
 - *Status*: Job status.
 - *Out*: Button that opens a list of jobs that depend on the one selected.
 - *In*: Button that opens a list of jobs on which the selected job depends.
-- *Wrapper*: If the job belongs to a wrapper, the name of the wrapper will be shown.
-- *Code*: Code of the wrapper the job belongs to, for easy searching.
 - *out path*: Path to the .out log file.
 - *err path*: Path to the .err log file.
+- *Submit*: Submit time of the job (If applicable).
+- *Start*: Start time of the job (If applicable).
+- *Finish*: Finish time of the job (If applicable).
+
+.. important:: Next to the **out** and **err** paths, you see the a ``Copy out/err`` button that copies the path to your clipboard. Then you see an ``eye symbol`` button, that when clicked will show that last 150 lines of the **out/err** file.
+
+Selection
+---------
+
+When you click on a job in the tree view, a ``Change Status`` button will appear in the top bar, if you click, you will be presented with the option to generate a change status command that can be run on autosubmit, or to generate a format that can be used to change the status of the job while the experiment is running.
+
+You can select many jobs at the same time by maintaining ``CTRL`` pressed and clicking on the jobs, then the generated command will include all these jobs.
 
 Monitoring
 ----------
