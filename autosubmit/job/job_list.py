@@ -86,7 +86,7 @@ class JobList(object):
         self.sections_checked = set()
         self._run_members = None
         self.jobs_to_run_first = list()
-
+        self.jobs_to_run_first_initial = list()
     @property
     def expid(self):
         """
@@ -847,15 +847,17 @@ class JobList(object):
 
         return all_jobs
     def update_two_step_jobs(self):
+        prev_jobs_to_run_first = self.jobs_to_run_first
         if len(self.jobs_to_run_first) > 0:
             self.jobs_to_run_first  = [ job for job in self.jobs_to_run_first if job.status != Status.COMPLETED ]
-            if len(self.jobs_to_run_first) > 0:
-                waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
-                if len(waiting_jobs) == len(self.jobs_to_run_first):
-                    self.jobs_to_run_first = []
-                    Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
+            #if len(self.jobs_to_run_first) > 0:
+                #waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
+                #if len(waiting_jobs) == len(self.jobs_to_run_first):
+                    #self.jobs_to_run_first = []
+                    #Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
+        job_names = ""
         if "&" in unparsed_jobs: # If there are explicit jobs add them
             jobs_to_check = unparsed_jobs.split("&")
             job_names = jobs_to_check[0]
@@ -874,6 +876,7 @@ class JobList(object):
             elif len(semiparsed_jobs) > 3:
                 raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 3 fields specified!")
             self.jobs_to_run_first = list(set(jobs_to_run_first))
+            self.jobs_to_run_first_initial = list(set(jobs_to_run_first))
 
     def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = ""):
         """
