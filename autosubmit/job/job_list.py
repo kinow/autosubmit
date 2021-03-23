@@ -879,10 +879,10 @@ class JobList(object):
                                                          member_or_chunk_list=member_chunk,job_names=job_names,chunk_or_member_list=chunk_member)
             else:
                 raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 4 fields specified!")
-            self.jobs_to_run_first = list(set(jobs_to_run_first))
-            self.jobs_to_run_first_initial = list(set(jobs_to_run_first))
         else:
             jobs_to_run_first += self.get_job_related(section_list=unparsed_jobs)
+        self.jobs_to_run_first = jobs_to_run_first
+        self.jobs_to_run_first_initial = jobs_to_run_first
 
     def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = "", chunk_or_member_list=""):
         """
@@ -920,9 +920,8 @@ class JobList(object):
                 jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", chunk_or_member_list.lower()) is not None or job.running == "once"]
             else:
                 jobs_final_2 = []
-        ultimate_jobs_list = jobs_final+jobs_by_name+jobs_final_2
-        #ultimate_jobs_list_names = [ job.name for job in ultimate_jobs_list ]
-        Log.debug("List of jobs filtered by TWO_STEP_START parameter:\n{0}".format(list(set([job.name for job in ultimate_jobs_list]))))
+        ultimate_jobs_list = list(set(jobs_final+jobs_by_name+jobs_final_2)) #Duplicates out
+        Log.debug("List of jobs filtered by TWO_STEP_START parameter:\n{0}".format([job.name for job in ultimate_jobs_list]))
         return ultimate_jobs_list
 
     def get_logs(self):
