@@ -85,7 +85,8 @@ class JobList(object):
         self.job_package_map = dict()
         self.sections_checked = set()
         self._run_members = None
-
+        self.jobs_to_run_first = list()
+        self.jobs_to_run_first_initial = list()
     @property
     def expid(self):
         """
@@ -830,6 +831,99 @@ class JobList(object):
         else:
             return all
 
+    def get_job_names(self,lower_case=False):
+        """
+        Returns a list of all job names
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: all jobs
+        :rtype: list
+        """
+        if lower_case:
+            all_jobs = [job.name.lower() for job in self._job_list]
+        else:
+            all_jobs = [job.name for job in self._job_list]
+
+        return all_jobs
+    def update_two_step_jobs(self):
+        prev_jobs_to_run_first = self.jobs_to_run_first
+        if len(self.jobs_to_run_first) > 0:
+            self.jobs_to_run_first  = [ job for job in self.jobs_to_run_first if job.status != Status.COMPLETED ]
+            #if len(self.jobs_to_run_first) > 0:
+                #waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
+                #if len(waiting_jobs) == len(self.jobs_to_run_first):
+                    #self.jobs_to_run_first = []
+                    #Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
+    def parse_two_step_start(self, unparsed_jobs):
+        jobs_to_run_first = list()
+        job_names = ""
+        if "&" in unparsed_jobs: # If there are explicit jobs add them
+            jobs_to_check = unparsed_jobs.split("&")
+            job_names = jobs_to_check[0]
+            unparsed_jobs = jobs_to_check[1]
+        if "," in unparsed_jobs:
+            semiparsed_jobs = unparsed_jobs.split(",")
+            if 2 <= len(semiparsed_jobs) <= 4:
+                section_job = semiparsed_jobs[0]
+                date = semiparsed_jobs[1]
+                if len(semiparsed_jobs) > 2:
+                    member_chunk = semiparsed_jobs[2]
+                    if len(semiparsed_jobs) == 4:
+                        chunk_member = semiparsed_jobs[3]
+                    else:
+                        chunk_member = ""
+                else:
+                    member_chunk = ""
+                jobs_to_run_first += self.get_job_related(section_list=section_job, date_list=date,
+                                                         member_or_chunk_list=member_chunk,job_names=job_names,chunk_or_member_list=chunk_member)
+            else:
+                raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 4 fields specified!")
+        else:
+            jobs_to_run_first += self.get_job_related(section_list=unparsed_jobs)
+        self.jobs_to_run_first = jobs_to_run_first
+        self.jobs_to_run_first_initial = jobs_to_run_first
+
+    def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = "", chunk_or_member_list=""):
+        """
+        :param datelist: job datelist
+        :param member_or_chunk_list: job member or chunk
+        :param chunk_or_member_list: job chunk or member
+        :param chunk_list: job chunk
+        :type platform: HPCPlatform
+        :return: jobs_list
+        :rtype: list
+        """
+        jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
+        jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
+        if date_list != "":
+            jobs_date = [ job for job in jobs if re.search("(^|[^0-9a-z_])" + date2str(job.date, job.date_format) + "([^a-z0-9_]|$)", date_list.lower()) is not None or job.date is None ]
+        else:
+            jobs_date = jobs
+
+        jobs_final = []
+        jobs_final_2 = []
+
+        if member_or_chunk_list != "":
+            if 'c' in member_or_chunk_list[0]:
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",member_or_chunk_list.lower()) is not None or job.running == "once"]
+            elif 'm' in member_or_chunk_list[0]:
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", member_or_chunk_list.lower()) is not None or job.running == "once"]
+            else:
+                jobs_final = []
+        else:
+            jobs_final = jobs_date
+        if chunk_or_member_list != "":
+            if 'c' in chunk_or_member_list[0]:
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",chunk_or_member_list.lower()) is not None or job.running == "once"]
+            elif 'm' in chunk_or_member_list[0]:
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", chunk_or_member_list.lower()) is not None or job.running == "once"]
+            else:
+                jobs_final_2 = []
+        ultimate_jobs_list = list(set(jobs_final+jobs_by_name+jobs_final_2)) #Duplicates out
+        Log.debug("List of jobs filtered by TWO_STEP_START parameter:\n{0}".format([job.name for job in ultimate_jobs_list]))
+        return ultimate_jobs_list
+
     def get_logs(self):
         """
         Returns a dict of logs by jobs_name jobs
@@ -1403,6 +1497,7 @@ class JobList(object):
                                     job.status = Status.SKIPPED
                                     save = True
             #save = True
+        self.update_two_step_jobs()
         Log.debug('Update finished')
         return save
 
