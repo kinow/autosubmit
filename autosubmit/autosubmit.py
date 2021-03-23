@@ -105,6 +105,7 @@ def signal_handler_create(signal_received, frame):
         'Autosubmit has been closed in an unexpected way. Killed or control + c.', 7010)
 
 
+
 class Autosubmit:
     """
     Interface class for autosubmit.
@@ -126,6 +127,9 @@ class Autosubmit:
         autosubmit_version = require("autosubmit")[0].version
 
     exit = False
+
+
+
 
     @staticmethod
     def parse_args():
@@ -1217,10 +1221,15 @@ class Autosubmit:
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+        # Related to TWO_STEP_START new variable defined in expdef
+        unparsed_two_step_start = as_conf.get_parse_two_step_start()
+        if unparsed_two_step_start != "":
+            job_list.parse_two_step_start(unparsed_two_step_start)
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(
                 as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
+
 
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None, run_members=None):
@@ -1292,7 +1301,7 @@ class Autosubmit:
                     "\r{0} until execution starts".format(elapsed_time))
                 sys.stdout.flush()
                 sleep(1)
-        # End of handling starting time block
+        # End of handling start ing time block
 
         # Start start after completion trigger block
         if start_after:
@@ -1451,7 +1460,12 @@ class Autosubmit:
                 except Exception as e:
                     raise AutosubmitCritical(
                         "Error in run initialization", 7067, str(e))
-
+                #Two step start
+                jobs_to_run_first = list()
+                #Related to TWO_STEP_START new variable defined in expdef
+                unparsed_two_step_start = as_conf.get_parse_two_step_start()
+                if unparsed_two_step_start != "":
+                    job_list.parse_two_step_start(unparsed_two_step_start)
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
@@ -1625,6 +1639,7 @@ class Autosubmit:
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
+
                         save = job_list.update_list(
                             as_conf, submitter=submitter)
                         if save:
