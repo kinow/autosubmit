@@ -100,6 +100,10 @@ Examples:
     NUMCHUNKS = 2
     # Calendar used. LIST: standard, noleap
     CALENDAR = standard
+    # List of members that can be included in this run. Optional. 
+    # RUN_ONLY_MEMBERS = fc0 fc1 fc2 fc3 fc4
+    # RUN_ONLY_MEMBERS = fc[0-4]
+    RUN_ONLY_MEMBERS = 
 
     [rerun]
     # Is a rerun or not? [Default: Do set FALSE]. BOOLEAN = TRUE, FALSE

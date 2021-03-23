@@ -54,7 +54,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'autosubmit'
 # noinspection PyShadowingBuiltins
-copyright = u'2018, Barcelona Supercomputing Center, BSC'
+copyright = u'2021, Barcelona Supercomputing Center, BSC'
 author = u'Earth Science Department, Barcelona Supercomputing Center, BSC'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -111,8 +111,8 @@ pygments_style = 'sphinx'
 todo_include_todos = False
 
 autodoc_mock_imports = ["portalocker", "argparse", "python-dateutil", "pydotplus", "pyparsing",
-                      'numpy', 'matplotlib', 'matplotlib.pyplot', 'matplotlib.gridspec', 'matplotlib.patches', 'paramiko',
-                      'mock', "networkx", 'networkx.algorithms.dag', 'bscearth.utils', 'bscearth.utils.config_parser',
+                        'numpy', 'matplotlib', 'matplotlib.pyplot', 'matplotlib.gridspec', 'matplotlib.patches', 'paramiko',
+                        'mock', "networkx", 'networkx.algorithms.dag', 'bscearth.utils', 'bscearth.utils.config_parser',
                         'bscearth.utils.date']
 
 # -- Options for HTML output ----------------------------------------------
