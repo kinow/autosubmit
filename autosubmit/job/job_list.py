@@ -897,33 +897,33 @@ class JobList(object):
         jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
         jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":
-            jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
+            jobs_date = [ job for job in jobs if re.search("(^|[^0-9a-z_])" + date2str(job.date, job.date_format) + "([^a-z0-9_]|$)", date_list.lower()) is not None or job.date is None ]
         else:
             jobs_date = jobs
-            
+
         jobs_final = []
         jobs_final_2 = []
 
         if member_or_chunk_list != "":
             if 'c' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if str(job.chunk) in member_or_chunk_list or job.running == "once"]
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",member_or_chunk_list.lower()) is not None or job.running == "once"]
             elif 'm' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if str(job.member) in member_or_chunk_list or job.running == "once"]
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", member_or_chunk_list.lower()) is not None or job.running == "once"]
             else:
                 jobs_final = []
         else:
             jobs_final = jobs_date
-
         if chunk_or_member_list != "":
             if 'c' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if str(job.chunk) in chunk_or_member_list or job.running == "once"]
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",chunk_or_member_list.lower()) is not None or job.running == "once"]
             elif 'm' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if str(job.member) in chunk_or_member_list or job.running == "once"]
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", chunk_or_member_list.lower()) is not None or job.running == "once"]
             else:
                 jobs_final_2 = []
-
-
-        return jobs_final+jobs_by_name+jobs_final_2
+        ultimate_jobs_list = jobs_final+jobs_by_name+jobs_final_2
+        #ultimate_jobs_list_names = [ job.name for job in ultimate_jobs_list ]
+        Log.debug("List of jobs filtered by TWO_STEP_START parameter:\n{0}".format(list(set([job.name for job in ultimate_jobs_list]))))
+        return ultimate_jobs_list
 
     def get_logs(self):
         """
