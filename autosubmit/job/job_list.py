@@ -864,24 +864,31 @@ class JobList(object):
             unparsed_jobs = jobs_to_check[1]
         if "," in unparsed_jobs:
             semiparsed_jobs = unparsed_jobs.split(",")
-            if len(semiparsed_jobs) == 2 or len(semiparsed_jobs) == 3:
+            if 2 <= len(semiparsed_jobs) <= 4:
                 section_job = semiparsed_jobs[0]
                 date = semiparsed_jobs[1]
-                if len(semiparsed_jobs) == 3:
+                if len(semiparsed_jobs) > 2:
                     member_chunk = semiparsed_jobs[2]
+                    if len(semiparsed_jobs) == 4:
+                        chunk_member = semiparsed_jobs[3]
+                    else:
+                        chunk_member = ""
                 else:
                     member_chunk = ""
                 jobs_to_run_first += self.get_job_related(section_list=section_job, date_list=date,
-                                                         member_or_chunk_list=member_chunk,job_names=job_names)
-            elif len(semiparsed_jobs) > 3:
-                raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 3 fields specified!")
+                                                         member_or_chunk_list=member_chunk,job_names=job_names,chunk_or_member_list=chunk_member)
+            else:
+                raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 4 fields specified!")
             self.jobs_to_run_first = list(set(jobs_to_run_first))
             self.jobs_to_run_first_initial = list(set(jobs_to_run_first))
+        else:
+            jobs_to_run_first += self.get_job_related(section_list=unparsed_jobs)
 
-    def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = ""):
+    def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = "", chunk_or_member_list=""):
         """
         :param datelist: job datelist
         :param member_or_chunk_list: job member or chunk
+        :param chunk_or_member_list: job chunk or member
         :param chunk_list: job chunk
         :type platform: HPCPlatform
         :return: jobs_list
@@ -893,14 +900,30 @@ class JobList(object):
             jobs_date = [ job for job in jobs if date2str(job.date, job.date_format) in date_list or job.date is None ]
         else:
             jobs_date = jobs
-        if 'c' in member_or_chunk_list[0]:
-            jobs_final = [job for job in jobs_date if str(job.chunk) in member_or_chunk_list or job.running == "once"]
-        elif 'm' in member_or_chunk_list[0]:
-            jobs_final = [job for job in jobs_date if str(job.member) in member_or_chunk_list or job.running == "once"]
+            
+        jobs_final = []
+        jobs_final_2 = []
+
+        if member_or_chunk_list != "":
+            if 'c' in member_or_chunk_list[0]:
+                jobs_final = [job for job in jobs_date if str(job.chunk) in member_or_chunk_list or job.running == "once"]
+            elif 'm' in member_or_chunk_list[0]:
+                jobs_final = [job for job in jobs_date if str(job.member) in member_or_chunk_list or job.running == "once"]
+            else:
+                jobs_final = []
         else:
             jobs_final = jobs_date
 
-        return jobs_final+jobs_by_name
+        if chunk_or_member_list != "":
+            if 'c' in chunk_or_member_list[0]:
+                jobs_final_2 = [job for job in jobs_date if str(job.chunk) in chunk_or_member_list or job.running == "once"]
+            elif 'm' in chunk_or_member_list[0]:
+                jobs_final_2 = [job for job in jobs_date if str(job.member) in chunk_or_member_list or job.running == "once"]
+            else:
+                jobs_final_2 = []
+
+
+        return jobs_final+jobs_by_name+jobs_final_2
 
     def get_logs(self):
         """
