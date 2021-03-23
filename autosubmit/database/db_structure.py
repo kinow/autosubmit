@@ -27,7 +27,7 @@ import traceback
 import sqlite3
 import copy
 from datetime import datetime
-from log.log import Log,AutosubmitError,AutosubmitCritical
+from log.log import Log, AutosubmitError, AutosubmitCritical
 # from networkx import DiGraph
 
 #DB_FILE_AS_TIMES = "/esarchive/autosubmit/as_times.db"
@@ -105,7 +105,7 @@ def create_table(conn, create_table_sql):
         c = conn.cursor()
         c.execute(create_table_sql)
     except Exception as e:
-        Log.printlog("Create table error {0}".format(str(e)),5000)
+        Log.printlog("Create table error {0}".format(str(e)), 5000)
 
 
 def _get_exp_structure(path):
@@ -123,7 +123,8 @@ def _get_exp_structure(path):
         rows = cur.fetchall()
         return rows
     except Exception as exp:
-        Log.debug("Get structure error {0}, couldn't load from storage ".format(str(exp)))
+        Log.debug(
+            "Get structure error {0}, couldn't load from storage ".format(str(exp)))
         Log.debug(traceback.format_exc())
         return dict()
 
@@ -148,9 +149,14 @@ def save_structure(graph, exp_id, structures_path):
             conn = create_connection(db_structure_path)
         if conn:
             # Save structure
-            for u, v in graph.edges():
-                # save
-                _create_edge(conn, u, v)
+            nodes_edges = {u for u, v in graph.edges()}
+            nodes_edges.update({v for u, v in graph.edges()})
+            independent_nodes = {
+                u for u in graph.nodes() if u not in nodes_edges}
+            data = {(u, v) for u, v in graph.edges()}
+            data.update({(u, u) for u in independent_nodes})
+            # save
+            _create_edge(conn, data)
             conn.commit()
     else:
         # Structure Folder not found
@@ -158,14 +164,14 @@ def save_structure(graph, exp_id, structures_path):
             "Structures folder not found {0}".format(structures_path))
 
 
-def _create_edge(conn, u, v):
+def _create_edge(conn, data):
     """
     Create edge
     """
     try:
         sql = ''' INSERT INTO experiment_structure(e_from, e_to) VALUES(?,?) '''
         cur = conn.cursor()
-        cur.execute(sql, (u, v))
+        cur.executemany(sql, data)
         # return cur.lastrowid
     except sqlite3.Error as e:
         Log.debug(traceback.format_exc())
