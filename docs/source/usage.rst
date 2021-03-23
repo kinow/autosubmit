@@ -30,6 +30,7 @@ Command list
 
 .. toctree::
    usage/create_exp
+   usage/create_members
    usage/check
    usage/describe
    usage/run
