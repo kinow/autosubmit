@@ -846,6 +846,7 @@ class JobList(object):
             all_jobs = [job.name for job in self._job_list]
 
         return all_jobs
+
     def update_two_step_jobs(self):
         prev_jobs_to_run_first = self.jobs_to_run_first
         if len(self.jobs_to_run_first) > 0:
@@ -857,6 +858,7 @@ class JobList(object):
                     keep_running = True
             if len(self.jobs_to_run_first) > 0 and keep_running is False:
                 raise AutosubmitCritical("No more jobs to run first, there were still pending jobs but they're unable to run without their parents or there are failed jobs.",7014)
+
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
         job_names = ""
@@ -896,6 +898,7 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
+        
         jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
         jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":
