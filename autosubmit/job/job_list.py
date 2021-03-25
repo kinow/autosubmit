@@ -850,11 +850,13 @@ class JobList(object):
         prev_jobs_to_run_first = self.jobs_to_run_first
         if len(self.jobs_to_run_first) > 0:
             self.jobs_to_run_first  = [ job for job in self.jobs_to_run_first if job.status != Status.COMPLETED ]
-            #if len(self.jobs_to_run_first) > 0:
-                #waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
-                #if len(waiting_jobs) == len(self.jobs_to_run_first):
-                    #self.jobs_to_run_first = []
-                    #Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
+            keep_running = False
+            for job in self.jobs_to_run_first:
+                running_parents = [parent for parent in job.parents if parent.status != Status.WAITING and parent.status != Status.FAILED ] #job is parent of itself
+                if len(running_parents) == len(job.parents):
+                    keep_running = True
+            if len(self.jobs_to_run_first) > 0 and keep_running is False:
+                raise AutosubmitCritical("No more jobs to run first, there were still pending jobs but they're unable to run without their parents or there are failed jobs.",7014)
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
         job_names = ""
