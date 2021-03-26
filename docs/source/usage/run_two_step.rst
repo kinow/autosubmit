@@ -1,9 +1,9 @@
-########
-Prepare an experiment to run in two independent job_list. (Prioritary jobs, Two-step-run)
-########
+##############################################################################################
+How to prepare an experiment to run in two independent job_list. (Priority jobs, Two-step-run)
+##############################################################################################
 
-Feature overview and configuration
------------------
+Feature overview
+----------------
 
 This feature allows to run an experiment in two separated steps without the need of do anything manually.
 
@@ -38,23 +38,28 @@ There are 5 fields on TWO_STEP_START, all of them are optional but there are cer
 * **member_or_chunk**: [Depends on Dates(OR)]  List of chunk or member, must start with C or M to indicate the filter type. Jobs are selected by [1,2,3..] or by a range [0-9] Optional, but depends on Dates field. Separated from the rest of fields by ';'
 * **chunk_or_member**: [Depends on Dates(OR)]  List of member or chunk, must start with M or C to indicate the filter type. Jobs are selected by [1,2,3..] or by a range [0-9] Optional, but depends on Dates field. Separated from the rest of fields by ';'
 
-Example:
-::
+Example
+-------
 
-    vi <experiments_directory>/cxxx/conf/expdef_cxxx.conf
+Guess the expdef configuration as follow:
 
 .. code-block:: ini
 
     [experiment]
-    DATELIST = 20120101 20120201
-    MEMBERS = 00[0-3]
+    DATELIST = 20120101
+    MEMBERS = 00[0-1]
     CHUNKSIZEUNIT = day
     CHUNKSIZE = 1
-    NUMCHUNKS = 10
-    CHUNKINI =
-    CALENDAR = standard
-    # To run before the rest of experiment:
-    TWO_STEP_START = LOCAL_SEND_INITIAL_DA,COMPILE_DA,LOCAL_SETUP,LOCAL_SEND,REMOTE_COMPILE,SIM;20120101;c[1]
+    NUMCHUNKS = 2
+    TWO_STEP_START = a02n_20120101_000_1_REDUCE&COMPILE_DA,SIM;20120101;c[1]
+
+Given this job_list ( jobs_conf has REMOTE_COMPILE(once),DA,SIM,REDUCE)
+
+['a02n_REMOTE_COMPILE', 'a02n_20120101_000_1_SIM', 'a02n_20120101_000_2_SIM', 'a02n_20120101_001_1_SIM', 'a02n_20120101_001_2_SIM', 'a02n_COMPILE_DA', 'a02n_20120101_1_DA', 'a02n_20120101_2_DA', 'a02n_20120101_000_1_REDUCE', 'a02n_20120101_000_2_REDUCE', 'a02n_20120101_001_1_REDUCE', 'a02n_20120101_001_2_REDUCE']
+
+The priority jobs will be ( check TWO_STEP_START from expdef conf):
+
+['a02n_20120101_000_1_SIM', 'a02n_20120101_001_1_SIM', 'a02n_COMPILE_DA', 'a02n_20120101_000_1_REDUCE']
 
 
 

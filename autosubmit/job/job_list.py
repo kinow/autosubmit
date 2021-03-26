@@ -898,7 +898,7 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
-        
+
         jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
         jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":

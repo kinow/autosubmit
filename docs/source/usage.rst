@@ -60,3 +60,4 @@ Command list
    usage/wrappers
    usage/remote_dependencies
    usage/report
+   usage/run_two_step
