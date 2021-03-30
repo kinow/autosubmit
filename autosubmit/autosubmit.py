@@ -1470,7 +1470,7 @@ class Autosubmit:
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
-                main_loop_retrials = 120  # Hard limit of tries 120 tries at 1min sleep each try
+                main_loop_retrials = 480  # Hard limit of tries 480 tries at 30seconds sleep each try
                 # establish the connection to all platforms
 
                 Autosubmit.restore_platforms(platforms_to_test)
@@ -1653,10 +1653,10 @@ class Autosubmit:
                             job_list.save()
                         time.sleep(safetysleeptime)
                     except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
+
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
-                        sleep(30)
                         # Save job_list if not is a failed submitted job
                         recovery = True
                         try:
@@ -1696,28 +1696,35 @@ class Autosubmit:
                             save = job_list.update_list(as_conf)
                             job_list.save()
                         except BaseException as e:
-                            raise AutosubmitCritical("Job_list couldn't be restored", 7040,
+                            raise AutosubmitCritical("Job_list couldn't be restored due I/O error to be solved on 3.14.", 7040,
                                                      e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
-                        if main_loop_retrials > 0:
-                            main_loop_retrials = main_loop_retrials - 1
-                            try:
-                                platforms_to_test = set()
-                                for job in job_list.get_job_list():
-                                    if job.platform_name is None:
-                                        job.platform_name = hpcarch
-                                    # noinspection PyTypeChecker
-                                    job.platform = submitter.platforms[job.platform_name.lower(
-                                    )]
-                                    # noinspection PyTypeChecker
-                                    platforms_to_test.add(job.platform)
-                                Autosubmit.restore_platforms(platforms_to_test)
-                            except BaseException:
+                        reconnected = False
+                        while not reconnected:
+                            sleep(30)
+                            if main_loop_retrials > 0:
+                                main_loop_retrials = main_loop_retrials - 1
+                                try:
+                                    platforms_to_test = set()
+                                    for job in job_list.get_job_list():
+                                        if job.platform_name is None:
+                                            job.platform_name = hpcarch
+                                        # noinspection PyTypeChecker
+                                        job.platform = submitter.platforms[job.platform_name.lower(
+                                        )]
+                                        # noinspection PyTypeChecker
+                                        platforms_to_test.add(job.platform)
+                                    Autosubmit.restore_platforms(platforms_to_test)
+                                    reconnected = True
+                                except AutosubmitCritical:
+                                    # Message prompt by restore_platforms.
+                                    Log.info("Couldn't recover the platforms, retrying in 30seconds...")
+                                    reconnected = False
+                                except BaseException:
+                                    reconnected = False
+                            else:
                                 raise AutosubmitCritical(
-                                    "Autosubmit couldn't recover the platforms", 7050, e.message)
-                        else:
-                            raise AutosubmitCritical(
-                                "Autosubmit Encounter too much errors during running time", 7051, e.message)
+                                    "Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
@@ -1772,7 +1779,7 @@ class Autosubmit:
             except BaseException:
                 issues += "\n[{1}] Connection Unsuccessful to host {0}".format(platform.host, platform.name)
                 continue
-            Log.result("[{1}] Connection successfull to host {0}",platform.host, platform.name)
+            Log.result("[{1}] Connection successful to host {0}",platform.host, platform.name)
             if platform.check_remote_permissions():
                 Log.result("[{1}] Correct user privileges for host {0}", platform.host, platform.name)
             else:
