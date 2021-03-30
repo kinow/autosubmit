@@ -846,15 +846,19 @@ class JobList(object):
             all_jobs = [job.name for job in self._job_list]
 
         return all_jobs
+
     def update_two_step_jobs(self):
         prev_jobs_to_run_first = self.jobs_to_run_first
         if len(self.jobs_to_run_first) > 0:
             self.jobs_to_run_first  = [ job for job in self.jobs_to_run_first if job.status != Status.COMPLETED ]
-            #if len(self.jobs_to_run_first) > 0:
-                #waiting_jobs = [ job for job in self.jobs_to_run_first if job.status != Status.WAITING ]
-                #if len(waiting_jobs) == len(self.jobs_to_run_first):
-                    #self.jobs_to_run_first = []
-                    #Log.warning("No more jobs to run first, there were still pending jobs but they're unable to run without their parents.")
+            keep_running = False
+            for job in self.jobs_to_run_first:
+                running_parents = [parent for parent in job.parents if parent.status != Status.WAITING and parent.status != Status.FAILED ] #job is parent of itself
+                if len(running_parents) == len(job.parents):
+                    keep_running = True
+            if len(self.jobs_to_run_first) > 0 and keep_running is False:
+                raise AutosubmitCritical("No more jobs to run first, there were still pending jobs but they're unable to run without their parents or there are failed jobs.",7014)
+
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
         job_names = ""
@@ -862,8 +866,8 @@ class JobList(object):
             jobs_to_check = unparsed_jobs.split("&")
             job_names = jobs_to_check[0]
             unparsed_jobs = jobs_to_check[1]
-        if "," in unparsed_jobs:
-            semiparsed_jobs = unparsed_jobs.split(",")
+        if ";" in unparsed_jobs:
+            semiparsed_jobs = unparsed_jobs.split(";")
             if 2 <= len(semiparsed_jobs) <= 4:
                 section_job = semiparsed_jobs[0]
                 date = semiparsed_jobs[1]
@@ -894,6 +898,7 @@ class JobList(object):
         :return: jobs_list
         :rtype: list
         """
+
         jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
         jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
         if date_list != "":
@@ -903,21 +908,65 @@ class JobList(object):
 
         jobs_final = []
         jobs_final_2 = []
-
+        number_start_at = 0
+        for char in self._member_list[0]:
+            if char.isdigit():
+                break
+            number_start_at += 1
         if member_or_chunk_list != "":
+            final_member_or_chunk_list = ""
+            number_range = re.findall("\[[0-9]+-[0-9]+\]", member_or_chunk_list.lower())
+            if len(number_range) > 0:
+                for numbers_found in number_range:
+                    number_range = numbers_found.split('-')
+                    lower_bound = int(number_range[0][1:])
+                    upper_bound = int(number_range[1][:-1])
+                    for seq in xrange(lower_bound, upper_bound):
+                        final_member_or_chunk_list += str(seq) + ","
+                    final_member_or_chunk_list += str(upper_bound) + ","
+            numbers_separated = re.findall("\[[0-9]*[^-a-z]+\]", member_or_chunk_list.lower())
+            if len(numbers_separated) > 0:
+                for numbers in numbers_separated:
+                    if ',' in numbers:
+                        numbers = numbers.split(',')
+                    else:
+                        numbers = numbers.split()
+                    for number in numbers:
+                        final_member_or_chunk_list += str(number).strip("[]") + ","
+                    final_member_or_chunk_list = final_member_or_chunk_list
             if 'c' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",member_or_chunk_list.lower()) is not None or job.running == "once"]
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",final_member_or_chunk_list) is not None or job.running == "once"]
             elif 'm' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", member_or_chunk_list.lower()) is not None or job.running == "once"]
+                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member)[number_start_at:].lower() + "([^a-z0-9_]|$)", final_member_or_chunk_list) is not None or job.running == "once"]
             else:
                 jobs_final = []
         else:
             jobs_final = jobs_date
         if chunk_or_member_list != "":
+            final_member_or_chunk_list = ""
+            number_range = re.findall("\[[0-9]+-[0-9]+\]", member_or_chunk_list.lower())
+            if len(number_range) > 0:
+                for numbers_found in number_range:
+                    number_range = numbers_found.split('-')
+                    lower_bound = int(number_range[0][1:])
+                    upper_bound = int(number_range[1][:-1])
+                    for seq in xrange(lower_bound, upper_bound):
+                        final_member_or_chunk_list += str(seq) + ","
+                    final_member_or_chunk_list += str(upper_bound) + ","
+            numbers_separated = re.findall("\[[0-9]+[^-a-z]+\]", member_or_chunk_list.lower())
+            if len(numbers_separated) > 0:
+                for numbers in numbers_separated:
+                    if ',' in numbers:
+                        numbers = numbers.split(',')
+                    else:
+                        numbers = numbers.split()
+                    for number in numbers:
+                        final_member_or_chunk_list += str(number).strip("[]") + ","
+                    final_member_or_chunk_list = final_member_or_chunk_list
             if 'c' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",chunk_or_member_list.lower()) is not None or job.running == "once"]
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",final_member_or_chunk_list) is not None or job.running == "once"]
             elif 'm' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member).lower() + "([^a-z0-9_]|$)", chunk_or_member_list.lower()) is not None or job.running == "once"]
+                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member)[number_start_at:].lower() + "([^a-z0-9_]|$)", final_member_or_chunk_list) is not None or job.running == "once"]
             else:
                 jobs_final_2 = []
         ultimate_jobs_list = list(set(jobs_final+jobs_by_name+jobs_final_2)) #Duplicates out

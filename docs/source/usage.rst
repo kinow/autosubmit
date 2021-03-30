@@ -31,6 +31,7 @@ Command list
 .. toctree::
    usage/create_exp
    usage/create_members
+   usage/custom_header
    usage/check
    usage/describe
    usage/run
@@ -60,3 +61,4 @@ Command list
    usage/wrappers
    usage/remote_dependencies
    usage/report
+   usage/run_two_step
