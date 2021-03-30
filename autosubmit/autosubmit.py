@@ -1700,31 +1700,30 @@ class Autosubmit:
                                                      e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
-                        while not reconnected:
+                        while not reconnected and main_loop_retrials > 0:
+                            main_loop_retrials = main_loop_retrials - 1
                             sleep(30)
-                            if main_loop_retrials > 0:
-                                main_loop_retrials = main_loop_retrials - 1
-                                try:
-                                    platforms_to_test = set()
-                                    for job in job_list.get_job_list():
-                                        if job.platform_name is None:
-                                            job.platform_name = hpcarch
-                                        # noinspection PyTypeChecker
-                                        job.platform = submitter.platforms[job.platform_name.lower(
-                                        )]
-                                        # noinspection PyTypeChecker
-                                        platforms_to_test.add(job.platform)
-                                    Autosubmit.restore_platforms(platforms_to_test)
-                                    reconnected = True
-                                except AutosubmitCritical:
-                                    # Message prompt by restore_platforms.
-                                    Log.info("Couldn't recover the platforms, retrying in 30seconds...")
-                                    reconnected = False
-                                except BaseException:
-                                    reconnected = False
-                            else:
-                                raise AutosubmitCritical(
-                                    "Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
+                            try:
+                                platforms_to_test = set()
+                                for job in job_list.get_job_list():
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    # noinspection PyTypeChecker
+                                    job.platform = submitter.platforms[job.platform_name.lower(
+                                    )]
+                                    # noinspection PyTypeChecker
+                                    platforms_to_test.add(job.platform)
+                                Autosubmit.restore_platforms(platforms_to_test)
+                                reconnected = True
+                            except AutosubmitCritical:
+                                # Message prompt by restore_platforms.
+                                Log.info("Couldn't recover the platforms, retrying in 30seconds...")
+                                reconnected = False
+                            except BaseException:
+                                reconnected = False
+                        if main_loop_retrials <= 0:
+                            raise AutosubmitCritical(
+                                "Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
