@@ -122,7 +122,7 @@ class SlurmPlatform(ParamikoPlatform):
 
     def hold_job(self, job):
         try:
-            cmd = "scontrol release {0} ; scontrol hold {0} ".format(job.id)
+            cmd = "scontrol release {0} ; sleep 2 ; scontrol hold {0} ".format(job.id)
             self.send_command(cmd)
             job_status = self.check_job(job, submit_hold_check=True)
             if job_status == Status.RUNNING:
