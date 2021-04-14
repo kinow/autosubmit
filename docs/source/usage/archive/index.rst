@@ -1,3 +1,8 @@
+.. _archive:
+
+Archive
+=======
+
 .. toctree::
 
    clean

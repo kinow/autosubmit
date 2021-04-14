@@ -1,3 +1,8 @@
+.. _stats:
+
+Stats
+=====
+
 .. toctree::
 
    report

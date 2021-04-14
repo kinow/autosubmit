@@ -1,3 +1,8 @@
+.. _run_modes:
+
+Run Modes
+=========
+
 .. toctree::
 
    run

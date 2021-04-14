@@ -1,3 +1,8 @@
+.. _configuration:
+
+Configuration
+===================
+
 .. toctree::
 
    configure

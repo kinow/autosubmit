@@ -1,3 +1,8 @@
+.. _advanced_features:
+
+Advanced Features
+============
+
 .. toctree::
 
    migrate
