@@ -8,7 +8,6 @@ Welcome to autosubmit's documentation!
 ######################################
 
 .. toctree::
-   :titlesonly:
 
    introduction
    tutorial
