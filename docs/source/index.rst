@@ -15,14 +15,14 @@ Welcome to autosubmit's documentation!
    tutorial
    installation
    usage
-      usage/new_experiment/*
-      usage/configuration/*
-      usage/run_modes
-      usage/workflow_validation
-      usage/workflow_recovery
-      usage/stats
-      usage/archive
-      usage/advanced_features
+      usage/new_experiment/index
+      usage/configuration/index
+      usage/run_modes/index
+      usage/workflow_validation/index
+      usage/workflow_recovery/index
+      usage/stats/index
+      usage/archive/index
+      usage/advanced_features/index
    workflows
    faq-original
    troubleshoot
