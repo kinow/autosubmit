@@ -44,7 +44,7 @@ It is only required for the vertical-mixed type (in which the specified job type
 By default, jobs of the same type will be wrapped together, as long as the constraints are satisfied.
 
 Number of jobs in a package
-**********************
+***************************
 
 .. code-block:: ini
 
