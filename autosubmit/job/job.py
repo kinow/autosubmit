@@ -938,10 +938,18 @@ class Job(object):
             if as_conf.get_project_type().lower() != "none":
                 template_file = open(os.path.join(
                     as_conf.get_project_dir(), self.file), 'r')
-                template = template_file.read()
+                if self.type == Type.BASH:
+                    template = 'sleep 30'
+                elif self.type == Type.PYTHON:
+                    template = 'time.sleep(30)'
+                elif self.type == Type.R:
+                    template = 'Sys.sleep(30)'
+                else:
+                    template = ''
+                template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 120'
+                    template = 'sleep 5'
                 elif self.type == Type.PYTHON:
                     template = 'time.sleep(5)'
                 elif self.type == Type.R:
