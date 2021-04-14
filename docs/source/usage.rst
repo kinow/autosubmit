@@ -28,6 +28,7 @@ Command list
 -report  extract experiment parameters
 
 .. toctree::
+   :includehidden:
 
    usage/new_experiment/index
    usage/run_modes/index
