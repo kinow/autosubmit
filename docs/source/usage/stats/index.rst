@@ -1,7 +1,7 @@
 .. _stats:
 
-Stats
-=====
+How to get stats from your experiment
+=====================================
 
 .. toctree::
 

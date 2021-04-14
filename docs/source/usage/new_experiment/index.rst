@@ -1,7 +1,7 @@
 .. _new_experiment:
 
-New Experiment
-==============
+How to create your experiment
+=============================
 
 .. toctree::
 

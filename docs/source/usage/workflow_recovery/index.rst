@@ -1,8 +1,8 @@
 .. _workflow_recovery:
 
 
-Workflow_recovery
-=================
+How to recover and restart your experiment workflow
+===================================================
 
 .. toctree::
 

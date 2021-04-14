@@ -1,8 +1,8 @@
 .. _workflow_validation:
 
 
-Workflow Validation
-===================
+How to check your experiment workflow status
+============================================
 
 .. toctree::
 

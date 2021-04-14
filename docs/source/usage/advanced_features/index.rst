@@ -1,7 +1,7 @@
 .. _advanced_features:
 
-Advanced Features
-============
+How to use Advanced Features
+============================
 
 .. toctree::
 

@@ -1,7 +1,7 @@
 .. _run_modes:
 
-Run Modes
-=========
+How to run your experiment
+==========================
 
 .. toctree::
 

@@ -1,7 +1,7 @@
 .. _configuration:
 
-Configuration
-===================
+How to Configure your experiment
+=================================
 
 .. toctree::
 
