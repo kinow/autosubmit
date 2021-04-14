@@ -29,12 +29,12 @@ Command list
 
 .. toctree::
 
-   new_experiment/index
-   run_modes/index
-   configuration/index
-   workflow_validation/index
-   workflow_recovery/index
-   archive/index
-   stats/index
-   advanced_features/index
+   usage/new_experiment/index
+   usage/run_modes/index
+   usage/configuration/index
+   usage/workflow_validation/index
+   usage/workflow_recovery/index
+   usage/archive/index
+   usage/stats/index
+   usage/advanced_features/index
 
