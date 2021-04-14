@@ -128,6 +128,8 @@ class SlurmPlatform(ParamikoPlatform):
             if job_status == Status.RUNNING:
                 self.send_command("scancel {0}".format(job.id))
                 return False
+            elif job_status == Status.FAILED:
+                return False
             cmd = self.get_queue_status_cmd(job.id)
             self.send_command(cmd)
 
