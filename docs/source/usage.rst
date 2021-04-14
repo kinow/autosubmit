@@ -25,9 +25,8 @@ Command list
 -archive  Clean, compress and remove from the experiments' folder a finalized experiment
 -unarchive  Restores an archived experiment
 -migrate_exp  Migrates an experiment from one user to another
--remote_dependencies Submit multiple jobs at same time in order to gain priority.
--report extract experiment parameters
-
+-remote_dependencies  Submit multiple jobs at same time in order to gain priority.
+-report  extract experiment parameters
 
 .. toctree::
    usage/new_experiment/create_exp
