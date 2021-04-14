@@ -9,7 +9,7 @@ Welcome to autosubmit's documentation!
 
 .. toctree::
    :titlesonly:
-   :maxdepth: 5
+   :maxdepth: 1
 
    introduction
    tutorial
