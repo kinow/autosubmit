@@ -29,6 +29,9 @@ Command list
 
 .. toctree::
    :includehidden:
+   :maxdepth: 1
+   :caption: Contents:
+   :glob:
 
    usage/new_experiment/index
    usage/run_modes/index
