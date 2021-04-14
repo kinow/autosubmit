@@ -15,6 +15,14 @@ Welcome to autosubmit's documentation!
    tutorial
    installation
    usage
+      usage/new_experiment
+      usage/configuration
+      usage/run_modes
+      usage/workflow_validation
+      usage/workflow_recovery
+      usage/stats
+      usage/archive
+      usage/advanced_features
    workflows
    faq-original
    troubleshoot
