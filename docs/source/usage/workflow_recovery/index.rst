@@ -1,0 +1,6 @@
+.. toctree::
+
+   recovery
+   stop
+   setstatus
+

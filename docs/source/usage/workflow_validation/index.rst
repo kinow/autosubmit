@@ -1,0 +1,6 @@
+.. toctree::
+
+   inspect
+   monitor
+   groups
+

@@ -28,38 +28,13 @@ Command list
 -report  extract experiment parameters
 
 .. toctree::
-   :titlesonly:
 
-   new_experiment/create_exp
-   new_experiment/test
-   new_experiment/testcase
-   run_modes/run
-   run_modes/run_members
-   run_modes/start_time
-   run_modes/start_after
-   run_modes/rerun
-   run_modes/wrappers
-   run_modes/remote_dependencies
-   run_modes/run_two_step
-   configuration/configure
-   configuration/new_job
-   configuration/new_platform
-   configuration/communication_library
-   configuration/refresh
-   configuration/create_members
-   configuration/check
-   workflow_validation/inspect
-   workflow_validation/monitor
-   workflow_validation/groups
-   workflow_recovery/recovery
-   workflow_recovery/stop
-   workflow_recovery/recovery
-   archive/clean
-   archive/delete
-   archive/archive
-   archive/unarchive
-   stats/report
-   stats/stats
-   stats/describe
-   advanced_features/migrate
-   advanced_features/custom_header
+   new_experiment/index
+   run_modes/index
+   configuration/index
+   workflow_validation/index
+   workflow_recovery/index
+   archive/index
+   stats/index
+   advanced_features/index
+

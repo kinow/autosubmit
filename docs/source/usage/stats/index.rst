@@ -1,0 +1,6 @@
+.. toctree::
+
+   report
+   stats
+   describe
+
