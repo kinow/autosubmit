@@ -27,16 +27,25 @@ Command list
 -migrate_exp  Migrates an experiment from one user to another
 -report  extract experiment parameters
 
-Tutorials ( How to ...)
-=======================
+
+Tutorials (How to)
+==================
 
 * :ref:`new_experiment`
+
 * :ref:`configuration`
+
 * :ref:`run_modes`
+
 * :ref:`workflow_recovery`
+
 * :ref:`workflow_validation`
+
 * :ref:`stats`
+
 * :ref:`archive`
+
 * :ref:`advanced_features`
+
 
 
