@@ -1218,9 +1218,8 @@ class JobDataStructure(MainDataBase):
                         "Parent Id List couldn't be parsed to array of int. Using default values.")
                     extra_data["parents"] = parent_id_list
                     pass
-                current_timestamp = int(time.time())
-                job_data_last.finish = current_timestamp if no_slurm == True else (
-                    job_data_last.finish if job_data_last.finish > 0 else current_timestamp)
+                current_timestamp = finish if finish > 0 else int(time.time())
+                job_data_last.finish = current_timestamp  # Take finish from input
                 # job_data_last.finish =  finish_time if finish_time > 0 and finish_time >= job_data_last.start else (
                 #     current_timestamp if no_slurm == True else job_data_last.finish)
                 #print("Job data finish time {0}".format(job_data_last.finish))
@@ -1266,49 +1265,6 @@ class JobDataStructure(MainDataBase):
             Log.debug(traceback.format_exc())
             Log.warning("Autosubmit couldn't write finish time.")
             return None
-
-    # def retry_incompleted_data(self, list_jobs):
-    #     """
-    #     DEPRECATED
-    #     Retries retrieval of data that might be incompleted.
-
-    #     :param list_jobs: list of jobs in experiment
-    #     :type list_jobs: list()
-
-    #     :return: None (Modifies database)
-    #     """
-    #     try:
-    #         pending_jobs = self.get_pending_data()
-    #         if pending_jobs:
-    #             for item in pending_jobs:
-    #                 job_object = section = next(
-    #                     (job for job in list_jobs if job.name == item), None)
-    #                 if (job_object):
-    #                     platform_object = job_object.platform
-    #                     if type(platform_object) is not str:
-    #                         if platform_object.type == "slurm":
-    #                             # print("Checking Slurm for " + str(job_name))
-    #                             Log.info("Attempting to complete information for {0}".format(
-    #                                 job_object.name))
-    #                             submit_time, start_time, finish_time, energy, extra_data = platform_object.check_job_energy(
-    #                                 job_object.id, job_object.packed)
-    #                             if submit_time > 0 and start_time > 0:
-    #                                 job_data_last = self.get_job_data_last(
-    #                                     job_object.name)[0]
-    #                                 job_data_last.submit = int(submit_time)
-    #                                 job_data_last.start = int(start_time)
-    #                                 job_data_last.energy = energy
-    #                                 job_data_last.extra_data = dumps(
-    #                                     extra_data)
-    #                                 job_data_last.modified = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
-    #                                 rowid = self._update_finish_job_data_plus(
-    #                                     job_data_last)
-    #                                 Log.info("Historic data successfully retrieved and updated for: {0} {1}".format(
-    #                                     job_object.name, rowid))
-    #     except Exception as exp:
-    #         print(traceback.format_exc())
-    #         Log.warning(str(exp))
-    #         return None
 
     def process_current_run_collection(self):
         """
