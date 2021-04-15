@@ -8,19 +8,12 @@ Welcome to autosubmit's documentation!
 ######################################
 
 .. toctree::
+   :maxdepth: 2
 
    introduction
    tutorial
    installation
    usage
-      usage/new_experiment/index
-      usage/configuration/index
-      usage/run_modes/index
-      usage/workflow_validation/index
-      usage/workflow_recovery/index
-      usage/stats/index
-      usage/archive/index
-      usage/advanced_features/index
    workflows
    faq-original
    troubleshoot
