@@ -548,7 +548,8 @@ class Job(object):
             if copy_remote_logs:
                 # unifying names for log files
                 if remote_logs != local_logs:
-                    self.synchronize_logs(self._platform, remote_logs, local_logs)
+                    self.synchronize_logs(
+                        self._platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 self._platform.get_logs_files(self.expid, remote_logs)
                 # Update the logs with Autosubmit Job Id Brand
@@ -572,9 +573,11 @@ class Job(object):
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
         try:
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(
+                expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
-            remote_logs = (self.script_name + ".out", self.script_name + ".err")
+            remote_logs = (self.script_name + ".out",
+                           self.script_name + ".err")
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             platform = submitter.platforms[platform_name.lower()]
@@ -730,12 +733,14 @@ class Job(object):
             platform_name = copy.deepcopy(self.platform_name.lower())
             local_logs = copy.deepcopy(self.local_logs)
             remote_logs = copy.deepcopy(self.remote_logs)
-            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(
+                expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
-                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
+                self.retrieve_logfiles(
+                    copy_remote_logs, local_logs, remote_logs, expid, platform_name)
 
         return self.status
 
@@ -748,10 +753,10 @@ class Job(object):
         :rtype: Submitter
         """
         #communications_library = as_conf.get_communications_library()
-        #if communications_library == 'paramiko':
+        # if communications_library == 'paramiko':
         return ParamikoSubmitter()
         # communications library not known
-        #raise AutosubmitCritical(
+        # raise AutosubmitCritical(
         #    'You have defined a not valid communications library on the configuration file', 7014)
 
     def update_children_status(self):
@@ -934,7 +939,7 @@ class Job(object):
         :rtype: str
         """
         parameters = self.parameters
-        try: # issue in tests with project_type variable while using threads
+        try:  # issue in tests with project_type variable while using threads
             if as_conf.get_project_type().lower() != "none":
                 template_file = open(os.path.join(
                     as_conf.get_project_dir(), self.file), 'r')
@@ -974,9 +979,9 @@ class Job(object):
 
     def _get_template_content(self, as_conf, snippet, template):
         #communications_library = as_conf.get_communications_library()
-        #if communications_library == 'paramiko':
+        # if communications_library == 'paramiko':
         return self._get_paramiko_template(snippet, template)
-        #else:
+        # else:
         #    raise AutosubmitCritical(
         #        "Job {0} does not have an correct template// template not found".format(self.name), 7014)
 
