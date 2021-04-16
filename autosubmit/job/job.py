@@ -663,7 +663,7 @@ class Job(object):
             pass
         return
 
-    def update_status(self, copy_remote_logs=False):
+    def update_status(self, copy_remote_logs=False, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
 
@@ -694,15 +694,17 @@ class Job(object):
         elif self.status == Status.COMPLETED:
             Log.result("Job {0} is COMPLETED", self.name)
         elif self.status == Status.FAILED:
-            Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(
-                self.name), 3000)
-            self._platform.get_completed_files(
-                self.name, wrapper_failed=self.packed)
-            self.check_completion()
-            if self.status == Status.COMPLETED:
-                Log.result("Job {0} is COMPLETED", self.name)
-            else:
-                self.update_children_status()
+            if not failed_file:
+                Log.printlog("Job {0} is FAILED. Checking completed files to confirm the failure...".format(
+                    self.name), 3000)
+                self._platform.get_completed_files(
+                    self.name, wrapper_failed=self.packed)
+                self.check_completion()
+                if self.status == Status.COMPLETED:
+                    Log.result("Job {0} is COMPLETED", self.name)
+                else:
+                    self.update_children_status()
+
         elif self.status == Status.UNKNOWN:
             Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(
                 self.name), 3000)
@@ -1518,7 +1520,7 @@ class WrapperJob(Job):
                 retries = retries - 1
             if output is not None and output != '' and 'COMPLETED' in output:
                 job.new_status = Status.COMPLETED
-        job.update_status(self.as_config.get_copy_remote_logs() == 'true')
+        job.update_status(self.as_config.get_copy_remote_logs() == 'true',failed_file)
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self, canceled_wrapper=False):
