@@ -1,6 +1,6 @@
 .. _archive:
 
-How to Archive and clean an experiment
+How to archive and clean an experiment
 ======================================
 
 .. toctree::

@@ -1,6 +1,6 @@
 .. _advanced_features:
 
-How to use Advanced Features
+How to use advanced features
 ============================
 
 .. toctree::

@@ -61,7 +61,7 @@ There are also other, less used features that you can use:
 Workflow examples:
 ==================
 
-Example 1: 
+Example 1:
 ----------
 
 In this first example, you can see 3 jobs in which last job (POST) shows an example with select chunks:
