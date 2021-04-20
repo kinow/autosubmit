@@ -59,9 +59,11 @@ There are also other, less used features that you can use:
 * SKIPPABLE: When this is true, the job will be able to skip it work if there is an higher chunk or member already ready, running, queuing or in complete status.
 
 Workflow examples:
-------------------
+==================
 
-Example 1:
+Example 1: 
+----------
+
 In this first example, you can see 3 jobs in which last job (POST) shows an example with select chunks:
 
 .. code-block:: ini
@@ -96,7 +98,8 @@ In this first example, you can see 3 jobs in which last job (POST) shows an exam
     SELECT_CHUNKS = SIM*[1,3] #Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
     SELECT_CHUNKS = SIM*[1] #Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
 
-Example 2:
+Example 2: select_chunks
+------------------------
 
 In this workflow you can see an illustrated example of select_chunks used in an actual workflow, to avoid an excess of information we only will see the configuration of a single job:
 
@@ -116,7 +119,8 @@ In this workflow you can see an illustrated example of select_chunks used in an 
    :align: center
    :alt: select_chunks_workflow
 
-Example 3:
+Example 3: SKIPPABLE
+--------------------
 
 In this workflow you can see an illustrated example of SKIPPABLE parameter used in an dummy workflow.
 
