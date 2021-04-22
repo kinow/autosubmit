@@ -28,11 +28,13 @@ Unable to recover remote logs files.
 Other possible errors
 =====================
 
-I see the `database malformed` error on my experiment log.
+**I see the `database malformed` error on my experiment log.**
 
 *Explanation*: The latest version of autosubmit uses a database to efficiently track changes in the jobs of your experiment. It might happen that this small database gets corrupted.
 
 *Solution*: run `autosubmit dbfix expid` where `expid` is the identifier of your experiment. This function will rebuild the database saving as much information as possible (usually all of it).
 
+**The pkl file of my experiment is empty but there is a job_list_%expid%_backup.pkl file that seems to be the real one.**
 
+*Solution*: run `autosubmit pklfix expid`, it will restore the `backup` file if possible.
 

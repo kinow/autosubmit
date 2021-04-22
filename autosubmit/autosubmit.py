@@ -105,7 +105,6 @@ def signal_handler_create(signal_received, frame):
         'Autosubmit has been closed in an unexpected way. Killed or control + c.', 7010)
 
 
-
 class Autosubmit:
     """
     Interface class for autosubmit.
@@ -127,9 +126,6 @@ class Autosubmit:
         autosubmit_version = require("autosubmit")[0].version
 
     exit = False
-
-
-
 
     @staticmethod
     def parse_args():
@@ -479,9 +475,14 @@ class Autosubmit:
             subparser.add_argument(
                 '-b', '--branch', help='branch of git to run (or revision from subversion)')
 
-            # Database
+            # Database Fix
             subparser = subparsers.add_parser(
                 'dbfix', description='historical database functions')
+            subparser.add_argument('expid', help='experiment identifier')
+
+            # Pkl Fix
+            subparser = subparsers.add_parser(
+                'pklfix', description='restore the backup of your pkl')
             subparser.add_argument('expid', help='experiment identifier')
 
             # Test
@@ -575,7 +576,7 @@ class Autosubmit:
             return Autosubmit.inspect(args.expid, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.notransitive, args.force, args.check_wrapper)
         elif args.command == 'report':
-            return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path,args.placeholders)
+            return Autosubmit.report(args.expid, args.template, args.show_all_parameters, args.folder_path, args.placeholders)
         elif args.command == 'describe':
             return Autosubmit.describe(args.expid)
         elif args.command == 'migrate':
@@ -624,6 +625,8 @@ class Autosubmit:
             return False
         elif args.command == 'dbfix':
             return Autosubmit.database_fix(args.expid)
+        elif args.command == 'pklfix':
+            return Autosubmit.pkl_fix(args.expid)
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
@@ -1230,7 +1233,6 @@ class Autosubmit:
                 as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
 
-
     @staticmethod
     def run_experiment(expid, notransitive=False, update_version=False, start_time=None, start_after=None, run_members=None):
         """
@@ -1460,9 +1462,9 @@ class Autosubmit:
                 except Exception as e:
                     raise AutosubmitCritical(
                         "Error in run initialization", 7067, str(e))
-                #Two step start
+                # Two step start
                 jobs_to_run_first = list()
-                #Related to TWO_STEP_START new variable defined in expdef
+                # Related to TWO_STEP_START new variable defined in expdef
                 unparsed_two_step_start = as_conf.get_parse_two_step_start()
                 if unparsed_two_step_start != "":
                     job_list.parse_two_step_start(unparsed_two_step_start)
@@ -1527,11 +1529,13 @@ class Autosubmit:
                             list_prevStatus = []
                             queuing_jobs = job_list.get_in_queue_grouped_id(
                                 platform)
-                            Log.debug('Checking jobs for platform={0}'.format(platform.name))
+                            Log.debug(
+                                'Checking jobs for platform={0}'.format(platform.name))
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
-                                    Log.debug('Checking Wrapper {0}'.format(str(job_id)))
+                                    Log.debug(
+                                        'Checking Wrapper {0}'.format(str(job_id)))
                                     wrapper_job = job_list.job_package_map[job_id]
                                     # Setting prev_status as an easy way to check status change for inner jobs
                                     if as_conf.get_notifications() == 'true':
@@ -1606,13 +1610,17 @@ class Autosubmit:
                                                                                       as_conf.get_mails_to())
                                         save = True
 
-                            if platform.type == "slurm" and list_jobid != "":  # IF there are jobs in an slurm platform, prepare the check them at once
-                                slurm.append([platform, list_jobid, list_prevStatus, completed_joblist])
-                        for platform_jobs in slurm: # Check slurm single jobs, the other platforms has already been checked.
+                            # IF there are jobs in an slurm platform, prepare the check them at once
+                            if platform.type == "slurm" and list_jobid != "":
+                                slurm.append(
+                                    [platform, list_jobid, list_prevStatus, completed_joblist])
+                        # Check slurm single jobs, the other platforms has already been checked.
+                        for platform_jobs in slurm:
                             platform = platform_jobs[0]
                             jobs_to_check = platform_jobs[1]
                             Log.debug("Checking all jobs at once")
-                            platform.check_Alljobs(platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
+                            platform.check_Alljobs(
+                                platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
                             for j_Indx in xrange(0, len(platform_jobs[3])):
                                 prev_status = platform_jobs[2][j_Indx]
                                 job = platform_jobs[3][j_Indx]
@@ -1675,7 +1683,8 @@ class Autosubmit:
                                     job.fail_count = failed_names[job.name]
                                 if job.platform_name is None:
                                     job.platform_name = hpcarch
-                                job.platform = submitter.platforms[job.platform_name.lower()]
+                                job.platform = submitter.platforms[job.platform_name.lower(
+                                )]
 
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
@@ -1717,7 +1726,8 @@ class Autosubmit:
                                 reconnected = True
                             except AutosubmitCritical:
                                 # Message prompt by restore_platforms.
-                                Log.info("Couldn't recover the platforms, retrying in 30seconds...")
+                                Log.info(
+                                    "Couldn't recover the platforms, retrying in 30seconds...")
                                 reconnected = False
                             except BaseException:
                                 reconnected = False
@@ -1776,16 +1786,20 @@ class Autosubmit:
             try:
                 platform.test_connection()
             except BaseException:
-                issues += "\n[{1}] Connection Unsuccessful to host {0}".format(platform.host, platform.name)
+                issues += "\n[{1}] Connection Unsuccessful to host {0}".format(
+                    platform.host, platform.name)
                 continue
-            Log.result("[{1}] Connection successful to host {0}",platform.host, platform.name)
+            Log.result("[{1}] Connection successful to host {0}",
+                       platform.host, platform.name)
             if platform.check_remote_permissions():
-                Log.result("[{1}] Correct user privileges for host {0}", platform.host, platform.name)
+                Log.result("[{1}] Correct user privileges for host {0}",
+                           platform.host, platform.name)
             else:
-                issues += "\n[{0}] has configuration issues. Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(platform.name, platform.user, platform.project, platform.scratch)
+                issues += "\n[{0}] has configuration issues. Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
+                    platform.name, platform.user, platform.project, platform.scratch)
         if issues != "":
-            raise AutosubmitCritical("Issues while checking the connectivity of platforms.", 7010, issues)
-
+            raise AutosubmitCritical(
+                "Issues while checking the connectivity of platforms.", 7010, issues)
 
     @staticmethod
     def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
@@ -2562,8 +2576,8 @@ class Autosubmit:
                                 Log.result("No data found in {0} for [{1}]\n".format(
                                     p.root_dir, platform))
                         except IOError as e:
-                            Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir,os.path.join(p.temp_dir,experiment_id),
-                                                                                       6012))
+                            Log.printlog("The files/dirs on {0} cannot be moved to {1}.".format(p.root_dir, os.path.join(p.temp_dir, experiment_id),
+                                                                                                6012))
                             error = True
                             break
                         except Exception as e:
@@ -2663,7 +2677,8 @@ class Autosubmit:
             try:
                 Autosubmit.restore_platforms(platforms_to_test)
             except AutosubmitCritical as e:
-                raise AutosubmitCritical(e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.trace)
+                raise AutosubmitCritical(
+                    e.message + "\nInvalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, e.trace)
             except Exception as e:
                 raise AutosubmitCritical(
                     "Invalid Remote Platform configuration, recover them manually or:\n 1) Configure platform.conf with the correct info\n 2) autosubmit expid -p --onlyremote", 7014, str(e))
@@ -2769,7 +2784,7 @@ class Autosubmit:
         return upper_dictionary
 
     @staticmethod
-    def report(expid, template_file_path="", show_all_parameters=False, folder_path="", placeholders = False):
+    def report(expid, template_file_path="", show_all_parameters=False, folder_path="", placeholders=False):
         """
         Show report for specified experiment
         :param expid: experiment identifier:
@@ -2869,7 +2884,8 @@ class Autosubmit:
                     parameter_file.write(key + "=" + str(value) + "\n")
                 else:
                     if placeholders:
-                        parameter_file.write(key + "=" + "%"+key+"%" + "\n")
+                        parameter_file.write(
+                            key + "=" + "%" + key + "%" + "\n")
                     else:
                         parameter_file.write(key + "=" + "-" + "\n")
 
@@ -2899,7 +2915,8 @@ class Autosubmit:
                             '%(?<!%%)' + key + '%(?!%%)', str(performance_metrics[key]), template_content)
                 template_content = template_content.replace("%%", "%")
                 if not placeholders:
-                    template_content = re.sub(r"\%[^% \n\t]+\%", "-", template_content)
+                    template_content = re.sub(
+                        r"\%[^% \n\t]+\%", "-", template_content)
                 report = '{0}_report_{1}.txt'.format(
                     expid, datetime.datetime.today().strftime('%Y%m%d-%H%M%S'))
                 open(os.path.join(tmp_path, report),
@@ -3337,6 +3354,85 @@ class Autosubmit:
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
         return True
+
+    @staticmethod
+    def pkl_fix(expid):
+        """
+        Tries to find a backup of the pkl file and restores it. Verifies that autosubmit is not running on this experiment.  
+
+        :param expid: experiment identifier
+        :type expid: str
+        :return:
+        :rtype: 
+        """
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        pkl_folder_path = os.path.join(exp_path, "pkl")
+        current_pkl_path = os.path.join(
+            pkl_folder_path, "job_list_{}.pkl".format(expid))
+        backup_pkl_path = os.path.join(
+            pkl_folder_path, "job_list_{}_backup.pkl".format(expid))
+        try:
+            with portalocker.Lock(os.path.join(tmp_path, 'autosubmit.lock'), timeout=1):
+                # Not locked
+                Log.info("Looking for backup file {}".format(backup_pkl_path))
+                if os.path.exists(backup_pkl_path):
+                    # Backup file exists
+                    Log.info("Backup file found.")
+                    # Make sure backup file is not empty
+                    _stat_b = os.stat(backup_pkl_path)
+                    if _stat_b.st_size <= 6:
+                        # It is empty -> Return
+                        Log.info("The backup file {} is empty. Pkl restore operation stopped. No changes have been made.".format(
+                            backup_pkl_path))
+                        return
+                    if os.path.exists(current_pkl_path):
+                        # Pkl file exists
+                        Log.info("Current pkl file {} found.".format(
+                            current_pkl_path))
+                        _stat = os.stat(current_pkl_path)
+                        if _stat.st_size > 6:
+                            # Greater than 6 bytes -> Not empty
+                            if not Autosubmit._user_yes_no_query("The current pkl file {0} is not empty. Do you want to continue?".format(current_pkl_path)):
+                                # The user chooses not to continue. Operation stopped.
+                                Log.info(
+                                    "Pkl restore operation stopped. No changes have been made.")
+                                return
+                        result = None
+                        if _stat.st_size > 6:
+                            # File not empty: Archive
+                            archive_pkl_name = os.path.join(pkl_folder_path, "{0}_job_list_{1}.pkl".format(
+                                datetime.datetime.today().strftime("%d%m%Y%H%M%S"), expid))
+                            # Waiting for completion
+                            subprocess.call(
+                                ["cp", current_pkl_path, archive_pkl_name])
+
+                            if os.path.exists(archive_pkl_name):
+                                Log.result("File {0} archived as {1}.".format(
+                                    current_pkl_path, archive_pkl_name))
+                        else:
+                            # File empty: Delete
+                            result = os.popen("rm {}".format(current_pkl_path))
+                            if result is not None:
+                                Log.info("File {0} deleted.".format(
+                                    current_pkl_path))
+                    # Restore backup file
+                    Log.info("Restoring {0} into {1}".format(
+                        backup_pkl_path, current_pkl_path))
+                    subprocess.call(["mv", backup_pkl_path, current_pkl_path])
+
+                    if os.path.exists(current_pkl_path):
+                        Log.result("Pkl restored.")
+                else:
+                    Log.info(
+                        "Backup file not found. Pkl restore operation stopped. No changes have been made.")
+        except portalocker.AlreadyLocked:
+            message = "Another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on the /tmp folder."
+            raise AutosubmitCritical(message, 7000)
+        except AutosubmitCritical as e:
+            raise AutosubmitCritical(e.message, e.code, e.trace)
+        except BaseException as e:
+            raise
 
     @staticmethod
     def database_fix(expid):
