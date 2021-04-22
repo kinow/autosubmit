@@ -72,11 +72,22 @@ class JobPackager(object):
         self.max_jobs = min(self._max_wait_jobs_to_submit,
                             self._max_jobs_to_submit)
         # These are defined in the [wrapper] section of autosubmit_,conf
-        self.wrapper_type = self._as_config.get_wrapper_type()
-        self.wrapper_policy = self._as_config.get_wrapper_policy()
-        self.wrapper_method = self._as_config.get_wrapper_method().lower()
+        if self._as_config.get_wrapper_type == "multi":
+            self.wrapper_type = []
+            self.wrapper_policy = []
+            self.wrapper_method = []
+            for wrapper_section in self._as_config.get_wrapper_multi():
+                self.wrapper_type.append(self._as_config.get_wrapper_type())
+                self.wrapper_policy.append(self._as_config.get_wrapper_policy())
+                self.wrapper_method.append(self._as_config.get_wrapper_method().lower())
+                self.jobs_in_wrapper.append(self._as_config.get_wrapper_jobs())
+        else:
+            self.wrapper_type = [self._as_config.get_wrapper_type()]
+            self.wrapper_policy = [self._as_config.get_wrapper_policy()]
+            self.wrapper_method = [self._as_config.get_wrapper_method().lower()]
+            self.jobs_in_wrapper = [ self._as_config.get_wrapper_jobs() ]
         # True or False
-        self.jobs_in_wrapper = self._as_config.get_wrapper_jobs()
+
         Log.debug(
             "Number of jobs available: {0}", self._max_wait_jobs_to_submit)
         if self.hold:
@@ -198,8 +209,7 @@ class JobPackager(object):
 
         jobs_to_submit_seq = [
             failed_job for failed_job in jobs_to_submit_tmp if failed_job.fail_count > 0]
-        jobs_to_submit_by_section = self._divide_list_by_section(
-            jobs_to_submit)
+        jobs_to_submit_by_section = self._divide_list_by_section(jobs_to_submit)
 
         for job in jobs_to_submit_seq:  # Failed jobs at least one time
             job.packed = False
@@ -213,9 +223,14 @@ class JobPackager(object):
             wrapped = False
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
-            if self._platform.allow_wrappers and self.wrapper_type in ['horizontal', 'vertical', 'vertical-mixed',
-                                                                       'vertical-horizontal', 'horizontal-vertical'] \
-                    and (self.jobs_in_wrapper == 'None' or section in self.jobs_in_wrapper):
+            wrapper_defined = False
+            index = 0
+            for wrapper_section in self.jobs_in_wrapper:
+                if section in wrapper_section:
+                    wrapper_defined = True
+                    break
+                index=index+1
+            if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[index] in ['horizontal', 'vertical', 'vertical-mixed','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(
                     section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
@@ -382,18 +397,19 @@ class JobPackager(object):
         :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
         # .jobs_in_wrapper defined in .conf, see constructor.
-        sections_split = self.jobs_in_wrapper.split()
-
-        jobs_section = dict()
+        sections_split_by_wrapper = []
+        jobs_section_by_wrapper = []
         for job in jobs_list:
-            # This iterator will always return None if there is no '&' defined in the section name
-            section = next(
-                (s for s in sections_split if job.section in s and '&' in s), None)
-            if section is None:
-                section = job.section
-            if section not in jobs_section:
-                jobs_section[section] = list()
-            jobs_section[section].append(job)
+            jobs_section = dict()
+            for sections_split in sections_split_by_wrapper:
+                # This iterator will always return None if there is no '&' defined in the section name
+                section = next(
+                    (s for s in sections_split if job.section in s and '&' in s), None)
+                if section is None:
+                    section = job.section
+                if section not in jobs_section:
+                    jobs_section[section] = list()
+                jobs_section[section].append(job)
         return jobs_section
 
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section, max_wrapper_job_by_section):

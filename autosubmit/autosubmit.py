@@ -1226,8 +1226,7 @@ class Autosubmit:
         if unparsed_two_step_start != "":
             job_list.parse_two_step_start(unparsed_two_step_start)
         while job_list.get_active():
-            Autosubmit.submit_ready_jobs(
-                as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
 
 
