@@ -76,16 +76,19 @@ class JobPackager(object):
             self.wrapper_type = []
             self.wrapper_policy = []
             self.wrapper_method = []
+            self.wrapper_section_names = []
             for wrapper_section in self._as_config.get_wrapper_multi():
-                self.wrapper_type.append(self._as_config.get_wrapper_type())
-                self.wrapper_policy.append(self._as_config.get_wrapper_policy())
-                self.wrapper_method.append(self._as_config.get_wrapper_method().lower())
-                self.jobs_in_wrapper.append(self._as_config.get_wrapper_jobs())
+                self.wrapper_type += [self._as_config.get_wrapper_type()]
+                self.wrapper_policy += [self._as_config.get_wrapper_policy()]
+                self.wrapper_method += [self._as_config.get_wrapper_method().lower()]
+                self.jobs_in_wrapper += [self._as_config.get_wrapper_jobs()]
+                self.wrapper_section_names += [wrapper_section]
         else:
             self.wrapper_type = [self._as_config.get_wrapper_type()]
             self.wrapper_policy = [self._as_config.get_wrapper_policy()]
             self.wrapper_method = [self._as_config.get_wrapper_method().lower()]
             self.jobs_in_wrapper = [ self._as_config.get_wrapper_jobs() ]
+            self.wrapper_section_names = ["wrapper"]
         # True or False
 
         Log.debug(
@@ -144,7 +147,7 @@ class JobPackager(object):
         """
         Returns the list of the built packages to be submitted
 
-        :return: List of packages depending on type of package, JobPackageVertical Object for 'vertical-mixed' or 'vertical'. \n
+        :return: List of packages depending on type of package, JobPackageVertical Object for 'vertical-mixed' or 'vertical'.
         :rtype: List() of JobPackageVertical
         """
         packages_to_submit = list()
@@ -232,8 +235,7 @@ class JobPackager(object):
                 index=index+1
             if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[index] in ['horizontal', 'vertical', 'vertical-mixed','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
-                max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(
-                    section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs()))
+                max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs(self.wrapper_section_names[index])))
                 if '&' not in section:
                     if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
                         dependencies_keys = self._as_config.jobs_parser.get(
@@ -241,7 +243,6 @@ class JobPackager(object):
                     else:
                         dependencies_keys = []
                     max_wrapper_job_by_section[section] = max_wrapped_jobs
-
                 else:
                     multiple_sections = section.split('&')
                     dependencies_keys = []
@@ -263,20 +264,20 @@ class JobPackager(object):
                             if number < max_wrapped_jobs:
                                 hard_limit_wrapper = number
                 min_wrapped_jobs = min(self._as_config.jobs_parser.get_option(
-                    section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
+                    section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs(self.wrapper_section_names[index])), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
                 packages_to_submit = []
-                if self.wrapper_type in ['vertical', 'vertical-mixed']:
+                if self.wrapper_type[index] in ['vertical', 'vertical-mixed']:
                     wrapped = True
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                        max_wrapped_jobs, max_wrapper_job_by_section)
-                elif self.wrapper_type == 'horizontal':
+                elif self.wrapper_type[index]  == 'horizontal':
                     wrapped = True
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                          max_wrapped_jobs, section, max_wrapper_job_by_section)
 
-                elif self.wrapper_type in ['vertical-horizontal', 'horizontal-vertical']:
+                elif self.wrapper_type[index]  in ['vertical-horizontal', 'horizontal-vertical']:
                     wrapped = True
                     built_packages_tmp = list()
                     built_packages_tmp.append(self._build_hybrid_package(
@@ -297,7 +298,7 @@ class JobPackager(object):
                         if job.fail_count > 0:
                             failed_innerjobs = True
                             break
-                    if failed_innerjobs and str(self.wrapper_policy) == "mixed":
+                    if failed_innerjobs and str(self.wrapper_policy[index]) == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
                                 continue
@@ -328,12 +329,12 @@ class JobPackager(object):
                                        independent_inner_job and parent.status == Status.COMPLETED]
                                 if len(tmp) != len(job.parents):
                                     deadlock = False
-                            if deadlock and self.wrapper_policy == "strict":
+                            if deadlock and self.wrapper_policy[index] == "strict":
                                 Log.debug(
                                     "Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
                                 for job in p.jobs:
                                     job.packed = False
-                            elif deadlock and self.wrapper_policy == "mixed":
+                            elif deadlock and self.wrapper_policy[index] == "mixed":
                                 Log.debug(
                                     "Wrapper policy is set to mixed, there is a deadlock")
                                 for job in p.jobs:
@@ -347,7 +348,7 @@ class JobPackager(object):
                                         else:
                                             package = JobPackageSimple([job])
                                         packages_to_submit.append(package)
-                            elif deadlock and self.wrapper_policy != "strict" and self.wrapper_policy != "mixed":
+                            elif deadlock and self.wrapper_policy[index] != "strict" and self.wrapper_policy[index] != "mixed":
                                 Log.debug(
                                     "Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
                                 for job in p.jobs:
@@ -397,19 +398,20 @@ class JobPackager(object):
         :rtype: Dictionary Key: Section Name, Value: List(Job Object)
         """
         # .jobs_in_wrapper defined in .conf, see constructor.
-        sections_split_by_wrapper = []
-        jobs_section_by_wrapper = []
+        sections_split= []
+        for number_of_wrapper_section in range(0 , len(self.jobs_in_wrapper) ):
+            sections_split += self.jobs_in_wrapper[number_of_wrapper_section].split()
+
         for job in jobs_list:
             jobs_section = dict()
-            for sections_split in sections_split_by_wrapper:
-                # This iterator will always return None if there is no '&' defined in the section name
-                section = next(
-                    (s for s in sections_split if job.section in s and '&' in s), None)
-                if section is None:
-                    section = job.section
-                if section not in jobs_section:
-                    jobs_section[section] = list()
-                jobs_section[section].append(job)
+            # This iterator will always return None if there is no '&' defined in the section name
+            section = next(
+                (s for s in sections_split if job.section in s and '&' in s), None)
+            if section is None:
+                section = job.section
+            if section not in jobs_section:
+                jobs_section[section] = list()
+            jobs_section[section].append(job)
         return jobs_section
 
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section, max_wrapper_job_by_section):
