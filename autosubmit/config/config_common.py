@@ -1316,6 +1316,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._conf_parser.get_option('config', 'MAX_WALLCLOCK', '')
+
     def get_disable_recovery_threads(self, section):
         """
         Returns FALSE/TRUE
@@ -1323,6 +1324,7 @@ class AutosubmitConfig(object):
         :rtype: str
         """
         return self._platforms_parser.get_option(section, 'DISABLE_RECOVERY_THREADS', 'FALSE').lower()
+
     def get_max_processors(self):
         """
         Returns max processors from autosubmit's config file
@@ -1578,5 +1580,28 @@ class AutosubmitConfig(object):
         """
         parser = parser_factory.create_parser()
         parser.optionxform = str
-        parser.read(file_path)
+        # Activating warnings
+        Log.set_console_level('WARNING')
+        # For testing purposes
+        if file_path.find('/dummy/local/root/dir/a000/conf/') >= 0 or file_path.find('dummy/file/path') >= 0:
+            parser.read(file_path)
+            return parser
+
+        if file_path.find('proj_') > 0:
+            # proj file might not be present
+            if not os.path.exists(file_path):
+                Log.warning(
+                    "{0} was not found. Some variables might be missing. If your experiment does not need a proj file, you can ignore this message.", file_path)
+            parser.read(file_path)
+        else:
+            # This block may rise an exception but all its callers handle it
+            try:
+                with open(file_path) as f:
+                    parser.read(file_path)
+            except Exception as exp:
+                raise Exception(
+                    "{}\n This file and the correctness of its content are necessary.".format(str(exp)))
+        # Back to info level
+        Log.set_console_level('INFO')
+        # parser.read(file_path)
         return parser
