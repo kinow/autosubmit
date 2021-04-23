@@ -1904,7 +1904,7 @@ class Autosubmit:
                             jobs_id = platform.submit_Script(hold=hold)
                         except AutosubmitError as e:
                             jobs_id = None
-                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1:
+                            if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1:
                                 error_msg = ""
                                 for package_tmp in valid_packages_to_submit:
                                     for job_tmp in package_tmp.jobs:
