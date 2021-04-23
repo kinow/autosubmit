@@ -629,7 +629,7 @@ class Autosubmit:
             return Autosubmit.pkl_fix(args.expid)
 
     @staticmethod
-    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
+    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):        
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
