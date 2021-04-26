@@ -948,11 +948,11 @@ class Job(object):
                 template = ''
                 if as_conf.get_remote_dependencies():
                     if self.type == Type.BASH:
-                        template = 'sleep 30' +"\n"
+                        template = 'sleep 30' + "\n"
                     elif self.type == Type.PYTHON:
-                        template = 'time.sleep(30)' +"\n"
+                        template = 'time.sleep(30)' + "\n"
                     elif self.type == Type.R:
-                        template = 'Sys.sleep(30)' +"\n"
+                        template = 'Sys.sleep(30)' + "\n"
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
@@ -1119,7 +1119,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.now(), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
+                                                       self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
 
     def write_start_time(self):
         """
@@ -1533,7 +1533,8 @@ class WrapperJob(Job):
                 retries = retries - 1
             if output is not None and output != '' and 'COMPLETED' in output:
                 job.new_status = Status.COMPLETED
-        job.update_status(self.as_config.get_copy_remote_logs() == 'true',failed_file)
+        job.update_status(self.as_config.get_copy_remote_logs()
+                          == 'true', failed_file)
         self.running_jobs_start.pop(job, None)
 
     def update_failed_jobs(self, canceled_wrapper=False):
