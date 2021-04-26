@@ -1412,7 +1412,7 @@ class AutosubmitConfig(object):
 
     def get_wrapper_type(self, wrapper_section_name="wrapper"):
         """
-        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
