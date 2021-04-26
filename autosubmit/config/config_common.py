@@ -1580,8 +1580,6 @@ class AutosubmitConfig(object):
         """
         parser = parser_factory.create_parser()
         parser.optionxform = str
-        # Activating warnings
-        Log.set_console_level('WARNING')
         # For testing purposes
         if file_path.find('/dummy/local/root/dir/a000/conf/') >= 0 or file_path.find('dummy/file/path') >= 0:
             parser.read(file_path)
@@ -1601,7 +1599,5 @@ class AutosubmitConfig(object):
             except Exception as exp:
                 raise Exception(
                     "{}\n This file and the correctness of its content are necessary.".format(str(exp)))
-        # Back to info level
-        Log.set_console_level('INFO')
         # parser.read(file_path)
         return parser
