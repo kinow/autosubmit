@@ -12,4 +12,5 @@ How to configure your experiment
    refresh
    create_members
    check
+   update_description
 
