@@ -26,6 +26,10 @@ Command list
 -unarchive  Restores an archived experiment
 -migrate_exp  Migrates an experiment from one user to another
 -report  extract experiment parameters
+-updateversion  Updates the Autosubmit version of your experiment with the current version of the module you are using
+-dbfix  Fixes the database malformed error in the historical database of your experiment
+-pklfix  Fixed the blank pkl error of your experiment
+-updatedescrip  Updates the description of your experiment (See: :ref:`updateDescrip`)
 
 
 Tutorials (How to)
