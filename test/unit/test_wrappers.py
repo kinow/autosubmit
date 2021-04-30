@@ -527,7 +527,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs
@@ -597,7 +597,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapper_job_by_section = {}
         max_wrapper_job_by_section["s1"] = max_wrapped_jobs
@@ -666,7 +666,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs
@@ -746,7 +746,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs
@@ -818,7 +818,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs
@@ -906,7 +906,7 @@ class TestWrappers(TestCase):
 
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
-        self.job_packager.wrapper_type = 'vertical-mixed'
+        self.job_packager.wrapper_type = 'vertical'
         self.job_packager.jobs_in_wrapper = wrapper_expression
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs

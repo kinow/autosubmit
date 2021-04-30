@@ -229,8 +229,9 @@ class JobPackager(object):
             for wrapper_section in self.jobs_in_wrapper:
                 if section in self.jobs_in_wrapper[wrapper_section]:
                     wrapper_defined = True
+                    self.current_wrapper_section = wrapper_section
                     break
-            if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[wrapper_section] in ['horizontal', 'vertical', 'vertical-mixed','vertical-horizontal', 'horizontal-vertical'] :
+            if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs(wrapper_section)))
                 if '&' not in section:
@@ -265,7 +266,7 @@ class JobPackager(object):
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
                 packages_to_submit = []
-                if self.wrapper_type[wrapper_section] in ['vertical', 'vertical-mixed']:
+                if self.wrapper_type[wrapper_section] == 'vertical':
                     wrapped = True
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
                                                                        max_wrapped_jobs, max_wrapper_job_by_section)
@@ -397,7 +398,7 @@ class JobPackager(object):
         # .jobs_in_wrapper defined in .conf, see constructor.
         sections_split = set()
         for wrapper_section in self.jobs_in_wrapper:
-            sections_split.update(set(self.jobs_in_wrapper[wrapper_section].split(",")))
+            sections_split.update(set(self.jobs_in_wrapper[wrapper_section].split()))
         sections_split = list(sections_split)
         for job in jobs_list:
             jobs_section = dict()
@@ -442,6 +443,8 @@ class JobPackager(object):
         :type max_wrapped_jobs: Integer. \n
         :param min_wrapped_jobs: Number of maximum jobs that can be wrapped (Can be user defined), per section. \n
         :type min_wrapped_jobs: Integer. \n
+        :param wrapper_section: Current Section
+        :type string
         :return: List of Wrapper Packages, Dictionary that details dependencies. \n
         :rtype: List() of JobPackageVertical(), Dictionary Key: String, Value: (Dictionary Key: Variable Name, Value: String/Int)
         """
@@ -450,16 +453,9 @@ class JobPackager(object):
             if self.max_jobs > 0:
                 if job.packed is False:
                     job.packed = True
-                    if self.wrapper_type == 'vertical-mixed':
-                        dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member()
-                        job_vertical_packager = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock, self.max_jobs,
-                                                                         max_wrapped_jobs, self._platform.max_wallclock, max_wrapper_job_by_section)
-                    else:
-                        job_vertical_packager = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
-                                                                          max_wrapped_jobs, self._platform.max_wallclock, max_wrapper_job_by_section)
-
-                    jobs_list = job_vertical_packager.build_vertical_package(
-                        job)
+                    dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member(self.current_wrapper_section)
+                    job_vertical_packager = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock, self.max_jobs,max_wrapped_jobs, self._platform.max_wallclock, max_wrapper_job_by_section)
+                    jobs_list = job_vertical_packager.build_vertical_package(job)
 
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(

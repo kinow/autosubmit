@@ -133,7 +133,7 @@ class JobList(object):
             # print(job.parents)
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False, run_only_members=[]):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[]):
         """
         Creates all jobs needed for the current workflow
 
@@ -211,9 +211,12 @@ class JobList(object):
                         job.children.add(jobc)
 
         # Perhaps this should be done by default independent of the wrapper_type supplied
-        if wrapper_type == 'vertical-mixed':
-            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(
-                wrapper_jobs)
+        for wrapper_section in wrapper_jobs:
+            if wrapper_jobs[wrapper_section] != 'None':
+                self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
+            else:
+                self._ordered_jobs_by_date_member[wrapper_section] = {}
+
 
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
@@ -685,14 +688,14 @@ class JobList(object):
                 date_format = 'M'
         return date_format
 
-    def get_ordered_jobs_by_date_member(self):
+    def get_ordered_jobs_by_date_member(self,section):
         """
         Get the dictionary of jobs ordered according to wrapper's expression divided by date and member
 
         :return: jobs ordered divided by date and member
         :rtype: dict
         """
-        return self._ordered_jobs_by_date_member
+        return self._ordered_jobs_by_date_member[section]
 
     def get_completed(self, platform=None, wrapper=False):
         """
