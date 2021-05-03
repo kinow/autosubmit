@@ -1229,8 +1229,7 @@ class Autosubmit:
         if unparsed_two_step_start != "":
             job_list.parse_two_step_start(unparsed_two_step_start)
         while job_list.get_active():
-            Autosubmit.submit_ready_jobs(
-                as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
             job_list.update_list(as_conf, False)
 
     @staticmethod
@@ -3751,10 +3750,14 @@ class Autosubmit:
                             date_format = 'H'
                         if date.minute > 1:
                             date_format = 'M'
+                    wrapper_jobs = dict()
+                    if as_conf.get_wrapper_type() == "multi":
+                        for wrapper_section in as_conf.get_wrapper_multi():
+                            wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
+                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
 
                     if rerun == "true":
                         chunk_list = Autosubmit._create_json(
@@ -4968,9 +4971,16 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
+        wrapper_jobs = dict()
+        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs()
+        if as_conf.get_wrapper_type() == "multi":
+            for wrapper_section in as_conf.get_wrapper_multi():
+                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+
+
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
                           new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
 
