@@ -1,12 +1,28 @@
-3.13.0b - This has been the Autosubmit development versions for many months, so it provides a lot of improvements,
-specially in terms of efficiency and stability. It also brings a full refactor of the wrappers module.
-    Multi-threaded wrappers were introduced in this version.
-    It provides the possibility to specify multiple hosts for the same platform (in a list) so it is more robust against connection issues / login failures.
-    In general, big experiments, with many startdates/members or featuring very big wrappers run much more efficiently with 3.12.1b.
-    A completely new implementation of remote dependencies (PreSubmission) were introduced in this version. It helps to speed up the jobs in a Slurm platform by sending the next 10 Waiting jobs in advance to the queues.
-    Workflows have more flexibility by the inclusion of a new way to define dependencies for specific chunks.
-    Changes were made to the algorithm that handles the maximum active jobs by platform. From this version, wrapped jobs count as a single job for Autosubmit, and the maximum number of inner jobs can be defined with new wrapper parameters.
-    There is a new log (.err, .out, COMPLETED, STAT files) recover system, that performs re-tries (in background threads) of the log files transfer from the remote platforms in case of failure.
+3.13.0 - This has been the Autosubmit development versions for many months, so it provides a lot of improvements, specially in terms of efficiency and stability. It also brings a full refactor of the wrappers module.
+
+
+Multi-threaded wrappers were introduced in this version.
+It provides the possibility to specify multiple hosts for the same platform (in a list) so it is more robust against connection issues / login failures.
+In general, big experiments, with many startdates/members or featuring very big wrappers run much more efficiently with 3.13.0.
+A completely new implementation of remote dependencies (PreSubmission) were introduced in this version. It helps to speed up the jobs in a Slurm platform by sending the next 10 Waiting jobs in advance to the queues.
+Workflows have more flexibility by the inclusion of a new way to define dependencies for specific chunks.
+Changes were made to the algorithm that handles the maximum active jobs by platform. From this version, wrapped jobs count as a single job for Autosubmit, and the maximum number of inner jobs can be defined with new wrapper parameters.
+There is a new log (.err, .out, COMPLETED, STAT files) recover system, that performs re-tries (in background threads) of the log files transfer from the remote platforms in case of failure.
+The user can specify a datetime or time when the experiment should start by sending the -st flag (plus the right format) using the autosubmit run command.
+The user can specify an experiment dependency by sending the -sa (plus the right expid format) using the autosubmit run command. The experiment will start when the experiment specified in the -sa flag finishes.
+When the user quits Autosubmit by using the CTRL+C keys, Autosubmit will make sure all threads are finished correctly before closing.
+Job lifecycle information is stored in an external database that will allow the user to see the historical information of the execution of the jobs in her experiment. This information is gathered in a way that does not interfere with the normal workflow, even if the information gathering fails or any of its components. Furthermore, threading is implemented to prevent unnecessary delays.
+
+Specific members can now be configured to run by using the autosubmit run together with the -rm command. By setting this flag, Autosubmit will only run jobs belonging to the supplied members. Jobs that were running before this command was sent, will be monitored and properly completed.
+The git clone operation now implements a backup procedure that will prevent loss of information in case of wrong configuration or network error.
+There is an improvement of the security, now all commands that could change the workflow are locked by an owner-only mechanism. Ej: create,refresh and run.
+Added autosubmit dbfix expid command that allows users to fix the database malformed error.
+Custom shebang (header of the script templates) so it is possible to use Python or R templates with a specific Python/R version dependency, for example.
+Workflow updates: A difference of 3.12.0 version, in this one, only Create and run commands can regenerate the configuration, workflow and structure information. In case of run, only will be updated if a change is detected before the starting of the main run loop.
+Improves into failure tolerance, in this version AS will try to prevent as many errors as possible at the beginning of the run and other delicate operations, instead of detecting them while in running time.
+Allows prioritizing a list of jobs to be run before the rest of the workflow. Via the use of the Two_step_start variable set in expdef.conf
+Allows skipping jobs under the same section if their last on queuing member/chunks is higher than other on queuing/waiting/ready
+
 
 3.12.0 - Shortly, this will be the Autosubmit default. Therefore, it is the recommended software to run any kind of experiments unless there is a
 necessity only covered by the development versions.
