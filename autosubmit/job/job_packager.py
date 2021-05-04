@@ -41,6 +41,7 @@ class JobPackager(object):
     """
 
     def __init__(self, as_config, platform, jobs_list, hold=False):
+        #self.current_wrapper_section = "wrapper"
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
@@ -226,12 +227,13 @@ class JobPackager(object):
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
             # ('None' is a default value) or the correct section is included in the corresponding sections in [wrappers]
             wrapper_defined = False
+
             for wrapper_section in self.jobs_in_wrapper:
                 if section in self.jobs_in_wrapper[wrapper_section]:
                     wrapper_defined = True
                     self.current_wrapper_section = wrapper_section
                     break
-            if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
+            if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
                 max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs(wrapper_section)))
                 if '&' not in section:
@@ -257,7 +259,7 @@ class JobPackager(object):
                 for k in dependencies_keys:
                     if "-" in k:
                         k_divided = k.split("-")
-                        if k_divided[0] not in self.jobs_in_wrapper:
+                        if k_divided[0] not in self.jobs_in_wrapper[self.current_wrapper_section]:
                             number = int(k_divided[1].strip(" "))
                             if number < max_wrapped_jobs:
                                 hard_limit_wrapper = number
@@ -282,14 +284,6 @@ class JobPackager(object):
                         jobs_to_submit_by_section[section], max_wrapped_jobs, section, max_wrapper_job_by_section))
             if wrapped:
                 for p in built_packages_tmp:
-                    #if len(self._jobs_list.jobs_to_run_first) > 0: # related to TWO_STEP_START new variable , defined in expdef
-                    #    temp_jobs = list()
-                    #    for packed_job in p.jobs:
-                    #        if packed_job in self._jobs_list.jobs_to_run_first:
-                    #            temp_jobs.append(packed_job)
-                    #        else:
-                    #            packed_job.packed = False
-                    #    p.jobs = temp_jobs
                     failed_innerjobs = False
                     # Check failed jobs first
                     for job in p.jobs:
@@ -397,8 +391,8 @@ class JobPackager(object):
         """
         # .jobs_in_wrapper defined in .conf, see constructor.
         sections_split = set()
-        for wrapper_section in self.jobs_in_wrapper:
-            sections_split.update(set(self.jobs_in_wrapper[wrapper_section].split()))
+        for jobs_in_wrapper_section in self.jobs_in_wrapper:
+            sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split()))
         sections_split = list(sections_split)
         for job in jobs_list:
             jobs_section = dict()
@@ -476,7 +470,7 @@ class JobPackager(object):
         ## Create the horizontal ##
         horizontal_packager = JobPackagerHorizontal(jobs_list, self._platform.max_processors, max_wrapped_jobs,
                                                     self.max_jobs, self._platform.processors_per_node, max_wrapper_job_by_section=max_wrapper_job_by_section)
-        if self.wrapper_type == 'vertical-horizontal':
+        if self.wrapper_type[self.current_wrapper_section] == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, jobs_resources)
         else:
             return self._build_horizontal_vertical_package(horizontal_packager, section, jobs_resources)
