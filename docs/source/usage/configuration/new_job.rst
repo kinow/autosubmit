@@ -113,7 +113,7 @@ In this workflow you can see an illustrated example of select_chunks used in an 
     WALLCLOCK = 0:30
     PROCESSORS = 768
 
-.. figure:: workflows/select_chunks.png
+.. figure:: ../../workflows/select_chunks.png
    :name: simple
    :width: 100%
    :align: center
@@ -141,7 +141,7 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
     RUNNING = member
     #QUEUE = debug
 
-.. figure:: workflows/skip.png
+.. figure:: ../../workflows/skip.png
    :name: simple
    :width: 100%
    :align: center

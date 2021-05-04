@@ -15,7 +15,7 @@ Examples:
 
 Consider the following workflow:
 
-.. figure:: ../workflows/pre_grouping_workflow.png
+.. figure:: ../../workflows/pre_grouping_workflow.png
    :name: pre_grouping_workflow
    :align: center
    :alt: simple workflow
@@ -26,7 +26,7 @@ Consider the following workflow:
 
     -group_by=date
 
-.. figure:: ../workflows/group_date.png
+.. figure:: ../../workflows/group_date.png
    :name: group_date
    :width: 70%
    :align: center
@@ -36,7 +36,7 @@ Consider the following workflow:
 
     -group_by=date -expand="[ 20000101 ]"
 
-.. figure:: ../workflows/group_by_date_expand.png
+.. figure:: ../../workflows/group_by_date_expand.png
    :name: group_date_expand
    :width: 70%
    :align: center
@@ -47,7 +47,7 @@ Consider the following workflow:
 
     -group_by=date -expand_status="FAILED RUNNING"
 
-.. figure:: ../workflows/group_by_date_status.png
+.. figure:: ../../workflows/group_by_date_status.png
    :name: group_date_status_expand
    :width: 70%
    :align: center
@@ -57,7 +57,7 @@ Consider the following workflow:
 
     -group_by=date -expand="[ 20000101 ]" -expand_status="FAILED RUNNING"
 
-.. figure:: ../workflows/group_by_date_status_expand.png
+.. figure:: ../../workflows/group_by_date_status_expand.png
    :name: group_date_expand_status
    :width: 100%
    :align: center
@@ -69,7 +69,7 @@ Consider the following workflow:
 
     -group_by=member
 
-.. figure:: ../workflows/group_member.png
+.. figure:: ../../workflows/group_member.png
    :name: group_member
    :width: 70%
    :align: center
@@ -80,7 +80,7 @@ Consider the following workflow:
 
     -group_by=member -expand="[ 20000101 [ fc0 fc1 ] 20000202 [ fc0 ] ]"
 
-.. figure:: ../workflows/group_by_member_expand.png
+.. figure:: ../../workflows/group_by_member_expand.png
    :name: group_member_expand
    :width: 70%
    :align: center
@@ -90,7 +90,7 @@ Consider the following workflow:
 
     -group_by=member -expand_status="FAILED QUEUING"
 
-.. figure:: ../workflows/group_by_member_status.png
+.. figure:: ../../workflows/group_by_member_status.png
    :name: group_member_status
    :width: 70%
    :align: center
@@ -100,7 +100,7 @@ Consider the following workflow:
 
     -group_by=member -expand="[ 20000101 [ fc0 fc1 ] 20000202 [ fc0 ] ]" -expand_status="FAILED QUEUING"
 
-.. figure:: ../workflows/group_by_member_expand_status.png
+.. figure:: ../../workflows/group_by_member_expand_status.png
    :name: group_member_expand_status
    :width: 70%
    :align: center
@@ -112,7 +112,7 @@ Consider the following workflow:
 
     -group_by=chunk
 
-.. figure:: ../workflows/group_chunk.png
+.. figure:: ../../workflows/group_chunk.png
    :name: group_chunk
    :width: 70%
    :align: center
@@ -122,7 +122,7 @@ Sychronize jobs
 
 If there are jobs synchronized between members or dates, then a connection between groups is shown:
 
-.. figure:: ../workflows/group_synchronize.png
+.. figure:: ../../workflows/group_synchronize.png
    :name: group_synchronize
    :width: 70%
    :align: center
@@ -132,7 +132,7 @@ If there are jobs synchronized between members or dates, then a connection betwe
 
     -group_by=chunk -expand="[ 20000101 [ fc0 [1 2] ] 20000202 [ fc1 [2] ] ]"
 
-.. figure:: ../workflows/group_by_chunk_expand.png
+.. figure:: ../../workflows/group_by_chunk_expand.png
    :name: group_chunk_expand
    :width: 70%
    :align: center
@@ -142,7 +142,7 @@ If there are jobs synchronized between members or dates, then a connection betwe
 
     -group_by=chunk -expand_status="FAILED RUNNING"
 
-.. figure:: ../workflows/group_by_chunk_status.png
+.. figure:: ../../workflows/group_by_chunk_status.png
    :name: group_chunk_status
    :width: 70%
    :align: center
@@ -152,7 +152,7 @@ If there are jobs synchronized between members or dates, then a connection betwe
 
     -group_by=chunk -expand="[ 20000101 [ fc0 [1] ] 20000202 [ fc1 [1 2] ] ]" -expand_status="FAILED RUNNING"
 
-.. figure:: ../workflows/group_by_chunk_expand_status.png
+.. figure:: ../../workflows/group_by_chunk_expand_status.png
    :name: group_chunk_expand_status
    :width: 70%
    :align: center
@@ -162,7 +162,7 @@ If there are jobs synchronized between members or dates, then a connection betwe
 
 If there are chunk jobs that are split, the splits can also be grouped.
 
-.. figure:: ../workflows/split_workflow.png
+.. figure:: ../../workflows/split_workflow.png
    :name: split_workflow
    :width: 70%
    :align: center
@@ -172,7 +172,7 @@ If there are chunk jobs that are split, the splits can also be grouped.
 
     -group_by=split
 
-.. figure:: ../workflows/split_group.png
+.. figure:: ../../workflows/split_group.png
    :name: group_split
    :width: 70%
    :align: center
@@ -191,7 +191,7 @@ The following workflow automatic created the groups 20000101_fc0, since all the 
 
 For example:
 
-.. figure:: ../workflows/group_automatic.png
+.. figure:: ../../workflows/group_automatic.png
    :name: group_automatic
    :width: 70%
    :align: center

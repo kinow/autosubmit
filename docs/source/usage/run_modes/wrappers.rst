@@ -106,7 +106,7 @@ Additionally, jobs are grouped within the corresponding date, member and chunk h
     TYPE = vertical-mixed
     JOBS_IN_WRAPPER = SIM&SIM2 # REQUIRED
 
-.. figure:: ../workflows/vertical-mixed.png
+.. figure:: ../../workflows/vertical-mixed.png
    :name: vertical-mixed
    :width: 100%
    :align: center
@@ -139,7 +139,7 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
     ...
     MAX_PROCESSORS = 2400
 
-.. figure:: ../workflows/horizontal_remote.png
+.. figure:: ../../workflows/horizontal_remote.png
    :name: horizontal_remote
    :width: 60%
    :align: center
@@ -178,7 +178,7 @@ Horizontal-vertical
     MACHINEFILES = STANDARD
     JOBS_IN_WRAPPER = SIM&DA
 
-.. figure:: ../workflows/dasim.png
+.. figure:: ../../workflows/dasim.png
    :name: wrapper_horizontal_vertical
    :width: 100%
    :align: center
@@ -199,7 +199,7 @@ Vertical-horizontal
     MACHINEFILES = STANDARD
     JOBS_IN_WRAPPER = SIM
 
-.. figure:: ../workflows/vertical-horizontal.png
+.. figure:: ../../workflows/vertical-horizontal.png
    :name: wrapper_vertical_horizontal
    :width: 100%
    :align: center
