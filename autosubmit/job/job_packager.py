@@ -235,7 +235,7 @@ class JobPackager(object):
                     break
             if wrapper_defined and self._platform.allow_wrappers and self.wrapper_type[self.current_wrapper_section] in ['horizontal', 'vertical','vertical-horizontal', 'horizontal-vertical'] :
                 # Trying to find the value in jobs_parser, if not, default to an autosubmit_.conf value (Looks first in [wrapper] section)
-                max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs(wrapper_section)))
+                max_wrapped_jobs = int(self._as_config.jobs_parser.get_option(section, "MAX_WRAPPED", self._as_config.get_max_wrapped_jobs(self.current_wrapper_section )))
                 if '&' not in section:
                     if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
                         dependencies_keys = self._as_config.jobs_parser.get(
@@ -277,7 +277,7 @@ class JobPackager(object):
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section],
                                                                          max_wrapped_jobs, section, max_wrapper_job_by_section)
 
-                elif self.wrapper_type[wrapper_section]  in ['vertical-horizontal', 'horizontal-vertical']:
+                elif self.wrapper_type[self.current_wrapper_section]  in ['vertical-horizontal', 'horizontal-vertical']:
                     wrapped = True
                     built_packages_tmp = list()
                     built_packages_tmp.append(self._build_hybrid_package(
