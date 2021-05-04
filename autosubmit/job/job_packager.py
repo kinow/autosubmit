@@ -290,7 +290,7 @@ class JobPackager(object):
                         if job.fail_count > 0:
                             failed_innerjobs = True
                             break
-                    if failed_innerjobs and str(self.wrapper_policy[wrapper_section]) == "mixed":
+                    if failed_innerjobs and str(self.wrapper_policy[self.current_wrapper_section]) == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
                                 continue
@@ -411,7 +411,7 @@ class JobPackager(object):
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section, max_wrapper_job_by_section):
         packages = []
         horizontal_packager = JobPackagerHorizontal(section_list, self._platform.max_processors, max_wrapped_jobs,
-                                                    self.max_jobs, self._platform.processors_per_node, self.wrapper_method, max_wrapper_job_by_section=max_wrapper_job_by_section)
+                                                    self.max_jobs, self._platform.processors_per_node, self.wrapper_method[self.current_wrapper_section], max_wrapper_job_by_section=max_wrapper_job_by_section)
 
         package_jobs = horizontal_packager.build_horizontal_package()
 
@@ -424,7 +424,7 @@ class JobPackager(object):
                 jobs_resources = horizontal_packager.components_dict
             jobs_resources['MACHINEFILES'] = machinefile_function
             current_package = JobPackageHorizontal(
-                package_jobs, jobs_resources=jobs_resources, method=self.wrapper_method, configuration=self._as_config)
+                package_jobs, jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config)
             packages.append(current_package)
 
         return packages
@@ -527,7 +527,7 @@ class JobPackager(object):
                 for job in current_package[level]:
                     job.level = level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
-                                            jobs_resources=jobs_resources, method=self.wrapper_method, configuration=self._as_config)
+                                            jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config)
 
 
 class JobPackagerVertical(object):
