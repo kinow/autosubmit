@@ -394,8 +394,9 @@ class JobPackager(object):
         for jobs_in_wrapper_section in self.jobs_in_wrapper:
             sections_split.update(set(self.jobs_in_wrapper[jobs_in_wrapper_section].split()))
         sections_split = list(sections_split)
+        jobs_section = dict()
         for job in jobs_list:
-            jobs_section = dict()
+
             # This iterator will always return None if there is no '&' defined in the section name
             section = next(
                 (s for s in sections_split if job.section in s and '&' in s), None)
@@ -405,6 +406,7 @@ class JobPackager(object):
                 jobs_section[section] = list()
             jobs_section[section].append(job)
         return jobs_section
+
 
     def _build_horizontal_packages(self, section_list, max_wrapped_jobs, section, max_wrapper_job_by_section):
         packages = []
