@@ -86,7 +86,7 @@ Where:
 - Completed: Total number of attempts that reached the COMPLETED status.
 - Queueing time (h): Sum of the time spent queuing by attempts that reached the COMPLETED status, in hours.
 - Expected consumption real (h): Sum of wallclock values for all jobs, in hours.
-- Expected consumption CPU time (h): Sum of the products of wallclock value and number of requested of processors for each job, in hours.
+- Expected consumption CPU time (h): Sum of the products of wallclock value and number of requested processors for each job, in hours.
 - Consumption real (h): Sum of the time spent running by all attempts of jobs, in hours.
 - Consumption CPU time (h): Sum of the products of the time spent running and number of requested of processors for each job, in hours.
 - Consumption (%): Percentage of `Consumption CPU time` relative to `Expected consumption CPU time`.
