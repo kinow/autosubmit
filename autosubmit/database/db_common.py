@@ -194,52 +194,6 @@ def check_experiment_exists(name, error_on_inexistence=True):
     return True
 
 
-def update_experiment_descrip_version(name, description=None, version=None):
-    """
-    Updates the experiment's description and/or version
-
-    :param name: experiment name (expid)  
-    :rtype name: str  
-    :param description: experiment new description  
-    :rtype description: str  
-    :param version: experiment autosubmit version  
-    :rtype version: str  
-    :return: If description has been update, True; otherwise, False.  
-    :rtype: bool
-    """
-    if not check_db():
-        return False
-    try:
-        (conn, cursor) = open_conn()
-    except DbException as e:
-        raise AutosubmitCritical(
-            "Could not establish a connection to the database.", 7001, str(e))
-    conn.isolation_level = None
-
-    # Changing default unicode
-    conn.text_factory = str
-    # Conditional update
-    if description is not None and version is not None:
-        cursor.execute('update experiment set description=:description, autosubmit_version=:version where name=:name', {
-            'description': description, 'version': version, 'name': name})
-    elif description is not None and version is None:
-        cursor.execute('update experiment set description=:description where name=:name', {
-            'description': description, 'name': name})
-    elif version is not None and description is None:
-        cursor.execute('update experiment set autosubmit_version=:version where name=:name', {
-            'version': version, 'name': name})
-    else:
-        raise AutosubmitCritical(
-            "Not enough data to update {}.".format(name), 7005)
-    row = cursor.rowcount
-    close_conn(conn, cursor)
-    if row == 0:
-        raise AutosubmitCritical(
-            "Update on experiment {} failed.".format(name), 7005)
-        return False
-    return True
-
-
 def get_autosubmit_version(expid):
     """
     Get the minimun autosubmit version needed for the experiment

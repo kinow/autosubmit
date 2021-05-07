@@ -464,12 +464,16 @@ class AutosubmitConfig(object):
         :return: True if everything is correct, False if it finds any error
         :rtype: bool
         """
+
         Log.info('\nChecking configuration files...')
         self.ignore_file_path = running_time
         self.ignore_undefined_platforms = running_time
 
         try:
             self.reload()
+        except IOError as e:
+            raise AutosubmitError(
+                "I/O Issues con config files", 6016, e.message)
         except (AutosubmitCritical, AutosubmitError) as e:
             raise
         except BaseException as e:
@@ -533,8 +537,14 @@ class AutosubmitConfig(object):
         if not self.is_valid_storage_type():
             self.wrong_config["Autosubmit"] += [['storage',
                                                  "TYPE parameter not found"]]
-        if self.get_wrapper_type() != 'None':
+        if self.get_wrapper_type().lower() == 'multi':
+            list_of_wrappers = self.get_wrapper_multi() # list
+            for wrapper_section_name in self.get_wrapper_multi():
+                self.check_wrapper_conf(wrapper_section_name)
+        elif self.get_wrapper_type() != 'None':
             self.check_wrapper_conf()
+
+
         if self.get_notifications() == 'true':
             for mail in self.get_mails_to():
                 if not self.is_valid_mail_address(mail):
@@ -788,20 +798,20 @@ class AutosubmitConfig(object):
                                            "FILE_PROJECT_CONF parameter is invalid"]]
             return False
 
-    def check_wrapper_conf(self):
-        if not self.is_valid_jobs_in_wrapper():
-            self.wrong_config["Wrapper"] += [['wrapper',
+    def check_wrapper_conf(self,wrapper_section_name="wrapper"):
+        if not self.is_valid_jobs_in_wrapper(wrapper_section_name):
+            self.wrong_config["Wrapper"] += [[wrapper_section_name,
                                               "JOBS_IN_WRAPPER contains non-defined jobs.  parameter is invalid"]]
-        if 'horizontal' in self.get_wrapper_type():
+        if 'horizontal' in self.get_wrapper_type(wrapper_section_name):
             if not self._platforms_parser.check_exists(self.get_platform(), 'PROCESSORS_PER_NODE'):
                 self.wrong_config["Wrapper"] += [
-                    ['wrapper', "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
+                    [wrapper_section_name, "PROCESSORS_PER_NODE no exist in the horizontal-wrapper platform"]]
             if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_PROCESSORS'):
-                self.wrong_config["Wrapper"] += [['wrapper',
+                self.wrong_config["Wrapper"] += [[wrapper_section_name,
                                                   "MAX_PROCESSORS no exist in the horizontal-wrapper platform"]]
-        if 'vertical' in self.get_wrapper_type():
+        if 'vertical' in self.get_wrapper_type(wrapper_section_name):
             if not self._platforms_parser.check_exists(self.get_platform(), 'MAX_WALLCLOCK'):
-                self.wrong_config["Wrapper"] += [['wrapper',
+                self.wrong_config["Wrapper"] += [[wrapper_section_name,
                                                   "MAX_WALLCLOCK no exist in the vertical-wrapper platform"]]
         if "Wrapper" not in self.wrong_config:
             Log.result('wrappers OK')
@@ -820,6 +830,8 @@ class AutosubmitConfig(object):
                 self.parser_factory, self._jobs_parser_file)
             self._exp_parser = AutosubmitConfig.get_parser(
                 self.parser_factory, self._exp_parser_file)
+        except IOError as e:
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
         except Exception as e:
             raise AutosubmitCritical(
                 "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
@@ -1406,86 +1418,100 @@ class AutosubmitConfig(object):
         else:
             return False
 
-    def get_wrapper_type(self):
+    def get_wrapper_type(self, wrapper_section_name="wrapper"):
         """
-        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
+        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, MULTI NONE) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'TYPE', 'None').lower()
+        return self._conf_parser.get_option(wrapper_section_name, 'TYPE', 'None').lower()
 
-    def get_wrapper_policy(self):
+    def get_wrapper_multi(self):
         """
-        Returns what kind of wrapper (VERTICAL, MIXED-VERTICAL, HORIZONTAL, HYBRID, NONE) the user has configured in the autosubmit's config
+        return the section name of the wrappers
+
+        :return: wrapper section list
+        :rtype: string
+        """
+        list_of_wrappers = self._conf_parser.get_option("wrapper", 'WRAPPER_LIST', [])
+        if "," in list_of_wrappers:
+            list_of_wrappers = list_of_wrappers.split(',')
+        else:
+            list_of_wrappers = []
+        return list_of_wrappers
+
+    def get_wrapper_policy(self,wrapper_section_name="wrapper"):
+        """
+        Returns what kind of policy (flexible, strict, mixed ) the user has configured in the autosubmit's config
 
         :return: wrapper type (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'POLICY', 'flexible').lower()
+        return self._conf_parser.get_option(wrapper_section_name, 'POLICY', 'flexible').lower()
 
-    def get_wrapper_jobs(self):
+    def get_wrapper_jobs(self,wrapper_section_name="wrapper"):
         """
         Returns the jobs that should be wrapped, configured in the autosubmit's config
 
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'JOBS_IN_WRAPPER', 'None')
+        return self._conf_parser.get_option(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
 
-    def get_wrapper_queue(self):
+    def get_wrapper_queue(self,wrapper_section_name="wrapper"):
         """
         Returns the wrapper queue if not defined, will be the one of the first job wrapped
 
         :return: expression (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option('wrapper', 'QUEUE', 'None')
+        return self._conf_parser.get_option(wrapper_section_name, 'QUEUE', 'None')
 
-    def get_min_wrapped_jobs(self):
+    def get_min_wrapped_jobs(self,wrapper_section_name="wrapper"):
         """
          Returns the minim number of jobs that can be wrapped together as configured in autosubmit's config file
 
         :return: minim number of jobs (or total jobs)
         :rtype: int
         """
-        return int(self._conf_parser.get_option('wrapper', 'MIN_WRAPPED', 2))
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED', 2))
 
-    def get_max_wrapped_jobs(self):
+    def get_max_wrapped_jobs(self,wrapper_section_name="wrapper"):
         """
          Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
 
          :return: maximum number of jobs (or total jobs)
          :rtype: int
          """
-        return int(self._conf_parser.get_option('wrapper', 'MAX_WRAPPED', self.get_total_jobs()))
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED', self.get_total_jobs()))
 
-    def get_wrapper_method(self):
+    def get_wrapper_method(self,wrapper_section_name="wrapper"):
         """
          Returns the method of make the wrapper
 
          :return: method
          :rtype: string
          """
-        return self._conf_parser.get_option('wrapper', 'METHOD', 'ASThread')
+        return self._conf_parser.get_option(wrapper_section_name, 'METHOD', 'ASThread')
 
-    def get_wrapper_check_time(self):
+    def get_wrapper_check_time(self,wrapper_section_name="wrapper"):
         """
          Returns time to check the status of jobs in the wrapper
 
          :return: wrapper check time
          :rtype: int
          """
-        return int(self._conf_parser.get_option('wrapper', 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
+        return int(self._conf_parser.get_option(wrapper_section_name, 'CHECK_TIME_WRAPPER', self.get_safetysleeptime()))
 
-    def get_wrapper_machinefiles(self):
+    def get_wrapper_machinefiles(self,wrapper_section_name="wrapper"):
         """
          Returns the strategy for creating the machinefiles in wrapper jobs
 
          :return: machinefiles function to use
          :rtype: string
          """
-        return self._conf_parser.get_option('wrapper', 'MACHINEFILES', '')
+        return self._conf_parser.get_option(wrapper_section_name, 'MACHINEFILES', '')
 
     def get_jobs_sections(self):
         """
@@ -1547,8 +1573,8 @@ class AutosubmitConfig(object):
         storage_type = self.get_storage_type()
         return storage_type in ['pkl', 'db']
 
-    def is_valid_jobs_in_wrapper(self):
-        expression = self.get_wrapper_jobs()
+    def is_valid_jobs_in_wrapper(self,wrapper_section_name="wrapper"):
+        expression = self.get_wrapper_jobs(wrapper_section_name="wrapper")
         if expression != 'None':
             parser = self._jobs_parser
             sections = parser.sections()
@@ -1596,6 +1622,8 @@ class AutosubmitConfig(object):
             try:
                 with open(file_path) as f:
                     parser.read(file_path)
+            except IOError as exp:
+                raise
             except Exception as exp:
                 raise Exception(
                     "{}\n This file and the correctness of its content are necessary.".format(str(exp)))

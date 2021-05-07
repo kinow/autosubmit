@@ -86,7 +86,7 @@ class ParamikoPlatform(Platform):
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
                 self.name, self.host), 6002, e.message)
-        except (AutosubmitError,AutosubmitCritical):
+        except (AutosubmitError,AutosubmitCritical,IOError):
             raise
         except BaseException as e:
             raise AutosubmitError("[{0}] connection failed for host: {1}".format(self.name, self.host), 6002, e.message)
@@ -164,6 +164,9 @@ class ParamikoPlatform(Platform):
             self.transport.connect(username=self.user)
             self._ftpChannel = self._ssh.open_sftp()
             self.connected = True
+        except IOError as e:
+            raise AutosubmitError(
+                "File can't be located due an slow connection", 6016, e.message)
         except BaseException as e:
             self.connected = False
             if "Authentication failed." in e.message:
@@ -653,6 +656,8 @@ class ParamikoPlatform(Platform):
             raise
         except AutosubmitError as e:
             raise
+        except IOError as e:
+            raise AutosubmitError(e.message,6016)
         except BaseException as e:
             raise AutosubmitError('Command {0} in {1} warning: {2}'.format(
                 command, self.host, '\n'.join(stderr_readlines)), 6005, e.message)
