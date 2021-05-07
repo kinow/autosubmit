@@ -7,9 +7,9 @@ In order to understand the goal of this feature, please take a look at: https://
 At the moment there are 4 types of wrappers that can be used depending on the experiment's workflow:
 
 * Vertical
-* Vertical mixed
 * Horizontal
 * Hybrid (horizontal-vertical and vertical-horizontal approaches)
+* Multiple wrappers - Same experiment
 
 When using the wrapper, it is useful to be able to visualize which packages are being created.
 So, when executing *autosubmit monitor cxxx*, a dashed box indicates the jobs that are wrapped together in the same job package.
@@ -93,17 +93,17 @@ In order to be able to use the vertical wrapper, in ``platforms_cxxx.conf`` set 
 
 Remember to add to each job the corresponding WALLCLOCK time.
 
-Vertical-mixed wrapper
-=======================
+Vertical with multiple sections
+===============================
 
-This is a version of the vertical wrapper that allows jobs of different types to be wrapped together.
+This is a mode of the vertical wrapper that allows jobs of different types to be wrapped together.
 Note that the solution considers the order of the sections defined in the ``jobs_cxxx.conf`` file, so the order of the sections given in **JOBS_IN_WRAPPER** is irrelevant.
 Additionally, jobs are grouped within the corresponding date, member and chunk hierarchy.
 
 .. code-block:: ini
 
     [wrapper]
-    TYPE = vertical-mixed
+    TYPE = vertical
     JOBS_IN_WRAPPER = SIM&SIM2 # REQUIRED
 
 .. figure:: ../../workflows/vertical-mixed.png
@@ -146,7 +146,7 @@ In order to be able to use the horizontal wrapper, in ``platforms_cxxx.conf`` se
    :alt: horizontally wrapped jobs
 
 Shared-memory Experiments
-**********************
+*************************
 
 There is also the possibility of setting the option **METHOD** to SRUN in the wrapper directive (**ONLY** for vertical and vertical-horizontal wrappers).
 
@@ -205,6 +205,30 @@ Vertical-horizontal
    :align: center
    :alt: hybrid wrapper
 
+Multiple wrappers at once
+=========================
+This is an special mode that allows you to use multiple **independent** wrappers on the same experiment. By using an special variable that allows to define subwrapper sections
+
+.. code-block:: ini
+
+    [Wrapper]
+    TYPE = multi # REQUIRED
+    WRAPPER_LIST = wrapper_0,wrapper_1
+
+    [wrapper_0]
+    TYPE = vertical
+    JOBS_IN_WRAPPER = SIM
+
+    [wrapper_1]
+    TYPE = vertical
+    JOBS_IN_WRAPPER = DA&REDUCE
+
+.. figure:: ../workflows/multiple_wrappers.png
+   :name:
+   :width: 100%
+   :align: center
+   :alt: multi wrapper
+
 Summary
 ==========================
 
@@ -213,10 +237,13 @@ In `autosubmit_cxxx.conf`:
 .. code-block:: ini
 
     # Basic Configuration of wrapper
-    #TYPE = {vertical,vertical-mixed,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
+    #TYPE = {vertical,horizontal,horizontal-vertical,vertical-horizontal} # REQUIRED
     # JOBS_IN_WRAPPER = Sections that should be wrapped together ex SIM
+    # METHOD : Select between MACHINESFILES or Shared-Memory.
     # MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2
     # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS
+    # Policy : Select the behaviour of the inner jobs Strict/Flexible/Mixed
+
 
     [wrapper]
     TYPE = Vertical #REQUIRED
@@ -225,7 +252,7 @@ In `autosubmit_cxxx.conf`:
     MIN_WRAPPED = 2
     MAX_WRAPPED = 9999 # OPTIONAL. Integer value, overrides TOTALJOBS
     CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
-
+    Policy = flexible #  OPTIONAL
 In `platforms_cxxx.conf`:
 
 .. code-block:: ini

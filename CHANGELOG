@@ -1,6 +1,16 @@
+<<<<<<< HEAD
 3.13.0 - This has been the Autosubmit development versions for many months, so it provides a lot of improvements, specially in terms of efficiency and stability. It also brings a full refactor of the wrappers module.
 
 
+=======
+3.14.0b -
+
+MultiThreads option is avaliable
+
+
+3.13.0 - This has been the Autosubmit development versions for many months, so it provides a lot of improvements, specially in terms of efficiency and stability. It also brings a full refactor of the wrappers module.
+
+>>>>>>> 36e528d2654399ba4ba1ffc27367e1bdcd5edfe9
 Multi-threaded wrappers were introduced in this version.
 It provides the possibility to specify multiple hosts for the same platform (in a list) so it is more robust against connection issues / login failures.
 In general, big experiments, with many startdates/members or featuring very big wrappers run much more efficiently with 3.13.0.
@@ -22,7 +32,10 @@ Workflow updates: A difference of 3.12.0 version, in this one, only Create and r
 Improves into failure tolerance, in this version AS will try to prevent as many errors as possible at the beginning of the run and other delicate operations, instead of detecting them while in running time.
 Allows prioritizing a list of jobs to be run before the rest of the workflow. Via the use of the Two_step_start variable set in expdef.conf
 Allows skipping jobs under the same section if their last on queuing member/chunks is higher than other on queuing/waiting/ready
+<<<<<<< HEAD
 
+=======
+>>>>>>> 36e528d2654399ba4ba1ffc27367e1bdcd5edfe9
 
 3.12.0 - Shortly, this will be the Autosubmit default. Therefore, it is the recommended software to run any kind of experiments unless there is a
 necessity only covered by the development versions.
