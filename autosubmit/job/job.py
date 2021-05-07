@@ -287,6 +287,10 @@ class Job(object):
 
     @property
     def total_processors(self):
+        """
+        Number of processors requested by job.  
+        Reduces ':' separated format  if necessary.
+        """
         if ':' in self.processors:
             return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
         return int(self.processors)
@@ -501,18 +505,27 @@ class Job(object):
         return self._get_from_total_stats(1)
 
     def get_last_retrials(self):
+        """
+        Returns the retrials of a job, including the last COMPLETED run. The selection stops, and does not include, when the previous COMPLETED job is located or the list of registers is exhausted.
+
+        :return: list of list of dates of retrial [submit, start, finish] in datetime format 
+        :rtype: list of list  
+        """
         log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         retrials_list = []
         if os.path.exists(log_name):
             already_completed = False
+            # Read lines of the TOTAL_STATS file starting from last
             for retrial in reversed(open(log_name).readlines()):
                 retrial_fields = retrial.split()
                 if Job.is_a_completed_retrial(retrial_fields):
+                    # It's a COMPLETED run
                     if already_completed:
                         break
                     already_completed = True
                 retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
                                     retrial_fields)
+                # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
@@ -1021,6 +1034,9 @@ class Job(object):
 
     @staticmethod
     def is_a_completed_retrial(fields):
+        """
+        Returns true only if there 4 fields: submit start finish status, and status equals COMPLETED.
+        """
         if len(fields) == 4:
             if fields[3] == 'COMPLETED':
                 return True

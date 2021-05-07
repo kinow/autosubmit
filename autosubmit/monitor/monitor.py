@@ -33,7 +33,7 @@ import subprocess
 from autosubmit.job.job_common import Status
 from autosubmit.config.basicConfig import BasicConfig
 from autosubmit.config.config_common import AutosubmitConfig
-from log.log import Log,AutosubmitError,AutosubmitCritical
+from log.log import Log, AutosubmitError, AutosubmitCritical
 from bscearth.utils.config_parser import ConfigParserFactory
 
 from diagram import create_bar_diagram
@@ -41,8 +41,9 @@ from diagram import create_bar_diagram
 
 class Monitor:
     """Class to handle monitoring of Jobs at HPC."""
-    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'),(Status.PREPARED, 'skyblue'),
-                   (Status.SUBMITTED, 'cyan'), (Status.HELD, 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
+    _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.PREPARED, 'skyblue'),
+                   (Status.SUBMITTED, 'cyan'), (Status.HELD,
+                                                'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
                    (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
 
     @staticmethod
@@ -95,7 +96,8 @@ class Monitor:
         graph = pydotplus.Dot(graph_type='digraph')
 
         Log.debug('Creating legend...')
-        legend = pydotplus.Subgraph(graph_name='Legend', label='Legend', rank="source")
+        legend = pydotplus.Subgraph(
+            graph_name='Legend', label='Legend', rank="source")
         legend.add_node(pydotplus.Node(name='UNKNOWN', shape='box', style="",
                                        fillcolor=self._table[Status.UNKNOWN]))
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
@@ -146,7 +148,8 @@ class Monitor:
                 if groups and job.name in groups['jobs']:
                     group = groups['jobs'][job.name][0]
                     node_job.obj_dict['name'] = group
-                    node_job.obj_dict['attributes']['fillcolor'] = self.color_status(groups['status'][group])
+                    node_job.obj_dict['attributes']['fillcolor'] = self.color_status(
+                        groups['status'][group])
                     node_job.obj_dict['attributes']['shape'] = 'box3d'
 
                 exp.add_node(node_job)
@@ -156,9 +159,10 @@ class Monitor:
             if not hide_groups:
                 for job, group in groups['jobs'].items():
                     if len(group) > 1:
-                        group_name = 'cluster_'+'_'.join(group)
+                        group_name = 'cluster_' + '_'.join(group)
                         if group_name not in graph.obj_dict['subgraphs']:
-                            subgraph = pydotplus.graphviz.Cluster(graph_name='_'.join(group))
+                            subgraph = pydotplus.graphviz.Cluster(
+                                graph_name='_'.join(group))
                             subgraph.obj_dict['attributes']['color'] = 'invis'
                         else:
                             subgraph = graph.get_subgraph(group_name)[0]
@@ -172,7 +176,8 @@ class Monitor:
                             if len(subgraph.get_node(group[i])) == 0:
                                 subgraph.add_node(node)
 
-                            edge = subgraph.get_edge(node.obj_dict['name'], previous_node.obj_dict['name'])
+                            edge = subgraph.get_edge(
+                                node.obj_dict['name'], previous_node.obj_dict['name'])
                             if len(edge) == 0:
                                 edge = pydotplus.Edge(previous_node, node)
                                 edge.obj_dict['attributes']['dir'] = 'none'
@@ -198,7 +203,8 @@ class Monitor:
             if name in jobs_packages_dict:
                 package = jobs_packages_dict[name]
                 if package not in packages_subgraphs_dict:
-                    packages_subgraphs_dict[package] = pydotplus.graphviz.Cluster(graph_name=package)
+                    packages_subgraphs_dict[package] = pydotplus.graphviz.Cluster(
+                        graph_name=package)
                     packages_subgraphs_dict[package].obj_dict['attributes']['color'] = 'black'
                     packages_subgraphs_dict[package].obj_dict['attributes']['style'] = 'dashed'
                 packages_subgraphs_dict[package].add_node(node)
@@ -215,7 +221,8 @@ class Monitor:
         self.nodes_ploted.add(job)
         if job.has_children() != 0:
             for child in sorted(job.children, key=lambda k: k.name):
-                node_child, skip = self._check_node_exists(exp, child, groups, hide_groups)
+                node_child, skip = self._check_node_exists(
+                    exp, child, groups, hide_groups)
                 if len(node_child) == 0 and not skip:
                     node_child = self._create_node(child, groups, hide_groups)
                     if node_child:
@@ -228,7 +235,8 @@ class Monitor:
                     exp.add_edge(pydotplus.Edge(node_job, node_child))
                     skip = True
                 if not skip:
-                    self._add_children(child, exp, node_child, groups, hide_groups)
+                    self._add_children(
+                        child, exp, node_child, groups, hide_groups)
 
     def _check_node_exists(self, exp, job, groups, hide_groups):
         skip = False
@@ -249,15 +257,15 @@ class Monitor:
             if not hide_groups:
                 group = groups['jobs'][job.name][0]
                 node = pydotplus.Node(group, shape='box3d', style="filled",
-                                        fillcolor=self.color_status(groups['status'][group]))
+                                      fillcolor=self.color_status(groups['status'][group]))
                 node.set_name(group.replace('"', ''))
 
         elif not groups or job.name not in groups['jobs']:
             node = pydotplus.Node(job.name, shape='box', style="filled",
-                                        fillcolor=self.color_status(job.status))
+                                  fillcolor=self.color_status(job.status))
         return node
 
-    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False, job_list_object = None):
+    def generate_output(self, expid, joblist, path, output_format="pdf", packages=None, show=False, groups=dict(), hide_groups=False, job_list_object=None):
         """
         Plots graph for joblist and stores it in a file
 
@@ -278,27 +286,30 @@ class Monitor:
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot", expid + "_" + output_date + "." +
                                    output_format)
 
-        graph = self.create_tree_list(expid, joblist, packages, groups, hide_groups)
+        graph = self.create_tree_list(
+            expid, joblist, packages, groups, hide_groups)
 
         Log.debug("Saving workflow plot at '{0}'", output_file)
         if output_format == "png":
             # noinspection PyUnresolvedReferences
-            graph.write_png(output_file)            
+            graph.write_png(output_file)
         elif output_format == "pdf":
             # noinspection PyUnresolvedReferences
-            graph.write_pdf(output_file)            
+            graph.write_pdf(output_file)
         elif output_format == "ps":
             # noinspection PyUnresolvedReferences
-            graph.write_ps(output_file)            
+            graph.write_ps(output_file)
         elif output_format == "svg":
             # noinspection PyUnresolvedReferences
-            graph.write_svg(output_file) 
+            graph.write_svg(output_file)
         elif output_format == "txt":
             # JobList object is needed, also it acts as a flag.
             if job_list_object is not None:
-                self.generate_output_txt(expid, joblist, path, job_list_object=job_list_object)
+                self.generate_output_txt(
+                    expid, joblist, path, job_list_object=job_list_object)
         else:
-            raise AutosubmitCritical('Format {0} not supported'.format(output_format),7069)
+            raise AutosubmitCritical(
+                'Format {0} not supported'.format(output_format), 7069)
         if output_format != "txt":
             Log.result('Plot created at {0}', output_file)
         # If txt, don't open
@@ -306,12 +317,13 @@ class Monitor:
             try:
                 subprocess.check_call(['xdg-open', output_file])
             except subprocess.CalledProcessError:
-                raise AutosubmitCritical('File {0} could not be opened'.format(output_file), 7068)
+                raise AutosubmitCritical(
+                    'File {0} could not be opened'.format(output_file), 7068)
         # If the txt has been generated, don't make it again.
         if output_format != "txt":
             self.generate_output_txt(expid, joblist, path, "default")
 
-    def generate_output_txt(self, expid, joblist, path,classictxt=False, job_list_object = None):
+    def generate_output_txt(self, expid, joblist, path, classictxt=False, job_list_object=None):
         """
         Function that generates a representation of the jobs in a txt file
         :param expid: experiment's identifier
@@ -322,10 +334,11 @@ class Monitor:
         :type job_list_object: JobList object
         """
         Log.info('Writing status txt...')
-        
+
         now = time.localtime()
         output_date = time.strftime("%Y%m%d_%H%M", now)
-        file_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "status", expid + "_" + output_date + ".txt")
+        file_path = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, expid, "status", expid + "_" + output_date + ".txt")
 
         if not os.path.exists(os.path.dirname(file_path)):
             os.makedirs(os.path.dirname(file_path))
@@ -339,29 +352,37 @@ class Monitor:
                     log_out = path + "/" + job.local_logs[0]
                     log_err = path + "/" + job.local_logs[1]
 
-                output = job.name + " " + Status().VALUE_TO_KEY[job.status] + " " + log_out + " " + log_err + "\n"
+                output = job.name + " " + \
+                    Status().VALUE_TO_KEY[job.status] + \
+                    " " + log_out + " " + log_err + "\n"
                 output_file.write(output)
-        else:                        
+        else:
             # Replaced call to function for a call to the function of the object that
             # was previously implemented, nocolor is set to True because we don't want
             # strange ANSI codes in our plain text file
-            if job_list_object is not None:     
-                print("In the new thingy")           
-                output_file.write(job_list_object.print_with_status(statusChange = None, nocolor=True, existingList=joblist))
+            if job_list_object is not None:
+                print("In the new thingy")
+                output_file.write(job_list_object.print_with_status(
+                    statusChange=None, nocolor=True, existingList=joblist))
             else:
-                output_file.write("Writing jobs, they're grouped by [FC and DATE] \n")
-                self.write_output_txt_recursive(joblist[0],output_file,"",file_path)
+                output_file.write(
+                    "Writing jobs, they're grouped by [FC and DATE] \n")
+                self.write_output_txt_recursive(
+                    joblist[0], output_file, "", file_path)
             output_file.close()
         Log.result('Status txt created at {0}', output_file)
 
-    def write_output_txt_recursive(self,job,output_file,level,path):
+    def write_output_txt_recursive(self, job, output_file, level, path):
         log_out = ""
         log_err = ""
-        output = level+job.name + " " + Status().VALUE_TO_KEY[job.status] +"\n" #+ " " + log_out + " " + log_err + "\n"
+        # + " " + log_out + " " + log_err + "\n"
+        output = level + job.name + " " + \
+            Status().VALUE_TO_KEY[job.status] + "\n"
         output_file.write(output)
         if job.has_children() > 0:
             for child in job.children:
-                self.write_output_txt_recursive(child,output_file,"_"+level,path)
+                self.write_output_txt_recursive(
+                    child, output_file, "_" + level, path)
 
     def generate_output_stats(self, expid, joblist, output_format="pdf", period_ini=None, period_fi=None, show=False):
         """
@@ -391,13 +412,16 @@ class Monitor:
         output_file = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "stats", expid + "_statistics_" + output_date +
                                    "." + output_format)
 
-        create_bar_diagram(expid, joblist, self.get_general_stats(expid), output_file, period_ini, period_fi)
+        create_bar_diagram(expid, joblist, self.get_general_stats(
+            expid), output_file, period_ini, period_fi)
         Log.result('Stats created at {0}', output_file)
         if show:
             try:
                 subprocess.check_call(['xdg-open', output_file])
             except subprocess.CalledProcessError:
-                raise AutosubmitCritical('File {0} could not be opened'.format(output_file),7068)
+                raise AutosubmitCritical(
+                    'File {0} could not be opened'.format(output_file), 7068)
+
     @staticmethod
     def clean_plot(expid):
         """
@@ -410,7 +434,8 @@ class Monitor:
         search_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "plot")
         chdir(search_dir)
         files = filter(path.isfile, listdir(search_dir))
-        files = [path.join(search_dir, f) for f in files if 'statistics' not in f]
+        files = [path.join(search_dir, f)
+                 for f in files if 'statistics' not in f]
         files.sort(key=lambda x: path.getmtime(x))
         remain = files[-2:]
         filelist = [f for f in files if f not in remain]
@@ -440,10 +465,20 @@ class Monitor:
 
     @staticmethod
     def get_general_stats(expid):
+        """
+        Returns all the options in the sections of the %expid%_GENERAL_STATS
+
+        :param expid: experiment's identifier  
+        :type expid: str  
+        :return: list of tuples (section, ''), (option, value), (option, value), (section, ''), (option, value), ...  
+        :rtype: list  
+        """
         general_stats = []
-        general_stats_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "tmp", expid + "_GENERAL_STATS")
-        parser = AutosubmitConfig.get_parser(ConfigParserFactory(), general_stats_path)
+        general_stats_path = os.path.join(
+            BasicConfig.LOCAL_ROOT_DIR, expid, "tmp", expid + "_GENERAL_STATS")
+        parser = AutosubmitConfig.get_parser(
+            ConfigParserFactory(), general_stats_path)
         for section in parser.sections():
             general_stats.append((section, ''))
-            general_stats += parser.items(section)
+            general_stats += parser.items(section)        
         return general_stats

@@ -20,7 +20,7 @@
 import datetime
 from autosubmit.job.job import Job
 from autosubmit.monitor.utils import FixedSizeList
-from log.log import Log,AutosubmitError,AutosubmitCritical
+from log.log import Log, AutosubmitError, AutosubmitCritical
 
 
 def timedelta2hours(deltatime):
@@ -108,63 +108,97 @@ class ExperimentStats(object):
         return FixedSizeList(self._fail_run, 0.0)
 
     def _calculate_stats(self):
+        """
+        Main calculation
+        """
         queued_by_id = dict()
+        # Start enumeration of job objects
         for i, job in enumerate(self._jobs_list):
             last_retrials = job.get_last_retrials()
             processors = job.total_processors
             for retrial in last_retrials:
                 if Job.is_a_completed_retrial(retrial):
+                    # The retrial has all necessary values and is status COMPLETED
+                    # This IF block appears to be an attempt to normalize the queuing times for wrapped job.
+                    # However, considering the current implementation of wrappers, it does not work.
                     if job.id not in queued_by_id:
-                        self._queued[i] += retrial[1] - retrial[0]
+                        self._queued[i] += retrial[1] - \
+                            retrial[0]  # Queue time
+                        # Job -> Queue time
                         queued_by_id[job.id] = self._queued[i]
                     else:
                         self._queued[i] += queued_by_id[job.id]
                     self._start_times[i] = retrial[1]
                     self._end_times[i] = retrial[2]
+                    # RUN time
                     self._run[i] += retrial[2] - retrial[1]
+                    # CPU consumption = run time (COMPLETED retrial) * number of processors requested (accumulated)
                     self._cpu_consumption += self.run[i] * int(processors)
+                    # REAL CONSUMPTION = run time (accumulated)
                     self._real_consumption += self.run[i]
+                    # Count as COMPLETED job
                     self._total_jobs_completed += 1
                 else:
+                    # Not COMPLETED status
                     if len(retrial) > 2:
+                        # Consider it as a FAILED run
+                        # Accumulate RUN time
                         self._fail_run[i] += retrial[2] - retrial[1]
                     if len(retrial) > 1:
+                        # It only QUEUED
+                        # Accumulate QUEUE time
                         self._fail_queued[i] += retrial[1] - retrial[0]
+                    # CPU consumption = run time (FAILED retrial) * number of processors requested (accumulated)
                     self._cpu_consumption += self.fail_run[i] * int(processors)
+                    # REAL CONSUMPTION = run time (accumulated)
                     self._real_consumption += self.fail_run[i]
+                    # Count as FAILED job
                     self._failed_jobs[i] += 1
             self._total_jobs_submitted += len(last_retrials)
             self._total_jobs_run += len(last_retrials)
             self._total_jobs_failed += self.failed_jobs[i]
             self._threshold = max(self._threshold, job.total_wallclock)
-            self._expected_cpu_consumption += job.total_wallclock * int(processors)
+            self._expected_cpu_consumption += job.total_wallclock * \
+                int(processors)
             self._expected_real_consumption += job.total_wallclock
             self._total_queueing_time += self._queued[i]
 
     def _calculate_maxs(self):
         max_run = max(max(self._run), max(self._fail_run))
         max_queued = max(max(self._queued), max(self._fail_queued))
-        self._max_timedelta = max(max_run, max_queued, datetime.timedelta(hours=self._threshold))
-        self._max_time = max(self._max_time, self._max_timedelta.days * 24 + self._max_timedelta.seconds / 3600.0)
+        self._max_timedelta = max(
+            max_run, max_queued, datetime.timedelta(hours=self._threshold))
+        self._max_time = max(self._max_time, self._max_timedelta.days *
+                             24 + self._max_timedelta.seconds / 3600.0)
         self._max_fail = max(self._max_fail, max(self._failed_jobs))
 
     def _calculate_totals(self):
-        percentage_consumption = timedelta2hours(self._cpu_consumption) / self._expected_cpu_consumption * 100
+        """
+        Calculates totals and prints to console.
+        """
+        percentage_consumption = timedelta2hours(
+            self._cpu_consumption) / self._expected_cpu_consumption * 100
         self._totals = ['Period: ' + str(self._start) + " ~ " + str(self._end),
                         'Submitted (#): ' + str(self._total_jobs_submitted),
                         'Run  (#): ' + str(self._total_jobs_run),
                         'Failed  (#): ' + str(self._total_jobs_failed),
                         'Completed (#): ' + str(self._total_jobs_completed),
-                        'Queueing time (h): ' + str(round(timedelta2hours(self._total_queueing_time), 2)),
-                        'Expected consumption real (h): ' + str(round(self._expected_real_consumption, 2)),
-                        'Expected consumption CPU time (h): ' + str(round(self._expected_cpu_consumption, 2)),
-                        'Consumption real (h): ' + str(round(timedelta2hours(self._real_consumption), 2)),
-                        'Consumption CPU time (h): ' + str(round(timedelta2hours(self._cpu_consumption), 2)),
+                        'Queueing time (h): ' +
+                        str(round(timedelta2hours(self._total_queueing_time), 2)),
+                        'Expected consumption real (h): ' + str(
+                            round(self._expected_real_consumption, 2)),
+                        'Expected consumption CPU time (h): ' + str(
+                            round(self._expected_cpu_consumption, 2)),
+                        'Consumption real (h): ' +
+                        str(round(timedelta2hours(self._real_consumption), 2)),
+                        'Consumption CPU time (h): ' + str(
+                            round(timedelta2hours(self._cpu_consumption), 2)),
                         'Consumption (%): ' + str(round(percentage_consumption, 2))]
         Log.result('\n'.join(self._totals))
 
     def _format_stats(self):
         self._queued = map(lambda y: timedelta2hours(y), self._queued)
         self._run = map(lambda y: timedelta2hours(y), self._run)
-        self._fail_queued = map(lambda y: timedelta2hours(y), self._fail_queued)
+        self._fail_queued = map(
+            lambda y: timedelta2hours(y), self._fail_queued)
         self._fail_run = map(lambda y: timedelta2hours(y), self._fail_run)
