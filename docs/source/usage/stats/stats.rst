@@ -58,3 +58,49 @@ The location where user can put this stats is in the file:
     <experiments_directory>/cxxx/tmp/cxxx_GENERAL_STATS
 
 .. hint:: If it is not yet created, you can manually create the file: ```expid_GENERAL_STATS``` inside the ```tmp``` folder.
+
+Console output description
+==========================
+
+Example:
+::
+
+    Period: 2021-04-25 06:43:00 ~ 2021-05-07 18:43:00
+    Submitted (#): 37
+    Run  (#): 37
+    Failed  (#): 3
+    Completed (#): 34
+    Queueing time (h): 1.61
+    Expected consumption real (h): 2.75
+    Expected consumption CPU time (h): 3.33
+    Consumption real (h): 0.05
+    Consumption CPU time (h): 0.06
+    Consumption (%): 1.75    
+
+Where:
+
+- Period: Requested time frame
+- Submitted: Total number of attempts that reached the SUBMITTED status.
+- Run: Total number of attempts that reached the RUNNING status.
+- Failed: Total number of FAILED attempts of running a job.
+- Completed: Total number of attempts that reached the COMPLETED status.
+- Queueing time (h): Sum of the time spent queuing by attempts that reached the COMPLETED status, in hours.
+- Expected consumption real (h): Sum of wallclock values for all jobs, in hours.
+- Expected consumption CPU time (h): Sum of the products of wallclock value and number of requested of processors for each job, in hours.
+- Consumption real (h): Sum of the time spent running by all attempts of jobs, in hours.
+- Consumption CPU time (h): Sum of the products of the time spent running and number of requested of processors for each job, in hours.
+- Consumption (%): Percentage of `Consumption CPU time` relative to `Expected consumption CPU time`.
+
+Diagram output description
+==========================
+
+The main `stats` output is a bar diagram. On this diagram, each job presents these values:
+
+- Queued (h): Sum of time spent queuing for COMPLETED attempts, in hours.
+- Run (h): Sum of time spent running for COMPLETED attempts, in hours.
+- Failed jobs (#): Total number of FAILED attempts.
+- Fail Queued (h): Sum of time spent queuing for FAILED attempts, in hours.
+- Fail Run (h): Sum of time spent running for FAILED attempts, in hours.
+- Max wallclock (h): Maximum wallclock value for all jobs in the plot.
+
+Notice that the left scale of the diagram measures the time in hours, and the right scale measures the number of attempts.

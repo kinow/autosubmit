@@ -2213,7 +2213,7 @@ class Autosubmit:
         job_list = Autosubmit.load_job_list(
             expid, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
-
+        # Filter by job section
         if filter_type:
             ft = filter_type
             Log.debug(ft)
@@ -2225,7 +2225,7 @@ class Autosubmit:
         else:
             ft = 'Any'
             job_list = job_list.get_job_list()
-
+        # Filter by time (hours before)
         period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
         if filter_period:
             period_ini = period_fi - datetime.timedelta(hours=filter_period)

@@ -22,7 +22,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib.patches as mpatches
 from autosubmit.experiment.statistics import ExperimentStats
-from log.log import Log,AutosubmitCritical,AutosubmitError
+from log.log import Log, AutosubmitCritical, AutosubmitError
 Log.get_logger("Autosubmit")
 
 # Autosubmit stats constants
@@ -32,6 +32,22 @@ MAX_NUM_PLOTS = 20
 
 
 def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, period_ini=None, period_fi=None):
+    """
+    Creates a bar diagram of the statistics.
+
+    :param experiment_id: experiment's identifier  
+    :type experiment_id: str  
+    :param job_list: list of jobs (filtered)  
+    :type job_list: list of Job objects  
+    :param general_stats: list of sections and options in the %expid%_GENERAL_STATS file  
+    :type general_stats: list of tuples  
+    :param output_file: path to the output file  
+    :type output_file: str  
+    :param period_ini: starting date and time
+    :type period_ini: datetime  
+    :param period_fi: finish date and time
+    :type period_fi: datetime  
+    """
     # Error prevention
     plt.close('all')
     # Stats variables definition
@@ -43,15 +59,17 @@ def create_bar_diagram(experiment_id, jobs_list, general_stats, output_file, per
         message = "The results are too large to be shown, try narrowing your query. \n Use a filter like -ft where you supply a list of job types, e.g. INI, SIM; \
 or -fp where you supply an integer that represents the number of hours into the past that should be queried: \
 suppose it is noon, if you supply -fp 5 the query will consider changes starting from 7:00 am. If you really wish to query the whole experiment, refer to Autosubmit GUI."
-        raise AutosubmitCritical("Stats query out of bounds",7061,message)
+        Log.info(message)
+        raise AutosubmitCritical("Stats query out of bounds", 7061, message)
 
+    exp_stats = ExperimentStats(jobs_list, period_ini, period_fi)
     fig = plt.figure(figsize=(RATIO * 4, 3 * RATIO * num_plots))
 
     fig.suptitle('STATS - ' + experiment_id, fontsize=24, fontweight='bold')
     # Variables initialization
     ax, ax2 = [], []
     rects = [None] * 6
-    exp_stats = ExperimentStats(jobs_list, period_ini, period_fi)
+
     grid_spec = gridspec.GridSpec(RATIO * num_plots + 2, 1)
 
     for plot in xrange(1, num_plots + 1):
@@ -59,10 +77,12 @@ suppose it is noon, if you supply -fp 5 the query will consider changes starting
         l1 = int((plot - 1) * MAX_JOBS_PER_PLOT)
         l2 = int(plot * MAX_JOBS_PER_PLOT)
         # Building plot axis
-        ax.append(fig.add_subplot(grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
+        ax.append(fig.add_subplot(
+            grid_spec[RATIO * plot - RATIO + 2:RATIO * plot + 1]))
         ax[plot - 1].set_ylabel('hours')
         ax[plot - 1].set_xticks(ind + width)
-        ax[plot - 1].set_xticklabels([job.name for job in jobs_list[l1:l2]], rotation='vertical')
+        ax[plot - 1].set_xticklabels(
+            [job.name for job in jobs_list[l1:l2]], rotation='vertical')
         ax[plot - 1].set_title(experiment_id, fontsize=20)
         ax[plot - 1].set_ylim(0, float(1.10 * exp_stats.max_time))
         # Axis 2
@@ -71,13 +91,18 @@ suppose it is noon, if you supply -fp 5 the query will consider changes starting
         ax2[plot - 1].set_yticks(range(0, exp_stats.max_fail + 2))
         ax2[plot - 1].set_ylim(0, exp_stats.max_fail + 1)
         # Building rects
-        rects[0] = ax[plot - 1].bar(ind, exp_stats.queued[l1:l2], width, color='orchid')
-        rects[1] = ax[plot - 1].bar(ind + width, exp_stats.run[l1:l2], width, color='limegreen')
-        rects[2] = ax2[plot - 1].bar(ind + width * 2, exp_stats.failed_jobs[l1:l2], width, color='red')
-        rects[3] = ax[plot - 1].bar(ind + width * 3, exp_stats.fail_queued[l1:l2], width, color='purple')
-        rects[4] = ax[plot - 1].bar(ind + width * 4, exp_stats.fail_run[l1:l2], width, color='tomato')
+        rects[0] = ax[plot -
+                      1].bar(ind, exp_stats.queued[l1:l2], width, color='orchid')
+        rects[1] = ax[plot - 1].bar(ind + width,
+                                    exp_stats.run[l1:l2], width, color='limegreen')
+        rects[2] = ax2[plot - 1].bar(ind + width * 2,
+                                     exp_stats.failed_jobs[l1:l2], width, color='red')
+        rects[3] = ax[plot - 1].bar(ind + width * 3,
+                                    exp_stats.fail_queued[l1:l2], width, color='purple')
+        rects[4] = ax[plot - 1].bar(ind + width * 4,
+                                    exp_stats.fail_run[l1:l2], width, color='tomato')
         rects[5] = ax[plot - 1].plot([0., width * 6 * MAX_JOBS_PER_PLOT], [exp_stats.threshold, exp_stats.threshold],
-                                    "k--", label='wallclock sim')
+                                     "k--", label='wallclock sim')
 
     # Building legends subplot
     legends_plot = fig.add_subplot(grid_spec[0, 0])
@@ -94,6 +119,7 @@ suppose it is noon, if you supply -fp 5 the query will consider changes starting
 
     create_csv_stats(exp_stats, jobs_list, output_file)
 
+
 def create_csv_stats(exp_stats, jobs_list, output_file):
     job_names = [job.name for job in jobs_list]
     start_times = exp_stats.start_times
@@ -103,15 +129,19 @@ def create_csv_stats(exp_stats, jobs_list, output_file):
 
     output_file = output_file.replace('pdf', 'csv')
     with open(output_file, 'wb') as file:
-        file.write("Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
+        file.write(
+            "Job,Started,Ended,Queuing time (hours),Running time (hours)\n")
         for i in xrange(len(jobs_list)):
-            file.write("{0},{1},{2},{3},{4}\n".format(job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
+            file.write("{0},{1},{2},{3},{4}\n".format(
+                job_names[i], start_times[i], end_times[i], queuing_times[i], running_times[i]))
+
 
 def build_legends(plot, rects, experiment_stats, general_stats):
     # Main legend with colourful rectangles
     legend_rects = [[rect[0] for rect in rects]]
     legend_titles = [
-        ['Queued (h)', 'Run (h)', 'Failed jobs (#)', 'Fail Queued (h)', 'Fail Run (h)', 'Max wallclock (h)']
+        ['Queued (h)', 'Run (h)', 'Failed jobs (#)',
+         'Fail Queued (h)', 'Fail Run (h)', 'Max wallclock (h)']
     ]
     legend_locs = ["upper right"]
     legend_handlelengths = [None]
@@ -119,7 +149,8 @@ def build_legends(plot, rects, experiment_stats, general_stats):
     # General stats legends, if exists
     if len(general_stats) > 0:
         legend_rects.append(get_whites_array(len(general_stats)))
-        legend_titles.append([str(key) + ': ' + str(value) for key, value in general_stats])
+        legend_titles.append([str(key) + ': ' + str(value)
+                              for key, value in general_stats])
         legend_locs.append("upper center")
         legend_handlelengths.append(0)
 
@@ -130,7 +161,8 @@ def build_legends(plot, rects, experiment_stats, general_stats):
     legend_handlelengths.append(0)
 
     # Creating the legends
-    legends = create_legends(plot, legend_rects, legend_titles, legend_locs, legend_handlelengths)
+    legends = create_legends(
+        plot, legend_rects, legend_titles, legend_locs, legend_handlelengths)
     for legend in legends:
         plt.gca().add_artist(legend)
 
@@ -138,7 +170,8 @@ def build_legends(plot, rects, experiment_stats, general_stats):
 def create_legends(plot, rects, titles, locs, handlelengths):
     legends = []
     for i in xrange(len(rects)):
-        legends.append(create_legend(plot, rects[i], titles[i], locs[i], handlelengths[i]))
+        legends.append(create_legend(
+            plot, rects[i], titles[i], locs[i], handlelengths[i]))
     return legends
 
 
