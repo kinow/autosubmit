@@ -216,6 +216,7 @@ class JobList(object):
                 self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
             else:
                 self._ordered_jobs_by_date_member[wrapper_section] = {}
+        pass
 
 
     @staticmethod
@@ -695,7 +696,8 @@ class JobList(object):
         :return: jobs ordered divided by date and member
         :rtype: dict
         """
-        return self._ordered_jobs_by_date_member[section]
+        if len(self._ordered_jobs_by_date_member) > 0:
+            return self._ordered_jobs_by_date_member[section]
 
     def get_completed(self, platform=None, wrapper=False):
         """

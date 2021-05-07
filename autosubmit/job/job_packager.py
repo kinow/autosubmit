@@ -89,6 +89,7 @@ class JobPackager(object):
                 self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_section)
 
 
+
         # True or False
 
         Log.debug(
@@ -449,6 +450,7 @@ class JobPackager(object):
             if self.max_jobs > 0:
                 if job.packed is False:
                     job.packed = True
+
                     dict_jobs = self._jobs_list.get_ordered_jobs_by_date_member(self.current_wrapper_section)
                     job_vertical_packager = JobPackagerVerticalMixed(dict_jobs, job, [job], job.wallclock, self.max_jobs,max_wrapped_jobs, self._platform.max_wallclock, max_wrapper_job_by_section)
                     jobs_list = job_vertical_packager.build_vertical_package(job)

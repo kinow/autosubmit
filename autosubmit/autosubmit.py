@@ -3780,6 +3780,8 @@ class Autosubmit:
                     if as_conf.get_wrapper_type() == "multi":
                         for wrapper_section in as_conf.get_wrapper_multi():
                             wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+                    wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
