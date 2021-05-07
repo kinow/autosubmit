@@ -22,7 +22,7 @@ import os
 import sys
 import traceback
 
-from log.log import Log, AutosubmitCritical
+from log.log import Log, AutosubmitCritical , AutosubmitError
 
 scriptdir = os.path.abspath(os.path.dirname(sys.argv[0]))
 assert sys.path[0] == scriptdir
@@ -37,15 +37,21 @@ def main():
     try:
         Autosubmit.parse_args()
         os._exit(0)
+    except AutosubmitError as e:
+        if e.trace is not None and len(e.trace) > 0:
+            Log.error("Trace: {0}", e.trace)
+        Log.critical("{1} [eCode={0}]", e.code, e.message)
+        Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
+        os._exit(1)
     except AutosubmitCritical as e:
-        if e.trace is not None:
+        if e.trace is not None and len(e.trace) > 0:
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
         Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
         os._exit(1)
     except Exception as e:
-        Log.error("Trace: {0}", str(e))
-        if "temporarily unavailable" in str(e):
+        Log.error("Trace: {0}", str(e.message))
+        if "temporarily unavailable" in str(e.message):
             Log.critical(
                 "Another instance of autosubmit is running on this experiment. If this is not the case, delete autosubmit.lock", 7000)
         else:
