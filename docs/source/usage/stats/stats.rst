@@ -79,7 +79,7 @@ Example:
 
 Where:
 
-- Period: Requested time frame
+- Period: Requested time frame.
 - Submitted: Total number of attempts that reached the SUBMITTED status.
 - Run: Total number of attempts that reached the RUNNING status.
 - Failed: Total number of FAILED attempts of running a job.
