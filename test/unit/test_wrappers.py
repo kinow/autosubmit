@@ -461,6 +461,10 @@ class TestWrappers(TestCase):
 
         d1_m1_1_s3 = self.job_list.get_job_by_name('expid_d1_m1_1_s3')
         d1_m2_1_s3 = self.job_list.get_job_by_name('expid_d1_m2_1_s3')
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s3]
+
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s3]
 
         section_list = [d1_m1_1_s3, d1_m2_1_s3]
 
