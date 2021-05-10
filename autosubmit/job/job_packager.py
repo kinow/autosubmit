@@ -41,11 +41,16 @@ class JobPackager(object):
     """
 
     def __init__(self, as_config, platform, jobs_list, hold=False):
-        #self.current_wrapper_section = "wrapper"
+        self.current_wrapper_section = "wrapper"
         self._as_config = as_config
         self._platform = platform
         self._jobs_list = jobs_list
         self.hold = hold
+        # These are defined in the [wrapper] section of autosubmit_,conf
+        self.wrapper_type = dict()
+        self.wrapper_policy = dict()
+        self.wrapper_method = dict()
+        self.jobs_in_wrapper = dict()
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs = jobs_list.get_queuing(platform)
         # We now consider the running jobs count
@@ -72,11 +77,7 @@ class JobPackager(object):
         self._max_jobs_to_submit = self._max_jobs_to_submit if self._max_jobs_to_submit > 0 else 0
         self.max_jobs = min(self._max_wait_jobs_to_submit,
                             self._max_jobs_to_submit)
-        # These are defined in the [wrapper] section of autosubmit_,conf
-        self.wrapper_type = dict()
-        self.wrapper_policy = dict()
-        self.wrapper_method = dict()
-        self.jobs_in_wrapper = dict()
+
         self.wrapper_type["wrapper"] = self._as_config.get_wrapper_type()
         self.wrapper_policy["wrapper"] = self._as_config.get_wrapper_policy()
         self.wrapper_method["wrapper"] = self._as_config.get_wrapper_method().lower()

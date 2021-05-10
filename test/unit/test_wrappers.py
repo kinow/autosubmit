@@ -165,12 +165,14 @@ class TestWrappers(TestCase):
         self.config.get_wrapper_method = Mock(return_value='ASThread')
         self.config.get_wrapper_queue = Mock(return_value='debug')
         self.config.get_wrapper_policy = Mock(return_value='flexible')
-
+        self.config.get = Mock(return_value='flexible')
         self.job_packager = JobPackager(
             self.config, self._platform, self.job_list)
+        self.job_list._ordered_jobs_by_date_member["wrapper"] = dict()
 
     ### ONE SECTION WRAPPER ###
     def test_returned_packages(self):
+        self.current_wrapper_section = {}
         date_list = ["d1", "d2"]
         member_list = ["m1", "m2"]
         chunk_list = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
@@ -211,12 +213,16 @@ class TestWrappers(TestCase):
         d1_m2_8_s2 = self.job_list.get_job_by_name('expid_d1_m2_8_s2')
         d1_m2_9_s2 = self.job_list.get_job_by_name('expid_d1_m2_9_s2')
         d1_m2_10_s2 = self.job_list.get_job_by_name('expid_d1_m2_10_s2')
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2, d1_m1_9_s2, d1_m1_10_s2]
 
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2, d1_m2_6_s2, d1_m2_7_s2, d1_m2_8_s2, d1_m2_9_s2, d1_m2_10_s2]
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
-
+        self.job_packager.current_wrapper_section = "wrapper"
         self.job_packager.max_jobs = max_jobs
         self.job_packager._platform.max_wallclock = max_wallclock
         self.job_packager.wrapper_type = 'vertical'
+
         max_wrapped_job_by_section = {}
         max_wrapped_job_by_section["s1"] = max_wrapped_jobs
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
@@ -278,6 +284,10 @@ class TestWrappers(TestCase):
         d1_m2_8_s2 = self.job_list.get_job_by_name('expid_d1_m2_8_s2')
         d1_m2_9_s2 = self.job_list.get_job_by_name('expid_d1_m2_9_s2')
         d1_m2_10_s2 = self.job_list.get_job_by_name('expid_d1_m2_10_s2')
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2, d1_m1_9_s2, d1_m1_10_s2]
+
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2, d1_m2_6_s2, d1_m2_7_s2, d1_m2_8_s2, d1_m2_9_s2, d1_m2_10_s2]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
@@ -300,16 +310,7 @@ class TestWrappers(TestCase):
         packages = [JobPackageVertical(
             package_m1_s2), JobPackageVertical(package_m2_s2)]
 
-        #returned_packages = returned_packages[0]
-        #print("max jobs test")
         for i in range(0, len(returned_packages)):
-            # print("Element " + str(i))
-            # print("Returned from packager")
-            # for job in returned_packages[i]._jobs:
-            #     print(job.name)
-            # print("Build for test")
-            # for _job in packages[i]._jobs:
-            #     print(_job.name)
             self.assertListEqual(returned_packages[i]._jobs, packages[i]._jobs)
 
     def test_returned_packages_max_wrapped_jobs(self):
@@ -343,6 +344,10 @@ class TestWrappers(TestCase):
         d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
         d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
         d1_m2_5_s2 = self.job_list.get_job_by_name('expid_d1_m2_5_s2')
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
+
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
@@ -400,6 +405,10 @@ class TestWrappers(TestCase):
         d1_m2_3_s2 = self.job_list.get_job_by_name('expid_d1_m2_3_s2')
         d1_m2_4_s2 = self.job_list.get_job_by_name('expid_d1_m2_4_s2')
         d1_m2_5_s2 = self.job_list.get_job_by_name('expid_d1_m2_5_s2')
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
+
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_2_s2, d1_m2_3_s2, d1_m2_4_s2, d1_m2_5_s2]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
 
@@ -465,6 +474,10 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
         returned_packages = self.job_packager._build_vertical_packages(
             section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s3]
+
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s3]
 
         package_m1_s2 = [d1_m1_1_s3]
         package_m2_s2 = [d1_m2_1_s3]
@@ -516,11 +529,11 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
                                                                   d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
                                                                   d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
@@ -585,12 +598,12 @@ class TestWrappers(TestCase):
         d1_m2_2_s3 = self.job_list.get_job_by_name('expid_d1_m2_2_s3')
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
-
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
                                                                   d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
                                                                   d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         section_list = [d1_m1_1_s2]
@@ -655,11 +668,11 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
                                                                   d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
                                                                   d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
@@ -735,11 +748,11 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
                                                                   d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
                                                                   d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
@@ -807,11 +820,11 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3,
                                                                   d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3,
                                                                   d1_m2_3_s2, d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         section_list = [d1_m1_1_s2, d1_m2_1_s2]
@@ -890,11 +903,11 @@ class TestWrappers(TestCase):
         d1_m2_3_s3 = self.job_list.get_job_by_name('expid_d1_m2_3_s3')
         d1_m2_4_s3 = self.job_list.get_job_by_name('expid_d1_m2_4_s3')
 
-        self.job_list._ordered_jobs_by_date_member["d1"] = dict()
-        self.job_list._ordered_jobs_by_date_member["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2,
                                                                   d1_m1_3_s3, d1_m1_4_s2, d1_m1_4_s3]
 
-        self.job_list._ordered_jobs_by_date_member["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3, d1_m2_3_s2,
+        self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m2"] = [d1_m2_1_s2, d1_m2_1_s3, d1_m2_2_s2, d1_m2_2_s3, d1_m2_3_s2,
                                                                   d1_m2_3_s3, d1_m2_4_s2, d1_m2_4_s3]
 
         wrapper_expression = "s2 s3"
