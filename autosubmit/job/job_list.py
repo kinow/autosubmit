@@ -127,10 +127,6 @@ class JobList(object):
             old_job_list_names = [job.name for job in old_job_list]
             self._job_list = [job for job in old_job_list if len(
                 job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
-            # for job in self._job_list:
-            #     print("{0} {1}".format(
-            #         job.name, Status.VALUE_TO_KEY[job.status]))
-            # print(job.parents)
 
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
                  default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[]):
