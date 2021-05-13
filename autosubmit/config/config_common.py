@@ -1458,6 +1458,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
+    def get_x11_jobs(self):
+        """
+        Returns the jobs that should support x11, configured in the autosubmit's config
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('config', 'X11_JOBS', 'None')
 
     def get_wrapper_queue(self,wrapper_section_name="wrapper"):
         """

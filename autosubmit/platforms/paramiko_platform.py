@@ -1,5 +1,5 @@
 from time import sleep
-
+import sys
 import os
 import paramiko
 import datetime
@@ -11,6 +11,8 @@ from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
 from log.log import AutosubmitError, AutosubmitCritical, Log
 
+import Xlib.support.connect as xlib_connect
+from threading import Thread
 
 class ParamikoPlatform(Platform):
     """
@@ -40,6 +42,8 @@ class ParamikoPlatform(Platform):
         self._ftpChannel = None
         self.transport = None
 
+        self.channels = {}
+        self.poller = select.poll()
     @property
     def header(self):
         """
@@ -122,6 +126,58 @@ class ParamikoPlatform(Platform):
         except Exception as e:
             raise AutosubmitCritical(
                 'Cant connect to this platform due an unknown error', 7050, e.message)
+    def threaded(fn):
+        def wrapper(*args, **kwargs):
+            thread = Thread(target=fn, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+        return wrapper
+
+    @threaded
+    def open_x11(self, transport=None):
+        """
+        opens an x11 channel.
+
+        :param str command: the command to execute
+        :param int bufsize:
+            interpreted the same way as by the built-in ``file()`` function in
+            Python
+        :param int timeout:
+            set command's channel timeout. See `Channel.settimeout`.settimeout
+        :return:
+            the stdin, stdout, and stderr of the executing command, as a
+            3-tuple
+
+        :raises SSHException: if the server fails to execute the command
+        """
+        chan = transport.open_session()
+        chan_fileno = chan.fileno()
+        self.poller.register(chan_fileno, select.POLLIN)
+
+        chan.get_pty()
+        chan.request_x11(handler=self.x11_handler)
+        chan.invoke_shell()
+        transport.accept()
+        while not chan.exit_status_ready():
+            poll = self.poller.poll()
+            if not poll:
+                break
+            # accept subsequent x11 connections if any
+            if len(transport.server_accepts) > 0:
+                transport.accept()
+            for fd, event in poll:
+                if fd == chan_fileno:
+                    self.flush_out(chan)
+                # data either on local/remote x11 socket
+                if fd in self.channels.keys():
+                    sender, receiver = self.channels[fd]
+                    try:
+                        receiver.sendall(sender.recv(4096))
+                    except self.socket.error:
+                        sender.close()
+                        receiver.close()
+                        del self.channels[fd]
+        self.flush_out(chan)
 
     def connect(self, reconnect=False):
         """
@@ -138,7 +194,6 @@ class ParamikoPlatform(Platform):
             self._user_config_file = os.path.expanduser("~/.ssh/config")
             if os.path.exists(self._user_config_file):
                 with open(self._user_config_file) as f:
-                    # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self.host)
             if "," in self._host_config['hostname']:
@@ -162,7 +217,9 @@ class ParamikoPlatform(Platform):
             self.transport = paramiko.Transport(
                 (self._host_config['hostname'], 22))
             self.transport.connect(username=self.user)
+
             self._ftpChannel = self._ssh.open_sftp()
+            self.open_x11(self._ssh.get_transport())
             self.connected = True
         except IOError as e:
             raise AutosubmitError(
@@ -212,7 +269,7 @@ class ParamikoPlatform(Platform):
                 return ""
         return ""
 
-    def send_file(self, filename, check=True):
+    def send_file(self, filename, check = True):
         """
         Sends a local file to the platform
         :param filename: name of the file to send
@@ -568,7 +625,74 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def send_command(self, command, ignore_log=False):
+    poller = select.poll()
+    def flush_out(self, session):
+        while session.recv_ready():
+            sys.stdout.write(session.recv(4096))
+        while session.recv_stderr_ready():
+            sys.stderr.write(session.recv_stderr(4096))
+
+    def x11_handler(self, channel, (src_addr, src_port)):
+        '''handler for incoming x11 connections
+        for each x11 incoming connection,
+        - get a connection to the local display
+        - maintain bidirectional map of remote x11 channel to local x11 channel
+        - add the descriptors to the poller
+        - queue the channel (use transport.accept())'''
+        x11_chanfd = channel.fileno()
+        # local_x11_socket = xlib_connect.get_socket(*self.local_x11_display[:3])
+        display = os.environ['DISPLAY']
+        display = xlib_connect.get_display(display)
+        local_x11_socket = xlib_connect.get_socket(display[0], display[1], display[2], display[3])
+        local_x11_socket_fileno = local_x11_socket.fileno()
+        self.channels[x11_chanfd] = channel, local_x11_socket
+        self.channels[local_x11_socket_fileno] = local_x11_socket, channel
+        self.poller.register(x11_chanfd, select.POLLIN)
+        self.poller.register(local_x11_socket, select.POLLIN)
+        self._ssh.get_transport()._queue_incoming_channel(channel)
+
+    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3,x11=False):
+        """
+        Execute a command on the SSH server.  A new `.Channel` is opened and
+        the requested command is executed.  The command's input and output
+        streams are returned as Python ``file``-like objects representing
+        stdin, stdout, and stderr.
+
+        :param str command: the command to execute
+        :param int bufsize:
+            interpreted the same way as by the built-in ``file()`` function in
+            Python
+        :param int timeout:
+            set command's channel timeout. See `Channel.settimeout`.settimeout
+        :return:
+            the stdin, stdout, and stderr of the executing command, as a
+            3-tuple
+
+        :raises SSHException: if the server fails to execute the command
+        """
+        while retries > 0:
+            try:
+                chan = self._ssh._transport.open_session()
+                if get_pty:
+                    chan.get_pty()
+                if x11:
+                    chan.request_x11()
+                chan.settimeout(timeout)
+                chan.exec_command(command)
+                stdin = chan.makefile('wb', bufsize)
+                stdout = chan.makefile('r', bufsize)
+                stderr = chan.makefile_stderr('r', bufsize)
+                return stdin, stdout, stderr
+            except paramiko.SSHException as e:
+                if str(e) in "SSH session not active":
+                    self._ssh = None
+                    self.restore_connection()
+                timeout = timeout + 60
+                retries = retries - 1
+        if retries <= 0:
+            return False , False, False
+
+    def send_command(self, command, ignore_log=False, x11 = False):
         """
         Sends given command to HPC
 
