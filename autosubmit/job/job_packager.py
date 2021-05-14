@@ -224,6 +224,7 @@ class JobPackager(object):
                 package = JobPackageSimple([job])
             packages_to_submit.append(package)
 
+
         for section in jobs_to_submit_by_section:
             wrapped = False
             # Only if platform allows wrappers, wrapper type has been correctly defined, and job names for wrappers have been correctly defined
@@ -269,7 +270,7 @@ class JobPackager(object):
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs(wrapper_section)), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
-                packages_to_submit = []
+
                 if self.wrapper_type[wrapper_section] == 'vertical':
                     wrapped = True
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
