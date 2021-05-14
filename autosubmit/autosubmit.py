@@ -1702,6 +1702,10 @@ class Autosubmit:
                                 packages_persistence = JobPackagePersistence(os.path.join(
                                     BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                                 packages = packages_persistence.load()
+                                if len(job_list.job_packages_dict) > 0:
+                                    if len(packages) == 0:
+                                        sleep(5)
+                                        raise IOError
                                 for (exp_id, package_name, job_name) in packages:
                                     if package_name not in job_list.packages_dict:
                                         job_list.packages_dict[package_name] = []
