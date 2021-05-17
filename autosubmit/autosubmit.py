@@ -2316,7 +2316,7 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files(False)
+        as_conf.check_conf_files(True)
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
@@ -2324,7 +2324,6 @@ class Autosubmit:
             expid, as_conf, notransitive=notransitive, monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
 
-        as_conf.check_conf_files(False)
 
         # Getting output type provided by the user in config, 'pdf' as default
         output_type = as_conf.get_output_type()
@@ -2453,7 +2452,7 @@ class Autosubmit:
         if offer:
             as_conf = AutosubmitConfig(
                 experiment_id, BasicConfig, ConfigParserFactory())
-            as_conf.check_conf_files(False)
+            as_conf.check_conf_files(True)
             pkl_dir = os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
             job_list = Autosubmit.load_job_list(
@@ -4054,7 +4053,7 @@ class Autosubmit:
                 job_tracked_changes = {}
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, ConfigParserFactory())
-                as_conf.check_conf_files(False)
+                as_conf.check_conf_files(True)
 
                 # Getting output type from configuration
                 output_type = as_conf.get_output_type()

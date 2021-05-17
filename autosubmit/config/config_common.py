@@ -494,7 +494,8 @@ class AutosubmitConfig(object):
             return result
         except AutosubmitCritical as e:
             # In case that there are critical errors in the configuration, Autosubmit won't continue.
-            raise AutosubmitCritical(e.message, e.code, e.trace)
+            if running_time is True:
+                raise AutosubmitCritical(e.message, e.code, e.trace)
         except Exception as e:
             raise AutosubmitCritical(
                 "There was an error while showing the config log messages", 7014, str(e))
