@@ -1200,27 +1200,50 @@ class Autosubmit:
         :return: Nothing\n
         :rtype: \n
         """
-
+        Log.warning("Generating the auxiliar job_list used for the -CW flag.")
         job_list._job_list = jobs_filtered
-        # Current choice is Paramiko Submitter
+        parameters = as_conf.load_parameters()
+        date_list = as_conf.get_date_list()
+        if len(date_list) != len(set(date_list)):
+            raise AutosubmitCritical(
+                'There are repeated start dates!', 7014)
+        num_chunks = as_conf.get_num_chunks()
+        chunk_ini = as_conf.get_chunk_ini()
+        member_list = as_conf.get_member_list()
+        run_only_members = as_conf.get_member_list(run_only=True)
+        date_format = ''
+        if as_conf.get_chunk_size_unit() is 'hour':
+            date_format = 'H'
+        for date in date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        wrapper_jobs = dict()
+        if as_conf.get_wrapper_type() == "multi":
+            for wrapper_section in as_conf.get_wrapper_multi():
+                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+
+        job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
+                                   as_conf.get_retrials(),
+                                   as_conf.get_default_job_type(),
+                                   as_conf.get_wrapper_type(), wrapper_jobs,
+                                   update_structure=True, run_only_members=run_only_members,show_log=True)
+        Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)
-        # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
         submitter.load_platforms(as_conf)
-        # The value is retrieved from DEFAULT.HPCARCH
         hpcarch = as_conf.get_platform()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         platforms_to_test = set()
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
-            # Assign platform objects to each job
-            # noinspection PyTypeChecker
             job.platform = submitter.platforms[job.platform_name.lower()]
-            # Add object to set
-            # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
-        # case setstatus
+
         job_list.check_scripts(as_conf)
+
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1228,8 +1251,11 @@ class Autosubmit:
         unparsed_two_step_start = as_conf.get_parse_two_step_start()
         if unparsed_two_step_start != "":
             job_list.parse_two_step_start(unparsed_two_step_start)
+
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            #for job in job_list.get_uncompleted_and_not_waiting():
+            #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
 
     @staticmethod
@@ -2144,8 +2170,7 @@ class Autosubmit:
             job_list_wrappers = copy.deepcopy(job_list)
             jobs_wr_aux = copy.deepcopy(jobs)
             jobs_wr = []
-            [jobs_wr.append(job) for job in jobs_wr_aux if (
-                job.status == Status.READY or job.status == Status.WAITING)]
+            [jobs_wr.append(job) for job in jobs_wr_aux ]
             for job in jobs_wr:
                 for child in job.children:
                     if child not in jobs_wr:
@@ -2157,6 +2182,8 @@ class Autosubmit:
             for job in jobs_wr:
                 job.children = job.children - referenced_jobs_to_remove
                 job.parents = job.parents - referenced_jobs_to_remove
+
+
             Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
                                                        packages_persistence, True)
 
