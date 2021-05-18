@@ -25,7 +25,7 @@ For example:
 
     [config]
     EXPID = ....
-    AUTOSUBMIT_VERSION = 3.13.1b
+    AUTOSUBMIT_VERSION = 3.13.0
     ...
 
     MAXWAITINGJOBS = 100
@@ -52,7 +52,7 @@ Number of jobs in a package
     TYPE = <ANY>
     MIN_WRAPPED = 2
     MAX_WRAPPED = 999
-    POLICY = flexible #default is flexible. Values: flexible,strict
+    POLICY = flexible #default is flexible. Values: flexible,strict,mixed
 
 
 - **MAX_WRAPPED** can be defined in ``jobs_cxxx.conf`` in order to limit the number of jobs wrapped for the corresponding job section
@@ -221,10 +221,11 @@ In `autosubmit_cxxx.conf`:
     [wrapper]
     TYPE = Vertical #REQUIRED
     JOBS_IN_WRAPPER = SIM # Job types (as defined in jobs_cxxx.conf) separated by space. REQUIRED only if vertical-mixed
-    DEPENDENCIES = {True,False} # OPTIONAL. False if not specified
     MIN_WRAPPED = 2
     MAX_WRAPPED = 9999 # OPTIONAL. Integer value, overrides TOTALJOBS
     CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
+    POLICY = flexible # OPTIONAL, Wrapper policy, mixed, flexible, strict
+    QUEUE = bsc_es # If not specified, queue will be the same of the first SECTION specified on JOBS_IN_WRAPPER
 
 In `platforms_cxxx.conf`:
 
