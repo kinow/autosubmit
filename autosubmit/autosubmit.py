@@ -1224,12 +1224,6 @@ class Autosubmit:
             for wrapper_section in as_conf.get_wrapper_multi():
                 wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
         wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
-
-        job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
-                                   as_conf.get_retrials(),
-                                   as_conf.get_default_job_type(),
-                                   as_conf.get_wrapper_type(), wrapper_jobs,
-                                   update_structure=True, run_only_members=run_only_members,show_log=True)
         Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)
         submitter.load_platforms(as_conf)
@@ -1251,6 +1245,7 @@ class Autosubmit:
         unparsed_two_step_start = as_conf.get_parse_two_step_start()
         if unparsed_two_step_start != "":
             job_list.parse_two_step_start(unparsed_two_step_start)
+        job_list.create_dictionary(date_list, member_list, num_chunks, chunk_ini, date_format, as_conf.get_retrials(), wrapper_jobs )
 
         while job_list.get_active():
             Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)

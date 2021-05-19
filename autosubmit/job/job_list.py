@@ -128,6 +128,20 @@ class JobList(object):
             self._job_list = [job for job in old_job_list if len(
                 job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
 
+    def create_dictionary(self, date_list, member_list, num_chunks, chunk_ini, date_format, default_retrials, wrapper_jobs):
+        chunk_list = range(chunk_ini, num_chunks + 1)
+
+        jobs_parser = self._get_jobs_parser()
+        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,
+                           chunk_list, date_format, default_retrials)
+        self._dic_jobs = dic_jobs
+        # Perhaps this should be done by default independent of the wrapper_type supplied
+        for wrapper_section in wrapper_jobs:
+            if wrapper_jobs[wrapper_section] != 'None':
+                self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
+            else:
+                self._ordered_jobs_by_date_member[wrapper_section] = {}
+        pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
                  default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True):
         """
