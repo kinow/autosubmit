@@ -518,7 +518,7 @@ class JobPackager(object):
         ## Create the vertical ##
         actual_wrapped_jobs = len(horizontal_package)
         remaining_wrapped_job_by_section = horizontal_packager.max_wrapper_job_by_section
-
+        #TODO create horizontal and vertical limit
         for job in horizontal_package:
             for section in horizontal_packager.max_wrapper_job_by_section:
                 if job.section == section:
