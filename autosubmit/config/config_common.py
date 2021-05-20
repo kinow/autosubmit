@@ -188,6 +188,16 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
+    def get_x11(self, section):
+        """
+        Active X11 for this section
+        :param section: job type
+        :type section: str
+        :return: false/true
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'X11', 'false')
+
     def get_wchunkinc(self, section):
         """
         Gets the chunk increase to wallclock  
