@@ -475,6 +475,7 @@ class JobPackager(object):
         ## Create the horizontal ##
         horizontal_packager = JobPackagerHorizontal(jobs_list, self._platform.max_processors, max_wrapped_jobs,
                                                     self.max_jobs, self._platform.processors_per_node, max_wrapper_job_by_section=max_wrapper_job_by_section)
+
         if self.wrapper_type[self.current_wrapper_section] == 'vertical-horizontal':
             return self._build_vertical_horizontal_package(horizontal_packager, jobs_resources)
         else:
@@ -514,12 +515,19 @@ class JobPackager(object):
         horizontal_package = horizontal_packager.build_horizontal_package()
         total_processors = horizontal_packager.total_processors
         current_package = []
-
         ## Create the vertical ##
+        actual_wrapped_jobs = len(horizontal_package)
+        remaining_wrapped_job_by_section = horizontal_packager.max_wrapper_job_by_section
+
+        for job in horizontal_package:
+            for section in horizontal_packager.max_wrapper_job_by_section:
+                if job.section == section:
+                    remaining_wrapped_job_by_section[section] = remaining_wrapped_job_by_section[section] - 1
+
         for job in horizontal_package:
             job_list = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
-                                                 horizontal_packager.max_wrapped_jobs,
-                                                 self._platform.max_wallclock, horizontal_packager.max_wrapper_job_by_section).build_vertical_package(job)
+                                                 horizontal_packager.max_wrapped_jobs-actual_wrapped_jobs,
+                                                 self._platform.max_wallclock, remaining_wrapped_job_by_section).build_vertical_package(job)
 
             current_package.append(job_list)
 
