@@ -341,13 +341,21 @@ class SlurmPlatform(ParamikoPlatform):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script, job, hold=False):
-        if not hold:
-            self._submit_script_file.write(
-                self._submit_cmd + job_script + "\n")
+        if job.modules == "none" or job.modules == "None" or job.modules is None or job.modules == "":
+            if not hold:
+                self._submit_script_file.write(
+                    self._submit_cmd + job_script + "\n")
+            else:
+                self._submit_script_file.write(
+                    self._submit_hold_cmd + job_script + "\n")
         else:
-            self._submit_script_file.write(
-                self._submit_hold_cmd + job_script + "\n")
-
+            if not hold:
+                self._submit_script_file.write(
+                    job.modules + " ; " + self._submit_cmd + job_script + "\n")
+            else:
+                self._submit_script_file.write(
+                    job.modules + " ; " + self._submit_hold_cmd + job_script + "\n")
+        return job.modules + " ; "+self._submit_cmd + job_script
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)
 

@@ -743,11 +743,21 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
-            os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, remote_logs[0]),
-            os.path.join(self.remote_log_dir, remote_logs[1])
-        )
+        if job.modules == "none" or job.modules == "None" or job.modules is None or job.modules == "":
+            command =  'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1])
+            )
+        else:
+            command = job.modules + ' ; nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1]),
+
+            )
+        return command
+
 
     @staticmethod
     def get_pscall(job_id):
