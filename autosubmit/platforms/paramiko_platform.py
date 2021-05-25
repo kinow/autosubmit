@@ -260,6 +260,7 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.get(remote_path, file_path)
             return True
         except Exception as e:
+            os.remove(file_path)
             if str(e) in "Garbage":
                 if not ignore_log:
                     Log.printlog(
@@ -416,7 +417,7 @@ class ParamikoPlatform(Platform):
             sleep_time = sleep_time + 5
             self.send_command(self.get_checkjob_cmd(job_id))
         if retries >= 0:
-            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(
                 self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
