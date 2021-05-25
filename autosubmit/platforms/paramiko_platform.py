@@ -260,7 +260,10 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.get(remote_path, file_path)
             return True
         except Exception as e:
-            os.remove(file_path)
+            try:
+                os.remove(file_path)
+            except:
+                pass
             if str(e) in "Garbage":
                 if not ignore_log:
                     Log.printlog(
