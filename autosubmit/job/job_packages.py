@@ -178,7 +178,6 @@ class JobPackageBase(object):
                     dataThread.join()
                 self._common_script = self._create_common_script()
             if not only_generate:
-
                 Log.debug("Sending Files")
                 self._send_files()
                 Log.debug("Submitting")

@@ -188,6 +188,16 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
+    def get_modules(self, section):
+        """
+        Gets command line for being submitted with
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'MODULES', None)
+
     def get_wchunkinc(self, section):
         """
         Gets the chunk increase to wallclock  

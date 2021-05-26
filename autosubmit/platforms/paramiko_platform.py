@@ -260,6 +260,10 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.get(remote_path, file_path)
             return True
         except Exception as e:
+            try:
+                os.remove(file_path)
+            except:
+                pass
             if str(e) in "Garbage":
                 if not ignore_log:
                     Log.printlog(
@@ -416,7 +420,7 @@ class ParamikoPlatform(Platform):
             sleep_time = sleep_time + 5
             self.send_command(self.get_checkjob_cmd(job_id))
         if retries >= 0:
-            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(
                 self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
@@ -743,11 +747,21 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
-            os.path.join(self.remote_log_dir, job_script),
-            os.path.join(self.remote_log_dir, remote_logs[0]),
-            os.path.join(self.remote_log_dir, remote_logs[1])
-        )
+        if job.modules == "none" or job.modules == "None" or job.modules is None or job.modules == "":
+            command =  'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1])
+            )
+        else:
+            command = job.modules + ' ; nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+                os.path.join(self.remote_log_dir, job_script),
+                os.path.join(self.remote_log_dir, remote_logs[0]),
+                os.path.join(self.remote_log_dir, remote_logs[1]),
+
+            )
+        return command
+
 
     @staticmethod
     def get_pscall(job_id):

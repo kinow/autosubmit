@@ -230,7 +230,7 @@ class Platform(object):
             else:
                 return False
         if self.check_file_exists('{0}_COMPLETED'.format(job_name), wrapper_failed=wrapper_failed):
-            if self.get_file('{0}_COMPLETED'.format(job_name), False, wrapper_failed=wrapper_failed):
+            if self.get_file('{0}_COMPLETED'.format(job_name), True, wrapper_failed=wrapper_failed):
                 return True
             else:
                 return False

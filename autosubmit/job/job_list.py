@@ -194,6 +194,7 @@ class JobList(object):
         for job in self._job_list:
             job.parameters = parameters
 
+
         # Checking for member constraints
         if len(run_only_members) > 0:
             # Found

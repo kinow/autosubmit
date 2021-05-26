@@ -333,7 +333,7 @@ class DicJobs:
         job.file = self.get_option(section, "FILE", None)
         job.queue = self.get_option(section, "QUEUE", None)
         job.check = str(self.get_option(section, "CHECK", 'True')).lower()
-
+        job.modules = str(self.get_option(section, "MODULES", None))
         job.processors = str(self.get_option(section, "PROCESSORS", 1))
         job.threads = str(self.get_option(section, "THREADS", 1))
         job.tasks = str(self.get_option(section, "TASKS", '0'))
