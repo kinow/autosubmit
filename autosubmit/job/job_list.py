@@ -862,115 +862,93 @@ class JobList(object):
 
     def parse_two_step_start(self, unparsed_jobs):
         jobs_to_run_first = list()
-        job_names = ""
+        select_jobs_by_name = "" #job_name
+        select_all_jobs_by_section = "" #  all
+        filter_jobs_by_section = ""  # Select, chunk / member
         if "&" in unparsed_jobs: # If there are explicit jobs add them
             jobs_to_check = unparsed_jobs.split("&")
-            job_names = jobs_to_check[0]
+            select_jobs_by_name = jobs_to_check[0]
             unparsed_jobs = jobs_to_check[1]
-        if ";" in unparsed_jobs:
-            semiparsed_jobs = unparsed_jobs.split(";")
-            if 2 <= len(semiparsed_jobs) <= 4:
-                section_job = semiparsed_jobs[0]
-                date = semiparsed_jobs[1]
-                if len(semiparsed_jobs) > 2:
-                    member_chunk = semiparsed_jobs[2]
-                    if len(semiparsed_jobs) == 4:
-                        chunk_member = semiparsed_jobs[3]
-                    else:
-                        chunk_member = ""
-                else:
-                    member_chunk = ""
-                jobs_to_run_first += self.get_job_related(section_list=section_job, date_list=date,
-                                                         member_or_chunk_list=member_chunk,job_names=job_names,chunk_or_member_list=chunk_member)
+        if not ";" in unparsed_jobs:
+            if not '[':
+                select_all_jobs_by_section = unparsed_jobs
+                filter_jobs_by_section = ""
             else:
-                raise AutosubmitCritical("Invalid format for parameter {0}: {1}".format("TWO_STEP_START",unparsed_jobs), 7014 ," More than 4 fields specified!")
+                select_all_jobs_by_section = ""
+                filter_jobs_by_section = unparsed_jobs
         else:
-            jobs_to_run_first += self.get_job_related(section_list=unparsed_jobs)
-        self.jobs_to_run_first = jobs_to_run_first
-        self.jobs_to_run_first_initial = jobs_to_run_first
+            aux = unparsed_jobs.split(';')
+            select_all_jobs_by_section = aux[0]
+            filter_jobs_by_section = aux[1]
 
-    def get_job_related(self, date_list="", member_or_chunk_list="", section_list="", job_names = "", chunk_or_member_list=""):
+
+        self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
+
+
+    def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section=""):
         """
-        :param datelist: job datelist
-        :param member_or_chunk_list: job member or chunk
-        :param chunk_or_member_list: job chunk or member
-        :param chunk_list: job chunk
-        :type platform: HPCPlatform
-        :return: jobs_list
+        :param select_jobs_by_name: job name
+        :param select_all_jobs_by_section: section name
+        :param filter_jobs_by_section: section, date , member? , chunk?
+        :return: jobs_list names
         :rtype: list
         """
+        ultimate_jobs_list = []
+        # First Filter {select job by name}
+        if select_jobs_by_name != "":
+            jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",select_jobs_by_name.lower()) is not None ]
+            jobs_by_name_no_expid = [job for job in self._job_list if
+                            re.search("(^|[^0-9a-z_])" + job.name.lower()[5:] + "([^a-z0-9_]|$)",
+                                      select_jobs_by_name.lower()) is not None]
+            ultimate_jobs_list.extend(jobs_by_name)
+            ultimate_jobs_list.extend(jobs_by_name_no_expid)
 
-        jobs_by_name = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.name.lower()+"([^a-z0-9_]|$)",job_names.lower()) is not None ]
-        jobs = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",section_list.lower()) is not None ]
-        if date_list != "":
-            jobs_date = [ job for job in jobs if re.search("(^|[^0-9a-z_])" + date2str(job.date, job.date_format) + "([^a-z0-9_]|$)", date_list.lower()) is not None or job.date is None ]
-        else:
-            jobs_date = jobs
+        # Second Filter { select all }
+        if select_all_jobs_by_section != "":
+            all_jobs_by_section = [ job for job in self._job_list if re.search("(^|[^0-9a-z_])"+job.section.lower()+"([^a-z0-9_]|$)",select_all_jobs_by_section.lower()) is not None ]
+            ultimate_jobs_list.extend(all_jobs_by_section)
+        # Third Filter N section { date , member? , chunk?}
+        # Section[date[member][chunk]]
+        # filter_jobs_by_section="SIM[20[C:000][M:1]],DA[20 21[M:000 001][C:1]]"
+        if filter_jobs_by_section != "":
+            section_name=""
+            section_dates=""
+            section_chunks=""
+            section_members=""
+            jobs_final = list()
+            for complete_filter_by_section in filter_jobs_by_section.split(','):
+                section_list = complete_filter_by_section.split('[')
+                section_name = section_list[0].strip('[]')
+                section_dates = section_list[1].strip('[]')
+                if 'c' in section_list[2].lower():
+                    section_chunks = section_list[2].strip('cC:[]')
+                elif 'm' in section_list[2].lower():
+                    section_members = section_list[2].strip('Mm:[]')
+                if len(section_list) > 3:
+                    if 'c' in section_list[3].lower():
+                        section_chunks = section_list[3].strip('Cc:[]')
+                    elif 'm' in section_list[3].lower():
+                        section_members = section_list[3].strip('mM:[]')
 
-        jobs_final = []
-        jobs_final_2 = []
-        number_start_at = 0
-        for char in self._member_list[0]:
-            if char.isdigit():
-                break
-            number_start_at += 1
-        if member_or_chunk_list != "":
-            final_member_or_chunk_list = ""
-            number_range = re.findall("\[[0-9]+-[0-9]+\]", member_or_chunk_list.lower())
-            if len(number_range) > 0:
-                for numbers_found in number_range:
-                    number_range = numbers_found.split('-')
-                    lower_bound = int(number_range[0][1:])
-                    upper_bound = int(number_range[1][:-1])
-                    for seq in xrange(lower_bound, upper_bound):
-                        final_member_or_chunk_list += str(seq) + ","
-                    final_member_or_chunk_list += str(upper_bound) + ","
-            numbers_separated = re.findall("\[[0-9]*[^-a-z]+\]", member_or_chunk_list.lower())
-            if len(numbers_separated) > 0:
-                for numbers in numbers_separated:
-                    if ',' in numbers:
-                        numbers = numbers.split(',')
-                    else:
-                        numbers = numbers.split()
-                    for number in numbers:
-                        final_member_or_chunk_list += str(number).strip("[]") + ","
-                    final_member_or_chunk_list = final_member_or_chunk_list
-            if 'c' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",final_member_or_chunk_list) is not None or job.running == "once"]
-            elif 'm' in member_or_chunk_list[0]:
-                jobs_final = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member)[number_start_at:].lower() + "([^a-z0-9_]|$)", final_member_or_chunk_list) is not None or job.running == "once"]
-            else:
-                jobs_final = []
-        else:
-            jobs_final = jobs_date
-        if chunk_or_member_list != "":
-            final_member_or_chunk_list = ""
-            number_range = re.findall("\[[0-9]+-[0-9]+\]", member_or_chunk_list.lower())
-            if len(number_range) > 0:
-                for numbers_found in number_range:
-                    number_range = numbers_found.split('-')
-                    lower_bound = int(number_range[0][1:])
-                    upper_bound = int(number_range[1][:-1])
-                    for seq in xrange(lower_bound, upper_bound):
-                        final_member_or_chunk_list += str(seq) + ","
-                    final_member_or_chunk_list += str(upper_bound) + ","
-            numbers_separated = re.findall("\[[0-9]+[^-a-z]+\]", member_or_chunk_list.lower())
-            if len(numbers_separated) > 0:
-                for numbers in numbers_separated:
-                    if ',' in numbers:
-                        numbers = numbers.split(',')
-                    else:
-                        numbers = numbers.split()
-                    for number in numbers:
-                        final_member_or_chunk_list += str(number).strip("[]") + ","
-                    final_member_or_chunk_list = final_member_or_chunk_list
-            if 'c' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",final_member_or_chunk_list) is not None or job.running == "once"]
-            elif 'm' in chunk_or_member_list[0]:
-                jobs_final_2 = [job for job in jobs_date if re.search("(^|[^0-9a-z_])" + str(job.member)[number_start_at:].lower() + "([^a-z0-9_]|$)", final_member_or_chunk_list) is not None or job.running == "once"]
-            else:
-                jobs_final_2 = []
-        ultimate_jobs_list = list(set(jobs_final+jobs_by_name+jobs_final_2)) #Duplicates out
+                #for index in xrange(0,len(section_dates)):
+                #    section_dates[index] = section_dates[index].strip(" ")
+                #for index in xrange(0,len(section_chunks)):
+                #    section_chunks[index] = section_chunks[index].strip(" ")
+                #for index in xrange(0,len(section_members)):
+                #    section_members[index] = section_members[index].strip(" ")
+
+                if section_name != "":
+                    jobs_filtered = [job for job in self._job_list if
+                                           re.search("(^|[^0-9a-z_])" + job.section.lower() + "([^a-z0-9_]|$)",
+                                                     section_name.lower()) is not None]
+                if section_dates != "":
+                    jobs_date = [ job for job in jobs_filtered if re.search("(^|[^0-9a-z_])" + date2str(job.date, job.date_format) + "([^a-z0-9_]|$)", section_dates.lower()) is not None or job.date is None  ]
+
+                if section_chunks != "" or section_members != "":
+                    jobs_final = [job for job in jobs_date if ( section_chunks == "" or re.search("(^|[^0-9a-z_])" + str(job.chunk) + "([^a-z0-9_]|$)",section_chunks)  is not None ) and ( section_members == "" or re.search("(^|[^0-9a-z_])" + str(job.member) + "([^a-z0-9_]|$)",section_members.lower()) is not None  )  ]
+                ultimate_jobs_list.extend(jobs_final)
+        # Duplicates out
+        ultimate_jobs_list = list(set(ultimate_jobs_list))
         Log.debug("List of jobs filtered by TWO_STEP_START parameter:\n{0}".format([job.name for job in ultimate_jobs_list]))
         return ultimate_jobs_list
 
