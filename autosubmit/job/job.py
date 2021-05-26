@@ -135,6 +135,7 @@ class Job(object):
         self.hold = False
         self.distance_weight = 0
         self.level = 0
+        self.modules = "none"
 
     def __getstate__(self):
         odict = self.__dict__
@@ -940,6 +941,20 @@ class Job(object):
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
 
+        if self.modules != "none":
+            variables = re.findall('%(?<!%%)\w+%(?!%%)', self.modules)
+            if len(variables) > 0:
+                variables = [variable[1:-1] for variable in variables]
+                for key in variables:
+                    try:
+                        self.modules = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.modules)
+                    except Exception as e:
+                        self.modules = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.modules)
+                        Log.debug("PARAMETER Modules: Variable: {0} doesn't exist".format(e.message))
+
+        parameters['MODULES'] = self.modules
         self.parameters = parameters
 
         return parameters
