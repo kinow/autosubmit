@@ -188,7 +188,7 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
-    def get_modules(self, section):
+    def get_export(self, section):
         """
         Gets command line for being submitted with
         :param section: job type
@@ -196,7 +196,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'MODULES', None)
+        return self._jobs_parser.get_option(section, 'EXPORT', None)
 
     def get_wchunkinc(self, section):
         """
@@ -1497,7 +1497,14 @@ class AutosubmitConfig(object):
          :rtype: string
          """
         return self._conf_parser.get_option('wrapper', 'MACHINEFILES', '')
+    def get_wrapper_export(self):
+        """
+         Returns modules variable from wrapper
 
+         :return: string
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'EXPORT', 'none')
     def get_jobs_sections(self):
         """
         Returns the list of sections defined in the jobs config file

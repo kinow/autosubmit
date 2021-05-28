@@ -747,14 +747,14 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        if job.modules == "none" or job.modules == "None" or job.modules is None or job.modules == "":
+        if job.export == "none" or job.export == "None" or job.export is None or job.export == "":
             command =  'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
                 os.path.join(self.remote_log_dir, job_script),
                 os.path.join(self.remote_log_dir, remote_logs[0]),
                 os.path.join(self.remote_log_dir, remote_logs[1])
             )
         else:
-            command = job.modules + ' ; nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+            command = job.export + ' ; nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
                 os.path.join(self.remote_log_dir, job_script),
                 os.path.join(self.remote_log_dir, remote_logs[0]),
                 os.path.join(self.remote_log_dir, remote_logs[1]),
@@ -798,13 +798,9 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
         else:
             header = self.header.PARALLEL
-        #TODO
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.cmd.out".format(job.name)
         err_filename = "{0}.cmd.err".format(job.name)
-        #out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        #err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        #job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 
