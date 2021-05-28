@@ -225,7 +225,7 @@ class JobPackageSimple(JobPackageBase):
                 os.remove(log_stat)
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold)
+            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold, export = self.export)
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
@@ -311,7 +311,7 @@ class JobPackageArray(JobPackageBase):
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             return
@@ -349,6 +349,12 @@ class JobPackageThread(JobPackageBase):
                 self.queue = jobs[0]._queue
         else:
             self.queue = jobs[0]._queue
+        self.export = configuration.get_wrapper_export()
+        if self.export != "none" and self.export != "None":
+            for job in self.jobs:
+                if job.export != "none" and job.export != "None":
+                    self.export == job.export
+                    break
         self.method = method
 #pipeline
     @property
@@ -441,7 +447,7 @@ class JobPackageThread(JobPackageBase):
                 if hold:
                     job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             return
@@ -520,7 +526,7 @@ class JobPackageThreadWrapped(JobPackageThread):
             if hold:
                 job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             raise Exception('Submission failed')

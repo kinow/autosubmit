@@ -339,7 +339,7 @@ class ParamikoPlatform(Platform):
                     os.path.join(self.get_files_path(), src)), 5001)
                 return False
 
-    def submit_job(self, job, script_name, hold=False):
+    def submit_job(self, job, script_name, hold=False,export="none"):
         """
         Submit a job from a given job object.
 
@@ -353,10 +353,10 @@ class ParamikoPlatform(Platform):
         :rtype: int
         """
         if self.type == 'slurm':
-            self.get_submit_cmd(script_name, job, hold=hold)
+            self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job)):
+            if self.send_command(self.get_submit_cmd(script_name, job, export=export)):
                 job_id = self.get_submitted_job_id(self.get_ssh_output())
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)

@@ -196,7 +196,7 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'EXPORT', None)
+        return self._jobs_parser.get_option(section, 'EXPORT', "none")
 
     def get_wchunkinc(self, section):
         """

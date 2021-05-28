@@ -1324,12 +1324,7 @@ class WrapperJob(Job):
         self.checked_time = datetime.datetime.now()
         self.hold = hold
         self.inner_jobs_running = list()
-        self.export = self.as_config.get_wrapper_export()
-        if self.export != "none" and self.export != "None":
-            for job in job_list:
-                if job.export != "none" and job.export != "None":
-                    self.export == job.export
-                    break
+
 
     def _queuing_reason_cancel(self, reason):
         try:

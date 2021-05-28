@@ -87,11 +87,11 @@ class LsfPlatform(ParamikoPlatform):
     def get_checkjob_cmd(self, job_id):
         return self._checkjob_cmd + str(job_id)
 
-    def get_submit_cmd(self, job_script, job):
-        if job.export == "none" or job.export == "None" or job.export is None or job.export == "":
+    def get_submit_cmd(self, job_script, job,export="none"):
+        if export == "none" or export == "None" or export is None or export == "":
             return self._submit_cmd + job_script
         else:
-            return job.export + " ; "+self._submit_cmd + job_script
+            return export + " ; "+self._submit_cmd + job_script
 
     @staticmethod
     def wrapper_header(filename, queue, project, wallclock, num_procs, dependency, directives):
