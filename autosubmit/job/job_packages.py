@@ -203,6 +203,7 @@ class JobPackageSimple(JobPackageBase):
     def __init__(self, jobs):
         super(JobPackageSimple, self).__init__(jobs)
         self._job_scripts = {}
+        self.export = jobs[0].export
 
     def _create_scripts(self, configuration):
         for job in self.jobs:
@@ -410,6 +411,7 @@ class JobPackageThread(JobPackageBase):
         return script_file
 
     def _send_files(self):
+        Log.debug("Check remote dir")
         self.platform.check_remote_log_dir()
         compress_type = "w"
         output_filepath = '{0}.tar'.format("wrapper_scripts")
@@ -419,7 +421,7 @@ class JobPackageThread(JobPackageBase):
                 filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
             self.platform.remove_multiple_files(filenames)
         tar_path = os.path.join(self._tmp_path, output_filepath)
-
+        Log.debug("Compressing multiple_files")
         with tarfile.open(tar_path, compress_type) as tar:
             for job in self.jobs:
                 jfile = os.path.join(self._tmp_path,self._job_scripts[job.name])
@@ -429,7 +431,9 @@ class JobPackageThread(JobPackageBase):
         tar.close()
         os.chmod(tar_path, 0o755)
         self.platform.send_file(tar_path, check=False)
+        Log.debug("Uncompress - send_command")
         self.platform.send_command("cd {0}; tar -xvf {1}".format(self.platform.get_files_path(),output_filepath))
+        Log.debug("Send_file: common_script")
         self.platform.send_file(self._common_script)
 
 
