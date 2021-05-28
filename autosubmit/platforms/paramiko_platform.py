@@ -689,7 +689,7 @@ class ParamikoPlatform(Platform):
     def get_submit_script(self):
         pass
 
-    def get_submit_cmd(self, job_script, job_type, hold=False):
+    def get_submit_cmd(self, job_script, job_type, hold=False, export= ""):
         """
         Get command to add job to scheduler
 
@@ -698,6 +698,8 @@ class ParamikoPlatform(Platform):
         :param job_script: str
         :param hold: submit a job in a held status
         :param hold: boolean
+        :param export: modules that should've downloaded
+        :param export: string
         :return: command to submit job to platforms
         :rtype: str
         """
@@ -728,7 +730,7 @@ class ParamikoPlatform(Platform):
     def get_ssh_output_err(self):
         return self._ssh_output_err
 
-    def get_call(self, job_script, job):
+    def get_call(self, job_script, job, export="none"):
         """
         Gets execution command for given job
 
@@ -747,19 +749,12 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        if job.export == "none" or job.export == "None" or job.export is None or job.export == "":
-            command =  'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
-                os.path.join(self.remote_log_dir, job_script),
-                os.path.join(self.remote_log_dir, remote_logs[0]),
-                os.path.join(self.remote_log_dir, remote_logs[1])
-            )
-        else:
-            command = job.export + ' ; nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
-                os.path.join(self.remote_log_dir, job_script),
-                os.path.join(self.remote_log_dir, remote_logs[0]),
-                os.path.join(self.remote_log_dir, remote_logs[1]),
+        command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+            os.path.join(self.remote_log_dir, job_script),
+            os.path.join(self.remote_log_dir, remote_logs[0]),
+            os.path.join(self.remote_log_dir, remote_logs[1]),
 
-            )
+        )
         return command
 
 

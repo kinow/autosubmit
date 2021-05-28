@@ -344,18 +344,20 @@ class JobPackageThread(JobPackageBase):
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         if configuration is not None:
+            self.export = configuration.get_wrapper_export()
+            if self.export != "none" and self.export != "None":
+                for job in self.jobs:
+                    if job.export != "none" and job.export != "None":
+                        self.export == job.export
+                        break
             if configuration.get_wrapper_queue() != 'None':
                 self.queue = configuration.get_wrapper_queue()
             else:
                 self.queue = jobs[0]._queue
+                self.export = "none"
         else:
             self.queue = jobs[0]._queue
-        self.export = configuration.get_wrapper_export()
-        if self.export != "none" and self.export != "None":
-            for job in self.jobs:
-                if job.export != "none" and job.export != "None":
-                    self.export == job.export
-                    break
+
         self.method = method
 #pipeline
     @property
