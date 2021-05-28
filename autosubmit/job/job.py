@@ -136,6 +136,16 @@ class Job(object):
         self.distance_weight = 0
         self.level = 0
         self.modules = "none"
+        self._wrapper_queue = None
+        # Try to get the wrapper queue. If exception, stays as None
+        try:
+            as_conf = AutosubmitConfig(
+                self.expid, BasicConfig, ConfigParserFactory())
+            as_conf.reload()
+            self._wrapper_queue = as_conf.get_wrapper_queue()
+        except Exception as exp:
+            pass
+            #Log.warning("Exception '{}' while trying to get the wrapper queue")
 
     def __getstate__(self):
         odict = self.__dict__
@@ -952,7 +962,8 @@ class Job(object):
                     except Exception as e:
                         self.modules = re.sub(
                             '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.modules)
-                        Log.debug("PARAMETER Modules: Variable: {0} doesn't exist".format(e.message))
+                        Log.debug(
+                            "PARAMETER Modules: Variable: {0} doesn't exist".format(e.message))
 
         parameters['MODULES'] = self.modules
         self.parameters = parameters
@@ -1148,9 +1159,10 @@ class Job(object):
         else:
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
+        # Get
         # Writing database
         JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
+                                                       self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
 
     def write_start_time(self):
         """
@@ -1176,7 +1188,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
         return True
 
     def write_end_time(self, completed):
@@ -1211,10 +1223,10 @@ class Job(object):
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors, self.wallclock, self._queue, self.date,
-                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err)
+                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err, self._wrapper_queue)
         # Launch second as threaded function
         thread_write_finish = Thread(target=JobDataStructure(self.expid).write_finish_time, args=(self.name, finish_time, final_status, self.processors,
-                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err))
+                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err, self._wrapper_queue))
         thread_write_finish.start()
 
     def check_started_after(self, date_limit):
