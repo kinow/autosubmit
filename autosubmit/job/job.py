@@ -143,6 +143,7 @@ class Job(object):
                 self.expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
             self._wrapper_queue = as_conf.get_wrapper_queue()
+	    self._wrapper_queue = None if self._wrapper_queue == "None" else self._wrapper_queue
         except Exception as exp:
             pass
             #Log.warning("Exception '{}' while trying to get the wrapper queue")
