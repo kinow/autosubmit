@@ -45,6 +45,7 @@ class JobPackager(object):
         self._platform = platform
         self._jobs_list = jobs_list
         self.hold = hold
+
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs = jobs_list.get_queuing(platform)
         # We now consider the running jobs count
@@ -268,14 +269,6 @@ class JobPackager(object):
                         jobs_to_submit_by_section[section], max_wrapped_jobs, section, max_wrapper_job_by_section))
             if wrapped:
                 for p in built_packages_tmp:
-                    #if len(self._jobs_list.jobs_to_run_first) > 0: # related to TWO_STEP_START new variable , defined in expdef
-                    #    temp_jobs = list()
-                    #    for packed_job in p.jobs:
-                    #        if packed_job in self._jobs_list.jobs_to_run_first:
-                    #            temp_jobs.append(packed_job)
-                    #        else:
-                    #            packed_job.packed = False
-                    #    p.jobs = temp_jobs
                     failed_innerjobs = False
                     # Check failed jobs first
                     for job in p.jobs:

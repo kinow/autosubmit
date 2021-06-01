@@ -135,18 +135,7 @@ class Job(object):
         self.hold = False
         self.distance_weight = 0
         self.level = 0
-        self.modules = "none"
-        self._wrapper_queue = None
-        # Try to get the wrapper queue. If exception, stays as None
-        try:
-            as_conf = AutosubmitConfig(
-                self.expid, BasicConfig, ConfigParserFactory())
-            as_conf.reload()
-            self._wrapper_queue = as_conf.get_wrapper_queue()
-	    self._wrapper_queue = None if self._wrapper_queue == "None" else self._wrapper_queue
-        except Exception as exp:
-            pass
-            #Log.warning("Exception '{}' while trying to get the wrapper queue")
+        self.export = "none"
 
     def __getstate__(self):
         odict = self.__dict__
@@ -952,21 +941,20 @@ class Job(object):
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
 
-        if self.modules != "none":
-            variables = re.findall('%(?<!%%)\w+%(?!%%)', self.modules)
+        if self.export != "none":
+            variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)
             if len(variables) > 0:
                 variables = [variable[1:-1] for variable in variables]
                 for key in variables:
                     try:
-                        self.modules = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.modules)
+                        self.export = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export)
                     except Exception as e:
-                        self.modules = re.sub(
-                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.modules)
-                        Log.debug(
-                            "PARAMETER Modules: Variable: {0} doesn't exist".format(e.message))
+                        self.export = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export)
+                        Log.debug("PARAMETER export: Variable: {0} doesn't exist".format(e.message))
 
-        parameters['MODULES'] = self.modules
+            parameters['EXPORT'] = self.export
         self.parameters = parameters
 
         return parameters
@@ -1337,6 +1325,7 @@ class WrapperJob(Job):
         self.checked_time = datetime.datetime.now()
         self.hold = hold
         self.inner_jobs_running = list()
+
 
     def _queuing_reason_cancel(self, reason):
         try:

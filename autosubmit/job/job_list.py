@@ -86,7 +86,6 @@ class JobList(object):
         self.sections_checked = set()
         self._run_members = None
         self.jobs_to_run_first = list()
-        self.jobs_to_run_first_initial = list()
     @property
     def expid(self):
         """
@@ -880,8 +879,6 @@ class JobList(object):
             aux = unparsed_jobs.split(';')
             select_all_jobs_by_section = aux[0]
             filter_jobs_by_section = aux[1]
-
-
         self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
 
 
@@ -930,12 +927,6 @@ class JobList(object):
                     elif 'm' in section_list[3].lower():
                         section_members = section_list[3].strip('mM:[]')
 
-                #for index in xrange(0,len(section_dates)):
-                #    section_dates[index] = section_dates[index].strip(" ")
-                #for index in xrange(0,len(section_chunks)):
-                #    section_chunks[index] = section_chunks[index].strip(" ")
-                #for index in xrange(0,len(section_members)):
-                #    section_members[index] = section_members[index].strip(" ")
 
                 if section_name != "":
                     jobs_filtered = [job for job in self._job_list if

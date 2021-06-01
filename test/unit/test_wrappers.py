@@ -159,6 +159,7 @@ class TestWrappers(TestCase):
         self._platform.max_waiting_jobs = 100
         self._platform.total_jobs = 100
         self.config.get_wrapper_type = Mock(return_value='vertical')
+        self.config.get_wrapper_export = Mock(return_value='none')
         self.config.get_wrapper_crossdate = Mock(return_value=False)
         self.config.get_remote_dependencies = Mock(return_value=False)
         self.config.get_wrapper_jobs = Mock(return_value='None')
