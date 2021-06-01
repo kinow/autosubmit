@@ -1432,17 +1432,23 @@ class Autosubmit:
                                 "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
                                 7040, e.message)
                         Log.debug("Processing job packages")
-                        for (exp_id, package_name, job_name) in packages:
-                            if package_name not in job_list.packages_dict:
-                                job_list.packages_dict[package_name] = []
-                            job_list.packages_dict[package_name].append(
-                                job_list.get_job_by_name(job_name))
-                        for package_name, jobs in job_list.packages_dict.items():
-                            from job.job import WrapperJob
-                            wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                                     None,
-                                                     None, jobs[0].platform, as_conf, jobs[0].hold)
-                            job_list.job_package_map[jobs[0].id] = wrapper_job
+
+                        try:
+                            for (exp_id, package_name, job_name) in packages:
+                                if package_name not in job_list.packages_dict:
+                                    job_list.packages_dict[package_name] = []
+                                job_list.packages_dict[package_name].append(
+                                    job_list.get_job_by_name(job_name))
+                            for package_name, jobs in job_list.packages_dict.items():
+                                from job.job import WrapperJob
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                         None,
+                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
+                                job_list.job_package_map[jobs[0].id] = wrapper_job
+                        except Exception as e:
+                            raise AutosubmitCritical(
+                                "Autosubmit failed while processing job packages. This might be due to a change in your experiment configuration files after 'autosubmit create' was performed.", 7014, str(e))
+
                     Log.debug("Checking job_list current status")
                     save = job_list.update_list(as_conf, first_time=True)
                     job_list.save()
@@ -1469,7 +1475,7 @@ class Autosubmit:
                     raise AutosubmitCritical(e.message, 7067, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical(
-                        "Error in run initialization", 7067, str(e))
+                        "Error in run initialization", 7014, str(e))  # Changing default to 7014
                 # Two step start
                 jobs_to_run_first = list()
                 # Related to TWO_STEP_START new variable defined in expdef
@@ -2323,7 +2329,6 @@ class Autosubmit:
         job_list = Autosubmit.load_job_list(
             expid, as_conf, notransitive=notransitive, monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
-
 
         # Getting output type provided by the user in config, 'pdf' as default
         output_type = as_conf.get_output_type()
