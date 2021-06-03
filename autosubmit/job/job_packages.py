@@ -354,10 +354,9 @@ class JobPackageThread(JobPackageBase):
             if configuration.get_wrapper_queue() != 'None':
                 self.queue = configuration.get_wrapper_queue()
             else:
-                self.queue = jobs[0]._queue
-                self.export = "none"
+                self.queue = jobs[0].queue
         else:
-            self.queue = jobs[0]._queue
+            self.queue = jobs[0].queue
 
         self.method = method
 #pipeline

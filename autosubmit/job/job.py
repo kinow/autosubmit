@@ -80,6 +80,7 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self._wrapper_queue = None
         self._platform = None
         self._queue = None
         self.platform_name = None

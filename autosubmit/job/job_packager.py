@@ -201,7 +201,7 @@ class JobPackager(object):
             failed_job for failed_job in jobs_to_submit_tmp if failed_job.fail_count > 0]
         jobs_to_submit_by_section = self._divide_list_by_section(
             jobs_to_submit)
-
+        packages_to_submit = []
         for job in jobs_to_submit_seq:  # Failed jobs at least one time
             job.packed = False
             if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
@@ -252,7 +252,7 @@ class JobPackager(object):
                     section, "MIN_WRAPPED", self._as_config.get_min_wrapped_jobs()), hard_limit_wrapper)
                 if len(self._jobs_list.jobs_to_run_first) > 0:# Allows to prepare an experiment with TWO_STEP_START  and strict policy
                     min_wrapped_jobs = 2
-                packages_to_submit = []
+
                 if self.wrapper_type in ['vertical', 'vertical-mixed']:
                     wrapped = True
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section],
