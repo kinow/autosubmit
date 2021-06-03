@@ -1326,6 +1326,7 @@ class WrapperJob(Job):
         self.inner_jobs_running = list()
 
 
+
     def _queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
