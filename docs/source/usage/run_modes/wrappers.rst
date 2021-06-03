@@ -226,6 +226,7 @@ In `autosubmit_cxxx.conf`:
     CHECK_TIME_WRAPPER = # OPTIONAL. Time in seconds, overrides SAFETYSLEEPTIME
     POLICY = flexible # OPTIONAL, Wrapper policy, mixed, flexible, strict
     QUEUE = bsc_es # If not specified, queue will be the same of the first SECTION specified on JOBS_IN_WRAPPER
+    #EXPORT = Allows to run an env script or load some modules before running this wrapper. # If not specified, export value will be the same of the first SECTION specified on JOBS_IN_WRAPPER
 
 In `platforms_cxxx.conf`:
 
