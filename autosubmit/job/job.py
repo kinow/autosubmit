@@ -1423,7 +1423,7 @@ class WrapperJob(Job):
                 Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(
                     self.name, reason), 6009)
                 # while running jobs?
-                self._check_running_jobs()  # todo
+                self._check_running_jobs()
                 self.update_failed_jobs(canceled_wrapper=True)
                 self.cancel_failed_wrapper_job()
 
