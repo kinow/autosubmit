@@ -164,7 +164,7 @@ class JobPackager(object):
                     held_by_id[held_job.id] = []
                 held_by_id[held_job.id].append(held_job)
             current_held_jobs = len(held_by_id.keys())
-            remaining_held_slots = 10 - current_held_jobs
+            remaining_held_slots = 5 - current_held_jobs
             try:
                 while len(sorted_jobs) > remaining_held_slots:
                     if sorted_jobs[-1].packed:
