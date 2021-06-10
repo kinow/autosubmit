@@ -1925,7 +1925,7 @@ class Autosubmit:
                                         if job_tmp.section not in error_msg:
                                             error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
-                                    "Submission failed, check job,queue and partition specified of job_sections of {0}".format(
+                                    "Submission failed. Check {0}: Queue, partition specified and total wallclock(sum of wallclock in case of wrapper)".format(
                                         error_msg[:-1]), 7014, e.message)
                         except BaseException as e:
                             raise AutosubmitError(
