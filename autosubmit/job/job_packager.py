@@ -271,10 +271,20 @@ class JobPackager(object):
                 for p in built_packages_tmp:
                     failed_innerjobs = False
                     # Check failed jobs first
+                    aux_jobs = []
                     for job in p.jobs:
+                        if len(self._jobs_list.jobs_to_run_first) > 0:
+                            if job not in self._jobs_list.jobs_to_run_first:
+                                job.packed = False
+                                aux_jobs.append(job)
+
                         if job.fail_count > 0:
                             failed_innerjobs = True
                             break
+                    if len(self._jobs_list.jobs_to_run_first) > 0:
+                        for job in aux_jobs:
+                            p.jobs.remove(job)
+
                     if failed_innerjobs and str(self.wrapper_policy) == "mixed":
                         for job in p.jobs:
                             if job.fail_count == 0:
@@ -306,25 +316,44 @@ class JobPackager(object):
                                        independent_inner_job and parent.status == Status.COMPLETED]
                                 if len(tmp) != len(job.parents):
                                     deadlock = False
+
                             if deadlock and self.wrapper_policy == "strict":
                                 Log.debug(
                                     "Wrapper policy is set to strict, there is a deadlock so autosubmit will sleep a while")
                                 for job in p.jobs:
                                     job.packed = False
+                                    if job in self._jobs_list.jobs_to_run_first:
+                                        if job.status == Status.READY:
+                                            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                                package = JobPackageSimpleWrapped(
+                                                    [job])
+                                            else:
+                                                package = JobPackageSimple([job])
+                                            packages_to_submit.append(package)
+
                             elif deadlock and self.wrapper_policy == "mixed":
                                 Log.debug(
                                     "Wrapper policy is set to mixed, there is a deadlock")
                                 for job in p.jobs:
                                     job.packed = False
-                                    if job.fail_count > 0 and job.status == Status.READY:
-                                        Log.debug(
-                                            "Wrapper policy is set to semi-strict, there is a failed job that will be sent sequential")
-                                        if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
-                                            package = JobPackageSimpleWrapped(
-                                                [job])
-                                        else:
-                                            package = JobPackageSimple([job])
-                                        packages_to_submit.append(package)
+                                    if job in self._jobs_list.jobs_to_run_first:
+                                        if job.status == Status.READY:
+                                            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                                package = JobPackageSimpleWrapped(
+                                                    [job])
+                                            else:
+                                                package = JobPackageSimple([job])
+                                            packages_to_submit.append(package)
+                                    else:
+                                        if job.fail_count > 0 and job.status == Status.READY:
+                                            Log.debug(
+                                                "Wrapper policy is set to semi-strict, there is a failed job that will be sent sequential")
+                                            if job.type == Type.PYTHON and not self._platform.allow_python_jobs:
+                                                package = JobPackageSimpleWrapped(
+                                                    [job])
+                                            else:
+                                                package = JobPackageSimple([job])
+                                            packages_to_submit.append(package)
                             elif deadlock and self.wrapper_policy != "strict" and self.wrapper_policy != "mixed":
                                 Log.debug(
                                     "Wrapper policy is set to flexible and there is a deadlock, As will submit the jobs sequentally")
