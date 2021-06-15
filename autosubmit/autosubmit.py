@@ -1756,7 +1756,7 @@ class Autosubmit:
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
                         raise
                 Log.result("No more jobs to run.")
-                # Updating job data header with current information
+                # Updating job data header with current information when experiment ends
                 job_data_structure.validate_current_run(
                     job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=False, only_update=True)
 
@@ -4563,8 +4563,10 @@ class Autosubmit:
                 if save and wrongExpid == 0:
                     job_list.save()
                     job_data_structure = JobDataStructure(expid)
+                    # job_data_structure.update_jobs_from_change_status(job_tracked_changes)
                     job_data_structure.process_status_changes(
-                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json())
+                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json(), is_setstatus=True)
+                    
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)
