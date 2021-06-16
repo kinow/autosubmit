@@ -1914,8 +1914,7 @@ class Autosubmit:
                     raise
                 except Exception as e:
                     raise
-
-            if platform.type == "slurm" and not inspect and not only_wrappers:
+            if platform.type != "slurm" and not inspect and not only_wrappers: # return to ==
                 try:
                     save = True
                     if len(valid_packages_to_submit) > 0:

@@ -322,7 +322,7 @@ class SlurmPlatform(ParamikoPlatform):
             return status
         return status[0]
 
-    def get_submitted_job_id(self, outputlines):
+    def get_submitted_job_id(self, outputlines, x11 = False):
         try:
             if outputlines.find("failed") != -1:
                 raise AutosubmitCritical(
@@ -330,7 +330,10 @@ class SlurmPlatform(ParamikoPlatform):
             jobs_id = []
             for output in outputlines.splitlines():
                 jobs_id.append(int(output.split(' ')[3]))
-            return jobs_id
+            if x11:
+                return jobs_id[0]
+            else:
+                return jobs_id
         except IndexError:
             raise AutosubmitCritical(
                 "Submission failed. There are issues on your config file", 7014)
@@ -341,12 +344,18 @@ class SlurmPlatform(ParamikoPlatform):
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
     def get_submit_cmd(self, job_script, job, hold=False):
-        if not hold:
-            self._submit_script_file.write(
-                self._submit_cmd + job_script + "\n")
+        if job.x11:
+            if not hold:
+                return self._submit_cmd + job_script
+            else:
+                return self._submit_hold_cmd + job_script
         else:
-            self._submit_script_file.write(
-                self._submit_hold_cmd + job_script + "\n")
+            if not hold:
+                self._submit_script_file.write(
+                    self._submit_cmd + job_script + "\n")
+            else:
+                self._submit_script_file.write(
+                    self._submit_hold_cmd + job_script + "\n")
 
     def get_checkjob_cmd(self, job_id):
         return 'sacct -n -X --jobs {1} -o "State"'.format(self.host, job_id)
