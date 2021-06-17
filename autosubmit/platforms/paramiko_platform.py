@@ -15,6 +15,8 @@ from log.log import AutosubmitError, AutosubmitCritical, Log
 import Xlib.support.connect as xlib_connect
 from threading import Thread
 
+
+
 class ParamikoPlatform(Platform):
     """
     Class to manage the connections to the different platforms with the Paramiko library.
@@ -77,8 +79,6 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self._ftpChannel = None
         self.transport = None
-        self.channel_list = []
-        self.poller_list = []
         self.channels = {}
         self.poller = select.poll()
         self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
@@ -153,6 +153,7 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
         try:
+            self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self._ssh_config = paramiko.SSHConfig()
@@ -185,7 +186,6 @@ class ParamikoPlatform(Platform):
             self.transport.connect(username=self.user)
 
             self._ftpChannel = self._ssh.open_sftp()
-            #self.open_x11(self._ssh.get_transport())
             self.connected = True
         except IOError as e:
             raise AutosubmitError(
@@ -610,24 +610,24 @@ class ParamikoPlatform(Platform):
         local_x11_socket_fileno = local_x11_socket.fileno()
         self.channels[x11_chanfd] = channel, local_x11_socket
         self.channels[local_x11_socket_fileno] = local_x11_socket, channel
-        self.poller_list[-1].register(x11_chanfd, select.POLLIN)
-        self.poller_list[-1].register(local_x11_socket, select.POLLIN)
-        self._ssh._transport._queue_incoming_channel(channel)
+        self.poller.register(x11_chanfd, select.POLLIN)
+        self.poller.register(local_x11_socket, select.POLLIN)
+        self._ssh.get_transport()._queue_incoming_channel(channel)
 
     def flush_out(self,session):
         while session.recv_ready():
             sys.stdout.write(session.recv(4096))
         while session.recv_stderr_ready():
             sys.stderr.write(session.recv_stderr(4096))
-    @threaded
-    def x11_status_checker(self, channel, poller):
-        self.transport.accept()
+
+    def x11_status_checker(self, channel):
+        self._ssh.get_transport().accept()
 
         while not channel.exit_status_ready():
-            poll = poller.poll()
+            poll = self.poller.poll()
             # accept subsequent x11 connections if any
-            if len(self.transport.server_accepts) > 0:
-                self.transport.accept()
+            if len(self._ssh.get_transport().server_accepts) > 0:
+                self._ssh.get_transport().accept()
             if not poll:  # this should not happen, as we don't have a timeout.
                 break
             for fd, event in poll:
@@ -644,7 +644,7 @@ class ParamikoPlatform(Platform):
                         channel.close()
                         counterpart.close()
                         del self.channels[fd]
-        #del self.poller_list[poll]
+
 
 
     def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
@@ -672,20 +672,15 @@ class ParamikoPlatform(Platform):
                 if get_pty:
                     chan.get_pty()
                 if x11:
-                    poller = select.poll()
-                    self.poller_list.append(poller)
+                    self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
                     chan.request_x11(handler=self.x11_handler)
-                    poller = self.poller_list[-1]
                 else:
                     chan.settimeout(timeout)
 
                 if x11:
-                    chan.exec_command(command + "; sleep infinity")
-                    chan_fileno = chan.fileno()
-                    self.poller_list[-1].register(chan_fileno, select.POLLIN)
-                    # accept first remote x11 connection
-
-                    self.x11_status_checker(chan,poller)
+                    command = command + " ; sleep infinity"
+                    chan.exec_command(command)
+                    chan.set_combine_stderr(1)
                 else:
                     chan.exec_command(command)
                 stdin = chan.makefile('wb', bufsize)
@@ -719,15 +714,21 @@ class ParamikoPlatform(Platform):
             timeout = 60 * 2
         stderr_readlines = []
         stdout_chunks = []
+
         try:
-            #stdin, stdout, stderr = self._ssh.exec_command(command)
-            stdin, stdout, stderr = self.exec_command(command, x11=x11)
+            stdin, stdout, stderr = self._ssh.exec_command(command)
+            #stdin, stdout, stderr = self.exec_command(command, x11=x11)
 
             channel = stdout.channel
             if not x11:
                 channel.settimeout(timeout)
                 stdin.close()
                 channel.shutdown_write()
+            else:
+                chan_fileno = channel.fileno()
+                self.poller.register(chan_fileno, select.POLLIN)
+                # accept first remote x11 connection
+                self.x11_status_checker(channel)
             stdout_chunks.append(stdout.channel.recv(len(stdout.channel.in_buffer)))
             while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready():
                 # stop if channel was closed prematurely, and there is no data in the buffers.
@@ -758,6 +759,8 @@ class ParamikoPlatform(Platform):
             if not x11:
                 stdout.close()
                 stderr.close()
+
+
             self._ssh_output = ""
             self._ssh_output_err = ""
             for s in stdout_chunks:
