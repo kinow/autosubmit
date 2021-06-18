@@ -620,26 +620,29 @@ class ParamikoPlatform(Platform):
     def x11_status_checker(self, session, session_fileno):
         self.transport.accept()
         while not session.exit_status_ready():
-            poll = self.poller.poll()
-            # accept subsequent x11 connections if any
-            if len(self.transport.server_accepts) > 0:
-                self.transport.accept()
-            if not poll:  # this should not happen, as we don't have a timeout.
-                break
-            for fd, event in poll:
-                if fd == session_fileno:
-                    self.flush_out(session)
-                # data either on local/remote x11 socket
-                if fd in self.channels.keys():
-                    channel, counterpart = self.channels[fd]
-                    try:
-                        # forward data between local/remote x11 socket.
-                        data = channel.recv(4096)
-                        counterpart.sendall(data)
-                    except socket.error:
-                        channel.close()
-                        counterpart.close()
-                        del self.channels[fd]
+            try:
+                poll = self.poller.poll()  # poll issues if multiple jobs requesting x11
+                # accept subsequent x11 connections if any
+                if len(self.transport.server_accepts) > 0:
+                    self.transport.accept()
+                if not poll:  # this should not happen, as we don't have a timeout.
+                    break
+                for fd, event in poll:
+                    if fd == session_fileno:
+                        self.flush_out(session)
+                    # data either on local/remote x11 socket
+                    if fd in self.channels.keys():
+                        channel, counterpart = self.channels[fd]
+                        try:
+                            # forward data between local/remote x11 socket.
+                            data = channel.recv(4096)
+                            counterpart.sendall(data)
+                        except socket.error:
+                            channel.close()
+                            counterpart.close()
+                            del self.channels[fd]
+            except:
+                pass
 
 
 
