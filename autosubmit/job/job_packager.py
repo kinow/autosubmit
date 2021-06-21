@@ -179,7 +179,7 @@ class JobPackager(object):
                     held_by_id[held_job.id] = []
                 held_by_id[held_job.id].append(held_job)
             current_held_jobs = len(held_by_id.keys())
-            remaining_held_slots = 10 - current_held_jobs
+            remaining_held_slots = 5 - current_held_jobs
             try:
                 while len(sorted_jobs) > remaining_held_slots:
                     if sorted_jobs[-1].packed:
@@ -289,7 +289,13 @@ class JobPackager(object):
                 for p in built_packages_tmp:
                     failed_innerjobs = False
                     # Check failed jobs first
+                    aux_jobs = []
                     for job in p.jobs:
+                        if len(self._jobs_list.jobs_to_run_first) > 0:
+                            if job not in self._jobs_list.jobs_to_run_first:
+                                job.packed = False
+                                aux_jobs.append(job)
+
                         if job.fail_count > 0:
                             failed_innerjobs = True
                             break

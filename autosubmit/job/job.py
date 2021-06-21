@@ -80,6 +80,7 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self._wrapper_queue = None
         self._platform = None
         self._queue = None
         self.platform_name = None
@@ -135,6 +136,7 @@ class Job(object):
         self.hold = False
         self.distance_weight = 0
         self.level = 0
+        self.export = "none"
 
     def __getstate__(self):
         odict = self.__dict__
@@ -287,6 +289,10 @@ class Job(object):
 
     @property
     def total_processors(self):
+        """
+        Number of processors requested by job.  
+        Reduces ':' separated format  if necessary.
+        """
         if ':' in self.processors:
             return reduce(lambda x, y: int(x) + int(y), self.processors.split(':'))
         return int(self.processors)
@@ -501,18 +507,27 @@ class Job(object):
         return self._get_from_total_stats(1)
 
     def get_last_retrials(self):
+        """
+        Returns the retrials of a job, including the last COMPLETED run. The selection stops, and does not include, when the previous COMPLETED job is located or the list of registers is exhausted.
+
+        :return: list of list of dates of retrial [submit, start, finish] in datetime format 
+        :rtype: list of list  
+        """
         log_name = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         retrials_list = []
         if os.path.exists(log_name):
             already_completed = False
+            # Read lines of the TOTAL_STATS file starting from last
             for retrial in reversed(open(log_name).readlines()):
                 retrial_fields = retrial.split()
                 if Job.is_a_completed_retrial(retrial_fields):
+                    # It's a COMPLETED run
                     if already_completed:
                         break
                     already_completed = True
                 retrial_dates = map(lambda y: parse_date(y) if y != 'COMPLETED' and y != 'FAILED' else y,
                                     retrial_fields)
+                # Inserting list [submit, start, finish] of datetimes at the beginning of the list. Restores ordering.
                 retrials_list.insert(0, retrial_dates)
         return retrials_list
 
@@ -927,6 +942,20 @@ class Job(object):
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
 
+        if self.export != "none":
+            variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)
+            if len(variables) > 0:
+                variables = [variable[1:-1] for variable in variables]
+                for key in variables:
+                    try:
+                        self.export = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', parameters[key], self.export)
+                    except Exception as e:
+                        self.export = re.sub(
+                            '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export)
+                        Log.debug("PARAMETER export: Variable: {0} doesn't exist".format(e.message))
+
+            parameters['EXPORT'] = self.export
         self.parameters = parameters
 
         return parameters
@@ -956,11 +985,11 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 5'
+                    template = 'sleep 30'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(5)'
+                    template = 'time.sleep(30)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(5)'
+                    template = 'Sys.sleep(30)'
                 else:
                     template = ''
         except:
@@ -1021,6 +1050,9 @@ class Job(object):
 
     @staticmethod
     def is_a_completed_retrial(fields):
+        """
+        Returns true only if there 4 fields: submit start finish status, and status equals COMPLETED.
+        """
         if len(fields) == 4:
             if fields[3] == 'COMPLETED':
                 return True
@@ -1117,9 +1149,10 @@ class Job(object):
         else:
             f = open(path, 'w')
         f.write(date2str(datetime.datetime.now(), 'S'))
+        # Get
         # Writing database
         JobDataStructure(self.expid).write_submit_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                       self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
+                                                       self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
 
     def write_start_time(self):
         """
@@ -1145,7 +1178,7 @@ class Job(object):
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         # Writing database
         JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
-                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed)
+                                                      self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
         return True
 
     def write_end_time(self, completed):
@@ -1180,10 +1213,10 @@ class Job(object):
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
         JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors, self.wallclock, self._queue, self.date,
-                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err)
+                                                       self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err, self._wrapper_queue)
         # Launch second as threaded function
         thread_write_finish = Thread(target=JobDataStructure(self.expid).write_finish_time, args=(self.name, finish_time, final_status, self.processors,
-                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err))
+                                                                                                  self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err, self._wrapper_queue))
         thread_write_finish.start()
 
     def check_started_after(self, date_limit):
@@ -1294,6 +1327,8 @@ class WrapperJob(Job):
         self.hold = hold
         self.inner_jobs_running = list()
 
+
+
     def _queuing_reason_cancel(self, reason):
         try:
             if len(reason.split('(', 1)) > 1:
@@ -1391,7 +1426,7 @@ class WrapperJob(Job):
                 Log.printlog("Job {0} will be cancelled and set to FAILED as it was queuing due to {1}".format(
                     self.name, reason), 6009)
                 # while running jobs?
-                self._check_running_jobs()  # todo
+                self._check_running_jobs()
                 self.update_failed_jobs(canceled_wrapper=True)
                 self.cancel_failed_wrapper_job()
 

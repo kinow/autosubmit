@@ -54,6 +54,7 @@ class JobPackageBase(object):
         self._jobs = jobs
         self._expid = jobs[0].expid
         self.hold = False
+        self.export = jobs[0].export
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0]._platform
@@ -178,7 +179,6 @@ class JobPackageBase(object):
                     dataThread.join()
                 self._common_script = self._create_common_script()
             if not only_generate:
-
                 Log.debug("Sending Files")
                 self._send_files()
                 Log.debug("Submitting")
@@ -204,6 +204,7 @@ class JobPackageSimple(JobPackageBase):
     def __init__(self, jobs):
         super(JobPackageSimple, self).__init__(jobs)
         self._job_scripts = {}
+        self.export = jobs[0].export
 
     def _create_scripts(self, configuration):
         for job in self.jobs:
@@ -226,7 +227,7 @@ class JobPackageSimple(JobPackageBase):
                 os.remove(log_stat)
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
-            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold)
+            job.id = self.platform.submit_job(job, job_scripts[job.name], hold=hold, export = self.export)
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
@@ -312,7 +313,7 @@ class JobPackageArray(JobPackageBase):
             self.platform.remove_stat_file(job.name)
             self.platform.remove_completed_file(job.name)
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             return
@@ -344,12 +345,19 @@ class JobPackageThread(JobPackageBase):
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
         if configuration is not None:
+            self.export = configuration.get_wrapper_export()
+            if self.export != "none" and self.export != "None":
+                for job in self.jobs:
+                    if job.export != "none" and job.export != "None":
+                        self.export == job.export
+                        break
             if configuration.get_wrapper_queue() != 'None':
                 self.queue = configuration.get_wrapper_queue()
             else:
-                self.queue = jobs[0]._queue
+                self.queue = jobs[0].queue
         else:
-            self.queue = jobs[0]._queue
+            self.queue = jobs[0].queue
+
         self.method = method
 #pipeline
     @property
@@ -405,6 +413,7 @@ class JobPackageThread(JobPackageBase):
         return script_file
 
     def _send_files(self):
+        Log.debug("Check remote dir")
         self.platform.check_remote_log_dir()
         compress_type = "w"
         output_filepath = '{0}.tar'.format("wrapper_scripts")
@@ -414,7 +423,7 @@ class JobPackageThread(JobPackageBase):
                 filenames += " " + self.platform.remote_log_dir + "/" + job.name + ".cmd"
             self.platform.remove_multiple_files(filenames)
         tar_path = os.path.join(self._tmp_path, output_filepath)
-
+        Log.debug("Compressing multiple_files")
         with tarfile.open(tar_path, compress_type) as tar:
             for job in self.jobs:
                 jfile = os.path.join(self._tmp_path,self._job_scripts[job.name])
@@ -424,7 +433,9 @@ class JobPackageThread(JobPackageBase):
         tar.close()
         os.chmod(tar_path, 0o755)
         self.platform.send_file(tar_path, check=False)
+        Log.debug("Uncompress - send_command")
         self.platform.send_command("cd {0}; tar -xvf {1}".format(self.platform.get_files_path(),output_filepath))
+        Log.debug("Send_file: common_script")
         self.platform.send_file(self._common_script)
 
 
@@ -442,7 +453,7 @@ class JobPackageThread(JobPackageBase):
                 if hold:
                     job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             return
@@ -521,7 +532,7 @@ class JobPackageThreadWrapped(JobPackageThread):
             if hold:
                 job.hold = hold
 
-        package_id = self.platform.submit_job(None, self._common_script, hold=hold)
+        package_id = self.platform.submit_job(None, self._common_script, hold=hold, export = self.export)
 
         if package_id is None:
             raise Exception('Submission failed')

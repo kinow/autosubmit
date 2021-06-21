@@ -80,8 +80,12 @@ class LocalPlatform(ParamikoPlatform):
         jobs_xml = dom.getElementsByTagName("JB_job_number")
         return [int(element.firstChild.nodeValue) for element in jobs_xml]
 
-    def get_submit_cmd(self, job_script, job, hold=False):
-        return self.get_call(job_script, job)
+    def get_submit_cmd(self, job_script, job, hold=False, export=""):
+        if export == "none" or export == "None" or export is None or export == "":
+            export = ""
+        else:
+            export += " ; "
+        return self.get_call(job_script, job, export=export)
 
     def get_checkjob_cmd(self, job_id):
         return self.get_pscall(job_id)

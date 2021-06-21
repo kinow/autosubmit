@@ -1454,17 +1454,23 @@ class Autosubmit:
                                 "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
                                 7040, e.message)
                         Log.debug("Processing job packages")
-                        for (exp_id, package_name, job_name) in packages:
-                            if package_name not in job_list.packages_dict:
-                                job_list.packages_dict[package_name] = []
-                            job_list.packages_dict[package_name].append(
-                                job_list.get_job_by_name(job_name))
-                        for package_name, jobs in job_list.packages_dict.items():
-                            from job.job import WrapperJob
-                            wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                                     None,
-                                                     None, jobs[0].platform, as_conf, jobs[0].hold)
-                            job_list.job_package_map[jobs[0].id] = wrapper_job
+
+                        try:
+                            for (exp_id, package_name, job_name) in packages:
+                                if package_name not in job_list.packages_dict:
+                                    job_list.packages_dict[package_name] = []
+                                job_list.packages_dict[package_name].append(
+                                    job_list.get_job_by_name(job_name))
+                            for package_name, jobs in job_list.packages_dict.items():
+                                from job.job import WrapperJob
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                         None,
+                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
+                                job_list.job_package_map[jobs[0].id] = wrapper_job
+                        except Exception as e:
+                            raise AutosubmitCritical(
+                                "Autosubmit failed while processing job packages. This might be due to a change in your experiment configuration files after 'autosubmit create' was performed.", 7014, str(e))
+
                     Log.debug("Checking job_list current status")
                     save = job_list.update_list(as_conf, first_time=True)
                     job_list.save()
@@ -1491,7 +1497,7 @@ class Autosubmit:
                     raise AutosubmitCritical(e.message, 7067, e.trace)
                 except Exception as e:
                     raise AutosubmitCritical(
-                        "Error in run initialization", 7067, str(e))
+                        "Error in run initialization", 7014, str(e))  # Changing default to 7014
                 # Two step start
                 jobs_to_run_first = list()
                 # Related to TWO_STEP_START new variable defined in expdef
@@ -1784,7 +1790,7 @@ class Autosubmit:
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
                         raise
                 Log.result("No more jobs to run.")
-                # Updating job data header with current information
+                # Updating job data header with current information when experiment ends
                 job_data_structure.validate_current_run(
                     job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=False, only_update=True)
 
@@ -1955,7 +1961,7 @@ class Autosubmit:
                                         if job_tmp.section not in error_msg:
                                             error_msg += job_tmp.section + "&"
                                 raise AutosubmitCritical(
-                                    "Submission failed, check job,queue and partition specified of job_sections of {0}".format(
+                                    "Submission failed. Check {0}: Queue, partition specified and total wallclock(sum of wallclock in case of wrapper)".format(
                                         error_msg[:-1]), 7014, e.message)
                         except IOError as e:
                             raise AutosubmitError(
@@ -2253,7 +2259,7 @@ class Autosubmit:
         job_list = Autosubmit.load_job_list(
             expid, as_conf, notransitive=notransitive)
         Log.debug("Job list restored from {0} files", pkl_dir)
-
+        # Filter by job section
         if filter_type:
             ft = filter_type
             Log.debug(ft)
@@ -2265,7 +2271,7 @@ class Autosubmit:
         else:
             ft = 'Any'
             job_list = job_list.get_job_list()
-
+        # Filter by time (hours before)
         period_fi = datetime.datetime.now().replace(second=0, microsecond=0)
         if filter_period:
             period_ini = period_fi - datetime.timedelta(hours=filter_period)
@@ -2356,15 +2362,13 @@ class Autosubmit:
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
-        as_conf.check_conf_files(False)
+        as_conf.check_conf_files(True)
 
         Log.info('Recovering experiment {0}'.format(expid))
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
         job_list = Autosubmit.load_job_list(
             expid, as_conf, notransitive=notransitive, monitor=True)
         Log.debug("Job list restored from {0} files", pkl_dir)
-
-        as_conf.check_conf_files(False)
 
         # Getting output type provided by the user in config, 'pdf' as default
         output_type = as_conf.get_output_type()
@@ -2493,7 +2497,7 @@ class Autosubmit:
         if offer:
             as_conf = AutosubmitConfig(
                 experiment_id, BasicConfig, ConfigParserFactory())
-            as_conf.check_conf_files(False)
+            as_conf.check_conf_files(True)
             pkl_dir = os.path.join(
                 BasicConfig.LOCAL_ROOT_DIR, experiment_id, 'pkl')
             job_list = Autosubmit.load_job_list(
@@ -4086,7 +4090,7 @@ class Autosubmit:
                 job_tracked_changes = {}
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, ConfigParserFactory())
-                as_conf.check_conf_files(False)
+                as_conf.check_conf_files(True)
 
                 # Getting output type from configuration
                 output_type = as_conf.get_output_type()
@@ -4591,8 +4595,10 @@ class Autosubmit:
                 if save and wrongExpid == 0:
                     job_list.save()
                     job_data_structure = JobDataStructure(expid)
+                    # job_data_structure.update_jobs_from_change_status(job_tracked_changes)
                     job_data_structure.process_status_changes(
-                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json())
+                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json(), is_setstatus=True)
+                    
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)

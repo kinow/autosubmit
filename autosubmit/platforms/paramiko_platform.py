@@ -263,6 +263,10 @@ class ParamikoPlatform(Platform):
             self._ftpChannel.get(remote_path, file_path)
             return True
         except Exception as e:
+            try:
+                os.remove(file_path)
+            except:
+                pass
             if str(e) in "Garbage":
                 if not ignore_log:
                     Log.printlog(
@@ -338,7 +342,7 @@ class ParamikoPlatform(Platform):
                     os.path.join(self.get_files_path(), src)), 5001)
                 return False
 
-    def submit_job(self, job, script_name, hold=False):
+    def submit_job(self, job, script_name, hold=False,export="none"):
         """
         Submit a job from a given job object.
 
@@ -352,10 +356,10 @@ class ParamikoPlatform(Platform):
         :rtype: int
         """
         if self.type == 'slurm':
-            self.get_submit_cmd(script_name, job, hold=hold)
+            self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job)):
+            if self.send_command(self.get_submit_cmd(script_name, job, export=export)):
                 job_id = self.get_submitted_job_id(self.get_ssh_output())
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)
@@ -419,7 +423,7 @@ class ParamikoPlatform(Platform):
             sleep_time = sleep_time + 5
             self.send_command(self.get_checkjob_cmd(job_id))
         if retries >= 0:
-            #Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
+            Log.debug('Successful check job command: {0}', self.get_checkjob_cmd(job_id))
             job_status = self.parse_job_output(
                 self.get_ssh_output()).strip("\n")
             # URi: define status list in HPC Queue Class
@@ -690,7 +694,7 @@ class ParamikoPlatform(Platform):
     def get_submit_script(self):
         pass
 
-    def get_submit_cmd(self, job_script, job_type, hold=False):
+    def get_submit_cmd(self, job_script, job_type, hold=False, export= ""):
         """
         Get command to add job to scheduler
 
@@ -699,6 +703,8 @@ class ParamikoPlatform(Platform):
         :param job_script: str
         :param hold: submit a job in a held status
         :param hold: boolean
+        :param export: modules that should've downloaded
+        :param export: string
         :return: command to submit job to platforms
         :rtype: str
         """
@@ -729,7 +735,7 @@ class ParamikoPlatform(Platform):
     def get_ssh_output_err(self):
         return self._ssh_output_err
 
-    def get_call(self, job_script, job):
+    def get_call(self, job_script, job, export="none"):
         """
         Gets execution command for given job
 
@@ -748,11 +754,14 @@ class ParamikoPlatform(Platform):
         elif job.type == Type.R:
             executable = 'Rscript'
         remote_logs = (job.script_name + ".out", job.script_name + ".err")
-        return 'nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
+        command = export + ' nohup ' + executable + ' {0} > {1} 2> {2} & echo $!'.format(
             os.path.join(self.remote_log_dir, job_script),
             os.path.join(self.remote_log_dir, remote_logs[0]),
-            os.path.join(self.remote_log_dir, remote_logs[1])
+            os.path.join(self.remote_log_dir, remote_logs[1]),
+
         )
+        return command
+
 
     @staticmethod
     def get_pscall(job_id):
@@ -789,13 +798,9 @@ class ParamikoPlatform(Platform):
             header = self.header.SERIAL
         else:
             header = self.header.PARALLEL
-        #TODO
         str_datetime = date2str(datetime.datetime.now(), 'S')
         out_filename = "{0}.cmd.out".format(job.name)
         err_filename = "{0}.cmd.err".format(job.name)
-        #out_filename = "{0}.{1}.out".format(job.name, str_datetime)
-        #err_filename = "{0}.{1}.err".format(job.name, str_datetime)
-        #job.local_logs = (out_filename, err_filename)
         header = header.replace('%OUT_LOG_DIRECTIVE%', out_filename)
         header = header.replace('%ERR_LOG_DIRECTIVE%', err_filename)
 

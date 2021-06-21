@@ -40,6 +40,7 @@ To do this use:
 
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
+
 There are also other, less used features that you can use:
 
 * FREQUENCY: specifies that a job has only to be run after X dates, members or chunk. A job will always be created for
@@ -57,6 +58,9 @@ There are also other, less used features that you can use:
 * CUSTOM_DIRECTIVES: Custom directives for the HPC resource manager headers of the platform used for that job.
 
 * SKIPPABLE: When this is true, the job will be able to skip it work if there is an higher chunk or member already ready, running, queuing or in complete status.
+* EXPORT: Allows to run an env script or load some modules before running this job.
+* EXECUTABLE: Allows to add an wrapper that will execute this job.
+* QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
 Workflow examples:
 ==================

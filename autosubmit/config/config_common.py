@@ -188,6 +188,16 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
 
+    def get_export(self, section):
+        """
+        Gets command line for being submitted with
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'EXPORT', "none")
+
     def get_wchunkinc(self, section):
         """
         Gets the chunk increase to wallclock  
@@ -498,7 +508,8 @@ class AutosubmitConfig(object):
             return result
         except AutosubmitCritical as e:
             # In case that there are critical errors in the configuration, Autosubmit won't continue.
-            raise AutosubmitCritical(e.message, e.code, e.trace)
+            if running_time is True:
+                raise AutosubmitCritical(e.message, e.code, e.trace)
         except Exception as e:
             raise AutosubmitCritical(
                 "There was an error while showing the config log messages", 7014, str(e))
@@ -1513,6 +1524,10 @@ class AutosubmitConfig(object):
          """
         return self._conf_parser.get_option(wrapper_section_name, 'MACHINEFILES', '')
 
+         :return: string
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'EXPORT', 'none')
     def get_jobs_sections(self):
         """
         Returns the list of sections defined in the jobs config file

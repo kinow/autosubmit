@@ -39,7 +39,7 @@ class MailNotifier:
                 Log.printlog('An error occurred while sending a mail for the job {0}'.format(job_name), 6011)
 
     def _send_mail(self, mail_from, mail_to, message):
-        server = smtplib.SMTP_SSL(self.config.SMTP_SERVER)
+        server = smtplib.SMTP(self.config.SMTP_SERVER)
         server.sendmail(mail_from, mail_to, message.as_string())
         server.quit()
 
