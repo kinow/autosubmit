@@ -154,6 +154,14 @@ class AutosubmitConfig(object):
         result["proj"] = get_data(
             self._proj_parser) if self._proj_parser else None
         return result
+    def get_wrapper_export(self):
+        """
+         Returns modules variable from wrapper
+
+         :return: string
+         :rtype: string
+         """
+        return self._conf_parser.get_option('wrapper', 'EXPORT', 'none')
 
     def get_full_config_as_json(self):
         """
