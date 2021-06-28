@@ -55,6 +55,7 @@ class JobPackageBase(object):
         self._expid = jobs[0].expid
         self.hold = False
         self.export = jobs[0].export
+        self.x11 = jobs[0].x11
         try:
             self._tmp_path = jobs[0]._tmp_path
             self._platform = jobs[0]._platform

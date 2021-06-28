@@ -1,5 +1,6 @@
 from time import sleep
-
+import sys
+import socket
 import os
 import paramiko
 import datetime
@@ -10,6 +11,10 @@ from autosubmit.job.job_common import Type
 from autosubmit.platforms.platform import Platform
 from bscearth.utils.date import date2str
 from log.log import AutosubmitError, AutosubmitCritical, Log
+
+import Xlib.support.connect as xlib_connect
+from threading import Thread
+
 
 
 class ParamikoPlatform(Platform):
@@ -39,7 +44,9 @@ class ParamikoPlatform(Platform):
         self.submit_cmd = ""
         self._ftpChannel = None
         self.transport = None
-
+        self.channels = {}
+        self.poller = select.poll()
+        self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
     @property
     def header(self):
         """
@@ -70,6 +77,9 @@ class ParamikoPlatform(Platform):
         self._host_config_id = None
         self._ftpChannel = None
         self.transport = None
+        self.channels = {}
+        self.poller = select.poll()
+        self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
 
     def test_connection(self):
         """
@@ -122,6 +132,16 @@ class ParamikoPlatform(Platform):
         except Exception as e:
             raise AutosubmitCritical(
                 'Cant connect to this platform due an unknown error', 7050, e.message)
+    def threaded(fn):
+        def wrapper(*args, **kwargs):
+            thread = Thread(target=fn, args=args, kwargs=kwargs)
+            thread.start()
+            return thread
+        return wrapper
+
+
+
+
 
     def connect(self, reconnect=False):
         """
@@ -131,6 +151,7 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
         try:
+            self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self._ssh_config = paramiko.SSHConfig()
@@ -138,7 +159,6 @@ class ParamikoPlatform(Platform):
             self._user_config_file = os.path.expanduser("~/.ssh/config")
             if os.path.exists(self._user_config_file):
                 with open(self._user_config_file) as f:
-                    # noinspection PyTypeChecker
                     self._ssh_config.parse(f)
             self._host_config = self._ssh_config.lookup(self.host)
             if "," in self._host_config['hostname']:
@@ -159,9 +179,9 @@ class ParamikoPlatform(Platform):
             else:
                 self._ssh.connect(self._host_config['hostname'], 22, username=self.user,
                                   key_filename=self._host_config_id, timeout=120 , banner_timeout=120)
-            self.transport = paramiko.Transport(
-                (self._host_config['hostname'], 22))
-            self.transport.connect(username=self.user)
+            self.transport = self._ssh.get_transport()
+            #self.transport = paramiko.Transport((self._host_config['hostname'], 22))
+            #self.transport.connect(username=self.user)
             self._ftpChannel = self._ssh.open_sftp()
             self.connected = True
         except IOError as e:
@@ -212,7 +232,7 @@ class ParamikoPlatform(Platform):
                 return ""
         return ""
 
-    def send_file(self, filename, check=True):
+    def send_file(self, filename, check = True):
         """
         Sends a local file to the platform
         :param filename: name of the file to send
@@ -355,12 +375,12 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.type == 'slurm':
+        if self.type == 'slurm' and not job.x11:
             self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job, export=export)):
-                job_id = self.get_submitted_job_id(self.get_ssh_output())
+            if self.send_command(self.get_submit_cmd(script_name, job), x11=job.x11, export=export):
+                job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)
             else:
@@ -572,7 +592,120 @@ class ParamikoPlatform(Platform):
         """
         raise NotImplementedError
 
-    def send_command(self, command, ignore_log=False):
+
+    def flush_out(self, session):
+        while session.recv_ready():
+            sys.stdout.write(session.recv(4096))
+        while session.recv_stderr_ready():
+            sys.stderr.write(session.recv_stderr(4096))
+
+    def x11_handler(self, channel, (src_addr, src_port)):
+        '''handler for incoming x11 connections
+        for each x11 incoming connection,
+        - get a connection to the local display
+        - maintain bidirectional map of remote x11 channel to local x11 channel
+        - add the descriptors to the poller
+        - queue the channel (use transport.accept())'''
+        x11_chanfd = channel.fileno()
+        local_x11_socket = xlib_connect.get_socket(*self.local_x11_display[:4])
+        local_x11_socket_fileno = local_x11_socket.fileno()
+        self.channels[x11_chanfd] = channel, local_x11_socket
+        self.channels[local_x11_socket_fileno] = local_x11_socket, channel
+        self.poller.register(x11_chanfd, select.POLLIN)
+        self.poller.register(local_x11_socket, select.POLLIN)
+        self.transport._queue_incoming_channel(channel)
+
+    def flush_out(self,session):
+        while session.recv_ready():
+            sys.stdout.write(session.recv(4096))
+        while session.recv_stderr_ready():
+            sys.stderr.write(session.recv_stderr(4096))
+    @threaded
+    def x11_status_checker(self, session, session_fileno):
+        self.transport.accept()
+        while not session.exit_status_ready():
+            try:
+                poll = self.poller.poll()  # poll issues if multiple jobs requesting x11
+                # accept subsequent x11 connections if any
+                if len(self.transport.server_accepts) > 0:
+                    self.transport.accept()
+                if not poll:  # this should not happen, as we don't have a timeout.
+                    break
+                for fd, event in poll:
+                    if fd == session_fileno:
+                        self.flush_out(session)
+                    # data either on local/remote x11 socket
+                    if fd in self.channels.keys():
+                        channel, counterpart = self.channels[fd]
+                        try:
+                            # forward data between local/remote x11 socket.
+                            data = channel.recv(4096)
+                            counterpart.sendall(data)
+                        except socket.error:
+                            channel.close()
+                            counterpart.close()
+                            del self.channels[fd]
+            except:
+                pass
+
+
+
+    def exec_command(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
+        """
+        Execute a command on the SSH server.  A new `.Channel` is opened and
+        the requested command is executed.  The command's input and output
+        streams are returned as Python ``file``-like objects representing
+        stdin, stdout, and stderr.
+
+        :param str command: the command to execute
+        :param int bufsize:
+            interpreted the same way as by the built-in ``file()`` function in
+            Python
+        :param int timeout:
+            set command's channel timeout. See `Channel.settimeout`.settimeout
+        :return:
+            the stdin, stdout, and stderr of the executing command, as a
+            3-tuple
+
+        :raises SSHException: if the server fails to execute the command
+        """
+        while retries > 0:
+            try:
+                chan = self.transport.open_session()
+                if x11:
+                    self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+                    chan.request_x11(handler=self.x11_handler)
+                else:
+                    chan.settimeout(timeout)
+                if x11:
+                    command = command + " ; sleep infinity"
+                    chan.exec_command(command)
+                    chan_fileno = chan.fileno()
+                    self.poller.register(chan_fileno, select.POLLIN)
+                    self.x11_status_checker(chan, chan_fileno)
+                else:
+                    chan.exec_command(command)
+                stdin = chan.makefile('wb', bufsize)
+                stdout = chan.makefile('r', bufsize)
+                stderr = chan.makefile_stderr('r', bufsize)
+                return stdin, stdout, stderr
+            except paramiko.SSHException as e:
+                if str(e) in "SSH session not active":
+                    self._ssh = None
+                    self.restore_connection()
+                timeout = timeout + 60
+                retries = retries - 1
+        if retries <= 0:
+            return False , False, False
+    def exec_command_x11(self, command, bufsize=-1, timeout=None, get_pty=False,retries=3, x11=False):
+        session = self.transport.open_session()
+        session.request_x11(handler=self.x11_handler)
+        session.exec_command(command + " ; sleep infinity")
+        session_fileno = session.fileno()
+        self.poller.register(session_fileno, select.POLLIN)
+        self.x11_status_checker(session, session_fileno)
+        pass
+    def send_command(self, command, ignore_log=False, x11 = False):
         """
         Sends given command to HPC
 
@@ -590,16 +723,15 @@ class ParamikoPlatform(Platform):
             timeout = 60 * 2
         stderr_readlines = []
         stdout_chunks = []
+
         try:
-            stdin, stdout, stderr = self._ssh.exec_command(command)
+            stdin, stdout, stderr = self.exec_command(command, x11=x11)
             channel = stdout.channel
-            channel.settimeout(timeout)
-            stdin.close()
-            channel.shutdown_write()
-
-            stdout_chunks.append(stdout.channel.recv(
-                len(stdout.channel.in_buffer)))
-
+            if not x11:
+                channel.settimeout(timeout)
+                stdin.close()
+                channel.shutdown_write()
+            stdout_chunks.append(stdout.channel.recv(len(stdout.channel.in_buffer)))
             while not channel.closed or channel.recv_ready() or channel.recv_stderr_ready():
                 # stop if channel was closed prematurely, and there is no data in the buffers.
                 got_chunk = False
@@ -616,6 +748,9 @@ class ParamikoPlatform(Platform):
                             stderr.channel.recv_stderr(len(c.in_stderr_buffer)))
                         #stdout_chunks.append(" ")
                         got_chunk = True
+                if x11:
+                    got_chunk = True
+                    break
                 if not got_chunk and stdout.channel.exit_status_ready() and not stderr.channel.recv_stderr_ready() and not stdout.channel.recv_ready():
                     # indicate that we're not going to read from this channel anymore
                     stdout.channel.shutdown_read()
@@ -623,8 +758,11 @@ class ParamikoPlatform(Platform):
                     stdout.channel.close()
                     break
             # close all the pseudofiles
-            stdout.close()
-            stderr.close()
+            if not x11:
+                stdout.close()
+                stderr.close()
+
+
             self._ssh_output = ""
             self._ssh_output_err = ""
             for s in stdout_chunks:
@@ -730,6 +868,7 @@ class ParamikoPlatform(Platform):
         :rtype: str
         """
         #Log.debug('Output {0}', self._ssh_output)
+
         return self._ssh_output
 
     def get_ssh_output_err(self):
@@ -813,6 +952,12 @@ class ParamikoPlatform(Platform):
         if hasattr(self.header, 'get_threads_per_task'):
             header = header.replace(
                 '%THREADS%', self.header.get_threads_per_task(job))
+        if job.x11:
+            header = header.replace(
+                '%X11%', "SBATCH --x11=batch")
+        else:
+            header = header.replace(
+                '%X11%', "")
         if hasattr(self.header, 'get_scratch_free_space'):
             header = header.replace(
                 '%SCRATCH_FREE_SPACE_DIRECTIVE%', self.header.get_scratch_free_space(job))

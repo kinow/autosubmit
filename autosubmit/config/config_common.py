@@ -198,6 +198,16 @@ class AutosubmitConfig(object):
         """
         return self._jobs_parser.get_option(section, 'EXPORT', "none")
 
+    def get_x11(self, section):
+        """
+        Active X11 for this section
+        :param section: job type
+        :type section: str
+        :return: false/true
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'X11', 'false')
+
     def get_wchunkinc(self, section):
         """
         Gets the chunk increase to wallclock  
@@ -1469,6 +1479,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
+    def get_x11_jobs(self):
+        """
+        Returns the jobs that should support x11, configured in the autosubmit's config
+
+        :return: expression (or none)
+        :rtype: string
+        """
+        return self._conf_parser.get_option('config', 'X11_JOBS', 'None')
 
     def get_wrapper_queue(self,wrapper_section_name="wrapper"):
         """

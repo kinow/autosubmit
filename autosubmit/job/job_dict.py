@@ -311,6 +311,7 @@ class DicJobs:
         job.member = member
         job.chunk = chunk
         job.date_format = self._date_format
+
         if split > -1:
             job.split = split
 
@@ -319,6 +320,7 @@ class DicJobs:
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
         job_type = self.get_option(section, "TYPE", default_job_type).lower()
+
         if job_type == 'bash':
             job.type = Type.BASH
         elif job_type == 'python':
@@ -347,6 +349,7 @@ class DicJobs:
         job.synchronize = self.get_option(section, "SYNCHRONIZE", None)
         job.check_warnings = str(self.get_option(section, "SHOW_CHECK_WARNINGS", 'false')).lower()
         job.running = self.get_option(section, 'RUNNING', 'once').lower()
+        job.x11 = bool(self.get_option(section, 'X11', False ))
 
         if self.get_option(section, "SKIPPABLE", "False").lower() == "true":
             job.skippable = True
