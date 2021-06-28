@@ -1523,6 +1523,15 @@ class AutosubmitConfig(object):
          :rtype: string
          """
         return self._conf_parser.get_option(wrapper_section_name, 'MACHINEFILES', '')
+    def get_export(self, section):
+        """
+        Gets command line for being submitted with
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
+        return self._jobs_parser.get_option(section, 'EXPORT', "none")
 
     def get_jobs_sections(self):
         """
