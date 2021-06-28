@@ -1524,10 +1524,6 @@ class AutosubmitConfig(object):
          """
         return self._conf_parser.get_option(wrapper_section_name, 'MACHINEFILES', '')
 
-         :return: string
-         :rtype: string
-         """
-        return self._conf_parser.get_option('wrapper', 'EXPORT', 'none')
     def get_jobs_sections(self):
         """
         Returns the list of sections defined in the jobs config file
