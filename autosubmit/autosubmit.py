@@ -29,7 +29,7 @@ from notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
 from database.db_common import get_autosubmit_version, check_experiment_exists
-from database.db_common import delete_experiment, update_experiment_descrip_version
+from database.db_common import delete_experiment
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db
@@ -485,12 +485,6 @@ class Autosubmit:
                 'pklfix', description='restore the backup of your pkl')
             subparser.add_argument('expid', help='experiment identifier')
 
-            # Update Description
-            subparser = subparsers.add_parser(
-                'updatedescrip', description="Updates the experiment's description.")
-            subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('description', help='New description.')
-
             # Test
             subparser = subparsers.add_parser(
                 'test', description='test experiment')
@@ -633,11 +627,9 @@ class Autosubmit:
             return Autosubmit.database_fix(args.expid)
         elif args.command == 'pklfix':
             return Autosubmit.pkl_fix(args.expid)
-        elif args.command == 'updatedescrip':
-            return Autosubmit.update_description(args.expid, args.description)
 
     @staticmethod
-    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
+    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):        
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
@@ -1208,27 +1200,44 @@ class Autosubmit:
         :return: Nothing\n
         :rtype: \n
         """
-
+        Log.warning("Generating the auxiliar job_list used for the -CW flag.")
         job_list._job_list = jobs_filtered
-        # Current choice is Paramiko Submitter
+        parameters = as_conf.load_parameters()
+        date_list = as_conf.get_date_list()
+        if len(date_list) != len(set(date_list)):
+            raise AutosubmitCritical(
+                'There are repeated start dates!', 7014)
+        num_chunks = as_conf.get_num_chunks()
+        chunk_ini = as_conf.get_chunk_ini()
+        member_list = as_conf.get_member_list()
+        run_only_members = as_conf.get_member_list(run_only=True)
+        date_format = ''
+        if as_conf.get_chunk_size_unit() is 'hour':
+            date_format = 'H'
+        for date in date_list:
+            if date.hour > 1:
+                date_format = 'H'
+            if date.minute > 1:
+                date_format = 'M'
+        wrapper_jobs = dict()
+        if as_conf.get_wrapper_type() == "multi":
+            for wrapper_section in as_conf.get_wrapper_multi():
+                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+        Log.warning("Aux Job_list was generated successfully")
         submitter = Autosubmit._get_submitter(as_conf)
-        # Load platforms saves a dictionary Key: Platform Name, Value: Corresponding Platform Object
         submitter.load_platforms(as_conf)
-        # The value is retrieved from DEFAULT.HPCARCH
         hpcarch = as_conf.get_platform()
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
         platforms_to_test = set()
         for job in job_list.get_job_list():
             if job.platform_name is None:
                 job.platform_name = hpcarch
-            # Assign platform objects to each job
-            # noinspection PyTypeChecker
             job.platform = submitter.platforms[job.platform_name.lower()]
-            # Add object to set
-            # noinspection PyTypeChecker
             platforms_to_test.add(job.platform)
-        # case setstatus
+
         job_list.check_scripts(as_conf)
+
         job_list.update_list(as_conf, False)
         # Loading parameters again
         Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
@@ -1236,9 +1245,12 @@ class Autosubmit:
         unparsed_two_step_start = as_conf.get_parse_two_step_start()
         if unparsed_two_step_start != "":
             job_list.parse_two_step_start(unparsed_two_step_start)
+        job_list.create_dictionary(date_list, member_list, num_chunks, chunk_ini, date_format, as_conf.get_retrials(), wrapper_jobs )
+
         while job_list.get_active():
-            Autosubmit.submit_ready_jobs(
-                as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            Autosubmit.submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, True, only_wrappers, hold=False)
+            #for job in job_list.get_uncompleted_and_not_waiting():
+            #    job.status = Status.COMPLETED
             job_list.update_list(as_conf, False)
 
     @staticmethod
@@ -1260,6 +1272,7 @@ class Autosubmit:
                 "The current host is not allowed to run Autosubmit", 7004)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
+
         as_conf.check_conf_files(True)
 
         Log.info(
@@ -1389,6 +1402,9 @@ class Autosubmit:
                     try:
                         job_list = Autosubmit.load_job_list(
                             expid, as_conf, notransitive=notransitive)
+                    except IOError as e:
+                        raise AutosubmitError(
+                            "Job_list not found", 6016, e.message)
                     except BaseException as e:
                         raise AutosubmitCritical(
                             "Corrupted job_list, backup couldn't be restored", 7040, e.message)
@@ -1419,6 +1435,9 @@ class Autosubmit:
                     try:
                         packages_persistence = JobPackagePersistence(os.path.join(
                             BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                    except IOError as e:
+                        raise AutosubmitError(
+                            "job_packages not found", 6016, e.message)
                     except BaseException as e:
                         raise AutosubmitCritical(
                             "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages", 7040, e.message)
@@ -1427,6 +1446,9 @@ class Autosubmit:
                                               expid, "pkl", "job_packages_" + expid + ".db"), 0644)
                         try:
                             packages = packages_persistence.load()
+                        except IOError as e:
+                            raise AutosubmitError(
+                                "job_packages not found", 6016, e.message)
                         except BaseException as e:
                             raise AutosubmitCritical(
                                 "Corrupted job_packages, python 2.7 and sqlite doesn't allow to restore these packages(will work on autosubmit4)",
@@ -1482,16 +1504,17 @@ class Autosubmit:
                 unparsed_two_step_start = as_conf.get_parse_two_step_start()
                 if unparsed_two_step_start != "":
                     job_list.parse_two_step_start(unparsed_two_step_start)
-                #########################
-                # AUTOSUBMIT - MAIN LOOP
-                #########################
-                # Main loop. Finishing when all jobs have been submitted
+
                 main_loop_retrials = 480  # Hard limit of tries 480 tries at 30seconds sleep each try
                 # establish the connection to all platforms
 
                 Autosubmit.restore_platforms(platforms_to_test)
                 save = True
                 Log.debug("Running main loop")
+                #########################
+                # AUTOSUBMIT - MAIN LOOP
+                #########################
+                # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
                     try:
                         if Autosubmit.exit:
@@ -1674,53 +1697,64 @@ class Autosubmit:
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
-                    except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
 
+                    except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
                         # Save job_list if not is a failed submitted job
                         recovery = True
-                        try:
-                            failed_jobs = job_list.get_failed()
-                            failed_jobs += job_list.get_ready()
-                            failed_names = {}
-                            for job in failed_jobs:
-                                if job.fail_count > 0:
-                                    failed_names[job.name] = job.fail_count
-                            job_list = Autosubmit.load_job_list(
-                                expid, as_conf, notransitive=notransitive)
-                            Autosubmit._load_parameters(
-                                as_conf, job_list, submitter.platforms)
-                            for job in job_list.get_job_list():
-                                if job in failed_names:
-                                    job.fail_count = failed_names[job.name]
-                                if job.platform_name is None:
-                                    job.platform_name = hpcarch
-                                job.platform = submitter.platforms[job.platform_name.lower(
-                                )]
+                        IO_issues = True
+                        while IO_issues:
+                            try:
+                                failed_jobs = job_list.get_failed()
+                                failed_jobs += job_list.get_ready()
+                                failed_names = {}
+                                for job in failed_jobs:
+                                    if job.fail_count > 0:
+                                        failed_names[job.name] = job.fail_count
+                                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
+                                if len(job_list._job_list) == 0:
+                                    sleep(5)
+                                    raise IOError
+                                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                                for job in job_list.get_job_list():
+                                    if job in failed_names:
+                                        job.fail_count = failed_names[job.name]
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    job.platform = submitter.platforms[job.platform_name.lower(
+                                    )]
 
-                            packages_persistence = JobPackagePersistence(os.path.join(
-                                BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
-                            packages = packages_persistence.load()
-                            for (exp_id, package_name, job_name) in packages:
-                                if package_name not in job_list.packages_dict:
-                                    job_list.packages_dict[package_name] = []
-                                job_list.packages_dict[package_name].append(
-                                    job_list.get_job_by_name(job_name))
-                            for package_name, jobs in job_list.packages_dict.items():
-                                from job.job import WrapperJob
-                                for inner_job in jobs:
-                                    inner_job.packed = True
-                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                                         None,
-                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
-                                job_list.job_package_map[jobs[0].id] = wrapper_job
-                            save = job_list.update_list(as_conf)
-                            job_list.save()
-                        except BaseException as e:
-                            raise AutosubmitCritical("Job_list couldn't be restored due I/O error to be solved on 3.14.", 7040,
-                                                     e.message)
+                                packages_persistence = JobPackagePersistence(os.path.join(
+                                    BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                                packages = packages_persistence.load()
+                                if len(job_list.job_packages_dict) > 0:
+                                    if len(packages) == 0:
+                                        sleep(5)
+                                        raise IOError
+                                for (exp_id, package_name, job_name) in packages:
+                                    if package_name not in job_list.packages_dict:
+                                        job_list.packages_dict[package_name] = []
+                                    job_list.packages_dict[package_name].append(
+                                        job_list.get_job_by_name(job_name))
+                                for package_name, jobs in job_list.packages_dict.items():
+                                    from job.job import WrapperJob
+                                    for inner_job in jobs:
+                                        inner_job.packed = True
+                                    wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                                             None,
+                                                             None, jobs[0].platform, as_conf, jobs[0].hold)
+                                    job_list.job_package_map[jobs[0].id] = wrapper_job
+                                save = job_list.update_list(as_conf)
+                                job_list.save()
+
+                                IO_issues = False
+                            except IOError as e:
+                                IO_issues = True
+                            except BaseException as e:
+                                AutosubmitCritical("Unknown error during the recovery of the job_list",7056,e)
+
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         while not reconnected and main_loop_retrials > 0:
@@ -1789,6 +1823,8 @@ class Autosubmit:
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
+        except IOError as e:
+            raise AutosubmitError(e.message,e.code,e.trace)
         except BaseException as e:
             raise
 
@@ -1927,6 +1963,9 @@ class Autosubmit:
                                 raise AutosubmitCritical(
                                     "Submission failed. Check {0}: Queue, partition specified and total wallclock(sum of wallclock in case of wrapper)".format(
                                         error_msg[:-1]), 7014, e.message)
+                        except IOError as e:
+                            raise AutosubmitError(
+                                "IO issues ", 6016, e.message)
                         except BaseException as e:
                             raise AutosubmitError(
                                 "Submission failed, this can be due a failure on the platform", 6015, e.message)
@@ -2132,8 +2171,7 @@ class Autosubmit:
             job_list_wrappers = copy.deepcopy(job_list)
             jobs_wr_aux = copy.deepcopy(jobs)
             jobs_wr = []
-            [jobs_wr.append(job) for job in jobs_wr_aux if (
-                job.status == Status.READY or job.status == Status.WAITING)]
+            [jobs_wr.append(job) for job in jobs_wr_aux ]
             for job in jobs_wr:
                 for child in job.children:
                     if child not in jobs_wr:
@@ -2145,6 +2183,8 @@ class Autosubmit:
             for job in jobs_wr:
                 job.children = job.children - referenced_jobs_to_remove
                 job.parents = job.parents - referenced_jobs_to_remove
+
+
             Autosubmit.generate_scripts_andor_wrappers(as_conf, job_list_wrappers, jobs_wr,
                                                        packages_persistence, True)
 
@@ -2731,6 +2771,9 @@ class Autosubmit:
                                 Log.result(
                                     "Empty dirs on {0} have been successfully deleted".format(p.temp_dir))
 
+                        except IOError as e:
+                            raise AutosubmitError(
+                                "I/O Issues", 6016, e.message)
                         except BaseException as e:
                             error = True
                             Log.printlog("The files/dirs on {0} cannot be copied to {1}.\nTRACE:{2}".format(
@@ -3364,24 +3407,7 @@ class Autosubmit:
 
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
-        update_experiment_descrip_version(
-            expid, version=Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
-        return True
-
-    @staticmethod
-    def update_description(expid, new_description):
-        Log.info("Checking if experiment exists...")
-        check_experiment_exists(expid)
-        Log.info("Experiment found.")
-        Log.info("Setting {0} description to '{1}'".format(
-            expid, new_description))
-        result = update_experiment_descrip_version(
-            expid, description=new_description)
-        if result:
-            Log.info("Update completed successfully.")
-        else:
-            Log.critical("Update failed.")
         return True
 
     @staticmethod
@@ -3780,10 +3806,16 @@ class Autosubmit:
                             date_format = 'H'
                         if date.minute > 1:
                             date_format = 'M'
+                    wrapper_jobs = dict()
+                    if as_conf.get_wrapper_type() == "multi":
+                        for wrapper_section in as_conf.get_wrapper_multi():
+                            wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+                    wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs("wrapper")
+
                     job_list.generate(date_list, member_list, num_chunks, chunk_ini, parameters, date_format,
                                       as_conf.get_retrials(),
                                       as_conf.get_default_job_type(),
-                                      as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(), notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
+                                      as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
 
                     if rerun == "true":
                         chunk_list = Autosubmit._create_json(
@@ -4999,9 +5031,16 @@ class Autosubmit:
                 date_format = 'H'
             if date.minute > 1:
                 date_format = 'M'
+        wrapper_jobs = dict()
+        wrapper_jobs["wrapper"] = as_conf.get_wrapper_jobs()
+        if as_conf.get_wrapper_type() == "multi":
+            for wrapper_section in as_conf.get_wrapper_multi():
+                wrapper_jobs[wrapper_section] = as_conf.get_wrapper_jobs(wrapper_section)
+
+
         job_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(), as_conf.get_chunk_ini(),
                           as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), as_conf.get_wrapper_jobs(),
+                          as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
                           new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
 

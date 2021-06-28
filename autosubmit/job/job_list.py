@@ -126,13 +126,23 @@ class JobList(object):
             old_job_list_names = [job.name for job in old_job_list]
             self._job_list = [job for job in old_job_list if len(
                 job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
-            # for job in self._job_list:
-            #     print("{0} {1}".format(
-            #         job.name, Status.VALUE_TO_KEY[job.status]))
-            # print(job.parents)
 
+    def create_dictionary(self, date_list, member_list, num_chunks, chunk_ini, date_format, default_retrials, wrapper_jobs):
+        chunk_list = range(chunk_ini, num_chunks + 1)
+
+        jobs_parser = self._get_jobs_parser()
+        dic_jobs = DicJobs(self, jobs_parser, date_list, member_list,
+                           chunk_list, date_format, default_retrials)
+        self._dic_jobs = dic_jobs
+        # Perhaps this should be done by default independent of the wrapper_type supplied
+        for wrapper_section in wrapper_jobs:
+            if wrapper_jobs[wrapper_section] != 'None':
+                self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
+            else:
+                self._ordered_jobs_by_date_member[wrapper_section] = {}
+        pass
     def generate(self, date_list, member_list, num_chunks, chunk_ini, parameters, date_format, default_retrials,
-                 default_job_type, wrapper_type=None, wrapper_jobs=None, new=True, notransitive=False, update_structure=False, run_only_members=[]):
+                 default_job_type, wrapper_type=None, wrapper_jobs=dict(), new=True, notransitive=False, update_structure=False, run_only_members=[],show_log=True):
         """
         Creates all jobs needed for the current workflow
 
@@ -172,8 +182,8 @@ class JobList(object):
                            chunk_list, date_format, default_retrials)
         self._dic_jobs = dic_jobs
         priority = 0
-
-        Log.info("Creating jobs...")
+        if show_log:
+            Log.info("Creating jobs...")
         jobs_data = dict()
         # jobs_data includes the name of the .our and .err files of the job in LOG_expid
         if not new:
@@ -183,11 +193,13 @@ class JobList(object):
                 jobs_data = {str(row[0]): row for row in self.backup_load()}
         self._create_jobs(dic_jobs, jobs_parser, priority,
                           default_job_type, jobs_data)
-        Log.info("Adding dependencies...")
+        if show_log:
+            Log.info("Adding dependencies...")
         self._add_dependencies(date_list, member_list,
                                chunk_list, dic_jobs, jobs_parser, self.graph)
 
-        Log.info("Removing redundant dependencies...")
+        if show_log:
+            Log.info("Removing redundant dependencies...")
         self.update_genealogy(
             new, notransitive, update_structure=update_structure)
         for job in self._job_list:
@@ -197,8 +209,9 @@ class JobList(object):
         # Checking for member constraints
         if len(run_only_members) > 0:
             # Found
-            Log.info("Considering only members {0}".format(
-                str(run_only_members)))
+            if show_log:
+                Log.info("Considering only members {0}".format(
+                    str(run_only_members)))
             old_job_list = [job for job in self._job_list]
             self._job_list = [
                 job for job in old_job_list if job.member is None or job.member in run_only_members or job.status not in [Status.WAITING, Status.READY]]
@@ -211,9 +224,13 @@ class JobList(object):
                         job.children.add(jobc)
 
         # Perhaps this should be done by default independent of the wrapper_type supplied
-        if wrapper_type == 'vertical-mixed':
-            self._ordered_jobs_by_date_member = self._create_sorted_dict_jobs(
-                wrapper_jobs)
+        for wrapper_section in wrapper_jobs:
+            if wrapper_jobs[wrapper_section] != 'None':
+                self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
+            else:
+                self._ordered_jobs_by_date_member[wrapper_section] = {}
+        pass
+
 
     @staticmethod
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
@@ -685,14 +702,17 @@ class JobList(object):
                 date_format = 'M'
         return date_format
 
-    def get_ordered_jobs_by_date_member(self):
+    def copy_ordered_jobs_by_date_member(self):
+        pass
+    def get_ordered_jobs_by_date_member(self,section):
         """
         Get the dictionary of jobs ordered according to wrapper's expression divided by date and member
 
         :return: jobs ordered divided by date and member
         :rtype: dict
         """
-        return self._ordered_jobs_by_date_member
+        if len(self._ordered_jobs_by_date_member) > 0:
+            return self._ordered_jobs_by_date_member[section]
 
     def get_completed(self, platform=None, wrapper=False):
         """
@@ -723,6 +743,24 @@ class JobList(object):
         """
         uncompleted_jobs = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
                             job.status != Status.COMPLETED]
+
+        if wrapper:
+            return [job for job in uncompleted_jobs if job.packed is False]
+        else:
+            return uncompleted_jobs
+
+    def get_uncompleted_and_not_waiting(self, platform=None, wrapper=False):
+        """
+        Returns a list of completed jobs and waiting
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: completed jobs
+        :rtype: list
+        """
+        uncompleted_jobs = [job for job in self._job_list if
+                            (platform is None or job.platform.name.lower() == platform.name.lower()) and
+                            job.status != Status.COMPLETED and job.status != Status.WAITING]
 
         if wrapper:
             return [job for job in uncompleted_jobs if job.packed is False]
