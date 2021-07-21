@@ -113,6 +113,7 @@ class Job(object):
         self.id = job_id
         self.file = None
         self.executable = None
+        self.x11 = False
         self._local_logs = ('', '')
         self._remote_logs = ('', '')
         self.script_name = self.name + ".cmd"
