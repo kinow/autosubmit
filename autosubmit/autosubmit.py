@@ -29,7 +29,7 @@ from notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
 from monitor.monitor import Monitor
 from database.db_common import get_autosubmit_version, check_experiment_exists
-from database.db_common import delete_experiment
+from database.db_common import delete_experiment, update_experiment_descrip_version
 from experiment.experiment_common import copy_experiment
 from experiment.experiment_common import new_experiment
 from database.db_common import create_db
@@ -485,6 +485,12 @@ class Autosubmit:
                 'pklfix', description='restore the backup of your pkl')
             subparser.add_argument('expid', help='experiment identifier')
 
+            # Update Description
+            subparser = subparsers.add_parser(
+                'updatedescrip', description="Updates the experiment's description.")
+            subparser.add_argument('expid', help='experiment identifier')
+            subparser.add_argument('description', help='New description.')
+
             # Test
             subparser = subparsers.add_parser(
                 'test', description='test experiment')
@@ -627,6 +633,8 @@ class Autosubmit:
             return Autosubmit.database_fix(args.expid)
         elif args.command == 'pklfix':
             return Autosubmit.pkl_fix(args.expid)
+        elif args.command == 'updatedescrip':
+            return Autosubmit.update_description(args.expid, args.description)
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):        
