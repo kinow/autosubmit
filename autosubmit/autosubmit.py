@@ -637,7 +637,8 @@ class Autosubmit:
             return Autosubmit.update_description(args.expid, args.description)
 
     @staticmethod
-    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):        
+    def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
+
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
@@ -669,6 +670,7 @@ class Autosubmit:
                 os.remove(os.path.join(aslogs_path, 'jobs_status.log'))
             Log.set_file(os.path.join(
                 aslogs_path, 'jobs_status.log'), "status")
+            Log.file_path = tmp_path
         else:
             if expid == 'None':
                 exp_id = ""
@@ -682,6 +684,7 @@ class Autosubmit:
                                       args.command + exp_id + '.log'), "out", log_level)
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
                                       args.command + exp_id + '_err.log'), "err")
+
 
     @staticmethod
     def _check_ownership(expid):

@@ -110,6 +110,7 @@ class Log:
     def __init__(self):
         pass
 
+    file_path = ""
     __module__ = __name__
     EVERYTHING = 0
     STATUS = 1000
@@ -130,7 +131,8 @@ class Log:
     console_handler.setLevel(INFO)
     console_handler.setFormatter(LogFormatter(False))
     log.addHandler(console_handler)
-
+    def init_variables(self,file_path=""):
+        self.file_path = file_path
     @staticmethod
     def shutdown_logger():
         """
