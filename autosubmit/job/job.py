@@ -954,7 +954,8 @@ class Job(object):
                     except Exception as e:
                         self.export = re.sub(
                             '%(?<!%%)' + key + '%(?!%%)', "NOTFOUND", self.export)
-                        Log.debug("PARAMETER export: Variable: {0} doesn't exist".format(e.message))
+                        Log.debug(
+                            "PARAMETER export: Variable: {0} doesn't exist".format(e.message))
 
             parameters['EXPORT'] = self.export
         self.parameters = parameters
@@ -1178,7 +1179,7 @@ class Job(object):
         # noinspection PyTypeChecker
         f.write(date2str(datetime.datetime.fromtimestamp(start_time), 'S'))
         # Writing database
-        JobDataStructure(self.expid).write_start_time(self.name, time.time(), Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
+        JobDataStructure(self.expid).write_start_time(self.name, start_time, Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
                                                       self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
         return True
 
@@ -1328,8 +1329,6 @@ class WrapperJob(Job):
         self.checked_time = datetime.datetime.now()
         self.hold = hold
         self.inner_jobs_running = list()
-
-
 
     def _queuing_reason_cancel(self, reason):
         try:
