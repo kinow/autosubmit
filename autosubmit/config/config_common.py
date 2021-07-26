@@ -1523,6 +1523,46 @@ class AutosubmitConfig(object):
          """
         return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED', self.get_total_jobs()))
 
+    def get_max_wrapped_jobs_vertical(self, wrapper_section_name="wrapper"):
+        """
+         Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
+
+         :return: maximum number of jobs (or total jobs)
+         :rtype: int
+         """
+        max_wrapped = self.get_max_wrapped_jobs(wrapper_section_name)
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED_V', max_wrapped))
+
+    def get_max_wrapped_jobs_horizontal(self, wrapper_section_name="wrapper"):
+        """
+         Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
+
+         :return: maximum number of jobs (or total jobs)
+         :rtype: int
+         """
+        max_wrapped = self.get_max_wrapped_jobs(wrapper_section_name)
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MAX_WRAPPED_H', max_wrapped))
+
+    def get_min_wrapped_jobs_vertical(self, wrapper_section_name="wrapper"):
+        """
+         Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
+
+         :return: maximum number of jobs (or total jobs)
+         :rtype: int
+         """
+        min_wrapped = self.get_min_wrapped_jobs(wrapper_section_name)
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED_V', min_wrapped))
+
+    def get_min_wrapped_jobs_horizontal(self, wrapper_section_name="wrapper"):
+        """
+         Returns the maximum number of jobs that can be wrapped together as configured in autosubmit's config file
+
+         :return: maximum number of jobs (or total jobs)
+         :rtype: int
+         """
+        min_wrapped = self.get_min_wrapped_jobs(wrapper_section_name)
+        return int(self._conf_parser.get_option(wrapper_section_name, 'MIN_WRAPPED_H', min_wrapped))
+
     def get_wrapper_method(self,wrapper_section_name="wrapper"):
         """
          Returns the method of make the wrapper
