@@ -229,8 +229,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs, max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -300,8 +308,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2, d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2, d1_m1_6_s2, d1_m1_7_s2, d1_m1_8_s2,
                          d1_m1_9_s2, d1_m1_10_s2]
@@ -360,8 +376,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2,
                          d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
@@ -421,8 +445,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2 = [d1_m1_1_s2, d1_m1_2_s2,
                          d1_m1_3_s2, d1_m1_4_s2, d1_m1_5_s2]
@@ -477,8 +509,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
         self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"] = dict()
         self.job_list._ordered_jobs_by_date_member["wrapper"]["d1"]["m1"] = [d1_m1_1_s3]
 
@@ -552,8 +592,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -622,8 +670,16 @@ class TestWrappers(TestCase):
         max_wrapper_job_by_section["s2"] = max_wrapped_jobs
         max_wrapper_job_by_section["s3"] = max_wrapped_jobs
         max_wrapper_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapper_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapper_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
@@ -691,8 +747,16 @@ class TestWrappers(TestCase):
         max_wrapped_job_by_section["s2"] = max_wrapped_jobs
         max_wrapped_job_by_section["s3"] = max_wrapped_jobs
         max_wrapped_job_by_section["s4"] = max_wrapped_jobs
+        wrapper_limits = dict()
+        wrapper_limits["max"] = max_wrapped_jobs
+        wrapper_limits["max_v"] = max_wrapped_jobs
+        wrapper_limits["max_h"] = max_wrapped_jobs
+        wrapper_limits["min"] = 2
+        wrapper_limits["min_v"] = 2
+        wrapper_limits["min_h"] = 2
+        wrapper_limits["max_by_section"] = max_wrapped_job_by_section
         returned_packages = self.job_packager._build_vertical_packages(
-            section_list, max_wrapped_jobs,max_wrapped_job_by_section)
+            section_list, wrapper_limits)
 
         package_m1_s2_s3 = [d1_m1_1_s2, d1_m1_1_s3, d1_m1_2_s2, d1_m1_2_s3, d1_m1_3_s2, d1_m1_3_s3, d1_m1_4_s2,
                             d1_m1_4_s3]
