@@ -243,8 +243,9 @@ class JobPackager(object):
                 wrapper_limits["max_by_section"] = dict()
                 wrapper_limits["max"] = self._as_config.get_max_wrapped_jobs(self.current_wrapper_section)
                 wrapper_limits["max_v"] = self._as_config.get_max_wrapped_jobs_vertical(self.current_wrapper_section)
-                wrapper_limits["max_h"]= self._as_config.get_max_wrapped_jobs_horizontal(self.current_wrapper_section)
-
+                wrapper_limits["max_h"] = self._as_config.get_max_wrapped_jobs_horizontal(self.current_wrapper_section)
+                if wrapper_limits["max"] < wrapper_limits["max_v"] * wrapper_limits["max_h"]:
+                    wrapper_limits["max"] = wrapper_limits["max_v"] * wrapper_limits["max_h"]
                 if '&' not in section:
                     if self._as_config.jobs_parser.has_option(section, 'DEPENDENCIES'):
                         dependencies_keys = self._as_config.jobs_parser.get(
@@ -319,7 +320,13 @@ class JobPackager(object):
                                 packages_to_submit.append(package)
                     else:
                         # if the quantity is enough, make the wrapper
-                        if len(p.jobs) >= wrapper_limits["min"]:
+                        min_h = len(p.jobs_lists)
+                        min_v = len(p.jobs_lists[0])
+                        for list_of_jobs in p.jobs_lists[1:]:
+                            min_v = min(min_v,len(list_of_jobs))
+                        if min_h < wrapper_limits["min_h"]:
+                            pass
+                        if len(p.jobs) >= wrapper_limits["min"] and min_v >= wrapper_limits["min_v"] and min_h >= wrapper_limits["min_h"]:
                             for job in p.jobs:
                                 job.packed = True
                             packages_to_submit.append(p)
@@ -526,17 +533,15 @@ class JobPackager(object):
         current_package = []
         ## Create the vertical ##
         actual_wrapped_jobs = len(horizontal_package)
-        remaining_wrapped_job_by_section = horizontal_packager.wrapper_limits["max_by_section"]
-        #TODO create horizontal and vertical limit
         for job in horizontal_package:
             for section in horizontal_packager.wrapper_limits["max_by_section"]:
                 if job.section == section:
-                    remaining_wrapped_job_by_section[section] = remaining_wrapped_job_by_section[section] - 1
-
+                    horizontal_packager.wrapper_limits["max_by_section"][section] = horizontal_packager.wrapper_limits["max_by_section"][section] - 1
+        horizontal_packager.wrapper_limits["max"] = horizontal_packager.wrapper_limits["max"] - actual_wrapped_jobs
         for job in horizontal_package:
             job_list = JobPackagerVerticalSimple([job], job.wallclock, self.max_jobs,
-                                                 horizontal_packager.wrapper_limits-actual_wrapped_jobs,
-                                                 self._platform.max_wallclock, remaining_wrapped_job_by_section).build_vertical_package(job)
+                                                 horizontal_packager.wrapper_limits,
+                                                 self._platform.max_wallclock).build_vertical_package(job)
 
             current_package.append(job_list)
 
@@ -585,9 +590,8 @@ class JobPackagerVertical(object):
         :rtype: List() of Job Object \n
         """
         # self.jobs_list starts as only 1 member, but wrapped jobs are added in the recursion
-        if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"]:
+        if len(self.jobs_list) >= self.max_jobs or len(self.jobs_list) >= self.wrapper_limits["max_v"] or len(self.jobs_list) >= self.wrapper_limits["max_by_section"] or len(self.jobs_list) >= self.wrapper_limits["max"]:
             return self.jobs_list
-
         child = self.get_wrappable_child(job)
         # If not None, it is wrappable
         if child is not None:
@@ -777,7 +781,7 @@ class JobPackagerHorizontal(object):
         for section in jobs_by_section:
             current_package_by_section[section] = 0
             for job in jobs_by_section[section]:
-                if self.max_jobs > 0 and len(current_package) < self.wrapper_limits["max_h"] and current_package_by_section[section] < self.wrapper_limits["max_by_section"][section]:
+                if self.max_jobs > 0 and len(current_package) < self.wrapper_limits["max_h"] and len(current_package) < self.wrapper_limits["max"]  and current_package_by_section[section] < self.wrapper_limits["max_by_section"][section]:
                     if int(job.tasks) != 0 and int(job.tasks) != int(self.processors_node) and \
                             int(job.tasks) < job.total_processors:
                         nodes = int(
