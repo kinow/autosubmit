@@ -379,7 +379,7 @@ class ParamikoPlatform(Platform):
             self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job), x11=job.x11, export=export):
+            if self.send_command(self.get_submit_cmd(script_name, job, export=export), x11=job.x11):
                 job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)

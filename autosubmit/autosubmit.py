@@ -1740,7 +1740,7 @@ class Autosubmit:
                                 packages_persistence = JobPackagePersistence(os.path.join(
                                     BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                                 packages = packages_persistence.load()
-                                if len(job_list.job_packages_dict) > 0:
+                                if len(job_list.packages_dict) > 0:
                                     if len(packages) == 0:
                                         sleep(5)
                                         raise IOError
@@ -1759,7 +1759,6 @@ class Autosubmit:
                                     job_list.job_package_map[jobs[0].id] = wrapper_job
                                 save = job_list.update_list(as_conf)
                                 job_list.save()
-
                                 IO_issues = False
                             except IOError as e:
                                 IO_issues = True
