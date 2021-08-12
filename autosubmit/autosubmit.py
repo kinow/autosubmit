@@ -1474,7 +1474,45 @@ class Autosubmit:
                                     job_list.get_job_by_name(job_name))
                             for package_name, jobs in job_list.packages_dict.items():
                                 from job.job import WrapperJob
-                                wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
+                                wrapper_status = Status.SUBMITTED
+                                all_completed = True
+                                running = False
+                                queuing = False
+                                failed = False
+                                hold = False
+                                submitted = False
+                                for job in jobs:
+                                    if job.status == Status.RUNNING:
+                                        running = True
+                                        all_completed = False
+                                    elif job.status == Status.QUEUING:
+                                        queuing = True
+                                        all_completed = False
+                                    elif job.status == Status.FAILED:
+                                        failed = True
+                                        all_completed = False
+                                    elif job.status == Status.HELD:
+                                        hold = True
+                                        all_completed = False
+                                    elif job.status == Status.SUBMITTED:
+                                        submitted = True
+                                        all_completed = False
+                                if all_completed:
+                                    wrapper_status = Status.COMPLETED
+                                elif hold:
+                                    wrapper_status = Status.HELD
+                                else:
+                                    if running:
+                                        wrapper_status = Status.RUNNING
+                                    elif queuing:
+                                        wrapper_status = Status.QUEUING
+                                    elif submitted:
+                                        wrapper_status = Status.SUBMITTED
+                                    elif failed:
+                                        wrapper_status = Status.FAILED
+                                    else:
+                                        wrapper_status = Status.SUBMITTED
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, wrapper_status, 0, jobs,
                                                          None,
                                                          None, jobs[0].platform, as_conf, jobs[0].hold)
                                 job_list.job_package_map[jobs[0].id] = wrapper_job

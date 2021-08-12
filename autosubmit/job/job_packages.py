@@ -36,7 +36,6 @@ from bscearth.utils.date import sum_str_hours
 from threading import Thread,Lock
 import multiprocessing
 import tarfile
-
 lock = Lock()
 def threaded(fn):
     def wrapper(*args, **kwargs):
@@ -97,22 +96,19 @@ class JobPackageBase(object):
                     exit = True
                     break
                 if not os.path.exists(os.path.join(configuration.get_project_dir(), job.file)):
-                    lock.acquire()
                     if configuration.get_project_type().lower() != "none":
                         raise AutosubmitCritical(
                             "Template [ {0} ] using CHECK=On_submission has some empty variable {0}".format(
                                 job.name), 7014)
-                    lock.release()
                 if not job.check_script(configuration, parameters, show_logs=job.check_warnings):
                     Log.warning("Script {0} check failed", job.name)
                     Log.warning("On submission script has  some empty variables")
                 else:
                     Log.result("Script {0} OK", job.name)
-            lock.acquire()
-            job.update_parameters(configuration, parameters)
-            lock.release()
+            #job.update_parameters(configuration, parameters)
+
             # looking for directives on jobs
-            self._custom_directives = self._custom_directives | set(job.custom_directives)
+            #self._custom_directives = self._custom_directives | set(job.custom_directives)
     @threaded
     def _create_scripts_threaded(self,jobs,configuration):
         for i in xrange(0, len(jobs)):
@@ -165,20 +161,15 @@ class JobPackageBase(object):
                     Lhandle.append(self.check_scripts(self.jobs[i:i + chunksize], configuration, parameters, only_generate, hold))
                 for dataThread in Lhandle:
                     dataThread.join()
+                for job in self.jobs:
+                    job.update_parameters(configuration, parameters)
+                    self._custom_directives = self._custom_directives | set(job.custom_directives)
         except BaseException as e: #should be IOERROR
             raise AutosubmitCritical(
                 "Error on {1}, template [{0}] still does not exists in running time(check=on_submission actived) ".format(job.file,job.name), 7014)
         Log.debug("Creating Scripts")
         if not exit:
-            if len(self.jobs) < thread_number:
-                self._create_scripts(configuration)
-            else:
-                Lhandle = list()
-                for i in xrange(0, len(self.jobs), chunksize):
-                    Lhandle.append(self._create_scripts_threaded(self.jobs[i:i + chunksize],configuration))
-                for dataThread in Lhandle:
-                    dataThread.join()
-                self._common_script = self._create_common_script()
+            self._create_scripts(configuration)
             if not only_generate:
                 Log.debug("Sending Files")
                 self._send_files()
