@@ -1347,6 +1347,7 @@ class Autosubmit:
             # Check if experiment exists. If False or None, it does not exist
             if not check_experiment_exists(start_after):
                 return None
+            # Historical Database: We use the historical database to retrieve the current progress data of the supplied expid (start_after)
             # JobStructure object, check_only flag to avoid updating remote experiment
             jobStructure = JobDataStructure(start_after, check_only=True)
             # Check if database exists
@@ -1491,6 +1492,7 @@ class Autosubmit:
                     # Before starting main loop, setup historical database tables and main information
                     Log.debug("Running job data structure")
                     try:
+                        # Historical Database: Can create a new run if there is a difference in the number of jobs or if the current state does not exist.
                         job_data_structure = JobDataStructure(expid)
                         job_data_structure.validate_current_run(job_list.get_job_list(
                         ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
@@ -3841,6 +3843,7 @@ class Autosubmit:
                     groups_dict = dict()
 
                     # Setting up job historical database header. Must create a new run.
+                    # Historical Database: Setup new run
                     JobDataStructure(expid).validate_current_run(job_list.get_job_list(
                     ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), must_create=True, current_config=as_conf.get_full_config_as_json())
 
@@ -4604,8 +4607,9 @@ class Autosubmit:
 
                 if save and wrongExpid == 0:
                     job_list.save()
-                    job_data_structure = JobDataStructure(expid)
-                    # job_data_structure.update_jobs_from_change_status(job_tracked_changes)
+                    # Historical Database: Setup new run if greater or equal than 90% of completed date-member jobs are going to be changed.
+                    # Or if the total number of jobs in the job_list is different than the total number of jobs in the current experiment run register in the database
+                    job_data_structure = JobDataStructure(expid)                    
                     job_data_structure.process_status_changes(
                         job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json(), is_setstatus=True)
                     
