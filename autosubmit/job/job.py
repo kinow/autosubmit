@@ -1553,7 +1553,7 @@ class WrapperJob(Job):
             temp_list = self.inner_jobs_running
             self.inner_jobs_running = [
                 job for job in temp_list if job.status == Status.RUNNING]
-            if retries == 0:  # or over_wallclock:
+            if retries == 0 or over_wallclock:
                 self.status = Status.FAILED
 
     def _check_finished_job(self, job, failed_file=False):
