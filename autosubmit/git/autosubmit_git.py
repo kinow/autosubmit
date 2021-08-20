@@ -159,9 +159,10 @@ class AutosubmitGit:
 
         # Making proj backup
         if force:
-            Log.info("Making a backup of your current proj folder at {0}".format(
-                project_backup_path))
-            shutil.move(project_path, project_backup_path)
+            if os.path.exists(project_path):
+                Log.info("Making a backup of your current proj folder at {0}".format(
+                    project_backup_path))
+                shutil.move(project_path, project_backup_path)
             #shutil.make_archive(project_backup_path, 'zip', project_path)
             #project_backup_path = project_backup_path + ".zip"
 
@@ -276,7 +277,7 @@ class AutosubmitGit:
         if submodule_failure:
             Log.info(
                 "Some Submodule failures have been detected. Backup {0} will not be removed.".format(project_backup_path))
-            return False        
+            return False
         if os.path.exists(project_backup_path):
             Log.info("Removing backup...")
             shutil.rmtree(project_backup_path)
