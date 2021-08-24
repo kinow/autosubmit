@@ -146,7 +146,7 @@ class JobData(object):
         try:
             self.extra_data = loads(extra_data)
         except Exception as exp:
-            self.extra_data = dict()
+            self.extra_data = ""
             pass
         self.nnodes = nnodes
         self.run_id = run_id
@@ -1396,7 +1396,8 @@ class JobDataStructure(MainDataBase):
                 if current_job_data:
                     # Dropping parents key
                     for job in current_job_data:
-                        job.extra_data.pop('parents', None)
+                        if job.extra_data is not None and isinstance(job.extra_data, dict):
+                            job.extra_data.pop('parents', None)
                     # Internal map from name to object
                     name_to_current_job = {
                         job.job_name: job for job in current_job_data}
