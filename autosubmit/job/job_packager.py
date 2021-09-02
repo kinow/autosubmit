@@ -296,18 +296,23 @@ class JobPackager(object):
                     if self.wrapper_type[self.current_wrapper_section] == 'vertical-horizontal':
                         min_h = len(p.jobs_lists)
                         min_v = len(p.jobs_lists[0])
-                        for list_of_jobs in p.jobs_lists[1:]:
+                        for list_of_jobs in p.jobs_lists[1:-1]:
                             min_v = min(min_v, len(list_of_jobs))
+                        min_t = min_h
                     elif self.wrapper_type[self.current_wrapper_section] == 'horizontal-vertical':
                         min_v = len(p.jobs_lists)
                         min_h = len(p.jobs_lists[0])
-                        for list_of_jobs in p.jobs_lists[1:]:
+                        for list_of_jobs in p.jobs_lists[1:-1]:
                             min_h = min(min_h, len(list_of_jobs))
+                        for list_of_jobs in p.jobs_lists[:-1]:
+                            if min_h != len(list_of_jobs):
+                                balanced = False
+                        min_t = min_h
                     elif self.wrapper_type[self.current_wrapper_section] == 'horizontal':
-                        min_h = len(p.jobs_lists)
+                        min_h = len(p.jobs)
                         min_v = 0
                     elif self.wrapper_type[self.current_wrapper_section] == 'vertical':
-                        min_v = len(p.jobs_lists)
+                        min_v = len(p.jobs)
                         min_h = 0
                     else:
                         min_v = 0

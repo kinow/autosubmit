@@ -289,7 +289,8 @@ class Autosubmit:
                                    help='Disable logs recovery')
             subparser.add_argument('-d', '--detail', action='store_true',
                                    default=False, help='Show Job List view in terminal')
-
+            subparser.add_argument('-f', '--force', action='store_true',
+                                   default=False, help='Cancel active jobs ')
             # Migrate
             subparser = subparsers.add_parser(
                 'migrate', description="Migrate experiments from current user to another")
@@ -575,7 +576,7 @@ class Autosubmit:
             return Autosubmit.clean(args.expid, args.project, args.plot, args.stats)
         elif args.command == 'recovery':
             return Autosubmit.recovery(args.expid, args.noplot, args.save, args.all, args.hide, args.group_by,
-                                       args.expand, args.expand_status, args.notransitive, args.no_recover_logs, args.detail)
+                                       args.expand, args.expand_status, args.notransitive, args.no_recover_logs, args.detail, args.force)
         elif args.command == 'check':
             return Autosubmit.check(args.expid, args.notransitive)
         elif args.command == 'inspect':
@@ -2355,7 +2356,7 @@ class Autosubmit:
 
     @staticmethod
     def recovery(expid, noplot, save, all_jobs, hide, group_by=None, expand=list(), expand_status=list(),
-                 notransitive=False, no_recover_logs=False, detail=False):
+                 notransitive=False, no_recover_logs=False, detail=False, force=False):
         """
         Method to check all active jobs. If COMPLETED file is found, job status will be changed to COMPLETED,
         otherwise it will be set to WAITING. It will also update the jobs list.
@@ -2368,6 +2369,8 @@ class Autosubmit:
         :type all_jobs: bool
         :param hide: hides plot window
         :type hide: bool
+        :param force: Allows to restore the workflow even if there are running jobs
+        :type force: bool
         """
         Autosubmit._check_ownership(expid)
 
@@ -2380,7 +2383,10 @@ class Autosubmit:
         pkl_dir = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, 'pkl')
         job_list = Autosubmit.load_job_list(
             expid, as_conf, notransitive=notransitive, monitor=True)
-        Log.debug("Job list restored from {0} files", pkl_dir)
+
+        current_active_jobs = job_list.get_in_queue()
+
+        as_conf.check_conf_files(False)
 
         # Getting output type provided by the user in config, 'pdf' as default
         output_type = as_conf.get_output_type()
@@ -2393,7 +2399,16 @@ class Autosubmit:
         platforms = submitter.platforms
 
         platforms_to_test = set()
-
+        if len(current_active_jobs) > 0:
+            if force and save:
+                for job in current_active_jobs:
+                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+            if not force:
+                raise AutosubmitCritical(
+                    "Experiment can't be recovered due being {0} active jobs in your experiment, If you want to recover the experiment, please use the flag -f and all active jobs will be cancelled".format(
+                        len(current_active_jobs)), 7000)
+        Log.debug("Job list restored from {0} files", pkl_dir)
+        Log.info('Recovering experiment {0}'.format(expid))
         for job in job_list.get_job_list():
             job.submitter = submitter
             if job.platform_name is None:
