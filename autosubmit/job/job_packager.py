@@ -340,7 +340,7 @@ class JobPackager(object):
                                 min_v = len(p.jobs_lists[0])
                                 for list_of_jobs in p.jobs_lists[1:-1]:
                                     min_v = min(min_v, len(list_of_jobs))
-                                min_t = min_h
+
                             elif self.wrapper_type[self.current_wrapper_section] == 'horizontal-vertical':
                                 min_v = len(p.jobs_lists)
                                 min_h = len(p.jobs_lists[0])
@@ -349,7 +349,7 @@ class JobPackager(object):
                                 for list_of_jobs in p.jobs_lists[:-1]:
                                     if min_h != len(list_of_jobs):
                                         balanced = False
-                                min_t = min_h
+
                             elif self.wrapper_type[self.current_wrapper_section] == 'horizontal':
                                 min_h = len(p.jobs)
                                 min_v = 0
@@ -439,7 +439,7 @@ class JobPackager(object):
                                             message = "Wrapper couldn't be formed under {0} POLICY due minimum limit not being reached: [wrappeable_h:{0} < defined_min_h:{1}]|[wrappeable_v:{2} < defined_min_v:{3}] ".format(self.wrapper_policy[self.current_wrapper_section] ,min_h,wrapper_limits["min_h"],min_v,wrapper_limits["min_v"])
                                             if hard_deadlock:
                                                 message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
-                                            if min_t > 1:
+                                            if min_v > 1:
                                                 message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(wallclock_sum)
                                             else:
                                                 message += "\nCheck your configuration: Only jobs_in_wrappers are active, check your jobs_in_wrapper dependencies."
@@ -485,7 +485,7 @@ class JobPackager(object):
                                                         wrapper_limits["min_h"], min_v, wrapper_limits["min_v"])
                                                 if hard_deadlock:
                                                     message += "\nCheck your configuration: The next wrappeable job can't be wrapped until some of inner jobs of current packages finishes which is imposible"
-                                                if min_t > 1:
+                                                if min_v > 1:
                                                     message += "\nCheck your configuration: Check if current {0} vertical wallclock has reached the max defined on platforms.conf.".format(
                                                         wallclock_sum)
                                                 else:

@@ -1206,6 +1206,20 @@ class JobList(object):
         for job in self._job_list:
             if job.name == name:
                 return job
+    def get_jobs_by_section(self, section_list):
+        """
+        Returns the job that its name matches parameter section
+
+        :parameter name: name to look for
+        :type section: str
+        :return: found job
+        :rtype: job
+        """
+        jobs_by_section = list()
+        for job in self._job_list:
+            if job.section in section_list:
+                jobs_by_section.append(job)
+        return jobs_by_section
 
     def get_in_queue_grouped_id(self, platform):
         jobs = self.get_in_queue(platform)
