@@ -1545,12 +1545,8 @@ class Autosubmit:
                         Log.result("Only jobs with member value in {0} or no member will be allowed in this run. Also, those jobs already SUBMITTED, QUEUING, or RUNNING will be allowed to complete and will be tracked.".format(
                             str(allowed_members)))
                 except AutosubmitCritical as e:
-                    fh.flush()
-                    os.fsync(fh.fileno())
                     raise AutosubmitCritical(e.message, 7067, e.trace)
                 except Exception as e:
-                    fh.flush()
-                    os.fsync(fh.fileno())
                     raise AutosubmitCritical(
                         "Error in run initialization", 7014, str(e))  # Changing default to 7014
                 # Two step start
@@ -1838,15 +1834,11 @@ class Autosubmit:
                             raise AutosubmitCritical(
                                 "Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
-                        fh.flush()
-                        os.fsync(fh.fileno())
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
-                        fh.flush()
-                        os.fsync(fh.fileno())
                         raise
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information when experiment ends
