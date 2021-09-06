@@ -157,7 +157,7 @@ class EcPlatform(ParamikoPlatform):
         except:
             return False
 
-    def send_command(self, command, ignore_log=False):
+    def send_command(self, command, ignore_log=False, x11 = False):
         try:
             output = subprocess.check_output(command, shell=True)
         except subprocess.CalledProcessError as e:
