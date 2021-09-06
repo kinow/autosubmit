@@ -348,8 +348,12 @@ class SlurmPlatform(ParamikoPlatform):
             export = ""
         else:
             export += " ; "
+        if job is None:
+            x11 = False
+        else:
+            x11 = job.x11
 
-        if job.x11:
+        if x11:
             if not hold:
                 return export + self._submit_cmd + job_script
             else:

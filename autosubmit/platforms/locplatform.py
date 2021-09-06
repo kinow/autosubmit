@@ -72,7 +72,7 @@ class LocalPlatform(ParamikoPlatform):
     def parse_job_output(self, output):
         return output[0]
 
-    def get_submitted_job_id(self, output):
+    def get_submitted_job_id(self, output, x11 = False):
         return output
 
     def jobs_in_queue(self):

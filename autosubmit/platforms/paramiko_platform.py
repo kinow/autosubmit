@@ -375,11 +375,15 @@ class ParamikoPlatform(Platform):
         :return: job id for the submitted job
         :rtype: int
         """
-        if self.type == 'slurm' and not job.x11:
+        if job is None:
+            x11 = False
+        else:
+            x11 = job.x11
+        if self.type == 'slurm' and not x11:
             self.get_submit_cmd(script_name, job, hold=hold, export=export)
             return None
         else:
-            if self.send_command(self.get_submit_cmd(script_name, job, export=export), x11=job.x11):
+            if self.send_command(self.get_submit_cmd(script_name, job, export=export), x11=x11):
                 job_id = self.get_submitted_job_id(self.get_ssh_output(),x11=job.x11)
                 Log.debug("Job ID: {0}", job_id)
                 return int(job_id)
@@ -914,7 +918,7 @@ class ParamikoPlatform(Platform):
         """
         return 'nohup kill -0 {0} > /dev/null 2>&1; echo $?'.format(job_id)
 
-    def get_submitted_job_id(self, output):
+    def get_submitted_job_id(self, output, x11 = False):
         """
         Parses submit command output to extract job id
         :param output: output to parse

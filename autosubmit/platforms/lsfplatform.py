@@ -78,7 +78,7 @@ class LsfPlatform(ParamikoPlatform):
         # change to failed if COMPLETED file is not present.
         return 'DONE'
 
-    def get_submitted_job_id(self, output):
+    def get_submitted_job_id(self, output, x11 = False):
         return output.split('<')[1].split('>')[0]
 
     def jobs_in_queue(self):
