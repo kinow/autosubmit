@@ -276,7 +276,9 @@ class JobPackager(object):
                 wrapper_limits["min_v"] = self._as_config.get_min_wrapped_jobs_vertical(self.current_wrapper_section)
                 wrapper_limits["min_h"] = self._as_config.get_min_wrapped_jobs_horizontal(self.current_wrapper_section)
                 wrapper_limits["max"] = hard_limit_wrapper
-                wrapper_limits["max_by_section"] = hard_limit_wrapper
+                if wrapper_limits["min"] < wrapper_limits["min_v"] * wrapper_limits["min_h"]:
+                    wrapper_limits["min"] = max(wrapper_limits["min_v"],wrapper_limits["min_h"])
+                #wrapper_limits["max_by_section"] = hard_limit_wrapper
 
                 if self.wrapper_type[self.current_wrapper_section] == 'vertical':
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits)
