@@ -907,18 +907,20 @@ class JobList(object):
             select_jobs_by_name = jobs_to_check[0]
             unparsed_jobs = jobs_to_check[1]
         if not ";" in unparsed_jobs:
-            if not '[':
+            if '[':
                 select_all_jobs_by_section = unparsed_jobs
                 filter_jobs_by_section = ""
             else:
                 select_all_jobs_by_section = ""
-                filter_jobs_by_section = unparsed_jobs
+                filter_jobs_by_section = unparsed_jbos
         else:
             aux = unparsed_jobs.split(';')
             select_all_jobs_by_section = aux[0]
             filter_jobs_by_section = aux[1]
-        self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
-
+        try:
+            self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
+        except:
+            raise AutosubmitCritical("Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(unparsed_jobs))
 
     def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section=""):
         """
