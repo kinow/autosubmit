@@ -26,10 +26,8 @@ class WrapperDirector:
     """
     Construct an object using the Builder interface.
     """
-
     def __init__(self):
         self._builder = None
-
     def construct(self, builder):
         self._builder = builder
 
@@ -44,11 +42,9 @@ class WrapperDirector:
         wrapper_script = wrapper_script.replace("_NEWLINE_", '\\n')
 
         return wrapper_script
-
-
 class WrapperBuilder(object):
-
     def __init__(self, **kwargs):
+        self.retrials = kwargs['retrials']
         self.header_directive = kwargs['header_directive']
         self.job_scripts = kwargs['jobs_scripts']
         self.threads = kwargs['threads']
@@ -59,30 +55,20 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
-
-
-
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
-
     def build_imports(self):
         pass
-
     def build_job_thread(self):
         pass
-
-
     # hybrids
     def build_joblist_thread(self, **kwargs):
         pass
-
     # horizontal and hybrids
     def build_nodes_list(self):
         pass
-
     def build_machinefiles(self):
         pass
-
     def get_machinefile_function(self):
         machinefile_function = ""
         if 'MACHINEFILES' in self.jobs_resources and self.jobs_resources['MACHINEFILES']:
@@ -95,31 +81,22 @@ class WrapperBuilder(object):
             else:
                 return self.build_machinefiles_standard()
         return machinefile_function
-
     def build_machinefiles_standard(self):
         pass
-
     def build_machinefiles_components(self):
         pass
-
     def build_machinefiles_components_alternate(self):
         pass
-
     def build_sequential_threads_launcher(self, **kwargs):
         pass
-
     def build_parallel_threads_launcher(self, **kwargs):
         pass
-
     # all should override -> abstract!
     def build_main(self):
         pass
-
     def _indent(self, text, amount, ch=' '):
         padding = amount * ch
         return ''.join(padding + line for line in text.splitlines(True))
-
-
 class PythonWrapperBuilder(WrapperBuilder):
     def get_random_alphanumeric_string(self,letters_count, digits_count):
         sample_str = ''.join((random.choice(string.ascii_letters) for i in range(letters_count)))
@@ -443,15 +420,68 @@ for i in range(len(pid_list)):
     def _indent(self, text, amount, ch=' '):
         padding = amount * ch
         return ''.join(padding + line for line in text.splitlines(True))
-
-
 class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
 
+    def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
+        sequential_threads_launcher = textwrap.dedent("""
+        failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
+        retrials = {2}
+        for i in range(len({0})):
+            current = {1}
+            while (current.retrials >= 0)
+                current.start()
+                current.join()
+        """).format(jobs_list, thread,self.retrials,'\n'.ljust(13))
+
+        if footer:
+            sequential_threads_launcher += self._indent(textwrap.dedent("""
+                completed_filename = {0}[i].replace('.cmd', '_COMPLETED')
+                completed_path = os.path.join(os.getcwd(), completed_filename)
+                failed_filename = {0}[i].replace('.cmd', '_FAILED')
+                failed_path = os.path.join(os.getcwd(), failed_filename)
+                failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
+                if os.path.exists(completed_path):
+                    print datetime.now(), "The job ", current.template," has been COMPLETED"
+                else:
+                    open(failed_wrapper,'w').close()
+                    open(failed_path, 'w').close()
+                    print datetime.now(), "The job ", current.template," has FAILED"
+                    #{1}
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
+            sequential_threads_launcher += self._indent(textwrap.dedent("""
+            if os.path.exists(failed_wrapper):
+                os.remove(os.path.join(os.getcwd(),wrapper_id))
+                wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
+                open(wrapper_failed, 'w').close()
+                os._exit(1)
+                    
+                    
+
+            """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
+        return sequential_threads_launcher
+
+    def build_job_thread(self):
+        return textwrap.dedent("""
+        class JobThread(Thread):
+            def __init__ (self, template, id_run, retrials):
+                Thread.__init__(self)
+                self.template = template
+                self.id_run = id_run
+                self.retrials = retrials
+
+            def run(self):
+                jobname = self.template.replace('.cmd', '')
+                os.system("echo $(date +%s) > "+jobname+"_STAT")
+                out = str(self.template) + ".out"
+                err = str(self.template) + ".err"
+                print(out+"\\n")
+                command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
+                (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+                self.retrials = self.retrials - 1
+        """).format('\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
-        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i)")
-
-
+        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, retrials)")
 class PythonHorizontalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):
@@ -459,8 +489,6 @@ class PythonHorizontalWrapperBuilder(PythonWrapperBuilder):
         #threads_launcher = self.build_parallel_threads_launcher("scripts", "JobThread")
         threads_launcher = self.build_parallel_threads_launcher_horizontal("scripts", "JobThread")
         return nodelist + threads_launcher
-
-
 class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
 
     def build_joblist_thread(self):
@@ -485,8 +513,6 @@ class PythonVerticalHorizontalWrapperBuilder(PythonWrapperBuilder):
         threads_launcher = self.build_parallel_threads_launcher_vertical_horizontal("scripts", "JobListThread", footer=False)
 
         return joblist_thread + nodes_list + threads_launcher
-
-
 class PythonHorizontalVerticalWrapperBuilder(PythonWrapperBuilder):
     def build_parallel_threads_launcher_horizontal_vertical(self, jobs_list, thread, footer=True):
         parallel_threads_launcher = textwrap.dedent("""
@@ -544,9 +570,6 @@ for i in range(len(pid_list)):
         threads_launcher = self.build_sequential_threads_launcher("scripts", "JobListThread(scripts[i], i*(len(scripts[i])), "
                                                                              "copy.deepcopy(all_cores))", footer=False)
         return joblist_thread + nodes_list + threads_launcher
-
-
-
 class BashWrapperBuilder(WrapperBuilder):
 
     def build_imports(self):
@@ -605,21 +628,15 @@ class BashWrapperBuilder(WrapperBuilder):
             fi
         done
         """).format(self.expid, '\n'.ljust(13))
-
-
 class BashVerticalWrapperBuilder(BashWrapperBuilder):
 
     def build_main(self):
         return super(BashVerticalWrapperBuilder, self).build_main() + self.build_sequential_threads_launcher()
-
-
 class BashHorizontalWrapperBuilder(BashWrapperBuilder):
 
     def build_main(self):
         return super(BashHorizontalWrapperBuilder, self).build_main() + self.build_parallel_threads_launcher()
-
 #SRUN CLASES
-
 class SrunWrapperBuilder(WrapperBuilder):
 
     def build_imports(self):
@@ -751,7 +768,6 @@ processors_per_node = int(jobs_resources['PROCESSORS_PER_NODE'])
     def _indent(self, text, amount, ch=' '):
         padding = amount * ch
         return ''.join(padding + line for line in text.splitlines(True))
-
 class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
     def build_imports(self):
         scripts_bash = "("
@@ -798,7 +814,6 @@ class SrunHorizontalWrapperBuilder(SrunWrapperBuilder):
         nodelist = self.build_nodes_list()
         srun_launcher = self.build_srun_launcher("scripts")
         return nodelist, srun_launcher
-
 class SrunVerticalHorizontalWrapperBuilder(SrunWrapperBuilder):
     def build_imports(self):
         scripts_bash = textwrap.dedent("""

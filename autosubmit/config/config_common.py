@@ -154,14 +154,14 @@ class AutosubmitConfig(object):
         result["proj"] = get_data(
             self._proj_parser) if self._proj_parser else None
         return result
-    def get_wrapper_export(self):
+    def get_wrapper_export(self,wrapper_section_name="wrapper"):
         """
          Returns modules variable from wrapper
 
          :return: string
          :rtype: string
          """
-        return self._conf_parser.get_option('wrapper', 'EXPORT', 'none')
+        return self._conf_parser.get_option(wrapper_section_name, 'EXPORT', 'none')
 
     def get_full_config_as_json(self):
         """
@@ -1454,8 +1454,16 @@ class AutosubmitConfig(object):
         :return: wrapper type (or none)
         :rtype: string
         """
-        return self._conf_parser.get_option(wrapper_section_name, 'TYPE', 'None').lower()
 
+        return self._conf_parser.get_option(wrapper_section_name, 'TYPE', 'None').lower()
+    def get_wrapper_retrials(self, wrapper_section_name="wrapper"):
+        """
+        Returns max number of retrials for job from autosubmit's config file
+
+        :return: safety sleep time
+        :rtype: int
+        """
+        return self._conf_parser.get_option(wrapper_section_name, 'INNER_RETRIALS', 0)
     def get_wrapper_multi(self):
         """
         return the section name of the wrappers

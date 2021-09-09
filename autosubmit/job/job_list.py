@@ -1639,7 +1639,7 @@ class JobList(object):
             if structure_valid == False:
                 # Structure does not exist or it is not be updated, attempt to create it.
                 Log.info("Updating structure persistence...")
-                self.graph = transitive_reduction(self.graph)
+                self.graph = transitive_reduction(self.graph) # add threads for large experiments? todo
                 if self.graph:
                     for job in self._job_list:
                         children_to_remove = [

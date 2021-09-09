@@ -335,7 +335,7 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper"):
         super(JobPackageThread, self).__init__(jobs)
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
@@ -345,15 +345,17 @@ class JobPackageThread(JobPackageBase):
         self._num_processors = '0'
         self._jobs_resources = jobs_resources
         self._wrapper_factory = self.platform.wrapper
+        self.current_wrapper_section = wrapper_section
         if configuration is not None:
-            self.export = configuration.get_wrapper_export()
+            self.inner_retrials = configuration.get_wrapper_retrials(self.current_wrapper_section)
+            self.export = configuration.get_wrapper_export(self.current_wrapper_section)
             if self.export != "none" and self.export != "None":
                 for job in self.jobs:
                     if job.export != "none" and job.export != "None":
                         self.export == job.export
                         break
-            if configuration.get_wrapper_queue() != 'None':
-                self.queue = configuration.get_wrapper_queue()
+            if configuration.get_wrapper_queue(self.current_wrapper_section) != 'None':
+                self.queue = configuration.get_wrapper_queue(self.current_wrapper_section)
             else:
                 self.queue = jobs[0].queue
         else:
@@ -364,11 +366,9 @@ class JobPackageThread(JobPackageBase):
     @property
     def name(self):
         return self._name
-
     @property
     def _jobs_scripts(self):
         self._jobs_resources['PROCESSORS_PER_NODE'] = self.platform.processors_per_node
-
         jobs_scripts = []
         for job in self.jobs:
             if job.section not in self._jobs_resources:
@@ -380,32 +380,24 @@ class JobPackageThread(JobPackageBase):
             except BaseException as e:
                 pass
         return jobs_scripts
-
     @property
     def queue(self):
         if str(self._num_processors) == '1':
             return self.platform.serial_platform.serial_queue
         else:
             return self._queue
-            #return self.platform.queue
-
     @queue.setter
     def queue(self,value):
         self._queue = value
-
     @property
     def _project(self):
         return self._platform.project
-
     def set_job_dependency(self, dependency):
         self._job_dependency = dependency
-
-
     def _create_scripts(self, configuration):
         for i in xrange(0, len(self.jobs)):
             self._job_scripts[self.jobs[i].name] = self.jobs[i].create_script(configuration)
         self._common_script = self._create_common_script()
-
     def _create_common_script(self):
         script_content = self._common_script_content()
         script_file = self.name + '.cmd'
@@ -467,15 +459,13 @@ class JobPackageThread(JobPackageBase):
 
     def _common_script_content(self):
         pass
-
-
 class JobPackageThreadWrapped(JobPackageThread):
     """
     Class to manage a thread-based package of jobs to be submitted by autosubmit
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None,configuration=None):
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper"):
         super(JobPackageThreadWrapped, self).__init__(jobs,configuration)
         self._job_scripts = {}
         self._job_dependency = dependency
@@ -483,6 +473,7 @@ class JobPackageThreadWrapped(JobPackageThread):
         self._wallclock = '00:00'
         self._num_processors = '0'
         self.threads = '1'
+        self.current_wrapper_section = wrapper_section
 
 
     @property
@@ -543,21 +534,15 @@ class JobPackageThreadWrapped(JobPackageThread):
             self.jobs[i].id = str(package_id)
             self.jobs[i].status = Status.SUBMITTED
             self.jobs[i].write_submit_time()
-
-
 class JobPackageVertical(JobPackageThread):
     """
     Class to manage a vertical thread-based package of jobs to be submitted by autosubmit
-
     :param jobs: 
     :type jobs:
     :param: dependency:
     """
-
-    def __init__(self, jobs, dependency=None,configuration=None):
-        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration)
-        #TODO unit or regression test of the wrappers, it will fail as in issue 280
-
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper"):
+        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section)
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
@@ -575,7 +560,7 @@ class JobPackageVertical(JobPackageThread):
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower())
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials)
 
 
 class JobPackageHorizontal(JobPackageThread):
@@ -583,8 +568,8 @@ class JobPackageHorizontal(JobPackageThread):
     Class to manage a horizontal thread-based package of jobs to be submitted by autosubmit
     """
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None):
-        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration=configuration)
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper"):
+        super(JobPackageHorizontal, self).__init__(jobs, dependency, jobs_resources,configuration=configuration,wrapper_section=wrapper_section)
         self.method = method
 
         self._queue = self.queue
@@ -612,9 +597,9 @@ class JobPackageHybrid(JobPackageThread):
         Class to manage a hybrid (horizontal and vertical) thread-based package of jobs to be submitted by autosubmit
         """
 
-    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None):
+    def __init__(self, jobs, num_processors, total_wallclock, dependency=None, jobs_resources=dict(),method="ASThread",configuration=None,wrapper_section="wrapper"):
         all_jobs = [item for sublist in jobs for item in sublist] #flatten list
-        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration=configuration)
+        super(JobPackageHybrid, self).__init__(all_jobs, dependency, jobs_resources,method,configuration=configuration,wrapper_section=wrapper_section)
         self.jobs_lists = jobs
         self.method=method
         self._num_processors = int(num_processors)

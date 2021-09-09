@@ -601,9 +601,9 @@ class JobPackager(object):
 
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(
-                            jobs_list, configuration=self._as_config))
+                            jobs_list, configuration=self._as_config,wrapper_section=self.current_wrapper_section))
                     else:
-                        package = JobPackageVertical(jobs_list, None)
+                        package = JobPackageVertical(jobs_list, None , wrapper_section=self.current_wrapper_section)
                         packages.append(package)
 
             else:
@@ -651,7 +651,7 @@ class JobPackager(object):
                 for job in current_package[level]:
                     job.level = level
         return JobPackageHorizontalVertical(current_package, max_procs, total_wallclock,
-                                            jobs_resources=jobs_resources, configuration=self._as_config)
+                                            jobs_resources=jobs_resources, configuration=self._as_config, wrapper_section=self.current_wrapper_section)
 
     def _build_vertical_horizontal_package(self, horizontal_packager, jobs_resources):
         total_wallclock = '00:00'
@@ -679,7 +679,7 @@ class JobPackager(object):
                 for job in current_package[level]:
                     job.level = level
         return JobPackageVerticalHorizontal(current_package, total_processors, total_wallclock,
-                                            jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config)
+                                            jobs_resources=jobs_resources, method=self.wrapper_method[self.current_wrapper_section], configuration=self._as_config, wrapper_section=self.current_wrapper_section )
 
 
 class JobPackagerVertical(object):
