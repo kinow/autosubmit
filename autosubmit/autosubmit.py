@@ -1886,8 +1886,8 @@ class Autosubmit:
         for platform in platform_to_test:
             try:
                 platform.test_connection()
-            except BaseException:
-                issues += "\n[{1}] Connection Unsuccessful to host {0}".format(
+            except BaseException as e :
+                issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
                     platform.host, platform.name)
                 continue
             Log.result("[{1}] Connection successful to host {0}",

@@ -427,10 +427,13 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         retrials = {2}
         for i in range(len({0})):
-            current = {1}
-            while (current.retrials >= 0)
+            job_retrials = retrials
+            completed = False
+            while job_retrials >= 0 or completed:
+                current = {1}
                 current.start()
                 current.join()
+                job_retrials = job_retrials - 1
         """).format(jobs_list, thread,self.retrials,'\n'.ljust(13))
 
         if footer:
@@ -441,6 +444,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 failed_path = os.path.join(os.getcwd(), failed_filename)
                 failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
                 if os.path.exists(completed_path):
+                    completed = True
                     print datetime.now(), "The job ", current.template," has been COMPLETED"
                 else:
                     open(failed_wrapper,'w').close()
@@ -472,16 +476,17 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             def run(self):
                 jobname = self.template.replace('.cmd', '')
                 os.system("echo $(date +%s) > "+jobname+"_STAT")
-                out = str(self.template) + ".out"
-                err = str(self.template) + ".err"
+                if self.retrials =
+                out = str(self.template) + ".out." + str(self.retrials)
+                err = str(self.template) + ".err." + str(self.retrials)
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
-                self.retrials = self.retrials - 1
+                
         """).format('\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
-        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, retrials)")
+        return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, job_retrials)")
 class PythonHorizontalWrapperBuilder(PythonWrapperBuilder):
 
     def build_main(self):

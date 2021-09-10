@@ -256,6 +256,10 @@ class ParamikoPlatform(Platform):
             raise AutosubmitError(
                 'Send file failed. Connection seems to no be active', 6004)
 
+
+    def get_list_of_files(self):
+        return self._ftpChannel.get(self.get_files_path)
+
     # Gets .err and .out
     def get_file(self, filename, must_exist=True, relative_path='', ignore_log=False, wrapper_failed=False):
         """

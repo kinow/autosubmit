@@ -582,9 +582,9 @@ class JobList(object):
                         # By adding to the result at this step, only those with the same RUNNIN have been added.
                         dict_jobs[date][member] += jobs_to_sort
                         jobs_to_sort = []
-
-                    jobs_to_sort.append(job)
-                    previous_job = job
+                    if len(sorted_jobs_list) > 1 :
+                        jobs_to_sort.append(job)
+                        previous_job = job
 
         return dict_jobs
 
