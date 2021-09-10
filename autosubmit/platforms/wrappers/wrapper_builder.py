@@ -476,7 +476,6 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             def run(self):
                 jobname = self.template.replace('.cmd', '')
                 os.system("echo $(date +%s) > "+jobname+"_STAT")
-                if self.retrials =
                 out = str(self.template) + ".out." + str(self.retrials)
                 err = str(self.template) + ".err." + str(self.retrials)
                 print(out+"\\n")
