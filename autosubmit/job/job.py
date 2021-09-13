@@ -1017,6 +1017,7 @@ class Job(object):
             else:
                 if self.type == Type.BASH:
                     template = 'sleep 1'
+                    template += 'crash'
                 elif self.type == Type.PYTHON:
                     template = 'time.sleep(1)'
                     template += 'crash'
@@ -1607,7 +1608,7 @@ class WrapperJob(Job):
         running_jobs = self.inner_jobs_running
         real_running = copy.deepcopy(self.inner_jobs_running)
         if check_ready_jobs:
-            running_jobs += [job for job in self.job_list if job.status == Status.READY or job.status == Status.SUBMITTED]
+            running_jobs += [job for job in self.job_list if job.status == Status.READY or job.status == Status.SUBMITTED or job.status == Status.QUEUING]
         self.inner_jobs_running = list()
         for job in running_jobs:
             if job.platform.check_file_exists('{0}_FAILED'.format(job.name), wrapper_failed=True):
