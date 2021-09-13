@@ -588,22 +588,25 @@ class Job(object):
 
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
+        max_logs = 0
+        wrapper_type = "none"
+
         try:
-            as_conf = AutosubmitConfig(
-                expid, BasicConfig, ConfigParserFactory())
+            as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
-            max_logs = 0
-            wrapper_type = "none"
-            for wrapper_section in as_conf.get_wrapper_multi():
+            list_of_wrappers = as_conf.get_wrapper_multi()
+            if len(list_of_wrappers) == 0:
+                list_of_wrappers.append("wrapper")
+            for wrapper_section in list_of_wrappers:
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-                        max_logs = as_conf.get_wrapper_retrials(wrapper_section)
+                        max_logs = int(as_conf.get_wrapper_retrials(wrapper_section))
                     break
             if wrapper_type != "vertical":
                 remote_logs = (self.script_name + ".out", self.script_name + ".err")
             else:
-                remote_logs = (self.script_name + ".out." + max_logs , self.script_name + ".err." + max_logs)
+                remote_logs = (self.script_name + ".out." + str(max_logs) , self.script_name + ".err." + str(max_logs))
 
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
@@ -651,18 +654,17 @@ class Job(object):
             if copy_remote_logs:
                 # unifying names for log files
                 if remote_logs != local_logs:
-                    if wrapper_type != "vertical":
+                    if wrapper_type == "vertical":
                         other_logs = max_logs - 1
                         while other_logs >= 0:  # perhaps the order is reversed TODO
                             try:
-                                r_log = (remote_logs[0][:-1]+other_logs,remote_logs[1][:-1]+other_logs)
-                                l_log = (local_logs[0]+"_"+other_logs,local_logs[1]+"_"+other_logs)
+                                r_log = (remote_logs[0][:-1]+str(other_logs),remote_logs[1][:-1]+str(other_logs))
+                                l_log = (local_logs[0]+"_"+str(other_logs),local_logs[1]+"_"+str(other_logs))
                                 self.synchronize_logs(platform, r_log, l_log)
                                 platform.get_logs_files(self.expid, l_log)
                                 try:
                                     for local_log in l_log:
-                                        platform.write_jobid(self.id, os.path.join(
-                                            self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                                        platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                                 except BaseException as e:
                                     pass
                                 other_logs = other_logs -1
@@ -1006,17 +1008,18 @@ class Job(object):
                 template = ''
                 if as_conf.get_remote_dependencies():
                     if self.type == Type.BASH:
-                        template = 'sleep 1' + "\n"
+                        template = 'sleep 30' + "\n"
                     elif self.type == Type.PYTHON:
-                        template = 'time.sleep(1)' + "\n"
+                        template = 'time.sleep(30)' + "\n"
                     elif self.type == Type.R:
-                        template = 'Sys.sleep(1)' + "\n"
+                        template = 'Sys.sleep(30)' + "\n"
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
                     template = 'sleep 1'
                 elif self.type == Type.PYTHON:
                     template = 'time.sleep(1)'
+                    template += 'crash'
                 elif self.type == Type.R:
                     template = 'Sys.sleep(1)'
                 else:

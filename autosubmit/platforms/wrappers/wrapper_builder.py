@@ -429,7 +429,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
         for i in range(len({0})):
             job_retrials = retrials
             completed = False
-            while job_retrials >= 0 or completed:
+            while job_retrials >= 0 and not completed:
                 current = {1}
                 current.start()
                 current.join()
