@@ -576,16 +576,13 @@ class Job(object):
                 except BaseException as e:
                     Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
                         e.message, self.name))
-
         except AutosubmitError as e:
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {1}".format(
                 e.message, self.name), 6001)
-
         except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
         return
-
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
         max_logs = 0
@@ -597,11 +594,11 @@ class Job(object):
             list_of_wrappers = as_conf.get_wrapper_multi()
             if len(list_of_wrappers) == 0:
                 list_of_wrappers.append("wrapper")
-            for wrapper_section in list_of_wrappers:
+            for wrapper_section in list_of_wrappers: #fastlook
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-                        max_logs = int(as_conf.get_wrapper_retrials(wrapper_section))
+                        max_logs = int(as_conf.get_retrials())
                     break
             if wrapper_type != "vertical":
                 remote_logs = (self.script_name + ".out", self.script_name + ".err")
@@ -656,7 +653,7 @@ class Job(object):
                 if remote_logs != local_logs:
                     if wrapper_type == "vertical":
                         other_logs = max_logs - 1
-                        while other_logs >= 0:  # perhaps the order is reversed TODO
+                        while other_logs >= 0:  # perhaps the order is reversed  TODO
                             try:
                                 r_log = (remote_logs[0][:-1]+str(other_logs),remote_logs[1][:-1]+str(other_logs))
                                 l_log = (local_logs[0]+"_"+str(other_logs),local_logs[1]+"_"+str(other_logs))
@@ -667,9 +664,9 @@ class Job(object):
                                         platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                                 except BaseException as e:
                                     pass
-                                other_logs = other_logs -1
+                                other_logs = other_logs - 1
                             except: # no more retrials
-                                other_logs = other_logs -1
+                                other_logs = other_logs - 1
                     self.synchronize_logs(platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 platform.get_logs_files(self.expid, remote_logs)
@@ -710,7 +707,6 @@ class Job(object):
         except BaseException as e:
             pass
         return
-
     def update_status(self, copy_remote_logs=False, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
@@ -732,7 +728,6 @@ class Job(object):
             self.check_completion()
         else:
             self.status = new_status
-
         if self.status == Status.RUNNING:
             Log.info("Job {0} is RUNNING", self.name)
         elif self.status == Status.QUEUING:
@@ -752,7 +747,6 @@ class Job(object):
                     Log.result("Job {0} is COMPLETED", self.name)
                 else:
                     self.update_children_status()
-
         elif self.status == Status.UNKNOWN:
             Log.printlog("Job {0} is UNKNOWN. Checking completed files to confirm the failure...".format(
                 self.name), 3000)
@@ -768,7 +762,6 @@ class Job(object):
             # after checking the jobs , no job should have the status "submitted"
             Log.printlog("Job {0} in SUBMITTED status. This should never happen on this step..".format(
                 self.name), 6008)
-
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
             self.write_start_time()
@@ -786,8 +779,7 @@ class Job(object):
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
-                self.retrieve_logfiles(
-                    copy_remote_logs, local_logs, remote_logs, expid, platform_name)
+                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
 
         return self.status
 
@@ -1193,7 +1185,7 @@ class Job(object):
         :return: True if succesful, False otherwise
         :rtype: bool
         """
-        if self._platform.get_stat_file(self.name, retries=5):
+        if self._platform.get_stat_file(self.name, retries=5): #fastlook
             start_time = self.check_start_time()
         else:
             Log.printlog('Could not get start time for {0}. Using current time as an approximation'.format(

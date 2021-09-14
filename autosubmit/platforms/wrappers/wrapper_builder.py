@@ -432,7 +432,9 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             while job_retrials >= 0 and not completed:
                 current = {1}
                 current.start()
+                os.system("echo $(date +%s) > "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
                 current.join()
+                os.system("echo $(date +%s) >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
                 job_retrials = job_retrials - 1
         """).format(jobs_list, thread,self.retrials,'\n'.ljust(13))
 
@@ -447,6 +449,8 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                     completed = True
                     print datetime.now(), "The job ", current.template," has been COMPLETED"
                 else:
+                    os.system("echo $(date +%s) >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
+                    os.system("$(echo FAILED)) >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
                     open(failed_wrapper,'w').close()
                     open(failed_path, 'w').close()
                     print datetime.now(), "The job ", current.template," has FAILED"
@@ -458,9 +462,6 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")
                 open(wrapper_failed, 'w').close()
                 os._exit(1)
-                    
-                    
-
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return sequential_threads_launcher
 
@@ -481,7 +482,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
-                
+                os.system("echo $(date +%s) >> "+jobname+"_STAT_"+str(self.retrials))
         """).format('\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
