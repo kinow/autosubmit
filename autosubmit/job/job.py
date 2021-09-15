@@ -598,7 +598,7 @@ class Job(object):
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-                        max_logs = int(as_conf.get_retrials())
+                        max_logs = int(as_conf.get_retrials()) - self.fail_count # - job.fail count
                     break
             if wrapper_type != "vertical":
                 remote_logs = (self.script_name + ".out", self.script_name + ".err")
@@ -651,22 +651,36 @@ class Job(object):
             if copy_remote_logs:
                 # unifying names for log files
                 if remote_logs != local_logs:
-                    if wrapper_type == "vertical":
-                        other_logs = max_logs - 1
-                        while other_logs >= 0:  # perhaps the order is reversed  TODO
+                    if wrapper_type == "vertical": # internal_Retrial mechanism
+                        other_logs = max_logs - 1 # All except the first log ran
+                        stat_file=self.script_name[:-4]+"_STAT_"
+                        while other_logs >= 0: # pick all except the last retrial, last retrial is always the max_logs value
                             try:
-                                r_log = (remote_logs[0][:-1]+str(other_logs),remote_logs[1][:-1]+str(other_logs))
-                                l_log = (local_logs[0]+"_"+str(other_logs),local_logs[1]+"_"+str(other_logs))
-                                self.synchronize_logs(platform, r_log, l_log)
-                                platform.get_logs_files(self.expid, l_log)
-                                try:
-                                    for local_log in l_log:
-                                        platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                                except BaseException as e:
-                                    pass
-                                other_logs = other_logs - 1
-                            except: # no more retrials
-                                other_logs = other_logs - 1
+                                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+                                tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+                                time_stamp = "1970"
+                                total_stats = (0,0,0,"FAILED")
+                                if platform.get_stat_file_by_retrials(stat_file+str(other_logs)): # if stat_{retrial} exist, the job has failed at least once
+
+                                    with open(os.path.join(tmp_path,stat_file+str(other_logs)), 'r+') as f:
+                                        time_stamp = str(f.readline()[:-1])
+                                        total_stats = (f.readline()[:-1],f.readline()[:-1],f.readline()[:-1],f.readline()[:-1])
+                                    self.write_total_stat_by_retries(total_stats)
+                                    platform.remove_stat_file_by_retrials(stat_file+str(other_logs))
+                                    l_log = (self.script_name[:-4] +"."+ time_stamp +".out", self.script_name[:-4] +"."+ time_stamp + ".err")
+                                    r_log = (remote_logs[0][:-1]+str(other_logs),remote_logs[1][:-1]+str(other_logs))
+                                    self.synchronize_logs(platform, r_log, l_log)
+                                    platform.get_logs_files(self.expid, l_log)
+                                    try:
+                                        for local_log in l_log:
+                                            platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                                    except BaseException as e:
+                                        pass
+                                    other_logs = other_logs - 1 # no more retrials
+                                else:
+                                    other_logs = 0  # exit, no more logs
+                            except:
+                                other_logs = 0 # exit
                     self.synchronize_logs(platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 platform.get_logs_files(self.expid, remote_logs)
@@ -780,6 +794,17 @@ class Job(object):
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
                 self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
+            list_of_wrappers = as_conf.get_wrapper_multi()
+            if len(list_of_wrappers) == 0:
+                list_of_wrappers.append("wrapper")
+            for wrapper_section in list_of_wrappers:  # fastlook
+                if self.section in as_conf.get_wrapper_jobs(wrapper_section):
+                    wrapper_type = as_conf.get_wrapper_type(wrapper_section)
+                    if wrapper_type == "vertical":
+                        max_logs = int(as_conf.get_retrials()) - self.fail_count  # - job.fail count
+                        for i in range(max_logs):
+                            self.inc_fail_count()
+                    break
 
         return self.status
 
@@ -1244,6 +1269,26 @@ class Job(object):
                                                                                                   self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err, self._wrapper_queue))
         thread_write_finish.name = "JOB_data_{}".format(self.name)
         thread_write_finish.start()
+
+    def write_total_stat_by_retries(self,total_stats):
+        """
+        Writes all data to TOTAL_STATS file
+        :param total_stats: data gathered by the wrapper
+        :type completed: str
+        """
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS') #todo jobdatastructure
+        f = open(path, 'a')
+        f.write(total_stats[0]+' '+total_stats[1]+' '+total_stats[2]+' '+total_stats[3])
+        out, err = self.local_logs
+        path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
+        # Launch first as simple non-threaded function
+        #JobDataStructure(self.expid).write_finish_time(self.name, finish_time, final_status, self.processors, self.wallclock, self._queue, self.date,
+        #                                               self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], True, None, out, err, self._wrapper_queue)
+        # Launch second as threaded function
+        #thread_write_finish = Thread(target=JobDataStructure(self.expid).write_finish_time, args=(self.name, finish_time, final_status, self.processors,
+        #                                                                                          self.wallclock, self._queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.platform, self.packed, [job.id for job in self._parents], False, path_out, out, err, self._wrapper_queue))
+        #thread_write_finish.name = "JOB_data_{}".format(self.name)
+        #thread_write_finish.start()
 
     def check_started_after(self, date_limit):
         """
