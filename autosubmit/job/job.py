@@ -591,20 +591,6 @@ class Job(object):
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
-            list_of_wrappers = as_conf.get_wrapper_multi()
-            if len(list_of_wrappers) == 0:
-                list_of_wrappers.append("wrapper")
-            for wrapper_section in list_of_wrappers: #fastlook
-                if self.section in as_conf.get_wrapper_jobs(wrapper_section):
-                    wrapper_type = as_conf.get_wrapper_type(wrapper_section)
-                    if wrapper_type == "vertical":
-                        max_logs = int(as_conf.get_retrials()) - fail_count # - job.fail count
-                    break
-            if wrapper_type != "vertical":
-                remote_logs = (self.script_name + ".out", self.script_name + ".err")
-            else:
-                remote_logs = (self.script_name + ".out." + str(max_logs) , self.script_name + ".err." + str(max_logs))
-
             submitter = self._get_submitter(as_conf)
             submitter.load_platforms(as_conf)
             platform = submitter.platforms[platform_name.lower()]
@@ -612,6 +598,26 @@ class Job(object):
                 platform.test_connection()
             except:
                 pass
+            list_of_wrappers = as_conf.get_wrapper_multi()
+            if len(list_of_wrappers) == 0:
+                list_of_wrappers.append("wrapper")
+            for wrapper_section in list_of_wrappers: #fastlook
+                if self.section in as_conf.get_wrapper_jobs(wrapper_section):
+                    wrapper_type = as_conf.get_wrapper_type(wrapper_section)
+                    if wrapper_type == "vertical":
+
+                        max_logs = int(as_conf.get_retrials()) - fail_count # - job.fail count
+                        last_log = max_logs
+                        stat_file = self.script_name[:-4] + "_STAT_"
+                        for i in range(max_logs+1):
+                            if platform.get_stat_file_by_retrials(stat_file + str(i)):
+                                last_log = i
+                                break
+                    break
+            if wrapper_type != "vertical":
+                remote_logs = (self.script_name + ".out", self.script_name + ".err")
+            else:
+                remote_logs = (self.script_name + ".out." + str(last_log) , self.script_name + ".err." + str(last_log))
         except Exception as e:
             Log.printlog(
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
@@ -652,13 +658,12 @@ class Job(object):
                 # unifying names for log files
                 if remote_logs != local_logs:
                     if wrapper_type == "vertical": # internal_Retrial mechanism
-                        last_ran = 0
-                        stat_file=self.script_name[:-4]+"_STAT_"
-                        for i in range(max_logs+1):
-                            if platform.get_stat_file_by_retrials(stat_file + str(i)):
-                                last_ran = i + 1
-                                break
-                        while last_ran <= max_logs:
+                        log_start = last_log + 1
+                        while log_start <= max_logs:
+                            try:
+                                platform.restore_connection()
+                            except:
+                                pass
                             try:
                                 exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
                                 tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
@@ -672,18 +677,22 @@ class Job(object):
                                     platform.remove_stat_file_by_retrials(stat_file+str(max_logs))
                                     l_log = (self.script_name[:-4] +"."+ time_stamp +".out", self.script_name[:-4] +"."+ time_stamp + ".err")
                                     r_log = (remote_logs[0][:-1]+str(max_logs),remote_logs[1][:-1]+str(max_logs))
-                                    self.synchronize_logs(platform, r_log, l_log)
+                                    self.synchronize_logs(platform, r_log, l_log,last = False)
                                     platform.get_logs_files(self.expid, l_log)
                                     try:
                                         for local_log in l_log:
                                             platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                                     except BaseException as e:
                                         pass
-                                    max_logs = max_logs - 1 # no more retrials
+                                    max_logs = max_logs - 1
                                 else:
-                                    max_logs = last_ran - 1   # exit, no more logs
+                                    max_logs = -1   # exit, no more logs
                             except:
-                                max_logs = 0 # exit
+                                max_logs = -1 # exit
+                    try:
+                        platform.restore_connection()
+                    except:
+                        pass
                     self.synchronize_logs(platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 platform.get_logs_files(self.expid, remote_logs)
@@ -1351,11 +1360,12 @@ class Job(object):
                 parent.children.remove(self)
                 self.parents.remove(parent)
 
-    def synchronize_logs(self, platform, remote_logs, local_logs):
+    def synchronize_logs(self, platform, remote_logs, local_logs, last = True):
         platform.move_file(remote_logs[0], local_logs[0], True)  # .out
         platform.move_file(remote_logs[1], local_logs[1], True)  # .err
-        self.local_logs = local_logs
-        self.remote_logs = copy.deepcopy(local_logs)
+        if last:
+            self.local_logs = local_logs
+            self.remote_logs = copy.deepcopy(local_logs)
 
 
 class WrapperJob(Job):

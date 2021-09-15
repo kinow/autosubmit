@@ -340,8 +340,9 @@ class ParamikoPlatform(Platform):
         """
         try:
             path_root = self.get_files_path()
-            self._ftpChannel.rename(os.path.join(path_root, src),
-                                    os.path.join(path_root, dest))
+            src = os.path.join(path_root, src)
+            dest = os.path.join(path_root, dest)
+            self._ftpChannel.rename(src,dest)
             return True
 
         except IOError as e:
