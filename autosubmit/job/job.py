@@ -584,7 +584,7 @@ class Job(object):
                 e.message, self.name), 6001)
         return
     @threaded
-    def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name):
+    def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
         wrapper_type = "none"
 
@@ -598,7 +598,7 @@ class Job(object):
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-                        max_logs = int(as_conf.get_retrials()) - self.fail_count # - job.fail count
+                        max_logs = int(as_conf.get_retrials()) - fail_count # - job.fail count
                     break
             if wrapper_type != "vertical":
                 remote_logs = (self.script_name + ".out", self.script_name + ".err")
@@ -620,7 +620,7 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        sleep(5)
+        sleep(1)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
@@ -652,23 +652,26 @@ class Job(object):
                 # unifying names for log files
                 if remote_logs != local_logs:
                     if wrapper_type == "vertical": # internal_Retrial mechanism
-                        other_logs = max_logs - 1 # All except the first log ran
+                        last_ran = 0
                         stat_file=self.script_name[:-4]+"_STAT_"
-                        while other_logs >= 0: # pick all except the last retrial, last retrial is always the max_logs value
+                        for i in range(max_logs+1):
+                            if platform.get_stat_file_by_retrials(stat_file + str(i)):
+                                last_ran = i + 1
+                                break
+                        while last_ran <= max_logs:
                             try:
                                 exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
                                 tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
                                 time_stamp = "1970"
                                 total_stats = (0,0,0,"FAILED")
-                                if platform.get_stat_file_by_retrials(stat_file+str(other_logs)): # if stat_{retrial} exist, the job has failed at least once
-
-                                    with open(os.path.join(tmp_path,stat_file+str(other_logs)), 'r+') as f:
+                                if platform.get_stat_file_by_retrials(stat_file+str(max_logs)):
+                                    with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'r+') as f:
                                         time_stamp = str(f.readline()[:-1])
                                         total_stats = (f.readline()[:-1],f.readline()[:-1],f.readline()[:-1],f.readline()[:-1])
                                     self.write_total_stat_by_retries(total_stats)
-                                    platform.remove_stat_file_by_retrials(stat_file+str(other_logs))
+                                    platform.remove_stat_file_by_retrials(stat_file+str(max_logs))
                                     l_log = (self.script_name[:-4] +"."+ time_stamp +".out", self.script_name[:-4] +"."+ time_stamp + ".err")
-                                    r_log = (remote_logs[0][:-1]+str(other_logs),remote_logs[1][:-1]+str(other_logs))
+                                    r_log = (remote_logs[0][:-1]+str(max_logs),remote_logs[1][:-1]+str(max_logs))
                                     self.synchronize_logs(platform, r_log, l_log)
                                     platform.get_logs_files(self.expid, l_log)
                                     try:
@@ -676,11 +679,11 @@ class Job(object):
                                             platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
                                     except BaseException as e:
                                         pass
-                                    other_logs = other_logs - 1 # no more retrials
+                                    max_logs = max_logs - 1 # no more retrials
                                 else:
-                                    other_logs = 0  # exit, no more logs
+                                    max_logs = last_ran - 1   # exit, no more logs
                             except:
-                                other_logs = 0 # exit
+                                max_logs = 0 # exit
                     self.synchronize_logs(platform, remote_logs, local_logs)
                     remote_logs = copy.deepcopy(local_logs)
                 platform.get_logs_files(self.expid, remote_logs)
@@ -793,7 +796,7 @@ class Job(object):
             if as_conf.get_disable_recovery_threads(self.platform.name) == "true":
                 self.retrieve_logfiles_unthreaded(copy_remote_logs, local_logs)
             else:
-                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name)
+                self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = copy.copy(self.fail_count))
             list_of_wrappers = as_conf.get_wrapper_multi()
             if len(list_of_wrappers) == 0:
                 list_of_wrappers.append("wrapper")
@@ -801,11 +804,10 @@ class Job(object):
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-                        max_logs = int(as_conf.get_retrials()) - self.fail_count  # - job.fail count
-                        for i in range(max_logs):
+                        max_logs = int(as_conf.get_retrials())
+                        for i in range(0,max_logs):
                             self.inc_fail_count()
                     break
-
         return self.status
 
     @staticmethod
