@@ -23,7 +23,7 @@ except ImportError:
     # noinspection PyCompatibility
     from ConfigParser import SafeConfigParser
 import os
-
+import re
 from log.log import Log, AutosubmitError, AutosubmitCritical
 
 
@@ -55,7 +55,7 @@ class BasicConfig:
     SMTP_SERVER = ''
     MAIL_FROM = ''
     ALLOWED_HOSTS = ''
-
+    DENIED_HOSTS = ''
     @staticmethod
     def _update_config():
         """
@@ -100,7 +100,37 @@ class BasicConfig:
         if parser.has_option('mail', 'mail_from'):
             BasicConfig.MAIL_FROM = parser.get('mail', 'mail_from')
         if parser.has_option('hosts', 'whitelist'):
-            BasicConfig.ALLOWED_HOSTS = parser.get('hosts', 'whitelist')
+            command_allowed = parser.get('hosts', 'whitelist')
+            command_allowed = command_allowed.split()
+            restrictions = dict()
+            if ',' in command_allowed[0]:
+               for command in  command_allowed.split(','):
+                   if ',' in command_allowed[1]:
+                       restrictions[command] = command_allowed[1].split(',')
+                   else:
+                       restrictions[command] = command_allowed[1]
+            else:
+                    if ',' in command_allowed[1]:
+                        restrictions[command_allowed[0]] = command_allowed[1].split(',')
+                    else:
+                        restrictions[command_allowed[0]] = command_allowed[1]
+            BasicConfig.ALLOWED_HOSTS = restrictions
+        if parser.has_option('hosts', 'blacklist'):
+            command_denied = parser.get('hosts', 'blacklist')
+            command_denied = command_denied.split()
+            restrictions = dict()
+            if ',' in command_denied[0]:
+               for command in  command_denied.split(','):
+                   if ',' in command_denied[1]:
+                       restrictions[command] = command_denied[1].split(',')
+                   else:
+                       restrictions[command] = command_denied[1]
+            else:
+                    if ',' in command_denied[1]:
+                        restrictions[command_denied[0]] = command_denied[1].split(',')
+                    else:
+                        restrictions[command_denied[0]] = command_denied[1]
+            BasicConfig.DENIED_HOSTS = restrictions
         if parser.has_option('structures', 'path'):
             BasicConfig.STRUCTURES_DIR = parser.get('structures', 'path')
         if parser.has_option('globallogs', 'path'):

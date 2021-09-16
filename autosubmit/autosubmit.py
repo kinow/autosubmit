@@ -649,6 +649,11 @@ class Autosubmit:
                 global_log_command.append("migrate")  # offer
             else:
                 expid_less.append("migrate")  # pickup
+        import platform
+        host = platform.node()
+        if args.command in BasicConfig.DENIED_HOSTS and host in BasicConfig.DENIED_HOSTS[args.command]: #fastlook
+            raise AutosubmitCritical(
+                "The current host is not allowed to run Autosubmit", 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
@@ -1279,7 +1284,7 @@ class Autosubmit:
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         import platform
         host = platform.node()
-        if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS:
+        if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS: #fastlook
             raise AutosubmitCritical(
                 "The current host is not allowed to run Autosubmit", 7004)
 
