@@ -605,7 +605,6 @@ class Job(object):
                 if self.section in as_conf.get_wrapper_jobs(wrapper_section):
                     wrapper_type = as_conf.get_wrapper_type(wrapper_section)
                     if wrapper_type == "vertical":
-
                         max_logs = int(as_conf.get_retrials()) - fail_count # - job.fail count
                         last_log = max_logs
                         stat_file = self.script_name[:-4] + "_STAT_"
@@ -626,7 +625,7 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        sleep(1)
+        sleep(4)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
@@ -659,24 +658,22 @@ class Job(object):
                 if remote_logs != local_logs:
                     if wrapper_type == "vertical": # internal_Retrial mechanism
                         log_start = last_log + 1
+                        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
+                        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+                        time_stamp = "1970"
+                        total_stats = (0, 0, 0, "FAILED")
                         while log_start <= max_logs:
                             try:
-                                platform.restore_connection()
-                            except:
-                                pass
-                            try:
-                                exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
-                                tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
-                                time_stamp = "1970"
-                                total_stats = (0,0,0,"FAILED")
                                 if platform.get_stat_file_by_retrials(stat_file+str(max_logs)):
+                                    #self.write_total_stat_by_retries_fix_newline(total_stats)
                                     with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'r+') as f:
-                                        time_stamp = str(f.readline()[:-1])
+                                        time_stamp = str(f.readline()[:-1])+"_"+str(max_logs)
                                         total_stats = (f.readline()[:-1],f.readline()[:-1],f.readline()[:-1],f.readline()[:-1])
+
                                     self.write_total_stat_by_retries(total_stats)
                                     platform.remove_stat_file_by_retrials(stat_file+str(max_logs))
                                     l_log = (self.script_name[:-4] +"."+ time_stamp +".out", self.script_name[:-4] +"."+ time_stamp + ".err")
-                                    r_log = (remote_logs[0][:-1]+str(max_logs),remote_logs[1][:-1]+str(max_logs))
+                                    r_log = ( remote_logs[0][:-1]+str(max_logs) , remote_logs[1][:-1]+str(max_logs) )
                                     self.synchronize_logs(platform, r_log, l_log,last = False)
                                     platform.get_logs_files(self.expid, l_log)
                                     try:
@@ -793,7 +790,7 @@ class Job(object):
             self.write_start_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
-            self.write_end_time(self.status == Status.COMPLETED)
+
             # New thread, check if file exist
             expid = copy.deepcopy(self.expid)
             platform_name = copy.deepcopy(self.platform_name.lower())
@@ -807,6 +804,7 @@ class Job(object):
             else:
                 self.retrieve_logfiles(copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = copy.copy(self.fail_count))
             list_of_wrappers = as_conf.get_wrapper_multi()
+            wrapper_type = "none"
             if len(list_of_wrappers) == 0:
                 list_of_wrappers.append("wrapper")
             for wrapper_section in list_of_wrappers:  # fastlook
@@ -817,6 +815,7 @@ class Job(object):
                         for i in range(0,max_logs):
                             self.inc_fail_count()
                     break
+            self.write_end_time(self.status == Status.COMPLETED)
         return self.status
 
     @staticmethod
@@ -1045,10 +1044,8 @@ class Job(object):
             else:
                 if self.type == Type.BASH:
                     template = 'sleep 1'
-                    template += 'crash'
                 elif self.type == Type.PYTHON:
                     template = 'time.sleep(1)'
-                    template += 'crash'
                 elif self.type == Type.R:
                     template = 'Sys.sleep(1)'
                 else:
@@ -1281,6 +1278,11 @@ class Job(object):
         thread_write_finish.name = "JOB_data_{}".format(self.name)
         thread_write_finish.start()
 
+    def write_total_stat_by_retries_fix_newline(self):
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        f = open(path, 'a')
+        f.write('\n')
+        f.close()
     def write_total_stat_by_retries(self,total_stats):
         """
         Writes all data to TOTAL_STATS file
@@ -1289,7 +1291,7 @@ class Job(object):
         """
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS') #todo jobdatastructure
         f = open(path, 'a')
-        f.write(total_stats[0]+' '+total_stats[1]+' '+total_stats[2]+' '+total_stats[3])
+        f.write('\n'+total_stats[0]+' '+total_stats[1]+' '+total_stats[2]+' '+total_stats[3])
         out, err = self.local_logs
         path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
         # Launch first as simple non-threaded function
