@@ -654,7 +654,7 @@ class Autosubmit:
         forbidden = BasicConfig.DENIED_HOSTS
         authorized = BasicConfig.ALLOWED_HOSTS
         message = "Command: {0} is not allowed to run in host: {1}.\n".format(args.command.upper(),host)
-        message += "You have a list of permissions as follows:Command | hosts \nAllowed hosts\n"
+        message += "List of permissions as follows:Command | hosts \nAllowed hosts\n"
         for command in BasicConfig.ALLOWED_HOSTS:
             message += "   {0}:{1} \n".format(command,BasicConfig.ALLOWED_HOSTS[command])
         message += "Denied hosts\n"
