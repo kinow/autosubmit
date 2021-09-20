@@ -651,9 +651,22 @@ class Autosubmit:
                 expid_less.append("migrate")  # pickup
         import platform
         host = platform.node()
-        if args.command in BasicConfig.DENIED_HOSTS and host in BasicConfig.DENIED_HOSTS[args.command]: #fastlook
-            raise AutosubmitCritical(
-                "The current host is not allowed to run Autosubmit", 7004)
+        forbidden = BasicConfig.DENIED_HOSTS
+        authorized = BasicConfig.ALLOWED_HOSTS
+        message = "Command: {0} is not allowed to run in host: {1}.\n".format(args.command.upper(),host)
+        message += "You have a list of permissions as follows:Command | hosts \nAllowed hosts\n"
+        for command in BasicConfig.ALLOWED_HOSTS:
+            message += "   {0}:{1} \n".format(command,BasicConfig.ALLOWED_HOSTS[command])
+        message += "Denied hosts\n"
+        for command in BasicConfig.DENIED_HOSTS:
+            message += "   {0}:{1} \n".format(command,BasicConfig.DENIED_HOSTS[command])
+        message += "[Command: autosubmit {0}] is not allowed to run in [host: {1}].".format(args.command.upper(), host)
+        if args.command in BasicConfig.DENIED_HOSTS:
+            if 'all' in BasicConfig.DENIED_HOSTS[args.command] or host in BasicConfig.DENIED_HOSTS[args.command]:
+                raise AutosubmitCritical(message, 7004)
+        if args.command in BasicConfig.ALLOWED_HOSTS:
+            if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
+                raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
