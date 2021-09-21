@@ -283,7 +283,6 @@ class JobPackager(object):
                 if self.wrapper_type[self.current_wrapper_section] == 'vertical':
                     built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits)
                 elif self.wrapper_type[self.current_wrapper_section]  == 'horizontal':
-
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section], wrapper_limits, section)
                 elif self.wrapper_type[self.current_wrapper_section]  in ['vertical-horizontal', 'horizontal-vertical']:
 
@@ -299,6 +298,7 @@ class JobPackager(object):
                     aux_jobs = []
                     # Check failed jobs first
                     for job in p.jobs:
+                        job.wrapper_type = self.wrapper_type[self.current_wrapper_section]
                         if len(self._jobs_list.jobs_to_run_first) > 0:
                             if job not in self._jobs_list.jobs_to_run_first:
                                 job.packed = False
