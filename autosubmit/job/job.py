@@ -1039,11 +1039,11 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 1 ; crash'
+                    template = 'sleep 10'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(1)'
+                    template = 'time.sleep(10)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(1)'
+                    template = 'Sys.sleep(10)'
                 else:
                     template = ''
         except:
