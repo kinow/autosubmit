@@ -116,6 +116,7 @@ class PythonWrapperBuilder(WrapperBuilder):
         from threading import Thread
         from commands import getstatusoutput
         from datetime import datetime
+        import time
         from math import ceil
         from collections import OrderedDict
         import copy
@@ -433,10 +434,8 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             while job_retrials >= 0 and not completed:
                 current = {1}
                 current.start()
-                os.system("echo "+date2str(datetime.now(), 'S')+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
-                os.system("echo "+date2str(datetime.now(), 'S')+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
+                os.system("echo "+str(time.time())+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
                 current.join()
-                os.system("echo "+date2str(datetime.now(), 'S')+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials))
                 job_retrials = job_retrials - 1
         """).format(jobs_list, thread,self.retrials,'\n'.ljust(13))
 
@@ -451,14 +450,16 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                     completed = True
                     print datetime.now(), "The job ", current.template," has been COMPLETED"
                 else:
-                    os.system("echo "+date2str(datetime.now(), 'S')+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
+                    os.system("echo "+str(time.time())+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
                     os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
-                    open(failed_wrapper,'w').close()
-                    open(failed_path, 'w').close()
                     print datetime.now(), "The job ", current.template," has FAILED"
                     #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
             sequential_threads_launcher += self._indent(textwrap.dedent("""
+            if not os.path.exists(completed_path):
+                open(failed_wrapper,'w').close()
+                open(failed_path, 'w').close()
+                
             if os.path.exists(failed_wrapper):
                 os.remove(os.path.join(os.getcwd(),wrapper_id))
                 wrapper_failed = os.path.join(os.getcwd(),"WRAPPER_FAILED")

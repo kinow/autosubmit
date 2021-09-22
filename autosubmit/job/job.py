@@ -655,41 +655,56 @@ class Job(object):
                         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
                         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
                         time_stamp = "1970"
-                        total_stats = ("", "", "", "FAILED")
+                        total_stats = ["", "","FAILED"]
                         while log_start <= max_logs:
                             try:
                                 if platform.get_stat_file_by_retrials(stat_file+str(max_logs)):
                                     with open(os.path.join(tmp_path,stat_file+str(max_logs)), 'r+') as f:
-                                        time_stamp = str(f.readline()[:-1])+"_"+str(max_logs)
-                                        total_stats = (f.readline()[:-1],f.readline()[:-1],f.readline()[:-1],f.readline()[:-1])
-                                    self.write_total_stat_by_retries(total_stats,max_logs == last_log)
+                                        total_stats = [f.readline()[:-1],f.readline()[:-1],f.readline()[:-1]]
+                                    try:
+                                        total_stats[0] = float(total_stats[0])
+                                        total_stats[1] = float(total_stats[1])
+                                    except:
+                                        total_stats[0] = int(str(total_stats[0]).split('.')[0])
+                                        total_stats[1] = int(str(total_stats[1]).split('.')[0])
+                                    if max_logs != ( int(as_conf.get_retrials()) - fail_count ):
+                                        time_stamp = date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S')
+                                    else:
+                                        with open(os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP'), 'r+') as f2:
+                                            for line in f2.readlines():
+                                                if len(line) > 0:
+                                                    time_stamp = line.split(" ")[0]
+
+                                    self.write_total_stat_by_retries(total_stats,max_logs == ( int(as_conf.get_retrials()) - fail_count ))
                                     platform.remove_stat_file_by_retrials(stat_file+str(max_logs))
-                                    l_log = (self.script_name[:-4] +"."+ time_stamp +".out", self.script_name[:-4] +"."+ time_stamp + ".err")
+                                    l_log = (self.script_name[:-4] + "." + time_stamp + ".out",self.script_name[:-4] + "." + time_stamp + ".err")
                                     r_log = ( remote_logs[0][:-1]+str(max_logs) , remote_logs[1][:-1]+str(max_logs) )
-                                    if max_logs != last_log:
-                                        self.synchronize_logs(platform, r_log, l_log,last = False)
-                                        platform.get_logs_files(self.expid, l_log)
-                                        try:
-                                            for local_log in l_log:
-                                                platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                                        except BaseException as e:
-                                            pass
+                                    self.synchronize_logs(platform, r_log, l_log,last = False)
+                                    platform.get_logs_files(self.expid, l_log)
+                                    try:
+                                        for local_log in l_log:
+                                            platform.write_jobid(self.id, os.path.join(self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                                    except BaseException as e:
+                                        pass
                                     max_logs = max_logs - 1
                                 else:
                                     max_logs = -1   # exit, no more logs
-                            except:
+                            except BaseException as e:
                                 max_logs = -1 # exit
-                    self.synchronize_logs(platform, remote_logs, local_logs)
-                    remote_logs = copy.deepcopy(local_logs)
-                platform.get_logs_files(self.expid, remote_logs)
-                # Update the logs with Autosubmit Job Id Brand
-                try:
-                    for local_log in local_logs:
-                        platform.write_jobid(self.id, os.path.join(
-                            self._tmp_path, 'LOG_' + str(self.expid), local_log))
-                except BaseException as e:
-                    Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
-                        e.message, self.name))
+                        local_logs = copy.deepcopy(l_log)
+                        remote_logs = copy.deepcopy(local_logs)
+                    if self.wrapper_type != "vertical":
+                        self.synchronize_logs(platform, remote_logs, local_logs)
+                        remote_logs = copy.deepcopy(local_logs)
+                        platform.get_logs_files(self.expid, remote_logs)
+                        # Update the logs with Autosubmit Job Id Brand
+                        try:
+                            for local_log in local_logs:
+                                platform.write_jobid(self.id, os.path.join(
+                                    self._tmp_path, 'LOG_' + str(self.expid), local_log))
+                        except BaseException as e:
+                            Log.printlog("Trace {0} \n Failed to write the {1} e=6001".format(
+                                e.message, self.name))
                 try:
                     platform.closeConnection()
                 except BaseException as e:
@@ -1024,9 +1039,9 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 1crash'
+                    template = 'sleep 1 ; crash'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(1)crash'
+                    template = 'time.sleep(1)'
                 elif self.type == Type.R:
                     template = 'Sys.sleep(1)'
                 else:
@@ -1194,26 +1209,29 @@ class Job(object):
         if not enabled:
             f.write(date2str(datetime.datetime.now(), 'S'))
             if self.wrapper_type == "vertical":
-                f.write(" "+time.time())
+                f.write(" "+str(time.time()))
         else:
             path2 = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS_TMP')
-            f2 = open(path, 'r')
-            data_time = ""
-            for line in f2.readline():
+            f2 = open(path2, 'r')
+            for line in f2.readlines():
                 if len(line) > 0:
                     data_time = line.split(" ")
+                    try:
+                        data_time[1] = float(data_time[1])
+                    except:
+                        data_time[1] = int(data_time[1])
             f.write(data_time[0])
             f2.close()
             try:
                 os.remove(path2)
             except:
                 pass
-
         # Get
         # Writing database
         if self.wrapper_type != "vertical" or enabled:
             JobDataStructure(self.expid).write_submit_time(self.name, data_time[1], Status.VALUE_TO_KEY[self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
                                                            self.wallclock, self.queue, self.date, self.member, self.section, self.chunk, self.platform_name, self.id, self.packed, self._wrapper_queue)
+
 
     def write_start_time(self, enabled = False):
         """
@@ -1289,36 +1307,35 @@ class Job(object):
         f.write('\n')
         f.close()
 
-    def write_total_stat_by_retries(self,total_stats, last_retrial = False):
+    def write_total_stat_by_retries(self,total_stats, first_retrial = False):
         """
         Writes all data to TOTAL_STATS file
         :param total_stats: data gathered by the wrapper
         :type completed: str
         """
-        if last_retrial:
+        if first_retrial:
             self.write_submit_time(True)
+        path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
+        f = open(path, 'a')
+        if first_retrial:
+            f.write(" " + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
         else:
-            path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
-            f = open(path, 'a')
-            if last_retrial:
-                f.write('\n' + total_stats[1] + ' ' + total_stats[2] + ' ' + total_stats[3])
-            else:
-                f.write('\n' + total_stats[0] + ' ' + total_stats[1] + ' ' + total_stats[2] + ' ' + total_stats[3])
-            out, err = self.local_logs
-            path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
-            # Launch first as simple non-threaded function
-        if not last_retrial:
+            f.write('\n' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[0]), 'S') + ' ' + date2str(datetime.datetime.fromtimestamp(total_stats[1]), 'S') + ' ' + total_stats[2])
+        out, err = self.local_logs
+        path_out = os.path.join(self._tmp_path, 'LOG_' + str(self.expid), out)
+        # Launch first as simple non-threaded function
+        if not first_retrial:
             JobDataStructure(self.expid).write_submit_time(self.name, total_stats[0], Status.VALUE_TO_KEY[
                 self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
                                                            self.wallclock, self.queue, self.date, self.member, self.section,
                                                            self.chunk, self.platform_name, self.id, self.packed,
                                                            self._wrapper_queue)
-        JobDataStructure(self.expid).write_start_time(self.name, total_stats[1], Status.VALUE_TO_KEY[
+        JobDataStructure(self.expid).write_start_time(self.name, total_stats[0], Status.VALUE_TO_KEY[
             self.status] if self.status in Status.VALUE_TO_KEY.keys() else "UNKNOWN", self.processors,
                                                       self.wallclock, self._queue, self.date, self.member,
                                                       self.section, self.chunk, self.platform_name, self.id,
                                                       self.packed, self._wrapper_queue)
-        JobDataStructure(self.expid).write_finish_time(self.name, total_stats[2], total_stats[3], self.processors,
+        JobDataStructure(self.expid).write_finish_time(self.name, total_stats[1], total_stats[2], self.processors,
                                                        self.wallclock, self._queue, self.date,
                                                        self.member, self.section, self.chunk, self.platform_name,
                                                        self.id, self.platform, self.packed,
