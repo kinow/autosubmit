@@ -587,6 +587,7 @@ class Job(object):
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
+        sleep(5)
         try:
             as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
             as_conf.reload()
@@ -597,17 +598,24 @@ class Job(object):
                 platform.test_connection()
             except:
                 pass
-            max_logs = 1
-            last_log = 1
+            max_logs = int(as_conf.get_retrials()) - fail_count
+            last_log = int(as_conf.get_retrials()) - fail_count
             if self.wrapper_type == "vertical":
-                max_logs = int(as_conf.get_retrials()) - fail_count # - job.fail count
-                last_log = max_logs
                 stat_file = self.script_name[:-4] + "_STAT_"
-                for i in range(max_logs+1):
-                    if platform.get_stat_file_by_retrials(stat_file + str(i)):
+                found = False
+                retrials = 0
+                while retrials < 3 and not found:
+                    sleep(2)
+                    if platform.check_stat_file_by_retrials(stat_file + str(max_logs)):
+                        found = True
+                    retrials = retrials - 1
+                for i in range(max_logs-1,-1,-1):
+                    if platform.check_stat_file_by_retrials(stat_file + str(i)):
                         last_log = i
+                    else:
                         break
                 remote_logs = (self.script_name + ".out." + str(last_log), self.script_name + ".err." + str(last_log))
+
             else:
                 remote_logs = (self.script_name + ".out", self.script_name + ".err")
 
@@ -619,7 +627,6 @@ class Job(object):
         retries = 5
         sleeptime = 0
         i = 0
-        #sleep(4)
         no_continue = False
         try:
             while (not out_exist and not err_exist) and i < retries:
@@ -648,6 +655,8 @@ class Job(object):
                         retries, remote_logs[0], remote_logs[1]))
                     return
             if copy_remote_logs:
+                l_log = copy.deepcopy(local_logs)
+                r_log = copy.deepcopy(remote_logs)
                 # unifying names for log files
                 if remote_logs != local_logs:
                     if self.wrapper_type == "vertical": # internal_Retrial mechanism

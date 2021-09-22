@@ -446,13 +446,14 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 failed_filename = {0}[i].replace('.cmd', '_FAILED')
                 failed_path = os.path.join(os.getcwd(), failed_filename)
                 failed_wrapper = os.path.join(os.getcwd(), wrapper_id)
+                os.system("echo "+str(time.time())+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
                 if os.path.exists(completed_path):
                     completed = True
                     print datetime.now(), "The job ", current.template," has been COMPLETED"
+                    os.system("echo COMPLETED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
                 else:
-                    os.system("echo "+str(time.time())+" >> "+scripts[i][:-4]+"_STAT_"+str(job_retrials+1)) #Completed
-                    os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
                     print datetime.now(), "The job ", current.template," has FAILED"
+                    os.system("echo FAILED >>  " + scripts[i][:-4]+"_STAT_"+str(job_retrials+1))
                     #{1}
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 8)
             sequential_threads_launcher += self._indent(textwrap.dedent("""

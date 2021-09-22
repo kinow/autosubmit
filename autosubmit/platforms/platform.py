@@ -314,6 +314,22 @@ class Platform(object):
         Log.debug('{0}_STAT file not found', job_name)
         return False
 
+    def check_stat_file_by_retrials(self, job_name, retries=0):
+        """
+         check *STAT* file
+
+         :param retries: number of intents to get the completed files
+         :type retries: int
+         :param job_name: name of job to check
+         :type job_name: str
+         :return: True if succesful, False otherwise
+         :rtype: bool
+         """
+        filename = job_name
+        if self.check_file_exists(filename):
+            return True
+        else:
+            return False
     def get_stat_file_by_retrials(self, job_name, retries=0):
         """
         Copies *STAT* files from remote to local
@@ -333,7 +349,10 @@ class Platform(object):
         if self.check_file_exists(filename):
             if self.get_file(filename, True):
                 return True
-        return False
+            else:
+                return False
+        else:
+            return False
 
     def get_files_path(self):
         """
