@@ -108,7 +108,7 @@ class StatisticsSnippetBash:
             ###################
             set -xuve
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
-            echo $(date +%s) > ${job_name_ptrn}_STAT
+            echo $(date +%s) >> ${job_name_ptrn}_STAT
 
             ###################
             # Autosubmit job

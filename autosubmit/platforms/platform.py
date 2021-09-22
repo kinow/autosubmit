@@ -211,7 +211,16 @@ class Platform(object):
         (job_out_filename, job_err_filename) = remote_logs
         self.get_files([job_out_filename, job_err_filename],
                        False, 'LOG_{0}'.format(exp_id))
+    def get_stat_file(self, exp_id, job_name):
+        """
+        Get the given stat files for all retrials
+        :param exp_id: experiment id
+        :type exp_id: str
+        :param remote_logs: names of the log files
+        :type remote_logs: (str, str)
+        """
 
+        self.get_files(job_name,False, 'LOG_{0}'.format(exp_id))
     def get_completed_files(self, job_name, retries=0, recovery=False, wrapper_failed=False):
         """
         Get the COMPLETED file of the given job
@@ -251,7 +260,19 @@ class Platform(object):
             Log.debug('{0}_STAT have been removed', job_name)
             return True
         return False
+    def remove_stat_file_by_retrials(self, job_name):
+        """
+        Removes *STAT* files from remote
 
+        :param job_name: name of job to check
+        :type job_name: str
+        :return: True if successful, False otherwise
+        :rtype: bool
+        """
+        filename = job_name
+        if self.delete_file(filename):
+            return True
+        return False
     def remove_completed_file(self, job_name):
         """
         Removes *COMPLETED* files from remote
@@ -292,6 +313,46 @@ class Platform(object):
                 return True
         Log.debug('{0}_STAT file not found', job_name)
         return False
+
+    def check_stat_file_by_retrials(self, job_name, retries=0):
+        """
+         check *STAT* file
+
+         :param retries: number of intents to get the completed files
+         :type retries: int
+         :param job_name: name of job to check
+         :type job_name: str
+         :return: True if succesful, False otherwise
+         :rtype: bool
+         """
+        filename = job_name
+        if self.check_file_exists(filename):
+            return True
+        else:
+            return False
+    def get_stat_file_by_retrials(self, job_name, retries=0):
+        """
+        Copies *STAT* files from remote to local
+
+        :param retries: number of intents to get the completed files
+        :type retries: int
+        :param job_name: name of job to check
+        :type job_name: str
+        :return: True if succesful, False otherwise
+        :rtype: bool
+        """
+        filename = job_name
+        stat_local_path = os.path.join(
+            self.config.LOCAL_ROOT_DIR, self.expid, self.config.LOCAL_TMP_DIR, filename)
+        if os.path.exists(stat_local_path):
+            os.remove(stat_local_path)
+        if self.check_file_exists(filename):
+            if self.get_file(filename, True):
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def get_files_path(self):
         """

@@ -347,7 +347,7 @@ class JobPackageThread(JobPackageBase):
         self._wrapper_factory = self.platform.wrapper
         self.current_wrapper_section = wrapper_section
         if configuration is not None:
-            self.inner_retrials = configuration.get_wrapper_retrials(self.current_wrapper_section)
+            self.inner_retrials = configuration.get_retrials()
             self.export = configuration.get_wrapper_export(self.current_wrapper_section)
             if self.export != "none" and self.export != "None":
                 for job in self.jobs:
