@@ -80,10 +80,13 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self.delay_end = datetime.datetime.now()
+        self.delay_retrials = 0
         self.wrapper_type = "none"
         self._wrapper_queue = None
         self._platform = None
         self._queue = None
+        self.retry_delay = 0
         self.platform_name = None
         self.section = None
         self.wallclock = None
@@ -883,7 +886,8 @@ class Job(object):
         parameters['MEMBER'] = self.member
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
-
+        if hasattr(self, 'delay_retrials'):
+            parameters['delay_retrials'] = self.delay_retrials
         if self.date is not None:
             if self.chunk is None:
                 chunk = 1

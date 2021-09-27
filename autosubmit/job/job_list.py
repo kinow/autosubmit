@@ -34,7 +34,7 @@ from autosubmit.job.job_utils import Dependency
 from autosubmit.job.job_common import Status, bcolors
 from bscearth.utils.date import date2str, parse_date
 import autosubmit.database.db_structure as DbStructure
-
+import datetime
 from networkx import DiGraph
 from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
@@ -1041,14 +1041,25 @@ class JobList(object):
         prepared = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
                     job.status == Status.PREPARED]
         return prepared
-
-    def get_skipped(self, platform=None):
+    def get_delayed(self, platform=None):
         """
-        Returns a list of prepared jobs
+        Returns a list of delayed jobs
 
         :param platform: job platform
         :type platform: HPCPlatform
-        :return: prepared jobs
+        :return: delayed jobs
+        :rtype: list
+        """
+        delayed = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
+                    job.status == Status.DELAY]
+        return delayed
+    def get_skipped(self, platform=None):
+        """
+        Returns a list of skipped jobs
+
+        :param platform: job platform
+        :type platform: HPCPlatform
+        :return: skipped jobs
         :rtype: list
         """
         skipped = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
@@ -1429,12 +1440,19 @@ class JobList(object):
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
-                        job.status = Status.READY
+                        if job.retry_delay > 0 :
+                            job.status = Status.DELAYED
+                            job.delay_end = datetime.datetime.now() + datetime.timedelta(seconds=job.retry_delay)
+                            Log.debug(
+                                "Resetting job: {0} status to: DELAYED for retrial...".format(job.name))
+                        else:
+                            job.status = Status.READY
+                            Log.debug(
+                                "Resetting job: {0} status to: READY for retrial...".format(job.name))
                         job.id = None
                         job.packed = False
                         save = True
-                        Log.debug(
-                            "Resetting job: {0} status to: READY for retrial...".format(job.name))
+
                     else:
                         job.status = Status.WAITING
                         save = True
@@ -1459,6 +1477,9 @@ class JobList(object):
         Log.debug('Updating WAITING jobs')
         if not fromSetStatus:
             all_parents_completed = []
+            for job in self.get_delayed():
+                if datetime.datetime.now() >= job.delay_end:
+                    job.status = Status.READY
             for job in self.get_waiting():
                 tmp = [parent for parent in job.parents if parent.status ==
                        Status.COMPLETED or parent.status == Status.SKIPPED]
@@ -1478,7 +1499,7 @@ class JobList(object):
                         job.packed = False
                         save = True
                         Log.debug(
-                            "Resetting job: {0} status to: READY for retrial...".format(job.name))
+                            "Resetting job: {0} status to: READY".format(job.name))
                     if len(tmp) == len(job.parents):
                         job.status = Status.READY
                         job.packed = False
