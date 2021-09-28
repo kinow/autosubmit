@@ -1197,9 +1197,9 @@ class JobList(object):
         :rtype: list
         """
         active = self.get_in_queue(platform) + self.get_ready(
-            platform=platform, hold=True) + self.get_ready(platform=platform, hold=False)
-        tmp = [job for job in active if job.hold and not job.status ==
-               Status.SUBMITTED and not job.status == Status.READY]
+            platform=platform, hold=True) + self.get_ready(platform=platform, hold=False) + self.get_active(platform=platform)
+        tmp = [job for job in active if job.hold and not (job.status ==
+               Status.SUBMITTED or job.status == Status.READY or job.status == Status.DELAYED) ]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
             if len(tmp) != 0 and len(active) != 0:
                 raise AutosubmitCritical(
@@ -1440,7 +1440,12 @@ class JobList(object):
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
-                        if job.retry_delay > 0 :
+                        if "+" in job.retry_delay:
+                            extra_time = 60 # add a minute each retrial
+                            retry_delay = job.fail_count * extra_time + int(job.retry_delay[:-1])
+                        else:
+                            retry_delay = int(job.retry_delay)
+                        if retry_delay > 0:
                             job.status = Status.DELAYED
                             job.delay_end = datetime.datetime.now() + datetime.timedelta(seconds=job.retry_delay)
                             Log.debug(

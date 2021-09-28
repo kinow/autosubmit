@@ -343,7 +343,7 @@ class DicJobs:
         job.memory_per_task = self.get_option(section, "MEMORY_PER_TASK", '')
         job.wallclock = self.get_option(section, "WALLCLOCK", '')
         job.retrials = int(self.get_option(section, 'RETRIALS', -1))
-        job.delay_retrials = int(self.get_option(section, 'DELAY_RETRIALS', -1))
+        job.delay_retrials = str(self.get_option(section, 'DELAY_RETRIALS', -1))
         if job.retrials == -1:
             job.retrials = None
         job.notify_on = [x.upper() for x in self.get_option(section, "NOTIFY_ON", '').split(' ')]
