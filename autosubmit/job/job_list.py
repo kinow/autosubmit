@@ -1440,14 +1440,21 @@ class JobList(object):
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
                     if len(tmp) == len(job.parents):
-                        if "+" in job.retry_delay:
-                            extra_time = 60 # add a minute each retrial
-                            retry_delay = job.fail_count * extra_time + int(job.retry_delay[:-1])
+                        if not hasattr(job, 'DELAY_RETRY_TIME') or job.retrials is None:
+                            delay_retry_time = as_conf.get_delay_retry_time()
                         else:
-                            retry_delay = int(job.retry_delay)
+                            delay_retry_time = job.retry_delay
+                        if "+" in job.retry_delay:
+                            retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
+                        elif "*" in job.delay_retrials:
+                            retry_delay = int(delay_retry_time[1:])
+                            for retrial_amount in range(0,job.fail_count):
+                                retry_delay += retry_delay * 10
+                        else:
+                            retry_delay = int(delay_retry_time)
                         if retry_delay > 0:
                             job.status = Status.DELAYED
-                            job.delay_end = datetime.datetime.now() + datetime.timedelta(seconds=job.retry_delay)
+                            job.delay_end = datetime.datetime.now() + datetime.timedelta(seconds=retry_delay)
                             Log.debug(
                                 "Resetting job: {0} status to: DELAYED for retrial...".format(job.name))
                         else:

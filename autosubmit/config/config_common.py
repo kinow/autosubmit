@@ -1424,6 +1424,15 @@ class AutosubmitConfig(object):
         """
         return int(self._conf_parser.get('config', 'RETRIALS'))
 
+    def get_delay_retry_time(self):
+        """
+        Returns delay time from autosubmit's config file
+
+        :return: safety sleep time
+        :rtype: int
+        """
+        return int(self._conf_parser.get_option('config', 'DELAY_RETRY_TIME', "-1"))
+
     def get_notifications(self):
         """
         Returns if the user has enabled the notifications from autosubmit's config file
