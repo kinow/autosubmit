@@ -1297,10 +1297,6 @@ class Autosubmit:
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         import platform
         host = platform.node()
-        if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS: #fastlook
-            raise AutosubmitCritical(
-                "The current host is not allowed to run Autosubmit", 7004)
-
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
 
         as_conf.check_conf_files(True)

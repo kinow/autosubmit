@@ -1051,7 +1051,7 @@ class JobList(object):
         :rtype: list
         """
         delayed = [job for job in self._job_list if (platform is None or job.platform.name.lower() == platform.name.lower()) and
-                    job.status == Status.DELAY]
+                    job.status == Status.DELAYED]
         return delayed
     def get_skipped(self, platform=None):
         """
@@ -1197,7 +1197,7 @@ class JobList(object):
         :rtype: list
         """
         active = self.get_in_queue(platform) + self.get_ready(
-            platform=platform, hold=True) + self.get_ready(platform=platform, hold=False) + self.get_active(platform=platform)
+            platform=platform, hold=True) + self.get_ready(platform=platform, hold=False) + self.get_delayed(platform=platform)
         tmp = [job for job in active if job.hold and not (job.status ==
                Status.SUBMITTED or job.status == Status.READY or job.status == Status.DELAYED) ]
         if len(tmp) == len(active):  # IF only held jobs left without dependencies satisfied
