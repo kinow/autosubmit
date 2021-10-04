@@ -40,6 +40,9 @@ To do this use:
 
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
+* RETRIALS: Number of retrials if job fails
+
+* DELAY_RETRY_TIME: Allows to add a timer between retries
 
 There are also other, less used features that you can use:
 
