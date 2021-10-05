@@ -71,8 +71,8 @@ import portalocker
 from pkg_resources import require, resource_listdir, resource_exists, resource_string
 from collections import defaultdict
 from pyparsing import nestedExpr
-from database.db_jobdata import ExperimentStatus, JobDataStructure
-
+from database.db_jobdata import JobDataStructure
+from history.experiment_status import ExperimentStatus
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -1553,7 +1553,7 @@ class Autosubmit:
                         job_data_structure.validate_current_run(job_list.get_job_list(
                         ), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())
 
-                        ExperimentStatus(expid).update_running_status()
+                        ExperimentStatus(expid).set_running()
                     except Exception as e:
                         raise AutosubmitCritical(
                             "Error while processing job_data_structure", 7067, str(e))

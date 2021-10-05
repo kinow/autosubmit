@@ -2042,7 +2042,6 @@ class JobDataStructure(MainDataBase):
     def _get_job_data(self, job_name):
         """
         Returns rows belonging to a job_name
-
         """
         try:
             if self.conn:
