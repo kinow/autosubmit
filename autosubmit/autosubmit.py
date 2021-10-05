@@ -760,33 +760,39 @@ class Autosubmit:
 
             # Deletion workflow continues as usual, a disjunction is included for the case when
             # force is sent, and user is eadmin
+            error_message = ""
             try:
                 if currentOwner_id == my_user or (force and my_user == id_eadmin):
                     if (force and my_user == id_eadmin):
                         Log.info(
                             "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
-                        Log.info("Removing experiment directory...")
-                        shutil.rmtree(os.path.join(
-                            BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                        Log.info("Deleting experiment from database...")
                         try:
+                            ret = delete_experiment(expid_delete)
+                            if ret:
+                                Log.result("Experiment {0} deleted".format(expid_delete))
+                        except BaseException as e:
+                            error_message += 'Can not delete experiment entry: {0}\n'.format(e.message)
+                        Log.info("Removing experiment directory...")
+                        try:
+                            shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                        except BaseException as e:
+                            error_message += 'Can not delete directory: {0}\n'.format(e.message)
+                        try:
+                            Log.info("Removing Structure db...")
                             os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                    BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
-                        except:
-                            pass
+                        except BaseException as e:
+                            error_message += 'Can not delete structure: {0}\n'.format(e.message)
                         try:
+                            Log.info("Removing job_data db...")
                             os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                    BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
-                        except:
-                            pass
+                        except BaseException as e:
+                            error_message += 'Can not delete job_data: {0}\n'.format(e.message)
                     except OSError as e:
-                        raise AutosubmitCritical(
-                            'Can not delete experiment folder: ', 7012, e.message)
-                    Log.info("Deleting experiment from database...")
-                    ret = delete_experiment(expid_delete)
-                    if ret:
-                        Log.result(
-                            "Experiment {0} deleted".format(expid_delete))
+                        error_message += 'Can not delete directory: {0}\n'.format(e.message)
                 else:
                     if currentOwner_id == 0:
                         raise AutosubmitCritical(
@@ -796,9 +802,9 @@ class Autosubmit:
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
-                # print(traceback.format_exc())
-                raise AutosubmitCritical(
-                    "Couldn't delete the experiment:", 7012, str(e))
+                error_message += "Couldn't delete the experiment".format(e.message)
+            if error_message != "":
+                raise AutosubmitError("Some experiment files weren't correctly deleted\nPlease if the trace shows DATABASE IS LOCKED, report it to git\nIf there are I/O issues, wait until they're solved and then use this command again.\n",error_message,6004)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):

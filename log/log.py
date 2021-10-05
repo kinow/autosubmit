@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from time import sleep
 from datetime import datetime
 
 
@@ -160,35 +161,45 @@ class Log:
         :param file_path: file to store the log
         :type file_path: str
         """
-        directory, filename = os.path.split(file_path)
-        if not os.path.exists(directory):
-            os.mkdir(directory)
-        files = [f for f in os.listdir(directory) if os.path.isfile(
-            os.path.join(directory, f)) and f.endswith(filename)]
-        if len(files) >= 10:
-            files.sort()
-            os.remove(os.path.join(directory, files[0]))
-        file_path = os.path.join(
-            directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
-        if type == 'out':
-            file_handler = logging.FileHandler(file_path, 'w')
-            file_handler.setLevel(level)
-            file_handler.setFormatter(LogFormatter(True))
-            Log.log.addHandler(file_handler)
-        elif type == 'err':
-            err_file_handler = logging.FileHandler(file_path, 'w')
-            err_file_handler.setLevel(Log.ERROR)
-            err_file_handler.setFormatter(LogFormatter(True))
-            Log.log.addHandler(err_file_handler)
-        elif type == 'status':
-            custom_filter = StatusFilter()
-            file_path = os.path.join(directory, filename)
-            status_file_handler = logging.FileHandler(file_path, 'w')
-            status_file_handler.setLevel(Log.STATUS)
-            status_file_handler.setFormatter(LogFormatter(False))
-            status_file_handler.addFilter(custom_filter)
-            Log.log.addHandler(status_file_handler)
-        os.chmod(file_path, 509)
+        max_retrials = 3
+        retrials = 0
+        timeout = 5
+
+        while not os.path.exists(file_path) and retrials < max_retrials:
+            sleep(timeout*retrials)
+            try:
+                directory, filename = os.path.split(file_path)
+                if not os.path.exists(directory):
+                    os.mkdir(directory)
+                files = [f for f in os.listdir(directory) if os.path.isfile(
+                    os.path.join(directory, f)) and f.endswith(filename)]
+                if len(files) >= 10:
+                    files.sort()
+                    os.remove(os.path.join(directory, files[0]))
+                file_path = os.path.join(
+                    directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
+                if type == 'out':
+                    file_handler = logging.FileHandler(file_path, 'w')
+                    file_handler.setLevel(level)
+                    file_handler.setFormatter(LogFormatter(True))
+                    Log.log.addHandler(file_handler)
+                elif type == 'err':
+                    err_file_handler = logging.FileHandler(file_path, 'w')
+                    err_file_handler.setLevel(Log.ERROR)
+                    err_file_handler.setFormatter(LogFormatter(True))
+                    Log.log.addHandler(err_file_handler)
+                elif type == 'status':
+                    custom_filter = StatusFilter()
+                    file_path = os.path.join(directory, filename)
+                    status_file_handler = logging.FileHandler(file_path, 'w')
+                    status_file_handler.setLevel(Log.STATUS)
+                    status_file_handler.setFormatter(LogFormatter(False))
+                    status_file_handler.addFilter(custom_filter)
+                    Log.log.addHandler(status_file_handler)
+                os.chmod(file_path, 509)
+            except: # retry again
+                pass
+
 
     @staticmethod
     def set_console_level(level):
