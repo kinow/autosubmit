@@ -22,20 +22,20 @@ class Logging:
   def __init__(self, expid):
     self.expid = expid        
   
-  def log(self, exception_msg, traceback_msg):
+  def log(self, main_msg, traceback_msg=""):
     try:
       log_path = self.get_default_log_path(self.expid)
       HUtils.get_current_datetime()
       if not os.path.exists(log_path):
         HUtils.create_file_with_full_permissions(log_path)
       with open(log_path, "a") as exp_log:
-        exp_log.write(self.build_message(exception_msg, traceback_msg))
+        exp_log.write(self.build_message(main_msg, traceback_msg))
     except Exception as exp:
       print(exp)
-      print("Logging failed. Please report it to the developers.")
+      print("Logging failed. Please report it to the developers.")  
     
-  def build_message(self, exception_msg, traceback_msg):
-    return "{0} :: {1} :: {2}".format(HUtils.get_current_datetime(), exception_msg, traceback_msg)
+  def build_message(self, main_msg, traceback_msg):
+    return "{0} :: {1} :: {2}".format(HUtils.get_current_datetime(), main_msg, traceback_msg)
 
   def get_default_log_path(self, expid):
     return os.path.join("/esarchive","autosubmit", "as_metadata", "logs","{}_log.txt".format(expid))

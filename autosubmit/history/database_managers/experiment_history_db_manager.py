@@ -168,12 +168,11 @@ class ExperimentHistoryDbManager(DatabaseManager):
   def update_job_data_by_id(self, job_data):
     """
     Update job_data table with data class JobData.  
-    Update finish, modified, job_id, status, energy, extra_data, nnodes, ncpus, rowstatus, out, err by id.
+    Update last, submit, start, finish, modified, job_id, status, energy, extra_data, nnodes, ncpus, rowstatus, out, err by id.
     """
     statement = ''' UPDATE job_data SET last=?, submit=?, start=?, finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=?, nnodes=?, ncpus=?, rowstatus=?, out=?, err=? WHERE id=? '''
     arguments = (job_data.last, job_data.submit, job_data.start, job_data.finish, HUtils.get_current_datetime(), job_data.job_id, job_data.status, job_data.energy, job_data.extra_data, job_data.nnodes, job_data.ncpus, job_data.rowstatus, job_data.out, job_data.err, job_data._id)
     self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
-
 
   def update_experiment_run(self, experiment_run):
     """ 
@@ -186,7 +185,7 @@ class ExperimentHistoryDbManager(DatabaseManager):
 
   def insert_job_data(self, job_data):
     # type : (JobData) -> int
-    """ Insert data class JobData into database """
+    """ Insert data class JobData into job_data table. """
     statement = ''' INSERT INTO job_data(counter, job_name, created, modified, submit, start, finish, status, rowtype, ncpus, wallclock, qos, energy, date, section, member, chunk, last, platform, job_id, extra_data, nnodes, run_id, MaxRSS, AveRSS, out, err, rowstatus) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) '''
     arguments = (job_data.counter, job_data.job_name, HUtils.get_current_datetime(), HUtils.get_current_datetime(), job_data.submit, job_data.start, job_data.finish, job_data.status, job_data.rowtype, job_data.ncpus, job_data.wallclock, job_data.qos, job_data.energy, job_data.date, job_data.section, job_data.member, job_data.chunk, job_data.last, job_data.platform, job_data.job_id, job_data.extra_data, job_data.nnodes, job_data.run_id, job_data.MaxRSS, job_data.AveRSS, job_data.out, job_data.err, job_data.rowstatus)    
     return self.insert_statement_with_arguments(self.historicaldb_file_path, statement, arguments)

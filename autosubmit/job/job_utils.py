@@ -67,7 +67,7 @@ def transitive_reduction(graph):
                         return code            
         except:
             pass
-        return None
+        return 0
 
 class Dependency(object):
     """

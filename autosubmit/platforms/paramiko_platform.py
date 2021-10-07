@@ -395,7 +395,7 @@ class ParamikoPlatform(Platform):
             else:
                 return None
 
-    def check_job_energy(self, job_id, packed=False):
+    def check_job_energy(self, job_id):
         """
         Checks job energy and return values. Defined in child classes.
 
@@ -407,8 +407,7 @@ class ParamikoPlatform(Platform):
         """
         check_energy_cmd = self.get_job_energy_cmd(job_id)
         self.send_command(check_energy_cmd)
-        return self.parse_job_finish_data(
-            self.get_ssh_output(), packed)
+        return self.get_ssh_output()
 
     def submit_Script(self, hold=False):
         """
