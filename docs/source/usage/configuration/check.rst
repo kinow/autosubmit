@@ -31,17 +31,22 @@ How to use check in running time:
 In ``jobs_cxxx.conf`` , you can set check(default true) to check the scripts during autosubmit run cxx.
 
 There are two parameters related to check:
+Check: that is the mechanism that allows replacing an unused variable with an empty string ( %_% substitution). If not set it will be TRUE.
+SHOW_CHECK_WARNINGS: That is mean to debug, it will print a lot of information regarding variables and substitution if is set to TRUE.
 
 .. code-block:: ini
 
-    CHECK = TRUE or FALSE or ON_SUBMISSION
-    SHOW_CHECK_WARNINGS = TRUE or FALSE
+    CHECK = TRUE or FALSE or ON_SUBMISSION # Default is TRUE
+    SHOW_CHECK_WARNINGS = TRUE or FALSE # Default is FALSE
 
-Check = TRUE is used to substitute empty variables (if the template exists)
-Check = on_submission is used to substitute empty variables if the template will be generated on running_time by another job.
-Check = FALSE is used to disable this substitution.
 
-SHOW_CHECK_WARNINGS = False is used for avoid a big text warn message.
+Check = true # Static templates, is used to substitute empty variables
+
+Check = on_submission # Dynamic templates ( generated on running time) is used to substitute empty variables.
+
+Check = false # is used to disable this substitution.
+
+SHOW_CHECK_WARNINGS = True # Shows a LOT of information, is disabled by default.
 
 For example:
 

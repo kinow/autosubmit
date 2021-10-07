@@ -108,6 +108,8 @@ class Log:
     configured. Levels can be set for each output independently. These levels are (from lower to higher priority):
     """
 
+    date = ('{0:%Y%m%d_%H%M%S}_').format(datetime.now())
+
     def __init__(self):
         pass
 
@@ -134,6 +136,7 @@ class Log:
     log.addHandler(console_handler)
     def init_variables(self,file_path=""):
         self.file_path = file_path
+
     @staticmethod
     def shutdown_logger():
         """
@@ -177,7 +180,7 @@ class Log:
                     files.sort()
                     os.remove(os.path.join(directory, files[0]))
                 file_path = os.path.join(
-                    directory, ('{0:%Y%m%d_%H%M%S}_').format(datetime.now()) + filename)
+                    directory, Log.date + filename)
                 if type == 'out':
                     file_handler = logging.FileHandler(file_path, 'w')
                     file_handler.setLevel(level)
