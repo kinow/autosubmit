@@ -22,20 +22,18 @@ import traceback
 import autosubmit.history.utils as HUtils
 import autosubmit.history.database_managers.database_models as Models
 from abc import ABCMeta, abstractmethod
-from log.log import Log, AutosubmitCritical, AutosubmitError
-from autosubmit.config.basicConfig import BasicConfig
 
-
+DEFAULT_JOBDATA_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'data')
+DEFAULT_LOCAL_ROOT_DIR = os.path.join('/esarchive', 'autosubmit')
 class DatabaseManager():
   """ Simple database manager. Needs expid. """
   __metaclass__ = ABCMeta
   AS_TIMES_DB_NAME = "as_times.db" # default AS_TIMES location
   ECEARTH_DB_NAME = "ecearth.db" # default EC_EARTH_DB_NAME location
-
-  def __init__(self, expid):    
-    self.expid = expid     
-    self._basic_configuration = BasicConfig
-    self._basic_configuration.read()    
+  def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):    
+    self.expid = expid
+    self.JOBDATA_DIR = jobdata_dir_path
+    self.LOCAL_ROOT_DIR = local_root_dir_path       
 
   def get_connection(self, path):
     # type : (str) -> Sqlite3Connection

@@ -17,21 +17,41 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import unittest
+import traceback
 from experiment_history import ExperimentHistory
+from logging import Logging
 
 class TestExperimentHistory(unittest.TestCase):
   # @classmethod
   # def setUpClass(cls):    
   #   cls.exp = ExperimentHistory("tt00") # example database
   def test_select_job_data_by_run_id(self):
-    result = ExperimentHistory("tt00").manager.get_job_data_last_by_run_id(17)
-    print(result)
-    self.assertIsNotNone(result)
+    pass
   
   def test_get_all_job_data(self):
-    result = ExperimentHistory("tt00").get_all_job_data_row()
-    print(result)
-    self.assertTrue(result)
+    pass
+
+class TestLogging(unittest.TestCase):
+
+  def setUp(self):
+    message = "No Message"
+    try:
+      raise Exception("Setup test exception")
+    except:
+      message = traceback.format_exc()
+    self.log = Logging("tt00")
+    self.exp_message = "Exception message"
+    self.trace_message = message
+
+  def test_build_message(self):
+    message = self.log.build_message(self.exp_message, self.trace_message)
+    print(message)
+    self.assertIsNotNone(message)
+    self.assertTrue(len(message) > 0)
+
+  def test_log(self):    
+    self.log.log(self.exp_message, self.trace_message)
+    
 
 if __name__ == '__main__':
   unittest.main()

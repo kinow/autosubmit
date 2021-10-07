@@ -19,15 +19,57 @@
 import unittest
 import time
 import random
-from experiment_history_db_manager import ExperimentHistoryDatabaseManager
+from experiment_history_db_manager import ExperimentHistoryDbManager
+from experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
+from autosubmit.config.basicConfig import BasicConfig
+import autosubmit.history.utils as HUtils
 EXPID = "tt00"
+EXPID_NONE = "tt01"
+BasicConfig.read()
+JOBDATA_DIR = BasicConfig.JOBDATA_DIR
+LOCAL_ROOT_DIR = BasicConfig.LOCAL_ROOT_DIR
 
-class TestExperimentHistoryDatabaseManager(unittest.TestCase):
-
+class TestExperimentStatusDatabaseManager(unittest.TestCase):
+  """ Covers Experiment Status Database Manager """
   def setUp(self):
-    self.experiment_database = ExperimentHistoryDatabaseManager(EXPID)
+    self.exp_status_db = ExperimentStatusDbManager(EXPID, LOCAL_ROOT_DIR)
+  
+  def tearDown(self):
+    pass
+
+  def test_get_current_experiment_status_row(self):    
+    exp_status_row = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
+    self.assertIsNotNone(exp_status_row)
+    exp_status_row_none = self.exp_status_db.get_experiment_status_row_by_expid(EXPID_NONE)
+    self.assertIsNone(exp_status_row_none)
+    exp_row_direct = self.exp_status_db.get_experiment_status_row_by_exp_id(exp_status_row.exp_id)
+    self.assertTrue(exp_status_row.exp_id == exp_row_direct.exp_id)
+    
+
+  def test_update_exp_status(self):
+    self.exp_status_db.update_exp_status(EXPID, "RUNNING")
+    exp_status_row_current = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
+    self.assertTrue(exp_status_row_current.status == "RUNNING")
+    self.exp_status_db.update_exp_status(EXPID, "NOT RUNNING")
+    exp_status_row_current = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
+    self.assertTrue(exp_status_row_current.status == "NOT RUNNING")
+
+  def test_create_exp_status(self):
+    experiment = self.exp_status_db.get_experiment_row_by_expid(EXPID_NONE)
+    self.exp_status_db.create_experiment_status_as_running(experiment)
+    experiment_status = self.exp_status_db.get_experiment_status_row_by_expid(EXPID_NONE)
+    self.assertIsNotNone(experiment_status)
+    self.exp_status_db.delete_exp_status(EXPID_NONE)
+    experiment_status = self.exp_status_db.get_experiment_status_row_by_expid(EXPID_NONE)
+    self.assertIsNone(experiment_status)
+
+
+class TestExperimentHistoryDbManager(unittest.TestCase):
+  """ Covers Experiment History Database Manager and Data Models """
+  def setUp(self):
+    self.experiment_database = ExperimentHistoryDbManager(EXPID, JOBDATA_DIR)
 
   def tearDown(self):
     pass
@@ -98,9 +140,55 @@ class TestExperimentHistoryDatabaseManager(unittest.TestCase):
   def test_job_data_from_model(self):
     job_data_rows = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     job_data_row_first = job_data_rows[0]
-    job_data_data_class = JobData.from_model(job_data_row_first)
-    print(job_data_data_class.extra_data_parsed)
+    job_data_data_class = JobData.from_model(job_data_row_first)    
     self.assertTrue(job_data_row_first.job_name == job_data_data_class.job_name)
+
+  def test_update_job_data_processed(self):
+    current_time = time.time()
+    job_data_rows = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    job_data_row_first = job_data_rows[0]
+    job_data_data_class = JobData.from_model(job_data_row_first)
+    backup_job_dc = JobData.from_model(job_data_row_first)
+    job_data_data_class.nnodes = random.randint(1, 1000)
+    job_data_data_class.ncpus = random.randint(1, 1000)
+    job_data_data_class.status = "DELAYED"
+    job_data_data_class.finish = current_time
+    self.experiment_database.update_job_data_by_id(job_data_data_class)
+    job_data_rows_current = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    job_data_row_first = job_data_rows_current[0]
+    self.assertTrue(job_data_row_first.nnodes == job_data_data_class.nnodes)
+    self.assertTrue(job_data_row_first.ncpus == job_data_data_class.ncpus)
+    self.assertTrue(job_data_row_first.status == job_data_data_class.status)
+    self.assertTrue(job_data_row_first.finish == job_data_data_class.finish)
+    self.experiment_database.update_job_data_by_id(backup_job_dc)
+
+  def test_bulk_update(self):
+    current_time = time.time()    
+    all_job_data_rows = self.experiment_database.get_job_data_all()
+    job_data_rows_test = [job for job in all_job_data_rows if job.run_id == 3]    
+    backup = [JobData.from_model(job) for job in job_data_rows_test]
+    list_job_data_class = [JobData.from_model(job) for job in job_data_rows_test]
+    backup_changes = [(job.finish, HUtils.get_current_datetime(), job.status, job.rowstatus, job._id) for job in list_job_data_class]
+    changes = [(current_time, HUtils.get_current_datetime(), "DELAYED", job.rowstatus, job._id) for job in list_job_data_class]
+    self.experiment_database.update_many_job_data_change_status(changes)
+    all_job_data_rows = self.experiment_database.get_job_data_all()
+    job_data_rows_validate = [job for job in all_job_data_rows if job.run_id == 3]
+    for (job_val, change_item) in zip(job_data_rows_validate, changes):
+      finish, modified, status, rowstatus, _id = change_item
+      self.assertTrue(job_val.finish == finish)
+      self.assertTrue(job_val.modified == modified)
+      self.assertTrue(job_val.status == status)
+      self.assertTrue(job_val.rowstatus == rowstatus)
+      self.assertTrue(job_val.id == _id)
+    self.experiment_database.update_many_job_data_change_status(backup_changes)
+  
+  def test_job_data_maxcounter(self):
+    new_job_data = ExperimentHistoryDbManager(EXPID_NONE, JOBDATA_DIR)    
+    max_empty_table_counter = new_job_data.get_job_data_max_counter()    
+    self.assertTrue(max_empty_table_counter == 0)
+    max_existing_counter = self.experiment_database.get_job_data_max_counter()    
+    self.assertTrue(max_existing_counter > 0)
+
 
 if __name__ == '__main__':
   unittest.main()

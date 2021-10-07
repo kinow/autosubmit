@@ -208,7 +208,7 @@ class JobData(object):
         """
         o_datetime = self.submit_datetime()
         if o_datetime:
-            return o_datetime.strftime(DATETIME_FORMAT)
+            return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
             return None
 
@@ -218,7 +218,7 @@ class JobData(object):
         """
         o_datetime = self.start_datetime()
         if o_datetime:
-            return o_datetime.strftime(DATETIME_FORMAT)
+            return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
             return None
 
@@ -228,7 +228,7 @@ class JobData(object):
         """
         o_datetime = self.finish_datetime()
         if o_datetime:
-            return o_datetime.strftime(DATETIME_FORMAT)
+            return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
             return None
 

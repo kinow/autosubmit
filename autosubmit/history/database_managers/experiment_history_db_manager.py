@@ -22,24 +22,25 @@ import textwrap
 import autosubmit.history.utils as HUtils
 import database_models as Models
 from abc import ABCMeta, abstractmethod
-from log.log import Log, AutosubmitCritical, AutosubmitError
-from database_manager import DatabaseManager
+from database_manager import DatabaseManager, DEFAULT_JOBDATA_DIR
 from datetime import datetime
 
 CURRENT_DB_VERSION = 16
 DB_EXPERIMENT_HEADER_SCHEMA_CHANGES = 14
 DB_VERSION_SCHEMA_CHANGES = 12
 DEFAULT_DB_VERSION = 10
+DEFAULT_MAX_COUNTER = 0
 
-class ExperimentHistoryDatabaseManager(DatabaseManager):
+class ExperimentHistoryDbManager(DatabaseManager):
   """ Manages actions directly on the database.  
   """
-  def __init__(self, expid):
-    super(ExperimentHistoryDatabaseManager, self).__init__(expid)
+  def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR):
+    """ Requires expid and jobdata_dir_path. """
+    super(ExperimentHistoryDbManager, self).__init__(expid, jobdata_dir_path=jobdata_dir_path)
     self.db_version = DEFAULT_DB_VERSION # type : int
     self._set_schema_changes()
     self._set_table_queries()    
-    self.historicaldb_file_path = os.path.join(self._basic_configuration.JOBDATA_DIR, "job_data_{0}.db".format(self.expid)) # type : str
+    self.historicaldb_file_path = os.path.join(self.JOBDATA_DIR, "job_data_{0}.db".format(self.expid)) # type : str
     
   def _set_table_queries(self):
     """ Sets basic table queries. """
@@ -133,12 +134,13 @@ class ExperimentHistoryDatabaseManager(DatabaseManager):
     self.db_version = CURRENT_DB_VERSION
   
   def update_historical_database(self):
-    """ Updates the historical database with the latest changes. """
-    self.execute_many_statements_on_dbfile(self.historicaldb_file_path, self.version_schema_changes)
-    self.execute_statement_on_dbfile(self.historicaldb_file_path, self.create_index_query)
-    self.execute_statement_on_dbfile(self.historicaldb_file_path, self.create_table_header_query)
-    self._set_historical_pragma_version(CURRENT_DB_VERSION)
-    self.db_version = CURRENT_DB_VERSION
+    """ Updates the historical database with the latest changes IF necessary. """
+    if self._get_pragma_version() == CURRENT_DB_VERSION:
+      self.execute_many_statements_on_dbfile(self.historicaldb_file_path, self.version_schema_changes)
+      self.execute_statement_on_dbfile(self.historicaldb_file_path, self.create_index_query)
+      self.execute_statement_on_dbfile(self.historicaldb_file_path, self.create_table_header_query)
+      self._set_historical_pragma_version(CURRENT_DB_VERSION)
+      self.db_version = CURRENT_DB_VERSION
 
   def get_experiment_run_with_max_id(self):
     """ Get Models.ExperimentRunRow for the maximum id run. """
@@ -154,56 +156,24 @@ class ExperimentHistoryDatabaseManager(DatabaseManager):
     job_data_rows = self.get_from_statement(self.historicaldb_file_path, statement)
     return [Models.JobDataRow(*row) for row in job_data_rows]
 
-  def update_job_data_last(self, job_data):
-    """ 
-    Updates job_data table with data class JobData.  
-    Updates last = 0, modified by id
-    """
-    statement = ''' UPDATE job_data SET last=0, modified = ? WHERE id = ?'''
-    arguments = (HUtils.get_current_datetime(), job_data._id)
-    self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
-
-  def update_job_data_start(self, job_data):
-    """ 
-    Updates job_data table with data class JobData.  
-    Updates start, modified, job_id, status, rowtype by id.
-    """
-    statement = ''' UPDATE job_data SET start=?, modified=?, job_id=?, status=?, rowtype=? WHERE id=? '''
-    arguments = (int(job_data.start), HUtils.get_current_datetime(), job_data.job_id, job_data.status, job_data.rowtype, job_data._id)
-    self.execute_many_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
-  
-  def update_job_data_finish_plus(self, job_data):
-    """ 
-    Update job_data table with data class JobData.  
-    Updates submit, start, finish, modified, job_id, status, energy, extra_data, nnodes, ncpus, rowstatus, out, err by id.
-    """
-    statement = ''' UPDATE job_data SET submit=?, start=?, finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=?, nnodes=?, ncpus=?, rowstatus=?, out=?, err=? WHERE id=? '''
-    arguments = (job_data.submit, job_data.start, job_data.finish, HUtils.get_current_datetime(), job_data.job_id,job_data.status, job_data.energy, job_data.extra_data, job_data.nnodes, job_data.ncpus, Models.RowStatus.COMPLETED, job_data.out, job_data.err, job_data._id)
-    self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
-
   def update_many_job_data_change_status(self, changes):
     # type : (List[Tuple]) -> None
-    """ Update many job_data rows in bulk. Requires a changes list of argument tuples. """
+    """ 
+    Update many job_data rows in bulk. Requires a changes list of argument tuples. 
+    Only updates finish, modified, status, and rowstatus by id.
+    """
     statement = ''' UPDATE job_data SET finish=?, modified=?, status=?, rowstatus=? WHERE id=? '''
     self.execute_many_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, changes)
 
-  def update_job_data_finish(self, job_data):
+  def update_job_data_by_id(self, job_data):
     """
     Update job_data table with data class JobData.  
     Update finish, modified, job_id, status, energy, extra_data, nnodes, ncpus, rowstatus, out, err by id.
     """
-    statement = ''' UPDATE job_data SET finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=?, nnodes=?, ncpus=?, rowstatus=?, out=?, err=? WHERE id=? '''
-    arguments = (job_data.finish, HUtils.get_current_datetime(), job_data.job_id, job_data.status, job_data.energy, job_data.extra_data, job_data.nnodes, job_data.ncpus, Models.RowStatus.COMPLETED, job_data.out, job_data.err, job_data._id)
+    statement = ''' UPDATE job_data SET last=?, submit=?, start=?, finish=?, modified=?, job_id=?, status=?, energy=?, extra_data=?, nnodes=?, ncpus=?, rowstatus=?, out=?, err=? WHERE id=? '''
+    arguments = (job_data.last, job_data.submit, job_data.start, job_data.finish, HUtils.get_current_datetime(), job_data.job_id, job_data.status, job_data.energy, job_data.extra_data, job_data.nnodes, job_data.ncpus, job_data.rowstatus, job_data.out, job_data.err, job_data._id)
     self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
 
-  def update_job_data_processed(self, job_data):
-    """ 
-    Update job_data table with data class JobData.  
-    Updates energy, modified, MaxRSS, AveRSS, rowstatus by 
-    """
-    statement = ''' UPDATE job_data SET energy=?, modified=?, MaxRSS=?, AveRSS=?, rowstatus=? WHERE id=? '''
-    arguments = (job_data.energy, HUtils.get_current_datetime(), job_data.MaxRSS, job_data.AveRSS, Models.RowStatus.PROCESSED, job_data._id)
-    self.execute_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, arguments)
 
   def update_experiment_run(self, experiment_run):
     """ 
@@ -256,6 +226,15 @@ class ExperimentHistoryDatabaseManager(DatabaseManager):
     job_data_rows_last = self.get_from_statement_with_arguments(self.historicaldb_file_path, statement, arguments)
     return [Models.JobDataRow(*row) for row in job_data_rows_last]
 
+  def get_job_data_max_counter(self):
+    statement = "SELECT MAX(counter) as maxcounter FROM job_data"
+    counter_result = self.get_from_statement(self.historicaldb_file_path, statement)
+    if len(counter_result) <= 0:
+      return DEFAULT_MAX_COUNTER
+    else:      
+      max_counter = Models.MaxCounterRow(*counter_result[0]).maxcounter
+      return max_counter if max_counter else DEFAULT_MAX_COUNTER
+
   def delete_job_data(self, _id):
     """ Deletes row in job_data by id. Useful for testing. """
     statement = ''' DELETE FROM job_data WHERE id=? '''
@@ -274,10 +253,9 @@ class ExperimentHistoryDatabaseManager(DatabaseManager):
     self.execute_statement_on_dbfile(self.historicaldb_file_path, statement)
 
   def _get_pragma_version(self):
-    """ Gets current pragma version """
+    """ Gets current pragma version as int. """
     statement = "pragma user_version;"
     pragma_result = self.get_from_statement(self.historicaldb_file_path, statement)
     if len(pragma_result) <= 0:
       raise Exception("Error while getting the pragma version. This might be a signal of a deeper problem. Review previous errors.")    
     return Models.PragmaVersion(*pragma_result[0]).version
-

@@ -18,9 +18,12 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import time
+import os
 from datetime import datetime
 
 DATETIME_FORMAT = '%Y-%m-%d-%H:%M:%S'
+
+
 
 def get_fields_as_comma_str(model):
   """ Get the fields of a namedtumple as a comma separated string. """
@@ -52,6 +55,12 @@ def get_current_datetime_if_none(argument):
     return get_current_datetime()
   else:
     return argument
+
+def create_file_with_full_permissions(path):
+  # type : (str) -> None
+  """ creates a database files with full permissions """
+  os.umask(0)
+  os.open(path, os.O_WRONLY | os.O_CREAT, 0o777)
 
 # if __name__ == "__main__":
 #   print(get_fields_as_comma_str())
