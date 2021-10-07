@@ -25,6 +25,8 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 
 import os
+from datetime import timedelta
+
 import time
 import random
 from autosubmit.job.job_common import Status
@@ -36,6 +38,7 @@ from bscearth.utils.date import sum_str_hours
 from threading import Thread,Lock
 import multiprocessing
 import tarfile
+import datetime
 
 lock = Lock()
 def threaded(fn):
@@ -555,12 +558,34 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def _common_script_content(self):
+        if self.jobs[0].type == "vertical":
+            wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
+            total = 0.0
+            if wallclock.hour > 0:
+                total = wallclock.hour
+            if wallclock.minute > 0:
+                total += wallclock.minute / 60.0
+            if wallclock.second > 0:
+                total += wallclock.second / 60.0 / 60.0
+            total = total * 1.15
+            hour = int(total)
+            minute = int((total - int(total)) * 60.0)
+            second = int(((total - int(total)) * 60 -
+                          int((total - int(total)) * 60.0)) * 60.0)
+            wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,seconds=second)
+            # split in hh, mm, ss
+            hh, mm, ss = str(wallclock_delta).split(':')
+            wallclock_seconds=int(hh) * 3600 + int(mm) * 60 + int(ss)
+            wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
+        else:
+            wallclock_by_level = 0
+
         return self._wrapper_factory.get_wrapper(self._wrapper_factory.vertical_wrapper, name=self._name,
                                                  queue=self._queue, project=self._project, wallclock=self._wallclock,
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level)
 
 
 class JobPackageHorizontal(JobPackageThread):

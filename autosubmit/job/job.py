@@ -1052,11 +1052,11 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 10'
+                    template = 'sleep 611'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(10)'
+                    template = 'time.sleep(610)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(10)'
+                    template = 'Sys.sleep(610)'
                 else:
                     template = ''
         except:
@@ -1598,9 +1598,9 @@ class WrapperJob(Job):
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
-            # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
-                job.name, self.name), 6009)
+            if job.type != "vertical":
+                Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
+                    job.name, self.name), 6009)
             return True
         return False
 
@@ -1673,9 +1673,10 @@ class WrapperJob(Job):
                                 over_wallclock = self._check_inner_job_wallclock(
                                     job)  # messaged included
                                 if over_wallclock:
-                                    job.status = Status.FAILED
-                                    Log.printlog(
-                                        "Job {0} is FAILED".format(jobname), 6009)
+                                    if job.wrapper_type != "vertical":
+                                        job.status = Status.FAILED
+                                        Log.printlog(
+                                            "Job {0} is FAILED".format(jobname), 6009)
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)

@@ -35,7 +35,6 @@ class WrapperFactory(object):
         kwargs['dependency'] = self.dependency(kwargs['dependency'])
         kwargs['queue'] = self.queue(kwargs['queue'])
         kwargs['header_directive'] = self.header_directives(**kwargs)
-
         builder = wrapper_builder(**kwargs)
         return self.wrapper_director.construct(builder)
 

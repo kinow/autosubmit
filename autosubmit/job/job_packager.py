@@ -706,9 +706,9 @@ class JobPackagerVertical(object):
         self.wrapper_limits = wrapper_limits
         self.max_wallclock = max_wallclock
 
-    def build_vertical_package(self, job, level=0):
+    def build_vertical_package(self, job, level=1):
         """
-        Goes trough the job and all the related jobs (children, or part of the same date member ordered group), finds those suitable
+        Goes through the job and all the related jobs (children, or part of the same date member ordered group), finds those suitable
         and groups them together into a wrapper. 
 
         :param job: Job to be wrapped. \n
