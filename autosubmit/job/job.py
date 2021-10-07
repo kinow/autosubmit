@@ -1598,7 +1598,7 @@ class WrapperJob(Job):
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
-            if job.type != "vertical":
+            if job.wrapper_type != "vertical":
                 Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
                     job.name, self.name), 6009)
             return True

@@ -558,7 +558,7 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def _common_script_content(self):
-        if self.jobs[0].type == "vertical":
+        if self.jobs[0].wrapper_type == "vertical":
             wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
             total = 0.0
             if wallclock.hour > 0:
