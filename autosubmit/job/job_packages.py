@@ -578,7 +578,7 @@ class JobPackageVertical(JobPackageThread):
             wallclock_seconds=int(hh) * 3600 + int(mm) * 60 + int(ss)
             wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
         else:
-            wallclock_by_level = 0
+            wallclock_by_level = None
 
         return self._wrapper_factory.get_wrapper(self._wrapper_factory.vertical_wrapper, name=self._name,
                                                  queue=self._queue, project=self._project, wallclock=self._wallclock,

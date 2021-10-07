@@ -55,8 +55,6 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
-        self.wallclock = kwargs['wallclock']
-
         self.wallclock_by_level = kwargs['wallclock_by_level']
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
@@ -496,7 +494,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 print(command+"\\n")
                 (self.status) = getstatusoutput("srun "+command + " > " + out + " 2> " + err)
                 for i in self.status:
-                    print(i+"\\n")
+                    print(str(i)+"\\n")
 
                 
         """).format('\n'.ljust(13))
