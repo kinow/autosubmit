@@ -1542,7 +1542,7 @@ class Autosubmit:
                                 "Autosubmit failed while processing job packages. This might be due to a change in your experiment configuration files after 'autosubmit create' was performed.", 7014, str(e))
 
                     Log.debug("Checking job_list current status")
-                    save = job_list.update_list(as_conf, first_time=True)
+                    job_list.update_list(as_conf, first_time=True)
                     job_list.save()
 
                     Log.info(
@@ -1748,24 +1748,25 @@ class Autosubmit:
                         # End Check Current jobs
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
-                        if save or save2:
-                            job_list.save()
+                        job_list.save()
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
+                            job_list.update_list(as_conf, submitter=submitter)
+                            job_list.save()
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-
-                        save = job_list.update_list(
-                            as_conf, submitter=submitter)
-                        if save:
+                            job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
                         job_data_structure.process_status_changes(
                             job_changes_tracker, job_list.get_job_list())
                         job_changes_tracker = {}
-
+                        save = job_list.update_list(
+                            as_conf, submitter=submitter)
+                        if save:
+                            job_list.save()
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
