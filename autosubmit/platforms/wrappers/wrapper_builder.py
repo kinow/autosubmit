@@ -44,7 +44,8 @@ class WrapperDirector:
         return wrapper_script
 class WrapperBuilder(object):
     def __init__(self, **kwargs):
-        self.retrials = kwargs['retrials']
+        if "retrials" in kwargs.keys():
+            self.retrials = kwargs['retrials']
         self.header_directive = kwargs['header_directive']
         self.job_scripts = kwargs['jobs_scripts']
         self.threads = kwargs['threads']
@@ -55,7 +56,8 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
-        self.wallclock_by_level = kwargs['wallclock_by_level']
+        if "wallclock_by_level" in kwargs.keys():
+            self.wallclock_by_level = kwargs['wallclock_by_level']
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
     def build_imports(self):

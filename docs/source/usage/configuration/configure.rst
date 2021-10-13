@@ -18,6 +18,9 @@ Example:
 .. code-block:: ini
 
     [mail]
+    # Enable mail notifications for remote_failures
+    # Default = True
+    NOTIFY_ON_REMOTE_FAIL = True
     # Enable mail notifications
     # Default = False
     NOTIFICATIONS = True

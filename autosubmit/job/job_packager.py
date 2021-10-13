@@ -51,6 +51,8 @@ class JobPackager(object):
         self.wrapper_policy = dict()
         self.wrapper_method = dict()
         self.jobs_in_wrapper = dict()
+        self.extensible_wallclock = dict()
+        self.wrapper_info = list()
         # Submitted + Queuing Jobs for specific Platform
         queuing_jobs = jobs_list.get_queuing(platform)
         # We now consider the running jobs count
@@ -82,13 +84,15 @@ class JobPackager(object):
         self.wrapper_policy["wrapper"] = self._as_config.get_wrapper_policy()
         self.wrapper_method["wrapper"] = self._as_config.get_wrapper_method().lower()
         self.jobs_in_wrapper["wrapper"] = self._as_config.get_wrapper_jobs()
+        self.extensible_wallclock["wrapper"] = self._as_config.get_extensible_wallclock()
         if self._as_config.get_wrapper_type() == "multi":
             for wrapper_section in self._as_config.get_wrapper_multi():
                 self.wrapper_type[wrapper_section] = self._as_config.get_wrapper_type(wrapper_section)
                 self.wrapper_policy[wrapper_section] = self._as_config.get_wrapper_policy(wrapper_section)
                 self.wrapper_method[wrapper_section] = self._as_config.get_wrapper_method(wrapper_section).lower()
                 self.jobs_in_wrapper[wrapper_section] = self._as_config.get_wrapper_jobs(wrapper_section)
-
+                self.extensible_wallclock[wrapper_section] = int(self._as_config.get_extensible_wallclock(wrapper_section))
+        self.wrapper_info = [self.wrapper_type,self.wrapper_policy,self.wrapper_method,self.jobs_in_wrapper,self.extensible_wallclock] # to pass to job_packages
 
 
         # True or False
@@ -278,14 +282,12 @@ class JobPackager(object):
                 wrapper_limits["max"] = hard_limit_wrapper
                 if wrapper_limits["min"] < wrapper_limits["min_v"] * wrapper_limits["min_h"]:
                     wrapper_limits["min"] = max(wrapper_limits["min_v"],wrapper_limits["min_h"])
-                #wrapper_limits["max_by_section"] = hard_limit_wrapper
 
                 if self.wrapper_type[self.current_wrapper_section] == 'vertical':
-                    built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits)
+                    built_packages_tmp = self._build_vertical_packages(jobs_to_submit_by_section[section], wrapper_limits,wrapper_info=self.wrapper_info)
                 elif self.wrapper_type[self.current_wrapper_section]  == 'horizontal':
                     built_packages_tmp = self._build_horizontal_packages(jobs_to_submit_by_section[section], wrapper_limits, section)
                 elif self.wrapper_type[self.current_wrapper_section]  in ['vertical-horizontal', 'horizontal-vertical']:
-
                     built_packages_tmp = list()
                     built_packages_tmp.append(self._build_hybrid_package(jobs_to_submit_by_section[section], wrapper_limits, section))
                 else:
@@ -577,7 +579,7 @@ class JobPackager(object):
 
         return packages
 
-    def _build_vertical_packages(self, section_list, wrapper_limits):
+    def _build_vertical_packages(self, section_list, wrapper_limits,wrapper_info={}):
         """
         Builds Vertical-Mixed or Vertical
 
@@ -601,9 +603,9 @@ class JobPackager(object):
 
                     if job.status is Status.READY:
                         packages.append(JobPackageVertical(
-                            jobs_list, configuration=self._as_config,wrapper_section=self.current_wrapper_section))
+                            jobs_list, configuration=self._as_config,wrapper_section=self.current_wrapper_section,wrapper_info=wrapper_info))
                     else:
-                        package = JobPackageVertical(jobs_list, None , wrapper_section=self.current_wrapper_section)
+                        package = JobPackageVertical(jobs_list, None , wrapper_section=self.current_wrapper_section,wrapper_info=wrapper_info)
                         packages.append(package)
 
             else:
@@ -699,12 +701,13 @@ class JobPackagerVertical(object):
 
     """
 
-    def __init__(self, jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock):
+    def __init__(self, jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock, wrapper_info):
         self.jobs_list = jobs_list
         self.total_wallclock = total_wallclock
         self.max_jobs = max_jobs
         self.wrapper_limits = wrapper_limits
         self.max_wallclock = max_wallclock
+        self.wrapper_info = wrapper_info
 
     def build_vertical_package(self, job, level=1):
         """
@@ -820,9 +823,9 @@ class JobPackagerVerticalMixed(JobPackagerVertical):
     :type max_wallclock: String \n
     """
 
-    def __init__(self, dict_jobs, ready_job, jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock):
+    def __init__(self, dict_jobs, ready_job, jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock,wrapper_info={}):
         super(JobPackagerVerticalMixed, self).__init__(
-            jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock)
+            jobs_list, total_wallclock, max_jobs, wrapper_limits, max_wallclock, wrapper_info)
         self.ready_job = ready_job
         self.dict_jobs = dict_jobs
         # Last date from the ordering

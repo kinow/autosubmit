@@ -194,7 +194,8 @@ class AutosubmitConfig(object):
         :return: wallclock time
         :rtype: str
         """
-        return self._jobs_parser.get_option(section, 'WALLCLOCK', '')
+        return self._jobs_parser.get_option(section, 'WALLCLOCK', '02:00')
+
 
     def get_export(self, section):
         """
@@ -1441,7 +1442,14 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option('mail', 'NOTIFICATIONS', 'false').lower()
+    def get_notifications_crash(self):
+        """
+        Returns if the user has enabled the notifications from autosubmit's config file
 
+        :return: if notifications
+        :rtype: string
+        """
+        return self._conf_parser.get_option('mail', 'NOTIFY_ON_REMOTE_FAIL', 'true').lower()
     def get_remote_dependencies(self):
         """
         Returns if the user has enabled the PRESUBMISSION configuration parameter from autosubmit's config file
@@ -1465,6 +1473,7 @@ class AutosubmitConfig(object):
         """
 
         return self._conf_parser.get_option(wrapper_section_name, 'TYPE', 'None').lower()
+
     def get_wrapper_retrials(self, wrapper_section_name="wrapper"):
         """
         Returns max number of retrials for job from autosubmit's config file
@@ -1504,6 +1513,17 @@ class AutosubmitConfig(object):
         :rtype: string
         """
         return self._conf_parser.get_option(wrapper_section_name, 'JOBS_IN_WRAPPER', 'None')
+
+    def get_extensible_wallclock(self, wrapper_section_name="wrapper"):
+        """
+        Gets extend_wallclock for the given wrapper
+        :param section: job type
+        :type section: str
+        :return: wallclock time
+        :rtype: str
+        """
+        return int(self._conf_parser.get_option(wrapper_section_name, 'EXTEND_WALLCLOCK', 0))
+
     def get_x11_jobs(self):
         """
         Returns the jobs that should support x11, configured in the autosubmit's config

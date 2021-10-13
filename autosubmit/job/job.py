@@ -957,10 +957,6 @@ class Job(object):
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        if self.wallclock == '':
-            Log.debug(
-                "Wallclock for {0} is not defined! , setting it to 02:00".format(self.name))
-            self.wallclock = '02:00'
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
@@ -1052,11 +1048,11 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 611'
+                    template = 'sleep 1'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(610)'
+                    template = 'time.sleep(1)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(610)'
+                    template = 'Sys.sleep(1)'
                 else:
                     template = ''
         except:

@@ -1774,9 +1774,10 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
-                        # Save job_list if not is a failed submitted job
+                        # No need to wait until the remote platform reconnection
                         recovery = True
                         try:
+                            #Recover job_list while keeping job.fail_count
                             failed_names = {}
                             for job in job_list.get_job_list():
                                 if job.fail_count > 0:
@@ -1792,7 +1793,7 @@ class Autosubmit:
                                     job.platform_name = hpcarch
                                 job.platform = submitter.platforms[job.platform_name.lower(
                                 )]
-
+                            # Recovery wrapper [Packages]
                             packages_persistence = JobPackagePersistence(os.path.join(
                                 BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                             packages = packages_persistence.load()
@@ -1801,6 +1802,7 @@ class Autosubmit:
                                     job_list.packages_dict[package_name] = []
                                 job_list.packages_dict[package_name].append(
                                     job_list.get_job_by_name(job_name))
+                            # Recovery wrappers [Wrapper status]
                             for package_name, jobs in job_list.packages_dict.items():
                                 from job.job import WrapperJob
                                 wrapper_status = Status.SUBMITTED
@@ -1864,7 +1866,7 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
-                                Autosubmit.restore_platforms(platforms_to_test)
+                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=True,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
                                 # Message prompt by restore_platforms.
@@ -1923,13 +1925,25 @@ class Autosubmit:
             raise
 
     @staticmethod
-    def restore_platforms(platform_to_test):
+    def restore_platforms(platform_to_test,mail_notify=False,as_conf=None,expid=expid):
         Log.info("Checking the connection to all platforms in use")
         issues = ""
+
         for platform in platform_to_test:
             try:
                 platform.test_connection()
-            except BaseException as e :
+                if mail_notify:
+                    email = as_conf.get_mails_to()
+                    if "@" in email[0]:
+                        Notifier.notify_experiment_status(MailNotifier(BasicConfig), expid, email, platform)
+            except BaseException as e:
+                try:
+                    if mail_notify:
+                        email = as_conf.get_mails_to()
+                        if "@" in email[0]:
+                            Notifier.notify_experiment_status(MailNotifier(BasicConfig),expid,email,platform)
+                except:
+                    pass
                 issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
                     platform.host, platform.name)
                 continue
