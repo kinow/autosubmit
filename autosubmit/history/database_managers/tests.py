@@ -75,15 +75,15 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     pass
 
   def test_get_max_id(self):        
-    max_item = self.experiment_database.get_experiment_run_with_max_id()  
-    self.assertTrue(len(max_item) > 0)
+    max_item = self.experiment_database.get_experiment_run_dc_with_max_id()  
+    self.assertTrue(max_item.run_id > 0)
     self.assertTrue(max_item.run_id >= 18) # Max is 18
 
   def test_pragma(self):
     self.assertTrue(self.experiment_database._get_pragma_version() == 16)
   
   def test_get_job_data(self):
-    job_data = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    job_data = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     self.assertTrue(len(job_data) > 0)
     self.assertTrue(job_data[0].last == 1)
     self.assertTrue(job_data[0].job_name == "a29z_20000101_fc0_1_SIM")
@@ -91,10 +91,10 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     job_data = self.experiment_database.get_job_data_by_name("a29z_20000101_fc0_1_SIM")
     self.assertTrue(job_data[0].job_name == "a29z_20000101_fc0_1_SIM")
 
-    job_data = self.experiment_database.get_job_data_last_by_run_id(18) # Latest
+    job_data = self.experiment_database._get_job_data_last_by_run_id(18) # Latest
     self.assertTrue(len(job_data) > 0)
 
-    job_data = self.experiment_database.get_job_data_last_by_run_id_and_finished(18) 
+    job_data = self.experiment_database._get_job_data_last_by_run_id_and_finished(18) 
     self.assertTrue(len(job_data) > 0)
 
     job_data = self.experiment_database.get_job_data_all()
@@ -102,19 +102,19 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
   
   def test_insert_and_delete_experiment_run(self):
     new_run = ExperimentRun(19)
-    new_id = self.experiment_database.insert_experiment_run(new_run)
+    new_id = self.experiment_database._insert_experiment_run(new_run)
     self.assertIsNotNone(new_id)
-    last_experiment_run = self.experiment_database.get_experiment_run_with_max_id()
+    last_experiment_run = self.experiment_database.get_experiment_run_dc_with_max_id()
     self.assertTrue(new_id == last_experiment_run.run_id)
     self.experiment_database.delete_experiment_run(new_id)
-    last_experiment_run = self.experiment_database.get_experiment_run_with_max_id()
+    last_experiment_run = self.experiment_database.get_experiment_run_dc_with_max_id()
     self.assertTrue(new_id != last_experiment_run.run_id)
   
   def test_insert_and_delete_job_data(self):
-    max_run_id = self.experiment_database.get_experiment_run_with_max_id().run_id
+    max_run_id = self.experiment_database.get_experiment_run_dc_with_max_id().run_id
     new_job_data_name = "test_001_name_{0}".format(int(time.time()))
     new_job_data = JobData(_id=1, job_name=new_job_data_name, run_id=max_run_id)
-    new_job_data_id = self.experiment_database.insert_job_data(new_job_data)
+    new_job_data_id = self.experiment_database._insert_job_data(new_job_data)
     self.assertIsNotNone(new_job_data_id)
     self.experiment_database.delete_job_data(new_job_data_id)
     job_data = self.experiment_database.get_job_data_by_name(new_job_data_name)
@@ -122,30 +122,29 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
 
 
   def test_update_experiment_run(self):
-    last_experiment_run = self.experiment_database.get_experiment_run_with_max_id() # 18
-    experiment_run_data_class = ExperimentRun.from_model(last_experiment_run)
-    backup_run = ExperimentRun.from_model(last_experiment_run)
+    experiment_run_data_class = self.experiment_database.get_experiment_run_dc_with_max_id() # 18
+    backup_run = self.experiment_database.get_experiment_run_dc_with_max_id()
     experiment_run_data_class.chunk_unit = "unouno"
     experiment_run_data_class.running = random.randint(1, 100)
     experiment_run_data_class.queuing = random.randint(1, 100)
     experiment_run_data_class.suspended = random.randint(1, 100)
-    self.experiment_database.update_experiment_run(experiment_run_data_class)
-    last_experiment_run = self.experiment_database.get_experiment_run_with_max_id() # 18
+    self.experiment_database._update_experiment_run(experiment_run_data_class)
+    last_experiment_run = self.experiment_database.get_experiment_run_dc_with_max_id() # 18
     self.assertTrue(last_experiment_run.chunk_unit == experiment_run_data_class.chunk_unit)
     self.assertTrue(last_experiment_run.running == experiment_run_data_class.running)
     self.assertTrue(last_experiment_run.queuing == experiment_run_data_class.queuing)
     self.assertTrue(last_experiment_run.suspended == experiment_run_data_class.suspended)
-    self.experiment_database.update_experiment_run(backup_run)
+    self.experiment_database._update_experiment_run(backup_run)
 
   def test_job_data_from_model(self):
-    job_data_rows = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    job_data_rows = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     job_data_row_first = job_data_rows[0]
     job_data_data_class = JobData.from_model(job_data_row_first)    
     self.assertTrue(job_data_row_first.job_name == job_data_data_class.job_name)
 
   def test_update_job_data_processed(self):
     current_time = time.time()
-    job_data_rows = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    job_data_rows = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     job_data_row_first = job_data_rows[0]
     job_data_data_class = JobData.from_model(job_data_row_first)
     backup_job_dc = JobData.from_model(job_data_row_first)
@@ -153,14 +152,14 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     job_data_data_class.ncpus = random.randint(1, 1000)
     job_data_data_class.status = "DELAYED"
     job_data_data_class.finish = current_time
-    self.experiment_database.update_job_data_by_id(job_data_data_class)
-    job_data_rows_current = self.experiment_database.get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
+    self.experiment_database._update_job_data_by_id(job_data_data_class)
+    job_data_rows_current = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
     job_data_row_first = job_data_rows_current[0]
     self.assertTrue(job_data_row_first.nnodes == job_data_data_class.nnodes)
     self.assertTrue(job_data_row_first.ncpus == job_data_data_class.ncpus)
     self.assertTrue(job_data_row_first.status == job_data_data_class.status)
     self.assertTrue(job_data_row_first.finish == job_data_data_class.finish)
-    self.experiment_database.update_job_data_by_id(backup_job_dc)
+    self.experiment_database._update_job_data_by_id(backup_job_dc)
 
   def test_bulk_update(self):
     current_time = time.time()    
@@ -189,6 +188,28 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     max_existing_counter = self.experiment_database.get_job_data_max_counter()    
     self.assertTrue(max_existing_counter > 0)
 
+  def test_register_submitted_job_data_dc(self):
+    job_data_dc = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
+    max_counter = self.experiment_database.get_job_data_max_counter()
+    self.assertTrue(max_counter > 0)
+    self.assertTrue(job_data_dc.counter > 0)
+    next_counter = max(max_counter, job_data_dc.counter + 1)
+    self.assertTrue(next_counter >= max_counter)
+    self.assertTrue(next_counter >= job_data_dc.counter + 1)
+    job_data_dc.counter = next_counter
+    job_data_dc_current = self.experiment_database.register_submitted_job_data_dc(job_data_dc)
+    self.assertTrue(job_data_dc._id < job_data_dc_current._id)
+    job_data_last_list = self.experiment_database._get_job_data_last_by_name(job_data_dc.job_name)
+    self.assertTrue(len(job_data_last_list) == 1)
+    self.experiment_database.delete_job_data(job_data_last_list[0].id) 
+    job_data_dc.last = 1
+    updated_job_data_dc = self.experiment_database.update_job_data_dc_by_id(job_data_dc)
+    self.assertTrue(job_data_dc._id == updated_job_data_dc._id)
+    job_data_dc = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
+    self.assertTrue(job_data_dc._id == updated_job_data_dc._id)
+
+  def test_experiment_run_dc(self):
+    experiment_run = self.experiment_database
 
 if __name__ == '__main__':
   unittest.main()

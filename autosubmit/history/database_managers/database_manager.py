@@ -18,7 +18,6 @@
 
 import sqlite3
 import os
-import traceback
 import autosubmit.history.utils as HUtils
 import autosubmit.history.database_managers.database_models as Models
 from abc import ABCMeta, abstractmethod
@@ -50,7 +49,7 @@ class DatabaseManager():
     # type : (str) -> None
     """ creates a database files with full permissions """
     os.umask(0)
-    os.open(path, os.O_WRONLY | os.O_CREAT, 0o777)
+    os.open(path, os.O_WRONLY | os.O_CREAT, 0o776)
 
   def execute_statement_on_dbfile(self, path, statement):
     # type : (str, str) -> None
@@ -83,15 +82,13 @@ class DatabaseManager():
     # type : (str, List[str]) -> None
     """
     Updates the table schema using a **small** list of statements. No Exception raised.  
-    Can be used to execute a list of schema updates that might have been already applied.
+    Should be used to execute a list of schema updates that might have been already applied.
     """
     for statement in statements:
       try:                   
           self.execute_statement_on_dbfile(path, statement)
-      except Exception as exp:
-          Log.info(traceback.format_exc())
-          Log.debug(str(exp))
-          Log.warning("Error on updating {0}. Statement: {1}. You can ignore this message.".format(path, statement))
+      except Exception as exp:      
+          pass
 
   def get_from_statement(self, path, statement):
     # type : (str, str) -> List[Tuple]

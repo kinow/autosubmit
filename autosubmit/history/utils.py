@@ -23,8 +23,6 @@ from datetime import datetime
 
 DATETIME_FORMAT = '%Y-%m-%d-%H:%M:%S'
 
-
-
 def get_fields_as_comma_str(model):
   """ Get the fields of a namedtumple as a comma separated string. """
   return ",".join(model._fields)
@@ -61,6 +59,14 @@ def create_file_with_full_permissions(path):
   """ creates a database files with full permissions """
   os.umask(0)
   os.open(path, os.O_WRONLY | os.O_CREAT, 0o777)
+
+class SupportedStatus:
+  COMPLETED = "COMPLETED"
+  FAILED = "FAILED"
+  QUEUING = "QUEUING"
+  SUBMITTED = "SUBMITTED"
+  RUNNING = "RUNNING"
+  SUSPENDED = "SUSPENDED"
 
 # if __name__ == "__main__":
 #   print(get_fields_as_comma_str())

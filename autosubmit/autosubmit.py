@@ -73,6 +73,7 @@ from collections import defaultdict
 from pyparsing import nestedExpr
 from database.db_jobdata import JobDataStructure
 from history.experiment_status import ExperimentStatus
+from history.experiment_history import ExperimentHistory
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -4171,7 +4172,6 @@ class Autosubmit:
                 Log.debug('Status of jobs to change: {0}', filter_status)
                 Log.debug('Sections to change: {0}', filter_section)
                 wrongExpid = 0
-                job_tracked_changes = {}
                 as_conf = AutosubmitConfig(
                     expid, BasicConfig, ConfigParserFactory())
                 as_conf.check_conf_files(True)
@@ -4392,9 +4392,6 @@ class Autosubmit:
                         ft = filter_chunks.split(",")[1:]
                     if ft == 'Any':
                         for job in job_list.get_job_list():
-                            # Tracking changes
-                            job_tracked_changes[job.name] = (
-                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
@@ -4404,9 +4401,6 @@ class Autosubmit:
                                     if filter_chunks:
                                         jobs_filtered.append(job)
                                     else:
-                                        # Tracking changes
-                                        job_tracked_changes[job.name] = (
-                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
@@ -4563,9 +4557,6 @@ class Autosubmit:
                                 job.platform.name, job.name), 6000)
                             continue
                         if job.status != final_status:
-                            # Tracking changes
-                            job_tracked_changes[job.name] = (
-                                job.status, final_status)
                             # Only real changes
                             performed_changes[job.name] = str(
                                 Status.VALUE_TO_KEY[job.status]) + " -> " + str(final)
@@ -4594,9 +4585,6 @@ class Autosubmit:
 
                     if fc == 'Any':
                         for job in jobs_filtered:
-                            # Tracking changes
-                            job_tracked_changes[job.name] = (
-                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
@@ -4615,16 +4603,10 @@ class Autosubmit:
                                 for chunk_json in member_json['cs']:
                                     chunk = int(chunk_json)
                                     for job in filter(lambda j: j.chunk == chunk and j.synchronize is not None, jobs_date):
-                                        # Tracking changes
-                                        job_tracked_changes[job.name] = (
-                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
                                     for job in filter(lambda j: j.chunk == chunk, jobs_member):
-                                        # Tracking changes
-                                        job_tracked_changes[job.name] = (
-                                            job.status, final_status)
                                         Autosubmit.change_status(
                                             final, final_status, job, save)
 
@@ -4634,18 +4616,12 @@ class Autosubmit:
                     Log.debug("Filtering jobs with status {0}", filter_status)
                     if status_list == 'Any':
                         for job in job_list.get_job_list():
-                            # Tracking changes
-                            job_tracked_changes[job.name] = (
-                                job.status, final_status)
                             Autosubmit.change_status(
                                 final, final_status, job, save)
                     else:
                         for status in status_list:
                             fs = Autosubmit._get_status(status)
                             for job in filter(lambda j: j.status == fs, job_list.get_job_list()):
-                                # Tracking changes
-                                job_tracked_changes[job.name] = (
-                                    job.status, final_status)
                                 Autosubmit.change_status(
                                     final, final_status, job, save)
 
@@ -4668,22 +4644,16 @@ class Autosubmit:
                     else:
                         for job in job_list.get_job_list():
                             if job.name in jobs:
-                                # Tracking changes
-                                job_tracked_changes[job.name] = (
-                                    job.status, final_status)
                                 Autosubmit.change_status(
                                     final, final_status, job, save)
 
                 job_list.update_list(as_conf, False, True)
 
                 if save and wrongExpid == 0:
-                    job_list.save()
-                    # Historical Database: Setup new run if greater or equal than 90% of completed date-member jobs are going to be changed.
-                    # Or if the total number of jobs in the job_list is different than the total number of jobs in the current experiment run register in the database
-                    job_data_structure = JobDataStructure(expid)                    
-                    job_data_structure.process_status_changes(
-                        job_tracked_changes, job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), check_run=True, current_config=as_conf.get_full_config_as_json(), is_setstatus=True)
-                    
+                    job_list.save()                    
+                    exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)
+                    exp_history.initialize_database()
+                    exp_history.process_status_changes(job_list.get_job_list(), chunk_unit=as_conf.get_chunk_size_unit(), chunk_size=as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                    
                 else:
                     Log.printlog(
                         "Changes NOT saved to the JobList!!!!:  use -s option to save", 3000)

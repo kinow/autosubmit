@@ -18,7 +18,7 @@
 import os
 import utils as HUtils
 
-class Logging:
+class Logging():
   def __init__(self, expid):
     self.expid = expid        
   

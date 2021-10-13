@@ -173,6 +173,13 @@ class Job(object):
         :rtype: set
         """
         return self._parents
+    
+    @property
+    def status_str(self):
+        """
+        String representation of the current status 
+        """
+        return Status.VALUE_TO_KEY.get(self.status, "UNKNOWN")
 
     @parents.setter
     def parents(self, parents):

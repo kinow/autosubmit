@@ -41,10 +41,11 @@ class RowType:
 
 class RowStatus:
     INITIAL = 0
-    COMPLETED = 1
+    COMPLETED = 1    
     PROCESSED = 2
     FAULTY = 3
     CHANGED = 4
+    PENDING_PROCESS = 5
 
 table_name_to_model = {
   "experiment" : ExperimentRow,

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 
 # Copyright 2015-2020 Earth Sciences Department, BSC-CNS
 # This file is part of Autosubmit.
@@ -25,9 +25,19 @@ class TestExperimentHistory(unittest.TestCase):
   # @classmethod
   # def setUpClass(cls):    
   #   cls.exp = ExperimentHistory("tt00") # example database
-  def test_select_job_data_by_run_id(self):
+  def setUp(self):
     pass
+
+  def test_db_exists(self):
+    exp_history = ExperimentHistory("tt00")
+    self.assertTrue(exp_history.my_database_exists() == True)
+    exp_history = ExperimentHistory("tt99")
+    self.assertTrue(exp_history.my_database_exists() == False)
   
+  def test_is_header_ready(self):
+    exp_history = ExperimentHistory("tt00")
+    self.assertTrue(exp_history.is_header_ready() == True)
+
   def test_get_all_job_data(self):
     pass
 
@@ -52,6 +62,7 @@ class TestLogging(unittest.TestCase):
   def test_log(self):    
     self.log.log(self.exp_message, self.trace_message)
     
+
 
 if __name__ == '__main__':
   unittest.main()
