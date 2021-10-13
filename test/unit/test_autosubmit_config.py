@@ -89,7 +89,7 @@ class TestAutosubmitConfig(TestCase):
     def test_get_wallclock(self):
         # arrange
         expected_value = '00:05'
-        default_value = ''
+        default_value = '02:00'
         config, parser_mock = self._arrange_config(expected_value)
         # act
         returned_value = config.get_wallclock(self.section)
