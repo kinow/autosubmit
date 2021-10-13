@@ -166,6 +166,7 @@ class TestWrappers(TestCase):
         self.config.get_wrapper_method = Mock(return_value='ASThread')
         self.config.get_wrapper_queue = Mock(return_value='debug')
         self.config.get_wrapper_policy = Mock(return_value='flexible')
+        self.config.get_extensible_wallclock = Mock(return_value=0)
         self.config.get_retrials = Mock(return_value=0)
         self.config.get = Mock(return_value='flexible')
         self.job_packager = JobPackager(
