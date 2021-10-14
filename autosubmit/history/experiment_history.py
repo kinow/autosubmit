@@ -17,6 +17,7 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import traceback
+from autosubmit.history.data_classes import job_data
 import database_managers.database_models as Models
 import utils as HUtils
 from time import time, sleep
@@ -24,7 +25,7 @@ from database_managers.experiment_history_db_manager import ExperimentHistoryDbM
 from data_classes.job_data import JobData
 from data_classes.experiment_run import ExperimentRun
 from platform_monitor.slurm_monitor import SlurmMonitor
-from logging import Logging
+from internal_logging import Logging
 
 SECONDS_WAIT_PLATFORM = 60
 
@@ -41,16 +42,10 @@ class ExperimentHistory():
 
   def initialize_database(self):
     try:
-      if self.my_database_exists():        
-        self.manager.update_historical_database()        
-      else:
-        self.manager.create_historical_database()        
+      self.manager.initialize()        
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       self.manager = None
-  
-  def my_database_exists(self):
-    return os.path.exists(self.manager.historicaldb_file_path)
   
   def is_header_ready(self):
     if self.manager:      
@@ -58,7 +53,8 @@ class ExperimentHistory():
     return False
   
 
-  def write_submit_time(self, job_name, submit=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None):
+  def write_submit_time(self, job_name, submit=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", 
+                        member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None, children=""):
     try:
       next_counter = self._get_next_counter_by_job_name(job_name)
       job_data_dc = JobData(_id=0, 
@@ -75,33 +71,63 @@ class ExperimentHistory():
                     section=section,
                     chunk=chunk,                    
                     platform=platform,
-                    job_id=job_id)
+                    job_id=job_id,
+                    children=children)
       return self.manager.register_submitted_job_data_dc(job_data_dc)
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       return None
   
-  def write_start_time(self, job_name, start=0, status="UNKWOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None):
+  def write_start_time(self, job_name, start=0, status="UNKWOWN", ncpus=0, wallclock="00:00", qos="debug", date="", 
+                      member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None, children=""):
     try:
       job_data_dc_last = self.manager.get_job_data_dc_unique_latest_by_job_name(job_name)
       if not job_data_dc_last:
-        job_data_dc_last = self.write_submit_time(job_name=job_name, status=status, ncpus=ncpus, wallclock=wallclock, qos=qos, date=date, member=member, section=section, chunk=chunk, platform=platform, job_id=job_id, wrapper_queue=wrapper_queue, wrapper_code=wrapper_code)
+        job_data_dc_last = self.write_submit_time(job_name=job_name, 
+                                                  status=status, 
+                                                  ncpus=ncpus, 
+                                                  wallclock=wallclock, 
+                                                  qos=qos, 
+                                                  date=date, 
+                                                  member=member, 
+                                                  section=section, 
+                                                  chunk=chunk, 
+                                                  platform=platform, 
+                                                  job_id=job_id, 
+                                                  wrapper_queue=wrapper_queue, 
+                                                  wrapper_code=wrapper_code)
         self._log.log("write_start_time {0} start not found.".format(job_name))
       job_data_dc_last.start = start
       job_data_dc_last.qos = self._get_defined_queue_name(wrapper_queue, wrapper_code, qos)
       job_data_dc_last.status = status
       job_data_dc_last.rowtype = self._get_defined_rowtype(wrapper_code)
       job_data_dc_last.job_id = job_id
+      job_data_dc_last.children = children
       return self.manager.update_job_data_dc_by_id(job_data_dc_last)
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       return None
   
-  def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", member="", section="", chunk=0, platform="NA", job_id=0, platform_object=None, packed=False, parent_id_list=None, no_slurm=True, out_file_path=None, out_file=None, err_file=None, wrapper_queue=None, wrapper_code=None):
+  def write_finish_time(self, job_name, finish=0, status="UNKNOWN", ncpus=0, wallclock="00:00", qos="debug", date="", 
+                        member="", section="", chunk=0, platform="NA", job_id=0, out_file=None, err_file=None, 
+                        wrapper_queue=None, wrapper_code=None, children=""):
     try:
       job_data_dc_last = self.manager.get_job_data_dc_unique_latest_by_job_name(job_name)
       if not job_data_dc_last:
-        job_data_dc_last = self.write_submit_time(job_name=job_name, status=status, ncpus=ncpus, wallclock=wallclock, qos=qos, date=date, member=member, section=section, chunk=chunk, platform=platform, job_id=job_id, wrapper_queue=wrapper_queue, wrapper_code=wrapper_code)
+        job_data_dc_last = self.write_submit_time(job_name=job_name, 
+                                                  status=status, 
+                                                  ncpus=ncpus, 
+                                                  wallclock=wallclock, 
+                                                  qos=qos, 
+                                                  date=date, 
+                                                  member=member, 
+                                                  section=section, 
+                                                  chunk=chunk, 
+                                                  platform=platform, 
+                                                  job_id=job_id, 
+                                                  wrapper_queue=wrapper_queue, 
+                                                  wrapper_code=wrapper_code, 
+                                                  children=children)
         self._log.log("write_finish_time {0} submit not found.".format(job_name))
       job_data_dc_last.finish = finish if finish > 0 else int(time())
       job_data_dc_last.status = status
@@ -115,16 +141,61 @@ class ExperimentHistory():
       return None
   
   def write_platform_data_after_finish(self, job_data_dc, platform_obj):
-    """ """
+    """ 
+    Call it in a thread.
+    """
     try:
-      sleep(SECONDS_WAIT_PLATFORM)      
-      slurm_monitor = SlurmMonitor(platform_obj.check_job_energy(job_data_dc.job_id))
-      # Get current rows in run_id by rowtype (wrapper code)
-      # Add children names columnd to job_data
-
+      sleep(SECONDS_WAIT_PLATFORM)
+      ssh_output = platform_obj.check_job_energy(job_data_dc.job_id)      
+      slurm_monitor = SlurmMonitor(ssh_output)
+      job_data_dcs_in_wrapper = self.manager.get_job_data_dcs_last_by_wrapper_code(job_data_dc.wrapper_code)      
+      if len(job_data_dcs_in_wrapper) > 0:
+        job_data_dcs_in_wrapper = self._distribute_energy_in_wrapper(job_data_dcs_in_wrapper, slurm_monitor)                
+        self.manager.update_list_job_data_dc_by_each_id(job_data_dcs_in_wrapper)        
+      else:
+        job_data_dc = self._assign_platform_information_to_job_data_dc(job_data_dc, slurm_monitor)
+      job_data_dc = self._assign_platform_information_to_job_data_dc(job_data_dc, slurm_monitor)
+      return self.manager.update_job_data_dc_by_id(job_data_dc)            
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       return None
+  
+  def _distribute_energy_in_wrapper(self, job_data_dcs, slurm_monitor):
+    """ SlurmMonitor with data. """
+    computational_weights = self._get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
+    if len(job_data_dcs) == slurm_monitor.step_count:
+      for job_dc, input_item in zip(job_data_dcs, slurm_monitor.input_items):
+        job_dc.energy = input_item.energy + computational_weights.get(job_dc.job_name, 0) * slurm_monitor.extern.energy
+        job_dc.platform_output = ""
+    else:
+      for job_dc in job_data_dcs:
+        job_dc.energy = computational_weights.get(job_dc.job_name, 0) * slurm_monitor.total_energy
+        job_dc.platform_output = ""    
+    return job_data_dcs
+  
+  def _set_job_as_processed_in_platform(self, job_data_dc, slurm_monitor):
+    """ """
+    job_data_dc.platform_output = slurm_monitor.original_input
+    job_data_dc.rowstatus = Models.RowStatus.PROCESSED
+    return job_data_dc
+  
+  def _assign_platform_information_to_job_data_dc(self, job_data_dc, slurm_monitor):
+    """ Basic Assignment """
+    job_data_dc.submit = slurm_monitor.header.submit
+    job_data_dc.start = slurm_monitor.header.start
+    job_data_dc.finish = slurm_monitor.header.finish
+    job_data_dc.ncpus = slurm_monitor.header.ncpus
+    job_data_dc.nnodes = slurm_monitor.header.nnodes
+    job_data_dc.energy = slurm_monitor.header.energy
+    job_data_dc.MaxRSS = slurm_monitor.header.MaxRSS
+    job_data_dc.AveRSS = slurm_monitor.header.AveRSS
+    job_data_dc.platform_output = slurm_monitor.original_input
+    return job_data_dc
+
+  def _get_calculated_weights_of_jobs_in_wrapper(self, job_data_dcs):
+    """ Based on computational weight: running time in seconds * number of cpus. """
+    total_weight = sum(job.computational_weight for job in job_data_dcs)
+    return {job.job_name: round(job.computational_weight/total_weight, 2) for job in job_data_dcs}    
 
   def process_status_changes(self, job_list=None, chunk_unit="NA", chunk_size=0, current_config=""):
     """ Detect status differences between job_list and current job_data rows, and update. Creates a new run if necessary. """

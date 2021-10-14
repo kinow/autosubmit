@@ -28,7 +28,10 @@ class JobData(object):
     Robust representation of a row in the job_data table of the experiment history database.
     """
 
-    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, status="UNKNOWN", rowtype=0, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", member="", chunk=0, last=1, platform="NA", job_id=0, extra_data="", nnodes=0, run_id=None, MaxRSS=0.0, AveRSS=0.0, out="", err="", rowstatus=Models.RowStatus.INITIAL):
+    def __init__(self, _id, counter=1, job_name="None", created=None, modified=None, submit=0, start=0, finish=0, 
+                status="UNKNOWN", rowtype=0, ncpus=0, wallclock="00:00", qos="debug", energy=0, date="", section="", 
+                member="", chunk=0, last=1, platform="NA", job_id=0, extra_data="", nnodes=0, run_id=None, MaxRSS=0.0, 
+                AveRSS=0.0, out="", err="", rowstatus=Models.RowStatus.INITIAL, children="", platform_output=""):
       """
       """
       self._id = _id
@@ -44,7 +47,7 @@ class JobData(object):
       self.ncpus = ncpus
       self.wallclock = wallclock
       self.qos = qos if qos else "debug"
-      self._energy = energy if energy else 0
+      self._energy = round(energy, 2) if energy else 0
       self.date = date if date else ""
       self.section = section if section else ""
       self.member = member if member else ""
@@ -66,7 +69,9 @@ class JobData(object):
       self.AveRSS = AveRSS
       self.out = out
       self.err = err
-      self.rowstatus = rowstatus
+      self.rowstatus = rowstatus      
+      self.children = children # DB 17
+      self.platform_output = platform_output # DB 17
 
     @classmethod
     def from_model(cls, row):
@@ -99,9 +104,14 @@ class JobData(object):
                       row.AveRSS,
                       row.out,
                       row.err,
-                      row.rowstatus)
+                      row.rowstatus,
+                      row.children,
+                      row.platform_output)
       return job_data
 
+    @property
+    def computational_weight(self):
+        return round(float(self.running_time * self.ncpus),2)
 
     @property
     def submit(self):
@@ -137,6 +147,16 @@ class JobData(object):
         Returns the energy spent value (JOULES) as an integer.
         """
         return self._energy
+    
+    @property
+    def wrapper_code(self):
+        """ 
+        Another name for rowtype
+        """
+        if self.rowtype > 2:        
+            return self.rowtype
+        else:
+            return None
 
     @submit.setter
     def submit(self, submit):
@@ -164,20 +184,23 @@ class JobData(object):
                 # print("Updating energy to {0} from {1}.".format(
                 #    energy, self._energy))
                 self.require_update = True
-            self._energy = energy if energy else 0
+            self._energy = round(energy, 2)
 
+    @property
     def delta_queue_time(self):
         """
         Returns queuing time as a timedelta object.
         """
         return str(timedelta(seconds=self.queuing_time()))
 
+    @property
     def delta_running_time(self):
         """
         Returns running time as a timedelta object.
         """
         return str(timedelta(seconds=self.running_time()))
 
+    @property
     def submit_datetime(self):
         """
         Return the submit time as a datetime object, None if submit time equal 0.
@@ -186,6 +209,7 @@ class JobData(object):
             return datetime.fromtimestamp(self.submit)
         return None
 
+    @property
     def start_datetime(self):
         """
         Return the start time as a datetime object, None if start time equal 0.
@@ -194,6 +218,7 @@ class JobData(object):
             return datetime.fromtimestamp(self.start)
         return None
 
+    @property
     def finish_datetime(self):
         """
         Return the finish time as a datetime object, None if start time equal 0.
@@ -202,6 +227,7 @@ class JobData(object):
             return datetime.fromtimestamp(self.finish)
         return None
 
+    @property
     def submit_datetime_str(self):
         """
         Returns the submit datetime as a string with format %Y-%m-%d-%H:%M:%S
@@ -211,7 +237,7 @@ class JobData(object):
             return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
             return None
-
+    @property
     def start_datetime_str(self):
         """
         Returns the start datetime as a string with format %Y-%m-%d-%H:%M:%S
@@ -221,7 +247,7 @@ class JobData(object):
             return o_datetime.strftime(HUtils.DATETIME_FORMAT)
         else:
             return None
-
+    @property
     def finish_datetime_str(self):
         """
         Returns the finish datetime as a string with format %Y-%m-%d-%H:%M:%S
@@ -232,6 +258,7 @@ class JobData(object):
         else:
             return None
 
+    @property
     def running_time(self):
         """
         Calculates and returns the running time of the job, in seconds.
@@ -243,6 +270,7 @@ class JobData(object):
             return HUtils.calculate_run_time_in_seconds(self.start, self.finish)                        
         return 0
 
+    @property
     def queuing_time(self):
         """
         Calculates and returns the queuing time of the job, in seconds.

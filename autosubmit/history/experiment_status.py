@@ -18,7 +18,7 @@
 
 import traceback
 from database_managers.experiment_status_db_manager import ExperimentStatusDbManager, DEFAULT_LOCAL_ROOT_DIR
-from logging import Logging
+from internal_logging import Logging
 
 class ExperimentStatus():
   """ Represents the Experiment Status Mechanism that keeps track of currently active experiments """

@@ -18,7 +18,10 @@
 
 import collections
 
-JobDataRow = collections.namedtuple('JobDataRow', ['id', 'counter', 'job_name', 'created', 'modified', 'submit', 'start', 'finish', 'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 'chunk', 'last', 'platform', 'job_id', 'extra_data', 'nnodes', 'run_id', 'MaxRSS', 'AveRSS', 'out', 'err', 'rowstatus'])
+JobDataRow = collections.namedtuple('JobDataRow', ['id', 'counter', 'job_name', 'created', 'modified', 'submit', 'start', 'finish', 
+                                                  'status', 'rowtype', 'ncpus', 'wallclock', 'qos', 'energy', 'date', 'section', 'member', 
+                                                  'chunk', 'last', 'platform', 'job_id', 'extra_data', 'nnodes', 'run_id', 'MaxRSS', 'AveRSS', 
+                                                  'out', 'err', 'rowstatus', 'children', 'platform_output'])
 
 ExperimentRunRow = collections.namedtuple('ExperimentRunRow', [
                                            'run_id', 'created', 'modified', 'start', 'finish', 'chunk_unit', 'chunk_size', 'completed', 'total', 'failed', 'queuing', 'running', 'submitted', 'suspended', 'metadata'])

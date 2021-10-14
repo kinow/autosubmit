@@ -89,14 +89,7 @@ class TestSlurmMonitor(unittest.TestCase):
     extern = slurm_monitor.get_extern()
     self.assertIsNotNone(header)
     self.assertIsNotNone(batch)
-    self.assertIsNotNone(extern)
-    steps_and_extern_energy = slurm_monitor.sum_steps_energy() + extern.energy
-    # print(slurm_monitor.sum_steps_energy())    
-    # print(slurm_monitor.sum_steps_energy() + extern.energy)
-    # print("{0} {1} <- {2}".format(batch.name, batch.energy, batch.energy_str))
-    # print("{0} {1} <- {2}".format(extern.name, extern.energy, extern.energy_str))
-    # print("{0} {1} <- {2}".format(header.name, header.energy, header.energy_str))
-    # ENERGY: extern + steps ~ header
+    self.assertIsNotNone(extern)    
     self.assertTrue(slurm_monitor.steps_plus_extern_approximate_header_energy())
     
 

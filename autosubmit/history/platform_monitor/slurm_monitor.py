@@ -23,29 +23,38 @@ class SlurmMonitor(PlatformMonitor):
   """ Manages Slurm commands interpretation. """
   def __init__(self, platform_output):
       super(SlurmMonitor, self).__init__(platform_output)
+      self._identify_input_rows()
 
-  def identify_input_rows(self):
-      lines = self.input.split("\n")
-      for line in lines:        
-        self.input_items.append(SlurmMonitorItem.from_line(line))
-  
+  @property
+  def steps_energy(self):
+    return sum([step.energy for step in self.input_items if step.is_step])
+    
+  @property
+  def total_energy(self):
+    return max(self.header_energy, self.steps_energy + self.extern_energy)
+
+  @property
   def step_count(self):
     return len([step for step in self.input_items if step.is_step])
-  
-  def get_header(self):
-    return next((header for header in self.input_items if header.is_header), None)
 
-  def sum_steps_energy(self):
-    return sum([step.energy for step in self.input_items if step.is_step])
+  def _identify_input_rows(self):
+      lines = self.input.split("\n")
+      self.input_items = [SlurmMonitorItem.from_line(line) for line in lines]        
   
-  def get_batch(self):
+  @property
+  def header(self):
+    return next((header for header in self.input_items if header.is_header), None)  
+  
+  @property
+  def batch(self):
     return next((batch for batch in self.input_items if batch.is_batch), None)
 
-  def get_extern(self):
+  @property
+  def extern(self):
     return next((extern for extern in self.input_items if extern.is_extern), None)
   
   def steps_plus_extern_approximate_header_energy(self):
-    return abs((self.sum_steps_energy() + self.get_extern().energy) - self.get_header().energy) <= 10
+    return abs(self.steps_energy + self.extern.energy - self.header.energy) <= 10
 
   def print_items(self):
     for item in self.input_items:

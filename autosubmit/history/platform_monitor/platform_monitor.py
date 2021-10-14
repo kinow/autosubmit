@@ -23,7 +23,7 @@ class PlatformMonitor():
   def __init__(self, platform_output):
     self.original_input = platform_output
     self.input = str(platform_output).strip()
-    self.input_items = []
+
   
   @abstractmethod
   def identify_input_rows(self):

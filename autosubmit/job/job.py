@@ -180,6 +180,13 @@ class Job(object):
         String representation of the current status 
         """
         return Status.VALUE_TO_KEY.get(self.status, "UNKNOWN")
+    
+    @property
+    def children_names_str(self):
+        """ 
+        Comma separated list of children's names
+        """
+        return ",".join([str(child.name) for child in self._children])
 
     @parents.setter
     def parents(self, parents):

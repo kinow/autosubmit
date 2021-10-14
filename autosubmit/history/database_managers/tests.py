@@ -70,6 +70,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
   """ Covers Experiment History Database Manager and Data Models """
   def setUp(self):
     self.experiment_database = ExperimentHistoryDbManager(EXPID, JOBDATA_DIR)
+    self.experiment_database.initialize()
 
   def tearDown(self):
     pass
@@ -80,7 +81,7 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     self.assertTrue(max_item.run_id >= 18) # Max is 18
 
   def test_pragma(self):
-    self.assertTrue(self.experiment_database._get_pragma_version() == 16)
+    self.assertTrue(self.experiment_database._get_pragma_version() == 17) # Update version on changes
   
   def test_get_job_data(self):
     job_data = self.experiment_database._get_job_data_last_by_name("a29z_20000101_fc0_1_SIM")
@@ -207,9 +208,35 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     self.assertTrue(job_data_dc._id == updated_job_data_dc._id)
     job_data_dc = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
     self.assertTrue(job_data_dc._id == updated_job_data_dc._id)
+  
+  def test_update_children_and_platform_output(self):
+    job_data_dc = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
+    children_str = "a00, a01, a02"
+    platform_output_str = " SLURM OUTPUT "
+    job_data_dc.children = children_str
+    job_data_dc.platform_output = platform_output_str
+    self.experiment_database.update_job_data_dc_by_id(job_data_dc)
+    job_data_dc_updated = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
+    self.assertTrue(job_data_dc_updated.children == children_str)
+    self.assertTrue(job_data_dc_updated.platform_output == platform_output_str)
+    # Back to normal
+    job_data_dc.children = ""
+    job_data_dc.platform_output = "NO OUTPUT"
+    self.experiment_database.update_job_data_dc_by_id(job_data_dc)
+    job_data_dc_updated = self.experiment_database.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc0_1_SIM")
+    self.assertTrue(job_data_dc_updated.children == "")
+    self.assertTrue(job_data_dc_updated.platform_output == "NO OUTPUT")
+
+  
 
   def test_experiment_run_dc(self):
-    experiment_run = self.experiment_database
+    experiment_run = self.experiment_database.get_experiment_run_dc_with_max_id()
+    self.assertIsNotNone(experiment_run)
+
+  def test_if_database_exists(self):
+    exp_manager = ExperimentHistoryDbManager("0000")
+    self.assertTrue(exp_manager.my_database_exists() == False)
+
 
 if __name__ == '__main__':
   unittest.main()
