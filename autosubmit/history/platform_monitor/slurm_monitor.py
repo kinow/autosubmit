@@ -31,7 +31,7 @@ class SlurmMonitor(PlatformMonitor):
     
   @property
   def total_energy(self):
-    return max(self.header_energy, self.steps_energy + self.extern_energy)
+    return max(self.header.energy, self.steps_energy + self.extern.energy)
 
   @property
   def step_count(self):
@@ -41,6 +41,10 @@ class SlurmMonitor(PlatformMonitor):
       lines = self.input.split("\n")
       self.input_items = [SlurmMonitorItem.from_line(line) for line in lines]        
   
+  @property
+  def steps(self):
+    return [item for item in self.input_items if item.is_step]
+
   @property
   def header(self):
     return next((header for header in self.input_items if header.is_header), None)  

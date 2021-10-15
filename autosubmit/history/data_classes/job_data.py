@@ -111,7 +111,7 @@ class JobData(object):
 
     @property
     def computational_weight(self):
-        return round(float(self.running_time * self.ncpus),2)
+        return round(float(self.running_time * self.ncpus),4)
 
     @property
     def submit(self):

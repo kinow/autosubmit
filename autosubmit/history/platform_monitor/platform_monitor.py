@@ -26,6 +26,6 @@ class PlatformMonitor():
 
   
   @abstractmethod
-  def identify_input_rows(self):
+  def _identify_input_rows(self):
     """ """
   

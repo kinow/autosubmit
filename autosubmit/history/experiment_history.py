@@ -154,24 +154,29 @@ class ExperimentHistory():
         self.manager.update_list_job_data_dc_by_each_id(job_data_dcs_in_wrapper)        
       else:
         job_data_dc = self._assign_platform_information_to_job_data_dc(job_data_dc, slurm_monitor)
-      job_data_dc = self._assign_platform_information_to_job_data_dc(job_data_dc, slurm_monitor)
+      job_data_dc = self._set_job_as_processed_in_platform(job_data_dc, slurm_monitor)
       return self.manager.update_job_data_dc_by_id(job_data_dc)            
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       return None
   
   def _distribute_energy_in_wrapper(self, job_data_dcs, slurm_monitor):
-    """ SlurmMonitor with data. """
+    """ Requires SlurmMonitor with data. """
     computational_weights = self._get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
-    if len(job_data_dcs) == slurm_monitor.step_count:
-      for job_dc, input_item in zip(job_data_dcs, slurm_monitor.input_items):
-        job_dc.energy = input_item.energy + computational_weights.get(job_dc.job_name, 0) * slurm_monitor.extern.energy
+    if len(job_data_dcs) == slurm_monitor.step_count:      
+      for job_dc, step in zip(job_data_dcs, slurm_monitor.steps):
+        job_dc.energy = step.energy + computational_weights.get(job_dc.job_name, 0) * slurm_monitor.extern.energy
+        job_dc.AveRSS = step.AveRSS
+        job_dc.MaxRSS = step.MaxRSS
         job_dc.platform_output = ""
     else:
       for job_dc in job_data_dcs:
         job_dc.energy = computational_weights.get(job_dc.job_name, 0) * slurm_monitor.total_energy
         job_dc.platform_output = ""    
     return job_data_dcs
+    
+  
+   
   
   def _set_job_as_processed_in_platform(self, job_data_dc, slurm_monitor):
     """ """
@@ -180,22 +185,17 @@ class ExperimentHistory():
     return job_data_dc
   
   def _assign_platform_information_to_job_data_dc(self, job_data_dc, slurm_monitor):
-    """ Basic Assignment """
+    """ Basic Assignment. No Wrapper. """
     job_data_dc.submit = slurm_monitor.header.submit
     job_data_dc.start = slurm_monitor.header.start
     job_data_dc.finish = slurm_monitor.header.finish
     job_data_dc.ncpus = slurm_monitor.header.ncpus
     job_data_dc.nnodes = slurm_monitor.header.nnodes
     job_data_dc.energy = slurm_monitor.header.energy
-    job_data_dc.MaxRSS = slurm_monitor.header.MaxRSS
-    job_data_dc.AveRSS = slurm_monitor.header.AveRSS
+    job_data_dc.MaxRSS = max(slurm_monitor.header.MaxRSS, slurm_monitor.batch.MaxRSS, slurm_monitor.extern.MaxRSS) # TODO: Improve this rule
+    job_data_dc.AveRSS = max(slurm_monitor.header.AveRSS, slurm_monitor.batch.AveRSS, slurm_monitor.extern.AveRSS)
     job_data_dc.platform_output = slurm_monitor.original_input
     return job_data_dc
-
-  def _get_calculated_weights_of_jobs_in_wrapper(self, job_data_dcs):
-    """ Based on computational weight: running time in seconds * number of cpus. """
-    total_weight = sum(job.computational_weight for job in job_data_dcs)
-    return {job.job_name: round(job.computational_weight/total_weight, 2) for job in job_data_dcs}    
 
   def process_status_changes(self, job_list=None, chunk_unit="NA", chunk_size=0, current_config=""):
     """ Detect status differences between job_list and current job_data rows, and update. Creates a new run if necessary. """
@@ -205,7 +205,7 @@ class ExperimentHistory():
       if len(update_these_changes) > 0:
         self.manager.update_many_job_data_change_status(update_these_changes)
       if self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc.total):
-        return self.create_new_experiment_run(chunk_unit, chunk_size, current_config)
+        return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
       return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
@@ -234,6 +234,7 @@ class ExperimentHistory():
     experiment_run_dc.submitted = status_counts[HUtils.SupportedStatus.SUBMITTED]
     experiment_run_dc.running = status_counts[HUtils.SupportedStatus.RUNNING]
     experiment_run_dc.suspended = status_counts[HUtils.SupportedStatus.SUSPENDED]
+    experiment_run_dc.total = status_counts["TOTAL"]
     return self.manager.update_experiment_run_dc_by_id(experiment_run_dc)
 
   def finish_current_experiment_run(self):
@@ -241,25 +242,10 @@ class ExperimentHistory():
     current_experiment_run_dc.finish = int(time())
     return self.manager.update_experiment_run_dc_by_id(current_experiment_run_dc)
 
-  def create_new_experiment_run(self, chunk_unit="NA", chunk_size=0, current_config=""):
+  def create_new_experiment_run(self, chunk_unit="NA", chunk_size=0, current_config="", job_list=None):
     """ Also writes the finish timestamp of the previous run.  """
     self.finish_current_experiment_run()
-    return self._create_new_experiment_run_dc_with_counts(chunk_unit=chunk_unit, chunk_size=chunk_size, current_config=current_config)
-
-  def detect_changes_in_job_list(self, job_list):
-    """ Detect changes in job_list compared to the current contents of job_data table. Returns a list of JobData data classes where the status of each item is the new status."""
-    job_name_to_job = {job.name: job for job in job_list}    
-    current_job_data_dcs = self.manager.get_all_last_job_data_dcs()
-    differences = []
-    for job_dc in current_job_data_dcs:
-      if job_dc.job_name in job_name_to_job and job_dc.status != job_name_to_job[job_dc.job_name].status_str:
-        job_dc.status = job_name_to_job[job_dc.job_name].status_str
-        differences.append(job_dc)
-    return differences
-
-  def update_experiment_history_from_job_list(self, job_list):
-    """ job_list: List of objects, each object must have attributes date, member, status_str. """
-    raise NotImplementedError
+    return self._create_new_experiment_run_dc_with_counts(chunk_unit=chunk_unit, chunk_size=chunk_size, current_config=current_config, job_list=job_list)
 
   def _create_new_experiment_run_dc_with_counts(self, chunk_unit, chunk_size, current_config="", job_list=None):
     """ Create new experiment_run row and return the new Models.ExperimentRun data class from database. """
@@ -275,7 +261,27 @@ class ExperimentHistory():
                         running=status_counts[HUtils.SupportedStatus.RUNNING], 
                         submitted=status_counts[HUtils.SupportedStatus.SUBMITTED], 
                         suspended=status_counts[HUtils.SupportedStatus.SUSPENDED])
-    return self.manager.register_experiment_run_dc(experiment_run_dc)    
+    return self.manager.register_experiment_run_dc(experiment_run_dc)  
+
+  def _get_built_list_of_changes(self, job_list):
+    """ Return: List of (current timestamp, current datetime str, status, rowstatus, id in job_data). One tuple per change. """
+    job_data_dcs = self.detect_changes_in_job_list(job_list)
+    return [(int(time()), HUtils.get_current_datetime(), job.status, Models.RowStatus.CHANGED, job._id) for job in job_data_dcs]
+
+  def detect_changes_in_job_list(self, job_list):
+    """ Detect changes in job_list compared to the current contents of job_data table. Returns a list of JobData data classes where the status of each item is the new status."""
+    job_name_to_job = {job.name: job for job in job_list}    
+    current_job_data_dcs = self.manager.get_all_last_job_data_dcs()
+    differences = []
+    for job_dc in current_job_data_dcs:
+      if job_dc.job_name in job_name_to_job and job_dc.status != job_name_to_job[job_dc.job_name].status_str:
+        job_dc.status = job_name_to_job[job_dc.job_name].status_str
+        differences.append(job_dc)
+    return differences
+
+  def update_experiment_history_from_job_list(self, job_list):
+    """ job_list: List of objects, each object must have attributes name, date, member, status_str, children. """
+    raise NotImplementedError
 
   def _get_defined_rowtype(self, code):  
     if code:
@@ -299,13 +305,8 @@ class ExperimentHistory():
 
   def _get_date_member_completed_count(self, job_list):
     """ Each item in the job_list must have attributes: date, member, status_str. """
-    job_list = job_list if job_list else []
-    return sum(1 for job in job_list if job.date is not None and job.member is None and job.status_str == HUtils.SupportedStatus.COMPLETED)
-  
-  def _get_built_list_of_changes(self, job_list):
-    """ Return: List of (current timestamp, current datetime str, status, rowstatus, id in job_data). One tuple per change. """
-    job_data_dcs = self.detect_changes_in_job_list(job_list)
-    return [(int(time()), HUtils.get_current_datetime(), job.status, Models.RowStatus.CHANGED, job._id) for job in job_data_dcs]
+    job_list = job_list if job_list else []    
+    return sum(1 for job in job_list if job.date is not None and job.member is not None and job.status_str == HUtils.SupportedStatus.COMPLETED)
     
   def get_status_counts_from_job_list(self, job_list):
     """ 
@@ -317,7 +318,7 @@ class ExperimentHistory():
       HUtils.SupportedStatus.QUEUING: 0,
       HUtils.SupportedStatus.SUBMITTED: 0,
       HUtils.SupportedStatus.RUNNING: 0,
-      HUtils.SupportedStatus.RUNNING: 0,
+      HUtils.SupportedStatus.SUSPENDED: 0,
       "TOTAL": 0
     }   
 

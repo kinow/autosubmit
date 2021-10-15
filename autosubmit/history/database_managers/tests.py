@@ -19,12 +19,16 @@
 import unittest
 import time
 import random
+import os
+from shutil import copy2
 from experiment_history_db_manager import ExperimentHistoryDbManager
 from experiment_status_db_manager import ExperimentStatusDbManager
 from autosubmit.history.data_classes.experiment_run import ExperimentRun
 from autosubmit.history.data_classes.job_data import JobData
 from autosubmit.config.basicConfig import BasicConfig
 import autosubmit.history.utils as HUtils
+EXPID_TT00_SOURCE = "test_database.db~"
+EXPID_TT01_SOURCE = "test_database_no_run.db~"
 EXPID = "tt00"
 EXPID_NONE = "tt01"
 BasicConfig.read()
@@ -35,9 +39,6 @@ class TestExperimentStatusDatabaseManager(unittest.TestCase):
   """ Covers Experiment Status Database Manager """
   def setUp(self):
     self.exp_status_db = ExperimentStatusDbManager(EXPID, LOCAL_ROOT_DIR)
-  
-  def tearDown(self):
-    pass
 
   def test_get_current_experiment_status_row(self):    
     exp_status_row = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
@@ -69,11 +70,18 @@ class TestExperimentStatusDatabaseManager(unittest.TestCase):
 class TestExperimentHistoryDbManager(unittest.TestCase):
   """ Covers Experiment History Database Manager and Data Models """
   def setUp(self):
-    self.experiment_database = ExperimentHistoryDbManager(EXPID, JOBDATA_DIR)
-    self.experiment_database.initialize()
+    self.experiment_database = ExperimentHistoryDbManager(EXPID, JOBDATA_DIR)    
+    source_path_tt00 = os.path.join(JOBDATA_DIR, EXPID_TT00_SOURCE)
+    self.target_path_tt00 = os.path.join(JOBDATA_DIR, "job_data_{0}.db".format(EXPID))        
+    copy2(source_path_tt00, self.target_path_tt00)
+    source_path_tt01 = os.path.join(JOBDATA_DIR, EXPID_TT01_SOURCE)
+    self.target_path_tt01 = os.path.join(JOBDATA_DIR, "job_data_{0}.db".format(EXPID_NONE))
+    copy2(source_path_tt01, self.target_path_tt01)
+    self.experiment_database.initialize()    
 
   def tearDown(self):
-    pass
+    os.remove(self.target_path_tt00)
+    os.remove(self.target_path_tt01)
 
   def test_get_max_id(self):        
     max_item = self.experiment_database.get_experiment_run_dc_with_max_id()  
@@ -183,7 +191,8 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     self.experiment_database.update_many_job_data_change_status(backup_changes)
   
   def test_job_data_maxcounter(self):
-    new_job_data = ExperimentHistoryDbManager(EXPID_NONE, JOBDATA_DIR)    
+    new_job_data = ExperimentHistoryDbManager(EXPID_NONE, JOBDATA_DIR) 
+    new_job_data.initialize()   
     max_empty_table_counter = new_job_data.get_job_data_max_counter()    
     self.assertTrue(max_empty_table_counter == 0)
     max_existing_counter = self.experiment_database.get_job_data_max_counter()    
