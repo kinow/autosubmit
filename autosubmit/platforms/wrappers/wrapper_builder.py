@@ -441,8 +441,6 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 current.start()
                 os.system("echo "+str(time.time())+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
                 current.join({3})
-                if current.is_alive():
-                    os.system("scancel --signal=TERM {{0}}.{{1}}".format(os.environ['SLURM_JOBID'],total_steps))
                 job_retrials = job_retrials - 1
                 total_steps = total_steps + 1
         """).format(jobs_list, thread,self.retrials,str(self.wallclock_by_level),'\n'.ljust(13))
@@ -494,12 +492,12 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 print(command+"\\n")
-                (self.status) = getstatusoutput("srun "+command + " > " + out + " 2> " + err)
+                (self.status) = getstatusoutput(timeout {0} command + " > " + out + " 2> " + err)
                 for i in self.status:
                     print(str(i)+"\\n")
 
                 
-        """).format('\n'.ljust(13))
+        """).format(str(self.wallclock_by_level),'\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
         return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, job_retrials)")
