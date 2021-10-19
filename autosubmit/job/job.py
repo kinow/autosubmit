@@ -81,10 +81,13 @@ class Job(object):
         return "{0} STATUS: {1}".format(self.name, self.status)
 
     def __init__(self, name, job_id, status, priority):
+        self.delay_end = datetime.datetime.now()
+        self.delay_retrials = 0
         self.wrapper_type = "none"
         self._wrapper_queue = None
         self._platform = None
         self._queue = None
+        self.retry_delay = 0
         self.platform_name = None
         self.section = None
         self.wallclock = None
@@ -898,7 +901,8 @@ class Job(object):
         parameters['MEMBER'] = self.member
         if hasattr(self, 'retrials'):
             parameters['RETRIALS'] = self.retrials
-
+        if hasattr(self, 'delay_retrials'):
+            parameters['delay_retrials'] = self.delay_retrials
         if self.date is not None:
             if self.chunk is None:
                 chunk = 1
@@ -968,10 +972,6 @@ class Job(object):
         # Increasing according to chunk
         self.wallclock = increase_wallclock_by_chunk(
             self.wallclock, self.wchunkinc, chunk)
-        if self.wallclock == '':
-            Log.debug(
-                "Wallclock for {0} is not defined! , setting it to 02:00".format(self.name))
-            self.wallclock = '02:00'
         self.scratch_free_space = as_conf.get_scratch_free_space(self.section)
         if self.scratch_free_space == 0:
             self.scratch_free_space = job_platform.scratch_free_space
@@ -1063,11 +1063,11 @@ class Job(object):
                 template += template_file.read()
             else:
                 if self.type == Type.BASH:
-                    template = 'sleep 10'
+                    template = 'sleep 1'
                 elif self.type == Type.PYTHON:
-                    template = 'time.sleep(10)'
+                    template = 'time.sleep(1)'
                 elif self.type == Type.R:
-                    template = 'Sys.sleep(10)'
+                    template = 'Sys.sleep(1)'
                 else:
                     template = ''
         except:
@@ -1623,9 +1623,9 @@ class WrapperJob(Job):
     def _check_inner_job_wallclock(self, job):
         start_time = self.running_jobs_start[job]
         if self._is_over_wallclock(start_time, job.wallclock):
-            # if self.as_config.get_wrapper_type() in ['vertical', 'horizontal']:
-            Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
-                job.name, self.name), 6009)
+            if job.wrapper_type != "vertical":
+                Log.printlog("Job {0} inside wrapper {1} is running for longer than it's wallclock!".format(
+                    job.name, self.name), 6009)
             return True
         return False
 
@@ -1698,9 +1698,10 @@ class WrapperJob(Job):
                                 over_wallclock = self._check_inner_job_wallclock(
                                     job)  # messaged included
                                 if over_wallclock:
-                                    job.status = Status.FAILED
-                                    Log.printlog(
-                                        "Job {0} is FAILED".format(jobname), 6009)
+                                    if job.wrapper_type != "vertical":
+                                        job.status = Status.FAILED
+                                        Log.printlog(
+                                            "Job {0} is FAILED".format(jobname), 6009)
                             elif len(out) == 3:
                                 end_time = self._check_time(out, 2)
                                 self._check_finished_job(job)

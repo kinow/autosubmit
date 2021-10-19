@@ -23,5 +23,9 @@ class Notifier:
         pass
 
     @staticmethod
-    def notify_status_change(implementation, exp_id, job_name, prev_status, status, notify_to):
+    def notify_status_change(implementation, exp_id, job_name="", prev_status="", status="", notify_to=""):
         implementation.notify_status_change(exp_id, job_name, prev_status, status, notify_to)
+
+    @staticmethod
+    def notify_experiment_status(implementation, exp_id, notify_to="",platform=""):
+        implementation.notify_experiment_status(exp_id,notify_to,platform)

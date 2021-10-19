@@ -46,7 +46,14 @@ class ParamikoPlatform(Platform):
         self.transport = None
         self.channels = {}
         self.poller = select.poll()
+<<<<<<< HEAD
         self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+=======
+        display = os.getenv('DISPLAY')
+        if display is None:
+            display = "localhost:0"
+        self.local_x11_display = xlib_connect.get_display(display)
+>>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
 
     @property
     def header(self):
@@ -80,7 +87,11 @@ class ParamikoPlatform(Platform):
         self.transport = None
         self.channels = {}
         self.poller = select.poll()
-        self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+        display = os.getenv('DISPLAY')
+        if display is None:
+            display = "localhost:0"
+        self.local_x11_display = xlib_connect.get_display(display)
+
 
     def test_connection(self):
         """
@@ -152,7 +163,10 @@ class ParamikoPlatform(Platform):
         :rtype: bool
         """
         try:
-            self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+            display = os.getenv('DISPLAY')
+            if display is None:
+                display = "localhost:0"
+            self.local_x11_display = xlib_connect.get_display(display)
             self._ssh = paramiko.SSHClient()
             self._ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self._ssh_config = paramiko.SSHConfig()
@@ -682,7 +696,10 @@ class ParamikoPlatform(Platform):
             try:
                 chan = self.transport.open_session()
                 if x11:
-                    self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+                    display = os.getenv('DISPLAY')
+                    if display is None:
+                        display = "localhost:0"
+                    self.local_x11_display = xlib_connect.get_display(display)
                     chan.request_x11(handler=self.x11_handler)
                 else:
                     chan.settimeout(timeout)

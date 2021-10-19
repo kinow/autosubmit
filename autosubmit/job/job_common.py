@@ -34,12 +34,13 @@ class Status:
     PREPARED = 7
     SKIPPED = 8
     FAILED = -1
+    DELAYED = 9
     UNKNOWN = -2
     SUSPENDED = -3
     #######
     # Note: any change on constants must be applied on the dict below!!!
     VALUE_TO_KEY = {-3: 'SUSPENDED', -2: 'UNKNOWN', -1: 'FAILED', 0: 'WAITING', 1: 'READY',
-                    2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED', 8: 'SKIPPED'}
+                    2: 'SUBMITTED', 3: 'QUEUING', 4: 'RUNNING', 5: 'COMPLETED', 6: 'HELD', 7: 'PREPARED', 8: 'SKIPPED', 9: 'DELAYED'}
 
     def retval(self, value):
         return getattr(self, value)
@@ -67,9 +68,10 @@ class bcolors:
     PREPARED = '\033[34;2m'
     HELD = '\033[34;1m'
     FAILED = '\033[31m'
+    DELAYED = '\033[36;1m'
     SUSPENDED = '\033[31;1m'
     CODE_TO_COLOR = {-3: SUSPENDED, -2: UNKNOWN, -1: FAILED, 0: WAITING, 1: READY,
-                     2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED, 8: SKIPPED}
+                     2: SUBMITTED, 3: QUEUING, 4: RUNNING, 5: COMPLETED, 6: HELD, 7: PREPARED, 8: SKIPPED, 9: DELAYED}
 
 
 class Type:
@@ -108,7 +110,7 @@ class StatisticsSnippetBash:
             ###################
             set -xuve
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
-            echo $(date +%s) >> ${job_name_ptrn}_STAT
+            echo $(date +%s) > ${job_name_ptrn}_STAT
 
             ###################
             # Autosubmit job

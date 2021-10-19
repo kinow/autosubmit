@@ -199,6 +199,10 @@ Examples:
     # MEMORY = 4096
     ##  Number of retrials if a job fails. If not specified, defaults to the value given on experiment's autosubmit.conf
     # RETRIALS = 4
+    ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
+    # DELAY_RETRY_TIME = 11
+    # DELAY_RETRY_TIME = +11 # will wait 11,22,33,44...
+    # DELAY_RETRY_TIME = *11 # will wait 11,110,1110,11110...
     ## Some jobs can not be checked before running previous jobs. Set this option to false if that is the case
     # CHECK = False
     ## Select the interpreter that will run the job. Options: bash, python, r Default: bash
@@ -331,6 +335,10 @@ Examples:
     # Number of retrials if a job fails. Can ve override at job level
     # Default = 0
     RETRIALS = 0
+    ##  Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static
+    # DELAY_RETRY_TIME = 11
+    # DELAY_RETRY_TIME = +11 # will wait 11,22,33,44...
+    # DELAY_RETRY_TIME = *11 # will wait 11,110,1110,11110...
     # Default output type for CREATE, MONITOR, SET STATUS, RECOVERY. Available options: pdf, svg, png, ps, txt
     # Default = pdf
     OUTPUT = pdf

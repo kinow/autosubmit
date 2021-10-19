@@ -25,6 +25,8 @@ except ImportError:
     from ConfigParser import SafeConfigParser
 
 import os
+from datetime import timedelta
+
 import time
 import random
 from autosubmit.job.job_common import Status
@@ -32,10 +34,11 @@ from log.log import Log,AutosubmitCritical,AutosubmitError
 Log.get_logger("Autosubmit")
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
-from bscearth.utils.date import sum_str_hours
+from bscearth.utils.date import sum_str_hours,date2str
 from threading import Thread,Lock
 import multiprocessing
 import tarfile
+import datetime
 
 lock = Lock()
 def threaded(fn):
@@ -335,8 +338,21 @@ class JobPackageThread(JobPackageBase):
     """
     FILE_PREFIX = 'ASThread'
 
-    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper"):
+    def __init__(self, jobs, dependency=None, jobs_resources=dict(),method='ASThread',configuration=None,wrapper_section="wrapper", wrapper_info= {}):
         super(JobPackageThread, self).__init__(jobs)
+        if len(wrapper_info) > 0 :
+            self.wrapper_type = wrapper_info[0][wrapper_section]
+            self.wrapper_policy = wrapper_info[1][wrapper_section]
+            self.wrapper_method = wrapper_info[2][wrapper_section]
+            self.jobs_in_wrapper = wrapper_info[3][wrapper_section]
+            self.extensible_wallclock = wrapper_info[4][wrapper_section]
+        else:
+            self.wrapper_type = None
+            self.wrapper_policy = None
+            self.wrapper_method = None
+            self.jobs_in_wrapper = None
+            self.extensible_wallclock = None
+
         self._job_scripts = {}
         # Seems like this one is not used at all in the class
         self._job_dependency = dependency
@@ -541,8 +557,8 @@ class JobPackageVertical(JobPackageThread):
     :type jobs:
     :param: dependency:
     """
-    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper"):
-        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section)
+    def __init__(self, jobs, dependency=None,configuration=None,wrapper_section="wrapper", wrapper_info = {}):
+        super(JobPackageVertical, self).__init__(jobs, dependency,configuration=configuration,wrapper_section=wrapper_section, wrapper_info = wrapper_info)
         for job in jobs:
             if job.processors > self._num_processors:
                 self._num_processors = job.processors
@@ -555,12 +571,46 @@ class JobPackageVertical(JobPackageThread):
                                                                                   len(self._jobs))
 
     def _common_script_content(self):
+        if self.jobs[0].wrapper_type == "vertical":
+            wallclock = datetime.datetime.strptime(self._wallclock, '%H:%M')
+            total = 0.0
+            if wallclock.hour > 0:
+                total = wallclock.hour
+            if wallclock.minute > 0:
+                total += wallclock.minute / 60.0
+            if wallclock.second > 0:
+                total += wallclock.second / 60.0 / 60.0
+            wallclock = total
+            total = total * 1.15
+            hour = int(total)
+            minute = int((total - int(total)) * 60.0)
+            second = int(((total - int(total)) * 60 -
+                          int((total - int(total)) * 60.0)) * 60.0)
+            wallclock_delta = datetime.timedelta(hours=hour, minutes=minute,seconds=second)
+            #####
+            # split in hh, mm, ss
+            hh, mm, ss = str(wallclock_delta).split(':')
+            wallclock_seconds=int(hh) * 3600 + int(mm) * 60 + int(ss)
+            wallclock_by_level = wallclock_seconds/(self.jobs[-1].level+1)
+            if self.extensible_wallclock > 0:
+                hour = int(wallclock)
+                minute = int((wallclock - int(wallclock)) * 60.0)
+                second = int(((wallclock - int(wallclock)) * 60 -
+                              int((wallclock - int(wallclock)) * 60.0)) * 60.0)
+                wallclock_seconds = int(hour) * 3600 + int(minute) * 60 + int(second)
+                wallclock_seconds = int(wallclock_seconds + wallclock_seconds * self.extensible_wallclock)
+                wallclock_delta = datetime.timedelta(hours=0, minutes=0, seconds=wallclock_seconds)
+                hh, mm, ss = str(wallclock_delta).split(':')
+                self._wallclock = hh + ":"+mm
+        else:
+            wallclock_by_level = None
+
         return self._wrapper_factory.get_wrapper(self._wrapper_factory.vertical_wrapper, name=self._name,
                                                  queue=self._queue, project=self._project, wallclock=self._wallclock,
                                                  num_processors=self._num_processors, jobs_scripts=self._jobs_scripts,
                                                  dependency=self._job_dependency, jobs_resources=self._jobs_resources,
                                                  expid=self._expid, rootdir=self.platform.root_dir,
-                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials)
+                                                 directives=self._custom_directives,threads=self._threads,method=self.method.lower(),retrials=self.inner_retrials, wallclock_by_level=wallclock_by_level)
 
 
 class JobPackageHorizontal(JobPackageThread):

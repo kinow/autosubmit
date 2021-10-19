@@ -639,7 +639,6 @@ class Autosubmit:
 
     @staticmethod
     def _init_logs(args, console_level='INFO', log_level='DEBUG', expid='None'):
-
         Log.set_console_level(console_level)
         expid_less = ["expid", "testcase", "install", "-v",
                       "readme", "changelog", "configure", "unarchive"]
@@ -760,33 +759,39 @@ class Autosubmit:
 
             # Deletion workflow continues as usual, a disjunction is included for the case when
             # force is sent, and user is eadmin
+            error_message = ""
             try:
                 if currentOwner_id == my_user or (force and my_user == id_eadmin):
                     if (force and my_user == id_eadmin):
                         Log.info(
                             "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
-                        Log.info("Removing experiment directory...")
-                        shutil.rmtree(os.path.join(
-                            BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                        Log.info("Deleting experiment from database...")
                         try:
+                            ret = delete_experiment(expid_delete)
+                            if ret:
+                                Log.result("Experiment {0} deleted".format(expid_delete))
+                        except BaseException as e:
+                            error_message += 'Can not delete experiment entry: {0}\n'.format(e.message)
+                        Log.info("Removing experiment directory...")
+                        try:
+                            shutil.rmtree(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid_delete))
+                        except BaseException as e:
+                            error_message += 'Can not delete directory: {0}\n'.format(e.message)
+                        try:
+                            Log.info("Removing Structure db...")
                             os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                    BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
-                        except:
-                            pass
+                        except BaseException as e:
+                            error_message += 'Can not delete structure: {0}\n'.format(e.message)
                         try:
+                            Log.info("Removing job_data db...")
                             os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
                                                    BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
-                        except:
-                            pass
+                        except BaseException as e:
+                            error_message += 'Can not delete job_data: {0}\n'.format(e.message)
                     except OSError as e:
-                        raise AutosubmitCritical(
-                            'Can not delete experiment folder: ', 7012, e.message)
-                    Log.info("Deleting experiment from database...")
-                    ret = delete_experiment(expid_delete)
-                    if ret:
-                        Log.result(
-                            "Experiment {0} deleted".format(expid_delete))
+                        error_message += 'Can not delete directory: {0}\n'.format(e.message)
                 else:
                     if currentOwner_id == 0:
                         raise AutosubmitCritical(
@@ -796,9 +801,9 @@ class Autosubmit:
                             'Current user is not the owner of the experiment. {0} can not be deleted!'.format(expid_delete), 7012)
             except Exception as e:
                 # Avoid calling Log at this point since it is possible that tmp folder is already deleted.
-                # print(traceback.format_exc())
-                raise AutosubmitCritical(
-                    "Couldn't delete the experiment:", 7012, str(e))
+                error_message += "Couldn't delete the experiment".format(e.message)
+            if error_message != "":
+                raise AutosubmitError("Some experiment files weren't correctly deleted\nPlease if the trace shows DATABASE IS LOCKED, report it to git\nIf there are I/O issues, wait until they're solved and then use this command again.\n",error_message,6004)
 
     @staticmethod
     def expid(hpc, description, copy_id='', dummy=False, test=False, operational=False, root_folder=''):
@@ -1297,10 +1302,6 @@ class Autosubmit:
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         import platform
         host = platform.node()
-        if BasicConfig.ALLOWED_HOSTS and host not in BasicConfig.ALLOWED_HOSTS: #fastlook
-            raise AutosubmitCritical(
-                "The current host is not allowed to run Autosubmit", 7004)
-
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
 
         as_conf.check_conf_files(True)
@@ -1533,7 +1534,7 @@ class Autosubmit:
                                 "Autosubmit failed while processing job packages. This might be due to a change in your experiment configuration files after 'autosubmit create' was performed.", 7014, str(e))
 
                     Log.debug("Checking job_list current status")
-                    save = job_list.update_list(as_conf, first_time=True)
+                    job_list.update_list(as_conf, first_time=True)
                     job_list.save()
 
                     Log.info(
@@ -1738,25 +1739,33 @@ class Autosubmit:
                         # End Check Current jobs
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
-                        if save or save2:
-                            job_list.save()
+                        job_list.save()
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
+                            job_list.update_list(as_conf, submitter=submitter)
+                            job_list.save()
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
-
-                        save = job_list.update_list(
-                            as_conf, submitter=submitter)
-                        if save:
+                            job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
+<<<<<<< HEAD
                         exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)                        
                         if len(job_changes_tracker) > 0:
                             exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                         job_changes_tracker = {}                        
 
+=======
+                        job_data_structure.process_status_changes(
+                            job_changes_tracker, job_list.get_job_list())
+                        job_changes_tracker = {}
+                        save = job_list.update_list(
+                            as_conf, submitter=submitter)
+                        if save:
+                            job_list.save()
+>>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
@@ -1765,58 +1774,83 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         Log.info("Waiting 30 seconds before continue")
-                        # Save job_list if not is a failed submitted job
+                        # No need to wait until the remote platform reconnection
                         recovery = True
-                        IO_issues = True
-                        while IO_issues:
-                            try:
-                                failed_jobs = job_list.get_failed()
-                                failed_jobs += job_list.get_ready()
-                                failed_names = {}
-                                for job in failed_jobs:
-                                    if job.fail_count > 0:
-                                        failed_names[job.name] = job.fail_count
-                                job_list = Autosubmit.load_job_list(expid, as_conf, notransitive=notransitive)
-                                if len(job_list._job_list) == 0:
-                                    sleep(5)
-                                    raise IOError
-                                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
-                                for job in job_list.get_job_list():
-                                    if job in failed_names:
-                                        job.fail_count = failed_names[job.name]
-                                    if job.platform_name is None:
-                                        job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower(
-                                    )]
-
-                                packages_persistence = JobPackagePersistence(os.path.join(
-                                    BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
-                                packages = packages_persistence.load()
-                                if len(job_list.packages_dict) > 0:
-                                    if len(packages) == 0:
-                                        sleep(5)
-                                        raise IOError
-                                for (exp_id, package_name, job_name) in packages:
-                                    if package_name not in job_list.packages_dict:
-                                        job_list.packages_dict[package_name] = []
-                                    job_list.packages_dict[package_name].append(
-                                        job_list.get_job_by_name(job_name))
-                                for package_name, jobs in job_list.packages_dict.items():
-                                    from job.job import WrapperJob
-                                    for inner_job in jobs:
-                                        inner_job.packed = True
-                                    wrapper_job = WrapperJob(package_name, jobs[0].id, Status.SUBMITTED, 0, jobs,
-                                                             None,
-                                                             None, jobs[0].platform, as_conf, jobs[0].hold)
-                                    job_list.job_package_map[jobs[0].id] = wrapper_job
-                                save = job_list.update_list(as_conf)
-                                job_list.save()
-                                IO_issues = False
-                            except IOError as e:
-                                IO_issues = True
-                            except BaseException as e:
-                                AutosubmitCritical("Unknown error during the recovery of the job_list",7056,e)
-
+                        try:
+                            #Recover job_list while keeping job.fail_count
+                            failed_names = {}
+                            for job in job_list.get_job_list():
+                                if job.fail_count > 0:
+                                    failed_names[job.name] = job.fail_count
+                            job_list = Autosubmit.load_job_list(
+                                expid, as_conf, notransitive=notransitive)
+                            Autosubmit._load_parameters(
+                                as_conf, job_list, submitter.platforms)
+                            for job in job_list.get_job_list():
+                                if job.name in failed_names.keys():
+                                    job.fail_count = failed_names[job.name]
+                                if job.platform_name is None:
+                                    job.platform_name = hpcarch
+                                job.platform = submitter.platforms[job.platform_name.lower(
+                                )]
+                            # Recovery wrapper [Packages]
+                            packages_persistence = JobPackagePersistence(os.path.join(
+                                BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                            packages = packages_persistence.load()
+                            for (exp_id, package_name, job_name) in packages:
+                                if package_name not in job_list.packages_dict:
+                                    job_list.packages_dict[package_name] = []
+                                job_list.packages_dict[package_name].append(
+                                    job_list.get_job_by_name(job_name))
+                            # Recovery wrappers [Wrapper status]
+                            for package_name, jobs in job_list.packages_dict.items():
+                                from job.job import WrapperJob
+                                wrapper_status = Status.SUBMITTED
+                                all_completed = True
+                                running = False
+                                queuing = False
+                                failed = False
+                                hold = False
+                                submitted = False
+                                if jobs[0].status == Status.RUNNING or jobs[0].status == Status.COMPLETED:
+                                    running = True
+                                for job in jobs:
+                                    if job.status == Status.QUEUING:
+                                        queuing = True
+                                        all_completed = False
+                                    elif job.status == Status.FAILED:
+                                        failed = True
+                                        all_completed = False
+                                    elif job.status == Status.HELD:
+                                        hold = True
+                                        all_completed = False
+                                    elif job.status == Status.SUBMITTED:
+                                        submitted = True
+                                        all_completed = False
+                                if all_completed:
+                                    wrapper_status = Status.COMPLETED
+                                elif hold:
+                                    wrapper_status = Status.HELD
+                                else:
+                                    if running:
+                                        wrapper_status = Status.RUNNING
+                                    elif queuing:
+                                        wrapper_status = Status.QUEUING
+                                    elif submitted:
+                                        wrapper_status = Status.SUBMITTED
+                                    elif failed:
+                                        wrapper_status = Status.FAILED
+                                    else:
+                                        wrapper_status = Status.SUBMITTED
+                                wrapper_job = WrapperJob(package_name, jobs[0].id, wrapper_status, 0, jobs,
+                                                         None,
+                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
+                                job_list.job_package_map[jobs[0].id] = wrapper_job
+                            save = job_list.update_list(as_conf)
+                            job_list.save()
+                        except BaseException as e:
+                            raise AutosubmitCritical("Job_list couldn't be restored due I/O error to be solved on 3.14.", 7040,
+                                                     e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         while not reconnected and main_loop_retrials > 0:
@@ -1832,7 +1866,7 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
-                                Autosubmit.restore_platforms(platforms_to_test)
+                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=True,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
                                 # Message prompt by restore_platforms.
@@ -1891,13 +1925,31 @@ class Autosubmit:
             raise
 
     @staticmethod
-    def restore_platforms(platform_to_test):
+    def restore_platforms(platform_to_test,mail_notify=False,as_conf=None,expid=expid):
         Log.info("Checking the connection to all platforms in use")
         issues = ""
+
         for platform in platform_to_test:
+<<<<<<< HEAD
             try:                
                 platform.test_connection()                
             except BaseException as e :                
+=======
+            try:
+                platform.test_connection()
+                if mail_notify:
+                    email = as_conf.get_mails_to()
+                    if "@" in email[0]:
+                        Notifier.notify_experiment_status(MailNotifier(BasicConfig), expid, email, platform)
+            except BaseException as e:
+                try:
+                    if mail_notify:
+                        email = as_conf.get_mails_to()
+                        if "@" in email[0]:
+                            Notifier.notify_experiment_status(MailNotifier(BasicConfig),expid,email,platform)
+                except:
+                    pass
+>>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
                 issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
                     platform.host, platform.name)
                 continue

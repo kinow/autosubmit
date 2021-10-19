@@ -44,7 +44,7 @@ class Monitor:
     _table = dict([(Status.UNKNOWN, 'white'), (Status.WAITING, 'gray'), (Status.READY, 'lightblue'), (Status.PREPARED, 'skyblue'),
                    (Status.SUBMITTED, 'cyan'), (Status.HELD,
                                                 'salmon'), (Status.QUEUING, 'pink'), (Status.RUNNING, 'green'),
-                   (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
+                   (Status.COMPLETED, 'yellow'), (Status.FAILED, 'red'), (Status.DELAYED,'lightcyan') ,(Status.SUSPENDED, 'orange'), (Status.SKIPPED, 'lightyellow')])
 
     @staticmethod
     def color_status(status):
@@ -78,6 +78,8 @@ class Monitor:
             return Monitor._table[Status.FAILED]
         elif status == Status.SUSPENDED:
             return Monitor._table[Status.SUSPENDED]
+        elif status == Status.DELAYED:
+            return Monitor._table[Status.SUSPENDED]
         else:
             return Monitor._table[Status.UNKNOWN]
 
@@ -100,8 +102,11 @@ class Monitor:
             graph_name='Legend', label='Legend', rank="source")
         legend.add_node(pydotplus.Node(name='UNKNOWN', shape='box', style="",
                                        fillcolor=self._table[Status.UNKNOWN]))
+
         legend.add_node(pydotplus.Node(name='WAITING', shape='box', style="filled",
                                        fillcolor=self._table[Status.WAITING]))
+        legend.add_node(pydotplus.Node(name='DELAYED', shape='box', style="filled",
+                                       fillcolor=self._table[Status.DELAYED]))
         legend.add_node(pydotplus.Node(name='READY', shape='box', style="filled",
                                        fillcolor=self._table[Status.READY]))
         legend.add_node(pydotplus.Node(name='PREPARED', shape='box', style="filled",
@@ -121,6 +126,7 @@ class Monitor:
                                        fillcolor=self._table[Status.COMPLETED]))
         legend.add_node(pydotplus.Node(name='FAILED', shape='box', style="filled",
                                        fillcolor=self._table[Status.FAILED]))
+
         legend.add_node(pydotplus.Node(name='SUSPENDED', shape='box', style="filled",
                                        fillcolor=self._table[Status.SUSPENDED]))
 

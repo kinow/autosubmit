@@ -44,7 +44,8 @@ class WrapperDirector:
         return wrapper_script
 class WrapperBuilder(object):
     def __init__(self, **kwargs):
-        self.retrials = kwargs['retrials']
+        if "retrials" in kwargs.keys():
+            self.retrials = kwargs['retrials']
         self.header_directive = kwargs['header_directive']
         self.job_scripts = kwargs['jobs_scripts']
         self.threads = kwargs['threads']
@@ -55,6 +56,8 @@ class WrapperBuilder(object):
         self.machinefiles_name = ''
         self.machinefiles_indent = 0
         self.exit_thread = ''
+        if "wallclock_by_level" in kwargs.keys():
+            self.wallclock_by_level = kwargs['wallclock_by_level']
     def build_header(self):
         return textwrap.dedent(self.header_directive) + self.build_imports()
     def build_imports(self):
@@ -148,7 +151,7 @@ class PythonWrapperBuilder(WrapperBuilder):
 
             def run(self):
                 jobname = self.template.replace('.cmd', '')
-                os.system("echo $(date +%s) > "+jobname+"_STAT")
+                #os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + ".out"
                 err = str(self.template) + ".err"
                 print(out+"\\n")
@@ -424,10 +427,12 @@ for i in range(len(pid_list)):
         return ''.join(padding + line for line in text.splitlines(True))
 class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
 
-    def build_sequential_threads_launcher(self, jobs_list, thread, footer=True):
+    def build_sequential_threads_launcher(self, jobs_list, thread, footer=True): #fastlook
         sequential_threads_launcher = textwrap.dedent("""
         failed_wrapper = os.path.join(os.getcwd(),wrapper_id)
         retrials = {2}
+        total_steps = 0 
+        print "JOB.ID:"+ os.getenv('SLURM_JOBID')
         for i in range(len({0})):
             job_retrials = retrials
             completed = False
@@ -435,9 +440,10 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 current = {1}
                 current.start()
                 os.system("echo "+str(time.time())+" > "+scripts[i][:-4]+"_STAT_"+str(job_retrials)) #Start/submit running
-                current.join()
+                current.join({3})
                 job_retrials = job_retrials - 1
-        """).format(jobs_list, thread,self.retrials,'\n'.ljust(13))
+                total_steps = total_steps + 1
+        """).format(jobs_list, thread,self.retrials,str(self.wallclock_by_level),'\n'.ljust(13))
 
         if footer:
             sequential_threads_launcher += self._indent(textwrap.dedent("""
@@ -469,7 +475,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
             """).format(jobs_list, self.exit_thread, '\n'.ljust(13)), 4)
         return sequential_threads_launcher
 
-    def build_job_thread(self):
+    def build_job_thread(self): # fastlook
         return textwrap.dedent("""
         class JobThread(Thread):
             def __init__ (self, template, id_run, retrials):
@@ -480,14 +486,18 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
 
             def run(self):
                 jobname = self.template.replace('.cmd', '')
-                os.system("echo $(date +%s) > "+jobname+"_STAT")
+                #os.system("echo $(date +%s) > "+jobname+"_STAT")
                 out = str(self.template) + ".out." + str(self.retrials)
                 err = str(self.template) + ".err." + str(self.retrials)
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
-                (self.status) = getstatusoutput(command + " > " + out + " 2> " + err)
+                print(command+"\\n")
+                (self.status) = getstatusoutput("timeout {0} " + command + " > " + out + " 2> " + err)
+                for i in self.status:
+                    print(str(i)+"\\n")
+
                 
-        """).format('\n'.ljust(13))
+        """).format(str(self.wallclock_by_level),'\n'.ljust(13))
     def build_main(self):
         self.exit_thread = "os._exit(1)"
         return self.build_sequential_threads_launcher("scripts", "JobThread(scripts[i], i, job_retrials)")

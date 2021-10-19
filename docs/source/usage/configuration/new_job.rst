@@ -40,6 +40,17 @@ To do this use:
 
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
+* RETRIALS: Number of retrials if job fails
+
+* DELAY_RETRY_TIME: Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static. The ideal is to use the +(number) approach or plain(number) in case that the hpc platform has little issues or the experiment will run for a short period of time
+and *(10) in case that the filesystem is having large  delays or the experiment will run for a lot of time.
+
+.. code-block:: ini
+
+    #DELAY_RETRY_TIME = 11
+    #DELAY_RETRY_TIME = +11 # will wait 11 + number specified
+    #DELAY_RETRY_TIME = *11 # will wait 11,110,1110,11110...* by 10 to prevent a too big number
+
 
 There are also other, less used features that you can use:
 
