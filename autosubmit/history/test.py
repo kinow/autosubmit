@@ -24,6 +24,7 @@ from shutil import copy2
 from collections import namedtuple
 from experiment_history import ExperimentHistory
 from internal_logging import Logging
+from strategies import StraightWrapperAssociationStrategy, GeneralizedWrapperDistributionStrategy, PlatformInformationHandler
 from autosubmit.config.basicConfig import BasicConfig
 from platform_monitor.slurm_monitor import SlurmMonitor
 EXPID_TT00_SOURCE = "test_database.db~"
@@ -97,7 +98,7 @@ class TestExperimentHistory(unittest.TestCase):
     built_differences = exp_history._get_built_list_of_changes(self.job_list)
     expected_ids_differences = [90, 101]
     for item in built_differences:
-      self.assertTrue(item[4] in expected_ids_differences)
+      self.assertTrue(item[3] in expected_ids_differences)
   
   def test_get_date_member_count(self):
     exp_history = ExperimentHistory("tt00")
@@ -159,26 +160,11 @@ class TestExperimentHistory(unittest.TestCase):
     exp_history = ExperimentHistory("tt00")
     exp_history.initialize_database()
     job_data_dcs = exp_history.manager.get_all_last_job_data_dcs()    
-    calculated_weights = exp_history._get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
+    calculated_weights = GeneralizedWrapperDistributionStrategy().get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
     sum_comp_weight = 0
     for job_name in calculated_weights:      
       sum_comp_weight += calculated_weights[job_name]    
     self.assertTrue(abs(sum_comp_weight - 1) <= 0.01)
-
-  def test_assign_platform_information_to_job_data_dc(self):
-    exp_history = ExperimentHistory("tt00")
-    exp_history.initialize_database()
-    ssh_output = '''                  12535498  COMPLETED          2        1 2020-11-18T13:54:24 2020-11-18T13:55:55 2020-11-18T13:56:10          2.77K                                                     
-           12535498.batch  COMPLETED          2        1 2020-11-18T13:55:55 2020-11-18T13:55:55 2020-11-18T13:56:10          2.69K                      659K                      659K 
-          12535498.extern  COMPLETED          2        1 2020-11-18T13:55:55 2020-11-18T13:55:55 2020-11-18T13:56:10          2.77K                       24K                       24K  '''
-    slurm_monitor = SlurmMonitor(ssh_output)    
-    job_data_dc = exp_history.manager.get_job_data_dc_unique_latest_by_job_name("a29z_20000101_fc1_1_CLEAN")
-    job_data_dc_result = exp_history._assign_platform_information_to_job_data_dc(job_data_dc, slurm_monitor)
-    self.assertTrue(job_data_dc_result.job_name == job_data_dc.job_name)
-    self.assertTrue(job_data_dc_result.energy == slurm_monitor.header.energy)
-    self.assertTrue(job_data_dc_result.status == "COMPLETED")    
-    self.assertTrue(slurm_monitor.header.energy == 2770)
-    self.assertTrue(job_data_dc_result.MaxRSS == 659000)
   
   def test_distribute_energy_in_wrapper_1_to_1(self):
     exp_history = ExperimentHistory("tt00")
@@ -193,8 +179,9 @@ class TestExperimentHistory(unittest.TestCase):
     '''
     slurm_monitor = SlurmMonitor(ssh_output)
     job_data_dcs = exp_history.manager.get_all_last_job_data_dcs()[:4] # Get me 4 jobs
-    weights = exp_history._get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
-    job_data_dcs_with_data = exp_history._distribute_energy_in_wrapper(job_data_dcs, slurm_monitor)       
+    weights = StraightWrapperAssociationStrategy().get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)    
+    info_handler = PlatformInformationHandler(StraightWrapperAssociationStrategy())
+    job_data_dcs_with_data = info_handler.execute_distribution(job_data_dcs[0], job_data_dcs, slurm_monitor)    
     self.assertTrue(job_data_dcs_with_data[0].energy == round(slurm_monitor.steps[0].energy + weights[job_data_dcs_with_data[0].job_name]*slurm_monitor.extern.energy, 2))
     self.assertTrue(job_data_dcs_with_data[0].MaxRSS == slurm_monitor.steps[0].MaxRSS)
     self.assertTrue(job_data_dcs_with_data[2].energy == round(slurm_monitor.steps[2].energy + weights[job_data_dcs_with_data[2].job_name]*slurm_monitor.extern.energy, 2))
@@ -213,15 +200,16 @@ class TestExperimentHistory(unittest.TestCase):
     '''
     slurm_monitor = SlurmMonitor(ssh_output)
     job_data_dcs = exp_history.manager.get_all_last_job_data_dcs()[:5] # Get me 5 jobs
-    weights = exp_history._get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)
-    job_data_dcs_with_data = exp_history._distribute_energy_in_wrapper(job_data_dcs, slurm_monitor)
+    weights = GeneralizedWrapperDistributionStrategy().get_calculated_weights_of_jobs_in_wrapper(job_data_dcs)    
+    # print(sum(weights[k] for k in weights))
+    info_handler = PlatformInformationHandler(GeneralizedWrapperDistributionStrategy())
+    job_data_dcs_with_data = info_handler.execute_distribution(job_data_dcs[0], job_data_dcs, slurm_monitor)
     self.assertTrue(job_data_dcs_with_data[0].energy == round(slurm_monitor.total_energy * weights[job_data_dcs_with_data[0].job_name], 2))
     self.assertTrue(job_data_dcs_with_data[1].energy == round(slurm_monitor.total_energy * weights[job_data_dcs_with_data[1].job_name], 2))
     self.assertTrue(job_data_dcs_with_data[2].energy == round(slurm_monitor.total_energy * weights[job_data_dcs_with_data[2].job_name], 2))
     self.assertTrue(job_data_dcs_with_data[3].energy == round(slurm_monitor.total_energy * weights[job_data_dcs_with_data[3].job_name], 2))
-    sum_energy = sum(job.energy for job in job_data_dcs_with_data)
-    print(sum_energy)
-    print(slurm_monitor.total_energy)
+    self.assertTrue(job_data_dcs_with_data[4].energy == round(slurm_monitor.total_energy * weights[job_data_dcs_with_data[4].job_name], 2))
+    sum_energy = sum(job.energy for job in job_data_dcs_with_data[:5]) # Last 1 is original job_data_dc    
     self.assertTrue(abs(sum_energy - slurm_monitor.total_energy) <= 10)
 
   def test_process_status_changes(self):
@@ -231,7 +219,7 @@ class TestExperimentHistory(unittest.TestCase):
     CHUNK_SIZE = 20
     CURRENT_CONFIG = "CURRENT CONFIG"
     current_experiment_run_dc = exp_history.manager.get_experiment_run_dc_with_max_id()      
-    exp_run = exp_history.process_status_changes(job_list=self.job_list, chunk_unit=CHUNK_UNIT, chunk_size=CHUNK_SIZE, current_config=CURRENT_CONFIG) # Generates new run
+    exp_run = exp_history.process_status_changes(job_list=self.job_list, chunk_unit=CHUNK_UNIT, chunk_size=CHUNK_SIZE, current_config=CURRENT_CONFIG) # Generates new run    
     self.assertTrue(current_experiment_run_dc.run_id != exp_run.run_id)
     self.assertTrue(exp_run.chunk_unit == CHUNK_UNIT)
     self.assertTrue(exp_run.metadata == CURRENT_CONFIG)

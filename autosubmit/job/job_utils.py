@@ -43,31 +43,31 @@ def transitive_reduction(graph):
             reduced_graph.add_edges_from((u, v) for v in u_edges)
         return reduced_graph
 
-    def get_job_package_code(self, job_name):
-        """
-        Finds the package code and retrieves it. None if no package.
+def get_job_package_code(job_name):
+    """
+    Finds the package code and retrieves it. None if no package.
 
-        :param BasicConfig: Basic configuration 
-        :type BasicConfig: Configuration Object
-        :param expid: Experiment Id
-        :type expid: String
-        :param current_job_name: Name of job
-        :type current_jobs: string
-        :return: package code, None if not found
-        :rtype: int or None
-        """
-        try:
-            packages_wrapper = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=True)
-            packages_wrapper_plus = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=False)
-            if (packages_wrapper or packages_wrapper_plus):
-                packages = packages_wrapper if len(packages_wrapper) > len(packages_wrapper_plus) else packages_wrapper_plus
-                for exp, package_name, _job_name in packages:
-                    if job_name == _job_name:
-                        code =  int(package_name.split("_")[2])
-                        return code            
-        except:
-            pass
-        return 0
+    :param BasicConfig: Basic configuration 
+    :type BasicConfig: Configuration Object
+    :param expid: Experiment Id
+    :type expid: String
+    :param current_job_name: Name of job
+    :type current_jobs: string
+    :return: package code, None if not found
+    :rtype: int or None
+    """
+    try:
+        packages_wrapper = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=True)
+        packages_wrapper_plus = JobPackagePersistence(os.path.join(self.basic_conf.LOCAL_ROOT_DIR, self.expid, "pkl"),"job_packages_" + self.expid).load(wrapper=False)
+        if (packages_wrapper or packages_wrapper_plus):
+            packages = packages_wrapper if len(packages_wrapper) > len(packages_wrapper_plus) else packages_wrapper_plus
+            for exp, package_name, _job_name in packages:
+                if job_name == _job_name:
+                    code = int(package_name.split("_")[2])
+                    return code            
+    except:
+        pass
+    return 0
 
 class Dependency(object):
     """

@@ -47,6 +47,7 @@ class ParamikoPlatform(Platform):
         self.channels = {}
         self.poller = select.poll()
         self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+
     @property
     def header(self):
         """
@@ -85,13 +86,13 @@ class ParamikoPlatform(Platform):
         """
         Test if the connection is still alive, reconnect if not.
         """
-        try:
-            self.reset()
+        try:            
+            self.reset()            
             try:
                 self.restore_connection()
             except:
-                pass
-            transport = self._ssh.get_transport()
+                pass            
+            transport = self._ssh.get_transport()            
             transport.send_ignore()
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(

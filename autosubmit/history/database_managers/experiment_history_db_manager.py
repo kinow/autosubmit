@@ -187,6 +187,13 @@ class ExperimentHistoryDbManager(DatabaseManager):
     if len(max_experiment_run) == 0:
       raise Exception("No Experiment Runs registered.")
     return Models.ExperimentRunRow(*max_experiment_run[0])
+  
+  def is_there_a_last_experiment_run(self):
+    statement = self.get_built_select_statement("experiment_run", "run_id > 0 ORDER BY run_id DESC LIMIT 0, 1")
+    max_experiment_run = self.get_from_statement(self.historicaldb_file_path, statement)
+    if len(max_experiment_run) > 0:
+      return True
+    return False
 
   def get_job_data_all(self):
     """ Gets all content from job_data as list of Models.JobDataRow from database. """
@@ -302,7 +309,7 @@ class ExperimentHistoryDbManager(DatabaseManager):
     Update many job_data rows in bulk. Requires a changes list of argument tuples. 
     Only updates finish, modified, status, and rowstatus by id.
     """
-    statement = ''' UPDATE job_data SET finish=?, modified=?, status=?, rowstatus=? WHERE id=? '''
+    statement = ''' UPDATE job_data SET modified=?, status=?, rowstatus=?  WHERE id=? '''
     self.execute_many_statement_with_arguments_on_dbfile(self.historicaldb_file_path, statement, changes)
 
   def _update_job_data_by_id(self, job_data_dc):

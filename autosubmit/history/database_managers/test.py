@@ -29,8 +29,8 @@ from autosubmit.config.basicConfig import BasicConfig
 import autosubmit.history.utils as HUtils
 EXPID_TT00_SOURCE = "test_database.db~"
 EXPID_TT01_SOURCE = "test_database_no_run.db~"
-EXPID = "tt00"
-EXPID_NONE = "tt01"
+EXPID = "t024"
+EXPID_NONE = "t027"
 BasicConfig.read()
 JOBDATA_DIR = BasicConfig.JOBDATA_DIR
 LOCAL_ROOT_DIR = BasicConfig.LOCAL_ROOT_DIR
@@ -49,7 +49,7 @@ class TestExperimentStatusDatabaseManager(unittest.TestCase):
     self.assertTrue(exp_status_row.exp_id == exp_row_direct.exp_id)
     
 
-  def test_update_exp_status(self):
+  def test_update_exp_status(self):    
     self.exp_status_db.update_exp_status(EXPID, "RUNNING")
     exp_status_row_current = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
     self.assertTrue(exp_status_row_current.status == "RUNNING")
@@ -176,14 +176,14 @@ class TestExperimentHistoryDbManager(unittest.TestCase):
     job_data_rows_test = [job for job in all_job_data_rows if job.run_id == 3]    
     backup = [JobData.from_model(job) for job in job_data_rows_test]
     list_job_data_class = [JobData.from_model(job) for job in job_data_rows_test]
-    backup_changes = [(job.finish, HUtils.get_current_datetime(), job.status, job.rowstatus, job._id) for job in list_job_data_class]
-    changes = [(current_time, HUtils.get_current_datetime(), "DELAYED", job.rowstatus, job._id) for job in list_job_data_class]
+    backup_changes = [(HUtils.get_current_datetime(), job.status, job.rowstatus, job._id) for job in list_job_data_class]
+    changes = [(HUtils.get_current_datetime(), "DELAYED", job.rowstatus, job._id) for job in list_job_data_class]
     self.experiment_database.update_many_job_data_change_status(changes)
     all_job_data_rows = self.experiment_database.get_job_data_all()
     job_data_rows_validate = [job for job in all_job_data_rows if job.run_id == 3]
     for (job_val, change_item) in zip(job_data_rows_validate, changes):
-      finish, modified, status, rowstatus, _id = change_item
-      self.assertTrue(job_val.finish == finish)
+      modified, status, rowstatus, _id = change_item
+      # self.assertTrue(job_val.finish == finish)
       self.assertTrue(job_val.modified == modified)
       self.assertTrue(job_val.status == status)
       self.assertTrue(job_val.rowstatus == rowstatus)

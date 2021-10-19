@@ -87,7 +87,7 @@ class ExperimentStatusDbManager(DatabaseManager):
     """
     Get Models.ExperimentRow by expid.
     """
-    experiment_row = self.get_experiment_row_by_expid(expid)
+    experiment_row = self.get_experiment_row_by_expid(expid)    
     return self.get_experiment_status_row_by_exp_id(experiment_row.id)
 
   def get_experiment_row_by_expid(self, expid):

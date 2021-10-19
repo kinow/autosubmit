@@ -110,6 +110,12 @@ class JobData(object):
       return job_data
 
     @property
+    def children_list(self):
+        children_list = self.children.split(",") if self.children else []
+        result = [str(job_name).strip() for job_name in children_list]
+        return result
+
+    @property
     def computational_weight(self):
         return round(float(self.running_time * self.ncpus),4)
 

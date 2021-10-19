@@ -23,8 +23,7 @@ from slurm_monitor import SlurmMonitor
 class TestSlurmMonitor(unittest.TestCase):
   def test_reader_on_simple_wrapper_example_1(self):
     ssh_output = utils.read_example("wrapper1.txt")
-    slurm_monitor = SlurmMonitor(ssh_output)
-    slurm_monitor.identify_input_rows()    
+    slurm_monitor = SlurmMonitor(ssh_output)      
     # Header
     self.assertTrue(slurm_monitor.input_items[0].is_batch == False)
     self.assertTrue(slurm_monitor.input_items[0].is_detail == False)
@@ -43,9 +42,9 @@ class TestSlurmMonitor(unittest.TestCase):
     self.assertTrue(slurm_monitor.input_items[2].is_extern == True)
     self.assertTrue(slurm_monitor.input_items[2].is_header == False)
     self.assertTrue(slurm_monitor.input_items[2].is_detail == True)
-    header = slurm_monitor.get_header()
-    batch = slurm_monitor.get_batch()
-    extern = slurm_monitor.get_extern()
+    header = slurm_monitor.header
+    batch = slurm_monitor.batch
+    extern = slurm_monitor.extern
     self.assertIsNotNone(header)
     self.assertIsNotNone(batch)
     self.assertIsNotNone(extern)
@@ -57,8 +56,7 @@ class TestSlurmMonitor(unittest.TestCase):
   
   def test_reader_on_simple_wrapper_example_2(self):  
     ssh_output = utils.read_example("wrapper2.txt") # not real
-    slurm_monitor = SlurmMonitor(ssh_output)
-    slurm_monitor.identify_input_rows()            
+    slurm_monitor = SlurmMonitor(ssh_output)         
     # Header
     self.assertTrue(slurm_monitor.input_items[0].is_batch == False)
     self.assertTrue(slurm_monitor.input_items[0].is_detail == False)
@@ -82,11 +80,10 @@ class TestSlurmMonitor(unittest.TestCase):
   def test_reader_on_big_wrapper(self):
     ssh_output = utils.read_example("wrapper_big.txt")
     slurm_monitor = SlurmMonitor(ssh_output)
-    slurm_monitor.identify_input_rows()
-    self.assertTrue(slurm_monitor.step_count() == 30)
-    header = slurm_monitor.get_header()
-    batch = slurm_monitor.get_batch()
-    extern = slurm_monitor.get_extern()
+    self.assertTrue(slurm_monitor.step_count == 30)
+    header = slurm_monitor.header
+    batch = slurm_monitor.batch
+    extern = slurm_monitor.extern
     self.assertIsNotNone(header)
     self.assertIsNotNone(batch)
     self.assertIsNotNone(extern)    
