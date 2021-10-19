@@ -1754,7 +1754,8 @@ class Autosubmit:
                         # Safe spot to store changes
                         exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)                        
                         if len(job_changes_tracker) > 0:
-                            exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())                        
+                            exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                        job_changes_tracker = {}                        
 
                         if Autosubmit.exit:
                             job_list.save()
