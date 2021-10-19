@@ -1389,9 +1389,6 @@ class JobDataStructure(MainDataBase):
                     return None
                     # warning_messages.append(
                     #     "Critical | This version of Autosubmit does not support the database that provides the energy information.")
-                # Include only those that exist in the pkl and have the same status as in the pkl
-                # current_job_data = [job for job in current_job_data_last if job.job_name in allJobsDict.keys(
-                # ) and allJobsDict[job.job_name] == job.status] if current_job_data_last else None
                 # Start processing
                 if current_job_data:
                     # Dropping parents key
@@ -2042,7 +2039,6 @@ class JobDataStructure(MainDataBase):
     def _get_job_data(self, job_name):
         """
         Returns rows belonging to a job_name
-
         """
         try:
             if self.conn:

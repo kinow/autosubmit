@@ -47,6 +47,7 @@ class ParamikoPlatform(Platform):
         self.channels = {}
         self.poller = select.poll()
         self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
+
     @property
     def header(self):
         """
@@ -85,13 +86,13 @@ class ParamikoPlatform(Platform):
         """
         Test if the connection is still alive, reconnect if not.
         """
-        try:
-            self.reset()
+        try:            
+            self.reset()            
             try:
                 self.restore_connection()
             except:
-                pass
-            transport = self._ssh.get_transport()
+                pass            
+            transport = self._ssh.get_transport()            
             transport.send_ignore()
         except EOFError as e:
             raise AutosubmitError("[{0}] not alive. Host: {1}".format(
@@ -395,7 +396,7 @@ class ParamikoPlatform(Platform):
             else:
                 return None
 
-    def check_job_energy(self, job_id, packed=False):
+    def check_job_energy(self, job_id):
         """
         Checks job energy and return values. Defined in child classes.
 
@@ -407,8 +408,7 @@ class ParamikoPlatform(Platform):
         """
         check_energy_cmd = self.get_job_energy_cmd(job_id)
         self.send_command(check_energy_cmd)
-        return self.parse_job_finish_data(
-            self.get_ssh_output(), packed)
+        return self.get_ssh_output()
 
     def submit_Script(self, hold=False):
         """
