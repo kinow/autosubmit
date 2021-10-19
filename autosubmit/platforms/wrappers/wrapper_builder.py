@@ -492,7 +492,7 @@ class PythonVerticalWrapperBuilder(PythonWrapperBuilder):
                 print(out+"\\n")
                 command = "bash " + str(self.template) + " " + str(self.id_run) + " " + os.getcwd()
                 print(command+"\\n")
-                (self.status) = getstatusoutput(timeout {0} command + " > " + out + " 2> " + err)
+                (self.status) = getstatusoutput("timeout {0} " command + " > " + out + " 2> " + err)
                 for i in self.status:
                     print(str(i)+"\\n")
 
