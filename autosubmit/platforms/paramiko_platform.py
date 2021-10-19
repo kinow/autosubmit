@@ -46,14 +46,10 @@ class ParamikoPlatform(Platform):
         self.transport = None
         self.channels = {}
         self.poller = select.poll()
-<<<<<<< HEAD
-        self.local_x11_display = xlib_connect.get_display(os.environ['DISPLAY'])
-=======
         display = os.getenv('DISPLAY')
         if display is None:
             display = "localhost:0"
         self.local_x11_display = xlib_connect.get_display(display)
->>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
 
     @property
     def header(self):

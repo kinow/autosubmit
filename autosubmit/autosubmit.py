@@ -1751,21 +1751,11 @@ class Autosubmit:
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
-<<<<<<< HEAD
                         exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)                        
                         if len(job_changes_tracker) > 0:
                             exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                         job_changes_tracker = {}                        
 
-=======
-                        job_data_structure.process_status_changes(
-                            job_changes_tracker, job_list.get_job_list())
-                        job_changes_tracker = {}
-                        save = job_list.update_list(
-                            as_conf, submitter=submitter)
-                        if save:
-                            job_list.save()
->>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
                         if Autosubmit.exit:
                             job_list.save()
                         time.sleep(safetysleeptime)
@@ -1930,11 +1920,6 @@ class Autosubmit:
         issues = ""
 
         for platform in platform_to_test:
-<<<<<<< HEAD
-            try:                
-                platform.test_connection()                
-            except BaseException as e :                
-=======
             try:
                 platform.test_connection()
                 if mail_notify:
@@ -1949,7 +1934,6 @@ class Autosubmit:
                             Notifier.notify_experiment_status(MailNotifier(BasicConfig),expid,email,platform)
                 except:
                     pass
->>>>>>> 86e5d0720cb14f42b39a59abe2ad96a1941a4982
                 issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
                     platform.host, platform.name)
                 continue
