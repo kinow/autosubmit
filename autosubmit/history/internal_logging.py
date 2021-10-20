@@ -35,7 +35,7 @@ class Logging():
       print("Logging failed. Please report it to the developers.")  
     
   def build_message(self, main_msg, traceback_msg):
-    return "{0} :: {1} :: {2}".format(HUtils.get_current_datetime(), main_msg, traceback_msg)
+    return "{0} :: {1} :: {2}\n".format(HUtils.get_current_datetime(), main_msg, traceback_msg)
 
   def get_default_log_path(self, expid):
     return os.path.join("/esarchive","autosubmit", "as_metadata", "logs","{}_log.txt".format(expid))
