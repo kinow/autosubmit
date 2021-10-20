@@ -667,6 +667,7 @@ class Autosubmit:
             if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
+
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -674,7 +675,7 @@ class Autosubmit:
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             # delete is treated differently
             if args.command not in ["monitor", "describe", "delete", "report"]:
-                Autosubmit._check_ownership(expid)
+                Autosubmit._check_ownership(expid,raise_error=True) #fastlook
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
             if not os.path.exists(aslogs_path):
@@ -703,19 +704,48 @@ class Autosubmit:
             Log.set_file(os.path.join(BasicConfig.GLOBAL_LOG_DIR,
                                       args.command + exp_id + '_err.log'), "err")
 
-
     @staticmethod
-    def _check_ownership(expid):
+    def _check_ownership(expid,raise_error=False):
+        """
+        Check if user owns or if it is edamin
+        :return: owner,eadmin
+        :rtype: boolean,boolean
+        """
+        # Read current login
+        # Read current user uid
+        my_user = os.getuid()
+        # Read eadmin user uid
+        owner = False
+        eadmin = False
+        id_eadmin = os.popen('id -u eadmin').read().strip()
+        ret = False
+        # Handling possible failure of retrieval of current owner data
+        currentOwner_id = 0
+        currentOwner = "empty"
         try:
-            current_user_id = pwd.getpwuid(os.getuid())[0]
-            current_owner_id = pwd.getpwuid(os.stat(os.path.join(
-                BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
-            if current_user_id != current_owner_id:
+            currentOwner_id = os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid
+            currentOwner = pwd.getpwuid(os.stat(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+        except:
+            pass
+        finally:
+            if currentOwner_id <= 0:
+                Log.info("Current owner '{0}' of experiment {1} does not exist anymore.", currentOwner, expid)
+        if currentOwner_id == my_user:
+            owner=True
+        if my_user == id_eadmin:
+            eadmin = True
+        if owner and raise_error:
+            try:
+                current_user_id = pwd.getpwuid(os.getuid())[0]
+                current_owner_id = pwd.getpwuid(os.stat(os.path.join(
+                    BasicConfig.LOCAL_ROOT_DIR, expid)).st_uid).pw_name
+                if current_user_id != current_owner_id:
+                    raise AutosubmitCritical(
+                        "You don't own the experiment {0}.".format(expid), 7012)
+            except BaseException as e:
                 raise AutosubmitCritical(
-                    "You don't own the experiment {0}.".format(expid), 7012)
-        except BaseException as e:
-            raise AutosubmitCritical(
-                "User or owner does not exists", 7012, e.message)
+                    "User or owner does not exists", 7012, e.message)
+        return owner,eadmin,currentOwner
 
     @staticmethod
     def _delete_expid(expid_delete, force=False):
@@ -731,40 +761,17 @@ class Autosubmit:
         :return: True if succesfully deleted, False otherwise
         :rtype: boolean
         """
-        # Read current login
-        # Read current user uid
-        my_user = os.getuid()
-        # Read eadmin user uid
-        id_eadmin = os.popen('id -u eadmin').read().strip()
-
-        if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                                                                          expid_delete)):
+        owner,eadmin,currentOwner = Autosubmit._check_ownership(expid_delete)
+        if expid_delete == '' or expid_delete is None and not os.path.exists(os.path.join(BasicConfig.LOCAL_ROOT_DIR,expid_delete)):
             Log.result("Experiment directory does not exist.")
         else:
-            ret = False
-            # Handling possible failure of retrieval of current owner data
-            currentOwner_id = 0
-            currentOwner = "empty"
-            try:
-                currentOwner_id = os.stat(os.path.join(
-                    BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid
-                currentOwner = pwd.getpwuid(os.stat(os.path.join(
-                    BasicConfig.LOCAL_ROOT_DIR, expid_delete)).st_uid).pw_name
-            except:
-                pass
-            finally:
-                if currentOwner_id <= 0:
-                    Log.info(
-                        "Current owner '{0}' of experiment {1} does not exist anymore.", currentOwner, expid_delete)
-
             # Deletion workflow continues as usual, a disjunction is included for the case when
             # force is sent, and user is eadmin
             error_message = ""
             try:
-                if currentOwner_id == my_user or (force and my_user == id_eadmin):
-                    if (force and my_user == id_eadmin):
-                        Log.info(
-                            "Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
+                if owner or (force and eadmin):
+                    if force and eadmin:
+                        Log.info("Preparing deletion of experiment {0} from owner: {1}, as eadmin.", expid_delete, currentOwner)
                     try:
                         Log.info("Deleting experiment from database...")
                         try:
@@ -793,7 +800,7 @@ class Autosubmit:
                     except OSError as e:
                         error_message += 'Can not delete directory: {0}\n'.format(e.message)
                 else:
-                    if currentOwner_id == 0:
+                    if not eadmin:
                         raise AutosubmitCritical(
                             'Detected Eadmin user however, -f flag is not found.  {0} can not be deleted!'.format(expid_delete), 7012)
                     else:
@@ -1077,7 +1084,7 @@ class Autosubmit:
          :rtype: bool
          """
 
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         if os.path.exists(os.path.join(tmp_path, 'autosubmit.lock')):
@@ -2459,7 +2466,7 @@ class Autosubmit:
         :param force: Allows to restore the workflow even if there are running jobs
         :type force: bool
         """
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
 
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
 
@@ -2632,7 +2639,7 @@ class Autosubmit:
             # establish the connection to all platforms on use
             Autosubmit.restore_platforms(platforms_to_test)
             Log.info('Migrating experiment {0}'.format(experiment_id))
-            Autosubmit._check_ownership(experiment_id)
+            Autosubmit._check_ownership(experiment_id,raise_error=True)
             if submitter.platforms is None:
                 return False
             Log.info("Checking remote platforms")
@@ -3493,7 +3500,7 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
         as_conf.check_conf_files()
@@ -3513,7 +3520,7 @@ class Autosubmit:
         :param expid: experiment identifier
         :type expid: str
         """
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
 
         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
         as_conf.reload()
@@ -3860,7 +3867,7 @@ class Autosubmit:
         :type output: str
 
         """
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
 
@@ -4185,7 +4192,7 @@ class Autosubmit:
         :param hide: hides plot window
         :type hide: bool
         """
-        Autosubmit._check_ownership(expid)
+        Autosubmit._check_ownership(expid,raise_error=True)
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         section_validation_message = " "
