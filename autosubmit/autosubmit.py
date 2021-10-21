@@ -667,7 +667,6 @@ class Autosubmit:
             if 'all' not in BasicConfig.ALLOWED_HOSTS[args.command] and host not in BasicConfig.ALLOWED_HOSTS[args.command]:
                 raise AutosubmitCritical(message, 7004)
         if expid != 'None' and args.command not in expid_less and args.command not in global_log_command:
-
             exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid)
             tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
             aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -675,20 +674,24 @@ class Autosubmit:
                 raise AutosubmitCritical("Experiment does not exist", 7012)
             # delete is treated differently
             if args.command not in ["monitor", "describe", "delete", "report"]:
-                Autosubmit._check_ownership(expid,raise_error=True) #fastlook
+                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=True) #fastlook
+            else:
+                owner,eadmin,currentOwner = Autosubmit._check_ownership(expid,raise_error=False) #fastlook
+                
             if not os.path.exists(tmp_path):
                 os.mkdir(tmp_path)
             if not os.path.exists(aslogs_path):
                 os.mkdir(aslogs_path)
-
-            Log.set_file(os.path.join(
-                aslogs_path, args.command + '.log'), "out", log_level)
-            Log.set_file(os.path.join(
-                aslogs_path, args.command + '_err.log'), "err")
-            if os.path.exists(os.path.join(aslogs_path, 'jobs_status.log')):
-                os.remove(os.path.join(aslogs_path, 'jobs_status.log'))
-            Log.set_file(os.path.join(
-                aslogs_path, 'jobs_status.log'), "status")
+            if owner:
+                Log.set_file(os.path.join(aslogs_path, args.command + '.log'), "out", log_level)
+                Log.set_file(os.path.join(aslogs_path, args.command + '_err.log'), "err")
+                if os.path.exists(os.path.join(aslogs_path, 'jobs_status.log')):
+                    os.remove(os.path.join(aslogs_path, 'jobs_status.log'))
+                Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+            else:
+                Log.set_file(os.path.join(tmp_path, args.command + '.log'), "out", log_level)
+                Log.set_file(os.path.join(tmp_path, args.command + '_err.log'), "err")
+                Log.set_file(os.path.join(tmp_path, 'jobs_status.log'), "status")
             Log.file_path = tmp_path
         else:
             if expid == 'None':
