@@ -108,6 +108,15 @@ class StatisticsSnippetBash:
             ###################
             # Autosubmit header
             ###################
+            locale_to_set=$(locale -a | grep ^C.)
+            if [ -z "$var" ] ; then
+                # locale installed...
+                export LC_ALL=$locale_to_set
+            else
+                # locale not installed...
+                export LC_ALL=C
+            fi
+            
             set -xuve
             job_name_ptrn='%CURRENT_LOGDIR%/%JOBNAME%'
             echo $(date +%s) > ${job_name_ptrn}_STAT
@@ -152,9 +161,15 @@ class StatisticsSnippetPython:
             ###################
             # Autosubmit header
             ###################
-
+            import locale
             import time
-
+            try:
+                try:
+                    locale.setlocale(locale.LC_ALL,'C.utf8')
+                except:
+                    locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+            except:
+                locale.setlocale(locale.LC_ALL, 'C')
             job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
             stat_file = open(job_name_ptrn + '_STAT', 'w')
             stat_file.write('{0:.0f}\\n'.format(time.time()))
@@ -202,9 +217,24 @@ class StatisticsSnippetR:
             ###################
             # Autosubmit header
             ###################
-
+            oldw <- getOption("warn")
+            options( warn = -1 )
+            leave = F
+            langs <- c("C.utf8","C.UTF-8","C")
+            i = 1
+            e=""
+            while (nchar(e) == 0 || leave)
+            {
+                e=Sys.setlocale("LC_ALL",langs[i])
+                e
+                i=i+1
+                if (i > NROW(langs)) 
+                {
+                    leave=T
+                }
+            } 
+            options( warn = oldw )
             job_name_ptrn = '%CURRENT_LOGDIR%/%JOBNAME%'
-
             fileConn<-file(paste(job_name_ptrn,"_STAT", sep = ''),"w")
             writeLines(toString(trunc(as.numeric(Sys.time()))), fileConn)
             close(fileConn)
