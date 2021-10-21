@@ -42,7 +42,7 @@ def main():
     except AutosubmitError as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        if e.trace is not None and len(e.trace) > 0:
+        if e.trace is not None: # trace might be int.
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
         Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
@@ -50,7 +50,7 @@ def main():
     except AutosubmitCritical as e:
         if os.path.exists(os.path.join(Log.file_path, "autosubmit.lock")):
             os.remove(os.path.join(Log.file_path, "autosubmit.lock"))
-        if e.trace is not None and len(e.trace) > 0:
+        if e.trace is not None:
             Log.error("Trace: {0}", e.trace)
         Log.critical("{1} [eCode={0}]", e.code, e.message)
         Log.info("More info at https://autosubmit.readthedocs.io/en/latest/faq.html")
