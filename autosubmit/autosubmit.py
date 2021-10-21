@@ -1006,7 +1006,7 @@ class Autosubmit:
             Log.debug("Setting the right permissions...")
             os.chmod(os.path.join(exp_id_path, "conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "pkl"), 0o755)
-            os.chmod(os.path.join(exp_id_path, "tmp"), 0o755)
+            os.chmod(os.path.join(exp_id_path, "tmp"), 0o775)
             os.chmod(os.path.join(exp_id_path, "plot"), 0o775)
             os.chmod(os.path.join(exp_id_path, "conf/autosubmit_" +
                                   str(exp_id) + ".conf"), 0o755)
@@ -1016,10 +1016,14 @@ class Autosubmit:
                                   str(exp_id) + ".conf"), 0o755)
             os.chmod(os.path.join(exp_id_path, "conf/platforms_" +
                                   str(exp_id) + ".conf"), 0o755)
+            try:
+                os.chmod(os.path.join(exp_id_path, "tmp/ASLOGS"), 0o755)
+            except:
+                pass
             os.chmod(os.path.join(exp_id_path, "conf/proj_" +
                                   str(exp_id) + ".conf"), 0o755)
         except:
-            pass
+            pass #some folder may no exists, like proj
         return exp_id
 
     @staticmethod
