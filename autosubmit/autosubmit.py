@@ -800,14 +800,16 @@ class Autosubmit:
                             error_message += 'Can not delete directory: {0}\n'.format(e.message)
                         try:
                             Log.info("Removing Structure db...")
-                            os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                                   BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete)))
+                            structures_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, BasicConfig.STRUCTURES_DIR, "structure_{0}.db".format(expid_delete))
+                            if os.path.exists(structures_path):
+                                os.remove(structures_path)
                         except BaseException as e:
                             error_message += 'Can not delete structure: {0}\n'.format(e.message)
                         try:
                             Log.info("Removing job_data db...")
-                            os.remove(os.path.join(BasicConfig.LOCAL_ROOT_DIR,
-                                                   BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete)))
+                            job_data_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, BasicConfig.JOBDATA_DIR, "job_data_{0}.db".format(expid_delete))
+                            if os.path.exists(job_data_path):
+                                os.remove(job_data_path)
                         except BaseException as e:
                             error_message += 'Can not delete job_data: {0}\n'.format(e.message)
                     except OSError as e:
@@ -3546,6 +3548,21 @@ class Autosubmit:
         Log.info("Changing {0} experiment version from {1} to  {2}",
                  expid, as_conf.get_version(), Autosubmit.autosubmit_version)
         as_conf.set_version(Autosubmit.autosubmit_version)
+        return True
+    
+    @staticmethod
+    def update_description(expid, new_description):
+        Log.info("Checking if experiment exists...")
+        check_experiment_exists(expid)
+        Log.info("Experiment found.")
+        Log.info("Setting {0} description to '{1}'".format(
+            expid, new_description))
+        result = update_experiment_descrip_version(
+            expid, description=new_description)
+        if result:
+            Log.info("Update completed successfully.")
+        else:
+            Log.critical("Update failed.")
         return True
 
     @staticmethod
