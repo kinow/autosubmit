@@ -263,18 +263,24 @@ class JobList(object):
             splits = None
             sign = None
 
-            if '-' not in key and '+' not in key and '*' not in key:
+            if '-' not in key and '+' not in key and '*' not in key and '?' not in key:
                 section = key
             else:
-                if '-' in key:
-                    sign = '-'
-                elif '+' in key:
-                    sign = '+'
-                elif '*' in key:
-                    sign = '*'
-                key_split = key.split(sign)
-                section = key_split[0]
-                distance = int(key_split[1])
+                if '?' in key:
+                    sign = '?'
+                    #key_split = key.split(sign)
+                    section = key[:-1]
+                    #distance = int(key_split[1])
+                else:
+                    if '-' in key:
+                        sign = '-'
+                    elif '+' in key:
+                        sign = '+'
+                    elif '*' in key:
+                        sign = '*'
+                    key_split = key.split(sign)
+                    section = key_split[0]
+                    distance = int(key_split[1])
 
             if '[' in section:
                 section_name = section[0:section.find("[")]
@@ -331,8 +337,7 @@ class JobList(object):
                     section, distance, dependency_running_type, sign, delay, splits, selected_chunks)
             else:
                 # []select_chunks_dest,select_chunks_orig
-                dependency = Dependency(
-                    section, distance, dependency_running_type, sign, delay, splits, [])
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, [])
 
             dependencies[key] = dependency
         return dependencies
@@ -450,6 +455,8 @@ class JobList(object):
                     date = date_list[date_index - dependency.distance]
                 else:
                     skip = True
+        #if dependency.sign is '?':
+        #    skip = True
         return skip, (chunk, member, date)
 
     @staticmethod
