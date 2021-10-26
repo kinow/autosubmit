@@ -206,6 +206,7 @@ class JobList(object):
             job.parameters = parameters
 
 
+
         # Checking for member constraints
         if len(run_only_members) > 0:
             # Found
@@ -500,6 +501,7 @@ class JobList(object):
         for i in xrange(num_parents):
             parent = parents[i] if isinstance(parents, list) else parents
             graph.add_edge(parent.name, job.name)
+            pass
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
@@ -1500,8 +1502,9 @@ class JobList(object):
                 if datetime.datetime.now() >= job.delay_end:
                     job.status = Status.READY
             for job in self.get_waiting():
-                tmp = [parent for parent in job.parents if parent.status ==
-                       Status.COMPLETED or parent.status == Status.SKIPPED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED]
+                tmp2 = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1509,16 +1512,22 @@ class JobList(object):
                         "Setting job: {0} status to: READY (all parents completed)...".format(job.name))
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
+                if len(tmp2) == len(job.parents):
+                    if '?' in job.dependencies:
+                        for parent in job.parents:
+                            if job.section+'?' in job.dependencies:
+                                job.status = Status.READY
+                                job.hold = False
+                                Log.debug(
+                                    "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(job.name))
+                                if as_conf.get_remote_dependencies():
+                                    all_parents_completed.append(job.name)
             if as_conf.get_remote_dependencies():
                 for job in self.get_prepared():
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
-                    if len(tmp) == len(job.parents):
-                        job.status = Status.READY
-                        job.packed = False
-                        save = True
-                        Log.debug(
-                            "Resetting job: {0} status to: READY".format(job.name))
+                    tmp2 = [parent for parent in job.parents if
+                            parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
                     if len(tmp) == len(job.parents):
                         job.status = Status.READY
                         job.packed = False
@@ -1526,8 +1535,7 @@ class JobList(object):
                         save = True
                         Log.debug(
                             "A job in prepared status has all parent completed, job: {0} status set to: READY ...".format(job.name))
-                Log.debug(
-                    'Updating WAITING jobs eligible for be prepared')
+                Log.debug('Updating WAITING jobs eligible for be prepared')
                 for job in self.get_waiting_remote_dependencies('slurm'):
                     if job.name not in all_parents_completed:
                         tmp = [parent for parent in job.parents if (

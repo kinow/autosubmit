@@ -1574,8 +1574,8 @@ class Autosubmit:
                         exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                        
                         ExperimentStatus(expid).set_as_running()
                     except Exception as e:
-                        raise AutosubmitCritical(
-                            "Error while processing historical database.", 7067, str(e))
+                        pass # @wuruchi, this is raising an error EXPERIMENT TABLE NOT FOUND
+                        #raise AutosubmitCritical("Error while processing historical database.", 7067, str(e))
                     if allowed_members:
                         # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
                         job_list.run_members = allowed_members
