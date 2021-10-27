@@ -17,14 +17,17 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 import os
 import utils as HUtils
+from database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
 
 class Logging():
-  def __init__(self, expid):
-    self.expid = expid        
-  
+  def __init__(self, expid, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):
+    self.expid = expid
+    self.historiclog_dir_path = historiclog_dir_path
+    self._make_log_directory_if_not_exists()  
+
   def log(self, main_msg, traceback_msg=""):
     try:
-      log_path = self.get_default_log_path(self.expid)
+      log_path = self.get_log_file_path()
       HUtils.get_current_datetime()
       if not os.path.exists(log_path):
         HUtils.create_file_with_full_permissions(log_path)
@@ -37,5 +40,9 @@ class Logging():
   def build_message(self, main_msg, traceback_msg):
     return "{0} :: {1} :: {2}\n".format(HUtils.get_current_datetime(), main_msg, traceback_msg)
 
-  def get_default_log_path(self, expid):
-    return os.path.join("/esarchive","autosubmit", "as_metadata", "logs","{}_log.txt".format(expid))
+  def _make_log_directory_if_not_exists(self):
+    if not os.path.exists(self.historiclog_dir_path):
+      os.makedirs(self.historiclog_dir_path)
+
+  def get_log_file_path(self):     
+    return os.path.join(self.historiclog_dir_path,"{}_log.txt".format(self.expid))

@@ -1394,7 +1394,7 @@ class Autosubmit:
             if not check_experiment_exists(start_after):
                 return None
             # Historical Database: We use the historical database to retrieve the current progress data of the supplied expid (start_after)
-            exp_history = ExperimentHistory(start_after, BasicConfig.JOBDATA_DIR)
+            exp_history = ExperimentHistory(start_after, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
             if exp_history.is_header_ready() == False:
                 Log.critical("Experiment {0} is running a database version which is not supported by the completion trigger function. An updated DB version is needed.".format(
                     start_after))
@@ -1569,7 +1569,7 @@ class Autosubmit:
                     Log.debug("Running job data structure")
                     try:
                         # Historical Database: Can create a new run if there is a difference in the number of jobs or if the current run does not exist.
-                        exp_history = ExperimentHistory(expid)
+                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                         exp_history.initialize_database()
                         exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                        
                         ExperimentStatus(expid).set_as_running()
@@ -1777,7 +1777,7 @@ class Autosubmit:
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
-                        exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)                        
+                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)                        
                         if len(job_changes_tracker) > 0:
                             exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                         job_changes_tracker = {}                        
@@ -1903,7 +1903,7 @@ class Autosubmit:
                         raise
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information when experiment ends
-                exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)                                              
+                exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)                                          
                 exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list()) 
 
                 # Wait for all remaining threads of I/O, close remaining connections
@@ -3987,7 +3987,7 @@ class Autosubmit:
 
                     # Setting up job historical database header. Must create a new run.
                     # Historical Database: Setup new run
-                    exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)
+                    exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
                     exp_history.create_new_experiment_run(as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), as_conf.get_full_config_as_json(), job_list.get_job_list())                    
 
@@ -4723,7 +4723,7 @@ class Autosubmit:
 
                 if save and wrongExpid == 0:
                     job_list.save()                    
-                    exp_history = ExperimentHistory(expid, BasicConfig.JOBDATA_DIR)
+                    exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                     exp_history.initialize_database()
                     exp_history.process_status_changes(job_list.get_job_list(), chunk_unit=as_conf.get_chunk_size_unit(), chunk_size=as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                    
                 else:

@@ -23,6 +23,7 @@ import autosubmit.history.database_managers.database_models as Models
 from abc import ABCMeta, abstractmethod
 
 DEFAULT_JOBDATA_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'data')
+DEFAULT_HISTORICAL_LOGS_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'logs')
 DEFAULT_LOCAL_ROOT_DIR = os.path.join('/esarchive', 'autosubmit')
 class DatabaseManager():
   """ Simple database manager. Needs expid. """

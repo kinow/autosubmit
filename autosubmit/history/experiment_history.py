@@ -21,7 +21,8 @@ from autosubmit.history.data_classes import job_data
 import database_managers.database_models as Models
 import utils as HUtils
 from time import time, sleep
-from database_managers.experiment_history_db_manager import ExperimentHistoryDbManager, DEFAULT_JOBDATA_DIR
+from database_managers.experiment_history_db_manager import ExperimentHistoryDbManager
+from database_managers.database_manager import DEFAULT_JOBDATA_DIR, DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
 from strategies import PlatformInformationHandler, SingleAssociationStrategy, StraightWrapperAssociationStrategy, TwoDimWrapperDistributionStrategy, GeneralizedWrapperDistributionStrategy
 from data_classes.job_data import JobData
 from data_classes.experiment_run import ExperimentRun
@@ -31,10 +32,11 @@ from internal_logging import Logging
 SECONDS_WAIT_PLATFORM = 60
 
 class ExperimentHistory():
-  def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR):    
+  def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):    
     self.expid = expid
-    self._log = Logging(expid)
+    self._log = Logging(expid, historiclog_dir_path)
     self._job_data_dir_path = jobdata_dir_path
+    self._historiclog_dir_path = historiclog_dir_path
     try:
       self.manager = ExperimentHistoryDbManager(self.expid, jobdata_dir_path=jobdata_dir_path)
     except Exception as exp:
@@ -151,16 +153,16 @@ class ExperimentHistory():
       job_data_dcs_in_wrapper = self.manager.get_job_data_dcs_last_by_wrapper_code(job_data_dc.wrapper_code)
       job_data_dcs_to_update = []      
       if len(job_data_dcs_in_wrapper) > 0:
-        info_handler = PlatformInformationHandler(StraightWrapperAssociationStrategy())
+        info_handler = PlatformInformationHandler(StraightWrapperAssociationStrategy(self._historiclog_dir_path))
         job_data_dcs_to_update = info_handler.execute_distribution(job_data_dc, job_data_dcs_in_wrapper, slurm_monitor)
         if len(job_data_dcs_to_update) == 0:
-          info_handler.strategy = TwoDimWrapperDistributionStrategy()
+          info_handler.strategy = TwoDimWrapperDistributionStrategy(self._historiclog_dir_path)
           job_data_dcs_to_update = info_handler.execute_distribution(job_data_dc, job_data_dcs_in_wrapper, slurm_monitor)
         if len(job_data_dcs_to_update) == 0:
-          info_handler.strategy = GeneralizedWrapperDistributionStrategy()
+          info_handler.strategy = GeneralizedWrapperDistributionStrategy(self._historiclog_dir_path)
           job_data_dcs_to_update = info_handler.execute_distribution(job_data_dc, job_data_dcs_in_wrapper, slurm_monitor)
       else:
-        info_handler = PlatformInformationHandler(SingleAssociationStrategy())
+        info_handler = PlatformInformationHandler(SingleAssociationStrategy(self._historiclog_dir_path))
         job_data_dcs_to_update = info_handler.execute_distribution(job_data_dc, job_data_dcs_in_wrapper, slurm_monitor)       
       return self.manager.update_list_job_data_dc_by_each_id(job_data_dcs_to_update)            
     except Exception as exp:

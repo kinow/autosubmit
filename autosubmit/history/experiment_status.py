@@ -17,12 +17,13 @@
 # along with Autosubmit.  If not, see <http://www.gnu.org/licenses/>.
 
 import traceback
-from database_managers.experiment_status_db_manager import ExperimentStatusDbManager, DEFAULT_LOCAL_ROOT_DIR
+from database_managers.experiment_status_db_manager import ExperimentStatusDbManager
+from database_managers.database_manager import DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
 from internal_logging import Logging
 
 class ExperimentStatus():
   """ Represents the Experiment Status Mechanism that keeps track of currently active experiments """
-  def __init__(self, expid, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):
+  def __init__(self, expid, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):
     # type : (str) -> None
     self.expid = expid # type : str
     try:
@@ -30,7 +31,7 @@ class ExperimentStatus():
     except Exception as exp:
       message = "Error while trying to update {0} in experiment_status.".format(str(self.expid))
       print(message)
-      Logging(self.expid).log(message, traceback.format_exc())
+      Logging(self.expid, historiclog_dir_path).log(message, traceback.format_exc())
       self.manager = None
                             
   def set_as_running(self):

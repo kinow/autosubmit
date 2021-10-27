@@ -42,6 +42,7 @@ class BasicConfig:
         '/esarchive', 'autosubmit', 'Aslogs')
     JOBDATA_DIR = os.path.join(
         '/esarchive', 'autosubmit', 'as_metadata', 'data')
+    HISTORICAL_LOG_DIR = os.path.join('/esarchive', 'autosubmit', 'as_metadata', 'logs')
     AUTOSUBMIT_API_URL = "http://192.168.11.91:8081"
     DB_FILE = 'autosubmit.db'
     DB_PATH = os.path.join(DB_DIR, DB_FILE)
@@ -150,6 +151,8 @@ class BasicConfig:
             BasicConfig.GLOBAL_LOG_DIR = parser.get('globallogs', 'path')
         if parser.has_option('historicdb', 'path'):
             BasicConfig.JOBDATA_DIR = parser.get('historicdb', 'path')
+        if parser.has_option('historiclog', 'path'):
+            BasicConfig.HISTORICAL_LOG_DIR = parser.get('historiclog', 'path')
         if parser.has_option('autosubmitapi', 'url'):
             BasicConfig.AUTOSUBMIT_API_URL = parser.get(
                 'autosubmitapi', 'url')
