@@ -1279,19 +1279,7 @@ class AutosubmitConfig(object):
         :rtype: list
         """
         try:
-            dependencies=[]
-            for dependency in str(self._jobs_parser.get_option(section, 'DEPENDENCIES', '')).split(' '):
-                if '-' in dependency:
-                    dependencies.append(dependency.split('-')[0])
-                elif '+' in dependency:
-                    dependencies.append(dependency.split('+')[0])
-                elif '*' in dependency:
-                    dependencies.append(dependency.split('*')[0])
-                elif '?' in dependency:
-                    dependencies.append(dependency.split('?')[0])
-                if '[' in dependency:
-                    dependencies.append(dependency[:dependency.find('[')])
-            return dependencies
+            return self.jobs_parser.get_option(section, "DEPENDENCIES", "").split()
         except:
             return []
 
