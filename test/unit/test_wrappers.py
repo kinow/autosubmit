@@ -169,6 +169,7 @@ class TestWrappers(TestCase):
         self.config.get_extensible_wallclock = Mock(return_value=0)
         self.config.get_retrials = Mock(return_value=0)
         self.config.get = Mock(return_value='flexible')
+        #self.snippet = Mock(return_value='flexible')
         self.job_packager = JobPackager(
             self.config, self._platform, self.job_list)
         self.job_list._ordered_jobs_by_date_member["wrapper"] = dict()
