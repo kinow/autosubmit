@@ -233,7 +233,7 @@ class Monitor:
                     node_child = self._create_node(child, groups, hide_groups)
                     if node_child:
                         exp.add_node(node_child)
-                        if job.section+"?" in child.dependencies:
+                        if job.section is not None and job.section+"?" in child.dependencies:
                             exp.add_edge(pydotplus.Edge(node_job, node_child,style="dashed"))
                         else:
                             exp.add_edge(pydotplus.Edge(node_job, node_child))
