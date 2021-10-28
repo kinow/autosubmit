@@ -686,13 +686,17 @@ class Autosubmit:
             if owner:
                 Log.set_file(os.path.join(aslogs_path, args.command + '.log'), "out", log_level)
                 Log.set_file(os.path.join(aslogs_path, args.command + '_err.log'), "err")
-                if os.path.exists(os.path.join(aslogs_path, 'jobs_status.log')):
-                    os.remove(os.path.join(aslogs_path, 'jobs_status.log'))
-                Log.set_file(os.path.join(aslogs_path, 'jobs_status.log'), "status")
+                if os.path.exists(os.path.join(aslogs_path, 'jobs_active_status.log')):
+                    os.remove(os.path.join(aslogs_path, 'jobs_active_status.log'))
+                if os.path.exists(os.path.join(aslogs_path, 'jobs_failed_status.log')):
+                    os.remove(os.path.join(aslogs_path, 'jobs_failed_status.log'))
+                Log.set_file(os.path.join(aslogs_path, 'jobs_active_status.log'), "status")
+                Log.set_file(os.path.join(aslogs_path, 'jobs_failed_status.log'), "status_failed")
             else:
                 Log.set_file(os.path.join(tmp_path, args.command + '.log'), "out", log_level)
                 Log.set_file(os.path.join(tmp_path, args.command + '_err.log'), "err")
-                Log.set_file(os.path.join(tmp_path, 'jobs_status.log'), "status")
+                Log.set_file(os.path.join(tmp_path, 'jobs_active_status.log'), "status")
+                Log.set_file(os.path.join(tmp_path, 'jobs_failed_status.log'), "status_failed")
             Log.file_path = tmp_path
         else:
             if expid == 'None':

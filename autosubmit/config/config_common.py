@@ -1450,7 +1450,7 @@ class AutosubmitConfig(object):
         :return: safety sleep time
         :rtype: int
         """
-        return int(self._conf_parser.get_option('config', 'DELAY_RETRY_TIME', "-1"))
+        return self._conf_parser.get_option('config', 'DELAY_RETRY_TIME', "-1")
 
     def get_notifications(self):
         """

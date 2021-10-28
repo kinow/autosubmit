@@ -101,6 +101,9 @@ class StatusFilter(logging.Filter):
     def filter(self, rec):
         return rec.levelno == Log.STATUS
 
+class StatusFailedFilter(logging.Filter):
+    def filter(self, rec):
+        return rec.levelno == Log.STATUS_FAILED
 
 class Log:
     """
@@ -116,6 +119,7 @@ class Log:
     file_path = ""
     __module__ = __name__
     EVERYTHING = 0
+    STATUS_FAILED = 500
     STATUS = 1000
     DEBUG = 2000
     WARNING = 3000
@@ -199,11 +203,44 @@ class Log:
                     status_file_handler.setFormatter(LogFormatter(False))
                     status_file_handler.addFilter(custom_filter)
                     Log.log.addHandler(status_file_handler)
+                elif type == 'status_failed':
+                    custom_filter = StatusFailedFilter()
+                    file_path = os.path.join(directory, filename)
+                    status_file_handler = logging.FileHandler(file_path, 'w')
+                    status_file_handler.setLevel(Log.STATUS_FAILED)
+                    status_file_handler.setFormatter(LogFormatter(False))
+                    status_file_handler.addFilter(custom_filter)
+                    Log.log.addHandler(status_file_handler)
                 os.chmod(file_path, 509)
             except: # retry again
                 pass
 
+    @staticmethod
+    def reset_status_file(file_path,type='status', level=WARNING):
+        """
+        Configure the file to store the log. If another file was specified earlier, new messages will only go to the
+        new file.
 
+        :param file_path: file to store the log
+        :type file_path: str
+        """
+        try:
+            if type == 'status':
+                custom_filter = StatusFilter()
+                status_file_handler = logging.FileHandler(file_path, 'w')
+                status_file_handler.setLevel(Log.STATUS)
+                status_file_handler.setFormatter(LogFormatter(False))
+                status_file_handler.addFilter(custom_filter)
+                Log.log.addHandler(status_file_handler)
+            elif type == 'status_failed':
+                custom_filter = StatusFailedFilter()
+                status_file_handler = logging.FileHandler(file_path, 'w')
+                status_file_handler.setLevel(Log.STATUS_FAILED)
+                status_file_handler.setFormatter(LogFormatter(False))
+                status_file_handler.addFilter(custom_filter)
+                Log.log.addHandler(status_file_handler)
+        except:  # retry again
+            pass
     @staticmethod
     def set_console_level(level):
         """
@@ -299,6 +336,16 @@ class Log:
         :param args: arguments for message formatting (it will be done using format() method on str)
         """
         Log.log.log(Log.STATUS, msg.format(*args))
+
+    @staticmethod
+    def status_failed(msg, *args):
+        """
+        Sends failed status of jobs to the log. It will be shown in white in the console.
+
+        :param msg: message to show
+        :param args: arguments for message formatting (it will be done using format() method on str)
+        """
+        Log.log.log(Log.STATUS_FAILED, msg.format(*args))
 
     @staticmethod
     def printlog(message="Generic message", code=4000):

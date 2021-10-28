@@ -40,6 +40,7 @@ from autosubmit.job.job_utils import transitive_reduction
 from log.log import AutosubmitCritical, AutosubmitError, Log
 from threading import Thread, Lock
 import multiprocessing
+from autosubmit.config.basicConfig import BasicConfig
 # Log.get_logger("Log.Autosubmit")
 
 
@@ -1364,17 +1365,32 @@ class JobList(object):
                                self._persistence_file + "_backup", self._job_list)
 
     def update_status_log(self):
-
+        exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
+        tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
+        aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
+        Log.reset_status_file(os.path.join(aslogs_path,"jobs_active_status.log"),"status")
+        Log.reset_status_file(os.path.join(aslogs_path,"jobs_failed_status.log"),"status_failed")
         job_list = self.get_completed()[-5:] + self.get_in_queue()
-
-        Log.status("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name",
-                   "Job Id", "Job Status", "Job Platform", "Job Queue")
+        failed_job_list = self.get_failed()
+        if len(job_list) > 0:
+            Log.status("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name",
+                       "Job Id", "Job Status", "Job Platform", "Job Queue")
+        if len(failed_job_list) > 0:
+            Log.status_failed("\n{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", "Job Name",
+                       "Job Id", "Job Status", "Job Platform", "Job Queue")
         for job in job_list:
             if len(job.queue) < 1:
                 queue = "no-scheduler"
             else:
                 queue = job.queue
             Log.status("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status(
+            ).VALUE_TO_KEY[job.status], job.platform.name, queue)
+        for job in failed_job_list:
+            if len(job.queue) < 1:
+                queue = "no-scheduler"
+            else:
+                queue = job.queue
+            Log.status_failed("{0:<35}{1:<15}{2:<15}{3:<20}{4:<15}", job.name, job.id, Status(
             ).VALUE_TO_KEY[job.status], job.platform.name, queue)
 
     def update_from_file(self, store_change=True):
