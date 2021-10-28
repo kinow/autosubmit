@@ -241,7 +241,7 @@ class Monitor:
                         skip = True
                 elif not skip:
                     node_child = node_child[0]
-                    if job.section + "?" in child.dependencies:
+                    if job.section is not None and job.section + "?" in child.dependencies:
                         exp.add_edge(pydotplus.Edge(node_job, node_child,style="dashed"))
                     else:
                         exp.add_edge(pydotplus.Edge(node_job, node_child))
