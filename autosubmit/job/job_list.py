@@ -1469,9 +1469,9 @@ class JobList(object):
                             delay_retry_time = as_conf.get_delay_retry_time()
                         else:
                             delay_retry_time = job.retry_delay
-                        if "+" in job.retry_delay:
+                        if "+" in delay_retry_time:
                             retry_delay = job.fail_count * int(delay_retry_time[:-1]) + int(delay_retry_time[:-1])
-                        elif "*" in job.delay_retrials:
+                        elif "*" in delay_retry_time:
                             retry_delay = int(delay_retry_time[1:])
                             for retrial_amount in range(0,job.fail_count):
                                 retry_delay += retry_delay * 10
