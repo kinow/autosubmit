@@ -143,6 +143,7 @@ class Job(object):
         self.distance_weight = 0
         self.level = 0
         self.export = "none"
+        self.dependencies = []
 
     def __getstate__(self):
         odict = self.__dict__
@@ -1018,6 +1019,8 @@ class Job(object):
 
         parameters['NUMMEMBERS'] = len(as_conf.get_member_list())
         parameters['WRAPPER'] = as_conf.get_wrapper_type()
+        parameters['DEPENDENCIES'] = as_conf.get_dependencies(self.section)
+        self.dependencies = parameters['DEPENDENCIES']
 
         if self.export != "none":
             variables = re.findall('%(?<!%%)\w+%(?!%%)', self.export)

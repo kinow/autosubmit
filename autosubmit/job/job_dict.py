@@ -82,6 +82,7 @@ class DicJobs:
             delay = int(self.get_option(section, "DELAY", -1))
             splits = int(self.get_option(section, "SPLITS", 0))
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
+        pass
 
     def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
         """
@@ -320,7 +321,7 @@ class DicJobs:
         job.wait = self.get_option(section, "WAIT", 'true').lower() == 'true'
         job.rerun_only = self.get_option(section, "RERUN_ONLY", 'false').lower() == 'true'
         job_type = self.get_option(section, "TYPE", default_job_type).lower()
-
+        job.dependencies = self.get_option(section, "DEPENDENCIES", "").split()
         if job_type == 'bash':
             job.type = Type.BASH
         elif job_type == 'python':

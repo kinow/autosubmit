@@ -698,6 +698,8 @@ class AutosubmitConfig(object):
                         dependency = dependency.split('+')[0]
                     elif '*' in dependency:
                         dependency = dependency.split('*')[0]
+                    elif '?' in dependency:
+                        dependency = dependency.split('?')[0]
                     if '[' in dependency:
                         dependency = dependency[:dependency.find('[')]
                     if dependency not in sections:
@@ -1269,6 +1271,22 @@ class AutosubmitConfig(object):
         if string_member is not None:
             member_list.append(string_member)
         return member_list
+    def get_dependencies(self, section="None"):
+        """
+        Returns dependencies list from jobs config file
+
+        :return: experiment's members
+        :rtype: list
+        """
+        try:
+            return self.jobs_parser.get_option(section, "DEPENDENCIES", "").split()
+        except:
+            return []
+
+        if section is not None:
+            return member_list
+        else:
+            return None
 
     def get_rerun(self):
         """
@@ -1750,3 +1768,4 @@ class AutosubmitConfig(object):
                     "{}\n This file and the correctness of its content are necessary.".format(str(exp)))
         # parser.read(file_path)
         return parser
+

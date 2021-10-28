@@ -206,6 +206,7 @@ class JobList(object):
             job.parameters = parameters
 
 
+
         # Checking for member constraints
         if len(run_only_members) > 0:
             # Found
@@ -263,18 +264,24 @@ class JobList(object):
             splits = None
             sign = None
 
-            if '-' not in key and '+' not in key and '*' not in key:
+            if '-' not in key and '+' not in key and '*' not in key and '?' not in key:
                 section = key
             else:
-                if '-' in key:
-                    sign = '-'
-                elif '+' in key:
-                    sign = '+'
-                elif '*' in key:
-                    sign = '*'
-                key_split = key.split(sign)
-                section = key_split[0]
-                distance = int(key_split[1])
+                if '?' in key:
+                    sign = '?'
+                    #key_split = key.split(sign)
+                    section = key[:-1]
+                    #distance = int(key_split[1])
+                else:
+                    if '-' in key:
+                        sign = '-'
+                    elif '+' in key:
+                        sign = '+'
+                    elif '*' in key:
+                        sign = '*'
+                    key_split = key.split(sign)
+                    section = key_split[0]
+                    distance = int(key_split[1])
 
             if '[' in section:
                 section_name = section[0:section.find("[")]
@@ -331,8 +338,7 @@ class JobList(object):
                     section, distance, dependency_running_type, sign, delay, splits, selected_chunks)
             else:
                 # []select_chunks_dest,select_chunks_orig
-                dependency = Dependency(
-                    section, distance, dependency_running_type, sign, delay, splits, [])
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, [])
 
             dependencies[key] = dependency
         return dependencies
@@ -450,6 +456,8 @@ class JobList(object):
                     date = date_list[date_index - dependency.distance]
                 else:
                     skip = True
+        #if dependency.sign is '?':
+        #    skip = True
         return skip, (chunk, member, date)
 
     @staticmethod
@@ -493,6 +501,7 @@ class JobList(object):
         for i in xrange(num_parents):
             parent = parents[i] if isinstance(parents, list) else parents
             graph.add_edge(parent.name, job.name)
+            pass
 
     @staticmethod
     def _create_jobs(dic_jobs, parser, priority, default_job_type, jobs_data=dict()):
@@ -1478,13 +1487,26 @@ class JobList(object):
         # if waiting jobs has all parents completed change its State to READY
         for job in self.get_completed():
             if job.synchronize is not None:
-                tmp = [
-                    parent for parent in job.parents if parent.status == Status.COMPLETED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED]
                 if len(tmp) != len(job.parents):
-                    job.status = Status.WAITING
-                    save = True
-                    Log.debug(
-                        "Resetting sync job: {0} status to: WAITING for parents completion...".format(job.name))
+                    tmp2 = [parent for parent in job.parents if
+                            parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+                    if len(tmp2) == len(job.parents):
+                        for parent in job.parents:
+                            if parent.section + '?' not in job.dependencies and parent.status != Status.COMPLETED:
+                                job.status = Status.WAITING
+                                save = True
+                                Log.debug(
+                                    "Resetting sync job: {0} status to: WAITING for parents completion...".format(
+                                        job.name))
+                                break
+                    else:
+                        job.status = Status.WAITING
+                        save = True
+                        Log.debug(
+                            "Resetting sync job: {0} status to: WAITING for parents completion...".format(
+                                job.name))
+
         #Log.debug('Update finished')
         Log.debug('Updating WAITING jobs')
         if not fromSetStatus:
@@ -1493,8 +1515,10 @@ class JobList(object):
                 if datetime.datetime.now() >= job.delay_end:
                     job.status = Status.READY
             for job in self.get_waiting():
-                tmp = [parent for parent in job.parents if parent.status ==
-                       Status.COMPLETED or parent.status == Status.SKIPPED]
+                tmp = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED]
+                tmp2 = [parent for parent in job.parents if parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+                tmp3 = [parent for parent in job.parents if parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+
                 if job.parents is None or len(tmp) == len(job.parents):
                     job.status = Status.READY
                     job.hold = False
@@ -1502,25 +1526,34 @@ class JobList(object):
                         "Setting job: {0} status to: READY (all parents completed)...".format(job.name))
                     if as_conf.get_remote_dependencies():
                         all_parents_completed.append(job.name)
+                if job.status != Status.READY:
+                    if len(tmp3) != len(job.parents):
+                        if len(tmp2) == len(job.parents):
+                            for parent in job.parents:
+                                if parent.section+'?' in job.dependencies:
+                                    job.status = Status.READY
+                                    job.hold = False
+                                    Log.debug(
+                                        "Setting job: {0} status to: READY (conditional jobs are completed/failed)...".format(job.name))
+                                    break
+                            if as_conf.get_remote_dependencies():
+                                all_parents_completed.append(job.name)
             if as_conf.get_remote_dependencies():
                 for job in self.get_prepared():
                     tmp = [
                         parent for parent in job.parents if parent.status == Status.COMPLETED]
-                    if len(tmp) == len(job.parents):
-                        job.status = Status.READY
-                        job.packed = False
-                        save = True
-                        Log.debug(
-                            "Resetting job: {0} status to: READY".format(job.name))
-                    if len(tmp) == len(job.parents):
+                    tmp2 = [parent for parent in job.parents if
+                            parent.status == Status.COMPLETED or parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+                    tmp3 = [parent for parent in job.parents if
+                            parent.status == Status.SKIPPED or parent.status == Status.FAILED]
+                    if len(tmp2) == len(job.parents) and len(tmp3) != len(job.parents):
                         job.status = Status.READY
                         job.packed = False
                         job.hold = False
                         save = True
                         Log.debug(
                             "A job in prepared status has all parent completed, job: {0} status set to: READY ...".format(job.name))
-                Log.debug(
-                    'Updating WAITING jobs eligible for be prepared')
+                Log.debug('Updating WAITING jobs eligible for be prepared')
                 for job in self.get_waiting_remote_dependencies('slurm'):
                     if job.name not in all_parents_completed:
                         tmp = [parent for parent in job.parents if (
