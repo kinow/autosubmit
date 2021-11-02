@@ -60,6 +60,7 @@ class ExperimentHistory():
                         member="", section="", chunk=0, platform="NA", job_id=0, wrapper_queue=None, wrapper_code=None, children=""):
     try:
       next_counter = self._get_next_counter_by_job_name(job_name)
+      current_experiment_run = self.manager.get_experiment_run_dc_with_max_id()
       job_data_dc = JobData(_id=0, 
                     counter=next_counter, 
                     job_name=job_name, 
@@ -75,7 +76,8 @@ class ExperimentHistory():
                     chunk=chunk,                    
                     platform=platform,
                     job_id=job_id,
-                    children=children)
+                    children=children,
+                    run_id=current_experiment_run.run_id)
       return self.manager.register_submitted_job_data_dc(job_data_dc)
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
