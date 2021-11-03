@@ -1078,8 +1078,10 @@ class Job(object):
 
         if self.type == Type.BASH:
             snippet = StatisticsSnippetBash
-        elif self.type == Type.PYTHON:
-            snippet = StatisticsSnippetPython
+        elif self.type == Type.PYTHON or self.type == Type.PYTHON2:
+            snippet = StatisticsSnippetPython("2")
+        elif self.type == Type.PYTHON3:
+            snippet = StatisticsSnippetPython("3")
         elif self.type == Type.R:
             snippet = StatisticsSnippetR
         else:

@@ -410,7 +410,7 @@ class SlurmPlatform(ParamikoPlatform):
                 """.format(filename, queue, project, wallclock, num_procs, dependency,
                            '\n'.ljust(13).join(str(s) for s in directives), threads)
         else:
-            language = "#!/usr/bin/env python"
+            language = "#!/usr/bin/env python2"
             return \
                 language + """
 ###############################################################################

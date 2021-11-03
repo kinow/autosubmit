@@ -324,8 +324,10 @@ class DicJobs:
         job.dependencies = self.get_option(section, "DEPENDENCIES", "").split()
         if job_type == 'bash':
             job.type = Type.BASH
-        elif job_type == 'python':
-            job.type = Type.PYTHON
+        elif job_type == 'python' or job_type == 'python2':
+            job.type = Type.PYTHON2
+        elif job_type == 'python3':
+            job.type = Type.PYTHON3
         elif job_type == 'r':
             job.type = Type.R
         job.executable = self.get_option(section, "EXECUTABLE", None)

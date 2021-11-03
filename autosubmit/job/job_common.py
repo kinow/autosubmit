@@ -81,6 +81,8 @@ class Type:
     BASH = 0
     PYTHON = 1
     R = 2
+    PYTHON2 = 3
+    PYTHON3 = 4
 
     def retval(self, value):
         return getattr(self, value)
@@ -147,11 +149,14 @@ class StatisticsSnippetPython:
     Class to handle the statistics snippet of a job. It contains header and tailer for
     local and remote jobs
     """
+    def __init__(self,version="2"):
+        self.version=version
 
-    @staticmethod
-    def as_header(scheduler_header, executable):
+    def as_header(self,scheduler_header, executable):
         if not executable:
-            executable = "/usr/bin/env python"
+            executable = "/usr/bin/env python"+str(self.version)
+        else:
+            executable = executable+str(self.version)
         return textwrap.dedent("""\
             #!{0}
 
@@ -182,8 +187,8 @@ class StatisticsSnippetPython:
 
             """)
 
-    @staticmethod
-    def as_tailer():
+    # expand tailer to use python3
+    def as_tailer(self):
         return textwrap.dedent("""\
 
                 ###################
