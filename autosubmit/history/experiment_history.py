@@ -210,7 +210,7 @@ class ExperimentHistory():
   def should_we_create_a_new_run(self, job_list, changes_count, total_count):
     if len(job_list) != total_count:
       return True
-    if changes_count > int(self._get_date_member_completed_count(job_list)*0.9):
+    if changes_count > int(self._get_date_member_completed_count(job_list)):
       return True
     return False
 
