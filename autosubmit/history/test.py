@@ -111,13 +111,24 @@ class TestExperimentHistory(unittest.TestCase):
     exp_history.initialize_database()
     CHANGES_COUNT = 1
     TOTAL_COUNT = 6
-    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, TOTAL_COUNT)
+    current_experiment_run_dc = exp_history.manager.get_experiment_run_dc_with_max_id()    
+    current_experiment_run_dc.total = TOTAL_COUNT
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, current_experiment_run_dc.chunk_unit, current_experiment_run_dc.chunk_size)
     self.assertTrue(should_we == False)
     TOTAL_COUNT_DIFF = 5
-    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, TOTAL_COUNT_DIFF)
+    current_experiment_run_dc.total = TOTAL_COUNT_DIFF
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, current_experiment_run_dc.chunk_unit, current_experiment_run_dc.chunk_size)
     self.assertTrue(should_we == True)
     CHANGES_COUNT = 5
-    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, TOTAL_COUNT)
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, current_experiment_run_dc.chunk_unit, current_experiment_run_dc.chunk_size)
+    self.assertTrue(should_we == True)
+    CHANGES_COUNT = 1
+    current_experiment_run_dc.total = TOTAL_COUNT
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, current_experiment_run_dc.chunk_unit, current_experiment_run_dc.chunk_size*20)
+    self.assertTrue(should_we == True)
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, current_experiment_run_dc.chunk_unit, current_experiment_run_dc.chunk_size)
+    self.assertTrue(should_we == False)
+    should_we = exp_history.should_we_create_a_new_run(self.job_list, CHANGES_COUNT, current_experiment_run_dc, "day", current_experiment_run_dc.chunk_size)
     self.assertTrue(should_we == True)
 
   def test_status_counts(self):

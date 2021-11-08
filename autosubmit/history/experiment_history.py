@@ -188,7 +188,7 @@ class ExperimentHistory():
       update_these_changes = self._get_built_list_of_changes(job_list)      
       if len(update_these_changes) > 0:
         self.manager.update_many_job_data_change_status(update_these_changes)
-      if self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc.total):        
+      if self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size):        
         return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
       return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
     except Exception as exp:
@@ -207,10 +207,17 @@ class ExperimentHistory():
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
   
-  def should_we_create_a_new_run(self, job_list, changes_count, total_count):
-    if len(job_list) != total_count:
+  def should_we_create_a_new_run(self, job_list, changes_count, current_experiment_run_dc, new_chunk_unit, new_chunk_size):
+    if len(job_list) != current_experiment_run_dc.total:
       return True
     if changes_count > int(self._get_date_member_completed_count(job_list)):
+      return True
+    return self._chunk_config_has_changed(current_experiment_run_dc, new_chunk_unit, new_chunk_size)
+  
+  def _chunk_config_has_changed(self, current_exp_run_dc, new_chunk_unit, new_chunk_size):
+    if not current_exp_run_dc:
+      return True
+    if current_exp_run_dc.chunk_unit != new_chunk_unit or current_exp_run_dc.chunk_size != new_chunk_size:
       return True
     return False
 
