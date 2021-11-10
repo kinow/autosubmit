@@ -196,8 +196,7 @@ class JobList(object):
                           default_job_type, jobs_data)
         if show_log:
             Log.info("Adding dependencies...")
-        self._add_dependencies(date_list, member_list,
-                               chunk_list, dic_jobs, jobs_parser, self.graph)
+        self._add_dependencies(date_list, member_list,chunk_list, dic_jobs, jobs_parser, self.graph)
 
         if show_log:
             Log.info("Removing redundant dependencies...")
@@ -238,15 +237,12 @@ class JobList(object):
     def _add_dependencies(date_list, member_list, chunk_list, dic_jobs, jobs_parser, graph, option="DEPENDENCIES"):
         for job_section in jobs_parser.sections():
             Log.debug("Adding dependencies for {0} jobs".format(job_section))
-
             # If does not have dependencies, do nothing
             if not jobs_parser.has_option(job_section, option):
                 continue
 
-            dependencies_keys = jobs_parser.get(
-                job_section, option).split()
-            dependencies = JobList._manage_dependencies(
-                dependencies_keys, dic_jobs, job_section)
+            dependencies_keys = jobs_parser.get(job_section, option).split()
+            dependencies = JobList._manage_dependencies(dependencies_keys, dic_jobs, job_section)
 
             for job in dic_jobs.get_jobs(job_section):
                 num_jobs = 1
@@ -270,9 +266,7 @@ class JobList(object):
             else:
                 if '?' in key:
                     sign = '?'
-                    #key_split = key.split(sign)
                     section = key[:-1]
-                    #distance = int(key_split[1])
                 else:
                     if '-' in key:
                         sign = '-'
@@ -333,14 +327,45 @@ class JobList(object):
                                     auxiliar_relation_list.append(
                                         auxiliar_chunk_list)
                                 selected_chunks.append(auxiliar_relation_list)
-            if len(selected_chunks) >= 1:
-                # []select_chunks_dest,select_chunks_orig
-                dependency = Dependency(
-                    section, distance, dependency_running_type, sign, delay, splits, selected_chunks)
+            select_member_opt = dic_jobs.get_option(job_section, 'SELECT_MEMBERS', None)
+            selected_member = []
+            if select_member_opt is not None:
+                if '*' in select_member_opt:
+                    sections_member = select_member_opt.split(' ')
+                    for section_member in sections_member:
+                        info = section_member.split('*')
+                        if info[0] in key:
+                            for relation in xrange(1, len(info)):
+                                auxiliar_relation_list = []
+                                for location in info[relation].split('-'):
+                                    auxiliar_member_list = []
+                                    location = location.strip('[').strip(']')
+                                    if ':' in location:
+                                        if len(location) == 3:
+                                            for member_number in xrange(int(location[0]), int(location[2]) + 1):
+                                                auxiliar_member_list.append(member_number)
+                                        elif len(location) == 2:
+                                            if ':' == location[0]:
+                                                for member_number in xrange(0, int(location[1]) + 1):
+                                                    auxiliar_member_list.append(member_number)
+                                            elif ':' == location[1]:
+                                                for member_number in xrange(int(location[0]) + 1, len(dic_jobs._chunk_list) - 1):
+                                                    auxiliar_member_list.append(member_number)
+                                    elif ',' in location:
+                                        for member in location.split(','):
+                                            auxiliar_member_list.append(int(member))
+                                    elif re.match('^[0-9]+$', location):
+                                        auxiliar_member_list.append(int(location))
+                                    auxiliar_relation_list.append(auxiliar_member_list)
+                                selected_member.append(auxiliar_relation_list)
+            if len(selected_chunks) >= 1 and len(selected_member) >= 1:
+               dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, selected_chunks, selected_member)
+            elif len(selected_chunks) >= 1:
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,selected_chunks, [])
+            elif len(selected_member) >= 1:
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits,[], selected_member)
             else:
-                # []select_chunks_dest,select_chunks_orig
-                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, [])
-
+                dependency = Dependency(section, distance, dependency_running_type, sign, delay, splits, [], [])
             dependencies[key] = dependency
         return dependencies
 
@@ -363,6 +388,8 @@ class JobList(object):
     @staticmethod
     def _manage_job_dependencies(dic_jobs, job, date_list, member_list, chunk_list, dependencies_keys, dependencies,
                                  graph):
+        visited_parents = set()
+        other_parents   = set()
         for key in dependencies_keys:
             dependency = dependencies[key]
             skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, chunk_list,
@@ -372,42 +399,62 @@ class JobList(object):
             if skip:
                 continue
             chunk_relations_to_add = list()
+            member_relations_to_add = list()
+            # Get current job dependency relations. Used for select chunk option. This is the job in where select chunks option is defined
             if len(dependency.select_chunks_orig) > 0:  # find chunk relation
-                relation_indx = 0
-                while relation_indx < len(dependency.select_chunks_orig):
-                    if len(dependency.select_chunks_orig[relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[relation_indx] or job.chunk is None:
-                        chunk_relations_to_add.append(relation_indx)
-                    relation_indx += 1
-                relation_indx -= 1
-
-            # If doesn't contain select_chunks or running isn't chunk . ...
-            if len(dependency.select_chunks_orig) <= 0 or job.chunk is None or len(chunk_relations_to_add) > 0:
-                parents_jobs = dic_jobs.get_jobs(
-                    dependency.section, date, member, chunk)
-                for parent in parents_jobs:
-                    if dependency.delay == -1 or chunk > dependency.delay:
-                        if isinstance(parent, list):
-                            if job.split is not None:
-                                parent = filter(
-                                    lambda _parent: _parent.split == job.split, parent)[0]
-                            else:
-                                if dependency.splits is not None:
-                                    parent = filter(
-                                        lambda _parent: _parent.split in dependency.splits, parent)
-                        if len(dependency.select_chunks_dest) <= 0 or parent.chunk is None:
-                            job.add_parent(parent)
-                            JobList._add_edge(graph, job, parent)
+                other_parents = dic_jobs.get_jobs(dependency.section, date, member, None)
+                chunk_relation_indx = 0
+                while chunk_relation_indx < len(dependency.select_chunks_orig):
+                    if job.running in ["once"] or len(dependency.select_chunks_orig[chunk_relation_indx]) == 0 or job.chunk in dependency.select_chunks_orig[chunk_relation_indx]:
+                        chunk_relations_to_add.append(chunk_relation_indx)
+                    chunk_relation_indx += 1
+                chunk_relation_indx -= 1
+            # Get current job dependency relations. Used for select members option. This is the job in where select members option is defined
+            if len(dependency.select_members_orig) > 0:  # find member relation
+                member_relation_indx = 0
+                other_parents = dic_jobs.get_jobs(dependency.section, date, None, chunk)
+                while member_relation_indx < len(dependency.select_members_orig):
+                    if job.running in ["once"] or len(dependency.select_members_orig[member_relation_indx]) == 0 or member_list.index(job.member) in dependency.select_members_orig[member_relation_indx] :
+                        member_relations_to_add.append(member_relation_indx)
+                    member_relation_indx += 1
+                member_relation_indx -= 1
+            #Now calculate the dependencies of jobs. If parent is not chunk or member it will be added to the dependency set,
+            parents_jobs = dic_jobs.get_jobs(dependency.section, date, member, chunk)
+            for parent in parents_jobs:
+                # Generic for all dependencies
+                if dependency.delay == -1 or chunk > dependency.delay:
+                    if isinstance(parent, list):
+                        if job.split is not None:
+                            parent = filter(
+                                lambda _parent: _parent.split == job.split, parent)[0]
                         else:
-                            visited_parents = set()
-                            for relation_indx in chunk_relations_to_add:
-                                if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(dependency.select_chunks_dest[relation_indx]) == 0:
-                                    if parent not in visited_parents:
-                                        job.add_parent(parent)
-                                        JobList._add_edge(graph, job, parent)
-                                    visited_parents.add(parent)
+                            if dependency.splits is not None:
+                                parent = filter(
+                                    lambda _parent: _parent.split in dependency.splits, parent)
+                #Select chunk + select member
+                if parent.running in ["once"] or ( len(dependency.select_members_orig) <= 0 and len(dependency.select_chunks_orig) <= 0):
+                    job.add_parent(parent)
+                    JobList._add_edge(graph, job, parent)
+                elif len(dependency.select_members_orig) > 0:
+                    for relation_indx in member_relations_to_add:
+                        if member_list.index(parent.member) in dependency.select_members_dest[relation_indx] or len(dependency.select_members_dest[relation_indx]) <= 0:
+                            if parent not in visited_parents:
+                                job.add_parent(parent)
+                                JobList._add_edge(graph, job, parent)
+                                other_parents.remove(parent)
+                        visited_parents.add(parent)
+                elif len(dependency.select_chunks_orig) > 0:
+                    for relation_indx in chunk_relations_to_add:
+                        if parent.chunk in dependency.select_chunks_dest[relation_indx] or len(
+                                dependency.select_chunks_dest[relation_indx]) == 0:
+                            if parent not in visited_parents:
+                                job.add_parent(parent)
+                                JobList._add_edge(graph, job, parent)
+                                other_parents.remove(parent)
+                        visited_parents.add(parent)
 
             JobList.handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member,
-                                                           member_list, dependency.section, graph)
+                                                           member_list, dependency.section, graph, other_parents)
 
     @staticmethod
     def _calculate_dependency_metadata(chunk, chunk_list, member, member_list, date, date_list, dependency):
@@ -457,13 +504,11 @@ class JobList(object):
                     date = date_list[date_index - dependency.distance]
                 else:
                     skip = True
-        #if dependency.sign is '?':
-        #    skip = True
         return skip, (chunk, member, date)
 
     @staticmethod
     def handle_frequency_interval_dependencies(chunk, chunk_list, date, date_list, dic_jobs, job, member, member_list,
-                                               section_name, graph):
+                                               section_name, graph,visited_parents):
         if job.wait and job.frequency > 1:
             if job.chunk is not None:
                 max_distance = (chunk_list.index(chunk) + 1) % job.frequency
@@ -471,8 +516,9 @@ class JobList(object):
                     max_distance = job.frequency
                 for distance in xrange(1, max_distance):
                     for parent in dic_jobs.get_jobs(section_name, date, member, chunk - distance):
-                        job.add_parent(parent)
-                        JobList._add_edge(graph, job, parent)
+                        if parent not in visited_parents:
+                            job.add_parent(parent)
+                            JobList._add_edge(graph, job, parent)
             elif job.member is not None:
                 member_index = member_list.index(job.member)
                 max_distance = (member_index + 1) % job.frequency
@@ -481,8 +527,9 @@ class JobList(object):
                 for distance in xrange(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date,
                                                     member_list[member_index - distance], chunk):
-                        job.add_parent(parent)
-                        JobList._add_edge(graph, job, parent)
+                        if parent not in visited_parents:
+                            job.add_parent(parent)
+                            JobList._add_edge(graph, job, parent)
             elif job.date is not None:
                 date_index = date_list.index(job.date)
                 max_distance = (date_index + 1) % job.frequency
@@ -491,8 +538,9 @@ class JobList(object):
                 for distance in xrange(1, max_distance, 1):
                     for parent in dic_jobs.get_jobs(section_name, date_list[date_index - distance],
                                                     member, chunk):
-                        job.add_parent(parent)
-                        JobList._add_edge(graph, job, parent)
+                        if parent not in visited_parents:
+                            job.add_parent(parent)
+                            JobList._add_edge(graph, job, parent)
 
     @staticmethod
     def _add_edge(graph, job, parents):

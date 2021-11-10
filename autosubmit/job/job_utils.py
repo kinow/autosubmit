@@ -75,7 +75,7 @@ class Dependency(object):
 
     """
 
-    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks=list()):
+    def __init__(self, section, distance=None, running=None, sign=None, delay=-1, splits=None, select_chunks=list(), select_members=list()):
         self.section = section
         self.distance = distance
         self.running = running
@@ -84,9 +84,17 @@ class Dependency(object):
         self.splits = splits
         self.select_chunks_dest = list()
         self.select_chunks_orig = list()
+        self.select_members_dest = list()
+        self.select_members_orig = list()
         for chunk_relation in select_chunks:
             self.select_chunks_dest.append(chunk_relation[0])
             if len(chunk_relation) > 1:
                 self.select_chunks_orig.append(chunk_relation[1])
             else:
                 self.select_chunks_orig.append([])
+        for member_relation in select_members:
+            self.select_members_dest.append(member_relation[0])
+            if len(member_relation) > 1:
+                self.select_members_orig.append(member_relation[1])
+            else:
+                self.select_members_orig.append([])
