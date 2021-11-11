@@ -125,7 +125,8 @@ class JobPackager(object):
         for job in job_list:
             if job.section not in jobs_by_section:
                 jobs_by_section[job.section] = []
-            jobs_by_section[job.section].append(job)
+            if job.status != Status.COMPLETED:
+                jobs_by_section[job.section].append(job)
 
         for section in jobs_by_section:
             if section in jobs_held_by_section.keys():
@@ -173,8 +174,7 @@ class JobPackager(object):
             self.compute_weight(jobs_ready)
             sorted_jobs = sorted(
                 jobs_ready, key=operator.attrgetter('distance_weight'))
-            jobs_in_held_status = self._jobs_list.get_held_jobs(
-            ) + self._jobs_list.get_submitted(self._platform, hold=self.hold)
+            jobs_in_held_status = self._jobs_list.get_held_jobs() + self._jobs_list.get_submitted(self._platform, hold=self.hold)
             held_by_id = dict()
             for held_job in jobs_in_held_status:
                 if held_job.id not in held_by_id:
@@ -182,6 +182,7 @@ class JobPackager(object):
                 held_by_id[held_job.id].append(held_job)
             current_held_jobs = len(held_by_id.keys())
             remaining_held_slots = 5 - current_held_jobs
+            Log.debug("there are currently {0} held jobs".format(remaining_held_slots))
             try:
                 while len(sorted_jobs) > remaining_held_slots:
                     if sorted_jobs[-1].packed:
