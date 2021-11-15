@@ -266,6 +266,7 @@ class TestJob(TestCase):
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.custom_directives = '["whatever"]'
         self.job._platform = dummy_platform
+        self.job.parameters['PROJECT_TYPE'] = "none"
         # Act
         parameters = self.job.update_parameters(as_conf, dict())
         # Assert
