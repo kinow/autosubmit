@@ -259,12 +259,14 @@ class TestJob(TestCase):
         as_conf.get_wallclock = Mock(return_value='00:30')
         as_conf.get_member_list = Mock(return_value=[])
         as_conf.get_custom_directives = Mock(return_value='["whatever"]')
+        as_conf.load_project_parameters = Mock(return_value='[]')
         self.job.parameters['PROJECT_TYPE'] = "none"
         dummy_serial_platform = Mock()
         dummy_serial_platform.name = 'serial'
         dummy_platform = Mock()
         dummy_platform.serial_platform = dummy_serial_platform
         dummy_platform.custom_directives = '["whatever"]'
+
         self.job._platform = dummy_platform
 
         # Act

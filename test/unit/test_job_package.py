@@ -45,6 +45,8 @@ class TestJobPackage(TestCase):
 
     def test_job_package_submission(self):
         # arrange
+        for job in self.jobs:
+            job._get_paramiko_template = Mock("false","empty")
         self.job_package._create_scripts = Mock()
         self.job_package._send_files = Mock()
         self.job_package._do_submission = Mock()
