@@ -1882,6 +1882,7 @@ class Autosubmit:
                         reconnected = False
                         send_mail = True
                         times = 0
+                        max = 10
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             sleep(30)
@@ -1895,11 +1896,14 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
-                                if times % 10 == 0:
+                                if times % max == 0:
                                     mail_notify = True
+                                    max = max + 10
+                                    times = 0
                                 else:
                                     mail_notify = False
                                 times = times + 1
+
                                 Autosubmit.restore_platforms(platforms_to_test,mail_notify=mail_notify,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
