@@ -173,7 +173,9 @@ class TestJob(TestCase):
         with patch.object(builtins, "open", open_mock):
             # act
             self.job.create_script(config)
-
+        with patch.object(builtins, "write", write_mock):
+            # act
+            self.job.create_script(config)
         # assert
         update_content_mock.assert_called_with(config)
         open_mock.assert_called_with(os.path.join(self.job._tmp_path, self.job.name + '.cmd'), 'w')
@@ -259,7 +261,7 @@ class TestJob(TestCase):
         as_conf.get_wallclock = Mock(return_value='00:30')
         as_conf.get_member_list = Mock(return_value=[])
         as_conf.get_custom_directives = Mock(return_value='["whatever"]')
-        as_conf.load_project_parameters = Mock(return_value='[]')
+        as_conf.load_project_parameters = Mock(return_value=[])
         self.job.parameters['PROJECT_TYPE'] = "none"
         dummy_serial_platform = Mock()
         dummy_serial_platform.name = 'serial'
