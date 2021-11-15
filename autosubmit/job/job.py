@@ -1037,6 +1037,31 @@ class Job(object):
                             "PARAMETER export: Variable: {0} doesn't exist".format(e.message))
 
             parameters['EXPORT'] = self.export
+        #PROJECT VARIABLES:
+        parameters['PROJECT_TYPE'] = as_conf.get_project_type().lower()
+        if as_conf._proj_parser is not None and parameters['PROJECT_TYPE'] != "none":
+            # Load project parameters
+            proj_param = as_conf.load_project_parameters()
+            variables_to_modify = []
+            deep_level = 1
+            max_deep_level = 10
+            for key, value in proj_param.items():
+                if type(proj_param[key]) is str:
+                    look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
+                    if len(look_non_sub_variables) > 0:
+                        variables_to_modify.append(key)
+            while len(variables_to_modify) > 0 and deep_level < max_deep_level:
+                for key, value in parameters.items():
+                    for var in variables_to_modify:
+                        proj_param[var] = re.sub('%(?<!%%)' + key + '%(?!%%)', str(value), proj_param[var])
+                deep_level = deep_level + 1
+                variables_to_modify = []
+                for key, value in proj_param.items():
+                    if type(proj_param[key]) is str:
+                        look_non_sub_variables = re.findall('%(?<!%%)\w+%(?!%%)', proj_param[key])
+                        if len(look_non_sub_variables) > 0:
+                            variables_to_modify.append(key)
+            parameters.update(proj_param)
         self.parameters = parameters
 
         return parameters
@@ -1162,8 +1187,7 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        open(os.path.join(self._tmp_path, script_name),
-             'w').write(template_content)
+        open(os.path.join(self._tmp_path, script_name),'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 

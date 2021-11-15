@@ -714,9 +714,9 @@ class Autosubmit:
         #Enforce LANG=C
         try:
             try:
-                locale.setlocale(locale.LC_ALL,'C.utf8')
+                locale.setlocale(locale.LC_ALL,'C.UTF-8')
             except:
-                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+                locale.setlocale(locale.LC_ALL, 'C.utf8')
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')
@@ -1576,9 +1576,17 @@ class Autosubmit:
                         exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
                         exp_history.initialize_database()
                         exp_history.process_status_changes(job_list.get_job_list(), as_conf.get_chunk_size_unit(), as_conf.get_chunk_size(), current_config=as_conf.get_full_config_as_json())                        
+                    except Exception as e:
+                        # This error is important
+                        raise AutosubmitCritical(
+                            "Error while processing historical database.", 7005, str(e))
+
+                    try:
                         ExperimentStatus(expid).set_as_running()
                     except Exception as e:
-                        raise AutosubmitCritical("Error while processing historical database.", 7067, str(e))
+                        # Connection to status database ec_earth.db can fail.
+                        # API worker will fix the status.
+                        Log.printlog("Autosubmit couldn't set your experiment as running on the main database. Exception: {0}".format(str(e)), 7003)
                     if allowed_members:
                         # Set allowed members after checks have been performed. This triggers the setter and main logic of the -rm feature.
                         job_list.run_members = allowed_members
@@ -1892,7 +1900,7 @@ class Autosubmit:
                                 else:
                                     mail_notify = False
                                 times = times + 1
-                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=True,as_conf=as_conf,expid=expid)
+                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=mail_notify,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
                                 # Message prompt by restore_platforms.
