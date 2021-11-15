@@ -714,9 +714,9 @@ class Autosubmit:
         #Enforce LANG=C
         try:
             try:
-                locale.setlocale(locale.LC_ALL,'C.utf8')
+                locale.setlocale(locale.LC_ALL,'C.UTF-8')
             except:
-                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+                locale.setlocale(locale.LC_ALL, 'C.utf8')
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')

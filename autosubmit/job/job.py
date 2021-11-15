@@ -1038,7 +1038,7 @@ class Job(object):
 
             parameters['EXPORT'] = self.export
         #PROJECT VARIABLES:
-        if parameters['PROJECT_TYPE'] != "none" and as_conf._proj_parser is not None:
+        if as_conf._proj_parser is not None and parameters['PROJECT_TYPE'] != "none":
             # Load project parameters
             proj_param = as_conf.load_project_parameters()
             variables_to_modify = []
