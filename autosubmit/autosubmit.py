@@ -1872,6 +1872,8 @@ class Autosubmit:
                                                      e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
+                        send_mail = True
+                        times = 0
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             sleep(30)
@@ -1885,6 +1887,11 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
+                                if times % 10 == 0:
+                                    mail_notify = True
+                                else:
+                                    mail_notify = False
+                                times = times + 1
                                 Autosubmit.restore_platforms(platforms_to_test,mail_notify=True,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
@@ -1951,10 +1958,6 @@ class Autosubmit:
         for platform in platform_to_test:
             try:
                 platform.test_connection()
-                if mail_notify:
-                    email = as_conf.get_mails_to()
-                    if "@" in email[0]:
-                        Notifier.notify_experiment_status(MailNotifier(BasicConfig), expid, email, platform)
             except BaseException as e:
                 try:
                     if mail_notify:
