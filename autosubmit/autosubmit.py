@@ -714,9 +714,9 @@ class Autosubmit:
         #Enforce LANG=C
         try:
             try:
-                locale.setlocale(locale.LC_ALL,'C.utf8')
+                locale.setlocale(locale.LC_ALL,'C.UTF-8')
             except:
-                locale.setlocale(locale.LC_ALL, 'C.UTF-8')
+                locale.setlocale(locale.LC_ALL, 'C.utf8')
         except:
             Log.info("Locale C.utf8 is not found, using '{0}' as fallback".format("C"))
             locale.setlocale(locale.LC_ALL, 'C')
@@ -1880,6 +1880,7 @@ class Autosubmit:
                                                      e.message)
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
+                        send_mail = True
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             sleep(30)
@@ -1893,7 +1894,7 @@ class Autosubmit:
                                     )]
                                     # noinspection PyTypeChecker
                                     platforms_to_test.add(job.platform)
-                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=True,as_conf=as_conf,expid=expid)
+                                Autosubmit.restore_platforms(platforms_to_test,mail_notify=send_mail,as_conf=as_conf,expid=expid)
                                 reconnected = True
                             except AutosubmitCritical:
                                 # Message prompt by restore_platforms.
