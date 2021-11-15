@@ -1038,6 +1038,7 @@ class Job(object):
 
             parameters['EXPORT'] = self.export
         #PROJECT VARIABLES:
+        parameters['PROJECT_TYPE'] = as_conf.get_project_type().lower()
         if as_conf._proj_parser is not None and parameters['PROJECT_TYPE'] != "none":
             # Load project parameters
             proj_param = as_conf.load_project_parameters()
