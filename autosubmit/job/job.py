@@ -1187,8 +1187,7 @@ class Job(object):
         template_content = template_content.replace("%%", "%")
         script_name = '{0}.cmd'.format(self.name)
         self.script_name = '{0}.cmd'.format(self.name)
-        open(os.path.join(self._tmp_path, script_name),
-             'w').write(template_content)
+        open(os.path.join(self._tmp_path, script_name),'w').write(template_content)
         os.chmod(os.path.join(self._tmp_path, script_name), 0o755)
         return script_name
 
