@@ -1898,7 +1898,7 @@ class Autosubmit:
                                     platforms_to_test.add(job.platform)
                                 if times % max == 0:
                                     mail_notify = True
-                                    max = max + 10
+                                    max = max + max
                                     times = 0
                                 else:
                                     mail_notify = False
