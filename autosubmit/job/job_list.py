@@ -127,7 +127,8 @@ class JobList(object):
                     processed_job_list.append(job)
                 if job.member is not None:
                     found_member = True
-            self._job_list = processed_job_list            
+            self._job_list = processed_job_list    
+            # Old implementation that also considered children of the members.        
             # self._job_list = [job for job in old_job_list if len(
             #     job.parents) == 0 or len(set(old_job_list_names).intersection(set([jobp.name for jobp in job.parents]))) == len(job.parents)]
 
