@@ -1002,6 +1002,16 @@ class AutosubmitConfig(object):
 
         return self._exp_parser.get_option('experiment', 'TWO_STEP_START', '').lower()
 
+    def get_rerun_jobs(self):
+        """
+        Returns rerun jobs
+
+        :return: jobs_list
+        :rtype: str
+        """
+
+        return self._exp_parser.get_option('rerun', 'RERUN_JOBLIST', '').lower()
+
     def get_file_project_conf(self):
         """
         Returns path to project config file from experiment config file
@@ -1298,14 +1308,7 @@ class AutosubmitConfig(object):
 
         return self._exp_parser.get('rerun', 'RERUN').lower()
 
-    def get_chunk_list(self):
-        """
-        Returns chunk list from experiment's config file
 
-        :return: experiment's chunks
-        :rtype: list
-        """
-        return self._exp_parser.get('rerun', 'CHUNKLIST')
 
     def get_platform(self):
         """
