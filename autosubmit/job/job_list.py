@@ -985,13 +985,13 @@ class JobList(object):
             try:
                 self.rerun_job_list = self.get_job_related(select_jobs_by_name=select_jobs_by_name,
                                                               select_all_jobs_by_section=select_all_jobs_by_section,
-                                                              filter_jobs_by_section=filter_jobs_by_section)
+                                                              filter_jobs_by_section=filter_jobs_by_section,two_step_start=two_step_start)
             except:
                 raise AutosubmitCritical(
                     "Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(
                         unparsed_jobs))
 
-    def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section=""):
+    def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section="",two_step_start=True):
         """
         :param select_jobs_by_name: job name
         :param select_all_jobs_by_section: section name
@@ -1888,11 +1888,17 @@ class JobList(object):
             job.status = Status.COMPLETED
             if job in self.rerun_job_list:
                 job.status = Status.WAITING
-                member_list.add(job.member)
-                chunk_list.add(job.chunk)
-                date_list.add(job.date)
+                if job.member is not None:
+                    member_list.add(job.member)
+                if job.chunk is not None:
+                    chunk_list.add(job.chunk)
+                if job.date is not None:
+                    date_list.add(job.date)
             else:
                 self._remove_job(job)
+        self._member_list = list(member_list)
+        self._chunk_list = list(chunk_list)
+        self._date_list = list(date_list)
         jobs_parser = self._get_jobs_parser()
         Log.info("Adding dependencies...")
         dependencies = dict()
@@ -1906,7 +1912,7 @@ class JobList(object):
                 for job in self.get_jobs_by_section(job_section):
                     for key in dependencies_keys:
                         dependency = dependencies[key]
-                        skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, list(chunk_list), job.member, list(member_list), job.date, list(date_list), dependency)
+                        skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, self._chunk_list, job.member, self._member_list, job.date, self._date_list, dependency)
                         if skip:
                             continue
                         section_name = dependencies[key].section
