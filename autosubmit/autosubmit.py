@@ -1309,7 +1309,7 @@ class Autosubmit:
         # Related to TWO_STEP_START new variable defined in expdef
         unparsed_two_step_start = as_conf.get_parse_two_step_start()
         if unparsed_two_step_start != "":
-            job_list.parse_two_step_start(unparsed_two_step_start)
+            job_list.parse_jobs_by_filter(unparsed_two_step_start)
         job_list.create_dictionary(date_list, member_list, num_chunks, chunk_ini, date_format, as_conf.get_retrials(), wrapper_jobs )
 
         while job_list.get_active():
@@ -1602,7 +1602,7 @@ class Autosubmit:
                 # Related to TWO_STEP_START new variable defined in expdef
                 unparsed_two_step_start = as_conf.get_parse_two_step_start()
                 if unparsed_two_step_start != "":
-                    job_list.parse_two_step_start(unparsed_two_step_start)
+                    job_list.parse_jobs_by_filter(unparsed_two_step_start)
 
                 main_loop_retrials = 480  # Hard limit of tries 480 tries at 30seconds sleep each try
                 # establish the connection to all platforms
@@ -3991,9 +3991,7 @@ class Autosubmit:
                                       as_conf.get_wrapper_type(), wrapper_jobs, notransitive=notransitive, update_structure=True, run_only_members=run_only_members)
 
                     if rerun == "true":
-                        chunk_list = Autosubmit._create_json(
-                            as_conf.get_chunk_list())
-                        job_list.rerun(chunk_list, notransitive)
+                        job_list.rerun(as_conf.get_rerun_jobs())
                     else:
                         job_list.remove_rerun_only_jobs(notransitive)
                     Log.info("\nSaving the jobs list...")
@@ -5188,22 +5186,8 @@ class Autosubmit:
                           as_conf.get_default_job_type(), as_conf.get_wrapper_type(), wrapper_jobs,
                           new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
-
-            chunk_list = Autosubmit._create_json(as_conf.get_chunk_list())
-            if not monitor:
-                job_list.rerun(chunk_list, notransitive)
-            else:
-                rerun_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                                     Autosubmit._get_job_list_persistence(expid, as_conf))
-                rerun_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(),
-                                    as_conf.get_chunk_ini(),
-                                    as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                                    as_conf.get_default_job_type(), as_conf.get_wrapper_type(),
-                                    as_conf.get_wrapper_jobs(),
-                                    new=False, notransitive=notransitive)
-                rerun_list.rerun(chunk_list, notransitive)
-                job_list = Autosubmit.rerun_recovery(
-                    expid, job_list, rerun_list, as_conf)
+            rerun_jobs  = as_conf.get_rerun_jobs()
+            job_list.rerun(rerun_jobs,monitor=monitor)
         else:
             job_list.remove_rerun_only_jobs(notransitive)
 

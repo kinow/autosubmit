@@ -87,6 +87,7 @@ class JobList(object):
         self.sections_checked = set()
         self._run_members = None
         self.jobs_to_run_first = list()
+        self.rerun_job_list = list()
     @property
     def expid(self):
         """
@@ -959,7 +960,7 @@ class JobList(object):
             if len(self.jobs_to_run_first) > 0 and keep_running is False:
                 raise AutosubmitCritical("No more jobs to run first, there were still pending jobs but they're unable to run without their parents or there are failed jobs.",7014)
 
-    def parse_two_step_start(self, unparsed_jobs):
+    def parse_jobs_by_filter(self, unparsed_jobs,two_step_start = True):
         jobs_to_run_first = list()
         select_jobs_by_name = "" #job_name
         select_all_jobs_by_section = "" #  all
@@ -979,12 +980,22 @@ class JobList(object):
             aux = unparsed_jobs.split(';')
             select_all_jobs_by_section = aux[0]
             filter_jobs_by_section = aux[1]
-        try:
-            self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
-        except:
-            raise AutosubmitCritical("Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(unparsed_jobs))
+        if two_step_start:
+            try:
+                self.jobs_to_run_first = self.get_job_related(select_jobs_by_name=select_jobs_by_name,select_all_jobs_by_section=select_all_jobs_by_section,filter_jobs_by_section=filter_jobs_by_section)
+            except:
+                raise AutosubmitCritical("Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(unparsed_jobs))
+        else:
+            try:
+                self.rerun_job_list = self.get_job_related(select_jobs_by_name=select_jobs_by_name,
+                                                              select_all_jobs_by_section=select_all_jobs_by_section,
+                                                              filter_jobs_by_section=filter_jobs_by_section,two_step_start=two_step_start)
+            except:
+                raise AutosubmitCritical(
+                    "Check the {0} format.\nFirst filter is optional ends with '&'.\nSecond filter ends with ';'.\nThird filter must contain '['. ".format(
+                        unparsed_jobs))
 
-    def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section=""):
+    def get_job_related(self, select_jobs_by_name="",select_all_jobs_by_section="",filter_jobs_by_section="",two_step_start=True):
         """
         :param select_jobs_by_name: job name
         :param select_all_jobs_by_section: section name
@@ -1865,76 +1876,57 @@ class JobList(object):
 
         self._job_list.remove(job)
 
-    def rerun(self, chunk_list, notransitive=False, monitor=False):
+    def rerun(self, job_list_unparsed, monitor=False):
         """
-        Updates job list to rerun the jobs specified by chunk_list
+        Updates job list to rerun the jobs specified by a job list
 
         :param chunk_list: list of chunks to rerun
         :type chunk_list: str
         """
-        jobs_parser = self._get_jobs_parser()
-
-        Log.info("Adding dependencies...")
-        dependencies = dict()
-        for job_section in jobs_parser.sections():
-            Log.debug(
-                "Reading rerun dependencies for {0} jobs".format(job_section))
-
-            # If does not has rerun dependencies, do nothing
-            if not jobs_parser.has_option(job_section, "RERUN_DEPENDENCIES"):
-                continue
-
-            dependencies_keys = jobs_parser.get(
-                job_section, "RERUN_DEPENDENCIES").split()
-            dependencies = JobList._manage_dependencies(
-                dependencies_keys, self._dic_jobs, job_section)
-
-        for job in self._job_list:
-            job.status = Status.COMPLETED
-
-        data = json.loads(chunk_list)
-        for d in data['sds']:
-            date = parse_date(d['sd'])
-            Log.debug("Date: {0}", date)
-            for m in d['ms']:
-                member = m['m']
-                Log.debug("Member: " + member)
-                previous_chunk = 0
-                for c in m['cs']:
-                    Log.debug("Chunk: " + c)
-                    chunk = int(c)
-                    for job in [i for i in self._job_list if i.date == date and i.member == member and (i.chunk == chunk)]:
-
-                        if not job.rerun_only or chunk != previous_chunk + 1:
-                            job.status = Status.WAITING
-                            Log.debug("Job: " + job.name)
-
-                        job_section = job.section
-                        if job_section not in dependencies:
-                            continue
-
-                        for key in dependencies_keys:
-                            skip, (current_chunk, current_member, current_date) = JobList._calculate_dependency_metadata(chunk, member, date,
-                                                                                                                         dependencies[key])
-                            if skip:
-                                continue
-
-                            section_name = dependencies[key].section
-                            for parent in self._dic_jobs.get_jobs(section_name, current_date, current_member,
-                                                                  current_chunk):
-                                parent.status = Status.WAITING
-                                Log.debug("Parent: " + parent.name)
-
-        for job in [j for j in self._job_list if j.status == Status.COMPLETED]:
-            if job.synchronize is None:
-                self._remove_job(job)
-
-        self.update_genealogy(notransitive=notransitive)
-        for job in [j for j in self._job_list if j.synchronize != None]:
-            if job.status == Status.COMPLETED:
-                job.status = Status.WAITING
+        self.parse_jobs_by_filter(job_list_unparsed,two_step_start=False)
+        member_list = set()
+        chunk_list = set()
+        date_list = set()
+        job_sections = set()
+        for job in self.get_all():
+            if not monitor:
+                job.status = Status.COMPLETED
+            if job in self.rerun_job_list:
+                job_sections.add(job.section)
+                if not monitor:
+                    job.status = Status.WAITING
+                if job.member is not None:
+                    member_list.add(job.member)
+                if job.chunk is not None:
+                    chunk_list.add(job.chunk)
+                if job.date is not None:
+                    date_list.add(job.date)
             else:
                 self._remove_job(job)
+        self._member_list = list(member_list)
+        self._chunk_list = list(chunk_list)
+        self._date_list = list(date_list)
+        jobs_parser = self._get_jobs_parser()
+        Log.info("Adding dependencies...")
+        dependencies = dict()
+
+        for job_section in job_sections:
+            Log.debug(
+                "Reading rerun dependencies for {0} jobs".format(job_section))
+            if jobs_parser.has_option(job_section, 'DEPENDENCIES'):
+                dependencies_keys = jobs_parser.get(job_section, "DEPENDENCIES").split()
+                dependencies = JobList._manage_dependencies(dependencies_keys, self._dic_jobs, job_section)
+                for job in self.get_jobs_by_section(job_section):
+                    for key in dependencies_keys:
+                        dependency = dependencies[key]
+                        skip, (chunk, member, date) = JobList._calculate_dependency_metadata(job.chunk, self._chunk_list, job.member, self._member_list, job.date, self._date_list, dependency)
+                        if skip:
+                            continue
+                        section_name = dependencies[key].section
+                        for parent in self._dic_jobs.get_jobs(section_name, job.date, job.member,job.chunk):
+                            if not monitor:
+                                parent.status = Status.WAITING
+                            Log.debug("Parent: " + parent.name)
 
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()
