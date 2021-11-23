@@ -603,6 +603,7 @@ class JobPackageVertical(JobPackageThread):
                 wallclock_delta = datetime.timedelta(hours=0, minutes=0, seconds=wallclock_seconds)
                 hh, mm, ss = str(wallclock_delta).split(':')
                 self._wallclock = hh + ":"+mm
+                Log.info("Submitting {2} with wallclock {0}:{1}".format(hh,mm,self._name))
         else:
             wallclock_by_level = None
 
