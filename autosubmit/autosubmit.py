@@ -5187,20 +5187,7 @@ class Autosubmit:
                           new=False, notransitive=notransitive, run_only_members=run_only_members)
         if rerun == "true":
             rerun_jobs  = as_conf.get_rerun_jobs()
-            if not monitor:
-                job_list.rerun(rerun_jobs)
-            else:
-                rerun_list = JobList(expid, BasicConfig, ConfigParserFactory(),
-                                     Autosubmit._get_job_list_persistence(expid, as_conf))
-                rerun_list.generate(date_list, as_conf.get_member_list(), as_conf.get_num_chunks(),
-                                    as_conf.get_chunk_ini(),
-                                    as_conf.load_parameters(), date_format, as_conf.get_retrials(),
-                                    as_conf.get_default_job_type(), as_conf.get_wrapper_type(),
-                                    as_conf.get_wrapper_jobs(),
-                                    new=False, notransitive=notransitive)
-                rerun_list.rerun(chunk_list, notransitive)
-                job_list = Autosubmit.rerun_recovery(
-                    expid, job_list, rerun_list, as_conf)
+            job_list.rerun(rerun_jobs,monitor=monitor)
         else:
             job_list.remove_rerun_only_jobs(notransitive)
 

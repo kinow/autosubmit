@@ -1872,7 +1872,7 @@ class JobList(object):
 
         self._job_list.remove(job)
 
-    def rerun(self, job_list_unparsed, notransitive=False, monitor=False):
+    def rerun(self, job_list_unparsed, monitor=False):
         """
         Updates job list to rerun the jobs specified by a job list
 
@@ -1883,11 +1883,14 @@ class JobList(object):
         member_list = set()
         chunk_list = set()
         date_list = set()
-
-        for job in self._job_list:
-            job.status = Status.COMPLETED
+        job_sections = set()
+        for job in self.get_all():
+            if not monitor:
+                job.status = Status.COMPLETED
             if job in self.rerun_job_list:
-                job.status = Status.WAITING
+                job_sections.add(job.section)
+                if not monitor:
+                    job.status = Status.WAITING
                 if job.member is not None:
                     member_list.add(job.member)
                 if job.chunk is not None:
@@ -1903,7 +1906,7 @@ class JobList(object):
         Log.info("Adding dependencies...")
         dependencies = dict()
 
-        for job_section in jobs_parser.sections():
+        for job_section in job_sections:
             Log.debug(
                 "Reading rerun dependencies for {0} jobs".format(job_section))
             if jobs_parser.has_option(job_section, 'DEPENDENCIES'):
@@ -1917,9 +1920,9 @@ class JobList(object):
                             continue
                         section_name = dependencies[key].section
                         for parent in self._dic_jobs.get_jobs(section_name, job.date, job.member,job.chunk):
-                            parent.status = Status.WAITING
+                            if not monitor:
+                                parent.status = Status.WAITING
                             Log.debug("Parent: " + parent.name)
-        self.update_genealogy(notransitive=notransitive)
 
     def _get_jobs_parser(self):
         jobs_parser = self._parser_factory.create_parser()
