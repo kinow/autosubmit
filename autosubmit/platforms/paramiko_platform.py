@@ -527,6 +527,17 @@ class ParamikoPlatform(Platform):
             for job in job_list:
                 job_id = job.id
                 job_status = self.parse_Alljobs_output(job_list_status, job_id)
+                while len(job_status) <= 0 and retries >= 0:
+                    retries -= 1
+                    self.send_command(cmd)
+                    job_list_status = self.get_ssh_output()
+                    job_status = self.parse_Alljobs_output(job_list_status, job_id)
+                    if len(job_status) <= 0:
+                        Log.debug('Retrying check job command: {0}', cmd)
+                        Log.debug('retries left {0}', retries)
+                        Log.debug('Will be retrying in {0} seconds', sleep_time)
+                        sleep(sleep_time)
+                        sleep_time = sleep_time + 5
                 # URi: define status list in HPC Queue Class
                 if job_status in self.job_status['COMPLETED']:
                     job_status = Status.COMPLETED
