@@ -881,23 +881,24 @@ class AutosubmitConfig(object):
         :return: a dictionary containing tuples [parameter_name, parameter_value]
         :rtype: dict
         """
-        parameters = dict()
-        for section in self._exp_parser.sections():
-            for option in self._exp_parser.options(section):
-                parameters[option] = self._exp_parser.get(section, option)
-        for section in self._conf_parser.sections():
-            for option in self._conf_parser.options(section):
-                parameters[option] = self._conf_parser.get(section, option)
-
-        parameters['PROJECT_TYPE'] = self.get_project_type()
-        if parameters['PROJECT_TYPE'] != "none" and self._proj_parser is not None:
-            # Load project parameters
-            Log.debug("Loading project parameters...")
-            parameters2 = parameters.copy()
-            parameters2.update(self.load_project_parameters())
-            parameters = parameters2
-
-        return parameters
+        try:
+            parameters = dict()
+            for section in self._exp_parser.sections():
+                for option in self._exp_parser.options(section):
+                    parameters[option] = self._exp_parser.get(section, option)
+            for section in self._conf_parser.sections():
+                for option in self._conf_parser.options(section):
+                    parameters[option] = self._conf_parser.get(section, option)
+            parameters['PROJECT_TYPE'] = self.get_project_type()
+            if parameters['PROJECT_TYPE'] != "none" and self._proj_parser is not None:
+                # Load project parameters
+                Log.debug("Loading project parameters...")
+                parameters2 = parameters.copy()
+                parameters2.update(self.load_project_parameters())
+                parameters = parameters2
+            return parameters
+        except IOError as e:
+            raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,e.message)
 
     def load_platform_parameters(self):
         """

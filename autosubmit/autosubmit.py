@@ -1081,6 +1081,7 @@ class Autosubmit:
         # Load parameters
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
+        Log.debug("Parameters load.")
         for platform_name in platforms:
             platform = platforms[platform_name]
             # Call method from platform.py parent object
@@ -1890,6 +1891,7 @@ class Autosubmit:
                         max = 10
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
+                            Log.info("Recovering the remote platform connection")
                             Log.info("Waiting 15 seconds before continue")
                             sleep(15)
                             try:
