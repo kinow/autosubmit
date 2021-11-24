@@ -1800,84 +1800,89 @@ class Autosubmit:
                     except AutosubmitError as e:  # If an error is detected, restore all connections and job_list                        
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
-                        Log.info("Waiting 30 seconds before continue")
                         # No need to wait until the remote platform reconnection
                         recovery = True
-                        try:
-                            #Recover job_list while keeping job.fail_count
-                            failed_names = {}
-                            for job in job_list.get_job_list():
-                                if job.fail_count > 0:
-                                    failed_names[job.name] = job.fail_count
-                            job_list = Autosubmit.load_job_list(
-                                expid, as_conf, notransitive=notransitive)
-                            Autosubmit._load_parameters(
-                                as_conf, job_list, submitter.platforms)
-                            for job in job_list.get_job_list():
-                                if job.name in failed_names.keys():
-                                    job.fail_count = failed_names[job.name]
-                                if job.platform_name is None:
-                                    job.platform_name = hpcarch
-                                job.platform = submitter.platforms[job.platform_name.lower(
-                                )]
-                            # Recovery wrapper [Packages]
-                            packages_persistence = JobPackagePersistence(os.path.join(
-                                BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
-                            packages = packages_persistence.load()
-                            for (exp_id, package_name, job_name) in packages:
-                                if package_name not in job_list.packages_dict:
-                                    job_list.packages_dict[package_name] = []
-                                job_list.packages_dict[package_name].append(
-                                    job_list.get_job_by_name(job_name))
-                            # Recovery wrappers [Wrapper status]
-                            for package_name, jobs in job_list.packages_dict.items():
-                                from job.job import WrapperJob
-                                wrapper_status = Status.SUBMITTED
-                                all_completed = True
-                                running = False
-                                queuing = False
-                                failed = False
-                                hold = False
-                                submitted = False
-                                if jobs[0].status == Status.RUNNING or jobs[0].status == Status.COMPLETED:
-                                    running = True
-                                for job in jobs:
-                                    if job.status == Status.QUEUING:
-                                        queuing = True
-                                        all_completed = False
-                                    elif job.status == Status.FAILED:
-                                        failed = True
-                                        all_completed = False
-                                    elif job.status == Status.HELD:
-                                        hold = True
-                                        all_completed = False
-                                    elif job.status == Status.SUBMITTED:
-                                        submitted = True
-                                        all_completed = False
-                                if all_completed:
-                                    wrapper_status = Status.COMPLETED
-                                elif hold:
-                                    wrapper_status = Status.HELD
-                                else:
-                                    if running:
-                                        wrapper_status = Status.RUNNING
-                                    elif queuing:
-                                        wrapper_status = Status.QUEUING
-                                    elif submitted:
-                                        wrapper_status = Status.SUBMITTED
-                                    elif failed:
-                                        wrapper_status = Status.FAILED
+                        while not recovery and main_loop_retrials > 0:
+                            main_loop_retrials = main_loop_retrials - 1
+                            sleep(15)
+                            Log.info("Waiting 15 seconds before continue")
+                            try:
+                                #Recover job_list while keeping job.fail_count
+                                failed_names = {}
+                                for job in job_list.get_job_list():
+                                    if job.fail_count > 0:
+                                        failed_names[job.name] = job.fail_count
+                                job_list = Autosubmit.load_job_list(
+                                    expid, as_conf, notransitive=notransitive)
+                                Autosubmit._load_parameters(
+                                    as_conf, job_list, submitter.platforms)
+                                for job in job_list.get_job_list():
+                                    if job.name in failed_names.keys():
+                                        job.fail_count = failed_names[job.name]
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    job.platform = submitter.platforms[job.platform_name.lower(
+                                    )]
+                                # Recovery wrapper [Packages]
+
+                                packages_persistence = JobPackagePersistence(os.path.join(
+                                    BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                                packages = packages_persistence.load()
+                                for (exp_id, package_name, job_name) in packages:
+                                    if package_name not in job_list.packages_dict:
+                                        job_list.packages_dict[package_name] = []
+                                    job_list.packages_dict[package_name].append(
+                                        job_list.get_job_by_name(job_name))
+                                # Recovery wrappers [Wrapper status]
+                                for package_name, jobs in job_list.packages_dict.items():
+                                    from job.job import WrapperJob
+                                    wrapper_status = Status.SUBMITTED
+                                    all_completed = True
+                                    running = False
+                                    queuing = False
+                                    failed = False
+                                    hold = False
+                                    submitted = False
+                                    if jobs[0].status == Status.RUNNING or jobs[0].status == Status.COMPLETED:
+                                        running = True
+                                    for job in jobs:
+                                        if job.status == Status.QUEUING:
+                                            queuing = True
+                                            all_completed = False
+                                        elif job.status == Status.FAILED:
+                                            failed = True
+                                            all_completed = False
+                                        elif job.status == Status.HELD:
+                                            hold = True
+                                            all_completed = False
+                                        elif job.status == Status.SUBMITTED:
+                                            submitted = True
+                                            all_completed = False
+                                    if all_completed:
+                                        wrapper_status = Status.COMPLETED
+                                    elif hold:
+                                        wrapper_status = Status.HELD
                                     else:
-                                        wrapper_status = Status.SUBMITTED
-                                wrapper_job = WrapperJob(package_name, jobs[0].id, wrapper_status, 0, jobs,
-                                                         None,
-                                                         None, jobs[0].platform, as_conf, jobs[0].hold)
-                                job_list.job_package_map[jobs[0].id] = wrapper_job
-                            save = job_list.update_list(as_conf)
-                            job_list.save()
-                        except BaseException as e:
-                            raise AutosubmitCritical("Job_list couldn't be restored due I/O error to be solved on 3.14.", 7040,
-                                                     e.message)
+                                        if running:
+                                            wrapper_status = Status.RUNNING
+                                        elif queuing:
+                                            wrapper_status = Status.QUEUING
+                                        elif submitted:
+                                            wrapper_status = Status.SUBMITTED
+                                        elif failed:
+                                            wrapper_status = Status.FAILED
+                                        else:
+                                            wrapper_status = Status.SUBMITTED
+                                    wrapper_job = WrapperJob(package_name, jobs[0].id, wrapper_status, 0, jobs,
+                                                             None,
+                                                             None, jobs[0].platform, as_conf, jobs[0].hold)
+                                    job_list.job_package_map[jobs[0].id] = wrapper_job
+                                save = job_list.update_list(as_conf)
+                                job_list.save()
+                                recovery = True
+                            except BaseException as e:
+                                recovery = False
+
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         send_mail = True
@@ -1885,7 +1890,8 @@ class Autosubmit:
                         max = 10
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-                            sleep(30)
+                            Log.info("Waiting 15 seconds before continue")
+                            sleep(15)
                             try:
                                 platforms_to_test = set()
                                 for job in job_list.get_job_list():
@@ -1958,7 +1964,7 @@ class Autosubmit:
         except AutosubmitCritical as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
         except IOError as e:
-            raise AutosubmitError(e.message,e.code,e.trace)
+            raise AutosubmitError(e.message,6040,"Failure while trying to recover the job_list")
         except BaseException as e:
             raise
 

@@ -2,7 +2,7 @@ How to add a new job
 ====================
 
 To add a new job, open the <experiments_directory>/cxxx/conf/jobs_cxxx.conf file where cxxx is the experiment
-identifier and add this text:
+identifier and add this text:s
 
 .. code-block:: ini
 
