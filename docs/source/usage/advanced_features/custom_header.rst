@@ -40,7 +40,6 @@ In the file:
     ## Defines if job is only to be executed in reruns. If not specified, defaults to false.
     # RERUN_ONLY = False
     ## Defines jobs needed to be rerun if this job is going to be rerun
-    # RERUN_DEPENDENCIES = RERUN INI LOCAL_SETUP REMOTE_SETUP TRANSFER
     ## Wallclock to be submitted to the HPC queue in format HH:MM
     # WALLCLOCK = 00:05
     ## Processors number to be submitted to the HPC. If not specified, defaults to 1.

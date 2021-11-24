@@ -23,9 +23,32 @@ This is the minimum job definition and usually is not enough. You usually will n
 * DEPENDENCIES: defines dependencies from job as a list of parents jobs separated by spaces. For example, if
   'new_job' has to wait for "old_job" to finish, you must add the line "DEPENDENCIES = old_job". For dependencies to
   jobs running in previous chunks, members or start-dates, use -(DISTANCE). For example, for a job "SIM" waiting for
-  the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1"
+  the previous "SIM" job to finish, you have to add "DEPENDENCIES = SIM-1". For dependencies that are not mandatory for the normal workflow behaviour, you must add the char '?' at the end of the dependency.
 
-* SELECT_CHUNKS (optional) : by default, Autosubmit jobs depends on all dependencies chunks (if parent job RUNNING == chunk) , with this parameter you will be able to  select the ones that you want, you can watch some examples at the bottom of this page.
+* SELECT_CHUNKS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the chunks of a specific job section. At the end of this doc, you will find diverse examples of this feature. The syntaxis is as follows:
+
+.. code-block:: ini
+
+    [jobs]
+    SELECT_CHUNKS = SIM*[1]*[3] # Enables the dependency of  chunk 1 with chunk 3. While chunks 2,4  won't be linked.
+    SELECT_CHUNKS = SIM*[1:3] # Enables the dependency of chunk 1,2 and 3. While 4 won't be linked.
+    SELECT_CHUNKS = SIM*[1,3] # Enables the dependency of chunk 1 and 3. While 2 and 4 won't be linked
+    SELECT_CHUNKS = SIM*[1] # Enables the dependency of chunk 1. While 2, 3 and 4 won't be linked
+
+* SELECT_MEMBERS (optional): by default, all sections depend on all jobs the items specified on the DEPENDENCIES parameter. However, with this parameter, you could select the members of a specific job section. At the end of this doc, you will find diverse examples of this feature. Caution, you must pick the member index, not the member name.
+
+.. code-block:: ini
+
+    [EXPDEF]
+    ...
+    MEMBERS = AA BB CC DD
+    ...
+    [jobs]
+    SELECT_MEMBERS = SIM*[1]*[3] # Enables the dependency of member BB with member DD. While AA and CC won't be linked.
+    SELECT_MEMBERS = SIM*[1:3] # Enables the dependency of member  BB,CC and DD. While AA won't be linked.
+    SELECT_MEMBERS = SIM*[1,3] # Enables the dependency of member BB and DD. While AA and CC won't be linked
+    SELECT_MEMBERS = SIM*[1] # Enables the dependency of member BB. While AA, CC and DD won't be linked
+
 
 For jobs running in HPC platforms, usually you have to provide information about processors, wallclock times and more.
 To do this use:
@@ -42,8 +65,7 @@ To do this use:
 
 * RETRIALS: Number of retrials if job fails
 
-* DELAY_RETRY_TIME: Allows to put a delay between retries, of retrials if a job fails. If not specified, it will be static. The ideal is to use the +(number) approach or plain(number) in case that the hpc platform has little issues or the experiment will run for a short period of time
-and *(10) in case that the filesystem is having large  delays or the experiment will run for a lot of time.
+* DELAY_RETRY_TIME: Allows to put a delay between retries. Triggered when a job fails. If not specified, Autosubmit will retry the job as soon as possible. Accepted formats are: plain number (there will be a constant delay between retrials, of as many seconds as specified), plus (+) sign followed by a number (the delay will steadily increase by the addition of these number of seconds), or multiplication (*) sign follows by a number (the delay after n retries will be the number multiplied by 10*n). Having this in mind, the ideal scenario is to use +(number) or plain(number) in case that the HPC has little issues or the experiment will run for a little time. Otherwise, is better to use the *(number) approach.
 
 .. code-block:: ini
 
@@ -63,14 +85,14 @@ There are also other, less used features that you can use:
 
 * RERUN_ONLY: determines if a job is only to be executed in reruns. If not specified, defaults to false.
 
-* RERUN_DEPENDENCIES: defines the jobs to be rerun if this job is going to be rerunned. Syntax is identical to
-  the used in DEPENDENCIES
-
 * CUSTOM_DIRECTIVES: Custom directives for the HPC resource manager headers of the platform used for that job.
 
 * SKIPPABLE: When this is true, the job will be able to skip it work if there is an higher chunk or member already ready, running, queuing or in complete status.
+
 * EXPORT: Allows to run an env script or load some modules before running this job.
-* EXECUTABLE: Allows to add an wrapper that will execute this job.
+
+* EXECUTABLE: Allows to wrap a job for be launched with a set of env variables.
+
 * QUEUE: queue to add the job to. If not specificied, uses PLATFORM default.
 
 Workflow examples:
@@ -161,3 +183,81 @@ In this workflow you can see an illustrated example of SKIPPABLE parameter used 
    :width: 100%
    :align: center
    :alt: skip_workflow
+
+Example 4: Conditional dependencies
+--------------------
+
+In this workflow you can see an illustrated example of conditional dependencies.
+
+.. code-block:: ini
+
+    [GET_FILES]
+    FILE = templates/fail.sh
+    RUNNING = chunk
+
+    [IT]
+    FILE = templates/work.sh
+    RUNNING = chunk
+    QUEUE = debug
+
+    [CALC_STATS]
+    FILE = templates/work.sh
+    DEPENDENCIES = IT GET_FILES?
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+    .. figure:: ../../workflows/Dashed.png
+       :name: simple
+       :width: 100%
+       :align: center
+       :alt: dashed_workflow
+
+Example 5: Select Member
+--------------------
+
+In this workflow you can see an illustrated example of select member. Using 4 members 1 datelist and 4 different job sections.
+
+Expdef:
+
+.. code-block:: ini
+    [experiment]
+    DATELIST = 19600101
+    MEMBERS = 00 01 02 03
+    CHUNKSIZE = 1
+    NUMCHUNKS = 2
+
+Jobs_conf:
+
+.. code-block:: ini
+
+    [SIM]
+    ...
+    RUNNING = chunk
+    QUEUE = debug
+
+    [DA]
+    ...
+    DEPENDENCIES = SIM
+    SELECT_MEMBERS = SIM*[0:2]
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+    [REDUCE]
+    ...
+    DEPENDENCIES = SIM
+    SELECT_MEMBERS = SIM*[3]
+    RUNNING = member
+    FREQUENCY = 4
+
+    [REDUCE_AN]
+    ...
+    FILE = templates/05b_sim.sh
+    DEPENDENCIES = DA
+    RUNNING = chunk
+    SYNCHRONIZE = member
+
+    .. figure:: ../../workflows/Select_members.png
+       :name: simple
+       :width: 100%
+       :align: center
+       :alt: select_members

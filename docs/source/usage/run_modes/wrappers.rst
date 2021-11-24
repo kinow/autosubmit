@@ -243,7 +243,8 @@ In `autosubmit_cxxx.conf`:
     # MIN_WRAPPED set the minim  number of jobs that should be included in the wrapper. DEFAULT = 2
     # MAX_WRAPPED set the maxim  number of jobs that should be included in the wrapper. DEFAULT = TOTALJOBS
     # Policy : Select the behaviour of the inner jobs Strict/Flexible/Mixed
-
+    # EXTEND_WALLCLOCK: Allows to extend the wallclock by the max wallclock of the horizontal package (max inner job). Values are integer units (0,1,2)
+    # RETRIALS : Enables a retrial mechanism for vertical wrappers, or default retrial mechanism for the other wrappers
 
     [wrapper]
     TYPE = Vertical #REQUIRED
