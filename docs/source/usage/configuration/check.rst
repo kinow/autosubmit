@@ -31,8 +31,10 @@ How to use check in running time:
 In ``jobs_cxxx.conf`` , you can set check(default true) to check the scripts during autosubmit run cxx.
 
 There are two parameters related to check:
-Check: that is the mechanism that allows replacing an unused variable with an empty string ( %_% substitution). If not set it will be TRUE.
-SHOW_CHECK_WARNINGS: That is mean to debug, it will print a lot of information regarding variables and substitution if is set to TRUE.
+
+* CHECK: Controls the mechanism that allows replacing an unused variable with an empty string ( %_% substitution). It is TRUE by default.
+
+* SHOW_CHECK_WARNINGS: For debugging purposes. It will print a lot of information regarding variables and substitution if it is set to TRUE.
 
 .. code-block:: ini
 
@@ -40,13 +42,19 @@ SHOW_CHECK_WARNINGS: That is mean to debug, it will print a lot of information r
     SHOW_CHECK_WARNINGS = TRUE or FALSE # Default is FALSE
 
 
-Check = true # Static templates, is used to substitute empty variables
 
-Check = on_submission # Dynamic templates ( generated on running time) is used to substitute empty variables.
+::
 
-Check = false # is used to disable this substitution.
+    CHECK = TRUE # Static templates (existing on `autosubmit create`). Used to substitute empty variables
 
-SHOW_CHECK_WARNINGS = True # Shows a LOT of information, is disabled by default.
+    CHECK = ON_SUBMISSION # Dynamic templates (generated on running time). Used to substitute empty variables.
+
+    CHECK = FALSE # Used to disable this substitution.
+
+::
+
+    SHOW_CHECK_WARNINGS = TRUE # Shows a LOT of information. Disabled by default.
+
 
 For example:
 
@@ -66,7 +74,7 @@ For example:
     RUNNING = chunk
     WALLCLOCK = 05:00
     CHECK = on_submission
-    SHOW_CHECK_WARNINGS = False
+    SHOW_CHECK_WARNINGS = FALSE
     ...
 
 
