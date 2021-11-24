@@ -73,7 +73,7 @@ For example:
     DEPENDENCIES = LOCAL_SETUP SIM - 1
     RUNNING = chunk
     WALLCLOCK = 05:00
-    CHECK = on_submission
+    CHECK = ON_SUBMISSION
     SHOW_CHECK_WARNINGS = FALSE
     ...
 
