@@ -1409,16 +1409,20 @@ class JobList(object):
         """
         Persists the job list
         """
-        job_list = None
-        if self.run_members is not None:
-            job_names = [job.name for job in self._job_list]
-            job_list = [job for job in self._job_list]
-            for job in self._base_job_list:
-                if job.name not in job_names:
-                    job_list.append(job)
-        self.update_status_log()
-        self._persistence.save(self._persistence_path,
-                               self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+        try:
+            job_list = None
+            if self.run_members is not None:
+                job_names = [job.name for job in self._job_list]
+                job_list = [job for job in self._job_list]
+                for job in self._base_job_list:
+                    if job.name not in job_names:
+                        job_list.append(job)
+            self.update_status_log()
+            self._persistence.save(self._persistence_path,
+                                   self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+        except BaseException as e:
+            raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
+
 
     def backup_save(self):
         """
@@ -1586,7 +1590,7 @@ class JobList(object):
                             "Resetting sync job: {0} status to: WAITING for parents completion...".format(
                                 job.name))
 
-        #Log.debug('Update finished')
+
         Log.debug('Updating WAITING jobs')
         if not fromSetStatus:
             all_parents_completed = []

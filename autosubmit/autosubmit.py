@@ -1798,7 +1798,7 @@ class Autosubmit:
                             job_list.save()
                         time.sleep(safetysleeptime)
 
-                    except AutosubmitError as e:  # If an error is detected, restore all connections and job_list                        
+                    except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         # No need to wait until the remote platform reconnection
@@ -1822,10 +1822,8 @@ class Autosubmit:
                                         job.fail_count = failed_names[job.name]
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower(
-                                    )]
+                                    job.platform = submitter.platforms[job.platform_name.lower()]
                                 # Recovery wrapper [Packages]
-
                                 packages_persistence = JobPackagePersistence(os.path.join(
                                     BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                                 packages = packages_persistence.load()
@@ -1881,9 +1879,13 @@ class Autosubmit:
                                 save = job_list.update_list(as_conf)
                                 job_list.save()
                                 recovery = True
+
+                            except AutosubmitError as e:
+                                recovery = False
+                            except IOError as e:
+                                recovery = False
                             except BaseException as e:
                                 recovery = False
-
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         send_mail = True
@@ -1919,23 +1921,24 @@ class Autosubmit:
                                 Log.info(
                                     "Couldn't recover the platforms, retrying in 30seconds...")
                                 reconnected = False
+                            except IOError:
+                                reconnected = False
                             except BaseException:
                                 reconnected = False
                         if main_loop_retrials <= 0:
-                            raise AutosubmitCritical(
-                                "Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
+                            raise AutosubmitCritical("Autosubmit Encounter too much errors during running time, limit of 4hours reached", 7051, e.message)
                     except AutosubmitCritical as e:  # Critical errors can't be recovered. Failed configuration or autosubmit error
                         raise AutosubmitCritical(e.message, e.code, e.trace)
                     except portalocker.AlreadyLocked:
                         message = "We have detected that there is another Autosubmit instance using the experiment\n. Stop other Autosubmit instances that are using the experiment or delete autosubmit.lock file located on tmp folder"
                         raise AutosubmitCritical(message, 7000)
                     except BaseException as e:  # If this happens, there is a bug in the code or an exception not-well caught
-                        raise
+                        raise AutosubmitCritical(e.message, 7000)
+                #End main loop. Finishing run.
                 Log.result("No more jobs to run.")
                 # Updating job data header with current information when experiment ends
                 exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)                                          
-                exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list()) 
-
+                exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
                 # Wait for all remaining threads of I/O, close remaining connections
                 timeout = 0
                 active_threads = True
@@ -1965,8 +1968,6 @@ class Autosubmit:
             raise AutosubmitCritical(message, 7000)
         except AutosubmitCritical as e:
             raise AutosubmitCritical(e.message, e.code, e.trace)
-        except IOError as e:
-            raise AutosubmitError(e.message,6040,"Failure while trying to recover the job_list")
         except BaseException as e:
             raise
 
