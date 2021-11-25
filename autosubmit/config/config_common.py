@@ -889,14 +889,13 @@ class AutosubmitConfig(object):
             for section in self._conf_parser.sections():
                 for option in self._conf_parser.options(section):
                     parameters[option] = self._conf_parser.get(section, option)
-            if 'PROJECT_TYPE' in parameters.keys():
-                parameters['PROJECT_TYPE'] = self.get_project_type()
-                if parameters['PROJECT_TYPE'] != "none" and self._proj_parser is not None:
-                    # Load project parameters
-                    Log.debug("Loading project parameters...")
-                    parameters2 = parameters.copy()
-                    parameters2.update(self.load_project_parameters())
-                    parameters = parameters2
+            parameters['PROJECT_TYPE'] = self.get_project_type()
+            if parameters['PROJECT_TYPE'] != "none" and self._proj_parser is not None:
+                # Load project parameters
+                Log.debug("Loading project parameters...")
+                parameters2 = parameters.copy()
+                parameters2.update(self.load_project_parameters())
+                parameters = parameters2
             return parameters
         except IOError as e:
             raise AutosubmitError("Local Platform IO_ERROR, Can't not get experiment parameters from files.",6000,e.message)
@@ -994,7 +993,8 @@ class AutosubmitConfig(object):
         :return: project type
         :rtype: str
         """
-        return self._exp_parser.get('project', 'PROJECT_TYPE').lower()
+        return self._exp_parser.get_option('project', 'PROJECT_TYPE', 'none').lower()
+
 
     def get_parse_two_step_start(self):
         """
