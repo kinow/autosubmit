@@ -20,7 +20,12 @@ from __future__ import print_function
 import threading
 import traceback
 import requests
-
+try:
+    # noinspection PyCompatibility
+    from configparser import SafeConfigParser
+except ImportError:
+    # noinspection PyCompatibility
+    from ConfigParser import SafeConfigParser
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
 from platforms.paramiko_submitter import ParamikoSubmitter
