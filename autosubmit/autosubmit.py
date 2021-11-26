@@ -1085,6 +1085,7 @@ class Autosubmit:
         :return: Nothing, modifies input.
         """
         # Load parameters
+        as_conf.reload()
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         Log.debug("Parameters load.")
@@ -1811,6 +1812,7 @@ class Autosubmit:
                         recovery = True
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
+                            as_conf.reload()
                             sleep(15)
                             Log.info("Waiting 15 seconds before continue")
                             try:
@@ -1894,11 +1896,12 @@ class Autosubmit:
                                 recovery = False
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
-                        send_mail = True
+                        mail_notify = True
                         times = 0
                         max = 10
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
+                            as_conf.reload()
                             Log.info("Recovering the remote platform connection")
                             Log.info("Waiting 15 seconds before continue")
                             sleep(15)
@@ -1907,10 +1910,7 @@ class Autosubmit:
                                 for job in job_list.get_job_list():
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
-                                    # noinspection PyTypeChecker
-                                    job.platform = submitter.platforms[job.platform_name.lower(
-                                    )]
-                                    # noinspection PyTypeChecker
+                                    job.platform = submitter.platforms[job.platform_name.lower()]
                                     platforms_to_test.add(job.platform)
                                 if times % max == 0:
                                     mail_notify = True
@@ -1919,13 +1919,12 @@ class Autosubmit:
                                 else:
                                     mail_notify = False
                                 times = times + 1
-
                                 Autosubmit.restore_platforms(platforms_to_test,mail_notify=mail_notify,as_conf=as_conf,expid=expid)
                                 reconnected = True
-                            except AutosubmitCritical:
+                            except AutosubmitCritical as e:
                                 # Message prompt by restore_platforms.
                                 Log.info(
-                                    "Couldn't recover the platforms, retrying in 30seconds...")
+                                    "{0}\nCouldn't recover the platforms, retrying in 15seconds...".format(e.message))
                                 reconnected = False
                             except IOError:
                                 reconnected = False
@@ -1981,8 +1980,9 @@ class Autosubmit:
     def restore_platforms(platform_to_test,mail_notify=False,as_conf=None,expid=expid):
         Log.info("Checking the connection to all platforms in use")
         issues = ""
-
+        platform_issues = ""
         for platform in platform_to_test:
+            platform_issues = ""
             try:
                 platform.test_connection()
             except BaseException as e:
@@ -1993,17 +1993,19 @@ class Autosubmit:
                             Notifier.notify_experiment_status(MailNotifier(BasicConfig),expid,email,platform)
                 except:
                     pass
-                issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
+                platform_issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
                     platform.host, platform.name)
+                issues += platform_issues
                 continue
-            Log.result("[{1}] Connection successful to host {0}",
-                       platform.host, platform.name)
             if platform.check_remote_permissions():
                 Log.result("[{1}] Correct user privileges for host {0}",
                            platform.host, platform.name)
             else:
-                issues += "\n[{0}] has configuration issues. Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
+                platform_issues += "\n[{0}] has configuration issues.\n Check that the connection is passwd-less.(ssh user@{1})\n Check the parameters that build the root_path are correct:{{scratch_dir/project/user}} = {{{3}/{2}/{1}}}".format(
                     platform.name, platform.user, platform.project, platform.scratch)
+                issues += platform_issues
+            if platform_issues != "":
+                Log.result("[{1}] Connection successful to host {0}",platform.host, platform.name)
         if issues != "":
             raise AutosubmitCritical(
                 "Issues while checking the connectivity of platforms.", 7010, issues)
