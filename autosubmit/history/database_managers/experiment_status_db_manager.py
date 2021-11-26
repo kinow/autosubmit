@@ -28,11 +28,11 @@ import database_models as Models
 
 class ExperimentStatusDbManager(DatabaseManager):
   """ Manages the actions on the status database """
-  def __init__(self, expid, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):
+  def __init__(self, expid, db_dir_path, main_db_name, local_root_dir_path=DEFAULT_LOCAL_ROOT_DIR):
       super(ExperimentStatusDbManager, self).__init__(expid, local_root_dir_path=local_root_dir_path)
-      self._as_times_file_path = os.path.join(self.LOCAL_ROOT_DIR, self.AS_TIMES_DB_NAME)
-      self._ecearth_file_path = os.path.join(self.LOCAL_ROOT_DIR, self.ECEARTH_DB_NAME)
-      self._pkl_file_path = os.path.join(self.LOCAL_ROOT_DIR, "pkl", "job_list_{0}.pkl".format(self.expid))
+      self._as_times_file_path = os.path.join(db_dir_path, self.AS_TIMES_DB_NAME)
+      self._ecearth_file_path = os.path.join(db_dir_path, main_db_name)
+      self._pkl_file_path = os.path.join(local_root_dir_path, self.expid, "pkl", "job_list_{0}.pkl".format(self.expid))
       self._validate_status_database()
       # self.current_experiment_row = self._get_current_experiment_row(self.expid)
       # self.current_experiment_status_row =self._get_current_experiment_status_row(self.current_experiment_row.id)
@@ -46,8 +46,7 @@ class ExperimentStatusDbManager(DatabaseManager):
               name text NOT NULL,
               status text NOT NULL,
               seconds_diff integer NOT NULL,
-              modified text NOT NULL,
-              FOREIGN KEY (exp_id) REFERENCES experiment (id)
+              modified text NOT NULL
           );'''
       )
       self.execute_statement_on_dbfile(self._as_times_file_path, create_table_query)

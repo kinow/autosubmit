@@ -79,6 +79,7 @@ from collections import defaultdict
 from pyparsing import nestedExpr
 from history.experiment_status import ExperimentStatus
 from history.experiment_history import ExperimentHistory
+import history.utils as HUtils
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -3234,26 +3235,48 @@ class Autosubmit:
         :param smtp_hostname:
         :type smtp_hostname: str
         """
+        
         home_path = os.path.expanduser('~')
+        autosubmitapi_url = "http://192.168.11.91:8081" + " # Replace me?"
         # Setting default values
         if not advanced and database_path is None and local_root_path is None:
-            database_path = home_path
-            local_root_path = home_path + '/autosubmit'
-            database_filename = 'autosubmit.db'
+            database_path = os.path.join(home_path, "autosubmit")
+            local_root_path = os.path.join(home_path, "autosubmit")
+            global_logs_path = os.path.join(home_path, "autosubmit", "logs")
+            structures_path = os.path.join(home_path, "autosubmit", "metadata", "structures")
+            historicdb_path = os.path.join(home_path, "autosubmit", "metadata", "data")
+            historiclog_path = os.path.join(home_path, "autosubmit", "metadata", "logs")            
+            database_filename = "autosubmit.db"            
 
         while database_path is None:
             database_path = raw_input("Introduce Database path: ")
+            if database_path.find("~/") < 0:
+                database_path = None
+                Log.error("Not a valid path. You must include '~/' at the beginning.")
         database_path = database_path.replace('~', home_path)
-        if not os.path.exists(database_path):
-            Log.error("Database path does not exist.")
-            return False
+        # if not os.path.exists(database_path):
+        HUtils.create_path_if_not_exists(database_path)
+            # Log.error("Database path does not exist.")
+            # return False
+        while database_filename is None:
+            database_filename = raw_input("Introduce Database name: ")
 
         while local_root_path is None:
             local_root_path = raw_input("Introduce path to experiments: ")
+            if local_root_path.find("~/") < 0:
+                local_root_path = None
+                Log.error("Not a valid path. You must include '~/' at the beginning.")
         local_root_path = local_root_path.replace('~', home_path)
-        if not os.path.exists(local_root_path):
-            Log.error("Local Root path does not exist.")
-            return False
+        
+        # if not os.path.exists(local_root_path):
+        HUtils.create_path_if_not_exists(local_root_path)
+            # Log.error("Local Root path does not exist.")
+            # return False
+        # else:
+        global_logs_path = os.path.join(local_root_path, "logs")
+        structures_path = os.path.join(local_root_path, "metadata", "structures")
+        historicdb_path = os.path.join(local_root_path, "metadata", "data")
+        historiclog_path = os.path.join(local_root_path, "metadata", "logs")
 
         if platforms_conf_path is not None:
             platforms_conf_path = platforms_conf_path.replace('~', home_path)
@@ -3267,14 +3290,14 @@ class Autosubmit:
                 return False
 
         if machine:
-            path = '/etc'
+            rc_path = '/etc'
         elif local:
-            path = '.'
+            rc_path = '.'
         else:
-            path = home_path
-        path = os.path.join(path, '.autosubmitrc')
+            rc_path = home_path
+        rc_path = os.path.join(rc_path, '.autosubmitrc')
 
-        config_file = open(path, 'w')
+        config_file = open(rc_path, 'w')
         Log.info("Writing configuration file...")
         try:
             parser = SafeConfigParser()
@@ -3294,9 +3317,34 @@ class Autosubmit:
                 parser.add_section('mail')
                 parser.set('mail', 'smtp_server', smtp_hostname)
                 parser.set('mail', 'mail_from', mail_from)
+            parser.add_section("globallogs")
+            parser.set("globallogs", "path", global_logs_path)
+            parser.add_section("structures")
+            parser.set("structures", "path", structures_path)
+            parser.add_section("historicdb")
+            parser.set("historicdb", "path", historicdb_path)
+            parser.add_section("historiclog")
+            parser.set("historiclog", "path", historiclog_path)
+            parser.add_section("autosubmitapi")
+            parser.set("autosubmitapi", "url", autosubmitapi_url)
+            parser.add_section("hosts")
+            parser.set("hosts", "whitelist", " localhost # Add your machine names")
             parser.write(config_file)
             config_file.close()
-            Log.result("Configuration file written successfully")
+            Log.result("Configuration file written successfully: \n\t{0}".format(rc_path))
+            HUtils.create_path_if_not_exists(local_root_path)
+            HUtils.create_path_if_not_exists(global_logs_path)
+            HUtils.create_path_if_not_exists(structures_path)
+            HUtils.create_path_if_not_exists(historicdb_path)
+            HUtils.create_path_if_not_exists(historiclog_path)
+            Log.result("Directories configured successfully: \n\t{5} \n\t{0} \n\t{1} \n\t{2} \n\t{3} \n\t{4}".format(
+                local_root_path,
+                global_logs_path,
+                structures_path,
+                historicdb_path,
+                historiclog_path,
+                database_path
+            ))
         except (IOError, OSError) as e:
             raise AutosubmitCritical(
                 "Can not write config file: {0}", 7012, e.message)

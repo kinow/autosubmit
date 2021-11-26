@@ -22,23 +22,25 @@ import database_managers.database_models as Models
 import utils as HUtils
 from time import time, sleep
 from database_managers.experiment_history_db_manager import ExperimentHistoryDbManager
-from database_managers.database_manager import DEFAULT_JOBDATA_DIR, DEFAULT_LOCAL_ROOT_DIR, DEFAULT_HISTORICAL_LOGS_DIR
+from database_managers.database_manager import DEFAULT_JOBDATA_DIR, DEFAULT_HISTORICAL_LOGS_DIR
 from strategies import PlatformInformationHandler, SingleAssociationStrategy, StraightWrapperAssociationStrategy, TwoDimWrapperDistributionStrategy, GeneralizedWrapperDistributionStrategy
 from data_classes.job_data import JobData
 from data_classes.experiment_run import ExperimentRun
 from platform_monitor.slurm_monitor import SlurmMonitor
 from internal_logging import Logging
+from autosubmit.config.basicConfig import BasicConfig
 
 SECONDS_WAIT_PLATFORM = 60
 
 class ExperimentHistory():
   def __init__(self, expid, jobdata_dir_path=DEFAULT_JOBDATA_DIR, historiclog_dir_path=DEFAULT_HISTORICAL_LOGS_DIR):    
     self.expid = expid
-    self._log = Logging(expid, historiclog_dir_path)
-    self._job_data_dir_path = jobdata_dir_path
-    self._historiclog_dir_path = historiclog_dir_path
+    BasicConfig.read()
+    self._log = Logging(expid, BasicConfig.HISTORICAL_LOG_DIR)
+    self._job_data_dir_path = BasicConfig.JOBDATA_DIR
+    self._historiclog_dir_path = BasicConfig.HISTORICAL_LOG_DIR
     try:
-      self.manager = ExperimentHistoryDbManager(self.expid, jobdata_dir_path=jobdata_dir_path)
+      self.manager = ExperimentHistoryDbManager(self.expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR)
     except Exception as exp:
       self._log.log(str(exp), traceback.format_exc())
       self.manager = None            

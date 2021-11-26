@@ -38,7 +38,7 @@ LOCAL_ROOT_DIR = BasicConfig.LOCAL_ROOT_DIR
 class TestExperimentStatusDatabaseManager(unittest.TestCase):
   """ Covers Experiment Status Database Manager """
   def setUp(self):
-    self.exp_status_db = ExperimentStatusDbManager(EXPID, LOCAL_ROOT_DIR)
+    self.exp_status_db = ExperimentStatusDbManager(EXPID, BasicConfig.DB_DIR, BasicConfig.DB_FILE, LOCAL_ROOT_DIR)
 
   def test_get_current_experiment_status_row(self):    
     exp_status_row = self.exp_status_db.get_experiment_status_row_by_expid(EXPID)
