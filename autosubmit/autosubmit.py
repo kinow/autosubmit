@@ -1995,7 +1995,7 @@ class Autosubmit:
                             Notifier.notify_experiment_status(MailNotifier(BasicConfig),expid,email,platform)
                 except:
                     pass
-                platform_issues += "\n[{1}] Connection Unsuccessful to host {0} trace".format(
+                platform_issues += "\n[{1}] Connection Unsuccessful to host {0} ".format(
                     platform.host, platform.name)
                 issues += platform_issues
                 continue
