@@ -643,7 +643,7 @@ class Job(object):
                 "{0} \n Couldn't connect to the remote platform for this {1} job err/out files. ".format(e.message, self.name), 6001)
         out_exist = False
         err_exist = False
-        retries = 5
+        retries = 3
         sleeptime = 0
         i = 0
         no_continue = False

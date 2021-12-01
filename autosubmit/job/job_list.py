@@ -1418,10 +1418,15 @@ class JobList(object):
                     if job.name not in job_names:
                         job_list.append(job)
             self.update_status_log()
-            self._persistence.save(self._persistence_path,
-                                   self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+            try:
+                self._persistence.save(self._persistence_path,
+                                       self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+            except BaseException as e:
+                raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
+        except AutosubmitError as e:
+            raise
         except BaseException as e:
-            raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
+            raise AutosubmitError(e.message,6040,"Unknown failure while saving the job_list")
 
 
     def backup_save(self):

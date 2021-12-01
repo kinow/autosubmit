@@ -768,6 +768,8 @@ class Autosubmit:
             except BaseException as e:
                 raise AutosubmitCritical(
                     "User or owner does not exists", 7012, e.message)
+            except AutosubmitCritical as e:
+                raise
         return owner,eadmin,currentOwner
 
     @staticmethod
@@ -1096,8 +1098,6 @@ class Autosubmit:
         # Platform = from DEFAULT.HPCARCH, e.g. marenostrum4
         if as_conf.get_platform().lower() not in platforms.keys():
             Log.warning("Main platform is not defined in platforms.conf")
-            # raise AutosubmitCritical("Specified platform in expdef_.conf " + str(as_conf.get_platform(
-            # ).lower()) + " is not a valid platform defined in platforms_.conf.", 7014)
         else:
             platform = platforms[as_conf.get_platform().lower()]
             platform.add_parameters(parameters, True)
@@ -1646,9 +1646,11 @@ class Autosubmit:
                             return 0
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
-                        as_conf.reload()
-                        Autosubmit._load_parameters(
-                            as_conf, job_list, submitter.platforms)
+                        try:
+                            as_conf.reload()
+                            Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                        except BaseException as e :
+                            raise AutosubmitError("Config files seems to not be accesible",6040,e.message)
                         total_jobs = len(job_list.get_job_list())
                         Log.info("\n\n{0} of {1} jobs remaining ({2})".format(
                             total_jobs - len(job_list.get_completed()), total_jobs, time.strftime("%H:%M")))
@@ -1809,7 +1811,7 @@ class Autosubmit:
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         # No need to wait until the remote platform reconnection
-                        recovery = True
+                        recovery = False
                         while not recovery and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             as_conf.reload()
@@ -2093,7 +2095,6 @@ class Autosubmit:
                             raise AutosubmitCritical("Invalid parameter substitution in {0} template".format(
                                 e.job_name), 7014, e.message)
                         except Exception as e:
-                            print(traceback.format_exc())
                             raise AutosubmitError("{0} submission failed".format(
                                 platform.name), 6015, str(e))
                 except WrongTemplateException as e:
@@ -2190,9 +2191,7 @@ class Autosubmit:
                 except AutosubmitCritical as e:
                     raise
                 except Exception as e:
-                    print(traceback.format_exc())
-                    raise AutosubmitError("{0} submission failed".format(
-                        platform.name), 6015, str(e))
+                    raise AutosubmitError("{0} submission failed".format(platform.name), 6015, str(e))
             try:
                 for package in valid_packages_to_submit:
                     if package.jobs[0].id not in failed_packages:
@@ -2209,8 +2208,7 @@ class Autosubmit:
                                 packages_persistence.save(
                                     package.name, package.jobs, package._expid, inspect)
             except Exception as e:                
-                raise AutosubmitError("{0} submission failed".format(
-                    platform.name), 6015, str(e))
+                raise AutosubmitError("{0} submission failed".format(platform.name), 6015, str(e))
         return save
 
     @staticmethod

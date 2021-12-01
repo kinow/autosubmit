@@ -867,11 +867,14 @@ class AutosubmitConfig(object):
         except Exception as e:
             raise AutosubmitCritical(
                 "{0} \n Repeated parameter, check if you have any uncommented value that should be commented".format(str(e)), 7014)
-        if self._proj_parser_file == '':
-            self._proj_parser = None
-        else:
-            self._proj_parser = AutosubmitConfig.get_parser(
-                self.parser_factory, self._proj_parser_file)
+        try:
+            if self._proj_parser_file == '':
+                self._proj_parser = None
+            else:
+                self._proj_parser = AutosubmitConfig.get_parser(
+                    self.parser_factory, self._proj_parser_file)
+        except IOError as e:
+            raise AutosubmitError("IO issues during the parsing of configuration files",6014,e.message)
 
     def load_parameters(self):
         """

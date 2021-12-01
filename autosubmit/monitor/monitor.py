@@ -373,9 +373,7 @@ class Monitor:
             # was previously implemented, nocolor is set to True because we don't want
             # strange ANSI codes in our plain text file
             if job_list_object is not None:
-                print("In the new thingy")
-                output_file.write(job_list_object.print_with_status(
-                    statusChange=None, nocolor=True, existingList=joblist))
+                output_file.write(job_list_object.print_with_status(statusChange=None, nocolor=True, existingList=joblist))
             else:
                 output_file.write(
                     "Writing jobs, they're grouped by [FC and DATE] \n")
