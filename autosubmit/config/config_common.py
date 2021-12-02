@@ -120,6 +120,7 @@ class AutosubmitConfig(object):
                     f.seek(0, 0)
                     f.write('[DEFAULT]'.rstrip('\r\n') +
                             '\n' + first_line + content)
+                    f.close()
 
     @property
     def jobs_file(self):

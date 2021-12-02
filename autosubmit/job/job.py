@@ -1089,6 +1089,7 @@ class Job(object):
                     elif self.type == Type.R:
                         template = 'Sys.sleep(30)' + "\n"
                 template += template_file.read()
+                template_file.close()
             else:
                 if self.type == Type.BASH:
                     template = 'sleep 1'

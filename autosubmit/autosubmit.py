@@ -1086,8 +1086,7 @@ class Autosubmit:
         :type platforms: List() of Platform Objects. e.g EcPlatform(), SgePlatform().
         :return: Nothing, modifies input.
         """
-        # Load parameters
-        as_conf.reload()
+
         Log.debug("Loading parameters...")
         parameters = as_conf.load_parameters()
         Log.debug("Parameters load.")
@@ -1647,7 +1646,6 @@ class Autosubmit:
                         # reload parameters changes
                         Log.debug("Reloading parameters...")
                         try:
-                            as_conf.reload()
                             Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                         except BaseException as e :
                             raise AutosubmitError("Config files seems to not be accesible",6040,e.message)
@@ -1812,9 +1810,11 @@ class Autosubmit:
                         Log.error("{1} [eCode={0}]", e.code, e.message)
                         # No need to wait until the remote platform reconnection
                         recovery = False
+                        as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                         while not recovery and main_loop_retrials > 0:
-                            main_loop_retrials = main_loop_retrials - 1
                             as_conf.reload()
+                            main_loop_retrials = main_loop_retrials - 1
+
                             sleep(15)
                             Log.info("Waiting 15 seconds before continue")
                             try:
@@ -1823,19 +1823,20 @@ class Autosubmit:
                                 for job in job_list.get_job_list():
                                     if job.fail_count > 0:
                                         failed_names[job.name] = job.fail_count
+                                Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
-                                Autosubmit._load_parameters(
-                                    as_conf, job_list, submitter.platforms)
                                 for job in job_list.get_job_list():
                                     if job.name in failed_names.keys():
                                         job.fail_count = failed_names[job.name]
                                     if job.platform_name is None:
                                         job.platform_name = hpcarch
                                     job.platform = submitter.platforms[job.platform_name.lower()]
+                                Log.info("Recovering parameters...")
+                                Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
                                 # Recovery wrapper [Packages]
-                                packages_persistence = JobPackagePersistence(os.path.join(
-                                    BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
+                                Log.info("Recovering Wrappers...")
+                                packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"), "job_packages_" + expid)
                                 packages = packages_persistence.load()
                                 for (exp_id, package_name, job_name) in packages:
                                     if package_name not in job_list.packages_dict:
@@ -1886,21 +1887,26 @@ class Autosubmit:
                                                              None,
                                                              None, jobs[0].platform, as_conf, jobs[0].hold)
                                     job_list.job_package_map[jobs[0].id] = wrapper_job
-                                save = job_list.update_list(as_conf)
+                                job_list.update_list(as_conf)
+                                Log.info("Saving recovered job list...")
                                 job_list.save()
                                 recovery = True
-
+                                Log.result("Recover of job_list is completed")
                             except AutosubmitError as e:
                                 recovery = False
+                                Log.result("Recover of job_list has fail")
                             except IOError as e:
                                 recovery = False
+                                Log.result("Recover of job_list has fail")
                             except BaseException as e:
                                 recovery = False
+                                Log.result("Recover of job_list has fail")
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         mail_notify = True
                         times = 0
                         max = 10
+                        Log.info("Restoring the connection to all experiment platforms")
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
                             as_conf.reload()
@@ -3748,8 +3754,7 @@ class Autosubmit:
             if os.path.exists(database_path):
                 # output = subprocess.check_output(
                 #     ['sqlite3', database_path, '.dump', ' > ', dump_file_name])
-                result = os.popen(
-                    bash_command).read()
+                result = os.popen(bash_command).read()
                 # process = subprocess.Popen(
                 #     bash_command.split(), stdout=subprocess.PIPE)
                 # output, error = process.communicate()
