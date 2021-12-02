@@ -1812,12 +1812,11 @@ class Autosubmit:
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
                         while not recovery and main_loop_retrials > 0:
-                            as_conf.reload()
                             main_loop_retrials = main_loop_retrials - 1
-
                             sleep(15)
                             Log.info("Waiting 15 seconds before continue")
                             try:
+                                as_conf.reload()
                                 #Recover job_list while keeping job.fail_count
                                 failed_names = {}
                                 for job in job_list.get_job_list():
@@ -1909,7 +1908,7 @@ class Autosubmit:
                         Log.info("Restoring the connection to all experiment platforms")
                         while not reconnected and main_loop_retrials > 0:
                             main_loop_retrials = main_loop_retrials - 1
-                            as_conf.reload()
+
                             Log.info("Recovering the remote platform connection")
                             Log.info("Waiting 15 seconds before continue")
                             sleep(15)
