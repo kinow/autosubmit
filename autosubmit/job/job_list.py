@@ -230,11 +230,14 @@ class JobList(object):
                         job.children.add(jobc)
 
         # Perhaps this should be done by default independent of the wrapper_type supplied
-        for wrapper_section in wrapper_jobs:
-            if wrapper_jobs[wrapper_section] != 'None':
-                self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
-            else:
-                self._ordered_jobs_by_date_member[wrapper_section] = {}
+        try:
+            for wrapper_section in wrapper_jobs:
+                if wrapper_jobs[wrapper_section] != 'None':
+                    self._ordered_jobs_by_date_member[wrapper_section] = self._create_sorted_dict_jobs(wrapper_jobs[wrapper_section])
+                else:
+                    self._ordered_jobs_by_date_member[wrapper_section] = {}
+        except BaseException as e:
+            raise AutosubmitCritical("Some of {0} are not in the current job_list defined in jobs.conf".format(wrapper_jobs),7000)
         pass
 
 

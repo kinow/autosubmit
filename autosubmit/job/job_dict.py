@@ -72,9 +72,12 @@ class DicJobs:
             running = self._parser.get(section, 'RUNNING').lower()
         frequency = int(self.get_option(section, "FREQUENCY", 1))
         if running == 'once':
-            self._create_jobs_once(section, priority, default_job_type, jobs_data)
+            splits = int(self.get_option(section, "SPLITS", 0))
+            self._create_jobs_once(section, priority, default_job_type, jobs_data,splits)
+
         elif running == 'date':
             self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data)
+
         elif running == 'member':
             self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data)
         elif running == 'chunk':
@@ -84,7 +87,7 @@ class DicJobs:
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
         pass
 
-    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict()):
+    def _create_jobs_once(self, section, priority, default_job_type, jobs_data=dict(),splits=0):
         """
         Create jobs to be run once
 
@@ -93,8 +96,16 @@ class DicJobs:
         :param priority: priority for the jobs
         :type priority: int
         """
-        self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
-        self._jobs_list.graph.add_node(self._dic[section].name)
+        total_jobs = 1
+        self._dic[section] = []
+        while total_jobs <= splits:
+            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
+            self._dic[section].append(job)
+            self._jobs_list.graph.add_node(self._dic[section][total_jobs-1].name)
+            total_jobs += 1
+        pass
+        #self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
+        #self._jobs_list.graph.add_node(self._dic[section].name)
 
     def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
         """
