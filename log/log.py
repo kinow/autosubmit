@@ -225,7 +225,10 @@ class Log:
         :type file_path: str
         """
         try:
+            #test = Log.log.handlers
             if type == 'status':
+                while len(Log.log.handlers) > 3:
+                    Log.log.handlers.pop()
                 custom_filter = StatusFilter()
                 status_file_handler = logging.FileHandler(file_path, 'w')
                 status_file_handler.setLevel(Log.STATUS)

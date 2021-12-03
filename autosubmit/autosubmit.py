@@ -52,6 +52,7 @@ from config.basicConfig import BasicConfig
 import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
+import log.fd_show
 
 try:
     import dialog
@@ -1616,12 +1617,14 @@ class Autosubmit:
 
                 Autosubmit.restore_platforms(platforms_to_test)
                 save = True
+                #@main
                 Log.debug("Running main loop")
                 #########################
                 # AUTOSUBMIT - MAIN LOOP
                 #########################
                 # Main loop. Finishing when all jobs have been submitted
                 while job_list.get_active():
+                    #Log.info("FD: {0}".format(log.fd_show.fd_table_status_str()))
                     try:
                         if Autosubmit.exit:
                             # Closing threads on Ctrl+C
@@ -1647,6 +1650,7 @@ class Autosubmit:
                         Log.debug("Reloading parameters...")
                         try:
                             Autosubmit._load_parameters(as_conf, job_list, submitter.platforms)
+                            #Log.info("FD 2: {0}".format(log.fd_show.fd_table_status_str()))
                         except BaseException as e :
                             raise AutosubmitError("Config files seems to not be accesible",6040,e.message)
                         total_jobs = len(job_list.get_job_list())
@@ -1678,8 +1682,6 @@ class Autosubmit:
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
-                                    Log.debug(
-                                        'Checking Wrapper {0}'.format(str(job_id)))
                                     wrapper_job = job_list.job_package_map[job_id]
                                     # Setting prev_status as an easy way to check status change for inner jobs
                                     if as_conf.get_notifications() == 'true':
@@ -1690,9 +1692,11 @@ class Autosubmit:
                                         check_wrapper = True if datetime.timedelta.total_seconds(datetime.datetime.now(
                                         ) - wrapper_job.checked_time) >= check_wrapper_jobs_sleeptime else False
                                     if check_wrapper:
+                                        Log.debug('Checking Wrapper {0}'.format(str(job_id)))
                                         wrapper_job.checked_time = datetime.datetime.now()
                                         # This is where wrapper will be checked on the slurm platform, update takes place.
                                         platform.check_job(wrapper_job)
+                                        #Log.info("FD 3Wrapper checked: {0}".format(log.fd_show.fd_table_status_str()))
                                         try:
                                             if wrapper_job.status != wrapper_job.new_status:
                                                 Log.info('Wrapper job ' + wrapper_job.name + ' changed from ' + str(
@@ -1743,6 +1747,7 @@ class Autosubmit:
                                             completed_joblist.append(job)
                                         else:  # If they're not from slurm platform check one-by-one TODO: Implement ecwmf future platform and mnX, abstract this part
                                             platform.check_job(job)
+                                            #Log.info("FD 4 check job: {0}".format(log.fd_show.fd_table_status_str()))
                                             if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                                 # Keeping track of changes
                                                 job_changes_tracker[job.name] = (
@@ -1766,6 +1771,8 @@ class Autosubmit:
                             Log.debug("Checking all jobs at once")
                             platform.check_Alljobs(
                                 platform_jobs[3], jobs_to_check, as_conf.get_copy_remote_logs())
+                            #Log.info("FD slurm jobs: {0}".format(log.fd_show.fd_table_status_str()))
+
                             for j_Indx in xrange(0, len(platform_jobs[3])):
                                 prev_status = platform_jobs[2][j_Indx]
                                 job = platform_jobs[3][j_Indx]
@@ -1784,21 +1791,30 @@ class Autosubmit:
                         # End Check Current jobs
                         save2 = job_list.update_list(
                             as_conf, submitter=submitter)
+                        #Log.info("FD update list: {0}".format(log.fd_show.fd_table_status_str()))
+
                         job_list.save()
+                        #Log.info("FD save list: {0}".format(log.fd_show.fd_table_status_str()))
                         if len(job_list.get_ready()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=False)
                             job_list.update_list(as_conf, submitter=submitter)
+                            #Log.info("FD updated  list after submit: {0}".format(log.fd_show.fd_table_status_str()))
                             job_list.save()
+                            #Log.info("FD save list after submit: {0}".format(log.fd_show.fd_table_status_str()))
                         if as_conf.get_remote_dependencies() and len(job_list.get_prepared()) > 0:
                             Autosubmit.submit_ready_jobs(
                                 as_conf, job_list, platforms_to_test, packages_persistence, hold=True)
                             job_list.update_list(as_conf, submitter=submitter)
                             job_list.save()
                         # Safe spot to store changes
-                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)                        
+                        #Log.info("exp_history start: {0}".format(log.fd_show.fd_table_status_str()))
+                        exp_history = ExperimentHistory(expid, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
+                        #Log.info("exp_history end: {0}".format(log.fd_show.fd_table_status_str()))
                         if len(job_changes_tracker) > 0:
+                            #Log.info("history process start: {0}".format(log.fd_show.fd_table_status_str()))
                             exp_history.process_job_list_changes_to_experiment_totals(job_list.get_job_list())
+                            #Log.info("history process end: {0}".format(log.fd_show.fd_table_status_str()))
                         job_changes_tracker = {}                        
 
                         if Autosubmit.exit:
@@ -1808,6 +1824,7 @@ class Autosubmit:
                     except AutosubmitError as e:  # If an error is detected, restore all connections and job_list
                         Log.error("Trace: {0}", e.trace)
                         Log.error("{1} [eCode={0}]", e.code, e.message)
+                        #Log.debug("FD recovery: {0}".format(log.fd_show.fd_table_status_str()))
                         # No need to wait until the remote platform reconnection
                         recovery = False
                         as_conf = AutosubmitConfig(expid, BasicConfig, ConfigParserFactory())
@@ -1817,14 +1834,24 @@ class Autosubmit:
                             Log.info("Waiting 15 seconds before continue")
                             try:
                                 as_conf.reload()
-                                #Recover job_list while keeping job.fail_count
-                                failed_names = {}
-                                for job in job_list.get_job_list():
-                                    if job.fail_count > 0:
-                                        failed_names[job.name] = job.fail_count
                                 Log.info("Recovering job_list...")
                                 job_list = Autosubmit.load_job_list(
                                     expid, as_conf, notransitive=notransitive)
+                                platforms_to_test = set()
+                                for job in job_list.get_job_list():
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    job.platform = submitter.platforms[job.platform_name.lower()]
+                                    platforms_to_test.add(job.platform)
+                                #Recover job_list while keeping job.fail_count
+                                failed_names = {}
+                                for job in job_list.get_job_list():
+                                    if job.platform_name is None:
+                                        job.platform_name = hpcarch
+                                    job.platform = submitter.platforms[job.platform_name.lower()]
+                                    platforms_to_test.add(job.platform)
+                                    if job.fail_count > 0:
+                                        failed_names[job.name] = job.fail_count
                                 for job in job_list.get_job_list():
                                     if job.name in failed_names.keys():
                                         job.fail_count = failed_names[job.name]
@@ -1893,13 +1920,13 @@ class Autosubmit:
                                 Log.result("Recover of job_list is completed")
                             except AutosubmitError as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail")
+                                Log.result("Recover of job_list has fail {0}".format(e.message))
                             except IOError as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail")
+                                Log.result("Recover of job_list has fail".format(e.message))
                             except BaseException as e:
                                 recovery = False
-                                Log.result("Recover of job_list has fail")
+                                Log.result("Recover of job_list has fail".format(e.message))
                         # Restore platforms and try again, to avoid endless loop with failed configuration, a hard limit is set.
                         reconnected = False
                         mail_notify = True
@@ -1913,12 +1940,6 @@ class Autosubmit:
                             Log.info("Waiting 15 seconds before continue")
                             sleep(15)
                             try:
-                                platforms_to_test = set()
-                                for job in job_list.get_job_list():
-                                    if job.platform_name is None:
-                                        job.platform_name = hpcarch
-                                    job.platform = submitter.platforms[job.platform_name.lower()]
-                                    platforms_to_test.add(job.platform)
                                 if times % max == 0:
                                     mail_notify = True
                                     max = max + max
@@ -2040,6 +2061,7 @@ class Autosubmit:
         """
         save = False
         failed_packages = list()
+
         for platform in platforms_to_test:
             if not hold:
                 Log.debug("\nJobs ready for {1}: {0}", len(
@@ -2048,10 +2070,8 @@ class Autosubmit:
             else:
                 Log.debug("\nJobs prepared for {1}: {0}", len(
                     job_list.get_prepared(platform)), platform.name)
-
             packages_to_submit = JobPackager(
                 as_conf, platform, job_list, hold=hold).build_packages()
-
             if not inspect:
                 platform.open_submit_script()
             valid_packages_to_submit = []
@@ -2076,9 +2096,10 @@ class Autosubmit:
                     # If called from RUN or inspect command
                     if not only_wrappers:
                         try:
-                            package.submit(
-                                as_conf, job_list.parameters, inspect, hold=hold)
+                            #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
+                            package.submit(as_conf, job_list.parameters, inspect, hold=hold)
                             valid_packages_to_submit.append(package)
+                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                         except (IOError, OSError):
                             failed_packages.append(package.jobs[0].id)
                             continue
@@ -2117,7 +2138,9 @@ class Autosubmit:
                     valid_packages_to_submit = [ package for package in valid_packages_to_submit if package.x11 != True]
                     if len(valid_packages_to_submit) > 0:
                         try:
+                            #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                             jobs_id = platform.submit_Script(hold=hold)
+                            #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                         except AutosubmitError as e:
                             jobs_id = None
                             if e.message.lower().find("bad parameters") != -1 or e.message.lower().find("invalid partition") != -1 or e.message.lower().find(" invalid qos") != -1:
@@ -2150,8 +2173,10 @@ class Autosubmit:
                                     while can_continue and retries > 0:
                                         cmd = package.jobs[0].platform.get_queue_status_cmd(
                                             jobs_id[i])
+                                        #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
                                         package.jobs[0].platform.send_command(
                                             cmd)
+                                        #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                                         queue_status = package.jobs[0].platform._ssh_output
                                         reason = package.jobs[0].platform.parse_queue_reason(
                                             queue_status, jobs_id[i])
@@ -2164,9 +2189,12 @@ class Autosubmit:
                                             sleep(5)
                                         retries = retries - 1
                                     if not can_continue:
+                                        #Log.debug("FD hold start: {0}".format(log.fd_show.fd_table_status_str()))
                                         package.jobs[0].platform.send_command(
                                             package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
                                         i = i + 1
+                                        #Log.debug("FD hold on: {0}".format(log.fd_show.fd_table_status_str()))
+
                                         # skip job if is bug by the admin bug.
                                         continue
                                     if not platform.hold_job(package.jobs[0]):
@@ -2184,8 +2212,10 @@ class Autosubmit:
                     save = True
                     if len(failed_packages) > 0:
                         for job_id in failed_packages:
+                            #Log.debug("FD failed to hold: {0}".format(log.fd_show.fd_table_status_str()))
                             package.jobs[0].platform.send_command(
                                 package.jobs[0].platform.cancel_cmd + " {0}".format(job_id))
+                            #Log.debug("FD failed to hold end: {0}".format(log.fd_show.fd_table_status_str()))
                         raise AutosubmitError(
                             "{0} submission failed, some hold jobs failed to be held".format(platform.name), 6015)
                 except WrongTemplateException as e:
