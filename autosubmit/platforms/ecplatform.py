@@ -219,7 +219,6 @@ class EcPlatform(ParamikoPlatform):
             FNULL = open(os.devnull, 'w')
             while not process_ok and retries < 5:
                 process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE,stderr=FNULL)
-                #process = subprocess.Popen(command, shell=True, stdout=os.devnull)
                 out, _ = process.communicate()
                 if 'No such file' in out or process.returncode != 0:
                     retries = retries + 1

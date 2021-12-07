@@ -41,6 +41,7 @@ from log.log import AutosubmitCritical, AutosubmitError, Log
 from threading import Thread, Lock
 import multiprocessing
 from autosubmit.config.basicConfig import BasicConfig
+import log.fd_show
 # Log.get_logger("Log.Autosubmit")
 
 
@@ -1420,10 +1421,15 @@ class JobList(object):
                 for job in self._base_job_list:
                     if job.name not in job_names:
                         job_list.append(job)
+            #Log.info("update_status_log start: {0}".format(log.fd_show.fd_table_status_str()))
             self.update_status_log()
+            #Log.info("update_status_log end: {0}".format(log.fd_show.fd_table_status_str()))
+
             try:
                 self._persistence.save(self._persistence_path,
                                        self._persistence_file, self._job_list if self.run_members is None or job_list is None else job_list)
+                Log.info("_persistence end: {0}".format(log.fd_show.fd_table_status_str()))
+                pass
             except BaseException as e:
                 raise AutosubmitError(e.message,6040,"Failure while saving the job_list")
         except AutosubmitError as e:
@@ -1440,6 +1446,7 @@ class JobList(object):
                                self._persistence_file + "_backup", self._job_list)
 
     def update_status_log(self):
+
         exp_path = os.path.join(BasicConfig.LOCAL_ROOT_DIR, self.expid)
         tmp_path = os.path.join(exp_path, BasicConfig.LOCAL_TMP_DIR)
         aslogs_path = os.path.join(tmp_path, BasicConfig.LOCAL_ASLOG_DIR)
@@ -1993,7 +2000,7 @@ class JobList(object):
             if job.has_parents() == False:
                 root = job
         visited = list()
-        print(root)
+        #print(root)
         # root exists
         if root is not None:
             result += self._recursion_print(root, 0, visited,
