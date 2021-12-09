@@ -2736,9 +2736,9 @@ class Autosubmit:
             backup_files = []
             backup_conf = []
             error = False
+            err_message = 'Invalid Configuration:'
             for platform in platforms:
                 # Checks
-                err_message = 'Invalid Configuration:'
                 Log.info(
                     "Checking [{0}] from platforms configuration...", platform)
                 if as_conf.get_migrate_user_to(platform) == '':
@@ -2759,8 +2759,8 @@ class Autosubmit:
                         err_message += "\nTEMP_DIR {0}, does not exists in [{1}]".format(
                             p.temp_dir, platform)
                         error = True
-            if error:
-                raise AutosubmitCritical(err_message, 7014)
+                if error:
+                    raise AutosubmitCritical(err_message, 7014)
             for platform in platforms:
                 if as_conf.get_migrate_project_to(platform) != '':
                     Log.info("Project in platform configuration file successfully updated to {0}",

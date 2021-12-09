@@ -96,14 +96,20 @@ class DicJobs:
         :param priority: priority for the jobs
         :type priority: int
         """
-        total_jobs = 1
+
         self._dic[section] = []
+        if splits <= 0:
+            job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, -1)
+            self._dic[section].append(job)
+            self._jobs_list.graph.add_node(job.name)
+        total_jobs = 1
         while total_jobs <= splits:
             job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
             self._dic[section].append(job)
-            self._jobs_list.graph.add_node(self._dic[section][total_jobs-1].name)
+            self._jobs_list.graph.add_node(job.name)
             total_jobs += 1
         pass
+
         #self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
         #self._jobs_list.graph.add_node(self._dic[section].name)
 
@@ -220,6 +226,7 @@ class DicJobs:
                             if splits > 1 and synchronize is None:
                                 self._dic[section][date][member][chunk] = []
                                 self._create_jobs_split(splits, section, date, member, chunk, priority, default_job_type, jobs_data, self._dic[section][date][member][chunk])
+                                pass
                             elif synchronize is None:
                                 self._dic[section][date][member][chunk] = self.build_job(section, priority, date, member,
                                                                                              chunk, default_job_type, jobs_data)
@@ -256,7 +263,10 @@ class DicJobs:
             return jobs
 
         dic = self._dic[section]
-        if type(dic) is not dict:
+        #once jobs
+        if type(dic) is list:
+            jobs = dic
+        elif type(dic) is not dict:
             jobs.append(dic)
         else:
             if date is not None:
