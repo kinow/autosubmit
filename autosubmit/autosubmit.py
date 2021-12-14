@@ -198,7 +198,7 @@ class Autosubmit:
             subparser = subparsers.add_parser(
                 'monitor', description="plots specified experiment")
             subparser.add_argument('expid', help='experiment identifier')
-            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg'),
+            subparser.add_argument('-o', '--output', choices=('pdf', 'png', 'ps', 'svg', 'txt'),
                                    help='chooses type of output for generated plot')  # Default -o value comes from .conf
             subparser.add_argument('-group_by', choices=('date', 'member', 'chunk', 'split', 'automatic'), default=None,
                                    help='Groups the jobs automatically or by date, member, chunk or split')
@@ -241,8 +241,8 @@ class Autosubmit:
 
             subparser.add_argument('-nt', '--notransitive', action='store_true',
                                    default=False, help='Disable transitive reduction')
-            subparser.add_argument('-d', '--detail', action='store_true',
-                                   default=False, help='Shows Job List view in terminal')
+            # subparser.add_argument('-d', '--detail', action='store_true',
+            #                        default=False, help='Shows Job List view in terminal')
 
             # Stats
             subparser = subparsers.add_parser(
@@ -576,7 +576,7 @@ class Autosubmit:
         elif args.command == 'monitor':
             return Autosubmit.monitor(args.expid, args.output, args.list, args.filter_chunks, args.filter_status,
                                       args.filter_type, args.hide, args.text, args.group_by, args.expand,
-                                      args.expand_status, args.hide_groups, args.notransitive, args.check_wrapper, args.txt_logfiles, args.detail)
+                                      args.expand_status, args.hide_groups, args.notransitive, args.check_wrapper, args.txt_logfiles, detail=False)
         elif args.command == 'stats':
             return Autosubmit.statistics(args.expid, args.filter_type, args.filter_period, args.output, args.hide,
                                          args.notransitive)
@@ -2357,8 +2357,7 @@ class Autosubmit:
             packages_persistence = JobPackagePersistence(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl"),
                                                          "job_packages_" + expid)
             # Permissons
-            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid,
-                                  "pkl", "job_packages_" + expid + ".db"), 0644)
+            os.chmod(os.path.join(BasicConfig.LOCAL_ROOT_DIR, expid, "pkl", "job_packages_" + expid + ".db"), 0644)
             # Database modification
             packages_persistence.reset_table(True)
             referenced_jobs_to_remove = set()
@@ -2401,10 +2400,16 @@ class Autosubmit:
             groups_dict = job_grouping.group_jobs()
 
         monitor_exp = Monitor()
-
-        if txt_only or txt_logfiles:
+     
+        if txt_only or txt_logfiles or file_format=="txt":
             monitor_exp.generate_output_txt(expid, jobs, os.path.join(
                 exp_path, "/tmp/LOG_" + expid), txt_logfiles, job_list_object=job_list)
+            if txt_only:                
+                current_length = len(job_list.get_job_list())
+                if current_length > 1000:
+                    Log.info("Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
+                else:                    
+                    Log.info(job_list.print_with_status())
         else:
             # if file_format is set, use file_format, otherwise use conf value
             monitor_exp.generate_output(expid,
@@ -2417,15 +2422,6 @@ class Autosubmit:
                                         groups=groups_dict,
                                         hide_groups=hide_groups,
                                         job_list_object=job_list)
-
-        if detail:
-            current_length = len(job_list.get_job_list())
-            if current_length > 1000:
-                Log.warning(
-                    "-d option: Experiment has too many jobs to be printed in the terminal. Maximum job quantity is 1000, your experiment has " + str(current_length) + " jobs.")
-            else:
-                Log.info(job_list.print_with_status())
-                Log.status(job_list.print_with_status())
 
         return True
 
