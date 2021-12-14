@@ -187,10 +187,11 @@ class ExperimentHistory():
     """ Detect status differences between job_list and current job_data rows, and update. Creates a new run if necessary. """
     try:
       current_experiment_run_dc = self.manager.get_experiment_run_dc_with_max_id()      
-      update_these_changes = self._get_built_list_of_changes(job_list)      
-      if len(update_these_changes) > 0:
+      update_these_changes = self._get_built_list_of_changes(job_list)
+      should_create_new_run = self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size)
+      if len(update_these_changes) > 0 and should_create_new_run == False:
         self.manager.update_many_job_data_change_status(update_these_changes)
-      if self.should_we_create_a_new_run(job_list, len(update_these_changes), current_experiment_run_dc, chunk_unit, chunk_size):        
+      if should_create_new_run:        
         return self.create_new_experiment_run(chunk_unit, chunk_size, current_config, job_list)
       return self.update_counts_on_experiment_run_dc(current_experiment_run_dc, job_list)
     except Exception as exp:
