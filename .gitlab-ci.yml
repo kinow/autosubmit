@@ -36,12 +36,12 @@ test_python2:
 #     - source activate earthdiagnostics3
 #     - python run_test.py
 
-report_codacy:
-  stage: report
-  script:
-    - source activate autosubmit2
-    - pip install codacy-coverage --upgrade
-    - python-codacy-coverage -r test/coverage.xml
+# report_codacy:
+#   stage: report
+#   script:
+#     - source activate autosubmit2
+#     - pip install codacy-coverage --upgrade
+#     - python-codacy-coverage -r test/coverage.xml
 
 clean:
   stage: clean
