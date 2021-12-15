@@ -68,22 +68,21 @@ class DicJobs:
         :type priority: int
         """
         running = 'once'
+        splits = int(self.get_option(section, "SPLITS", 0))
+
         if self._parser.has_option(section, 'RUNNING'):
             running = self._parser.get(section, 'RUNNING').lower()
         frequency = int(self.get_option(section, "FREQUENCY", 1))
+
         if running == 'once':
-            splits = int(self.get_option(section, "SPLITS", 0))
             self._create_jobs_once(section, priority, default_job_type, jobs_data,splits)
-
         elif running == 'date':
-            self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data)
-
+            self._create_jobs_startdate(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'member':
-            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data)
+            self._create_jobs_member(section, priority, frequency, default_job_type, jobs_data,splits)
         elif running == 'chunk':
             synchronize = self.get_option(section, "SYNCHRONIZE", None)
             delay = int(self.get_option(section, "DELAY", -1))
-            splits = int(self.get_option(section, "SPLITS", 0))
             self._create_jobs_chunk(section, priority, frequency, default_job_type, synchronize, delay, splits, jobs_data)
         pass
 
@@ -113,7 +112,7 @@ class DicJobs:
         #self._dic[section] = self.build_job(section, priority, None, None, None, default_job_type, jobs_data)
         #self._jobs_list.graph.add_node(self._dic[section].name)
 
-    def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict()):
+    def _create_jobs_startdate(self, section, priority, frequency, default_job_type, jobs_data=dict(), splits=-1):
         """
         Create jobs to be run once per start date
 
@@ -126,15 +125,24 @@ class DicJobs:
         :type frequency: int
         """
         self._dic[section] = dict()
+        tmp_dic = dict()
+        tmp_dic[section] = dict()
         count = 0
         for date in self._date_list:
             count += 1
             if count % frequency == 0 or count == len(self._date_list):
-                self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
-                                                          jobs_data)
-                self._jobs_list.graph.add_node(self._dic[section][date].name)
+                if splits <= 0:
+                    self._dic[section][date] = self.build_job(section, priority, date, None, None, default_job_type,
+                                                              jobs_data)
+                    self._jobs_list.graph.add_node(self._dic[section][date].name)
+                else:
+                    tmp_dic[section] = []
+                    self._create_jobs_split(splits, section, date, member, None, priority,
+                                            default_job_type, jobs_data, tmp_dic[section])
 
-    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict()):
+
+
+    def _create_jobs_member(self, section, priority, frequency, default_job_type, jobs_data=dict(),splits=-1):
         """
         Create jobs to be run once per member
 
@@ -147,20 +155,24 @@ class DicJobs:
         :type frequency: int
         """
         self._dic[section] = dict()
+        tmp_dic = {}
+        tmp_dic[section] = dict()
         for date in self._date_list:
+            tmp_dic[section][date] = dict()
             self._dic[section][date] = dict()
             count = 0
             for member in self._member_list:
                 count += 1
                 if count % frequency == 0 or count == len(self._member_list):
-                    self._dic[section][date][member] = self.build_job(section, priority, date, member, None,
-                                                                      default_job_type, jobs_data)
-                    self._jobs_list.graph.add_node(self._dic[section][date][member].name)
+                    if splits <= 0:
+                        self._dic[section][date][member] = self.build_job(section, priority, date, member, None,default_job_type, jobs_data,splits)
+                        self._jobs_list.graph.add_node(self._dic[section][date][member].name)
+                    else:
+                        tmp_dic[section][date][member] = []
+                        self._create_jobs_split(splits, section, date, member, None, priority,
+                                                default_job_type, jobs_data, tmp_dic[section][date][member])
+        self._dic[section] = tmp_dic[section]
 
-    '''
-        Maybe a good choice could be split this function or ascend the
-        conditional decision to the parent which makes the call
-    '''
 
     def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):
         """
@@ -280,7 +292,10 @@ class DicJobs:
         if date not in dic:
             return jobs
         dic = dic[date]
-        if type(dic) is not dict:
+        if type(dic) is list:
+            for job in dic:
+                jobs.append(job)
+        elif type(dic) is not dict:
             jobs.append(dic)
         else:
             if member is not None:
@@ -295,8 +310,12 @@ class DicJobs:
         if member not in dic:
             return jobs
         dic = dic[member]
-        if type(dic) is not dict:
+        if type(dic) is list:
+            for job in dic:
+                jobs.append(job)
+        elif type(dic) is not dict:
             jobs.append(dic)
+
         else:
             if chunk is not None:
                 if chunk in dic:
