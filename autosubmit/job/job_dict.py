@@ -136,9 +136,10 @@ class DicJobs:
                                                               jobs_data)
                     self._jobs_list.graph.add_node(self._dic[section][date].name)
                 else:
-                    tmp_dic[section] = []
-                    self._create_jobs_split(splits, section, date, member, None, priority,
-                                            default_job_type, jobs_data, tmp_dic[section])
+                    tmp_dic[section][date] = []
+                    self._create_jobs_split(splits, section, date, None, None, priority,
+                                            default_job_type, jobs_data, tmp_dic[section][date])
+                    self._dic[section][date] = tmp_dic[section][date]
 
 
 
@@ -155,7 +156,7 @@ class DicJobs:
         :type frequency: int
         """
         self._dic[section] = dict()
-        tmp_dic = {}
+        tmp_dic = dict()
         tmp_dic[section] = dict()
         for date in self._date_list:
             tmp_dic[section][date] = dict()
@@ -171,7 +172,7 @@ class DicJobs:
                         tmp_dic[section][date][member] = []
                         self._create_jobs_split(splits, section, date, member, None, priority,
                                                 default_job_type, jobs_data, tmp_dic[section][date][member])
-        self._dic[section] = tmp_dic[section]
+                        self._dic[section][date][member] = tmp_dic[section]
 
 
     def _create_jobs_chunk(self, section, priority, frequency, default_job_type, synchronize=None, delay=0, splits=0, jobs_data=dict()):
