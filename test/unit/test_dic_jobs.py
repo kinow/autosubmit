@@ -30,9 +30,11 @@ class TestDicJobs(TestCase):
         # arrange
         section = 'fake-section'
         priority = 999
+        frequency = 123
+        splits = -1
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='once')
-        self.dictionary.get_option = Mock(return_value=123)
+        self.dictionary.get_option = Mock(return_value=-1)
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -42,7 +44,7 @@ class TestDicJobs(TestCase):
         self.dictionary.read_section(section, priority, Type.BASH)
 
         # assert
-        self.dictionary._create_jobs_once.assert_called_once_with(section, priority, Type.BASH, {})
+        self.dictionary._create_jobs_once.assert_called_once_with(section, priority, Type.BASH, {},splits)
         self.dictionary._create_jobs_startdate.assert_not_called()
         self.dictionary._create_jobs_member.assert_not_called()
         self.dictionary._create_jobs_chunk.assert_not_called()
@@ -52,9 +54,12 @@ class TestDicJobs(TestCase):
         section = 'fake-section'
         priority = 999
         frequency = 123
+        splits = -1
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='date')
-        self.dictionary.get_option = Mock(return_value=frequency)
+        #self.dictionary.get_option = Mock(return_value=frequency)
+        self.dictionary.get_option = Mock(side_effect=[splits,frequency ])
+        #self.dictionary.get_option = Mock(return_value=splits)
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -65,7 +70,7 @@ class TestDicJobs(TestCase):
 
         # assert
         self.dictionary._create_jobs_once.assert_not_called()
-        self.dictionary._create_jobs_startdate.assert_called_once_with(section, priority, frequency, Type.BASH, {})
+        self.dictionary._create_jobs_startdate.assert_called_once_with(section, priority, frequency, Type.BASH, {}, splits)
         self.dictionary._create_jobs_member.assert_not_called()
         self.dictionary._create_jobs_chunk.assert_not_called()
 
@@ -74,9 +79,10 @@ class TestDicJobs(TestCase):
         section = 'fake-section'
         priority = 999
         frequency = 123
+        splits = 0
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='member')
-        self.dictionary.get_option = Mock(return_value=frequency)
+        self.dictionary.get_option = Mock(side_effect=[splits,frequency])
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -88,7 +94,7 @@ class TestDicJobs(TestCase):
         # assert
         self.dictionary._create_jobs_once.assert_not_called()
         self.dictionary._create_jobs_startdate.assert_not_called()
-        self.dictionary._create_jobs_member.assert_called_once_with(section, priority, frequency, Type.BASH, {})
+        self.dictionary._create_jobs_member.assert_called_once_with(section, priority, frequency, Type.BASH, {},splits)
         self.dictionary._create_jobs_chunk.assert_not_called()
 
     def test_read_section_running_chunk_create_jobs_chunk(self):
@@ -101,7 +107,7 @@ class TestDicJobs(TestCase):
         splits = 0
         self.parser_mock.has_option = Mock(return_value=True)
         self.parser_mock.get = Mock(return_value='chunk')
-        self.dictionary.get_option = Mock(side_effect=[frequency, synchronize, delay, splits])
+        self.dictionary.get_option = Mock(side_effect=[splits,frequency, synchronize, delay])
         self.dictionary._create_jobs_once = Mock()
         self.dictionary._create_jobs_startdate = Mock()
         self.dictionary._create_jobs_member = Mock()
@@ -507,13 +513,14 @@ class TestDicJobs(TestCase):
         mock_section = Mock()
         mock_section.name = 'fake-section'
         priority = 999
-        self.dictionary.build_job = Mock(return_value=mock_section)
+        splits = -1
+        self.dictionary.build_job = Mock(side_effect=[mock_section, splits])
         self.job_list.graph.add_node = Mock()
 
-        self.dictionary._create_jobs_once(mock_section.name, priority, Type.BASH, dict())
+        self.dictionary._create_jobs_once(mock_section.name, priority, Type.BASH, dict(),splits)
 
         self.assertEquals(mock_section, self.dictionary._dic[mock_section.name])
-        self.dictionary.build_job.assert_called_once_with(mock_section.name, priority, None, None, None, Type.BASH, {})
+        self.dictionary.build_job.assert_called_once_with(mock_section.name, priority, None, None, None, Type.BASH, {},splits)
         self.job_list.graph.add_node.assert_called_once_with(mock_section.name)
 
 
