@@ -96,13 +96,14 @@ class DicJobs:
         :type priority: int
         """
 
-        self._dic[section] = []
+
         if splits <= 0:
             job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, -1)
-            self._dic[section].append(job)
+            self._dic[section] = job
             self._jobs_list.graph.add_node(job.name)
         total_jobs = 1
         while total_jobs <= splits:
+            self._dic[section] = []
             job = self.build_job(section, priority, None, None, None, default_job_type, jobs_data, total_jobs)
             self._dic[section].append(job)
             self._jobs_list.graph.add_node(job.name)
