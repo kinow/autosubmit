@@ -29,6 +29,7 @@ except ImportError:
 from job.job_packager import JobPackager
 from job.job_exceptions import WrongTemplateException
 from platforms.paramiko_submitter import ParamikoSubmitter
+from platforms.platform import Platform
 from notifications.notifier import Notifier
 from notifications.mail_notifier import MailNotifier
 from bscearth.utils.date import date2str
@@ -42,8 +43,9 @@ from job.job_grouping import JobGrouping
 from job.job_list_persistence import JobListPersistencePkl
 from job.job_list_persistence import JobListPersistenceDb
 from job.job_package_persistence import JobPackagePersistence
-from job.job_packages import JobPackageThread
+from job.job_packages import JobPackageThread, JobPackageBase
 from job.job_list import JobList
+from job.job import Job
 from git.autosubmit_git import AutosubmitGit
 from job.job_common import Status
 from config.config_parser import ConfigParserFactory
@@ -52,6 +54,7 @@ from config.basicConfig import BasicConfig
 import locale
 from distutils.util import strtobool
 from log.log import Log, AutosubmitError, AutosubmitCritical
+from typing import Set
 import log.fd_show
 
 try:
@@ -80,7 +83,9 @@ from collections import defaultdict
 from pyparsing import nestedExpr
 from history.experiment_status import ExperimentStatus
 from history.experiment_history import ExperimentHistory
+from typing import List
 import history.utils as HUtils
+import helpers.autosubmit_helper as AutosubmitHelper
 """
 Main module for autosubmit. Only contains an interface class to all functionality implemented on autosubmit
 """
@@ -1357,90 +1362,13 @@ class Autosubmit:
                                          "Or with the -v parameter: autosubmit run {2} -v ".format(as_conf.get_version(), Autosubmit.autosubmit_version, expid), 7067)
 
         # Handling starting time
-        if start_time:
-            Log.info("User provided starting time has been detected.")
-            current_time = time.time()
-            datetime_now = datetime.datetime.now()
-            target_date = parsed_time = None
-            try:
-                # Trying first parse H:M:S
-                parsed_time = datetime.datetime.strptime(
-                    start_time, "%H:%M:%S")
-                target_date = datetime.datetime(datetime_now.year, datetime_now.month,
-                                                datetime_now.day, parsed_time.hour, parsed_time.minute, parsed_time.second)
-            except:
-                try:
-                    # Trying second parse y-m-d H:M:S
-                    target_date = datetime.datetime.strptime(
-                        start_time, "%Y-%m-%d %H:%M:%S")
-                except:
-                    target_date = None
-                    Log.critical(
-                        "The string input provided as the starting time of your experiment must have the format 'H:M:S' or 'yyyy-mm-dd H:M:S'. Your input was '{0}'.".format(start_time))
-                    return
-            # Must be in the future
-            if (target_date < datetime.datetime.now()):
-                Log.critical("You must provide a valid date into the future. Your input was interpreted as '{0}', which is considered past.\nCurrent time {1}.".format(
-                    target_date.strftime("%Y-%m-%d %H:%M:%S"), datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-                return
-            # Starting waiting sequence
-            Log.info("Your experiment will start execution on {0}\n".format(
-                target_date.strftime("%Y-%m-%d %H:%M:%S")))
-            # Check time every second
-            while datetime.datetime.now() < target_date:
-                elapsed_time = target_date - datetime.datetime.now()
-                sys.stdout.write(
-                    "\r{0} until execution starts".format(elapsed_time))
-                sys.stdout.flush()
-                sleep(1)
-        # End of handling start ing time block
+        AutosubmitHelper.handle_start_time(start_time)
 
         # Start start after completion trigger block
-        if start_after:
-            Log.info("User provided expid completion trigger has been detected.")
-            # The user tries to be tricky
-            if str(start_after) == str(expid):
-                Log.info(
-                    "Hey! What do you think is going to happen? In theory, your experiment will run again after it has been completed. Good luck!")
-            # Check if experiment exists. If False or None, it does not exist
-            if not check_experiment_exists(start_after):
-                return None
-            # Historical Database: We use the historical database to retrieve the current progress data of the supplied expid (start_after)
-            exp_history = ExperimentHistory(start_after, jobdata_dir_path=BasicConfig.JOBDATA_DIR, historiclog_dir_path=BasicConfig.HISTORICAL_LOG_DIR)
-            if exp_history.is_header_ready() == False:
-                Log.critical("Experiment {0} is running a database version which is not supported by the completion trigger function. An updated DB version is needed.".format(
-                    start_after))
-                return
-            Log.info("Autosubmit will start monitoring experiment {0}. When the number of completed jobs plus suspended jobs becomes equal to the total number of jobs of experiment {0}, experiment {1} will start. Querying every 60 seconds. Status format Completed/Queuing/Running/Suspended/Failed.".format(
-                start_after, expid))
-            while True:
-                # Query current run
-                current_run = exp_history.manager.get_experiment_run_dc_with_max_id()
-                if current_run and current_run.finish > 0 and current_run.total > 0 and current_run.completed + current_run.suspended == current_run.total:
-                    break
-                else:
-                    sys.stdout.write(
-                        "\rExperiment {0} ({1} total jobs) status {2}/{3}/{4}/{5}/{6}".format(start_after, current_run.total, current_run.completed, current_run.queuing, current_run.running, current_run.suspended, current_run.failed))
-                    sys.stdout.flush()
-                # Update every 60 seconds
-                sleep(60)
-        # End of completion trigger block
-
+        AutosubmitHelper.handle_start_after(start_after, expid, BasicConfig)
+        
         # Handling run_members
-        allowed_members = None
-
-        if run_members:
-            allowed_members = run_members.split()
-            rmember = [
-                rmember for rmember in allowed_members if rmember not in as_conf.get_member_list()]
-            if len(rmember) > 0:
-                Log.critical(
-                    "Some of the members ({0}) in the list of allowed members you supplied do not exist in the current list of members specified in the conf files.\nCurrent list of members: {1}".format(str(rmember), str(as_conf.get_member_list())))
-                return
-            if len(allowed_members) == 0:
-                Log.critical(
-                    "Not a valid -rm --run_members input: {0}".format(str(run_members)))
-                return
+        allowed_members = AutosubmitHelper.get_allowed_members(run_members, as_conf)
 
         # checking if there is a lock file to avoid multiple running on the same expid
         try:
@@ -1575,8 +1503,7 @@ class Autosubmit:
                     job_list.update_list(as_conf, first_time=True)
                     job_list.save()
 
-                    Log.info(
-                        "Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
+                    Log.info("Autosubmit is running with v{0}", Autosubmit.autosubmit_version)
                     # Before starting main loop, setup historical database tables and main information
                     Log.debug("Running job data structure")
                     try:
@@ -1675,10 +1602,8 @@ class Autosubmit:
                             list_jobid = ""
                             completed_joblist = []
                             list_prevStatus = []
-                            queuing_jobs = job_list.get_in_queue_grouped_id(
-                                platform)
-                            Log.debug(
-                                'Checking jobs for platform={0}'.format(platform.name))
+                            queuing_jobs = job_list.get_in_queue_grouped_id(platform)
+                            Log.debug('Checking jobs for platform={0}'.format(platform.name))
                             for job_id, job in queuing_jobs.items():
                                 # Check Wrappers one-by-one
                                 if job_list.job_package_map and job_id in job_list.job_package_map:
@@ -1778,8 +1703,7 @@ class Autosubmit:
                                 job = platform_jobs[3][j_Indx]
                                 if prev_status != job.update_status(as_conf.get_copy_remote_logs() == 'true'):
                                     # Keeping track of changes
-                                    job_changes_tracker[job.name] = (
-                                        prev_status, job.status)
+                                    job_changes_tracker[job.name] = (prev_status, job.status)
                                     if as_conf.get_notifications() == 'true':
                                         if Status.VALUE_TO_KEY[job.status] in job.notify_on:
                                             Notifier.notify_status_change(MailNotifier(BasicConfig), expid, job.name,
@@ -2039,8 +1963,8 @@ class Autosubmit:
                 "Issues while checking the connectivity of platforms.", 7010, issues)
 
     @staticmethod
-    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False,
-                          only_wrappers=False, hold=False):
+    def submit_ready_jobs(as_conf, job_list, platforms_to_test, packages_persistence, inspect=False, only_wrappers=False, hold=False):
+        # type: (AutosubmitConfig, JobList, Set[Platform], JobPackagePersistence, bool, bool, bool) -> bool
         """
         Gets READY jobs and send them to the platforms if there is available space on the queues
 
@@ -2074,7 +1998,7 @@ class Autosubmit:
                 as_conf, platform, job_list, hold=hold).build_packages()
             if not inspect:
                 platform.open_submit_script()
-            valid_packages_to_submit = []
+            valid_packages_to_submit = [] # type: List[JobPackageBase]
             for package in packages_to_submit:
                 try:
                     # If called from inspect command or -cw
@@ -2171,15 +2095,12 @@ class Autosubmit:
                                 try:
                                     can_continue = True
                                     while can_continue and retries > 0:
-                                        cmd = package.jobs[0].platform.get_queue_status_cmd(
-                                            jobs_id[i])
+                                        cmd = package.jobs[0].platform.get_queue_status_cmd(jobs_id[i])
                                         #Log.debug("FD submit: {0}".format(log.fd_show.fd_table_status_str()))
-                                        package.jobs[0].platform.send_command(
-                                            cmd)
+                                        package.jobs[0].platform.send_command(cmd)
                                         #Log.debug("FD endsubmit: {0}".format(log.fd_show.fd_table_status_str()))
                                         queue_status = package.jobs[0].platform._ssh_output
-                                        reason = package.jobs[0].platform.parse_queue_reason(
-                                            queue_status, jobs_id[i])
+                                        reason = package.jobs[0].platform.parse_queue_reason(queue_status, jobs_id[i])
                                         if reason == '(JobHeldAdmin)':
                                             can_continue = False
                                         elif reason == '(JobHeldUser)':
@@ -2190,8 +2111,7 @@ class Autosubmit:
                                         retries = retries - 1
                                     if not can_continue:
                                         #Log.debug("FD hold start: {0}".format(log.fd_show.fd_table_status_str()))
-                                        package.jobs[0].platform.send_command(
-                                            package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
+                                        package.jobs[0].platform.send_command(package.jobs[0].platform.cancel_cmd + " {0}".format(jobs_id[i]))
                                         i = i + 1
                                         #Log.debug("FD hold on: {0}".format(log.fd_show.fd_table_status_str()))
 
@@ -2207,7 +2127,7 @@ class Autosubmit:
                                 job.hold = hold
                                 job.id = str(jobs_id[i])
                                 job.status = Status.SUBMITTED
-                                job.write_submit_time()
+                                job.write_submit_time(hold=hold)
                             i += 1
                     save = True
                     if len(failed_packages) > 0:
@@ -4286,6 +4206,7 @@ class Autosubmit:
 
     @staticmethod
     def change_status(final, final_status, job, save):
+        # type: (str, int, Job, bool) -> None
         """
         Set job status to final
 
@@ -4293,20 +4214,17 @@ class Autosubmit:
         :param final_status:
         :param job:
         """
-
-        if (job.status == Status.SUBMITTED or job.status == Status.QUEUING or job.status == Status.HELD) and save and (final_status != Status.QUEUING and final_status != Status.HELD and final_status != Status.SUSPENDED):
-            job.hold = False
-            if job.platform_name is not None and job.platform_name.lower() != "local":
-                job.platform.send_command(
-                    job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
-        elif (job.status == Status.QUEUING or job.status == Status.RUNNING or job.status == Status.SUBMITTED) and save and (final_status == Status.SUSPENDED):
-            if job.platform_name is not None and job.platform_name.lower() != "local":
-                job.platform.send_command(
-                    "scontrol hold " + "{0}".format(job.id), ignore_log=True)
-        elif (final_status == Status.QUEUING or final_status == Status.RUNNING) and save and (job.status == Status.SUSPENDED):
-            if job.platform_name is not None and job.platform_name.lower() != "local":
-                job.platform.send_command(
-                    "scontrol release " + "{0}".format(job.id), ignore_log=True)
+        if save:
+            if job.status in [Status.SUBMITTED, Status.QUEUING, Status.HELD] and final_status not in [Status.QUEUING, Status.HELD, Status.SUSPENDED]:
+                job.hold = False
+                if job.platform_name and job.platform_name.lower() != "local":
+                    job.platform.send_command(job.platform.cancel_cmd + " " + str(job.id), ignore_log=True)
+            elif job.status in [Status.QUEUING, Status.RUNNING, Status.SUBMITTED] and final_status == Status.SUSPENDED:
+                if job.platform_name and job.platform_name.lower() != "local":
+                    job.platform.send_command("scontrol hold " + "{0}".format(job.id), ignore_log=True)
+            elif final_status in [Status.QUEUING, Status.RUNNING] and (job.status == Status.SUSPENDED):
+                if job.platform_name and job.platform_name.lower() != "local":
+                    job.platform.send_command("scontrol release " + "{0}".format(job.id), ignore_log=True)
         job.status = final_status
         Log.info("CHANGED: job: " + job.name + " status to: " + final)
         Log.status("CHANGED: job: " + job.name + " status to: " + final)

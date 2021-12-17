@@ -35,7 +35,8 @@ Log.get_logger("Autosubmit")
 from autosubmit.job.job_exceptions import WrongTemplateException
 from autosubmit.job.job import Job
 from bscearth.utils.date import sum_str_hours,date2str
-from threading import Thread,Lock
+from threading import Thread, Lock
+from typing import List
 import multiprocessing
 import tarfile
 import datetime
@@ -54,10 +55,11 @@ class JobPackageBase(object):
     """
 
     def __init__(self, jobs):
-        self._jobs = jobs
-        self._expid = jobs[0].expid
-        self.hold = False
-        self.export = jobs[0].export
+        # type: (List[Job]) -> None
+        self._jobs = jobs # type: List[Job]
+        self._expid = jobs[0].expid # type: str
+        self.hold = False # type: bool
+        self.export = jobs[0].export 
         self.x11 = jobs[0].x11
         try:
             self._tmp_path = jobs[0]._tmp_path
@@ -74,6 +76,7 @@ class JobPackageBase(object):
 
     @property
     def jobs(self):
+        # type: () -> List[Job]
         """
         Returns the jobs
 
@@ -193,10 +196,10 @@ class JobPackageBase(object):
         raise Exception('Not implemented')
 
     def _send_files(self):
-        raise Exception('Not implemented')
+        """ Send local files to the platform. """
 
     def _do_submission(self,job_scripts=None, hold=False):
-        raise Exception('Not implemented')
+        """ Submit package to the platform. """
 
 
 
@@ -235,8 +238,8 @@ class JobPackageSimple(JobPackageBase):
             if job.id is None:
                 continue
             Log.info("{0} submitted", job.name)
-            job.status = Status.SUBMITTED
-            job.write_submit_time()
+            job.status = Status.SUBMITTED            
+            job.write_submit_time(hold=self.hold)
 
 
 class JobPackageSimpleWrapped(JobPackageSimple):
@@ -325,8 +328,8 @@ class JobPackageArray(JobPackageBase):
         for i in xrange(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id) + '[{0}]'.format(i)
-            self.jobs[i].status = Status.SUBMITTED
-            self.jobs[i].write_submit_time()
+            self.jobs[i].status = Status.SUBMITTED            
+            self.jobs[i].write_submit_time(hold=hold)
 
 
 class JobPackageThread(JobPackageBase):
@@ -471,8 +474,8 @@ class JobPackageThread(JobPackageBase):
         for i in xrange(0, len(self.jobs) ):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
-            self.jobs[i].status = Status.SUBMITTED
-            self.jobs[i].write_submit_time()
+            self.jobs[i].status = Status.SUBMITTED            
+            self.jobs[i].write_submit_time(hold=hold)
 
     def _common_script_content(self):
         pass
@@ -549,8 +552,8 @@ class JobPackageThreadWrapped(JobPackageThread):
         for i in xrange(0, len(self.jobs)):
             Log.info("{0} submitted", self.jobs[i].name)
             self.jobs[i].id = str(package_id)
-            self.jobs[i].status = Status.SUBMITTED
-            self.jobs[i].write_submit_time()
+            self.jobs[i].status = Status.SUBMITTED            
+            self.jobs[i].write_submit_time(hold=hold)
 class JobPackageVertical(JobPackageThread):
     """
     Class to manage a vertical thread-based package of jobs to be submitted by autosubmit

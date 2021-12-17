@@ -29,6 +29,7 @@ import datetime
 import textwrap
 from collections import OrderedDict
 import copy
+import traceback
 
 from bscearth.utils.config_parser import ConfigParserFactory
 
@@ -88,11 +89,11 @@ class Job(object):
         self._platform = None
         self._queue = None
         self.retry_delay = 0
-        self.platform_name = None
-        self.section = None
-        self.wallclock = None
+        self.platform_name = None # type: str
+        self.section = None # type: str
+        self.wallclock = None # type: str
         self.wchunkinc = None
-        self.tasks = '0'
+        self.tasks = '0' 
         self.threads = '1'
         self.processors = '1'
         self.memory = ''
@@ -130,7 +131,7 @@ class Job(object):
         self._parents = set()
         self._children = set()
         self.fail_count = 0
-        self.expid = name.split('_')[0]
+        self.expid = name.split('_')[0] # type: str
         self.parameters = dict()
         self._tmp_path = os.path.join(
             BasicConfig.LOCAL_ROOT_DIR, self.expid, BasicConfig.LOCAL_TMP_DIR)
@@ -139,7 +140,7 @@ class Job(object):
         self.check = 'true'
         self.check_warnings = False
         self.packed = False
-        self.hold = False
+        self.hold = False # type: bool
         self.distance_weight = 0
         self.level = 0
         self.export = "none"
@@ -603,6 +604,7 @@ class Job(object):
             Log.printlog("Trace {0} \nFailed to retrieve log file for job {0}".format(
                 e.message, self.name), 6001)
         return
+
     @threaded
     def retrieve_logfiles(self, copy_remote_logs, local_logs, remote_logs, expid, platform_name,fail_count = 0):
         max_logs = 0
@@ -762,6 +764,7 @@ class Job(object):
         except BaseException as e:
             pass
         return
+    
     def update_status(self, copy_remote_logs=False, failed_file=False):
         """
         Updates job status, checking COMPLETED file if needed
@@ -820,6 +823,8 @@ class Job(object):
         if previous_status != Status.RUNNING and self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN,
                                                                  Status.RUNNING]:
             self.write_start_time()
+        if previous_status == Status.HELD and self.status in [Status.SUBMITTED, Status.QUEUING, Status.RUNNING]:            
+            self.write_submit_time()
         # Updating logs
         if self.status in [Status.COMPLETED, Status.FAILED, Status.UNKNOWN]:
             # New thread, check if file exist
@@ -1246,10 +1251,15 @@ class Job(object):
                         str(set(parameters) - set(variables))), 6013)
         return out
 
-    def write_submit_time(self,enabled = False):
+    def write_submit_time(self, enabled=False, hold=False):
+        # type: (bool, bool) -> None
         """
-        Writes submit date and time to TOTAL_STATS file
+        Writes submit date and time to TOTAL_STATS file. It doesn't write if hold == True.
         """
+        # print(traceback.format_stack())
+        print("Call from {} with status {}".format(self.name, self.status_str))
+        if hold == True:
+            return # Do not write for HELD jobs.
         data_time = ["",time.time()]
         if self.wrapper_type != "vertical" or enabled:
             path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
@@ -1375,9 +1385,9 @@ class Job(object):
         Writes all data to TOTAL_STATS file
         :param total_stats: data gathered by the wrapper
         :type completed: str
-        """
+        """        
         if first_retrial:
-            self.write_submit_time(True)
+            self.write_submit_time(enabled=True)
         path = os.path.join(self._tmp_path, self.name + '_TOTAL_STATS')
         f = open(path, 'a')
         if first_retrial:
@@ -1624,12 +1634,12 @@ class WrapperJob(Job):
             if reason == '(JobHeldUser)':
                 if self.hold is False:
                     # SHOULD BE MORE CLASS (GET_scontrol realease but not sure if this can be implemented on others PLATFORMS
-                    self._platform.send_command(
-                        "scontrol release " + "{0}".format(self.id))
-                    self.status = Status.QUEUING
+                    self._platform.send_command("scontrol release " + "{0}".format(self.id))
+                    self.new_status = Status.QUEUING
                     for job in self.job_list:
                         job.hold = self.hold
-                        job.status = self.status
+                        job.new_status = Status.QUEUING
+                        job.update_status(self.as_config.get_copy_remote_logs() == 'true')                        
                     Log.info("Job {0} is QUEUING {1}", self.name, reason)
                 else:
                     self.status = Status.HELD

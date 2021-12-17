@@ -22,6 +22,7 @@ from time import sleep
 from time import mktime
 from time import time
 from datetime import datetime
+from typing import List, Union
 import traceback
 
 from xml.dom.minidom import parseString
@@ -72,6 +73,7 @@ class SlurmPlatform(ParamikoPlatform):
         return os.path.join(self.config.LOCAL_ASLOG_DIR, os.path.basename(self._submit_script_path))
 
     def submit_Script(self, hold=False):
+        # type: (bool) -> Union[List[str], str]
         """
         Sends a Submit file Script, execute it  in the platform and retrieves the Jobs_ID of all jobs at once.
 

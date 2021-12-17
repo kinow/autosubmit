@@ -40,7 +40,7 @@ setup(
     download_url='https://earth.bsc.es/wiki/doku.php?id=tools:autosubmit',
     keywords=['climate', 'weather', 'workflow', 'HPC'],
     install_requires=['argparse>=1.2,<2', 'python-dateutil>2', 'pydotplus>=2', 'pyparsing>=2.0.1',
-                      'numpy', 'matplotlib', 'paramiko == 2.7.1',
+                      'numpy', 'matplotlib', 'typing', 'paramiko == 2.7.1',
                       'mock>=1.3.0', 'portalocker==0.5.7', 'networkx', 'bscearth.utils', 'Xlib == 0.21'],
     extras_require={
         'dialog': ["python2-pythondialog>=3.3.0"]
